@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """NetworkDynamics.jl backend adapter for SimulationExperiment.
 
 Uses pyjulia (tvbo.adapters.julia) to execute generated Julia code and return full Julia objects alongside a TVBO TimeSeries.
@@ -138,8 +137,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
     def get_initial_positions(self) -> np.ndarray:
         """Extract initial (x, y, …) positions for ALL nodes from YAML.
 
-        For free (dynamic) nodes: positions come from per-node ``state`` overrides (legacy ``initial_state`` arrays are also supported),
-        at the indices marked ``coupling_variable=True``.
+        For free (dynamic) nodes: positions come from per-node ``state`` overrides (legacy ``initial_state`` arrays are also supported), at the indices marked ``coupling_variable=True``.
         For static (fixed) nodes: positions come from node parameter values (in parameter-definition order).
 
         Returns shape ``(n_nodes, n_coupling_vars)``.
@@ -226,7 +224,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
     def build_node_positions(
         self,
-        ts: "SimulationResult",
+        ts: SimulationResult,
         ctx: dict,
     ) -> np.ndarray:
         """Build ``(n_t, n_nodes, n_cv)`` position array from simulation data.
@@ -271,10 +269,10 @@ class NetworkDynamicsAdapter(BaseAdapter):
         template = templates.lookup.get_template("tvbo-nd-experiment.jl.mako")
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "ExperimentResult":
+    def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using NetworkDynamics.jl.
 
-        Returns
+        Returns:
         -------
         ExperimentResult
             Simulation results with named dimensions and coordinates.

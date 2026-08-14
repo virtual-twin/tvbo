@@ -7,7 +7,6 @@ from pathlib import Path
 
 import typer
 
-
 app = typer.Typer(name="config", no_args_is_help=True)
 
 

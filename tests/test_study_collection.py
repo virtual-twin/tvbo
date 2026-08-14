@@ -1,17 +1,13 @@
 """The StudyCollection container: manifest resolution, verify gates, and composed captions.
 
-Phase 0 of the native-manuscript design. A `StudyCollection` is a study-of-studies whose
-`results:` are the numbers the prose cites (computed from a container or authored from prior
-work), whose figures carry `Panel.description` so captions compose from the spec, and whose
-buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship
-a wrong number, an orphan figure, or a caption that disagrees with its panels.
+Phase 0 of the native-manuscript design. A `StudyCollection` is a study-of-studies whose `results:` are the numbers the prose cites (computed from a container or authored from prior work), whose figures carry `Panel.description` so captions compose from the spec, and whose buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship a wrong number, an orphan figure, or a caption that disagrees with its panels.
 """
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from types import SimpleNamespace
 import xarray as xr
 
 import tvbo
@@ -260,8 +256,7 @@ def grid_figure(tmp_path):
 def test_a_grid_names_each_source_once_not_once_per_cell(grid_figure):
     """Eight cells showing one analysis had put its name in the caption eight times.
 
-    The same map drawn laterally and medially is ONE binding seen twice, and a caption that
-    repeats it per cell buries the authored sentence behind identical phrases.
+    The same map drawn laterally and medially is ONE binding seen twice, and a caption that repeats it per cell buries the authored sentence behind identical phrases.
     """
     caption = bsplot.compose_caption(grid_figure)
     assert caption.count("analysis lag_data") == 1
@@ -302,8 +297,7 @@ def multi_output_figure(tmp_path):
 def test_layers_sharing_one_analysis_name_it_once(multi_output_figure):
     """Three outputs of one container is one source, not three.
 
-    Naming it per layer pushed the authored caption behind the same phrase repeated, and a
-    reader cannot tell from it that the three lines describe a single result.
+    Naming it per layer pushed the authored caption behind the same phrase repeated, and a reader cannot tell from it that the three lines describe a single result.
     """
     caption = bsplot.compose_caption(multi_output_figure)
     assert caption.count("analysis dist") == 1
@@ -321,10 +315,7 @@ def test_a_rule_is_described_by_the_value_it_stands_at(multi_output_figure):
 def test_a_member_container_resolves_from_the_members_own_root(collection, tmp_path):
     """A ``used:`` binding into a MEMBER, which the schema documents as supported.
 
-    A member study runs in its own directory and writes
-    ``<member-dir>/output/results/<name>/result.h5``. Searching only the collection's
-    root left every such key unresolved, so the build died right after a successful
-    multi-hour run — contradicting the slot's own description.
+    A member study runs in its own directory and writes ``<member-dir>/output/results/<name>/result.h5``. Searching only the collection's root left every such key unresolved, so the build died right after a successful multi-hour run — contradicting the slot's own description.
     """
     _write_container(tmp_path / "members" / "output", "tally", "n_errors", 7)
     results, _prov, problems = I.resolve_results(collection, tmp_path / "output")
@@ -372,8 +363,7 @@ def test_fingerprint_tracks_the_declaration_not_the_file():
 def test_an_unrelated_spec_edit_does_not_mark_an_analysis_stale(tmp_path):
     """The defect this replaced: any touch of the spec failed every analysis.
 
-    Editing a caption, adding a figure or fixing a typo made ``verify`` demand a re-run of
-    work that edit could not affect — and the only escape was recomputing all of it.
+    Editing a caption, adding a figure or fixing a typo made ``verify`` demand a re-run of work that edit could not affect — and the only escape was recomputing all of it.
     """
     root = tmp_path / "output"
     _write_container(root, "tally", "n_errors", 3)
@@ -438,8 +428,7 @@ def test_run_analysis_records_the_fingerprint_it_will_be_checked_against(tmp_pat
 def test_a_mistyped_manuscript_path_names_the_real_problem(collection, tmp_path):
     """An unreadable path must not read as "the prose cites nothing".
 
-    Swallowing the OSError produced an empty key set, so verify reported EVERY declared
-    binding as never-cited — a wall of wrong diagnostics hiding the one real fault.
+    Swallowing the OSError produced an empty key set, so verify reported EVERY declared binding as never-cited — a wall of wrong diagnostics hiding the one real fault.
     """
     import typer
 
@@ -475,8 +464,7 @@ def test_cited_keys_are_read_from_a_file_and_a_tree(tmp_path):
 def test_a_caption_failure_does_not_abort_the_render_loop(tmp_path, monkeypatch):
     """The pre-check sat OUTSIDE the try that exists to guarantee exactly this.
 
-    An exception composing figure 1's caption stopped the loop, so every later figure
-    went unrendered even though the images written so far were fine.
+    An exception composing figure 1's caption stopped the loop, so every later figure went unrendered even though the images written so far were fine.
     """
     from tvbo.adapters import bsplot
     from tvbo.cli import figures as figures_cli
@@ -494,8 +482,7 @@ def test_a_caption_failure_does_not_abort_the_render_loop(tmp_path, monkeypatch)
 def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monkeypatch):
     """A failed stage means the containers are stale or absent.
 
-    Emitting anyway reported numbers the run did not produce, and exited 0. The
-    boolean ``_run_whole_study`` already returned was simply discarded.
+    Emitting anyway reported numbers the run did not produce, and exited 0. The boolean ``_run_whole_study`` already returned was simply discarded.
     """
     import typer
 

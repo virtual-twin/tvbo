@@ -12,7 +12,6 @@ The most important classes for specifying and running a simulation:
 | `SimulationExperiment` | Top-level experiment specification | [schema](datamodel/classes/SimulationExperiment.qmd) | [api](api/classes/experiment.qmd) |
 | `Dynamics` | Neural mass model (ODE / rate equations) | [schema](datamodel/classes/Dynamics.qmd) | [api](api/classes/dynamics.qmd) |
 | `Network` | Brain network (nodes, weights, delays) | [schema](datamodel/classes/Network.qmd) | [sim](api/classes/network.qmd) · [plot](api/plot/network.qmd) |
-| `Connectome` | Structural connectivity matrix + tracts | [schema](datamodel/classes/Network.qmd) | [api](api/data/network_io.qmd) |
 | `Coupling` | Inter-node coupling function | [schema](datamodel/classes/Coupling.qmd) | — |
 | `Integrator` | Numerical integrator (Euler, Heun, …) | [schema](datamodel/classes/Integrator.qmd) | — |
 | `Noise` | Stochastic noise specification | [schema](datamodel/classes/Noise.qmd) | [api](api/classes/noise.qmd) |

@@ -1,13 +1,11 @@
 """Observation models that transform simulation output into observables.
 
-This module provides [`Function`](#tvbo.classes.observation.Function), a named symbolic transformation, and
-[`ObservationModel`](#tvbo.classes.observation.ObservationModel), a directed graph that chains such functions (e.g. BOLD HRF, filtering, functional
-connectivity) into an observation pipeline. Helper routines convert Python callables and curated ontology instances into the underlying datamodel shape.
+This module provides [`Function`](#tvbo.classes.observation.Function), a named symbolic transformation, and [`ObservationModel`](#tvbo.classes.observation.ObservationModel), a directed graph that chains such functions (e.g. BOLD HRF, filtering, functional connectivity) into an observation pipeline. Helper routines convert Python callables and curated ontology instances into the underlying datamodel shape.
 """
 
-import logging
 import importlib
 import inspect
+import logging
 from types import FunctionType
 from typing import Any
 
@@ -17,19 +15,20 @@ import numpy as np
 import sympy
 from sympy import (
     Eq,
+    Float,
     IndexedBase,
     Lambda,
+    Rational,
     Symbol,
     lambdify,
-    parse_expr,
     latex,
-    Rational,
-    Float,
+    parse_expr,
 )
+
 from tvbo.classes.equation import _clash1
+from tvbo.codegen.code import render_expression
 from tvbo.data.types import TimeSeries
 from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.codegen.code import render_expression
 from tvbo.ontology import owl as ontology
 from tvbo.plot.ontology import draw_custom_nodes
 
@@ -139,8 +138,7 @@ def functioninstance2metadata(function_instance, **kwargs):
 def instance2metadata(instance, **kwargs):
     """Normalize an ontology transformation instance into datamodel kwargs.
 
-    Maps the instance's name, arguments, equation, parameters and acronym onto the keyword arguments used to construct a datamodel object, nesting the
-    argument and equation metadata under a `transformation` key.
+    Maps the instance's name, arguments, equation, parameters and acronym onto the keyword arguments used to construct a datamodel object, nesting the argument and equation metadata under a `transformation` key.
 
     Args:
         instance: Ontology instance exposing `name`, `has_argument`,
@@ -174,9 +172,7 @@ def instance2metadata(instance, **kwargs):
 class Function(tvbo_datamodel.Function):
     """A named symbolic transformation applied to simulation outputs.
 
-    `Function` wraps an `equation` (RHS string parseable by SymPy) plus parameters and metadata. Used as the building block of
-    [`ObservationModel`](#tvbo.classes.observation.ObservationModel)s (e.g. BOLD HRF, sigmoid firing-rate, band-pass filter) and as derived
-    quantities (e.g. coherence, PSD, FC).
+    `Function` wraps an `equation` (RHS string parseable by SymPy) plus parameters and metadata. Used as the building block of [`ObservationModel`](#tvbo.classes.observation.ObservationModel)s (e.g. BOLD HRF, sigmoid firing-rate, band-pass filter) and as derived quantities (e.g. coherence, PSD, FC).
 
     Construct from a callable, from the curated ontology by name, or by passing `equation=`, `parameters=`, etc. inline.
     """
@@ -348,8 +344,7 @@ class Function(tvbo_datamodel.Function):
     def get_equation(self):
         """Build the function as a SymPy equation.
 
-        Parses the stored right-hand-side string into an expression, treats the function's arguments as `IndexedBase` symbols, and returns an equality
-        whose left-hand side is the named function applied to its arguments.
+        Parses the stored right-hand-side string into an expression, treats the function's arguments as `IndexedBase` symbols, and returns an equality whose left-hand side is the named function applied to its arguments.
 
         Returns:
             A SymPy `Eq` relating the function call to its parsed expression.
@@ -371,12 +366,10 @@ class Function(tvbo_datamodel.Function):
         self.get_parameters()
         return Lambda(equation.lhs.args, equation)
 
-    def execute(self, format="python", fill_in_parameters=True, parameters={}, **kwargs):
+    def execute(self, format="python", fill_in_parameters=True, parameters=None, **kwargs):
         """Compile the function into an executable callable.
 
-        Returns the recorded Python callable when one is available; otherwise lambdifies the symbolic equation for the requested backend. Supplied
-        parameters that do not appear in the equation are discarded, and the function's stored parameter values can optionally be substituted in
-        before compilation.
+        Returns the recorded Python callable when one is available; otherwise lambdifies the symbolic equation for the requested backend. Supplied parameters that do not appear in the equation are discarded, and the function's stored parameter values can optionally be substituted in before compilation.
 
         Args:
             format: Target backend for `lambdify` (e.g. `"python"`/`"numpy"`,
@@ -391,6 +384,8 @@ class Function(tvbo_datamodel.Function):
         Returns:
             A callable evaluating the function over its arguments.
         """
+        if parameters is None:
+            parameters = {}
         if self.function:
             return self.function
 
@@ -447,17 +442,18 @@ class Function(tvbo_datamodel.Function):
         """
         return render_expression(self.get_equation().rhs, format=format, **kwargs)
 
-    def plot(self, format="python", plotting_kwargs={}, **kwargs):
+    def plot(self, format="python", plotting_kwargs=None, **kwargs):
         """Plot the function's output against its input.
 
-        For a single-argument function, the input array (supplied via `kwargs` under the argument name) is plotted against the evaluated output; for
-        multi-argument functions the output is plotted directly using the stored parameter values.
+        For a single-argument function, the input array (supplied via `kwargs` under the argument name) is plotted against the evaluated output; for multi-argument functions the output is plotted directly using the stored parameter values.
 
         Args:
             format: Backend used to compile the function for evaluation.
             plotting_kwargs: Keyword arguments forwarded to `matplotlib`.
             **kwargs: Input values keyed by argument name.
         """
+        if plotting_kwargs is None:
+            plotting_kwargs = {}
         function = self.execute(format=format)
         args = self.arguments
         if len(args) == 1:
@@ -468,11 +464,10 @@ class Function(tvbo_datamodel.Function):
             plt.plot(function(**{**kwargs, **self.get_parameters()}), **plotting_kwargs)
         pass
 
-    def plot_metadata_graph(self, ax=None, node_kwargs={}, edge_kwargs={}, edge_labels=True):
+    def plot_metadata_graph(self, ax=None, node_kwargs=None, edge_kwargs=None, edge_labels=True):
         """Draw a graph of the function's metadata.
 
-        Builds a directed graph linking the function node to its equation, software requirements and arguments, then renders it with a radial
-        layout.
+        Builds a directed graph linking the function node to its equation, software requirements and arguments, then renders it with a radial layout.
 
         Args:
             ax: Matplotlib axes to draw into; a new figure is created and
@@ -485,6 +480,10 @@ class Function(tvbo_datamodel.Function):
         Returns:
             The created figure when `ax` is not provided, otherwise `None`.
         """
+        if edge_kwargs is None:
+            edge_kwargs = {}
+        if node_kwargs is None:
+            node_kwargs = {}
         if ax is None:
             fig, ax = plt.subplots()
             return_fig = True
@@ -554,10 +553,7 @@ class Function(tvbo_datamodel.Function):
 class ObservationModel:
     """A directed graph of `Function`s transforming simulation output to observables.
 
-    `ObservationModel` chains symbolic and numerical operations (e.g. BOLD
-    HRF → low-pass filter → downsample → FC matrix) on a per-region time series. Nodes are `Function`s; edges describe data flow from `Input` to
-    `Output`. Use `add_node(name, function, ...)`, `add_edge(src, dst)` and
-    `run()` to evaluate the pipeline.
+    `ObservationModel` chains symbolic and numerical operations (e.g. BOLD HRF → low-pass filter → downsample → FC matrix) on a per-region time series. Nodes are `Function`s; edges describe data flow from `Input` to `Output`. Use `add_node(name, function, ...)`, `add_edge(src, dst)` and `run()` to evaluate the pipeline.
     """
 
     # TODO: Checkout dask for parallel execution
@@ -575,8 +571,7 @@ class ObservationModel:
     def add_data(self, node, data):
         """Attach a data array to a graph node.
 
-        Accepts a `TimeSeries` (whose values and time axis are extracted) or a raw array (for which an integer time axis is generated). Creates the
-        node when it does not yet exist, otherwise updates its stored data.
+        Accepts a `TimeSeries` (whose values and time axis are extracted) or a raw array (for which an integer time axis is generated). Creates the node when it does not yet exist, otherwise updates its stored data.
 
         Args:
             node: Name of the graph node to attach the data to.
@@ -596,7 +591,7 @@ class ObservationModel:
     def add_function(
         self,
         function,
-        argument_mapping={},
+        argument_mapping=None,
         function_type="",
         select_state=None,
         select_region=None,
@@ -608,8 +603,7 @@ class ObservationModel:
     ):
         """Add a `Function` node to the pipeline graph.
 
-        Registers the function as a graph node, records its execution options, overrides parameter values from `kwargs`, and wires edges from the nodes
-        named in `argument_mapping` to this node. Unless the function is a derivative, it becomes the new tail feeding the `Output` node.
+        Registers the function as a graph node, records its execution options, overrides parameter values from `kwargs`, and wires edges from the nodes named in `argument_mapping` to this node. Unless the function is a derivative, it becomes the new tail feeding the `Output` node.
 
         Args:
             function: The `Function` to add as a node.
@@ -626,6 +620,8 @@ class ObservationModel:
             **kwargs: Parameter values; entries matching equation parameters
                 override the function's stored values.
         """
+        if argument_mapping is None:
+            argument_mapping = {}
         if alt_name:
             function.acronym = alt_name
 
@@ -658,17 +654,18 @@ class ObservationModel:
             self.last_function_name = func_name
             self.graph.add_edge(func_name, "Output")
 
-    def add_derivative(self, function, argument_mapping={}, **kwargs):
+    def add_derivative(self, function, argument_mapping=None, **kwargs):
         """Add a derivative `Function` node to the pipeline.
 
-        Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function)
-        with `function_type="derivative"`, so the node is computed as a side branch rather than chained into `Output`.
+        Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function) with `function_type="derivative"`, so the node is computed as a side branch rather than chained into `Output`.
 
         Args:
             function: The `Function` to add as a derivative node.
             argument_mapping: Mapping from argument names to source nodes.
             **kwargs: Additional options forwarded to `add_function`.
         """
+        if argument_mapping is None:
+            argument_mapping = {}
         self.add_function(
             function,
             argument_mapping=argument_mapping,
@@ -676,17 +673,18 @@ class ObservationModel:
             **kwargs,
         )
 
-    def add_projection_model(self, function, argument_mapping={}, **kwargs):
+    def add_projection_model(self, function, argument_mapping=None, **kwargs):
         """Add a projection `Function` node to the pipeline.
 
-        Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function)
-        with `function_type="projection"`.
+        Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function) with `function_type="projection"`.
 
         Args:
             function: The `Function` to add as a projection node.
             argument_mapping: Mapping from argument names to source nodes.
             **kwargs: Additional options forwarded to `add_function`.
         """
+        if argument_mapping is None:
+            argument_mapping = {}
         self.add_function(
             function,
             argument_mapping=argument_mapping,
@@ -696,11 +694,10 @@ class ObservationModel:
         # TODO: Finish implementation
         pass
 
-    def plot_graph(self, ax=None, plot_edge_labels=True, node_kwargs={}, edge_kwargs={}):
+    def plot_graph(self, ax=None, plot_edge_labels=True, node_kwargs=None, edge_kwargs=None):
         """Draw the pipeline graph, including `Input` and `Output` nodes.
 
-        Lays out the directed graph (falling back to a spring layout when
-        Graphviz is unavailable) and annotates edges with their argument names and any selected state index.
+        Lays out the directed graph (falling back to a spring layout when Graphviz is unavailable) and annotates edges with their argument names and any selected state index.
 
         Args:
             ax: Matplotlib axes to draw into; a new figure is created and
@@ -713,13 +710,17 @@ class ObservationModel:
         Returns:
             The created figure when `ax` is not provided, otherwise `None`.
         """
+        if edge_kwargs is None:
+            edge_kwargs = {}
+        if node_kwargs is None:
+            node_kwargs = {}
         try:
             pos = nx.nx_pydot.graphviz_layout(self.graph, prog="dot")  # Layout for graph visualization
         except Exception:
             pos = nx.spring_layout(self.graph)  # Layout for graph visualization
 
         edge_labels = {}
-        for src, dst, data in self.graph.edges(data=True):
+        for src, dst, _data in self.graph.edges(data=True):
             select_state = self.graph.nodes[dst].get("select_state", None)
             label = self.graph[src][dst].get("argument", "")
 
@@ -781,8 +782,7 @@ class ObservationModel:
     def apply(self, timeseries, mode=0):
         """Run the pipeline on a time series and return the observable.
 
-        Feeds the input into the `Input` node, evaluates every node in topological order, propagates each function's output to its successors,
-        and trims the final `Output` back to the input's shape.
+        Feeds the input into the `Input` node, evaluates every node in topological order, propagates each function's output to its successors, and trims the final `Output` back to the input's shape.
 
         Args:
             timeseries: A `TimeSeries` or array-like of simulation output; a raw
@@ -877,8 +877,7 @@ class ObservationModel:
         return TimeSeries(time, data)
 
     def get_function_output(self, function_name) -> Any:
-        """
-        Get the output of a specific function after execution.
+        """Get the output of a specific function after execution.
 
         Args:
             function_name (str): The name of the function whose output to retrieve.
@@ -939,13 +938,9 @@ class ObservationModel:
 def populate_observation_from_iri(obs, functions_sink=None) -> bool:
     """Fill an observation's missing fields from the curated model its ``iri`` names.
 
-    When an observation declares ``iri: tvbo:BOLD_TVB`` (or any curated entry under
-    ``tvbo/database/observation_models/``), its metadata — ``pipeline``, ``parameters``,
-    ``class_reference``, ``imaging_modality``, ``label``/``description`` — is loaded from that model and merged **non-destructively**: a field the recipe set locally always
-    wins, so ``source``/``period`` overrides stay in force while the curated hemodynamic pipeline fills in. Mirrors :func:`tvbo.classes.coupling._load_coupling_from_database`.
+    When an observation declares ``iri: tvbo:BOLD_TVB`` (or any curated entry under ``tvbo/database/observation_models/``), its metadata — ``pipeline``, ``parameters``, ``class_reference``, ``imaging_modality``, ``label``/``description`` — is loaded from that model and merged **non-destructively**: a field the recipe set locally always wins, so ``source``/``period`` overrides stay in force while the curated hemodynamic pipeline fills in. Mirrors :func:`tvbo.classes.coupling._load_coupling_from_database`.
 
-    When ``functions_sink`` (a mutable name→Function mapping) is given, the model's
-    ``functions`` block is merged into it too — the helper functions a functional pipeline calls by name, which codegen reads from ``experiment.functions``.
+    When ``functions_sink`` (a mutable name→Function mapping) is given, the model's ``functions`` block is merged into it too — the helper functions a functional pipeline calls by name, which codegen reads from ``experiment.functions``.
 
     Returns True if a curated model was found and merged, False otherwise.
     """
@@ -977,8 +972,7 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
 
     # pipeline: the heart of a curated observation model. Fill only if absent so a recipe that hand-declares its own pipeline is never silently overridden.
     if data.get("pipeline") and not getattr(obs, "pipeline", None):
-        # A pipeline step is a FunctionCall (it may reference a function by name, inline a callable, or carry its own equation/source_code) — not a bare
-        # Function. Building it as Function drops `function:`/`callable:` steps.
+        # A step is a FunctionCall, never a bare Function: as Function, `function:`/`callable:` are dropped.
         obs.pipeline = [
             step if isinstance(step, tvbo_datamodel.FunctionCall) else tvbo_datamodel.FunctionCall(**step)
             for step in data["pipeline"]
@@ -1007,8 +1001,6 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
                 params[pname] = tvbo_datamodel.Parameter(name=pname, value=pval)
         obs.parameters = params
 
-    # functions: a curated model may ship the helper functions its pipeline calls by name (an HRF kernel, a downsample, a convolution). Observation carries no
-    # `functions` slot — codegen reads them from the experiment — so hand them to the caller's sink to merge into `experiment.functions` (non-destructively: a function the experiment already declares wins).
     if data.get("functions") and functions_sink is not None:
         for fname, fdef in data["functions"].items():
             if fname in functions_sink:
@@ -1054,7 +1046,7 @@ class Observation(tvbo_datamodel.Observation):
         format : str
             Target backend. Currently ``"tvb"`` is supported.
 
-        Returns
+        Returns:
         -------
         str
             Executable Python code string.
@@ -1081,7 +1073,7 @@ class Observation(tvbo_datamodel.Observation):
         format : str
             Target backend. Currently ``"tvb"`` is supported.
 
-        Returns
+        Returns:
         -------
         tvb.simulator.monitors.Monitor
             Configured TVB monitor instance.
@@ -1097,11 +1089,7 @@ class Observation(tvbo_datamodel.Observation):
             return monitors[0]
         raise RuntimeError("Template produced no monitors")
 
-    # ------------------------------------------------------------------ #
-    # Structural axioms: derive observation type from pipeline structure  #
-    # ------------------------------------------------------------------ #
-
-    # Operation-type labels and face-colors for flowchart boxes
+    # Operation-type labels and face colours for flowchart boxes.
     _OP_COLORS = {
         "kernel": "#dbeafe",  # generates a function over time (e.g. HRF)
         "convolution": "#fef9c3",  # folds two signals (e.g. fftconvolve)
@@ -1150,10 +1138,6 @@ class Observation(tvbo_datamodel.Observation):
                 return dominant
         return "transform"
 
-    # ------------------------------------------------------------------ #
-    # Public plot entry-point                                              #
-    # ------------------------------------------------------------------ #
-
     def plot(self, ax=None, **kwargs):
         """Plot a visual summary of this observation model.
 
@@ -1189,14 +1173,10 @@ class Observation(tvbo_datamodel.Observation):
             plt.close(fig)
             return fig
 
-    # ------------------------------------------------------------------ #
-    # Kernel plot: evaluates any pipeline step that has a time_range      #
-    # ------------------------------------------------------------------ #
-
     def _plot_kernel(self, ax, **kwargs):
         """Evaluate and plot the first pipeline step that has a ``time_range``."""
         import numpy as np
-        from sympy import lambdify, sympify, Symbol
+        from sympy import Symbol, lambdify, sympify
 
         kernel_step = next(
             (s for s in (self.pipeline or []) if getattr(s, "time_range", None)),
@@ -1256,17 +1236,13 @@ class Observation(tvbo_datamodel.Observation):
         ax.set_ylabel("kernel (norm.)")
         ax.axhline(0, color="gray", linewidth=0.5, linestyle="--")
 
-    # ------------------------------------------------------------------ #
-    # Flowchart: annotated pipeline steps                                  #
-    # ------------------------------------------------------------------ #
-
     def _plot_pipeline_flowchart(self, ax, **kwargs):
         """Draw pipeline steps as a vertical flowchart.
 
         Each box is colour-coded and tagged with the structural operation type (kernel / projection / temporal / transform / callable / identity).
         """
-        import numpy as np
         import matplotlib.patches as mpatches
+        import numpy as np
 
         steps = list(self.pipeline or [])
 
@@ -1291,7 +1267,7 @@ class Observation(tvbo_datamodel.Observation):
         box_h = min(0.13, 0.75 / n)
         box_w = 0.78
 
-        for idx, (step, yc) in enumerate(zip(steps, y_positions)):
+        for idx, (step, yc) in enumerate(zip(steps, y_positions, strict=True)):
             op = self._step_op_type(step)
             fc = self._OP_COLORS.get(op, self._OP_COLORS["transform"])
             label = str(getattr(step, "label", None) or getattr(step, "name", None) or getattr(step, "output", f"step {idx}"))

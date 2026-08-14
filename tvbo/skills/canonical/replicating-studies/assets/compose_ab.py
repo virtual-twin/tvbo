@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 """Compose side-by-side A/B images: A = the original paper figure on a light-grey panel; B = the TVBO reproduction on white. Writes ``output/figures/ab_fig{N}.png``.
 
-Reusable as-is across replications. Point ``_REPRO`` at each paper figure's reproduction image (rendered from the study's ``figures:`` block by ``tvbo figure render``)
-and drop the paper originals into ``original_study/img/fig{N}.png``. A/B composition is a
-REPORT concern — this helper is called from the report's internal build (the ``ab()`` helper),
-NOT from a plotting script; the composite embeds the © original, so it is local-only and git-ignored, never in the public report.
+Reusable as-is across replications. Point ``_REPRO`` at each paper figure's reproduction image (rendered from the study's ``figures:`` block by ``tvbo figure render``) and drop the paper originals into ``original_study/img/fig{N}.png``. A/B composition is a REPORT concern — this helper is called from the report's internal build (the ``ab()`` helper), NOT from a plotting script; the composite embeds the © original, so it is local-only and git-ignored, never in the public report.
 """
 
 import matplotlib
 
 matplotlib.use("Agg")
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent  # <study>/  (code/figures/ -> <study>/)
@@ -23,12 +21,11 @@ ORIG = ROOT / "original_study" / "img"
 # paper figure number -> its reproduction PNG under output/figures/ (edit for your study).
 _REPRO = {
     1: FIGS / "fig01_topology.png",
-    # 5: FIGS / "tvbo_fig5.png",
-    # 8: FIGS / "tvbo_fig8.png",
 }
 
 
 def compose_ab(repro=None):
+    """Write a side-by-side of each © original against its reproduction, skipping any pair with a missing half."""
     repro = repro or _REPRO
     for n, rp in repro.items():
         op = ORIG / f"fig{n}.png"

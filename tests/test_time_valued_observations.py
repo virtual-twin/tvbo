@@ -1,14 +1,8 @@
 """A time-valued observation must not restate the integration step.
 
-Two slots used to force a recipe to hardcode ``dt``. ``aggregation: first_passage`` returns a
-sample *index*, so any equation turning it into a latency had to multiply by a literal step; and
-``tail_samples`` states a trailing window as a sample count, so the same declaration covers half
-the duration at half the step. Both are silent: changing ``step_size`` rescales the reported
-number with no error anywhere.
+Two slots used to force a recipe to hardcode ``dt``. ``aggregation: first_passage`` returns a sample *index*, so any equation turning it into a latency had to multiply by a literal step; and ``tail_samples`` states a trailing window as a sample count, so the same declaration covers half the duration at half the step. Both are silent: changing ``step_size`` rescales the reported number with no error anywhere.
 
-``dt`` is now bound inside a derived observation's ``equation`` (to the sample period of its
-sources), and ``tail_duration`` states a window as a length of simulated time. Both are pinned
-here at three step sizes, because a single-step test would pass on a hardcoded literal too.
+``dt`` is now bound inside a derived observation's ``equation`` (to the sample period of its sources), and ``tail_duration`` states a window as a length of simulated time. Both are pinned here at three step sizes, because a single-step test would pass on a hardcoded literal too.
 """
 
 import pytest

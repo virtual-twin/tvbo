@@ -1,13 +1,7 @@
-#  coupling.py
-#
-# Created on Mon Jan 22 2024
-# Author: Leon K. Martin
-#
-# Copyright (c) 2024 Charité Universitätsmedizin Berlin
-#
-"""
-TVB-O wrapper for Coupling functions
-====================================
+# Copyright © 2024 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
+
+"""TVB-O wrapper for Coupling functions.
 
 ```{seealso}
 - [Coupling](![wiki]/Coupling/index.html)
@@ -21,13 +15,12 @@ import numpy as np
 import owlready2
 
 from tvbo import templates
-from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo.classes import equation as equations
 from tvbo.codegen import templater
 from tvbo.codegen.code import parse_eq
+from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
-from tvbo.classes import equation as equations
-
 
 TEMPLATES = templates.root
 
@@ -38,8 +31,7 @@ _COUPLING_DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 def _load_coupling_from_database(name, coupling):
     """Fill coupling metadata from a database YAML file.
 
-    Looks for ``tvbo/database/coupling_functions/<name>.yaml`` and fills missing ``pre_expression``, ``post_expression``, ``parameters``,
-    and ``delayed`` on the coupling instance.
+    Looks for ``tvbo/database/coupling_functions/<name>.yaml`` and fills missing ``pre_expression``, ``post_expression``, ``parameters``, and ``delayed`` on the coupling instance.
 
     Parameters
     ----------
@@ -48,7 +40,7 @@ def _load_coupling_from_database(name, coupling):
     coupling : tvbo_datamodel.Coupling
         Coupling instance to fill (modified in-place).
 
-    Returns
+    Returns:
     -------
     bool
         True if a database file was found and applied.
@@ -144,7 +136,7 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
             metadata.post_expression = tvbo_datamodel.Equation(rhs=str(eqs["post"]))
 
     # Parameters
-    for key, param in get_parameters(ontoclass).items():
+    for param in get_parameters(ontoclass).values():
         label = param["label"]
         if label not in metadata.parameters:
             metadata.parameters[label] = tvbo_datamodel.Parameter(
@@ -218,8 +210,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def populate_from_type(self, type_ref):
         """Fill missing pre/post expressions and parameters from a type reference.
 
-        This is used when ``network.coupling`` entries specify a ``type`` field to reference a known coupling function (e.g. ``KuramotoCoupling`` or
-        ``tvbo:KuramotoCoupling``).
+        This is used when ``network.coupling`` entries specify a ``type`` field to reference a known coupling function (e.g. ``KuramotoCoupling`` or ``tvbo:KuramotoCoupling``).
 
         Parameters
         ----------
@@ -234,10 +225,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def _resolve_xi_xj(self):
         """Auto-populate local_states/incoming_states from x_i/x_j in expression.
 
-        Coupling database equations use generic placeholders ``x_i`` (local node state) and ``x_j`` (source node state).  When the user has
-        declared ``incoming_states`` (the actual state variable names to pull from connected nodes) but not ``local_states``, and the
-        expression references ``x_i``, we mirror ``incoming_states`` into
-        ``local_states`` so the template can generate correct assignments.
+        Coupling database equations use generic placeholders ``x_i`` (local node state) and ``x_j`` (source node state).  When the user has declared ``incoming_states`` (the actual state variable names to pull from connected nodes) but not ``local_states``, and the expression references ``x_i``, we mirror ``incoming_states`` into ``local_states`` so the template can generate correct assignments.
         """
         pre_rhs = str(self.pre_expression.rhs) if getattr(self, "pre_expression", None) else ""
         incoming = getattr(self, "incoming_states", None) or []
@@ -310,11 +298,6 @@ class Coupling(tvbo_datamodel.Coupling):
         """The coupling's own metadata, i.e. this object itself (back-compat accessor)."""
         return self
 
-    # def __str__(self):
-    #     return (
-    #         self.name if self.name else f"Coupling{self.id}"
-    #     )
-
     def to_yaml(self, filepath: str | None = None):
         """Serialize this coupling to YAML.
 
@@ -332,8 +315,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def render(self, format="yaml", **kwargs) -> str:
         """Render this coupling in the requested output format.
 
-        Dispatches to `to_yaml`, `report`, or `render_code` depending on
-        `format`.
+        Dispatches to `to_yaml`, `report`, or `render_code` depending on `format`.
 
         Args:
             format: Output format. `"yaml"` serializes to YAML; `"report"`,
@@ -508,8 +490,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def symbolic(self, delays=False):
         """Full symbolic coupling equation with proper indexed state variables.
 
-        Resolves all expression styles (``theta_j``/``theta_i``, ``x_j``/``x_i``,
-        ``incoming_states``/``local_states``) into proper ``IndexedBase`` notation and wraps the pre-expression in a weighted summation over connected nodes.
+        Resolves all expression styles (``theta_j``/``theta_i``, ``x_j``/``x_i``, ``incoming_states``/``local_states``) into proper ``IndexedBase`` notation and wraps the pre-expression in a weighted summation over connected nodes.
 
         Parameters
         ----------
@@ -517,13 +498,22 @@ class Coupling(tvbo_datamodel.Coupling):
             If True, incoming states carry an explicit time-delay index:
             ``y1[j, t - tau[i, j]]`` instead of plain ``y1[j]``.
 
-        Returns
+        Returns:
         -------
         sympy.Expr
             E.g. ``Sum(w[i, j]*sin(theta[j] - theta[i]), (j, 0, N - 1))/N``
+
+        Notes:
+        -----
+        Parsing and substitution both happen under ``sp.evaluate(False)``, which keeps sympy from canonicalising the sign of an odd function and from reordering an ``Add`` alphabetically. Parsing has to be inside that block too, or ``v0 - (y1 - y2)`` is flattened to ``v0 - y1 + y2`` before the substitution ever sees it.
+
+        A *factored* coupling declares its pre-expression as a list whose k-th component is summed into ``gx_k``, with the post recombining them. Where the post is linear in the ``gx_k``, which is the usual case, that collapses to the single canonical sum ``c = Sum_j w[i,j] * sum_k a_k(x_i) * pre_k(x_j)`` and ``trigsimp`` folds the per-edge term — ``cos(x_i)sin(x_j) - sin(x_i)cos(x_j)`` becoming ``sin(x_j - x_i)``. Otherwise the explicit ``gx_k = Sum(w * pre_k)`` form is kept. This part is built outside the ``evaluate(False)`` block, so the sum, the coefficient extraction and ``trigsimp`` can actually evaluate. A bare state name inside a summed pre-expression refers to the summed node even where it was declared local; an explicit ``_i`` stays local.
+
+        A folded odd-trig term is rebuilt as a positive-first unevaluated ``Add`` so it reads in the physics convention ``f(incoming - local)``: sympy canonicalises ``f(x_j - x_i)`` to ``-f(x_i - x_j)``, and the report renders with ``order='none'``.
         """
         import sympy as sp
-        from sympy import IndexedBase, Symbol, symbols, Sum
+        from sympy import IndexedBase, Sum, Symbol, symbols
+
         from tvbo.parse.expression import parse_eq
 
         i, j, N, gx = symbols("i j N gx")
@@ -554,8 +544,6 @@ class Coupling(tvbo_datamodel.Coupling):
         def _local(sn):
             return state_bases[sn][i]
 
-        # Bare state names: y1 → y1[j] (incoming), y1 → y1[i] (local)
-        # This handles expressions like "2*e0 / (1 + exp(r*(v0 - (y1 - y2))))"
         for sn in incoming:
             subs_map[Symbol(sn)] = _incoming(sn)
         for sn in local:
@@ -586,20 +574,12 @@ class Coupling(tvbo_datamodel.Coupling):
         for pname in self.parameters or {}:
             local_dict[str(pname)] = Symbol(str(pname))
 
-        # Parse and substitute inside evaluate=False to prevent:
-        #  - sin.eval() sign canonicalization (Function.__new__, L301)
-        #  - Add.flatten() alphabetical reordering (AssocOp.__new__, L95)
-        # Parsing must also be inside the block so that e.g.
-        # v0 - (y1 - y2) isn't flattened to v0 - y1 + y2 before subs.
         with sp.evaluate(False):
             pre_expr = parse_eq(self.pre_expression, local_dict=local_dict)
             post_expr = parse_eq(self.post_expression, local_dict=local_dict)
             if not isinstance(pre_expr, (list, tuple)):
                 pre_indexed = pre_expr.subs(subs_map)
 
-        # Factored / vectorized coupling: the pre-expression is a *list* whose k-th component is summed into gx_k and the post recombines the gx_k. When the post is linear in the gx_k (the usual case) collapse to the canonical single sum c = Sum_j w[i,j] * sum_k a_k(x_i) * pre_k(x_j) and let ``trigsimp`` fold the per-edge term (cos(x_i)sin(x_j) - sin(x_i)cos(x_j)
-        # -> sin(x_j - x_i)); otherwise keep the explicit gx_k = Sum(w * pre_k) form.
-        # Built outside the evaluate(False) block so the sum, coeff and trigsimp evaluate.
         if isinstance(pre_expr, (list, tuple)):
             # A bare state name in a summed pre refers to the summed (j) node, even when declared `local` (e.g. [sin(theta), cos(theta)]); explicit `_i` stays local.
             pre_subs = dict(subs_map)
@@ -609,10 +589,8 @@ class Coupling(tvbo_datamodel.Coupling):
             gxk = [Symbol(f"gx_{k}") for k in range(len(pre_k))]
             post_indexed = post_expr.subs(subs_map)
             coeffs = [post_indexed.coeff(g) for g in gxk]
-            if sp.expand(post_indexed - sum(a * g for a, g in zip(coeffs, gxk))) == 0:
-                edge = sp.trigsimp(sum(a * p for a, p in zip(coeffs, pre_k)))
-                # Show a folded odd-trig term in the physics convention f(incoming - local):
-                # sympy canonicalises f(x_j - x_i) to -f(x_i - x_j), so rebuild f(x_j - x_i) as a positive-first, unevaluated Add (the report renders with order='none').
+            if sp.expand(post_indexed - sum(a * g for a, g in zip(coeffs, gxk, strict=True))) == 0:
+                edge = sp.trigsimp(sum(a * p for a, p in zip(coeffs, pre_k, strict=True)))
                 c0, rest = edge.as_coeff_Mul()
                 odd = (sp.sin, sp.tan, sp.sinh, sp.tanh)
                 if c0 == -1 and getattr(rest, "func", None) in odd and rest.args[0].is_Add:
@@ -620,7 +598,7 @@ class Coupling(tvbo_datamodel.Coupling):
                     with sp.evaluate(False):
                         edge = rest.func(sp.Add(*terms, evaluate=False))
                 return Sum(w[i, j] * edge, (j, 0, N - 1))
-            return post_indexed.subs({g: Sum(w[i, j] * p, (j, 0, N - 1)) for g, p in zip(gxk, pre_k)})
+            return post_indexed.subs({g: Sum(w[i, j] * p, (j, 0, N - 1)) for g, p in zip(gxk, pre_k, strict=True)})
 
         # Scalar pre: Sum(w[i,j] * pre, (j, 0, N-1)), substituted into post
         gx_sum = Sum(w[i, j] * pre_indexed, (j, 0, N - 1))
@@ -629,11 +607,11 @@ class Coupling(tvbo_datamodel.Coupling):
     def summed_inputs(self, delays=False):
         """Summed inputs ``gx_k`` of a factored / vectorized coupling.
 
-        A factored coupling emits a *list* pre-expression whose k-th component is summed over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the
-        post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
+        A factored coupling emits a *list* pre-expression whose k-th component is summed over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
         """
         import sympy as sp
-        from sympy import IndexedBase, Symbol, symbols, Sum
+        from sympy import IndexedBase, Sum, Symbol, symbols
+
         from tvbo.parse.expression import parse_eq
 
         with sp.evaluate(False):
@@ -660,8 +638,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def plot(self, weights=None, node_idx=0, xs=None, ax=None, **kwargs):
         """Plot the coupling output against a single input state component.
 
-        Lambdifies the assembled coupling `equation` and evaluates it while sweeping one node's state over `xs`, holding the other components
-        fixed.
+        Lambdifies the assembled coupling `equation` and evaluates it while sweeping one node's state over `xs`, holding the other components fixed.
 
         Args:
             weights: Connectivity weight matrix. If omitted, a random 3x3
@@ -735,8 +712,7 @@ class Coupling(tvbo_datamodel.Coupling):
 def get_global_coupling_functions():
     """Return all coupling function classes defined in the ontology.
 
-    Loads the ontology on demand and collects the subclasses of its
-    `Coupling` class.
+    Loads the ontology on demand and collects the subclasses of its `Coupling` class.
 
     Returns:
         A list of the ontology's `Coupling` subclasses.
@@ -744,10 +720,8 @@ def get_global_coupling_functions():
     onto = ontology.get_onto()
     CouplingFunctions = onto.Coupling.subclasses()
 
-    # for CF in CouplingFunctions:
     #     CF.pre = MethodType(get_pre_summation_coupling_function, CF)
     return list(CouplingFunctions)
 
 
-# NOTE: do NOT eagerly compute an ``available_coupling_functions`` set at import time. It has no consumers, and traversing ``onto.Coupling.subclasses()`` forces the (metadata-only) owlready2 ontology to fully load on every ``import tvbo`` — including JAX/codegen processes that never query the ontology. Call
-# ``get_global_coupling_functions()`` on demand instead.
+# No eager set here: traversing subclasses would load the whole ontology on every `import tvbo`.

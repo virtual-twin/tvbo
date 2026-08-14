@@ -1,10 +1,6 @@
 """Saving a network keeps the per-node arrays it was loaded with.
 
-A companion may carry per-node datasets the writer does not model — a study's fitted
-per-region intervals, a per-node scaling — and an observation may reference one as
-``network.nodes.<name>``. When ``tvbo workflow`` bakes a network into a kit it re-saves it, so
-a writer that only persists what it models produces a kit whose spec cannot resolve on the
-target host.
+A companion may carry per-node datasets the writer does not model — a study's fitted per-region intervals, a per-node scaling — and an observation may reference one as ``network.nodes.<name>``. When ``tvbo workflow`` bakes a network into a kit it re-saves it, so a writer that only persists what it models produces a kit whose spec cannot resolve on the target host.
 """
 
 import h5py

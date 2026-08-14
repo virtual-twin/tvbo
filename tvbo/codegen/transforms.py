@@ -1,8 +1,6 @@
 """Transform vocabulary: the network's own edge attributes, and masked reductions.
 
-A ``transforms:`` entry is a ``Function`` whose equation is written over the network's edge attributes — ``weight``, ``length``, or the canonical ``network.edges.<label>`` —
-resolved by the same :func:`tvbo.utils.edge_label` that observation sources and exploration axes go through. There is no second, invented vocabulary: a derived quantity
-is spelled as the reduction it is (``max(weight)``), so nothing has to be declared twice and no backend can be handed a name the runtime never defined.
+A ``transforms:`` entry is a ``Function`` whose equation is written over the network's edge attributes — ``weight``, ``length``, or the canonical ``network.edges.<label>`` — resolved by the same :func:`tvbo.utils.edge_label` that observation sources and exploration axes go through. There is no second, invented vocabulary: a derived quantity is spelled as the reduction it is (``max(weight)``), so nothing has to be declared twice and no backend can be handed a name the runtime never defined.
 
 A reduction may be scoped by a boolean mask, in either of two spellings, because the notation people reach for differs and both are unambiguous:
 
@@ -12,14 +10,13 @@ A reduction may be scoped by a boolean mask, in either of two spellings, because
     rhs: "weight / mean(weight, weight > 0)"    # the predicate as an argument
 
 Both normalise to one node, ``red(expr, predicate)``, lowered once into ``Piecewise``.
-Each printer already turns that into its own ``where``/``ifelse``, so the mask is backend-independent for free and no two backends can disagree about what it means. A
-boolean subscript is only legal *inside* a reduction: on its own it has a data-dependent output shape, so it cannot be jitted and is rejected.
+Each printer already turns that into its own ``where``/``ifelse``, so the mask is backend-independent for free and no two backends can disagree about what it means. A boolean subscript is only legal *inside* a reduction: on its own it has a data-dependent output shape, so it cannot be jitted and is rejected.
 """
 
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
 
 from sympy import (
     Basic,
@@ -37,7 +34,7 @@ from sympy.logic.boolalg import Boolean
 _SUBSCRIPTED = re.compile(r"([A-Za-z_]\w*)\s*\[")
 MASK_PREFIX = "_mask"
 
-REDUCTIONS: Dict[str, Basic] = {
+REDUCTIONS: dict[str, Basic] = {
     "sum": Integer(0),
     "mean": Integer(0),
     "min": oo,
@@ -55,12 +52,10 @@ divides by the number of kept entries, which is the whole reason an unmasked
 """
 
 
-def subscript_locals(source: str) -> Dict[str, IndexedBase]:
+def subscript_locals(source: str) -> dict[str, IndexedBase]:
     """An ``IndexedBase`` for every name *source* subscripts, to hand the parser.
 
-    ``parse_expr`` builds a plain ``Symbol`` for a name it has not been given, and a
-    ``Symbol`` is not subscriptable — so ``mean(weight[weight > 0])`` would die with
-    ``'Symbol' object is not subscriptable`` before anything could read the mask.
+    ``parse_expr`` builds a plain ``Symbol`` for a name it has not been given, and a ``Symbol`` is not subscriptable — so ``mean(weight[weight > 0])`` would die with ``'Symbol' object is not subscriptable`` before anything could read the mask.
     """
     return {name: IndexedBase(name) for name in set(_SUBSCRIPTED.findall(source or ""))}
 
@@ -68,8 +63,7 @@ def subscript_locals(source: str) -> Dict[str, IndexedBase]:
 def _plain(expr):
     """*expr* with every ``IndexedBase`` collapsed to its bare symbol.
 
-    ``parse_expr`` builds ``IndexedBase`` for any name it sees subscripted, including in the predicate, so the same edge attribute would otherwise reach the printer as two
-    different objects depending on where it appeared.
+    ``parse_expr`` builds ``IndexedBase`` for any name it sees subscripted, including in the predicate, so the same edge attribute would otherwise reach the printer as two different objects depending on where it appeared.
     """
     bases = {b: b.label for b in expr.atoms(IndexedBase)}
     return expr.xreplace(bases) if bases else expr
@@ -108,14 +102,13 @@ def lower_reductions(expr):
     """Lower canonical masked reductions to ``Piecewise``, which every printer handles.
 
     ``mean`` becomes a kept-sum over a kept-count rather than a masked ``mean``, because an array library's ``mean`` divides by the full size no matter what it was handed.
-    That mentions the predicate twice, so each distinct one is replaced by a symbol the caller binds once: ``create_network`` runs eagerly, and XLA never gets to CSE the
-    duplicate.
+    That mentions the predicate twice, so each distinct one is replaced by a symbol the caller binds once: ``create_network`` runs eagerly, and XLA never gets to CSE the duplicate.
 
     Returns:
         A ``(lowered, mask_bindings)`` pair, mapping each mask symbol to its predicate.
     """
-    replacements: Dict[Basic, Basic] = {}
-    bindings: Dict[Symbol, Basic] = {}
+    replacements: dict[Basic, Basic] = {}
+    bindings: dict[Symbol, Basic] = {}
 
     def _bind(mask):
         for symbol, bound in bindings.items():
@@ -172,7 +165,7 @@ def prepare(expr, what: str = "transform"):
     return lowered, bindings
 
 
-def edge_symbols(expr, masks=None) -> List[str]:
+def edge_symbols(expr, masks=None) -> list[str]:
     """Names to resolve as edge attributes, in sorted order.
 
     A mask symbol stands for a predicate the caller binds itself, so it is excluded while the names *inside* that predicate are included — those are edge attributes too.
@@ -183,7 +176,7 @@ def edge_symbols(expr, masks=None) -> List[str]:
     return sorted(names - {str(symbol) for symbol in (masks or {})})
 
 
-def runtime_env(resolve, symbols: Sequence[str], jnp, jsp=None) -> Dict[str, object]:
+def runtime_env(resolve, symbols: Sequence[str], jnp, jsp=None) -> dict[str, object]:
     """Bind every symbol *expr* names to a live array.
 
     Args:
@@ -195,7 +188,7 @@ def runtime_env(resolve, symbols: Sequence[str], jnp, jsp=None) -> Dict[str, obj
     Returns:
         Mapping of each resolvable name to its array, plus the array modules.
     """
-    env: Dict[str, object] = {}
+    env: dict[str, object] = {}
     for name in symbols:
         value = resolve(name)
         if value is not None:
@@ -204,7 +197,7 @@ def runtime_env(resolve, symbols: Sequence[str], jnp, jsp=None) -> Dict[str, obj
     return env
 
 
-def emit_env(symbols: Sequence[str], resolve, target: Optional[str] = None) -> Tuple[List[str], List[str]]:
+def emit_env(symbols: Sequence[str], resolve, target: str | None = None) -> tuple[list[str], list[str]]:
     """Source lines binding the edge attributes *symbols* names, for an emitted script.
 
     Args:
@@ -222,8 +215,8 @@ def emit_env(symbols: Sequence[str], resolve, target: Optional[str] = None) -> T
     from tvbo.utils import edge_label
 
     target_label = edge_label(target) or target
-    chained: List[str] = []
-    constant: List[str] = []
+    chained: list[str] = []
+    constant: list[str] = []
     for name in dict.fromkeys(symbols):
         source = resolve(name)
         if source is None:

@@ -25,9 +25,7 @@ class TVBOPlatformError(RuntimeError):
 class TVBOPlatform:
     """Client for the TVBO platform REST API.
 
-    Wraps an authenticated `requests` session against a TVBO platform instance, exposing helpers to list, fetch, load, and push saved models and
-    experiments. Load helpers return live `tvbo` objects (a `Dynamics` or a [SimulationExperiment](/api/classes/experiment.qmd)); push helpers accept YAML
-    text, a `dict`, or a `tvbo` object and serialize it for upload.
+    Wraps an authenticated `requests` session against a TVBO platform instance, exposing helpers to list, fetch, load, and push saved models and experiments. Load helpers return live `tvbo` objects (a `Dynamics` or a [SimulationExperiment](/api/classes/experiment.qmd)); push helpers accept YAML text, a `dict`, or a `tvbo` object and serialize it for upload.
 
     Args:
         base_url: Base URL of the platform (a trailing slash is stripped).

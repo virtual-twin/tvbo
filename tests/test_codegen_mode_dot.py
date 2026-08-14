@@ -1,7 +1,6 @@
 """The ``mode_dot`` codegen primitive — mode-axis contraction for multi-mode models.
 
-``mode_dot(X, M)`` contracts a state variable's mode axis with a (modes x modes)
-matrix, i.e. TVB's ``numpy.dot(xi, A_ik)`` for reduced-set / mode-coupled models.
+``mode_dot(X, M)`` contracts a state variable's mode axis with a (modes x modes) matrix, i.e. TVB's ``numpy.dot(xi, A_ik)`` for reduced-set / mode-coupled models.
 It renders to ``{np,jnp}.dot(X, M)`` per backend.
 """
 

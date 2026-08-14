@@ -1,15 +1,8 @@
 """`kind: grid` is what a paper's lettered panel usually is, and it needs no study code.
 
-Almost every composite panel in a neuroscience figure is a grid of the same kind of cell
-labelled once per row and column — a row of mode surfaces under a single (a), a 7x4
-Data/Reconstruction matrix whose task name is written once at the left. Declaring each
-cell as its own mosaic entry repeats those labels in every cell and renumbers panels the
-paper letters once, so studies wrote a bespoke composite drawer instead; this kind is that
-drawer, generalised.
+Almost every composite panel in a neuroscience figure is a grid of the same kind of cell labelled once per row and column — a row of mode surfaces under a single (a), a 7x4 Data/Reconstruction matrix whose task name is written once at the left. Declaring each cell as its own mosaic entry repeats those labels in every cell and renumbers panels the paper letters once, so studies wrote a bespoke composite drawer instead; this kind is that drawer, generalised.
 
-A grid cell IS an inset — the same class, resolved by the same function — and the tests
-below pin that: the geometry the grid computes, the labels it writes once, and the fact
-that a cell draws exactly as the same kind draws in a mosaic slot.
+A grid cell IS an inset — the same class, resolved by the same function — and the tests below pin that: the geometry the grid computes, the labels it writes once, and the fact that a cell draws exactly as the same kind draws in a mosaic slot.
 """
 
 from __future__ import annotations

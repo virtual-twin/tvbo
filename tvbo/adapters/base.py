@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """Base adapter for processing SimulationExperiment metadata.
 
 Extracts Python logic from Mako templates into reusable, testable methods.
-Backend-specific adapters (NetworkDynamics, PyRates, etc.) inherit from
-BaseAdapter and override or extend as needed.
+Backend-specific adapters (NetworkDynamics, PyRates, etc.) inherit from BaseAdapter and override or extend as needed.
 """
 
 from __future__ import annotations
@@ -17,7 +15,6 @@ import numpy as np
 if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
 
-from tvbo.utils import noise_sigma
 from tvbo.templates.base.utils import (
     collect_param_distributions,
     collect_sv_distributions,
@@ -25,6 +22,7 @@ from tvbo.templates.base.utils import (
     graph_generator_call,
     has_distributions,
 )
+from tvbo.utils import noise_sigma
 
 
 class BaseAdapter:
@@ -34,7 +32,7 @@ class BaseAdapter:
     dynamics library, node-dynamics mapping, coupling resolution, graph info, initial state parsing, etc.
     """
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
 
     # ── Dynamics library ─────────────────────────────────────────────────

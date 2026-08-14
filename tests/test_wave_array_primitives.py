@@ -1,18 +1,13 @@
 """General array-op primitives for per-timestep detectors / permutation tests.
 
-``take`` (2-D gather), ``sum_axis`` (single-axis reduction), and ``pearson``
-(node-collapsing correlation) are backend-abstracted printer primitives, so a
-wave / graph / significance observable can be authored as declarative equations
-instead of backend ``source_code``. Each parses to a SymPy Function and prints to
-the backend's array algebra; here we render for jax + numpy and execute against a
-numpy reference.
+``take`` (2-D gather), ``sum_axis`` (single-axis reduction), and ``pearson`` (node-collapsing correlation) are backend-abstracted printer primitives, so a wave / graph / significance observable can be authored as declarative equations instead of backend ``source_code``. Each parses to a SymPy Function and prints to the backend's array algebra; here we render for jax + numpy and execute against a numpy reference.
 """
 
 import numpy as np
 import pytest
 
-from tvbo.parse.expression import parse_eq
 from tvbo.codegen import render_expression
+from tvbo.parse.expression import parse_eq
 
 
 def _render(rhs, fmt, params):
@@ -67,8 +62,7 @@ def test_pearson_matches_numpy_corrcoef():
 
 @pytest.mark.parametrize("fmt,mod", [("jax", "jnp"), ("numpy", "np")])
 def test_clip_any_all_render(fmt, mod):
-    """clip/any/all complete the per-timestep detector vocabulary (clip before acos,
-    any over a significance mask)."""
+    """clip/any/all complete the per-timestep detector vocabulary (clip before acos, any over a significance mask)."""
     assert _render("clip(x, -1, 1)", fmt, ["x"]) == f"{mod}.clip(x, -1, 1)"
     assert _render("any(x)", fmt, ["x"]) == f"{mod}.any(x)"
     assert _render("all(x)", fmt, ["x"]) == f"{mod}.all(x)"
@@ -79,8 +73,10 @@ def test_clip_any_all_render(fmt, mod):
 
 
 def test_masked_mean_form_composes():
-    """The axis-1 masked-mean the wave detector uses composes from the primitives:
-    sum_axis(ang*nbr_mask, 1) / deg  ==  (ang*nbr_mask).sum(1)/deg."""
+    """The axis-1 masked-mean the wave detector uses composes from the primitives.
+
+    ``sum_axis(ang*nbr_mask, 1) / deg`` == ``(ang*nbr_mask).sum(1)/deg``.
+    """
     import jax.numpy as jnp
 
     code = _render("sum_axis(ang * nbr_mask, 1) / deg", "jax", ["ang", "nbr_mask", "deg"])

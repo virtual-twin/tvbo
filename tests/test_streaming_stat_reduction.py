@@ -1,17 +1,11 @@
 """Cumulative streaming mean/std/variance reducer (``aggregation`` + ``reduce: streaming``).
 
-An observation declared ``aggregation: mean`` (or ``std`` / ``variance``) AND
-``reduce: streaming`` — with no HRF/BOLD pipeline — is folded into the integrator carry as
-an ``(init, update, finalize)`` running-moment accumulator, so the source trajectory is
-never materialised. These tests pin:
+An observation declared ``aggregation: mean`` (or ``std`` / ``variance``) AND ``reduce: streaming`` — with no HRF/BOLD pipeline — is folded into the integrator carry as an ``(init, update, finalize)`` running-moment accumulator, so the source trajectory is never materialised. These tests pin:
 
 * the resolver synthesizes the reducer from ``aggregation`` alone (one sum accumulator for
-  ``mean``; a second sum-of-squares for ``std`` / ``variance``), tags it with no ``kind``
-  so it reuses the recurrence emitter, and stays truthy as the bare streaming predicate;
+  ``mean``; a second sum-of-squares for ``std`` / ``variance``), tags it with no ``kind`` so it reuses the recurrence emitter, and stays truthy as the bare streaming predicate;
 * the emitted reducer is byte-identical (to f64 rounding) to the host ``jnp.mean`` /
-  ``jnp.std`` / ``jnp.var`` (ddof=0) of the materialised trajectory — the values the
-  post-scan ``aggregation`` path computes — both as one block and across ANY block
-  decomposition (the ``prepare(reduce=...)`` grid path feeds blocks, not one trajectory);
+  ``jnp.std`` / ``jnp.var`` (ddof=0) of the materialised trajectory — the values the post-scan ``aggregation`` path computes — both as one block and across ANY block decomposition (the ``prepare(reduce=...)`` grid path feeds blocks, not one trajectory);
 * the recurrence factory accepts-and-ignores ``warm_history`` / ``progress`` so the post-
   tuning eval shares ONE call site with the BOLD convolution reducer;
 * the streaming post-eval plan folds the stat stream (defaulting the block to 1000 when no
@@ -35,8 +29,7 @@ _OBS_TEMPLATE = Template(filename="tvbo/templates/tvboptim/tvbo-tvboptim-observa
 
 
 class _Exp:
-    """Minimal experiment stub — the stat-stream resolver reads nothing off it, but the
-    post-eval plan walks ``observations``."""
+    """Minimal experiment stub — the stat-stream resolver reads nothing off it, but the post-eval plan walks ``observations``."""
 
     def __init__(self, observations=None):
         self.observations = observations or {}
@@ -84,8 +77,7 @@ def test_variance_stream_output_has_no_sqrt():
 
 
 def test_bare_predicate_without_experiment_is_truthy():
-    # The exploration path calls resolve_reduction(obs) with NO experiment as the
-    # "is this a streaming reducer?" predicate; the full dict must resolve regardless.
+    """The exploration path calls ``resolve_reduction(obs)`` with no experiment, as the "is this a streaming reducer?" predicate, so the full dict must resolve regardless."""
     red = resolve_reduction(_stat_observation("mean"))
     assert red is not None and "kind" not in red
 
@@ -94,8 +86,7 @@ def test_bare_predicate_without_experiment_is_truthy():
 
 
 def _emit_reducer(red, name="obs"):
-    """Render the reduction via the dispatcher and exec it (proves stat streams route to
-    the recurrence branch)."""
+    """Render the reduction via the dispatcher and exec it (proves stat streams route to the recurrence branch)."""
     src = _OBS_TEMPLATE.get_def("render_reduction").render(red=red, name=name, s_idx=0, dt=1.0)
     ns = {"jnp": jnp, "jax": jax}
     exec(compile(src, "<reducer>", "exec"), ns)
@@ -132,8 +123,7 @@ def test_reducer_matches_host_aggregation(aggregation, reference):
 
 
 def test_mean_includes_the_first_sample():
-    """Regression: a cumulative mean must fold the sample AT skip=0, not the step after
-    (the `skip_inclusive` gate). Dropping sample 0 would bias the mean and miscount."""
+    """Regression: a cumulative mean must fold the sample AT skip=0, not the step after (the `skip_inclusive` gate). Dropping sample 0 would bias the mean and miscount."""
     red = resolve_reduction(_stat_observation("mean"))
     factory = _emit_reducer(red)
     data = _trajectory(seed=7, T=64)
@@ -147,9 +137,7 @@ def test_mean_includes_the_first_sample():
 @pytest.mark.parametrize("aggregation", ["mean", "std", "variance"])
 @pytest.mark.parametrize("block_size", [64, 128, 171, 256])
 def test_reducer_is_block_decomposition_invariant(aggregation, block_size):
-    """The grid path feeds blocks, not one trajectory. Sequential summation folds samples
-    in the same order regardless of block boundaries, so the value is bit-exact across any
-    decomposition."""
+    """The grid path feeds blocks, not one trajectory. Sequential summation folds samples in the same order regardless of block boundaries, so the value is bit-exact across any decomposition."""
     red = resolve_reduction(_stat_observation(aggregation))
     factory = _emit_reducer(red)
     data = _trajectory(seed=2, T=512)
@@ -165,8 +153,7 @@ def test_reducer_is_block_decomposition_invariant(aggregation, block_size):
 
 
 def test_factory_accepts_warm_history_and_progress_kwargs():
-    """Edit 3: the recurrence factory accepts-and-ignores the BOLD-only warm_history /
-    progress kwargs so the post-tuning eval has ONE reducer call site."""
+    """Edit 3: the recurrence factory accepts-and-ignores the BOLD-only warm_history / progress kwargs so the post-tuning eval has ONE reducer call site."""
     red = resolve_reduction(_stat_observation("mean"))
     factory = _emit_reducer(red)
     data = _trajectory(seed=3, T=128)
@@ -188,11 +175,10 @@ def test_factory_accepts_warm_history_and_progress_kwargs():
 )
 def test_grad_flows_through_the_reducer_and_matches_host(aggregation, host):
     """A streamed mean/std observation must be differentiable so it can be a fit target.
-    ``jax.grad`` of a loss over the folded reducer must be finite and byte-identical (to
-    f64) to the gradient through the materialised host ``jnp.mean``/``jnp.std(ddof=0)``.
-    Guards the autodiff hazards: the integer ``count``/``_gstep`` accumulators are constant
-    w.r.t. the parameter, the ``jnp.where`` skip gate stays differentiable, and ``std``'s
-    ``sqrt(var)`` has a finite gradient for var>0."""
+
+    ``jax.grad`` of a loss over the folded reducer must be finite and byte-identical (to f64) to the gradient through the materialised host ``jnp.mean``/``jnp.std(ddof=0)``.
+    Guards the autodiff hazards: the integer ``count``/``_gstep`` accumulators are constant w.r.t. the parameter, the ``jnp.where`` skip gate stays differentiable, and ``std``'s ``sqrt(var)`` has a finite gradient for var>0.
+    """
     factory = _emit_reducer(resolve_reduction(_stat_observation(aggregation)))
     init, update, finalize = factory(s_var=0, dt=1.0)
     base = _trajectory(seed=5, T=200)
@@ -275,9 +261,7 @@ def test_fc_stream_routes_to_the_comoment_reducer():
 
 
 def test_fc_reducer_matches_compute_fc():
-    """The folded FC must be byte-identical (to f64) to the materialised
-    ``compute_fc(source, skip_t=20)`` — a zero-diagonal Pearson correlation over the
-    post-skip window — held as an O(n^2) co-moment with no trajectory."""
+    """The folded FC must be byte-identical (to f64) to the materialised ``compute_fc(source, skip_t=20)`` — a zero-diagonal Pearson correlation over the post-skip window — held as an O(n^2) co-moment with no trajectory."""
     red = resolve_reduction(_fc_observation(skip_t=20))
     factory = _emit_fc_reducer(red, s_idx=4)
     data = _trajectory(seed=13, T=400, n_states=5, n=8)  # x_e_pre at column 4
@@ -291,8 +275,7 @@ def test_fc_reducer_matches_compute_fc():
 
 @pytest.mark.parametrize("block_size", [37, 64, 128, 199])
 def test_fc_reducer_is_block_decomposition_invariant(block_size):
-    """The grid path folds blocks; the cumulative co-moment must be bit-exact across any
-    block boundary (Welford add is order-fixed for a fixed sample order)."""
+    """The grid path folds blocks; the cumulative co-moment must be bit-exact across any block boundary (Welford add is order-fixed for a fixed sample order)."""
     red = resolve_reduction(_fc_observation(skip_t=20))
     factory = _emit_fc_reducer(red, s_idx=4)
     data = _trajectory(seed=17, T=400, n_states=5, n=8)
@@ -306,11 +289,7 @@ def test_fc_reducer_is_block_decomposition_invariant(block_size):
 
 
 def test_fc_reducer_gradient_matches_compute_fc():
-    """The FC reducer must be differentiable so a streamed FC can be a fit target. Grad of a
-    loss over the folded FC is finite and matches the gradient through the materialised
-    compute_fc to f64. A shared, theta-scaled drive injects real (tunable) correlation
-    structure so the gradient is nonzero and meaningful (a uniform scale leaves correlation
-    — hence the gradient — exactly zero)."""
+    """The FC reducer must be differentiable so a streamed FC can be a fit target. Grad of a loss over the folded FC is finite and matches the gradient through the materialised compute_fc to f64. A shared, theta-scaled drive injects real (tunable) correlation structure so the gradient is nonzero and meaningful (a uniform scale leaves correlation — hence the gradient — exactly zero)."""
     red = resolve_reduction(_fc_observation(skip_t=20))
     factory = _emit_fc_reducer(red, s_idx=4)
     init, update, finalize = factory(s_var=4, dt=1.0, skip=0)

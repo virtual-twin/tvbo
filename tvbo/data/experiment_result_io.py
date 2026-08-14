@@ -1,7 +1,6 @@
 """Sidecar I/O + cross-experiment cache for :class:`ExperimentResult`.
 
-Lets downstream experiments depend on an upstream experiment's fitted parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``,
-``J_i`` via an ``aux_data: Reference``) without recomputing on every notebook re-execution.
+Lets downstream experiments depend on an upstream experiment's fitted parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``, ``J_i`` via an ``aux_data: Reference``) without recomputing on every notebook re-execution.
 
 Layout
 ------
@@ -29,25 +28,22 @@ Cache invalidation
 A cache hit requires both:
 
 1. Current experiment YAML hash matches ``provenance.experiment_yaml_hash``.
-2. For each input fingerprint, the underlying file's ``(mtime, size)`` matches (fast path). On mismatch, recompute the sha256; if THAT
-   matches, still a hit (handles ``touch`` and rename-in-place).
+2. For each input fingerprint, the underlying file's ``(mtime, size)`` matches (fast path). On mismatch, recompute the sha256; if THAT matches, still a hit (handles ``touch`` and rename-in-place).
 """
 
 from __future__ import annotations
 
 import hashlib
 import os
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import h5py
 import numpy as np
 import yaml
 
-
-# ----------------------------------------------------------------------------
 # YAML hashing
-# ----------------------------------------------------------------------------
 
 
 def hash_yaml(normalized_dict: Mapping[str, Any]) -> str:
@@ -73,9 +69,7 @@ def file_fingerprint(path: str | os.PathLike) -> dict:
     return {"mtime": float(st.st_mtime), "size": int(st.st_size), "hash": h.hexdigest()}
 
 
-# ----------------------------------------------------------------------------
 # Sidecar I/O
-# ----------------------------------------------------------------------------
 
 
 def save_sidecar(
@@ -144,7 +138,7 @@ def save_sidecar(
 def load_sidecar(yaml_path: str | os.PathLike) -> tuple[dict, dict]:
     """Load an ExperimentResult sidecar.
 
-    Returns
+    Returns:
     -------
     parameters
         ``{name: ndarray}`` — eagerly loaded numeric arrays.
@@ -162,9 +156,7 @@ def load_sidecar(yaml_path: str | os.PathLike) -> tuple[dict, dict]:
     return parameters, descriptor
 
 
-# ----------------------------------------------------------------------------
 # Cache hit/miss check
-# ----------------------------------------------------------------------------
 
 
 class CacheStatus:
@@ -198,7 +190,7 @@ def check_cache(
         identifier to its current on-disk path. For each fingerprint in
         the sidecar, the matching ``path`` is fingerprinted and compared.
 
-    Returns
+    Returns:
     -------
     status
         One of :class:`CacheStatus` constants.

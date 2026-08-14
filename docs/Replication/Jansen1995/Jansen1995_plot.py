@@ -9,13 +9,13 @@ All time axes are in seconds (the native simulation unit).
 
 import re
 
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap, BoundaryNorm
-from scipy.signal import welch, hilbert, find_peaks
+import numpy as np
+from matplotlib.colors import BoundaryNorm, ListedColormap
 from scipy.ndimage import gaussian_filter
-from sympy import IndexedBase, Symbol, latex as sympy_latex
-
+from scipy.signal import find_peaks, hilbert, welch
+from sympy import IndexedBase, Symbol
+from sympy import latex as sympy_latex
 
 # ── Consistent sizing ────────────────────────────────────────────────────────
 # All figures share the same width so text at a given point-size renders
@@ -106,7 +106,7 @@ def _point_label(er, values, fmt=".0f"):
         return " = ".join(latex_names) + f" = {vals[0]:{fmt}}"
     # General case
     sep = ",\\; "
-    return sep.join(f"{ln} = {v:{fmt}}" for ln, v in zip(latex_names, vals))
+    return sep.join(f"{ln} = {v:{fmt}}" for ln, v in zip(latex_names, vals, strict=False))
 
 
 def _add_k_legend(ax, er, values, fmt=".0f", **kwargs):
@@ -123,7 +123,7 @@ def _add_k_legend(ax, er, values, fmt=".0f", **kwargs):
     if base is not None and len(set(round(v, 8) for v in vals)) == 1:
         lines = [" = ".join(latex_names) + f" = {vals[0]:{fmt}}"]
     else:
-        lines = [f"{ln} = {v:{fmt}}" for ln, v in zip(latex_names, vals)]
+        lines = [f"{ln} = {v:{fmt}}" for ln, v in zip(latex_names, vals, strict=False)]
 
     text = "\n".join(f"${ln}$" for ln in lines)
     kw = dict(
@@ -230,7 +230,7 @@ def plot_fig3(res, axes=None):
           values — one trace per axis (same layout as the default figure but
           drawn on the caller's axes).
 
-    Returns
+    Returns:
     -------
     fig : Figure or None
         The created Figure when *axes* is ``None``; otherwise ``None``
@@ -331,7 +331,7 @@ def classify_regimes(data, dt, v0):
     v0 : float or ndarray
         Scalar (fixed v0 for all points) or array indexed by last grid axis.
 
-    Returns
+    Returns:
     -------
     regimes : ndarray, shape grid_shape (int codes 0-4)
     """
@@ -421,7 +421,7 @@ def plot_fig4(res):
     res : ExperimentResult
         Result from experiment 2 (4D parameter sweep: A, B, C, v0).
 
-    Returns
+    Returns:
     -------
     fig : Figure
     """
@@ -487,7 +487,7 @@ def plot_fig4(res):
 
     # Exploration heatmaps
     for vi in range(nV):
-        for row, (ci, C) in enumerate(zip(range(nC - 1, -1, -1), reversed(C_vals))):
+        for row, (ci, C) in enumerate(zip(range(nC - 1, -1, -1), reversed(C_vals), strict=False)):
             ax = axd[f"ex{row}{vi}"]
             ax.pcolormesh(
                 X,
@@ -502,12 +502,12 @@ def plot_fig4(res):
             cy = [Y[0, 0], Y[0, -1], Y[-1, -1], Y[-1, 0], Y[0, 0]]
             ax.plot(cx, cy)
 
-            for bp, bl in zip(b_vis, b_ticks):
+            for bp, bl in zip(b_vis, b_ticks, strict=False):
                 ax.plot([bp, bp], [-0.12, 0], clip_on=False)
                 if row == nC - 1:
                     ax.text(bp, -0.35, f"{bl:g}", ha="center", va="top", fontsize=FS_TICK / 2)
 
-            for ap, al in zip(a_vis, a_ticks):
+            for ap, al in zip(a_vis, a_ticks, strict=False):
                 ax.plot(
                     [ap * shear - 0.12, ap * shear],
                     [ap * aspect] * 2,
@@ -613,7 +613,7 @@ def plot_fig5(res, experiment):
     experiment : SimulationExperiment
         The experiment object (for network metadata).
 
-    Returns
+    Returns:
     -------
     fig : Figure
     """
@@ -745,7 +745,7 @@ def plot_fig6(res, experiment):
     experiment : SimulationExperiment
         The experiment object (for model parameter metadata).
 
-    Returns
+    Returns:
     -------
     fig : Figure
     """
@@ -1016,7 +1016,7 @@ def plot_fig8(res, experiment):
     experiment : SimulationExperiment
         Experiment object (for stimulus timing metadata).
 
-    Returns
+    Returns:
     -------
     fig : Figure
     """
@@ -1076,7 +1076,7 @@ def plot_fig9(res, experiment):
     experiment : SimulationExperiment
         Experiment object (for stimulus timing and exploration metadata).
 
-    Returns
+    Returns:
     -------
     fig : Figure
     """
@@ -1145,7 +1145,7 @@ def plot_fig10(res, experiment):
     experiment : SimulationExperiment
         Experiment object.
 
-    Returns
+    Returns:
     -------
     fig : Figure
     """
@@ -1202,7 +1202,7 @@ def plot_fig11(res, experiment):
     experiment : SimulationExperiment
         Experiment object.
 
-    Returns
+    Returns:
     -------
     fig : Figure
     """

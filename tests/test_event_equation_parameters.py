@@ -1,13 +1,8 @@
 """A stimulus event may declare its constants under ``equation.parameters``.
 
-Codegen reads an event's constants from ``ev.parameters``, so the loader merges the
-equation-level ones onto the event. That merge used to *assign* a dict to the multivalued slot,
-which LinkML re-coerces to the list form — after which every ``dict(ev.parameters)`` downstream
-raised ``dictionary update sequence element #0 has length N``, an error naming neither the event
-nor the slot. The merge mutates in place now.
+Codegen reads an event's constants from ``ev.parameters``, so the loader merges the equation-level ones onto the event. That merge used to *assign* a dict to the multivalued slot, which LinkML re-coerces to the list form — after which every ``dict(ev.parameters)`` downstream raised ``dictionary update sequence element #0 has length N``, an error naming neither the event nor the slot. The merge mutates in place now.
 
-Both spellings must reach the same emitted signal, since a recipe may put a constant next to the
-equation that uses it or on the event itself.
+Both spellings must reach the same emitted signal, since a recipe may put a constant next to the equation that uses it or on the event itself.
 """
 
 import pytest

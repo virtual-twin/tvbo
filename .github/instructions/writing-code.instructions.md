@@ -72,6 +72,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - A block of explanatory comments above code is a smell: extract a well-named helper, or simplify the code, so the comment isn't needed.
 - Reserve inline `#` for a single genuinely non-obvious line (a subtle invariant, a workaround) — not a running narration. If it takes a paragraph, the code is too clever; rewrite the code.
 - Same budget in codegen templates (Mako `##` / `<% %>`): terse code beats an annotated wall.
+- **When you change a line that already carries a comment, rewrite that comment to describe the new state — do not append a second one beside it.** Layering is what turns a three-line explanation into a twelve-line record where each layer is true and the stack no longer says what the code does.
+- A comment states the code's current contract, addressed to a reader who has never seen your diff — never "Previously…", "This replaces…" or "for now". History belongs in `CHANGELOG.md`, reasoning in the commit message.
 - Aim for maximally readable: someone should follow the code without the comments.
 
 ## 6. Use the Dependency's Own API

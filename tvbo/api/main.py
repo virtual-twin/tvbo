@@ -1,18 +1,15 @@
 """FastAPI application exposing the TVBO ontology and simulation experiment endpoints.
 
-Defines the top-level `app`, wires in the network, dynamics, and experiment sub-routers, and provides ontology search/query endpoints plus routes to
-configure and run [`SimulationExperiment`](/api/classes/experiment.qmd) instances.
+Defines the top-level `app`, wires in the network, dynamics, and experiment sub-routers, and provides ontology search/query endpoints plus routes to configure and run [`SimulationExperiment`](/api/classes/experiment.qmd) instances.
 """
-
-from typing import List, Optional
 
 from fastapi import Body, FastAPI, Path, Query
 from pydantic import BaseModel, Field
 
-from tvbo.api.ontology_api import OntologyAPI
-from tvbo.api.network_api import router as network_router
 from tvbo.api.dynamics_api import router as dynamics_router
 from tvbo.api.experiment_api import router as experiment_router
+from tvbo.api.network_api import router as network_router
+from tvbo.api.ontology_api import OntologyAPI
 
 app = FastAPI(title="TVBO API", description="The Virtual Brain Ontology API for simulation experiments", version="0.1.0")
 api = OntologyAPI()
@@ -23,39 +20,36 @@ app.include_router(dynamics_router)
 app.include_router(experiment_router)
 
 
-# ============================================
 # Request/Response Models (API-specific only)
-# ============================================
 
 
 class RunExperimentRequest(BaseModel):
     """Request payload for running a simulation."""
 
     experiment: dict = Field(..., description="Experiment configuration dictionary")
-    duration: Optional[float] = Field(1000.0, description="Simulation duration in ms")
-    step_size: Optional[float] = Field(0.1, description="Integration step size in ms")
-    backend: Optional[str] = Field("jax", description="Simulation backend: 'jax' or 'tvb'")
+    duration: float | None = Field(1000.0, description="Simulation duration in ms")
+    step_size: float | None = Field(0.1, description="Integration step size in ms")
+    backend: str | None = Field("jax", description="Simulation backend: 'jax' or 'tvb'")
 
 
 class RunExperimentResponse(BaseModel):
     """Response payload with simulation results."""
 
     success: bool
-    data: Optional[List] = None  # [time, state_vars, regions, modes]
-    time: Optional[List[float]] = None
-    state_variables: Optional[List[str]] = None
-    region_labels: Optional[List[str]] = None
-    sample_period: Optional[float] = None
-    message: Optional[str] = None
-    error: Optional[str] = None
+    data: list | None = None  # [time, state_vars, regions, modes]
+    time: list[float] | None = None
+    state_variables: list[str] | None = None
+    region_labels: list[str] | None = None
+    sample_period: float | None = None
+    message: str | None = None
+    error: str | None = None
 
 
 # Legacy model for backwards compatibility
 class SimulationMetadata(BaseModel):
     """Legacy request payload describing a simulation configuration.
 
-    Retained for backwards compatibility with clients that submit the model, connectivity, coupling, and integration blocks separately rather than as a
-    single experiment dictionary.
+    Retained for backwards compatibility with clients that submit the model, connectivity, coupling, and integration blocks separately rather than as a single experiment dictionary.
 
     Args:
         model: Dynamics/model configuration block.
@@ -65,14 +59,12 @@ class SimulationMetadata(BaseModel):
     """
 
     model: dict
-    connectivity: Optional[dict] = None
-    coupling: Optional[dict] = None
-    integration: Optional[dict] = None
+    connectivity: dict | None = None
+    coupling: dict | None = None
+    integration: dict | None = None
 
 
-# ============================================
 # API Endpoints
-# ============================================
 
 
 @app.get("/")
@@ -165,8 +157,7 @@ def configure_experiment(metadata: SimulationMetadata = Body(...)):
 
 @app.post("/experiment/run", response_model=RunExperimentResponse)
 def run_experiment(request: RunExperimentRequest = Body(...)):
-    """
-    Run a simulation experiment and return the results.
+    """Run a simulation experiment and return the results.
 
     The experiment dict should match the YAML schema and is passed directly to SimulationExperiment for initialization.
     """

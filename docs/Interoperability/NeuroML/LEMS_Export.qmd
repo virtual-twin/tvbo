@@ -368,8 +368,8 @@ A complete TVBO → LEMS export produces this XML skeleton:
 
 ## Troubleshooting
 
-**`DeprecationWarning: Dynamics.to_lems()`**
-: This method is deprecated. Use `NeuroMLAdapter(model).render_code()` instead.
+**`AttributeError: 'Dynamics' object has no attribute 'to_lems'`**
+: Removed at 1.0. Use `NeuroMLAdapter(model).render_code()` instead.
 
 **`LEMSPrinter` output has `exp()` instead of `e^x`**
 : That's correct — LEMS uses the function name `exp(x)`, not `e^x`.

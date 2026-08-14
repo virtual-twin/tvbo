@@ -5,14 +5,13 @@
 # Licensed under the EUPL-1.2-or-later
 #
 
-"""tvbo.classes
-============
+"""tvbo.classes.
+
 Core simulation classes: dynamics, coupling, noise, continuation, observation, perturbation, equation, functions, experiment, study, network, and atlas.
 """
 
 __all__ = [
     "Atlas",
-    "Connectome",
     "Continuation",
     "Coupling",
     "Dynamics",
@@ -70,12 +69,11 @@ def __getattr__(name):
 
         globals()["StudyCollection"] = StudyCollection
         return StudyCollection
-    if name in ("Network", "Connectome"):
-        from tvbo.classes.network import Network, Connectome
+    if name == "Network":
+        from tvbo.classes.network import Network
 
         globals()["Network"] = Network
-        globals()["Connectome"] = Connectome
-        return globals()[name]
+        return Network
     if name == "Atlas":
         from tvbo.classes.atlas import Atlas
 

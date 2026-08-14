@@ -1,10 +1,6 @@
 """`strided_convolve` array-op: a subsampled HRF convolution with no FFT buffer.
 
-`strided_convolve(X, k, s)` computes the ``'valid'`` convolution of ``X`` (leading
-time axis) with kernel ``k``, evaluated ONLY at the ``[s::s]`` output indices — the
-samples that survive TR subsampling. It fuses ``fftconvolve(X, k, 'valid')`` and
-``subsample data[s::s]`` into one windowed matmul, so the BOLD forward model never
-materialises the full-length FFT (the transient-memory peak of the online fit).
+`strided_convolve(X, k, s)` computes the ``'valid'`` convolution of ``X`` (leading time axis) with kernel ``k``, evaluated ONLY at the ``[s::s]`` output indices — the samples that survive TR subsampling. It fuses ``fftconvolve(X, k, 'valid')`` and ``subsample data[s::s]`` into one windowed matmul, so the BOLD forward model never materialises the full-length FFT (the transient-memory peak of the online fit).
 
 The numeric contract, asserted below:
   * BYTE-IDENTICAL to a direct full ``'valid'`` convolution then ``[s::s]`` — same
@@ -16,8 +12,8 @@ The numeric contract, asserted below:
 import numpy as np
 import pytest
 
-from tvbo.parse.expression import parse_eq
 from tvbo.codegen.code import JaxPrinter, NumPyPrinter
+from tvbo.parse.expression import parse_eq
 
 
 @pytest.fixture(scope="module")
@@ -42,10 +38,7 @@ def test_renders_for_numpy_and_jax():
 def test_byte_identical_to_windowed_matmul(signal):
     """strided_convolve == an explicit windowed matmul over the retained indices.
 
-    The point of strided_convolve is that it skips outputs a later subsample would
-    discard WITHOUT changing the arithmetic of the ones it keeps. Reconstructing the
-    kept outputs as the same reversed-kernel · window dot products must give a
-    bit-identical result — the exact equivalence the FFT path cannot offer.
+    The point of strided_convolve is that it skips outputs a later subsample would discard WITHOUT changing the arithmetic of the ones it keeps. Reconstructing the kept outputs as the same reversed-kernel · window dot products must give a bit-identical result — the exact equivalence the FFT path cannot offer.
     """
     x, k, L = signal
     s = 16

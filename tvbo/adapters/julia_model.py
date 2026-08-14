@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """Prepared codegen context for the Julia model templates.
 
-The Julia backends (DifferentialEquations.jl, NetworkDynamics.jl, ModelingToolkit.jl) share the same *metadata → Julia* translation logic: which state variables/parameters
-become symbols, which optional packages are needed, how conditional derived variables fold into ``ifelse``, and how multi-mode models lay their state out along a mode axis.
+The Julia backends (DifferentialEquations.jl, NetworkDynamics.jl, ModelingToolkit.jl) share the same *metadata → Julia* translation logic: which state variables/parameters become symbols, which optional packages are needed, how conditional derived variables fold into ``ifelse``, and how multi-mode models lay their state out along a mode axis.
 
 This module owns that logic so the Mako templates stay slim — they only emit syntax from the dict returned by :func:`build_model_context` (and the small helpers here).
 Mirrors the "resolve in Python, not Mako" convention used by the other adapters.
@@ -89,8 +87,7 @@ def needs_special_functions(model) -> bool:
 def needs_nanmath(model) -> bool:
     """True if any equation contains a ``Piecewise``.
 
-    The Julia printer routes domain-restricted powers inside Piecewise branches through NaNMath (NaN instead of DomainError, matching numpy/JAX), so those
-    models must ``import NaNMath``.
+    The Julia printer routes domain-restricted powers inside Piecewise branches through NaNMath (NaN instead of DomainError, matching numpy/JAX), so those models must ``import NaNMath``.
     """
     return "Piecewise" in equation_rhs_text(model)
 
@@ -120,15 +117,9 @@ def make_renderer(model, fmt="julia"):
 def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     """Network-coupled variant of :func:`build_model_context` (loop-based RHS).
 
-    State is ``n_nodes`` blocks per state variable (block ``k`` spans indices
-    ``k*N+1 .. (k+1)*N``). Each long-range coupling term becomes a connectivity matvec evaluated once per step (``_coup_<c> = W_NET · s_view``); the per-node
-    scalar RHS (the same expressions the single-node emitter produces) runs inside a ``for i in 1:N`` loop. ``local`` coupling inputs are zero in a region sim.
+    State is ``n_nodes`` blocks per state variable (block ``k`` spans indices ``k*N+1 .. (k+1)*N``). Each long-range coupling term becomes a connectivity matvec evaluated once per step (``_coup_<c> = W_NET · s_view``); the per-node scalar RHS (the same expressions the single-node emitter produces) runs inside a ``for i in 1:N`` loop. ``local`` coupling inputs are zero in a region sim.
 
-    ``constraints`` promotes constraint-defined free parameters (e.g. the FIC
-    ``J_i``) from parameters to extra unknown STATE blocks, appended after the real state. Each block's defining equation is the ``TuningObjective`` residual
-    (``target_variable − target_value``), not an ODE: at equilibrium the residual is zero so the constraint holds, and during the initial-state warm-up the same
-    residual is stabilising negative feedback (``target_variable`` ↑ ⇒ free param ↑
-    ⇒ inhibition ↑ ⇒ ``target_variable`` ↓), so no separate solver is needed. This is the FIC branch of Deco 2014 Fig 2c. See ``DEV_PLAN_recipe_native.md`` (D2).
+    ``constraints`` promotes constraint-defined free parameters (e.g. the FIC ``J_i``) from parameters to extra unknown STATE blocks, appended after the real state. Each block's defining equation is the ``TuningObjective`` residual (``target_variable − target_value``), not an ODE: at equilibrium the residual is zero so the constraint holds, and during the initial-state warm-up the same residual is stabilising negative feedback (``target_variable`` ↑ ⇒ free param ↑ ⇒ inhibition ↑ ⇒ ``target_variable`` ↓), so no separate solver is needed. This is the FIC branch of Deco 2014 Fig 2c. See ``DEV_PLAN_recipe_native.md`` (D2).
     Each constraint is ``{"parameter", "target_variable", "target_value"}``.
     """
     import numpy as np
@@ -183,8 +174,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
         else:
             derived_vars.append((dv.name, jl(dv.equation.rhs)))
 
-    # Parameters. A heterogeneous per-node parameter (value is a length-n_nodes array, e.g. the FIC-tuned J_i) is emitted as a Julia vector ``<name>_vec`` and gathered per node (``<name> = <name>_vec[i]``) at the top of the loop;
-    # scalar parameters (incl. a scalar default on a ``(n_nodes,)`` slot) stay scalar.
+    # A per-node parameter becomes a `<name>_vec` gathered at the top of the loop; scalars stay scalar.
     pval_parts, destructure_names, pernode_gather = [], [], []
     for p in model.parameters.values():
         if p.name in free_names:
@@ -206,16 +196,14 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     for s in model.state_variables.values():
         u0.extend([initial_value(s)] * n_nodes)
 
-    # Observables to record along the branch: every state variable plus any derived variable listed in the model's ``output`` (e.g. the firing rate
-    # H_e). Each is reduced across nodes to a max and a mean (see the record hook in the BifurcationKit template), so the branch plots e.g. max r_E vs G.
+    # Every state variable plus the model's `output`, each reduced across nodes to a max and a mean.
     dv_names = {name for name, _ in derived_vars}
     record_obs = list(sv)
     for o in [str(o) for o in (getattr(model, "output", None) or [])]:
         if o in dv_names and o not in record_obs:
             record_obs.append(o)
 
-    # ── Constraint-defined free-parameter blocks (FIC J_i etc.) ──
-    # Appended after the real state blocks: unpacked from the state vector, given a residual "dfun" (target_variable − target_value), seeded in u0 from the declared value, and recorded along the branch (so J_i(G) is available).
+    # Constraint-defined free parameters, appended after the state blocks with a residual dfun.
     n_sv = len(model.state_variables)
     for j, c in enumerate(constraints):
         pname, tv, tval = c["parameter"], str(c["target_variable"]), float(c["target_value"])
@@ -261,13 +249,9 @@ def build_model_context(model, network=None, constraints=None) -> dict:
 
     Everything the ``tvbo-julia-model.jl.mako`` / ``tvbo-julia-ODEProblem.jl.mako`` templates need is pre-rendered here so those templates only emit syntax.
 
-    Multi-mode models (``number_of_modes > 1``) lay each state variable out as a contiguous length-n_modes block, so the dfun operates on per-mode vectors and
-    writes vector slices (``dx[lo:hi] .= …``); scalar models keep the flat layout.
+    Multi-mode models (``number_of_modes > 1``) lay each state variable out as a contiguous length-n_modes block, so the dfun operates on per-mode vectors and writes vector slices (``dx[lo:hi] .= …``); scalar models keep the flat layout.
 
-    When ``network`` is supplied (a multi-node ``Network``), the model is emitted as a coupled network: the state is laid out as ``n_nodes`` blocks per state
-    variable, each long-range coupling term becomes a connectivity matvec (``c = W · s_coupling``) evaluated once per step, and the per-node scalar RHS
-    runs inside a ``for i in 1:N`` loop — reusing the single-node equation emission verbatim (no vectorised broadcasting). This is the vector field a whole-brain
-    equilibrium/periodic-orbit continuation (e.g. Deco 2014 Fig 2c) continues in G.
+    When ``network`` is supplied (a multi-node ``Network``), the model is emitted as a coupled network: the state is laid out as ``n_nodes`` blocks per state variable, each long-range coupling term becomes a connectivity matvec (``c = W · s_coupling``) evaluated once per step, and the per-node scalar RHS runs inside a ``for i in 1:N`` loop — reusing the single-node equation emission verbatim (no vectorised broadcasting). This is the vector field a whole-brain equilibrium/periodic-orbit continuation (e.g. Deco 2014 Fig 2c) continues in G.
     """
     n_nodes = int(getattr(network, "number_of_nodes", 0) or 0) if network is not None else 0
     if n_nodes > 1:

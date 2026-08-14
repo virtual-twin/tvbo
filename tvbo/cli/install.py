@@ -1,13 +1,11 @@
 """``tvbo install`` — provision optional components that pip alone cannot place.
 
-Some extras have a half that is not distributed on PyPI. ``pip install tvbo[…]`` installs the Python wrapper; this verb installs the native component and links it
-onto the current environment so imports resolve.
+Some extras have a half that is not distributed on PyPI. ``pip install tvbo[…]`` installs the Python wrapper; this verb installs the native component and links it onto the current environment so imports resolve.
 
 Currently one target:
 
 * ``tvbo install auto7p`` — the AUTO-07p bifurcation-continuation engine used
-  through :mod:`pycobi`. AUTO-07p is a Fortran program: this command locates an existing build (or builds one from source with ``--build``), then drops a
-  ``.pth`` link to its ``python/`` front-end into the active environment's site-packages, so ``import auto`` resolves for every process using this venv.
+  through :mod:`pycobi`. AUTO-07p is a Fortran program: this command locates an existing build (or builds one from source with ``--build``), then drops a ``.pth`` link to its ``python/`` front-end into the active environment's site-packages, so ``import auto`` resolves for every process using this venv.
 """
 
 from __future__ import annotations
@@ -77,8 +75,7 @@ def _module_importable(module: str) -> bool:
 def _run_step(cmd: list[str], *, cwd: str | None = None, what: str) -> None:
     """Run a build step, converting a non-zero exit into a clean ``die``.
 
-    Keeps a failed clone/configure/make from surfacing as a raw
-    ``CalledProcessError`` traceback — the reason is reported the same way as every other fatal path in this command.
+    Keeps a failed clone/configure/make from surfacing as a raw ``CalledProcessError`` traceback — the reason is reported the same way as every other fatal path in this command.
     """
     result = subprocess.run(cmd, cwd=cwd)
     if result.returncode != 0:
@@ -88,8 +85,7 @@ def _run_step(cmd: list[str], *, cwd: str | None = None, what: str) -> None:
 def _build_auto(prefix: Path) -> Path:
     """Clone and build AUTO-07p under *prefix*, returning the build directory.
 
-    Requires a source toolchain (git, make, a Fortran compiler). Missing tools are reported up front, and a build-step failure is reported cleanly rather
-    than as an opaque traceback.
+    Requires a source toolchain (git, make, a Fortran compiler). Missing tools are reported up front, and a build-step failure is reported cleanly rather than as an opaque traceback.
     """
     import shutil
 
@@ -162,10 +158,7 @@ def auto7p(
 ) -> None:
     """Install AUTO-07p and link it onto this environment for pycobi continuation.
 
-    The pip half (pycobi) comes from the ``auto7p`` extra; this command provides the native AUTO-07p engine, which is not on PyPI. It locates an
-    existing build (``--auto-dir`` / ``$AUTO_DIR`` / common paths), or builds one with ``--build``, then links its ``python/`` front-end into site-packages so
-    ``import auto`` resolves. Safe to re-run — this is the step to repeat after recreating the virtualenv, since the link lives inside it. Pass ``--uninstall``
-    to remove the link (the AUTO-07p build itself is left untouched).
+    The pip half (pycobi) comes from the ``auto7p`` extra; this command provides the native AUTO-07p engine, which is not on PyPI. It locates an existing build (``--auto-dir`` / ``$AUTO_DIR`` / common paths), or builds one with ``--build``, then links its ``python/`` front-end into site-packages so ``import auto`` resolves. Safe to re-run — this is the step to repeat after recreating the virtualenv, since the link lives inside it. Pass ``--uninstall`` to remove the link (the AUTO-07p build itself is left untouched).
     """
     if uninstall:
         pth = _site_packages() / PTH_NAME

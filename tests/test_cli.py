@@ -9,7 +9,6 @@ from typer.testing import CliRunner
 
 from tvbo.cli import app
 
-
 runner = CliRunner()
 
 
@@ -59,8 +58,7 @@ def test_validate_help():
 def test_validate_schema_detects_the_class_from_the_file_envelope(tmp_path):
     """Without `--class`, the target comes from the file's own `tvbo_class`.
 
-    A study validated as the default SimulationExperiment fails on a required `id` it has
-    no business carrying, so a spec that declares its class must be taken at its word.
+    A study validated as the default SimulationExperiment fails on a required `id` it has no business carrying, so a spec that declares its class must be taken at its word.
     """
     (tmp_path / "study.yaml").write_text("tvbo_class: tvbo:SimulationStudy\nkey: Probe\ntitle: probe\n")
     res = runner.invoke(app, ["validate", "schema", str(tmp_path / "study.yaml")])

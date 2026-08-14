@@ -1,22 +1,11 @@
 """P1 finite-element operators for a triangular mesh, flat or curved.
 
-:func:`~tvbo.data.mesh_io.read_mesh` turns a mesh file into vertices and faces; this turns
-those into the two matrices a field equation is discretised with — the mass matrix
-``int(u v)`` and the stiffness matrix ``int(grad(u).grad(v))``. Together they are the whole
-of a P1 discretisation, so ``a*laplacian(u)`` assembles as ``-a*K`` and ``a*u`` as ``a*M``.
+:func:`~tvbo.data.mesh_io.read_mesh` turns a mesh file into vertices and faces; this turns those into the two matrices a field equation is discretised with — the mass matrix ``int(u v)`` and the stiffness matrix ``int(grad(u).grad(v))``. Together they are the whole of a P1 discretisation, so ``a*laplacian(u)`` assembles as ``-a*K`` and ``a*u`` as ``a*M``.
 
-The reason this exists rather than a call into a FEM library: a cortical surface is a
-2-manifold embedded in 3-space, and the general-purpose libraries assemble on domains whose
-element dimension equals their coordinate dimension. Their affine mapping inverts a square
-Jacobian, which a triangle carrying three coordinates does not have — scikit-fem builds such
-a mesh and then fails inside the mapping. For P1 the manifold case needs no mapping at all:
-the basis gradients are tangential and are written in closed form below, which makes the
-brain-surface case exact rather than unsupported.
+The reason this exists rather than a call into a FEM library: a cortical surface is a 2-manifold embedded in 3-space, and the general-purpose libraries assemble on domains whose element dimension equals their coordinate dimension. Their affine mapping inverts a square Jacobian, which a triangle carrying three coordinates does not have — scikit-fem builds such a mesh and then fails inside the mapping. For P1 the manifold case needs no mapping at all:
+the basis gradients are tangential and are written in closed form below, which makes the brain-surface case exact rather than unsupported.
 
-Coefficients may vary per vertex, which is what lets a propagation scale differ across
-cortex. Both weighted forms are exact for a P1 coefficient, not a one-point approximation
-of one: a gradient product is constant on a triangle so the weighted stiffness needs only
-the coefficient's element mean, while the weighted mass integrates the full cubic.
+Coefficients may vary per vertex, which is what lets a propagation scale differ across cortex. Both weighted forms are exact for a P1 coefficient, not a one-point approximation of one: a gradient product is constant on a triangle so the weighted stiffness needs only the coefficient's element mean, while the weighted mass integrates the full cubic.
 """
 
 from __future__ import annotations
@@ -35,9 +24,7 @@ def _as_faces(faces) -> np.ndarray:
 def _opposite_edges(vertices, faces):
     """Per-triangle areas and the edge vector opposite each of its three vertices.
 
-    Returns ``(areas (F,), edges (F, 3, dim))``. The edges are ordered so that ``edges[:, i]``
-    faces vertex ``i``, which is what makes the closed-form gradient below hold in any
-    embedding dimension.
+    Returns ``(areas (F,), edges (F, 3, dim))``. The edges are ordered so that ``edges[:, i]`` faces vertex ``i``, which is what makes the closed-form gradient below hold in any embedding dimension.
     """
     vertices = np.asarray(vertices, dtype=float)
     faces = _as_faces(faces)
@@ -91,9 +78,7 @@ def triangle_areas(vertices, faces) -> np.ndarray:
 def p1_stiffness(vertices, faces, coefficient=None) -> sps.csr_matrix:
     """``int(c grad(u) . grad(v))`` — the cotangent operator, weighted by ``c``.
 
-    Positive semi-definite with the constant vector in its kernel, so a Laplacian term
-    enters an operator NEGATED. On a closed surface that kernel is exactly one-dimensional,
-    which is the discrete statement that no flux leaves the domain.
+    Positive semi-definite with the constant vector in its kernel, so a Laplacian term enters an operator NEGATED. On a closed surface that kernel is exactly one-dimensional, which is the discrete statement that no flux leaves the domain.
 
     Args:
         vertices: ``(V, 2)`` or ``(V, 3)`` coordinates. Three columns is a surface in space.
@@ -115,9 +100,7 @@ def p1_stiffness(vertices, faces, coefficient=None) -> sps.csr_matrix:
 def p1_mass(vertices, faces, coefficient=None) -> sps.csr_matrix:
     """``int(c u v)`` — the consistent mass matrix, weighted by ``c``.
 
-    Consistent, not lumped: the row sums give the area each vertex carries, but the
-    off-diagonal entries are kept. Lumping is a first-order approximation whose error grows
-    with spatial frequency, so it distorts exactly the high modes a wave equation resolves.
+    Consistent, not lumped: the row sums give the area each vertex carries, but the off-diagonal entries are kept. Lumping is a first-order approximation whose error grows with spatial frequency, so it distorts exactly the high modes a wave equation resolves.
     """
     areas, _ = _opposite_edges(vertices, faces)
     faces = _as_faces(faces)
@@ -140,8 +123,7 @@ def p1_mass(vertices, faces, coefficient=None) -> sps.csr_matrix:
 def boundary_vertices(faces) -> np.ndarray:
     """Vertices on the mesh boundary — empty for a closed surface.
 
-    An edge shared by one triangle is a boundary edge. A closed cortical surface has none,
-    which is why a Dirichlet condition declared on one constrains nothing.
+    An edge shared by one triangle is a boundary edge. A closed cortical surface has none, which is why a Dirichlet condition declared on one constrains nothing.
     """
     faces = _as_faces(faces)
     edges = np.sort(np.concatenate([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]]]), axis=1)

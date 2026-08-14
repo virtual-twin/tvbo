@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-CUDA Adapter for TVBO
-=====================
+"""CUDA Adapter for TVBO.
 
 Run generated CUDA kernels using PyCUDA.
 
@@ -14,15 +11,16 @@ Usage:
 
 from __future__ import annotations
 
-import numpy as np
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+import numpy as np
 
 if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
 
 
-def compile_cuda(experiment: SimulationExperiment) -> Tuple[Any, Any]:
+def compile_cuda(experiment: SimulationExperiment) -> tuple[Any, Any]:
     """Compile CUDA kernel for experiment.
 
     Args:
@@ -34,10 +32,10 @@ def compile_cuda(experiment: SimulationExperiment) -> Tuple[Any, Any]:
     try:
         import pycuda.autoinit  # noqa: F401
         from pycuda.compiler import SourceModule
-    except ImportError:
+    except ImportError as exc:
         raise ImportError(
             "PyCUDA not installed. Install with: pip install pycuda\nNote: Requires NVIDIA GPU and CUDA toolkit."
-        )
+        ) from exc
 
     cuda_source = experiment.render_code("cuda")
     module = SourceModule(cuda_source)
@@ -52,14 +50,14 @@ def compile_cuda(experiment: SimulationExperiment) -> Tuple[Any, Any]:
 
 def run_cuda(
     experiment: SimulationExperiment,
-    n_steps: Optional[int] = None,
-    dt: Optional[float] = None,
+    n_steps: int | None = None,
+    dt: float | None = None,
     n_work_items: int = 1,
     global_speed: float = 1.0,
     global_coupling: float = 0.1,
-    buffer_length: Optional[int] = None,
-    swept_params: Optional[Dict[str, np.ndarray]] = None,
-) -> Dict[str, np.ndarray]:
+    buffer_length: int | None = None,
+    swept_params: dict[str, np.ndarray] | None = None,
+) -> dict[str, np.ndarray]:
     """Run CUDA simulation for experiment.
 
     All configuration comes from experiment metadata.
