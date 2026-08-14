@@ -34,7 +34,10 @@ jobs:
         name: Lint
         runs-on: ubuntu-latest
         steps:
+            # Full history: the diff-mode prose check needs a merge-base with the target branch.
             - uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0
 
             # `version` tracks the `lint` extra in pyproject.toml.
             - name: Ruff — lint
@@ -54,10 +57,13 @@ jobs:
               with:
                   python-version: "3.12"
 
-            # Blocking in pre-commit (changed files only) so no NEW drift lands; reporting
-            # here until the Stage C backlog clears, then drop `|| true`.
+            # Reporting until the Stage C backlog clears, then drop `|| true`.
             - name: Prose — comments and docstrings (reporting)
               run: python scripts/check_prose.py || true
+
+            # Blocking: templates and config keep their backlog, but no PR may add to it.
+            - name: Prose — no stacked '#' blocks added
+              run: python scripts/check_prose.py --diff "origin/${{ github.base_ref || 'dev' }}"
 
             # mypy: type-check the source tree, non-blocking.
             - uses: astral-sh/setup-uv@v8.1.0
