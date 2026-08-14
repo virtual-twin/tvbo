@@ -1543,11 +1543,13 @@ classes:
                 multivalued: true
                 inlined_as_list: true
                 description: >-
-                    Ordered list of transforms applied to edge property matrices.
-                    Each Function's name identifies the target edge property
-                    (e.g. 'weight', 'length'). Supports equation-based (symbolic)
-                    or callable-based (software) transforms. Multiple transforms
-                    on the same target are applied sequentially.
+                    Ordered list of transforms applied to edge property matrices. Each
+                    entry's `name:` is the edge property it rewrites (e.g. 'weight',
+                    'length'), and that property is also the value under transform inside
+                    the entry's own equation, which is written over the network's edge
+                    attributes. Supports equation-based (symbolic) or callable-based
+                    (software) transforms. Multiple transforms on the same target are
+                    applied sequentially, each seeing the previous one's output.
 
             # BIDS integration (BEP017)
             data_file:

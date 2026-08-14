@@ -90,7 +90,7 @@ network:
   transforms:
     - name: weight
       equation:
-        rhs: "W / max(W)"
+        rhs: "weight / max(weight)"
 
   coupling:
     c_sigmJR:

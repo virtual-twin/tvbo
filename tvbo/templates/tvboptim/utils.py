@@ -27,7 +27,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
-from tvbo.utils import as_list
+from tvbo.utils import _NETWORK_EDGE_ALIASES, as_list, edge_label  # noqa: F401  re-exported for the mako templates
 
 
 # =============================================================================
@@ -747,12 +747,21 @@ def _callable_wants(ref, argument: str, source_dir=None) -> bool:
     return argument == "network" and any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
 
 
-def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List[str]]:
+_KIT_EDGE_ARRAYS = {"weight": "weights", "length": "distances"}
+"""Edge attributes a generated kit holds, and the `create_network` argument holding each.
+
+A kit is self-contained, so it can only bind the matrices it is handed. The runtime can
+resolve any label through `Network.matrix()`; a transform naming one of the others is
+refused at render time rather than emitted as a name the kit lacks.
+"""
+
+
+def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List[str], bool]:
     """Render `transforms:` targeting weight to JAX for inlining in the generated script.
 
-    A transform is a `Function`, so both of its forms are lowered: an `equation:` renders through the same expression resolver and primitive table the runtime evaluates
-    (`Network.transform_expression`, `tvbo.codegen.transforms`), and a `callable:` renders as an import of that callable plus a call. The kit therefore applies the declared
-    transform exactly as the runtime does, but visibly, on the RAW weights the generated
+    A transform is a `Function`, so both of its forms are lowered: an `equation:` renders through the very expression the runtime evaluates (`Network.transform_expression`,
+    which folds any mask into the reductions it scopes), and a `callable:` renders as an import of that callable plus a call. The kit therefore applies the declared transform
+    exactly as the runtime does, but visibly, on the RAW weights the generated
     `create_network` is handed — raw SC stays in the network file, the transform stays declared in the spec, and the operation is in the script rather than hidden in the tvbo
     runtime. This helper runs only at render time, inside the tvbo environment.
 
@@ -760,35 +769,70 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
         network: The `Network` whose transforms are being lowered.
 
     Returns:
-        A `(transforms, const_env)` pair. `transforms` is a list of
-        `(jax_expr, matrix_env)`; `matrix_env` rebinds matrix-derived primitives from the
-        current `weights` so a chain of transforms composes. `const_env` binds
-        data-derived symbols — `L`, per-node parameter vectors, imported callables — once.
+        A `(transforms, const_env, needs_lengths)` triple. `transforms` is a list of
+        `(jax_expr, chained_env)`; `chained_env` rebinds the transform's own target from
+        the current `weights`, so a chain composes. `const_env` binds everything bound
+        once — other edge matrices, per-node parameter vectors, imported callables.
+        `needs_lengths` reports whether `create_network` has to be handed real lengths.
 
     Raises:
-        ValueError: If a transform equation names a symbol that is neither a primitive,
-            a declared per-node parameter, nor a substituted argument. Failing here beats
-            emitting an undefined name into a kit that only dies once it reaches a cluster.
-            Symbols are checked by base identifier, so a masked expression such as
-            `mean(W[W > 0])` is validated — and bound — as `W`. Also if a callable
-            transform takes the `network` the runtime injects, which a kit cannot supply.
+        ValueError: If a transform equation names a symbol that is neither an edge
+            attribute this kit holds, a declared per-node parameter, nor a substituted
+            argument. Failing here beats emitting an undefined name into a kit that only
+            dies once it reaches a cluster. Also if a callable transform takes the
+            `network` the runtime injects, which a kit has no object to supply.
     """
 
     import numpy as np
 
     from tvbo.codegen.code import render_expression
-    from tvbo.codegen.transforms import PRIMITIVES, emit_env
+    from tvbo.codegen.transforms import edge_symbols, emit_env
+    from tvbo.utils import edge_label, transform_target
 
     _source_dir = getattr(network, "_source_dir", None)
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
+    raw = getattr(network, "raw_weights_matrix", None)
+    n_nodes = None if raw is None else np.asarray(raw).shape[0]
     transforms: List[Tuple[str, List[str]]] = []
     const_env: List[str] = []
     const_seen: Set[str] = set()
+    labels_used: Set[str] = set()
 
     def _add_const(name: str, line: str) -> None:
         if name not in const_seen:
             const_env.append(line)
             const_seen.add(name)
+
+    def _resolver(t):
+        def resolve(name: str) -> str:
+            label = edge_label(name) or name
+            source = _KIT_EDGE_ARRAYS.get(label)
+            if source is not None:
+                labels_used.add(label)
+                return source
+            if name in node_vectors:
+                vec = np.asarray(node_vectors[name]).ravel()
+                if n_nodes is not None and vec.shape[0] != n_nodes:
+                    raise ValueError(
+                        f"weight transform {transform_target(t)!r} uses per-node parameter "
+                        f"{name!r} with {vec.shape[0]} values, but the network has {n_nodes} "
+                        f"nodes. The runtime skips a mismatched vector; a kit would embed it "
+                        f"and broadcast it against another subject's connectome."
+                    )
+                return f"jnp.asarray([{', '.join(repr(float(v)) for v in vec)}]).reshape(-1, 1)"
+            if network.matrix(label) is not None:
+                raise ValueError(
+                    f"weight transform {transform_target(t)!r} reads edge attribute {label!r}, "
+                    f"which a self-contained kit is not handed. A kit holds "
+                    f"{', '.join(sorted(_KIT_EDGE_ARRAYS))}; the runtime can read any label."
+                )
+            raise ValueError(
+                f"weight transform {transform_target(t)!r} references {name!r}, which is "
+                f"neither an edge attribute nor a declared per-node parameter of this network. "
+                f"Declare it as a Function argument, or add it to the network."
+            )
+
+        return resolve
 
     for t in network.transforms_for("weight"):
         c = getattr(t, "callable", None)
@@ -803,34 +847,24 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
                     f"Give it a signature over the matrix (and `L`) alone."
                 )
             if _callable_wants(c, "L", _source_dir):
-                for line in emit_env(["L"], "weights", "distances")[1]:
-                    _add_const(line.split(" = ", 1)[0], line)
+                labels_used.add("length")
+                _add_const("L", f"L = {_KIT_EDGE_ARRAYS['length']}")
                 args += ", L=L"
             transforms.append((f"{alias}(weights{args})", []))
             continue
 
-        exp = network.transform_expression(t)
+        exp, masks = network.transform_expression(t)
         if exp is None:
             continue
         expr = render_expression(exp, format="jax")
-        if "jsp." in expr:
+        mask_lines = [f"{symbol} = {render_expression(mask, format='jax')}" for symbol, mask in masks.items()]
+        if any("jsp." in line for line in [expr, *mask_lines]):
             _add_const("jsp", "import jax.scipy as jsp")
-        symbols = sorted({str(sym).split("[", 1)[0] for sym in exp.free_symbols})
-        matrix_env, data_env = emit_env(symbols, "weights", "distances")
-        for line in data_env:
+        chained, constant = emit_env(edge_symbols(exp, masks), _resolver(t), target="weight")
+        for line in constant:
             _add_const(line.split(" = ", 1)[0], line)
-        for s in symbols:
-            if s in node_vectors:
-                vals = ", ".join(repr(float(v)) for v in np.asarray(node_vectors[s]).ravel())
-                _add_const(s, f"{s} = jnp.asarray([{vals}]).reshape(-1, 1)")
-            elif s not in PRIMITIVES:
-                raise ValueError(
-                    f"weight transform {getattr(t, 'name', '?')!r} references {s!r}, which is "
-                    f"neither a transform primitive nor a declared per-node parameter of this "
-                    f"network. Declare it as a Function argument, or add it to the network."
-                )
-        transforms.append((expr, matrix_env))
-    return transforms, const_env
+        transforms.append((expr, chained + mask_lines))
+    return transforms, const_env, "length" in labels_used
 
 
 def to_numeric(val: Any) -> Union[int, float, Any]:
@@ -3444,29 +3478,6 @@ def get_all_hyperparams(algo: Any, algorithms_dict: Dict) -> Dict:
         all_hp[str(getattr(hp, "name", ""))] = getattr(hp, "value", None)
 
     return all_hp
-
-
-# ---------------------------------------------------------------------------
-# Network edge references (network.weight(s)/length(s) → connectome matrices)
-# ---------------------------------------------------------------------------
-# `weight`/`weights`/`length`/`lengths` are ergonomic shortcuts for the canonical
-# `network.edges.<label>`; both resolve to a connectome matrix via Network.matrix().
-_NETWORK_EDGE_ALIASES = {"weight": "weight", "weights": "weight", "length": "length", "lengths": "length"}
-
-
-def edge_label(ref: Any) -> Optional[str]:
-    """Canonical ``Network.matrix()`` label for a network reference, else None.
-
-    Accepts the fully-qualified form (``network.weight``, ``network.edges.length``), the explicit ``edges.<label>`` form (any label), and the bare
-    ``weight(s)``/``length(s)`` shortcut. Returns None for anything that is not a connectome-matrix reference (state variables, ``network.observations.*``, ...),
-    which callers route through their normal path.
-    """
-    if not isinstance(ref, str):
-        return None
-    r = ref[len("network.") :] if ref.startswith("network.") else ref
-    if r.startswith("edges."):
-        return r.split("edges.", 1)[1] or None
-    return _NETWORK_EDGE_ALIASES.get(r)
 
 
 def edge_const(label: str) -> str:

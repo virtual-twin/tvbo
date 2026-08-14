@@ -236,6 +236,49 @@ def edge_param(edge, name: str, default=None):
     return scalar if isinstance(scalar, (int, float)) else default
 
 
+_NETWORK_EDGE_ALIASES = {
+    "weight": "weight",
+    "weights": "weight",
+    "length": "length",
+    "lengths": "length",
+}
+"""Ergonomic shortcuts for the canonical ``network.edges.<label>``.
+
+Both spellings resolve to a connectome matrix through ``Network.matrix()``.
+"""
+
+
+def edge_label(ref):
+    """Canonical ``Network.matrix()`` label for a network reference, else ``None``.
+
+    The one resolver for every way a recipe can point at a connectome matrix, so a
+    transform equation, an observation source and an exploration axis cannot mean
+    different matrices by the same name. Accepts the fully-qualified form
+    (``network.weight``, ``network.edges.length``), the explicit ``edges.<label>`` form
+    (any label), and the bare ``weight(s)``/``length(s)`` shortcut. Returns ``None`` for
+    anything that is not a connectome-matrix reference (state variables,
+    ``network.observations.*``, ...), which callers route through their normal path.
+    """
+    if not isinstance(ref, str):
+        return None
+    r = ref[len("network.") :] if ref.startswith("network.") else ref
+    if r.startswith("edges."):
+        return r.split("edges.", 1)[1] or None
+    return _NETWORK_EDGE_ALIASES.get(r)
+
+
+def transform_target(func):
+    """The edge attribute a ``transforms:`` entry rewrites, or ``None``.
+
+    A transform's identifier *is* its target, so a recipe spells it ``target:`` — the
+    schema declares that an alias of ``name``, which LinkML requires to stay the
+    identifier. Reading it through here says which of the two meanings a call site wants,
+    since ``name: weight`` beside ``rhs: weight / max(weight)`` otherwise reads as if the
+    two were different things.
+    """
+    return getattr(func, "name", None)
+
+
 def noise_sigma(noise, **legacy):
     """The noise standard deviation σ off a declared ``Noise``, or ``None``.
 
