@@ -890,6 +890,7 @@ def _engine_config_from_dict(blk: dict) -> Any:
         "partition",
         "account",
         "cores",
+        "jobs",
         "executor",
         "queue",
         "venv",

@@ -1033,11 +1033,16 @@ def _write_snakemake_profile(out_dir: Path, block: dict, plan=None) -> None:
     ``snakemake`` process runs on the login node and dispatches each rule as its own
     SLURM job (with the per-rule ``resources:`` in the Snakefile). The profile carries the compute-environment settings — ``executor: slurm``, the concurrent-jobs cap,
     and the cluster-identity default-resources (partition/account) that don't belong in the workflow definition. Run: ``snakemake --profile profile`` from the kit dir.
+
+    The concurrent-jobs cap comes from the workflow block's ``jobs`` (100 when unset), beside
+    the partition and account it belongs with: a site's queue limit is a property of the run,
+    and a 1000-subject fan-out throttled to a baked-in 100 is a silent slowdown with nothing
+    in the recipe to change.
     """
     _container_args = getattr(plan, "container_exec_flags", "") or ""
     text = _render_template(
         "snakemake/profile.yaml.mako",
-        jobs=100,
+        jobs=int(block.get("jobs") or 100),
         container=getattr(plan, "container", None),
         container_args=_container_args,
         # YAML 1.2 is a JSON superset, so a JSON string literal is always a valid — and correctly escaped — YAML scalar. container_args is free-form, so it may contain the quote that would otherwise terminate the scalar early.
