@@ -1,11 +1,8 @@
 """``tvbo figure`` — render declarative figures from a Figure or Study YAML.
 
-A :class:`~tvbo.datamodel.Figure` is TVBO's backend-independent spec of a publication figure: a mosaic of panels whose layers bind experiment result
-containers to visual channels (see ``schema/figure.yaml``). This verb resolves such a spec and drives :mod:`tvbo.adapters.bsplot` to emit a self-contained
-``plot.py`` and run it, mirroring how ``tvbo run`` drives the simulation adapters.
+A :class:`~tvbo.datamodel.Figure` is TVBO's backend-independent spec of a publication figure: a mosaic of panels whose layers bind experiment result containers to visual channels (see ``schema/figure.yaml``). This verb resolves such a spec and drives :mod:`tvbo.adapters.bsplot` to emit a self-contained ``plot.py`` and run it, mirroring how ``tvbo run`` drives the simulation adapters.
 
-The spec may be a standalone ``Figure`` (top-level ``panels:``) or a
-``SimulationStudy`` carrying a ``figures:`` list — the latter closes the replication loop (a study is its experiments plus the figures that read them).
+The spec may be a standalone ``Figure`` (top-level ``panels:``) or a ``SimulationStudy`` carrying a ``figures:`` list — the latter closes the replication loop (a study is its experiments plus the figures that read them).
 """
 
 from __future__ import annotations
@@ -14,8 +11,9 @@ from pathlib import Path
 
 import typer
 
-from . import _common
 from tvbo.utils import as_list, sanitize_name
+
+from . import _common
 
 app = typer.Typer(name="figure", no_args_is_help=True)
 
@@ -23,9 +21,7 @@ app = typer.Typer(name="figure", no_args_is_help=True)
 def _load_figures(spec_path: Path) -> tuple[list, str]:
     """Resolve *spec_path* to ``(figures, kind)``.
 
-    A spec with a top-level ``panels:`` (and no study markers) is a standalone
-    ``Figure``; otherwise it is loaded as a ``SimulationStudy`` and its
-    ``figures`` slot is returned. *kind* is ``"figure"`` or ``"study"`` so the caller can phrase the empty case correctly.
+    A spec with a top-level ``panels:`` (and no study markers) is a standalone ``Figure``; otherwise it is loaded as a ``SimulationStudy`` and its ``figures`` slot is returned. *kind* is ``"figure"`` or ``"study"`` so the caller can phrase the empty case correctly.
     """
     from tvbo.utils import yaml_loader
 
@@ -50,13 +46,9 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
 def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
     """Emit + run each figure's render script and return the written images.
 
-    The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after
-    its experiments, so one command closes the replication loop). ``base_dir`` is the root each layer's ``used`` IRI resolves against (``<base_dir>/output/…``).
+    The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the root each layer's ``used`` IRI resolves against (``<base_dir>/output/…``).
 
-    The image lands directly in ``out_dir`` — the one place the report and every other consumer reads a figure from — while its self-contained, editable
-    ``plot_<name>.py`` goes to ``out_dir/scripts/``. Both are regenerable and gitignored together; separating them just keeps a study with many figures from
-    interleaving twice as many files in the directory people actually browse. The subdirectory is deliberately NOT called ``code``: in a study that name means
-    the authored, tracked, importable code the recipe references by bare module name, which this is not.
+    The image lands directly in ``out_dir`` — the one place the report and every other consumer reads a figure from — while its self-contained, editable ``plot_<name>.py`` goes to ``out_dir/scripts/``. Both are regenerable and gitignored together; separating them just keeps a study with many figures from interleaving twice as many files in the directory people actually browse. The subdirectory is deliberately NOT called ``code``: in a study that name means the authored, tracked, importable code the recipe references by bare module name, which this is not.
     """
     from tvbo.adapters import bsplot
 
@@ -111,8 +103,7 @@ def render(
 ) -> None:
     """Render figures in *spec* via bsplot codegen (all of them, or the ``--name`` subset).
 
-    Each figure's ``<name>.<format>`` image lands in ``<out-dir>`` and its self-contained, editable ``plot_<name>.py`` in ``<out-dir>/scripts/``, so the
-    directory the report reads holds images only. ``<base-dir>`` is the root each layer's ``used`` IRI resolves against (``<base-dir>/output/nc/…``).
+    Each figure's ``<name>.<format>`` image lands in ``<out-dir>`` and its self-contained, editable ``plot_<name>.py`` in ``<out-dir>/scripts/``, so the directory the report reads holds images only. ``<base-dir>`` is the root each layer's ``used`` IRI resolves against (``<base-dir>/output/nc/…``).
     """
     spec_path = Path(spec).expanduser()
     if not spec_path.is_file():
@@ -161,8 +152,7 @@ def caption(
 ) -> None:
     """Compose each figure's caption from its spec and write a ``<name>.caption.qmd`` partial.
 
-    The render-free sibling of ``figure render``: it emits only the composed captions (figure lead + per-panel structural descriptor + authored ``Panel.description``), so the prose can
-    ``{{< include >}}`` a caption that regenerates from the spec without recomputing the figure.
+    The render-free sibling of ``figure render``: it emits only the composed captions (figure lead + per-panel structural descriptor + authored ``Panel.description``), so the prose can ``{{< include >}}`` a caption that regenerates from the spec without recomputing the figure.
     """
     from tvbo.adapters import bsplot
 
@@ -210,9 +200,7 @@ def compare(
 ) -> None:
     """Compare each rendered figure against its published counterpart, by panel geometry.
 
-    Replication asks a figure to land on the original's layout — same aspect, same panel grid, panels the same relative size in the same places. This decomposes both images
-    into panel boxes and reports the offsets, so "not well aligned" becomes a number per panel rather than an impression. Writes one overlay PNG per figure plus a markdown
-    summary; the summary is what a report reads.
+    Replication asks a figure to land on the original's layout — same aspect, same panel grid, panels the same relative size in the same places. This decomposes both images into panel boxes and reports the offsets, so "not well aligned" becomes a number per panel rather than an impression. Writes one overlay PNG per figure plus a markdown summary; the summary is what a report reads.
     """
     from tvbo.utils import figure_compare as fc
 

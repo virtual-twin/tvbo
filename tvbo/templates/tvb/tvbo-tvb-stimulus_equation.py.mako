@@ -6,7 +6,6 @@ else:
 
 from tvbo.classes.equation import (
     conditionals2piecewise,
-    piecewise2numpy,
     _clash1,
     convert_ifelse_to_np_where,
 )

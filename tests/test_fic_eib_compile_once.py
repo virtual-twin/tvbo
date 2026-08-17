@@ -101,9 +101,7 @@ def test_update_every_gate_emitted_and_traced_when_declared():
 def test_nan_guard_reads_final_state_not_rec_buffer():
     """The guard must check the RETURNED estimate (state.*), not the subsampled __rec buffer.
 
-    __rec is recorded only at ``(i+1)%save_every==0 or i==0``; when save_every does not divide
-    n_iterations the final iterate is unrecorded, so a divergence in the last steps would leave
-    __rec finite while the written estimate (state) is NaN.
+    __rec is recorded only at ``(i+1)%save_every==0 or i==0``; when save_every does not divide n_iterations the final iterate is unrecorded, so a divergence in the last steps would leave __rec finite while the written estimate (state) is NaN.
     """
     code = _multistage_experiment().render_code("tvboptim")
     blocks, start = [], 0
@@ -165,9 +163,7 @@ def test_stage_reset_absent_by_default():
 def test_stage_reset_carries_only_tuned_targets():
     """reset_state restarts each stage from the entry state, carrying every update-rule target.
 
-    The dynamical state, window buffer and monitors must come from the algorithm's entry
-    state, the noise key must restart from the run seed (so each stage samples the same
-    realisation), and each tuned parameter must be grafted from the previous endpoint.
+    The dynamical state, window buffer and monitors must come from the algorithm's entry state, the noise key must restart from the run seed (so each stage samples the same realisation), and each tuned parameter must be grafted from the previous endpoint.
     """
     exp = _multistage_experiment()
     for stage in exp.algorithms["fic_eib"].stages:

@@ -1,6 +1,13 @@
 ## Unreleased
 
 ### Added
+- **`tvbo.__all__` and `__dir__`.** `dir(tvbo)` now lists the API rather than the
+  stdlib modules (`os`, `shutil`, `tempfile`, `warnings`, `logging`) that `import
+  tvbo` bound as a side effect of its own setup. `__all__` is what SemVer covers;
+  see the new *What is public* section of `CONTRIBUTING.md`.
+- **`tvbo/py.typed`.** The package is annotated throughout, but without PEP 561's
+  marker file every downstream `mypy` ignored those annotations.
+- `SECURITY.md`, issue templates and a PR template.
 - Schema-declared `aliases:` now resolve at load time, so `dt` (for
   `Integrator.step_size`), `number_of_regions`, `righthandside`/`lefthandside` and
   `components` are accepted where the schema says they are. Resolution happens per
@@ -23,10 +30,34 @@
   kit still runs in the container its profile declares, instead of dropping the
   profile — and its bind mounts, retries and keep-going — entirely.
 
-### Deprecated
-- `noise: {intensity: ...}` warns when read. It is interpreted as a standard
-  deviation; use `parameters: {sigma: ...}`, or `parameters: {nsig: ...}` if the
-  value was a dispersion (the two differ by sqrt(2D)/D).
+### Removed
+**1.0 clears the deprecation backlog rather than carrying it.** Every name that
+warned in 0.5.x is gone; each had a replacement that was already the documented
+path, and the callers in `tvbo/`, `tests/` and `docs/` are migrated to it.
+
+- `noise: {intensity: ...}` — the schema slot is removed, so a recipe that still
+  declares it is rejected instead of silently read as a standard deviation. Use
+  `parameters: {sigma: ...}`, or `parameters: {nsig: ...}` if the value was a
+  dispersion (the two differ by sqrt(2D)/D). One reader, `utils.noise_sigma`,
+  now knows exactly two spellings.
+- `random=True` / `random_initial_conditions=True` on `Dynamics.get_initial_values`,
+  `SimulationExperiment.run` and `collect_initial_conditions` — declaring a
+  `distribution` on the state variable is the only way to ask for sampling. The
+  flag sampled every variable's raw domain regardless of what the model declared.
+  `plot.dynamics` spread its multi-trial starts through that flag; it now does so
+  itself, which is where a plotting concern belongs.
+- `Dynamics.to_lems()`, `SimulationExperiment.to_lems()` and
+  `save_model_specification()` — use `NeuroMLAdapter(...)`, which emits validated
+  XML rather than a `lems.Model` and covers constructs those never did.
+- `Network.compute_delays()` → `calculate_delays()`;
+  `Dynamics.add_coupling_term()` → `add_coupling_input()`; `Connectome` →
+  `Network` (it was a subclass that added a warning and nothing else).
+- `equation.piecewise2numpy()` / `piecewise2julia()` — use
+  `codegen.code.render_expression(expr, format=...)`. `print_Piecewise` is the one
+  handler every printer shares, emitting through each printer's `_where3`
+  primitive (`<mod>.where` for numpy/JAX, `ifelse` for Julia). Both predated it,
+  duplicated one backend each, and raised on any Piecewise with a symbolic
+  condition — so neither could have had a working caller.
 
 ### Fixed
 - Heterogeneous tvboptim runs: `Node.id` is resolved as an identifier rather than

@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-"""
-Generate LinkML datamodel documentation for Quarto integration.
+"""Generate LinkML datamodel documentation for Quarto integration.
 
-This script generates markdown documentation from the tvbo_datamodel.yaml schema
-and places it in the docs/datamodel directory for Quarto rendering.
+This script generates markdown documentation from the tvbo_datamodel.yaml schema and places it in the docs/datamodel directory for Quarto rendering.
 """
 
 import re
@@ -33,8 +31,7 @@ def convert_md_to_qmd(output_dir: Path):
     # Second pass: fix all internal .md links to .qmd and mermaid blocks
     for qmd_file in output_dir.rglob("*.qmd"):
         original = qmd_file.read_text()
-        # LinkML 1.11's docgen emits MkDocs-style `search: {boost: N}` frontmatter.
-        # Quarto rejects this (its `search:` key must be a boolean), so drop it.
+        # LinkML docgen emits MkDocs-style `search: {boost: N}`; Quarto's `search:` must be a boolean, so drop it.
         content = _MKDOCS_SEARCH_FRONTMATTER.sub("", original)
         # Replace markdown links: [text](path.md) -> [text](path.qmd)
         updated_content = content.replace(".md)", ".qmd)")
@@ -78,11 +75,7 @@ def main():
     # Ensure output directory exists
     output_dir.mkdir(exist_ok=True)
 
-    # Freshness check: skip only if the schema and *this generator script*
-    # are both unchanged since the last successful run. Including the script
-    # mtime ensures edits to ``convert_md_to_qmd`` (e.g. the LinkML-1.11
-    # MkDocs-frontmatter stripper) re-process existing pages even when the
-    # schema itself is untouched.
+    # Freshness check: skip only if the schema and *this generator script* are both unchanged since the last successful run. Including the script mtime ensures edits to ``convert_md_to_qmd`` (e.g. the LinkML-1.11 MkDocs-frontmatter stripper) re-process existing pages even when the schema itself is untouched.
     script_path = Path(__file__).resolve()
     input_mtime = max(schema_path.stat().st_mtime, script_path.stat().st_mtime)
     if stamp_file.exists() and any(output_dir.rglob("*.qmd")):
@@ -95,9 +88,7 @@ def main():
     print(f"  Schema: {schema_path}")
     print(f"  Output: {output_dir}")
 
-    # Generate documentation using LinkML gen-doc
-    # Resolve gen-doc from the same Python interpreter's bin directory
-    # to ensure it works even when Quarto doesn't inherit shell PATH.
+    # Generate documentation using LinkML gen-doc Resolve gen-doc from the same Python interpreter's bin directory to ensure it works even when Quarto doesn't inherit shell PATH.
     import shutil
 
     gen_doc = shutil.which("gen-doc")

@@ -1,8 +1,6 @@
 """bsplot figure codegen adapter.
 
-Resolves a declarative ``Figure`` (see ``schema/figure.yaml``) into a codegen context and renders the ``tvbo/templates/bsplot/`` Mako tree into a self-contained,
-user-editable ``plot.py``. This is the figure sibling of the simulation adapters (``julia_model``, ``pyrates``, …): resolution lives here in Python, code *structure*
-lives in the Mako template.
+Resolves a declarative ``Figure`` (see ``schema/figure.yaml``) into a codegen context and renders the ``tvbo/templates/bsplot/`` Mako tree into a self-contained, user-editable ``plot.py``. This is the figure sibling of the simulation adapters (``julia_model``, ``pyrates``, …): resolution lives here in Python, code *structure* lives in the Mako template.
 
 ``render_code(figure, base_dir)`` returns the script; ``render(...)`` emits and runs it — mirroring ``experiment.render_code`` / ``.run``.
 """
@@ -17,7 +15,7 @@ from tvbo.templates import lookup
 from tvbo.utils import as_list
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _open_ds(path):
     """Open a result container once per distinct path (shared by the adapter's custom panels)."""
     import xarray as xr
@@ -28,8 +26,7 @@ def _open_ds(path):
 _TEMPLATE = "bsplot/tvbo-bsplot-figure.py.mako"
 
 
-# --------------------------------------------------------------------------- registries
-# Extension points for the layer `transform` and the `custom` panel escape hatch. Core ships no built-ins: a study ships figure-specific transforms/panels in its code_source module and decorates them with these; the emitted plot.py imports that module so the registration fires before lookup (see Figure.code_modules).
+# --------------------------------------------------------------------------- registries Extension points for the layer `transform` and the `custom` panel escape hatch. Core ships no built-ins: a study ships figure-specific transforms/panels in its code_source module and decorates them with these; the emitted plot.py imports that module so the registration fires before lookup (see Figure.code_modules).
 
 TRANSFORMS: dict = {}  # name -> fn(da) -> da       presentation-only layer reductions
 CUSTOM_PANELS: dict = {}  # name -> fn(fig, ax, ctx)   bespoke `custom` panel drawers
@@ -55,7 +52,7 @@ def register_panel(name):
     return deco
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _read_mesh_cached(path: str, kind: str, mesh_format):
     """One parse per distinct mesh, so a grid of surfaces reads its file once."""
     import numpy as _np
@@ -90,9 +87,7 @@ def _read_mesh_cached(path: str, kind: str, mesh_format):
 
 
 def _read_mesh(path: str, kind: str, mesh_format):
-    """Per-caller mesh: the parse is cached (once per file), but each caller gets its OWN arrays. The cached tuple must never be handed out directly — a grid of surfaces would
-    then share one geometry, and any in-place consumer (recenter/normalize) would corrupt it for every later cell. Copying outside the cache (not freezing) also avoids aliasing a
-    network's own live ``_mesh_vertices`` array."""
+    """Per-caller mesh: the parse is cached (once per file), but each caller gets its OWN arrays. The cached tuple must never be handed out directly — a grid of surfaces would then share one geometry, and any in-place consumer (recenter/normalize) would corrupt it for every later cell. Copying outside the cache (not freezing) also avoids aliasing a network's own live ``_mesh_vertices`` array."""
     vertices, faces = _read_mesh_cached(path, kind, mesh_format)
     return vertices.copy(), faces.copy()
 
@@ -100,9 +95,7 @@ def _read_mesh(path: str, kind: str, mesh_format):
 def _surface_mesh(ctx):
     """``(vertices, faces)`` for a ``surface`` panel, from whichever source it declares.
 
-    Three tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), a surface mesh
-    FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that
-    ``Mesh.mesh_file`` has always declared — or an ``.npz`` holding ``vertices``/``faces`` (what an analysis emits when the mesh is derived rather than measured).
+    Three tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), a surface mesh FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that ``Mesh.mesh_file`` has always declared — or an ``.npz`` holding ``vertices``/``faces`` (what an analysis emits when the mesh is derived rather than measured).
     """
     opts, base = ctx.get("opts", {}), ctx.get("base_dir")
     net_path, mesh_path = opts.get("network"), opts.get("mesh")
@@ -120,9 +113,7 @@ def _surface_mesh(ctx):
 def _vertex_values(da, n_vertices):
     """A layer's values on the FULL mesh, placed BY LABEL from a vertex-subset array.
 
-    An analysis that runs on a subset of the mesh — the cortex vertices, with the medial wall cut away — returns fewer values than the mesh has vertices and carries the kept
-    indices as a ``vertex`` coordinate. Scattering by that coordinate puts each value on its own vertex and leaves the rest NaN, which renders grey; placing them positionally
-    would silently rotate the map into a plausible-looking wrong one.
+    An analysis that runs on a subset of the mesh — the cortex vertices, with the medial wall cut away — returns fewer values than the mesh has vertices and carries the kept indices as a ``vertex`` coordinate. Scattering by that coordinate puts each value on its own vertex and leaves the rest NaN, which renders grey; placing them positionally would silently rotate the map into a plausible-looking wrong one.
     """
     import numpy as _np
 
@@ -160,8 +151,7 @@ def _vertex_values(da, n_vertices):
 def surface_panel(fig, ax, ctx):
     """Per-vertex values painted on a mesh — the built-in ``kind: surface``.
 
-    A brain map is the most-drawn panel in a network-neuroscience paper and needs no study code: the mesh is geometry the network already carries, the values are a layer like any
-    other, and everything else is presentation. Registered here rather than shipped per study, so ``kind: surface`` works with no ``code_modules``.
+    A brain map is the most-drawn panel in a network-neuroscience paper and needs no study code: the mesh is geometry the network already carries, the values are a layer like any other, and everything else is presentation. Registered here rather than shipped per study, so ``kind: surface`` works with no ``code_modules``.
 
     opts:
         network / mesh: where the geometry comes from (see :func:`_surface_mesh`).
@@ -254,8 +244,7 @@ def surface_panel(fig, ax, ctx):
 def colorbar_panel(fig, ax, ctx):
     """A colour scale occupying its own mosaic slot — the built-in ``kind: colorbar``.
 
-    Panels that share one scale cannot each own the bar: attaching it to any one of them steals that panel's width and implies the scale is local to it. The paper puts it in
-    an empty cell instead, and so does this.
+    Panels that share one scale cannot each own the bar: attaching it to any one of them steals that panel's width and implies the scale is local to it. The paper puts it in an empty cell instead, and so does this.
 
     opts:
         cmap / vmin / vmax: the scale. With a layer bound and no explicit limits, the
@@ -303,11 +292,9 @@ def colorbar_panel(fig, ax, ctx):
 def legend_panel(fig, ax, ctx):
     """A free-standing key occupying its own mosaic slot — the built-in ``kind: legend``.
 
-    A convention shared by several panels belongs to none of them; drawing it inside one both shrinks that panel and implies the convention is local to it. Papers put it in the
-    grid's spare cell, which is what this kind is.
+    A convention shared by several panels belongs to none of them; drawing it inside one both shrinks that panel and implies the convention is local to it. Papers put it in the grid's spare cell, which is what this kind is.
 
-    The entries are parallel declared lists rather than one encoded string per entry, so each is a typed value the spec can validate: ``labels`` names them and ``colors`` /
-    ``linestyles`` / ``markers`` style them, each falling back to a sensible default when shorter than ``labels``.
+    The entries are parallel declared lists rather than one encoded string per entry, so each is a typed value the spec can validate: ``labels`` names them and ``colors`` / ``linestyles`` / ``markers`` style them, each falling back to a sensible default when shorter than ``labels``.
 
     opts: labels, colors, linestyles, markers, title, loc, handlelength.
     """
@@ -374,8 +361,7 @@ def heatmap_orientation(da, C, x, y, nx, ny):
 def registered(registry, name, kind):
     """Look a spec-declared name up in a registry, or raise an actionable error (public API).
 
-    Shared by the adapter and the emitted plot.py, which imports it, so both report a miss the same way. The registries are empty until a figure's code_modules are imported and
-    their register_* decorators run, so a miss almost always means code_modules is missing the module, or importing it failed.
+    Shared by the adapter and the emitted plot.py, which imports it, so both report a miss the same way. The registries are empty until a figure's code_modules are imported and their register_* decorators run, so a miss almost always means code_modules is missing the module, or importing it failed.
     """
     try:
         return registry[name]
@@ -390,11 +376,9 @@ def registered(registry, name, kind):
 def resolve_path(p, base_dir):
     """Resolve a spec-relative file reference against *base_dir* (the study dir) — public API.
 
-    A file a figure points at (an ``image`` panel's path, a study .mplstyle) is written relative to the spec that declares it, so the spec stays portable; the emitted plot.py
-    runs from an arbitrary cwd and needs an absolute one. An absolute path is passed through untouched. Returns *p* unchanged when it is empty.
+    A file a figure points at (an ``image`` panel's path, a study .mplstyle) is written relative to the spec that declares it, so the spec stays portable; the emitted plot.py runs from an arbitrary cwd and needs an absolute one. An absolute path is passed through untouched. Returns *p* unchanged when it is empty.
 
-    A ``custom`` panel resolving its own study-relative input (``ctx["opts"]`` naming a tvbo Network yaml, say) should call this with ``ctx["base_dir"]`` so it follows the
-    same rule as the rest of the spec rather than re-implementing the join.
+    A ``custom`` panel resolving its own study-relative input (``ctx["opts"]`` naming a tvbo Network yaml, say) should call this with ``ctx["base_dir"]`` so it follows the same rule as the rest of the spec rather than re-implementing the join.
     """
     if not p:
         return p
@@ -405,9 +389,7 @@ def resolve_path(p, base_dir):
 def _style_entries(figure, base_dir) -> list:
     """Classify each figure style as a bsplot named style or an .mplstyle path.
 
-    bsplot.style.use only knows its registered names; a study's own .mplstyle is a filesystem path, applied via matplotlib's plt.style.use instead. This lets a
-    study carry its own design rules (Figure.style: ['<path>/study.mplstyle']). Only the path form is resolved against base_dir — a named style is not a filesystem
-    reference.
+    bsplot.style.use only knows its registered names; a study's own .mplstyle is a filesystem path, applied via matplotlib's plt.style.use instead. This lets a study carry its own design rules (Figure.style: ['<path>/study.mplstyle']). Only the path form is resolved against base_dir — a named style is not a filesystem reference.
     """
     styles = list(getattr(figure, "style", None) or []) or ["tvbo"]
     out = []
@@ -442,8 +424,7 @@ def _style_kwargs(style) -> dict:
 def _heatmap_kwargs(style) -> dict:
     """Resolve a Style into pcolormesh kwargs: the colormap, opacity and raw opts.
 
-    A field's colour scale is part of what it shows (a diverging map centred on zero for a correlation matrix), so ``Style.colormap`` and explicit ``vmin``/``vmax`` opts route
-    here. ``Style.color`` — a line colour — is not a mesh property and is dropped.
+    A field's colour scale is part of what it shows (a diverging map centred on zero for a correlation matrix), so ``Style.colormap`` and explicit ``vmin``/``vmax`` opts route here. ``Style.color`` — a line colour — is not a mesh property and is dropped.
     """
     if style is None:
         return {}
@@ -512,9 +493,7 @@ def _panel_opts(panel) -> dict:
 def _axopts(panel) -> dict:
     """Axis-level directives for a grammar panel (labels, limits, ticks, legend).
 
-    Draws from ``Panel.opts`` (the recognised ``_AXIS_OPTS`` keys) plus the boolean
-    ``Panel.legend`` slot. This is the minimal per-panel label/limit override: the paper's
-    LaTeX axis labels and shared ranges live here rather than defaulting to the bare variable name.
+    Draws from ``Panel.opts`` (the recognised ``_AXIS_OPTS`` keys) plus the boolean ``Panel.legend`` slot. This is the minimal per-panel label/limit override: the paper's LaTeX axis labels and shared ranges live here rather than defaulting to the bare variable name.
     """
     o = {k: v for k, v in _panel_opts(panel).items() if k in _AXIS_OPTS}
     if getattr(panel, "legend", None):
@@ -530,12 +509,10 @@ _ANNOT_LOC = {
     "center": (0.5, 0.5),
 }
 
-# How much larger than the body font a panel letter is drawn when the figure does not say.
-# Journals set panel letters well above the body size; matching the body size makes the letter read as another tick label.
+# How much larger than the body font a panel letter is drawn when the figure does not say. Journals set panel letters well above the body size; matching the body size makes the letter read as another tick label.
 _PANEL_NUMBER_SCALE = 1.6
 
-# Panel-number placement per corner -> kwargs for bsplot.panels.add_panel_number.
-# In its coord="axes" mode the label lands at (x_shift, 1.0 + y_shift), so ha/va anchor the text and the shifts hug it just inside the corresponding spine.
+# Panel-number placement per corner -> kwargs for bsplot.panels.add_panel_number. In its coord="axes" mode the label lands at (x_shift, 1.0 + y_shift), so ha/va anchor the text and the shifts hug it just inside the corresponding spine.
 _PANEL_NUM_LOC = {
     "upper left": {"x_shift": 0.02, "y_shift": -0.02, "ha": "left", "va": "top"},
     "upper right": {"x_shift": 0.98, "y_shift": -0.02, "ha": "right", "va": "top"},
@@ -547,11 +524,9 @@ _PANEL_NUM_LOC = {
 def _group_axis(opts, axis: str) -> dict | None:
     """A categorical axis whose entries fall into named groups, from ``<axis>groups`` opts.
 
-    A paper labels 47 task contrasts as seven families, not as 47 tick labels: one name per family, centred on its block, with a rule between blocks. The same shape recurs wherever
-    a categorical axis has structure — ROIs by system, nodes by module, subjects by cohort — so it is an axis feature rather than something a bespoke panel redraws each time.
+    A paper labels 47 task contrasts as seven families, not as 47 tick labels: one name per family, centred on its block, with a rule between blocks. The same shape recurs wherever a categorical axis has structure — ROIs by system, nodes by module, subjects by cohort — so it is an axis feature rather than something a bespoke panel redraws each time.
 
-    ``bounds`` are the cumulative COUNTS at which each group ends, which is what makes the group sizes readable off the declaration and the last bound the axis length. Entry *i*
-    of a categorical axis is drawn centred on coordinate *i*, so the boundary after count
+    ``bounds`` are the cumulative COUNTS at which each group ends, which is what makes the group sizes readable off the declaration and the last bound the axis length. Entry *i* of a categorical axis is drawn centred on coordinate *i*, so the boundary after count
     *n* lies half a unit below it — the rules and the label centres carry that shift, and a
     bound is therefore declared as "how many", never as a plotted coordinate.
     """
@@ -581,7 +556,11 @@ def _group_axis(opts, axis: str) -> dict | None:
         "axis": axis,
         "rules": [b + edge for b in bounds[:-1]],  # interior only: the last is the axis end
         "rule_kwargs": {"color": str(spec.get("color", "k")), "linewidth": float(spec.get("linewidth", 0.6))},
-        "labels": [{"text": t, "at": (s + e) / 2.0 + edge} for (s, e), t in zip(zip(starts, bounds), labels)],
+        "labels": [
+            # Not strict on `labels`: it is optional, and the check above already rejects a partial list.
+            {"text": t, "at": (s + e) / 2.0 + edge}
+            for (s, e), t in zip(zip(starts, bounds, strict=True), labels, strict=False)
+        ],
         "pad": float(spec.get("pad", 0.04)),
         "kwargs": {
             "ha": "right" if axis == "y" else "center",
@@ -594,8 +573,7 @@ def _group_axis(opts, axis: str) -> dict | None:
 def _annotations(panel, base_dir=Path(".")) -> list:
     """Resolve ``Panel.annotations`` into ``[{text, x, y, layer}]`` in axes-fraction coords.
 
-    An annotation with a ``used:`` binding carries its resolved layer, so the emitted script reads the number out of the container and formats ``text`` with it — a panel's
-    printed statistic is computed from the run, never typed into the spec.
+    An annotation with a ``used:`` binding carries its resolved layer, so the emitted script reads the number out of the container and formats ``text`` with it — a panel's printed statistic is computed from the run, never typed into the spec.
     """
     out = []
     for a in getattr(panel, "annotations", None) or []:
@@ -632,16 +610,11 @@ class _UsedOnly:
         self.used = used
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _container_path(iri, base_dir: Path) -> str:
     """Resolve an experiment IRI/key to its result container (skips ``*_network.h5``).
 
-    The PROV ``used`` edge points at a result; its container lives under either
-    ``<base_dir>/output/nc/<exp>/`` (a per-experiment ``tvbo run``), flat BIDS-style files directly inside ``<base_dir>/output/nc/`` (``<exp>[_desc-...]_result.h5`` —
-    the layout a whole-study ``tvbo run`` writes into ``nc/``), the flat
-    ``<base_dir>/output/<exp>[_desc-...]_result.h5`` at the output root, or
-    ``<base_dir>/output/results/<name>/result.h5`` (a derived-figure container a replication study writes with ``ExperimentResult.save``, the ``results_io``
-    convention). All are tried so a figure layer can bind any of them. Returns ``""`` when unresolved.
+    The PROV ``used`` edge points at a result; its container lives under either ``<base_dir>/output/nc/<exp>/`` (a per-experiment ``tvbo run``), flat BIDS-style files directly inside ``<base_dir>/output/nc/`` (``<exp>[_desc-...]_result.h5`` — the layout a whole-study ``tvbo run`` writes into ``nc/``), the flat ``<base_dir>/output/<exp>[_desc-...]_result.h5`` at the output root, or ``<base_dir>/output/results/<name>/result.h5`` (a derived-figure container a replication study writes with ``ExperimentResult.save``, the ``results_io`` convention). All are tried so a figure layer can bind any of them. Returns ``""`` when unresolved.
     """
     if not iri:
         return ""
@@ -674,16 +647,14 @@ def _container_path(iri, base_dir: Path) -> str:
     return ""
 
 
-# --------------------------------------------------------------------------- custom panels
-# The ``custom`` escape hatch: a registered ``fn(fig, ax, ctx)`` draws a bespoke sub-panel the grammar can't (yet) express. ``ctx`` carries the resolved layers (container paths, transforms, selectors already resolved by ``build_context``) plus the panel's ``opts``, so a callable opens the container(s) itself and draws exactly what the paper needs. A study registers its own the same way it registers a transform.
+# --------------------------------------------------------------------------- custom panels The ``custom`` escape hatch: a registered ``fn(fig, ax, ctx)`` draws a bespoke sub-panel the grammar can't (yet) express. ``ctx`` carries the resolved layers (container paths, transforms, selectors already resolved by ``build_context``) plus the panel's ``opts``, so a callable opens the container(s) itself and draws exactly what the paper needs. A study registers its own the same way it registers a transform.
 
 
 def load_layer(layer: dict):
     """Open a custom panel's resolved layer into a DataArray (public API).
 
     A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``);
-    it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray
-    ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. The shared container cache means opening the same file across panels is free.
+    it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. The shared container cache means opening the same file across panels is free.
     """
     name = layer.get("transform")
     fn = registered(TRANSFORMS, name, "transform") if name else None  # spec error before any IO
@@ -727,10 +698,7 @@ def _sel_dict(used):
 def _used_ref(used):
     """The container key for a figure layer's ``used`` DataRef.
 
-    An explicit ``iri`` pointer wins; otherwise an in-study ``experiment`` id resolves to its
-    ``exp-<id>`` key and an in-study ``analysis`` to its own name (whose container
-    ``_container_path`` finds under ``output/results/<name>/``). The short forms are preferred for same-study bindings — they need no hardcoded study key in an IRI string and (via the
-    ``used`` edge) register the dependency, so the source runs first.
+    An explicit ``iri`` pointer wins; otherwise an in-study ``experiment`` id resolves to its ``exp-<id>`` key and an in-study ``analysis`` to its own name (whose container ``_container_path`` finds under ``output/results/<name>/``). The short forms are preferred for same-study bindings — they need no hardcoded study key in an IRI string and (via the ``used`` edge) register the dependency, so the source runs first.
     """
     iri = getattr(used, "iri", None)
     if iri:
@@ -786,8 +754,7 @@ _BUILTIN_PANELS = {"surface", "colorbar", "legend"}
 class _GridCell:
     """One cell of a ``grid`` panel: the shared ``cell:`` template with this cell's overrides.
 
-    Shaped like a Panel so it resolves through :func:`_resolve_drawable` — a grid cell must draw exactly as the same kind draws in a mosaic slot, and a second resolution path is
-    how the two would drift apart.
+    Shaped like a Panel so it resolves through :func:`_resolve_drawable` — a grid cell must draw exactly as the same kind draws in a mosaic slot, and a second resolution path is how the two would drift apart.
     """
 
     def __init__(self, template, cell, layers, opts):
@@ -805,13 +772,9 @@ class _GridCell:
 def _grid_geometry(opts, n_cells):
     """Cell boxes and label anchors of a ``grid``, in the host panel's axes fractions.
 
-    Rows and columns are labelled ONCE, at the left and top, which is the whole reason a paper's composite panel is one lettered panel rather than n of them: declaring each
-    cell as its own mosaic entry repeats the row name in every cell and renumbers panels the paper letters once. The label strips are reserved out of the drawable area (``left``
-    and ``top``), so the cells shrink to make room instead of being drawn over.
+    Rows and columns are labelled ONCE, at the left and top, which is the whole reason a paper's composite panel is one lettered panel rather than n of them: declaring each cell as its own mosaic entry repeats the row name in every cell and renumbers panels the paper letters once. The label strips are reserved out of the drawable area (``left`` and ``top``), so the cells shrink to make room instead of being drawn over.
 
-    A column header sits just above the cells rather than at the panel's own top: parked at a fixed fraction it would leave a dead band whenever ``top`` is opened up for something
-    else, and stop reading as belonging to its column. ``between`` writes text in the gap
-    BEFORE each cell, which is what turns a row of maps into a paper's decomposition equation ``y = a1 x psi_1 + a2 x psi_2 + ...``.
+    A column header sits just above the cells rather than at the panel's own top: parked at a fixed fraction it would leave a dead band whenever ``top`` is opened up for something else, and stop reading as belonging to its column. ``between`` writes text in the gap BEFORE each cell, which is what turns a row of maps into a paper's decomposition equation ``y = a1 x psi_1 + a2 x psi_2 + ...``.
 
     An unset ``nrows`` holds every cell, so declaring only ``ncols`` wraps rather than drops. An explicit ``nrows`` still caps the grid — cropping the extras deliberately.
     ``bottom`` is ``top``'s counterpart: cells that carry tick labels or a shared axis label need that strip reserved, or the labels are drawn outside the panel's own box.
@@ -869,8 +832,7 @@ def _grid_cells(panel, key, base_dir, opts) -> tuple:
 
     Cells come either from ``cells:`` (one entry each, with its own layers) or from the panel's ``layers:``, one cell per layer drawn by the shared ``cell:`` template.
 
-    An opt named ``row.<name>`` or ``col.<name>`` supplies ``<name>`` one value per row or column, which is how an option that belongs to the ROW — the same frames shown
-    laterally and then medially — is declared once instead of repeated in every cell of it.
+    An opt named ``row.<name>`` or ``col.<name>`` supplies ``<name>`` one value per row or column, which is how an option that belongs to the ROW — the same frames shown laterally and then medially — is declared once instead of repeated in every cell of it.
     """
     template = getattr(panel, "cell", None)
     template_opts = _panel_opts(template) if template is not None else {}
@@ -906,7 +868,7 @@ def _grid_cells(panel, key, base_dir, opts) -> tuple:
     boxes, labels = _grid_geometry(opts, len(cells))
     resolved = [
         dict(_resolve_drawable(cell, f"{key}_cell{i}", base_dir), bounds=box)
-        for i, (cell, box) in enumerate(zip(cells, boxes))
+        for i, (cell, box) in enumerate(zip(cells, boxes, strict=False))  # nrows crops: fewer boxes than cells is legal
     ]
     return resolved, labels
 
@@ -926,8 +888,7 @@ def _inset_bounds(inset, key, i) -> list:
 def _resolve_drawable(panel, key, base_dir) -> dict:
     """Resolve one drawable — a mosaic Panel or an Inset — into its template entry.
 
-    An inset is a panel in everything that draws, so both go through this one function and the template emits both from one partial. Splitting them would let an inset's heatmap,
-    triangle gap or colourbar quietly diverge from the identical panel beside it.
+    An inset is a panel in everything that draws, so both go through this one function and the template emits both from one partial. Splitting them would let an inset's heatmap, triangle gap or colourbar quietly diverge from the identical panel beside it.
     """
     kind = str(panel.kind)  # datamodel enum -> plain string (flavor-agnostic)
     opts = _panel_opts(panel)
@@ -1120,11 +1081,9 @@ def _panel_layout_order(figure) -> list[str]:
 
 
 def _used_source(used) -> tuple:
-    """``(source, output)`` for a layer's ``used:`` DataRef — ``("analysis y", "fc")`` — or
-    ``(None, None)`` for a local/unbound layer.
+    """``(source, output)`` for a layer's ``used:`` DataRef — ``("analysis y", "fc")`` — or ``(None, None)`` for a local/unbound layer.
 
-    Split rather than pre-joined so a panel drawing several outputs of ONE analysis (a density with its mean and a reference line on it) names that analysis once. An output
-    that merely repeats its analysis's own name is dropped: it says one thing twice.
+    Split rather than pre-joined so a panel drawing several outputs of ONE analysis (a density with its mean and a reference line on it) names that analysis once. An output that merely repeats its analysis's own name is dropped: it says one thing twice.
     """
     if used is None:
         return None, None
@@ -1140,12 +1099,9 @@ def _used_source(used) -> tuple:
 def _panel_descriptor(panel) -> str:
     """The auto-derived structural half of a panel's caption clause, read from its spec.
 
-    From each layer's ``mark`` + ``encoding`` (which quantity is on which axis) and its ``used:``
-    DataRef (which run/analysis it came from), so the description follows the figure: move a panel or rebind a layer and the sentence changes with it. Units live in the runtime container and
-    are folded in by the renderer, not typed here.
+    From each layer's ``mark`` + ``encoding`` (which quantity is on which axis) and its ``used:`` DataRef (which run/analysis it came from), so the description follows the figure: move a panel or rebind a layer and the sentence changes with it. Units live in the runtime container and are folded in by the renderer, not typed here.
 
-    Clauses are deduplicated. A grid draws one binding per CELL — the same frames laterally and then medially, one analysis per row — so listing them undeduplicated repeated a single source
-    once per cell and buried the authored caption behind eight identical phrases.
+    Clauses are deduplicated. A grid draws one binding per CELL — the same frames laterally and then medially, one analysis per row — so listing them undeduplicated repeated a single source once per cell and buried the authored caption behind eight identical phrases.
     """
     kind = str(getattr(panel, "kind", "") or "")
     if kind == "image":
@@ -1194,9 +1150,7 @@ def _sentence(text: str) -> str:
 def compose_caption(figure) -> str:
     """Compose a figure's caption from its spec — the authored lead plus one clause per panel.
 
-    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`)
-    so caption and figure cannot disagree. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and
-    ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
+    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
     """
     spec_by_key = {k: p for k, p in _items(figure.panels)}
     lead: list[str] = []
@@ -1223,8 +1177,7 @@ def compose_caption(figure) -> str:
 def write_caption(figure, out_dir, *, name: str | None = None) -> Path:
     """Write a figure's composed caption to ``<out_dir>/<name>.caption.qmd`` and return the path.
 
-    A Quarto partial the manuscript pulls in with ``{{< include <name>.caption.qmd >}}``, so the caption is generated from the figure spec and regenerates whenever a panel moves or a layer
-    is rebound — never hand-maintained beside the figure it describes.
+    A Quarto partial the manuscript pulls in with ``{{< include <name>.caption.qmd >}}``, so the caption is generated from the figure spec and regenerates whenever a panel moves or a layer is rebound — never hand-maintained beside the figure it describes.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

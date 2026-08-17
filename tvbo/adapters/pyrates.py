@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """PyRates backend adapter for SimulationExperiment.
 
 This module handles all PyRates-specific logic for running simulations, converting between TVBO and PyRates data formats, and computing outputs.
@@ -17,15 +16,16 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
-from tvbo.utils import is_array_valued, as_list
 
 # Single source of truth (forward map + derived reverse) lives in tvbo/codegen/pyrates.py; re-imported here and used by the model template so the rename mapping is defined exactly once. See PYRATES_REPL there.
 from tvbo.codegen.pyrates import PYRATES_REPL  # noqa: F401
+from tvbo.utils import as_list, bind_function_arguments, is_array_valued
 
 if TYPE_CHECKING:
     import pandas as pd
-    from tvbo.data.types import ExperimentResult, SimulationResult
+
     from tvbo.classes.experiment import SimulationExperiment
+    from tvbo.data.types import ExperimentResult, SimulationResult
 
 
 # PyRates supported solvers and TVBO-to-PyRates mapping
@@ -44,9 +44,7 @@ TVBO_TO_PYRATES_SOLVER = {
 def _patch_pyrates_networkx_backend():
     """Fix networkx 3.4+ backend dispatch conflict with PyRates.
 
-    PyRates' ``ComputeGraph`` extends ``networkx.MultiDiGraph``.  In networkx ≥ 3.4 the ``MultiDiGraph.__new__`` is decorated with
-    ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument and tries to dispatch to a networkx graph backend.  PyRates passes
-    ``backend='default'`` (meaning *PyRates* compute backend, not a networkx backend) through ``**kwargs`` to ``ComputeGraph(**kwargs)``.
+    PyRates' ``ComputeGraph`` extends ``networkx.MultiDiGraph``.  In networkx ≥ 3.4 the ``MultiDiGraph.__new__`` is decorated with ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument and tries to dispatch to a networkx graph backend.  PyRates passes ``backend='default'`` (meaning *PyRates* compute backend, not a networkx backend) through ``**kwargs`` to ``ComputeGraph(**kwargs)``.
     The decorator sees it and raises ``ImportError: 'default' backend is not installed``.
 
     Fix: replace ``ComputeGraph.__new__`` (and ``ComputeGraphBackProp``) with plain ``object.__new__`` so the decorator is removed.
@@ -76,9 +74,7 @@ def _patch_pyrates_networkx_backend():
 def _patch_pyrates_replace_in_expr():
     """Monkey-patch PyRates' replace_in_expr to use xreplace.
 
-    PyRates uses ``expr.subs(replacements, simultaneous=True)`` which corrupts compound sub-expressions: when a ``Mul`` has two or more
-    ``Add`` children sharing a symbol (e.g. ``a*v*(1-v)*(v-b)``), ``subs`` replaces the symbol *inside* the ``Add`` first, breaking the match for
-    the ``Add`` replacement key. ``xreplace`` matches top-down and avoids this bug.
+    PyRates uses ``expr.subs(replacements, simultaneous=True)`` which corrupts compound sub-expressions: when a ``Mul`` has two or more ``Add`` children sharing a symbol (e.g. ``a*v*(1-v)*(v-b)``), ``subs`` replaces the symbol *inside* the ``Add`` first, breaking the match for the ``Add`` replacement key. ``xreplace`` matches top-down and avoids this bug.
     """
     import pyrates.backend.parser as _pr_parser
 
@@ -91,17 +87,9 @@ def _patch_pyrates_replace_in_expr():
 def _patch_pyrates_reserved_names():
     """Relax PyRates' variable-name reservation for SymPy collisions.
 
-    PyRates >=1.2 rejects parameter / state-variable names that collide with a SymPy constant or function — ``Gamma``, ``gamma``, ``beta``, ``exp``,
-    ``pi`` … — because an *undeclared* name of that form would sympify to the function/constant rather than a free symbol (e.g. ``sympify('Gamma*x')``
-    yields the gamma function). See ``check_vname`` in
-    ``pyrates.frontend.template.operator``.
+    PyRates >=1.2 rejects parameter / state-variable names that collide with a SymPy constant or function — ``Gamma``, ``gamma``, ``beta``, ``exp``, ``pi`` … — because an *undeclared* name of that form would sympify to the function/constant rather than a free symbol (e.g. ``sympify('Gamma*x')`` yields the gamma function). See ``check_vname`` in ``pyrates.frontend.template.operator``.
 
-    tvbo declares *every* model parameter and state variable as an explicit
-    PyRates operator variable, so PyRates' own parser resolves the name to a symbol and the collision never occurs — exactly how tvbo's parser lets a
-    declared parameter override the SymPy built-in (see
-    ``tvbo.parse.expression.parse_eq``). We therefore keep only the genuinely
-    PyRates-internal slot names reserved (the state vector ``y``/``dy``, the index slots, and the buffer/history name parts) and allow the rest. This
-    is maximally flexible: a model may use ``Gamma`` as a parameter, or use the SymPy ``Gamma`` function in an equation where it is *not* declared.
+    tvbo declares *every* model parameter and state variable as an explicit PyRates operator variable, so PyRates' own parser resolves the name to a symbol and the collision never occurs — exactly how tvbo's parser lets a declared parameter override the SymPy built-in (see ``tvbo.parse.expression.parse_eq``). We therefore keep only the genuinely PyRates-internal slot names reserved (the state vector ``y``/``dy``, the index slots, and the buffer/history name parts) and allow the rest. This is maximally flexible: a model may use ``Gamma`` as a parameter, or use the SymPy ``Gamma`` function in an equation where it is *not* declared.
     """
     import pyrates.frontend.template.operator as _pr_op
     from pyrates.ir.circuit import PyRatesException
@@ -135,8 +123,7 @@ def _patch_pyrates_missing_funcs():
     """Register additional math functions in PyRates' base backend.
 
     PyRates' compute graph only supports functions listed in ``base_funcs``.
-    Functions like ``erfc``, ``erf``, and ``fmod`` are valid in SymPy/numpy but missing from PyRates' registry.  We inject them into the shared
-    ``base_funcs`` dict which is copied by every new backend instance.
+    Functions like ``erfc``, ``erf``, and ``fmod`` are valid in SymPy/numpy but missing from PyRates' registry.  We inject them into the shared ``base_funcs`` dict which is copied by every new backend instance.
 
     Also patches the ExpressionParser to inject functions into already- instantiated backends via their compute graph.
     """
@@ -182,6 +169,10 @@ def _inline_model_functions(expr, dyn):
     """Inline model-defined functions (e.g. H(x)) into a SymPy expression.
 
     Replaces function calls like H(x) with the function body from dyn.functions, substituting formal arguments with actual arguments.
+
+    Matches are taken in sorted order rather than the set order `atoms` returns: `expr` is reassigned inside the loop, so substituting an inner `H(x)` before the outer `H(H(x))` would leave the outer match pointing at a node the mutated expression no longer holds, and the call would survive into the generated model. sympy hashes derive from randomised string hashing, so which order occurred varied between processes and the same recipe generated different code on different runs.
+
+    Binding is one simultaneous `xreplace`, since substituting formals one at a time lets an actual argument that names a later formal be captured by that later substitution.
     """
     import sympy as sp
 
@@ -198,11 +189,11 @@ def _inline_model_functions(expr, dyn):
         arg_iter = args.values() if hasattr(args, "values") else args
         arg_names = [str(getattr(a, "name", a)) for a in arg_iter]
         sym_func = sp.Function(func_name)
-        for match in expr.atoms(sp.Function(func_name)):
+        for match in sorted(expr.atoms(sp.Function(func_name)), key=sp.default_sort_key, reverse=True):
             if match.func == sym_func:
                 body = sp.sympify(func_eq.rhs)
-                for formal, actual in zip(arg_names, match.args):
-                    body = body.subs(sp.Symbol(formal), actual)
+                bound = bind_function_arguments(func_name, arg_names, match.args)
+                body = body.xreplace({sp.Symbol(f): a for f, a in bound.items()})
                 expr = expr.subs(match, body)
     return expr
 
@@ -210,7 +201,7 @@ def _inline_model_functions(expr, dyn):
 class PyRatesAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via PyRates backend."""
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         """Initialize adapter with experiment reference.
 
         Parameters
@@ -227,7 +218,7 @@ class PyRatesAdapter(BaseAdapter):
         outputs: list[str] | None = None,
         matrix_edge_threshold: int = 100,
         **kwargs,
-    ) -> "ExperimentResult":
+    ) -> ExperimentResult:
         """Run simulation and explorations using PyRates backend.
 
         Handles both integration and grid-search explorations in a single call, sharing YAML export / circuit load across both.
@@ -246,7 +237,7 @@ class PyRatesAdapter(BaseAdapter):
         **kwargs
             Additional kwargs passed to circuit.run() / grid_search().
 
-        Returns
+        Returns:
         -------
         ExperimentResult
         """
@@ -361,7 +352,7 @@ class PyRatesAdapter(BaseAdapter):
         **kwargs
             Additional keyword arguments forwarded to ``grid_search``.
 
-        Returns
+        Returns:
         -------
         dict
             ``{exploration_name: ExplorationResult}``
@@ -408,7 +399,7 @@ class PyRatesAdapter(BaseAdapter):
 
         Uses ``_pyrates_node_map()`` to resolve operator/node naming, so the generated paths match the YAML template exactly.
 
-        Returns
+        Returns:
         -------
         tuple
             ``(param_grid, param_map, axes)``
@@ -458,8 +449,7 @@ class PyRatesAdapter(BaseAdapter):
             ax = Bunch(name=ref, n=len(values), explored_values=values, key=grid_key)
             axes.append(ax)
 
-            # Resolve the target dynamics: prefer the class named by the prefix (so
-            # `A.w` and `B.w` reach their own nodes), else the first dynamics that declares the parameter, else the first dynamics.
+            # Prefer the class the prefix names, so `A.w` and `B.w` reach their own nodes.
             py_name = PYRATES_REPL.get(param_name, param_name)
             resolved = None
             if dyn_class and dyn_class in dynamics_dict and param_name in (dynamics_dict[dyn_class].parameters or {}):
@@ -479,8 +469,8 @@ class PyRatesAdapter(BaseAdapter):
 
     def _df_to_exploration_result(
         self,
-        results_df: "pd.DataFrame",
-        results_map: "pd.DataFrame",
+        results_df: pd.DataFrame,
+        results_map: pd.DataFrame,
         axes: list,
         expl,
         expl_name: str,
@@ -596,7 +586,7 @@ class PyRatesAdapter(BaseAdapter):
 
         Mirrors the naming conventions of the PyRates YAML template exactly, so output paths and param_map entries resolve correctly.
 
-        Returns
+        Returns:
         -------
         dict
             ``{dyn_name: {'op': str, 'nodes': list[str]}}``
@@ -642,7 +632,7 @@ class PyRatesAdapter(BaseAdapter):
     def _load_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
         """Load PyRates circuit from YAML template.
 
-        Returns
+        Returns:
         -------
         tuple
             (circuit, tmpdir, pkg_name) for cleanup
@@ -794,12 +784,11 @@ class PyRatesAdapter(BaseAdapter):
 
         return outputs
 
-    def _compute_outputs(self, result: "pd.DataFrame") -> "pd.DataFrame":
+    def _compute_outputs(self, result: pd.DataFrame) -> pd.DataFrame:
         """Compute algebraic output variables from PyRates simulation results.
 
         PyRates only records state variables. This method evaluates output equations (like 'r_eff = r_in*x') using recorded state values and parameters.
         """
-
         exp = self.experiment
         dynamics = self.build_dynamics_dict()
 
@@ -873,7 +862,7 @@ class PyRatesAdapter(BaseAdapter):
 
     def _compute_node_outputs(
         self,
-        result: "pd.DataFrame",
+        result: pd.DataFrame,
         dyn,
         prefix: str,
         safe_label: str,
@@ -918,7 +907,7 @@ class PyRatesAdapter(BaseAdapter):
                 func = sp.lambdify(list(subs.keys()), expr, "numpy")
                 result[out_col] = func(*subs.values())
 
-    def _compute_single_outputs(self, result: "pd.DataFrame", dyn) -> None:
+    def _compute_single_outputs(self, result: pd.DataFrame, dyn) -> None:
         """Compute algebraic outputs for single dynamics case."""
         import sympy as sp
 
@@ -999,7 +988,7 @@ class PyRatesAdapter(BaseAdapter):
 
         return inputs
 
-    def _df_to_simulation_result(self, result: "pd.DataFrame") -> "SimulationResult":
+    def _df_to_simulation_result(self, result: pd.DataFrame) -> SimulationResult:
         """Convert PyRates pandas DataFrame result to SimulationResult."""
         import xarray as xr
 

@@ -1,10 +1,6 @@
 """Unit tests for the shared cross-experiment DataRef resolver (``tvbo/data/dataref.py``).
 
-Light — synthetic xarray datasets written to a temp HDF5, no JAX, no big grids. Covers
-every resolution path the design enumerates: intra-study ``experiment`` id, ``iri``
-(trailing number and filesystem path), the ``source_experiment`` fallback, the local
-no-WHERE guard, ``sel`` nearest on an indexed *and* a non-index coordinate, the
-``output`` ``__``-suffix matcher, and ``by_label`` reconcile (identity + permuted).
+Light — synthetic xarray datasets written to a temp HDF5, no JAX, no big grids. Covers every resolution path the design enumerates: intra-study ``experiment`` id, ``iri`` (trailing number and filesystem path), the ``source_experiment`` fallback, the local no-WHERE guard, ``sel`` nearest on an indexed *and* a non-index coordinate, the ``output`` ``__``-suffix matcher, and ``by_label`` reconcile (identity + permuted).
 """
 
 from __future__ import annotations
@@ -80,9 +76,10 @@ def test_locate_container_by_experiment(sweep_h5):
 
 
 def test_locate_container_by_experiment_exp_dash_spelling(sweep_h5):
-    """The ``exp-N`` spelling (as written in a recipe's ``used: {experiment: exp-32}``)
-    resolves at resolve time, matching the planner — it must not raise on ``int('exp-32')``.
-    Covers both the direct ``experiment`` path and the from_experiment fallback path."""
+    """The ``exp-N`` spelling (as written in a recipe's ``used: {experiment: exp-32}``) resolves at resolve time, matching the planner — it must not raise on ``int('exp-32')``.
+
+    Covers both the direct ``experiment`` path and the from_experiment fallback path.
+    """
     root, path = sweep_h5
     assert dr.locate_container(_ref(experiment="exp-32"), results_root=root) == path
     assert dr.locate_container(_ref(), results_root=root, fallback_experiment="exp-32") == path
@@ -148,8 +145,7 @@ def test_match_output_missing():
         dr.match_output(["a", "b"], "nope")
 
 
-# A run with two algorithms records every observation twice — `algorithm__fic__S_e_final` beside
-# `algorithm__fic_eib__S_e_final`. A caller that cannot tolerate an arbitrary pick passes `prefer`.
+# A run with two algorithms records every observation twice — `algorithm__fic__S_e_final` beside `algorithm__fic_eib__S_e_final`. A caller that cannot tolerate an arbitrary pick passes `prefer`.
 _TWO_ALGORITHMS = [
     "algorithm__fic__S_e_final",
     "algorithm__fic_eib__S_e_final",
@@ -207,8 +203,7 @@ def test_select_exact_label():
 
 
 def test_select_numeric_list_on_non_index_coord():
-    # A numeric list on a non-dimension coordinate uses nearest per element (not exact isin,
-    # which would silently miss on a continuous sweep).
+    # A numeric list on a non-dimension coordinate uses nearest per element (not exact isin, which would silently miss on a continuous sweep).
     da = xr.DataArray(np.arange(5.0), dims=["point"], coords={"K": ("point", [700.0, 900.0, 1100.0, 1300.0, 1500.0])})
     out = dr.select_labeled(da, {"K": [817, 1307]})  # nearest -> 900 (idx1), 1300 (idx3)
     np.testing.assert_allclose(out.values, [1.0, 3.0])
@@ -309,9 +304,7 @@ def test_sel_dict_and_reconcile_mode():
 
 
 def test_sel_dict_reads_the_keyed_dict_spelling():
-    """A study writes ``sel: {variable: phi}`` — a NAME-KEYED collection, which is what the
-    loader hands back. Reading only the list spelling silently dropped the selection, so a
-    sourced argument arrived unsliced (whole trajectory instead of one state variable)."""
+    """A study writes ``sel: {variable: phi}`` — a NAME-KEYED collection, which is what the loader hands back. Reading only the list spelling silently dropped the selection, so a sourced argument arrived unsliced (whole trajectory instead of one state variable)."""
     sel = {
         "variable": SimpleNamespace(name="variable", value="phi"),
         "time": SimpleNamespace(name="time", value=[0.006, 0.016]),

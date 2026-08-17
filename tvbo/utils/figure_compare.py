@@ -1,18 +1,17 @@
 """Measure how a rendered figure differs in LAYOUT from a reference image.
 
-A replication's figure is meant to land on the published one's layout: same aspect, same panel grid, panels in the same places at the same relative sizes. Judging that by
-eye does not scale and does not produce a number you can put in a report, so this module reduces both images to their panel geometry and reports the differences.
+A replication's figure is meant to land on the published one's layout: same aspect, same panel grid, panels in the same places at the same relative sizes. Judging that by eye does not scale and does not produce a number you can put in a report, so this module reduces both images to their panel geometry and reports the differences.
 
 Panels are found by recursive XY-cut — the classic document-layout decomposition:
-project the ink onto each axis, split at runs of blank, recurse. It needs no knowledge of either figure's provenance, which is the point: the reference is a bitmap from a PDF
-and ours comes from a mosaic spec, and they are compared on equal terms.
+project the ink onto each axis, split at runs of blank, recurse. It needs no knowledge of either figure's provenance, which is the point: the reference is a bitmap from a PDF and ours comes from a mosaic spec, and they are compared on equal terms.
 """
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple, Sequence
+from typing import NamedTuple
 
 import numpy as np
 
@@ -28,17 +27,20 @@ class Box:
 
     @property
     def w(self) -> float:
+        """Width as a fraction of the page."""
         return self.x1 - self.x0
 
     @property
     def h(self) -> float:
+        """Height as a fraction of the page."""
         return self.y1 - self.y0
 
     @property
     def area(self) -> float:
+        """Fraction of the page the block covers."""
         return self.w * self.h
 
-    def iou(self, other: "Box") -> float:
+    def iou(self, other: Box) -> float:
         """Intersection over union — 1.0 when the two blocks coincide exactly."""
         ix = max(0.0, min(self.x1, other.x1) - max(self.x0, other.x0))
         iy = max(0.0, min(self.y1, other.y1) - max(self.y0, other.y0))
@@ -76,7 +78,7 @@ def _runs(profile: np.ndarray, min_gap: int) -> list[tuple[int, int]]:
     breaks = np.flatnonzero(np.diff(idx) > min_gap)
     starts = np.concatenate([[idx[0]], idx[breaks + 1]])
     ends = np.concatenate([idx[breaks], [idx[-1]]])
-    return list(zip(starts.tolist(), (ends + 1).tolist()))
+    return list(zip(starts.tolist(), (ends + 1).tolist(), strict=True))
 
 
 def content_blocks(
@@ -146,8 +148,7 @@ def page_boxes(path: Path, **kwargs) -> tuple[list[Box], tuple[int, int]]:
 def match_boxes(ours: list[Box], theirs: list[Box]) -> list[tuple[Box | None, Box | None]]:
     """Pair our panels with theirs by best overlap, leaving unmatched panels as ``None``.
 
-    Greedy on IoU rather than an assignment solve: when the layouts already broadly agree the two are identical, and when they do not, a greedy pairing degrades into
-    obvious ``None`` rows instead of an inscrutable global optimum.
+    Greedy on IoU rather than an assignment solve: when the layouts already broadly agree the two are identical, and when they do not, a greedy pairing degrades into obvious ``None`` rows instead of an inscrutable global optimum.
     """
     pairs, used = [], set()
     for a in ours:
@@ -285,11 +286,9 @@ def _pane_image(images) -> np.ndarray | None:
 def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
     """A one-row figure holding *panes* at a COMMON height, widths following their aspect.
 
-    Equal heights with aspect-proportional widths is what makes an A/B honest: neither side is stretched to match the other, and the row fills *width* inches exactly, so the pair lands
-    on a report's text block without letterboxing. Returns ``(fig, axes)`` so a caller can annotate before saving.
+    Equal heights with aspect-proportional widths is what makes an A/B honest: neither side is stretched to match the other, and the row fills *width* inches exactly, so the pair lands on a report's text block without letterboxing. Returns ``(fig, axes)`` so a caller can annotate before saving.
 
-    Built on `matplotlib.figure.Figure` rather than `pyplot`, so calling this from a notebook (a Quarto report is one) neither switches the global backend nor leaks a figure into
-    pyplot's registry.
+    Built on `matplotlib.figure.Figure` rather than `pyplot`, so calling this from a notebook (a Quarto report is one) neither switches the global backend nor leaks a figure into pyplot's registry.
     """
     from matplotlib.figure import Figure
 
@@ -297,7 +296,7 @@ def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
     ratios = [a.shape[1] / a.shape[0] if a is not None else _PLACEHOLDER_ASPECT for a in arrays]
     fig = Figure(figsize=(width, width / sum(ratios)))
     axes = fig.subplots(1, len(panes), squeeze=False, gridspec_kw={"width_ratios": ratios})[0]
-    for ax, array, pane in zip(axes, arrays, panes):
+    for ax, array, pane in zip(axes, arrays, panes, strict=True):
         if array is None:
             ax.text(0.5, 0.5, pane.fallback, ha="center", va="center", fontsize=fontsize)
         else:
@@ -311,8 +310,7 @@ def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
 def side_by_side(panes: Sequence[Pane], outfile: Path, width: float = 6.7, fontsize: float = 6, dpi: int = 300) -> Path:
     """Write *panes* as one row at a common height — the A/B composite a report embeds.
 
-    A replication report sets the published figure beside its reproduction. Composing that pair at render time, rather than shipping a rendered composite, is what keeps a
-    copyrighted original out of every artifact but the one the caller names here.
+    A replication report sets the published figure beside its reproduction. Composing that pair at render time, rather than shipping a rendered composite, is what keeps a copyrighted original out of every artifact but the one the caller names here.
     """
     fig, _ = image_row(panes, width, fontsize)
     outfile = Path(outfile)
@@ -331,10 +329,10 @@ def overlay(result: dict, outfile: Path, titles: tuple[str, str] = ("ours", "ref
     sides = ("ours", "theirs")
     panes = [
         Pane(result[s]["path"], f"{t} — {result[s]['size'][0]}x{result[s]['size'][1]}px, {result[s]['n_panels']} panels")
-        for s, t in zip(sides, titles)
+        for s, t in zip(sides, titles, strict=True)
     ]
     fig, axes = image_row(panes, width=14, fontsize=10)
-    for ax, side, colour in zip(axes, sides, ("#d62728", "#1f77b4")):
+    for ax, side, colour in zip(axes, sides, ("#d62728", "#1f77b4"), strict=True):
         w, h = result[side]["size"]
         for r in result["rows"]:
             box = r[side]

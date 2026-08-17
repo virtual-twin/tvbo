@@ -1,18 +1,14 @@
 """Regression tests for ``tvbo.analysis.linear_response`` and its codegen partials.
 
-The linear-response path builds the network Jacobian ``A`` from a model's dfun metadata
-and solves the Lyapunov equation ``A P + P A^T + Q = 0`` for the stationary covariance.
+The linear-response path builds the network Jacobian ``A`` from a model's dfun metadata and solves the Lyapunov equation ``A P + P A^T + Q = 0`` for the stationary covariance.
 Two things about that are metadata-driven and were not, until these tests, pinned:
 
 * ``Q`` must come from the noise each state variable DECLARES. A model whose noise enters
-  two of six equations — synaptic gating plus a haemodynamic cascade that is *driven*,
-  not forced — gets noise injected into its haemodynamics under a uniform ``Q``.
+  two of six equations — synaptic gating plus a haemodynamic cascade that is *driven*, not forced — gets noise injected into its haemodynamics under a uniform ``Q``.
 * the covariance that comes out must be of the DECLARED observable, which may be a derived
-  variable at the end of an observation cascade (a BOLD signal), not only the first state
-  block.
+  variable at the end of an observation cascade (a BOLD signal), not only the first state block.
 
-Both are checked against a NumPy/scipy reference, and the pre-existing uniform-``Q``,
-first-state-block behaviour is pinned so it cannot drift.
+Both are checked against a NumPy/scipy reference, and the pre-existing uniform-``Q``, first-state-block behaviour is pinned so it cannot drift.
 """
 
 from __future__ import annotations
@@ -137,14 +133,15 @@ def _exec_rendered(model, sigma, obs_name):
 
 
 def test_covariance_through_a_declared_observation_cascade():
-    """``H Sigma H^T`` with a per-state ``Q``, against a scipy Lyapunov solve."""
+    """``H Sigma H^T`` with a per-state ``Q``, against a scipy Lyapunov solve.
+
+    The symbolic Jacobian is checked against a finite difference elsewhere; here the NumPy oracle assembles the same ``A``, so the test isolates ``Q`` and ``H``.
+    """
     scipy_linalg = pytest.importorskip("scipy.linalg")
     model = _model()
     P, A, ctx, params = _exec_rendered(model, sigma=None, obs_name="obs")
 
     N = _weights().shape[0]
-    # The symbolic Jacobian is checked against a finite difference elsewhere; here the
-    # NumPy oracle assembles the same A so the test isolates Q and H.
     A_ref = network_jacobian(model, _weights(), np.zeros((2, N)), params)
     assert np.allclose(A, A_ref, atol=1e-12)
 
@@ -157,8 +154,7 @@ def test_covariance_through_a_declared_observation_cascade():
 def test_declared_noise_does_not_leak_into_an_unforced_state():
     """A state variable that declares no noise contributes no ``Q`` of its own.
 
-    Under the uniform ``Q`` this test would fail: the unforced second state would be
-    driven at the same amplitude as the first, inflating the observable's variance.
+    Under the uniform ``Q`` this test would fail: the unforced second state would be driven at the same amplitude as the first, inflating the observable's variance.
     """
     scipy_linalg = pytest.importorskip("scipy.linalg")
     model = _model()
@@ -188,10 +184,7 @@ def test_uniform_sigma_still_returns_the_first_state_block():
 def test_settle_step_never_exceeds_the_recipes_own_integration_step(dt, expected):
     """A settle step is in MODEL time units, so a fixed one is right for only one time unit.
 
-    0.1 is a tenth of a millisecond for a millisecond model and a hundred milliseconds for a
-    second-based one — past the stability boundary of a 10 ms inhibitory time constant, which
-    makes the operating point diverge rather than settle. Capping at the recipe's own step
-    leaves every millisecond-unit recipe exactly where it was.
+    0.1 is a tenth of a millisecond for a millisecond model and a hundred milliseconds for a second-based one — past the stability boundary of a 10 ms inhibitory time constant, which makes the operating point diverge rather than settle. Capping at the recipe's own step leaves every millisecond-unit recipe exactly where it was.
     """
     from tvbo.templates.tvboptim.utils import _lr_analysis_spec
 

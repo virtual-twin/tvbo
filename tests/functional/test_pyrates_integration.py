@@ -1,25 +1,24 @@
 """Functional tests for PyRates integration.
 
-Tests the full-circle export and import of TVBO models to/from PyRates format,
-including:
+Tests the full-circle export and import of TVBO models to/from PyRates format, including:
 - Dynamics export to PyRates OperatorTemplate/NodeTemplate
 - Network export with edge-based connectivity
 - Round-trip import from PyRates YAML back to TVBO Dynamics
 """
 
-import tempfile
 import os
+import tempfile
 
 import numpy as np
 import pytest
 
-from tvbo import Dynamics, Network, Coupling
-from tvbo.datamodel import tvbo_datamodel
+from tvbo import Coupling, Dynamics, Network
 from tvbo.codegen.pyrates import (
     to_pyrates_model_yaml,
     to_pyrates_network_yaml,
     to_pyrates_yaml_string,
 )
+from tvbo.datamodel import tvbo_datamodel
 
 
 class TestDynamicsExport:
@@ -127,10 +126,7 @@ class TestNetworkExport:
     def test_edge_weight_reaches_yaml(self, edge_kwargs):
         """A non-unit edge weight must reach the PyRates YAML, not the 1.0 fallback.
 
-        edge.parameters is a dict[str, Parameter]; the codegen helper previously
-        iterated it as a list of Parameter objects, never matched, and always
-        emitted the default weight (any weight != 1.0 was silently lost). Covers
-        both the keyed-parameters and scalar-field forms of the weight.
+        edge.parameters is a dict[str, Parameter]; the codegen helper previously iterated it as a list of Parameter objects, never matched, and always emitted the default weight (any weight != 1.0 was silently lost). Covers both the keyed-parameters and scalar-field forms of the weight.
         """
         osc = Dynamics("Dynamics")
         osc.name = "osc"
@@ -154,7 +150,10 @@ class TestNetworkExport:
         assert "weight: 1.0" not in yaml_output
 
     def test_weights_matrix_from_edges(self):
-        """Test that weights_matrix property correctly computes from edges."""
+        """Test that weights_matrix property correctly computes from edges.
+
+        Matrices follow the target-by-source convention used by the backends: an edge ``source -> target`` is stored at ``[target, source]``.
+        """
         network = Network(number_of_nodes=3)
         network.edges = [
             tvbo_datamodel.Edge(
@@ -181,8 +180,6 @@ class TestNetworkExport:
         ]
 
         W = network.weights_matrix
-        # Matrices follow the target-by-source convention used by backends:
-        # an edge source -> target is stored at [target, source].
         expected = np.array(
             [
                 [0.0, 0.0, 0.2],
@@ -470,8 +467,7 @@ synapse_op:
         try:
             model = Dynamics.from_pyrates(temp_path)
 
-            # input() syntax creates a parameter with the default value
-            # (in TVBO, this can be used as a coupling input in a network context)
+            # input() syntax creates a parameter with the default value (in TVBO, this can be used as a coupling input in a network context)
             assert "r_in" in model.parameters
             assert model.parameters["r_in"].value == 0.0
 

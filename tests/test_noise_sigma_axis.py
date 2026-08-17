@@ -139,8 +139,10 @@ def test_explored_values_axis_binds_a_data_axis(tmp_path):
 
 
 def test_sweeping_amplitude_without_noise_is_rejected(tmp_path):
-    """No declared noise → no amplitude to sweep. Binding the leaf anyway would sweep a
-    slot that does not exist, so this fails at codegen rather than silently doing nothing."""
+    """No declared noise → no amplitude to sweep.
+
+    Binding the leaf anyway would sweep a slot that does not exist, so this fails at codegen rather than silently doing nothing.
+    """
     with pytest.raises(ValueError, match="declares no noise"):
         _render(tmp_path, "        domain: {lo: 0.005, hi: 0.05, n: 4}\n", noise="")
 

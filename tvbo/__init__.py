@@ -1,11 +1,9 @@
-# Copyright Berlin Institute of Health / Charité University Medicine Berlin
-# Department of Neurology and Experimental Neurology
-# Brain Simulation Section
+# Copyright © 2026 Charité Universitätsmedizin Berlin — Brain Simulation Section.
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-Welcome to the TVB-O project!
-==============================
-TVB-O is a Python package for understanding and generating large-scale brain network models.
+"""TVB-O: understand and generate large-scale brain network models.
+
+Importing the package is deliberately cheap. Only a `NullHandler` goes on the `tvbo` logger, so tvbo is silent as a library; the entry points — `tvbo run`, `SimulationExperiment.run` — surface progress through `configure_logging`, and one switch (`TVBO_LOG_LEVEL`, or `set_log_level`) controls all of it. Nothing here imports JAX, PyRates or the ontology.
 """
 
 import logging
@@ -14,18 +12,13 @@ import shutil
 import tempfile
 import warnings
 
-# ---------------------------------------------------------------------------
-# Suppress harmless requests dependency warning
-# ---------------------------------------------------------------------------
-# requests 2.32.x checks chardet<6 but pyshex installs chardet 6.x.
-# requests itself uses charset-normalizer (which *is* compatible); the warning is a false positive.  Suppress it before anything imports requests so the user never sees it.
+# A false positive: requests 2.32.x checks chardet<6, but it actually uses charset-normalizer.
 warnings.filterwarnings(
     "ignore",
     message=r"urllib3.*or chardet.*doesn't match a supported version",
     category=Warning,
     module=r"requests",
 )
-# ---------------------------------------------------------------------------
 
 ROOT = os.path.dirname(__file__)
 
@@ -33,9 +26,6 @@ ROOT = os.path.dirname(__file__)
 tempdir = os.path.join(tempfile.gettempdir(), "tvbo")
 os.makedirs(tempdir, exist_ok=True)
 
-# Central logging. Importing tvbo installs only a NullHandler on the ``tvbo`` logger, so the package is silent as a library; entry points (``tvbo run``,
-# ``SimulationExperiment.run``) surface progress via ``configure_logging`` and everything is controlled by one switch (``TVBO_LOG_LEVEL`` / ``set_log_level``).
-# This replaces a former process-wide ``logging.disable(CRITICAL)`` that muted every logger — see :mod:`tvbo.log`.
 from tvbo.log import (  # noqa: E402,F401
     configure_logging,
     ensure_configured,
@@ -56,10 +46,10 @@ __authors__ = [
     "Petra Ritter",
 ]
 
-__version__ = "0.5.3"
+__version__ = "1.0.0"
 __maintainer__ = "Leon K. Martin (leon.martin@bih-charite.de)"
 __contact__ = "petra.ritter@charite.de"
-__status__ = "beta"
+__status__ = "stable"
 
 __copyright__ = "Copyright (c) 2026, Brain Simulation Section, Charité Universitätsmedizin Berlin"
 __license__ = "EUPL-1.2-or-later"
@@ -68,28 +58,21 @@ __license__ = "EUPL-1.2-or-later"
 def clean_temp():
     """Remove and recreate the TVBO temporary working directory.
 
-    Deletes the entire `tvbo` scratch directory under the system temp location (ignoring errors if it is missing) and recreates it empty,
-    clearing any cached or generated artifacts from previous runs.
+    Deletes the entire `tvbo` scratch directory under the system temp location (ignoring errors if it is missing) and recreates it empty, clearing any cached or generated artifacts from previous runs.
     """
     shutil.rmtree(tempdir, ignore_errors=True)
     os.makedirs(tempdir)
 
 
-# ---------------------------------------------------------------------------
-# JAX backend configuration
-# ---------------------------------------------------------------------------
-# jax-metal (Apple GPU) plugin versions <= 0.1.1 are incompatible with
-# JAX >= 0.7 and crash with "UNIMPLEMENTED: default_memory_space is not supported".  Detect this and fall back to the CPU backend so that
-# *every* downstream JAX call works out of the box.
-# Users can override by setting JAX_PLATFORMS or jax_default_device before importing tvbo.
 _JAX_CONFIGURED = False
 
 
 def _configure_jax_backend():
     """Fall back to CPU when the Metal plugin is broken.
 
-    Called by the compute modules the first time TVBO touches JAX for a simulation, not at ``import tvbo`` — so a bare import (and the CLI) never
-    imports JAX. Idempotent: the guard runs at most once regardless of how many entry points call it.
+    A `jax-metal` plugin at 0.1.1 or older is incompatible with JAX 0.7 and up, and crashes with `UNIMPLEMENTED: default_memory_space is not supported`. Detecting that and falling back to CPU means every downstream JAX call works out of the box; setting `JAX_PLATFORMS` or `jax_default_device` before importing tvbo overrides it.
+
+    Called by the compute modules the first time TVBO touches JAX for a simulation, not at `import tvbo`, so a bare import and the CLI never import JAX. Idempotent: the guard runs at most once however many entry points call it.
     """
     global _JAX_CONFIGURED
     if _JAX_CONFIGURED:
@@ -121,18 +104,9 @@ def _configure_jax_backend():
         pass  # JAX not installed – nothing to configure
 
 
-# ---------------------------------------------------------------------------
-
-
-# PyRates is an optional backend, imported only when its adapter runs. Its networkx-dispatch monkeypatch lives with the adapters that build a PyRates
-# ComputeGraph (``tvbo.adapters.pyrates`` and ``tvbo.adapters.pyrates_bifurcation``), each applying it before compiling — so a bare ``import tvbo`` pulls in no pyrates.
-
-# ---------------------------------------------------------------------------
 # Lazy public API — imports happen on first attribute access
-# ---------------------------------------------------------------------------
 _LAZY_IMPORTS = {
     "database_path": ".data.registry",
-    "Connectome": ".classes.network",
     "Network": ".classes.network",
     "Atlas": ".classes.atlas",
     "SimulationExperiment": ".classes",
@@ -157,6 +131,27 @@ _LAZY_ALIASES = {
 }
 
 
+_LOGGING_EXPORTS = (
+    "configure_logging",
+    "ensure_configured",
+    "get_log_level",
+    "log_level",
+    "set_log_level",
+    "silence",
+)
+
+__all__ = sorted({*_LAZY_IMPORTS, *_LAZY_ALIASES, *_LOGGING_EXPORTS, "clean_temp", "ROOT", "tempdir"})
+"""The public surface of `tvbo`, and what SemVer covers.
+
+Names not listed here are internal, whatever their spelling — including the stdlib modules (`os`, `shutil`, `tempfile`, `warnings`, `logging`) that `import tvbo` binds as a side effect of its own setup and that used to be the bulk of what `dir(tvbo)` returned.
+"""
+
+
+def __dir__():
+    """The public API, so tab-completion and `dir(tvbo)` show it rather than this module's imports."""
+    return list(__all__)
+
+
 def __getattr__(name):
     if name in _LAZY_IMPORTS:
         import importlib
@@ -176,5 +171,4 @@ def __getattr__(name):
     raise AttributeError(f"module 'tvbo' has no attribute {name!r}")
 
 
-# Helper methods (.plot(), …) are attached to the auto-generated schema classes by ``tvbo.datamodel`` when the datamodel is first imported, alongside the sibling
-# Network/UnitEnum patches. Keeping that out of ``import tvbo`` avoids eagerly pulling the datamodel (pydantic, sympy, pandas) into every CLI invocation.
+# Attached by `tvbo.datamodel` on first import, so a CLI invocation never pulls in pydantic/sympy/pandas.

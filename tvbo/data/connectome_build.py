@@ -1,10 +1,8 @@
 """Build a structural connectome from a tractogram + parcellation via MRtrix3.
 
-A thin wrapper around MRtrix3's ``tck2connectome``. Given a streamline tractogram and an integer-labelled parcellation image that already live in the *same* space,
-it returns the edge-weight (streamline-count) and mean-tract-length matrices. The inputs are assumed to be co-registered — this module does not register them.
+A thin wrapper around MRtrix3's ``tck2connectome``. Given a streamline tractogram and an integer-labelled parcellation image that already live in the *same* space, it returns the edge-weight (streamline-count) and mean-tract-length matrices. The inputs are assumed to be co-registered — this module does not register them.
 
-Assembling the matrices into a :class:`tvbo.classes.network.Network` and writing the ``…_desc-SC_relmat.h5`` + YAML sidecar happens in the caller (``tvbo network
-build``); this module only shells out to MRtrix and reads back the CSVs, so it is the single place the ``tck2connectome`` invocation is defined.
+Assembling the matrices into a :class:`tvbo.classes.network.Network` and writing the ``…_desc-SC_relmat.h5`` + YAML sidecar happens in the caller (``tvbo network build``); this module only shells out to MRtrix and reads back the CSVs, so it is the single place the ``tck2connectome`` invocation is defined.
 """
 
 from __future__ import annotations
@@ -12,8 +10,8 @@ from __future__ import annotations
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence
 
 import numpy as np
 
@@ -43,17 +41,16 @@ def tck2connectome_commands(
     parcellation: Path,
     weights_csv: Path,
     lengths_csv: Path,
-    assignments_csv: Optional[Path] = None,
+    assignments_csv: Path | None = None,
     *,
     symmetric: bool = True,
     zero_diagonal: bool = True,
     force: bool = True,
-    extra_args: Optional[Sequence[str]] = None,
+    extra_args: Sequence[str] | None = None,
 ) -> list[list[str]]:
     """Return the two ``tck2connectome`` argv lists (edge weights, then lengths).
 
-    The first call counts streamlines between each node pair (edge weights); the second scales each streamline by its length and averages per edge to get mean
-    tract lengths. Returned rather than run so callers can preview them (dry-run).
+    The first call counts streamlines between each node pair (edge weights); the second scales each streamline by its length and averages per edge to get mean tract lengths. Returned rather than run so callers can preview them (dry-run).
     """
     common: list[str] = []
     if symmetric:
@@ -88,12 +85,12 @@ def run_tck2connectome(
     parcellation: Path,
     weights_csv: Path,
     lengths_csv: Path,
-    assignments_csv: Optional[Path] = None,
+    assignments_csv: Path | None = None,
     *,
     symmetric: bool = True,
     zero_diagonal: bool = True,
     force: bool = True,
-    extra_args: Optional[Sequence[str]] = None,
+    extra_args: Sequence[str] | None = None,
 ) -> None:
     """Run ``tck2connectome`` twice: edge weights (count) then mean tract lengths."""
     for cmd in tck2connectome_commands(
@@ -116,8 +113,8 @@ def connectome_from_tractogram(
     *,
     symmetric: bool = True,
     zero_diagonal: bool = True,
-    extra_args: Optional[Sequence[str]] = None,
-    assignments_out: Optional[Path] = None,
+    extra_args: Sequence[str] | None = None,
+    assignments_out: Path | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute the ``(weights, lengths)`` matrices for a tractogram + parcellation.
 
@@ -133,7 +130,7 @@ def connectome_from_tractogram(
     assignments_out : Path, optional
         When given, ``tck2connectome``'s ``-out_assignments`` is kept at this path.
 
-    Returns
+    Returns:
     -------
     weights, lengths : np.ndarray
         ``(N, N)`` streamline-count and mean-length matrices.

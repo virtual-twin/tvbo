@@ -7,6 +7,7 @@ from pathlib import Path
 import typer
 
 from tvbo import export as _export
+
 from . import _common
 
 
@@ -27,8 +28,7 @@ def export(
 ) -> None:
     """Render *spec* into *format* without executing it.
 
-    Resolves *spec* (file path, CURIE, or DB name) to a TVBO object and writes the rendered output to *--output* or stdout. Use `tvbo formats`
-    to list available format keys.
+    Resolves *spec* (file path, CURIE, or DB name) to a TVBO object and writes the rendered output to *--output* or stdout. Use `tvbo formats` to list available format keys.
     """
     kind, obj = _common.resolve_spec(spec)
 

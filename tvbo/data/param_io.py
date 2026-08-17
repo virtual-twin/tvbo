@@ -16,32 +16,30 @@ A parameter says where its value comes from in exactly one of three ways, and th
     arguments, and (via ``output``) which entry to take from a callable returning
     several named arrays.
 
-Sourced and produced values are **never materialised into ``Parameter.value``**, so loading a spec stays cheap no matter how large the array is, and a dumper never sees
-bytes it would try to serialise back into YAML. Resolution happens here, on demand, and the result is cached in this module — the ``Parameter`` object is never mutated.
+Sourced and produced values are **never materialised into ``Parameter.value``**, so loading a spec stays cheap no matter how large the array is, and a dumper never sees bytes it would try to serialise back into YAML. Resolution happens here, on demand, and the result is cached in this module — the ``Parameter`` object is never mutated.
 
-That is deliberate: ``Parameter`` appears at 16 nesting sites in the schema, and
-LinkML always constructs the *declared range* class, so a tvbo subclass carrying lazy behaviour would need a hand-written re-wrap at every one of them (and would diverge
-between the dataclass and pydantic flavours). Keeping resolution outside the class means the generated datamodel is untouched and both flavours behave identically.
+That is deliberate: ``Parameter`` appears at 16 nesting sites in the schema, and LinkML always constructs the *declared range* class, so a tvbo subclass carrying lazy behaviour would need a hand-written re-wrap at every one of them (and would diverge between the dataclass and pydantic flavours). Keeping resolution outside the class means the generated datamodel is untouched and both flavours behave identically.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
-# Resolved arrays, keyed by a content-addressed key (see `_source_key` /
-# `_producer_key`) rather than by object identity: two Parameter objects naming the same array share one entry, and a rebuilt spec hits the cache rather than re-reading or recomputing. Never keyed by id() — CPython reuses ids of collected objects, which would silently serve one parameter's array for another's.
 _CACHE: dict[tuple, Any] = {}
+"""Resolved arrays, keyed by content rather than object identity.
+
+Two Parameter objects naming the same array share one entry, and a rebuilt spec hits the cache instead of re-reading or recomputing. Never keyed by `id()`: CPython reuses the ids of collected objects, which would silently serve one parameter's array for another's.
+"""
 
 # module name -> digest of the source that module was LOADED from, pinned for the process
 _SOURCE_DIGESTS: dict[str, str] = {}
 
 
 def _default_cache_dir() -> Path:
-    """On-disk home for materialised produced constants, alongside the network cache (``~/.tvbo/networks``). Resolved per call, not at import, so a harness that sets
-    ``HOME`` after importing tvbo still writes where it expects."""
+    """On-disk home for materialised produced constants, alongside the network cache (``~/.tvbo/networks``). Resolved per call, not at import, so a harness that sets ``HOME`` after importing tvbo still writes where it expects."""
     return Path.home() / ".tvbo" / "constants"
 
 
@@ -58,11 +56,10 @@ def _slot(obj: Any, name: str, default: Any = None) -> Any:
     return getattr(obj, name, default) if obj is not None else default
 
 
-def _resolve_path(source: str, source_dir: Optional[Path]) -> Optional[Path]:
+def _resolve_path(source: str, source_dir: Path | None) -> Path | None:
     """A path source, resolved against the declaring spec's directory when relative.
 
-    Mirrors how ``Network.bids_dir`` / ``Network.data_file`` resolve, so a spec means the same thing wherever it is loaded from and a kit that carries its companion
-    alongside the spec keeps working after it is moved.
+    Mirrors how ``Network.bids_dir`` / ``Network.data_file`` resolve, so a spec means the same thing wherever it is loaded from and a kit that carries its companion alongside the spec keeps working after it is moved.
     """
     p = Path(str(source))
     if not p.is_absolute() and source_dir is not None:
@@ -76,19 +73,16 @@ def _fingerprint(path: Path) -> tuple:
     return (str(path), st.st_mtime_ns, st.st_size)
 
 
-def _source_key(path: Path, measure: Optional[str]) -> tuple:
+def _source_key(path: Path, measure: str | None) -> tuple:
     return ("source", _fingerprint(path), measure)
 
 
 def _readonly(value: Any) -> Any:
     """A read-only view of a resolved array (recursing into a bundle dict).
 
-    One buffer is shared by every parameter naming the same array, so an in-place write by one consumer would silently corrupt the others — action at a distance that would
-    surface in an unrelated run. A resolved constant is conceptually immutable (it IS the declared value), so a read-only view turns an accidental write into a ValueError at
-    the offending line.
+    One buffer is shared by every parameter naming the same array, so an in-place write by one consumer would silently corrupt the others — action at a distance that would surface in an unrelated run. A resolved constant is conceptually immutable (it IS the declared value), so a read-only view turns an accidental write into a ValueError at the offending line.
 
-    Crucially this returns a *view* and does not freeze the input in place: a producer may hand back an array the recipe still owns (a module-level cache, or an echoed
-    argument), and setting ``write=False`` on that object would break the recipe's own later use of it from a line that never asked for a constant.
+    Crucially this returns a *view* and does not freeze the input in place: a producer may hand back an array the recipe still owns (a module-level cache, or an echoed argument), and setting ``write=False`` on that object would break the recipe's own later use of it from a line that never asked for a constant.
     """
     if isinstance(value, np.ndarray):
         view = value.view()
@@ -127,18 +121,12 @@ def _mesh_array(net: Any, field: str) -> np.ndarray:
 _NODE_MEASURES = ("positions", "instrength")
 
 
-def resolve_network_node(net: Any, measure: str) -> Optional[np.ndarray]:
-    """Per-node vector for a ``network.<measure>`` reference — the single definition shared by the producer-argument path (``_resolve_ref``) and the observation-embedding path
-    (``utils.collect_network_node_arrays``), so both resolve ``network.positions`` /
-    ``network.instrength`` identically. ``positions`` → region centroids ``(n_nodes, 3)``;
-    ``instrength`` → weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention).
+def resolve_network_node(net: Any, measure: str) -> np.ndarray | None:
+    """Per-node vector for a ``network.<measure>`` reference.
 
-    Anything else is read as a **named per-node attribute**, the node-side twin of
-    ``network.edges.<attr>``: first from the nodes' own ``parameters`` (in node order), then
-    from a ``nodes/<attr>`` dataset in the companion store. That is what lets a study carry a
-    measured per-region array — a per-node current range, a region size — in the network file
-    and reference it from a spec instead of pasting it into code. Returns None when the measure
-    is unknown or unbuildable.
+    The single definition shared by the producer-argument path (``_resolve_ref``) and the observation-embedding path (``utils.collect_network_node_arrays``), so both resolve ``network.positions`` / ``network.instrength`` identically. ``positions`` → region centroids ``(n_nodes, 3)``; ``instrength`` → weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention).
+
+    Anything else is read as a **named per-node attribute**, the node-side twin of ``network.edges.<attr>``: first from the nodes' own ``parameters`` (in node order), then from a ``nodes/<attr>`` dataset in the companion store. That is what lets a study carry a measured per-region array — a per-node current range, a region size — in the network file and reference it from a spec instead of pasting it into code. Returns None when the measure is unknown or unbuildable.
     """
     if measure == "positions" and hasattr(net, "node_positions"):
         return np.asarray(net.node_positions(), dtype=float)
@@ -148,12 +136,10 @@ def resolve_network_node(net: Any, measure: str) -> Optional[np.ndarray]:
     return _resolve_node_attribute(net, measure)
 
 
-def _resolve_node_attribute(net: Any, name: str) -> Optional[np.ndarray]:
+def _resolve_node_attribute(net: Any, name: str) -> np.ndarray | None:
     """Named per-node array from the nodes' ``parameters``, else from ``nodes/<name>`` in the companion store.
 
-    Node parameters win, so a spec can override what the file carries. A parameter that is not a
-    per-node SCALAR — set on some nodes only, or carrying a vector value — is not a per-node
-    vector and returns None rather than a silently zero-filled or ragged array.
+    Node parameters win, so a spec can override what the file carries. A parameter that is not a per-node SCALAR — set on some nodes only, or carrying a vector value — is not a per-node vector and returns None rather than a silently zero-filled or ragged array.
     """
     nodes = getattr(net, "nodes", None) or []
     vals = []
@@ -240,12 +226,9 @@ def _hashable(value: Any) -> Any:
 def _producer_key(module: str, name: str, kwargs: dict) -> tuple:
     """Keyed on the CALL and on the producing SOURCE, deliberately not on ``output``.
 
-    One producer typically returns a bundle of named arrays (a precompute emitting every mesh operator at once). Keying per-output would re-run that call once per parameter
-    reading it — the expensive thing the cache exists to avoid.
+    One producer typically returns a bundle of named arrays (a precompute emitting every mesh operator at once). Keying per-output would re-run that call once per parameter reading it — the expensive thing the cache exists to avoid.
 
-    The source digest belongs HERE rather than only in the artifact path, because the two must key on the same thing. Keyed apart, a process that materialises, has its producer
-    edited underneath it, and materialises again computes the NEW path from the new source while the in-memory cache still answers on the old one — writing pre-edit arrays under a
-    digest that asserts they are post-edit. Every later run then reads that file and trusts it, which is worse than the stale hit this digest exists to prevent.
+    The source digest belongs HERE rather than only in the artifact path, because the two must key on the same thing. Keyed apart, a process that materialises, has its producer edited underneath it, and materialises again computes the NEW path from the new source while the in-memory cache still answers on the old one — writing pre-edit arrays under a digest that asserts they are post-edit. Every later run then reads that file and trusts it, which is worse than the stale hit this digest exists to prevent.
     """
     return ("producer", module, name, _hashable(kwargs), _module_source_digest(module))
 
@@ -253,17 +236,9 @@ def _producer_key(module: str, name: str, kwargs: dict) -> tuple:
 def _module_source_digest(module: str) -> str:
     """A digest of the source the DEFINING MODULE is currently LOADED from.
 
-    Without this the on-disk companion is keyed on ``(module, function, kwargs)`` alone, and editing the callable changes nothing the key can see: the run reads the array from before
-    the edit while a direct call to the same function returns the new value. Hashing the whole module rather than the function catches an edit to a helper the producer delegates to —
-    which is where that bug actually landed — but only for a helper in the SAME file. An edit to a sibling module in ``code/`` still changes no byte here and is still invisible; a
-    producer that delegates across files must be re-derived deliberately.
+    Without this the on-disk companion is keyed on ``(module, function, kwargs)`` alone, and editing the callable changes nothing the key can see: the run reads the array from before the edit while a direct call to the same function returns the new value. Hashing the whole module rather than the function catches an edit to a helper the producer delegates to — which is where that bug actually landed — but only for a helper in the SAME file. An edit to a sibling module in ``code/`` still changes no byte here and is still invisible; a producer that delegates across files must be re-derived deliberately.
 
-    The digest describes the source the module was LOADED from, so it is taken once per process and then pinned. Python does not re-execute an imported module, so re-reading
-    the file would let an edit rename the artifact while the stale function still fills it — writing pre-edit arrays under a digest asserting they are post-edit, which every later
-    process then finds and trusts. That is worse than the stale hit this exists to prevent, because a stale hit clears on restart and a mislabelled artifact never does. Pinning
-    keeps key and code in step without reloading the module, which would re-run its import-time side effects (a ``code_modules`` module registers panels and transforms on
-    import). An in-session edit therefore needs a restart to take effect — exactly as the edited function itself does. A module with no readable source contributes nothing,
-    keeping the previous behaviour for anything not backed by a file.
+    The digest describes the source the module was LOADED from, so it is taken once per process and then pinned. Python does not re-execute an imported module, so re-reading the file would let an edit rename the artifact while the stale function still fills it — writing pre-edit arrays under a digest asserting they are post-edit, which every later process then finds and trusts. That is worse than the stale hit this exists to prevent, because a stale hit clears on restart and a mislabelled artifact never does. Pinning keeps key and code in step without reloading the module, which would re-run its import-time side effects (a ``code_modules`` module registers panels and transforms on import). An in-session edit therefore needs a restart to take effect — exactly as the edited function itself does. A module with no readable source contributes nothing, keeping the previous behaviour for anything not backed by a file.
     """
     import hashlib
     import importlib
@@ -285,7 +260,7 @@ def _module_source_digest(module: str) -> str:
 # --------------------------------------------------------------------------- sources
 
 
-def _read_source(path: Path, measure: Optional[str]) -> Any:
+def _read_source(path: Path, measure: str | None) -> Any:
     """Read ``measure`` out of a binary store, or the whole array when it holds one."""
     from tvbo.data.matrix_io import LazyArrayStore
 
@@ -298,9 +273,8 @@ def _read_source(path: Path, measure: Optional[str]) -> Any:
     raise ValueError(f"{path} holds {len(arrays)} arrays {sorted(arrays)}; the parameter must name one with `measure:`.")
 
 
-def read_artifact(path: Any, key: Optional[str] = None) -> Any:
-    """Load a materialised ``(path, key)`` artifact back to its array — for codegen probes that need a produced/sourced constant's shape (e.g. a partition's group count) without
-    re-running the producer."""
+def read_artifact(path: Any, key: str | None = None) -> Any:
+    """Load a materialised ``(path, key)`` artifact back to its array — for codegen probes that need a produced/sourced constant's shape (e.g. a partition's group count) without re-running the producer."""
     return _read_source(Path(path), key)
 
 
@@ -341,20 +315,16 @@ def _producer_bundle(
     producer: Any,
     param_name: str,
     context: Any,
-    spec: Optional[tuple] = None,
-    key: Optional[tuple] = None,
+    spec: tuple | None = None,
+    key: tuple | None = None,
 ) -> Any:
     """Everything the producer returns, cached on the CALL — no output selection.
 
-    Kept separate from selection so a caller that needs the whole result (writing the cache artifact) gets every named array, not just the one entry some parameter asked
-    for; writing only that entry would make each sibling output a fresh re-run.
+    Kept separate from selection so a caller that needs the whole result (writing the cache artifact) gets every named array, not just the one entry some parameter asked for; writing only that entry would make each sibling output a fresh re-run.
 
-    ``spec`` is an already-resolved ``_producer_spec``; pass it when the caller has one, since resolving arguments again would rebuild every referenced array (a whole node
-    position matrix) only to discard the copy. ``key`` is the matching ``_producer_key``, for the same reason one step further on: hashing it re-runs ``tobytes()`` over every
-    array argument.
+    ``spec`` is an already-resolved ``_producer_spec``; pass it when the caller has one, since resolving arguments again would rebuild every referenced array (a whole node position matrix) only to discard the copy. ``key`` is the matching ``_producer_key``, for the same reason one step further on: hashing it re-runs ``tobytes()`` over every array argument.
 
-    The callable resolves by bare module name against the recipe's ``code_source`` (already on ``sys.path`` once the study is loaded), so a study's own code produces
-    its own derived constants without that code living in core tvbo.
+    The callable resolves by bare module name against the recipe's ``code_source`` (already on ``sys.path`` once the study is loaded), so a study's own code produces its own derived constants without that code living in core tvbo.
     """
     import importlib
 
@@ -402,17 +372,15 @@ def _call_producer(producer: Any, param_name: str, context: Any) -> Any:
 def _declared_name(obj: Any) -> str:
     """What to call this thing in a cache key and an error message.
 
-    Everything carrying the provenance triple is named, but not all of it is named
-    ``name``: an ``Edge`` is identified by its ``label`` (the matrix it supplies).
+    Everything carrying the provenance triple is named, but not all of it is named ``name``: an ``Edge`` is identified by its ``label`` (the matrix it supplies).
     """
     return str(_slot(obj, "name") or _slot(obj, "label") or "<unnamed>")
 
 
-def _provenance(param: Any) -> Optional[str]:
+def _provenance(param: Any) -> str | None:
     """Which of ``value``/``source``/``producer`` this parameter declares.
 
-    The schema states the three are mutually exclusive; enforce it here rather than let each entry point pick its own precedence. Two that disagreed (``resolve`` preferring
-    the producer while ``materialise`` preferred the source) would hand the host and the generated code different values for one parameter, silently.
+    The schema states the three are mutually exclusive; enforce it here rather than let each entry point pick its own precedence. Two that disagreed (``resolve`` preferring the producer while ``materialise`` preferred the source) would hand the host and the generated code different values for one parameter, silently.
     """
     declared = [n for n in ("value", "source", "producer") if _slot(param, n) is not None]
     if len(declared) > 1:
@@ -428,13 +396,12 @@ def _provenance(param: Any) -> Optional[str]:
 def is_lazy(param: Any) -> bool:
     """True when this parameter's value is resolved rather than inlined.
 
-    The one rule codegen branches on: a literal is materialised and inlined; anything obtained (``source``) or derived (``producer``) is read at run time and must never
-    be embedded in generated source.
+    The one rule codegen branches on: a literal is materialised and inlined; anything obtained (``source``) or derived (``producer``) is read at run time and must never be embedded in generated source.
     """
     return _provenance(param) in ("source", "producer")
 
 
-def _source_file(param: Any, source_dir: Optional[Path], name: str) -> Path:
+def _source_file(param: Any, source_dir: Path | None, name: str) -> Path:
     """The existing file a ``source:`` parameter names, resolved against the spec dir."""
     source = _slot(param, "source")
     path = _resolve_path(str(source), source_dir)
@@ -447,20 +414,15 @@ def _source_file(param: Any, source_dir: Optional[Path], name: str) -> Path:
 
 def materialise(
     param: Any,
-    source_dir: Optional[Path] = None,
+    source_dir: Path | None = None,
     context: Any = None,
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
 ) -> tuple:
     """The ``(file, key)`` a backend reads this parameter's array from.
 
-    Codegen emits this pair rather than the bytes, so a large constant never enters the spec or the generated source and is read at run time instead. Generated modules are
-    ``exec``'d in memory as often as they are written to disk, so the path is absolute (resolved against the declaring spec's directory) — the same way ``bids_dir`` is
-    emitted. A kit stays correct without rewriting code: its emitter rewrites the *spec* to point at the companion it staged and re-renders, exactly as it already does for
-    ``network.h5``.
+    Codegen emits this pair rather than the bytes, so a large constant never enters the spec or the generated source and is read at run time instead. Generated modules are ``exec``'d in memory as often as they are written to disk, so the path is absolute (resolved against the declaring spec's directory) — the same way ``bids_dir`` is emitted. A kit stays correct without rewriting code: its emitter rewrites the *spec* to point at the companion it staged and re-renders, exactly as it already does for ``network.h5``.
 
-    A ``source:`` parameter already lives in a file, so nothing is written. A
-    ``producer:`` parameter is computed once and cached content-addressed under
-    ``~/.tvbo/constants``, keyed by the producing call — so it survives across runs and every parameter naming that producer shares the one artifact.
+    A ``source:`` parameter already lives in a file, so nothing is written. A ``producer:`` parameter is computed once and cached content-addressed under ``~/.tvbo/constants``, keyed by the producing call — so it survives across runs and every parameter naming that producer shares the one artifact.
 
     Raises for a literal (there is nothing to read; it inlines) or for a parameter with no declared value.
     """
@@ -498,11 +460,10 @@ def materialise(
     return path, _checked_key(path, _slot(producer, "output", None), name)
 
 
-def _checked_key(path: Path, key: Optional[str], name: str) -> str:
+def _checked_key(path: Path, key: str | None, name: str) -> str:
     """The dataset ``key`` names in ``path``, verified to exist.
 
-    Checked here rather than left to run time: codegen bakes this key into the generated module, so an unverified one turns a typo into a failure inside a simulation, far
-    from the declaration that caused it. A cache hit skips the write entirely, so this is the only place the key is ever seen against the artifact.
+    Checked here rather than left to run time: codegen bakes this key into the generated module, so an unverified one turns a typo into a failure inside a simulation, far from the declaration that caused it. A cache hit skips the write entirely, so this is the only place the key is ever seen against the artifact.
     """
     import h5py
 
@@ -524,8 +485,7 @@ def _checked_key(path: Path, key: Optional[str], name: str) -> str:
 def _write_bundle(path: Path, produced: Any) -> None:
     """Write a producer's result to its cache artifact.
 
-    The whole bundle is written, not just one entry: a precompute typically emits every operator at once, so writing them together makes the next parameter naming a sibling
-    output a cache hit rather than a re-run.
+    The whole bundle is written, not just one entry: a precompute typically emits every operator at once, so writing them together makes the next parameter naming a sibling output a cache hit rather than a re-run.
     """
     import os
 
@@ -545,11 +505,10 @@ def _write_bundle(path: Path, produced: Any) -> None:
             tmp.unlink()
 
 
-def _declared_producers(root: Any, _seen: Optional[set] = None):
+def _declared_producers(root: Any, _seen: set | None = None):
     """Every object under *root* that declares a ``producer:``, wherever it sits.
 
-    Walked generically rather than from a list of the places producers are allowed: a parameter, a noise covariance and a coupling weight all declare one, and a reclaimer
-    that enumerated those three would silently spare — that is, treat as dead — every artifact belonging to the fourth.
+    Walked generically rather than from a list of the places producers are allowed: a parameter, a noise covariance and a coupling weight all declare one, and a reclaimer that enumerated those three would silently spare — that is, treat as dead — every artifact belonging to the fourth.
     """
     _seen = set() if _seen is None else _seen
     if root is None or id(root) in _seen or isinstance(root, (str, bytes, int, float, bool)):
@@ -567,7 +526,7 @@ def _declared_producers(root: Any, _seen: Optional[set] = None):
         yield from _declared_producers(child, _seen)
 
 
-def live_artifacts(root: Any, cache_dir: Optional[Path] = None) -> tuple[set, set]:
+def live_artifacts(root: Any, cache_dir: Path | None = None) -> tuple[set, set]:
     """``(paths, producers)`` this study still reaches in the produced-constant store.
 
     *producers* is every ``module.function`` whose liveness could be decided; a producer
@@ -589,12 +548,10 @@ def live_artifacts(root: Any, cache_dir: Optional[Path] = None) -> tuple[set, se
     return paths, producers
 
 
-def superseded_artifacts(root: Any, cache_dir: Optional[Path] = None) -> list:
+def superseded_artifacts(root: Any, cache_dir: Path | None = None) -> list:
     """Artifacts of THIS study's producers that it no longer reaches, newest first.
 
-    Superseded, not merely old: the content address keys on the producing call *and* on its module's source, so an artifact of a producer this study uses, at a digest this
-    study no longer computes, can only be a version left behind by an edit or by a changed argument. Files belonging to producers not seen here are never listed — they
-    may well be another study's, and this reads one study.
+    Superseded, not merely old: the content address keys on the producing call *and* on its module's source, so an artifact of a producer this study uses, at a digest this study no longer computes, can only be a version left behind by an edit or by a changed argument. Files belonging to producers not seen here are never listed — they may well be another study's, and this reads one study.
     """
     root_dir = Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
     if not root_dir.is_dir():
@@ -604,14 +561,12 @@ def superseded_artifacts(root: Any, cache_dir: Optional[Path] = None) -> list:
     return sorted(dead, key=lambda p: -p.stat().st_size)
 
 
-def resolve(param: Any, source_dir: Optional[Path] = None, context: Any = None) -> Any:
+def resolve(param: Any, source_dir: Path | None = None, context: Any = None) -> Any:
     """This parameter's value, resolving ``source``/``producer`` on demand.
 
-    Returns the literal ``value`` untouched when there is one, so a scalar costs nothing. Returns ``None`` for a parameter that declares no value at all (a free
-    parameter, say) rather than raising — the caller decides whether that is an error.
+    Returns the literal ``value`` untouched when there is one, so a scalar costs nothing. Returns ``None`` for a parameter that declares no value at all (a free parameter, say) rather than raising — the caller decides whether that is an error.
 
-    ``context`` is the owning experiment (or a network); a producer argument naming an entity — ``positions: network.nodes.position`` — resolves against it. Resolved
-    arrays are cached and returned **read-only**: they are shared, and a resolved constant is not the caller's to modify.
+    ``context`` is the owning experiment (or a network); a producer argument naming an entity — ``positions: network.nodes.position`` — resolves against it. Resolved arrays are cached and returned **read-only**: they are shared, and a resolved constant is not the caller's to modify.
     """
     kind = _provenance(param)
     if kind == "value":

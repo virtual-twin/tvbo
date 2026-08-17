@@ -1,9 +1,6 @@
 """Flatten a multi-scale reservoir SimulationExperiment to a flat one (Python).
 
-Lowering strategy for Experiment A (per-region reservoirs): a network of ``R`` macro regions, each hosting an ``n``-unit reservoir (``Node.subnetwork`` with a
-``RandomReservoir`` generator) coupled long-range through the empirical SC, is compiled into a single **flat** ``R·n``-node scalar network plus a global weight
-matrix that the existing tvboptim backend runs unchanged. No vector-state machinery in the templates — the multi-scale structure is resolved entirely in
-Python (the chosen "flatten in Python" approach).
+Lowering strategy for Experiment A (per-region reservoirs): a network of ``R`` macro regions, each hosting an ``n``-unit reservoir (``Node.subnetwork`` with a ``RandomReservoir`` generator) coupled long-range through the empirical SC, is compiled into a single **flat** ``R·n``-node scalar network plus a global weight matrix that the existing tvboptim backend runs unchanged. No vector-state machinery in the templates — the multi-scale structure is resolved entirely in Python (the chosen "flatten in Python" approach).
 
 The reservoir multi-scale pattern this handles
 ----------------------------------------------
@@ -19,21 +16,17 @@ with the cross-layer edges forming a **linear** down/up coupling:
   the macro coupling;
 * (optional) upward trained readout ``W_out @ x`` — ignored for free-running.
 
-Because both the recurrence (``W_int @ x``) and the cross-region drive are linear in the units' states and enter the *same* activation, they fold into one
-global matrix via Kronecker structure::
+Because both the recurrence (``W_int @ x``) and the cross-region drive are linear in the units' states and enter the *same* activation, they fold into one global matrix via Kronecker structure::
 
     W_global = kron(I_R, W_int)  +  (kappa / n) · kron(SC, outer(W_in, 1ₙ))
     dX/dt    = (1/tau) · (-X + act(W_global @ X))            # X ∈ ℝ^{R·n}
 
-The flat model is a scalar leaky-integrator whose coupling enters *inside* the activation. ``flatten_reservoir`` validates the spec matches this pattern and
-raises otherwise — it is a principled lowering of a well-defined model class, not a general arbitrary-coupling compiler (that would be the Stage-3 codegen
-engine emitting the procedure on-device).
+The flat model is a scalar leaky-integrator whose coupling enters *inside* the activation. ``flatten_reservoir`` validates the spec matches this pattern and raises otherwise — it is a principled lowering of a well-defined model class, not a general arbitrary-coupling compiler (that would be the Stage-3 codegen engine emitting the procedure on-device).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -78,18 +71,14 @@ def _activation_from_rhs(rhs: str) -> str:
 
 def flatten_reservoir(
     exp: dict,
-    n_override: Optional[int] = None,
-    max_flat_nodes: Optional[int] = 12_000,
+    n_override: int | None = None,
+    max_flat_nodes: int | None = 12_000,
 ) -> FlatReservoir:
     """Flatten a per-region-reservoir experiment dict into a flat scalar model.
 
-    ``exp`` is the parsed Experiment-A YAML (a plain dict). ``n_override`` optionally shrinks the reservoir size for a fast demonstration run (the full
-    ``n`` from the spec is memory-heavy: ``W_global`` is dense ``(R·n)²``).
+    ``exp`` is the parsed Experiment-A YAML (a plain dict). ``n_override`` optionally shrinks the reservoir size for a fast demonstration run (the full ``n`` from the spec is memory-heavy: ``W_global`` is dense ``(R·n)²``).
 
-    ``max_flat_nodes`` caps the flat node count ``R·n`` before the dense
-    ``(R·n)²`` float64 ``W_global`` is allocated. Because memory grows quadratically, a full-``n`` reservoir over a whole-brain SC can exhaust RAM
-    (this lowering has OOM-crashed a machine). Exceeding the cap raises with the projected allocation size; pass a larger value — or ``None`` to disable —
-    once the memory is known to be available.
+    ``max_flat_nodes`` caps the flat node count ``R·n`` before the dense ``(R·n)²`` float64 ``W_global`` is allocated. Because memory grows quadratically, a full-``n`` reservoir over a whole-brain SC can exhaust RAM (this lowering has OOM-crashed a machine). Exceeding the cap raises with the projected allocation size; pass a larger value — or ``None`` to disable — once the memory is known to be available.
     """
     # Local imports keep this module import-light.
     from tvbo.graph_generators import catalog
@@ -220,7 +209,7 @@ def _project_weights(subnet: dict, n: int) -> np.ndarray:
     for edge in subnet.get("edges") or []:
         if edge.get("source_network") in ("..", "parent"):
             wparams = _pluck(edge, "coupling", "parameters") or {}
-            for pname, pspec in wparams.items():
+            for pspec in wparams.values():
                 dist = pspec.get("distribution") if isinstance(pspec, dict) else None
                 if dist:
                     seed = _pluck(pspec, "distribution", "seed")

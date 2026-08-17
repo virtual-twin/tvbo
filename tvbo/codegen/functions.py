@@ -1,14 +1,7 @@
-#
-# Module: functions.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-Function Code Generation
-========================
+"""Function Code Generation.
 
 Generate executable Python code from TVBO Function and LossFunction objects.
 Supports standalone usage without SimulationExperiment or Dynamics context.
@@ -50,14 +43,14 @@ With aggregation (LossFunction):
     code = generate_loss_function(loss, inner_func_names=['correlation'])
 """
 
-from typing import Dict, List, Optional, Callable
+from collections.abc import Callable
 
 
 def generate_function(
     func,
     format: str = "jax",
-    user_functions: Optional[Dict[str, str]] = None,
-    render_func: Optional[Callable] = None,
+    user_functions: dict[str, str] | None = None,
+    render_func: Callable | None = None,
 ) -> str:
     """Generate Python code for a function definition.
 
@@ -80,12 +73,12 @@ def generate_function(
         Custom render function for model context.
         If provided, uses this instead of render_expression.
 
-    Returns
+    Returns:
     -------
     str
         Python code string defining the function
 
-    Examples
+    Examples:
     --------
     >>> from tvbo.datamodel.schema import Function, Equation
     >>> func = Function(
@@ -116,8 +109,8 @@ def generate_function(
 def generate_loss_function(
     func,
     format: str = "jax",
-    user_functions: Optional[Dict[str, str]] = None,
-    inner_func_names: Optional[List[str]] = None,
+    user_functions: dict[str, str] | None = None,
+    inner_func_names: list[str] | None = None,
 ) -> str:
     """Generate Python code for a loss function with aggregation.
 
@@ -137,12 +130,12 @@ def generate_loss_function(
         Names of inner functions that should be recognized
         Example: ['correlation'] for "1 - correlation(x, y)"
 
-    Returns
+    Returns:
     -------
     str
         Python code string defining the loss function
 
-    Examples
+    Examples:
     --------
     >>> from tvbo.datamodel.schema import LossFunction, Equation, Aggregation
     >>> loss = LossFunction(
@@ -176,7 +169,7 @@ def generate_loss_function(
 def generate_indexed_function(
     func,
     format: str = "jax",
-    user_functions: Optional[Dict[str, str]] = None,
+    user_functions: dict[str, str] | None = None,
 ) -> str:
     """Generate Python code for a function with indexed aggregation.
 
@@ -193,7 +186,7 @@ def generate_indexed_function(
     user_functions : dict, optional
         Custom function name mappings
 
-    Returns
+    Returns:
     -------
     str
         Python code string
@@ -216,7 +209,7 @@ def generate_indexed_function(
 def generate_callable_function(
     func,
     format: str = "jax",
-    callable_ref: Optional[str] = None,
+    callable_ref: str | None = None,
 ) -> str:
     """Generate Python code for a callable-based function with vmap.
 
@@ -231,7 +224,7 @@ def generate_callable_function(
     callable_ref : str, optional
         Override the callable reference name
 
-    Returns
+    Returns:
     -------
     str
         Python code string
@@ -254,7 +247,7 @@ def generate_callable_function(
 def generate_inline_function(
     func,
     format: str = "jax",
-    user_functions: Optional[Dict[str, str]] = None,
+    user_functions: dict[str, str] | None = None,
 ) -> str:
     """Generate a lambda expression for a function.
 
@@ -267,12 +260,12 @@ def generate_inline_function(
     user_functions : dict, optional
         Custom function name mappings
 
-    Returns
+    Returns:
     -------
     str
         Lambda expression string
 
-    Examples
+    Examples:
     --------
     >>> func = Function(name='square', equation=Equation(rhs='x**2'), arguments=[{'name': 'x'}])
     >>> print(generate_inline_function(func))
@@ -296,8 +289,8 @@ def generate_inline_function(
 def function_to_callable(
     func,
     format: str = "jax",
-    user_functions: Optional[Dict[str, str]] = None,
-    namespace: Optional[Dict] = None,
+    user_functions: dict[str, str] | None = None,
+    namespace: dict | None = None,
 ) -> Callable:
     """Generate and execute function code, returning the callable.
 
@@ -312,12 +305,12 @@ def function_to_callable(
     namespace : dict, optional
         Namespace for exec(). If None, creates one with jnp/np imports.
 
-    Returns
+    Returns:
     -------
     callable
         The generated function as a callable
 
-    Examples
+    Examples:
     --------
     >>> func = Function(name='sigmoid', equation=Equation(rhs='1/(1+exp(-x))'), ...)
     >>> sigmoid = function_to_callable(func)

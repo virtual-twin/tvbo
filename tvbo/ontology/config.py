@@ -5,13 +5,10 @@
 #
 # Copyright (c) 2023 Charité Universitätsmedizin Berlin
 #
-"""
-TVB-O Model Configuration Module
---------------------------------
+"""TVB-O Model Configuration Module.
 
 This module provides utility functions to configure and manage TVB neural mass models using ontology-based configurations.
-These configurations can be applied to model objects to change their default behavior or parameterize them as per
-published studies or lab-tested configurations.
+These configurations can be applied to model objects to change their default behavior or parameterize them as per published studies or lab-tested configurations.
 
 ### Functions
 
@@ -56,15 +53,14 @@ from os.path import join
 
 import numpy as np
 
-from tvbo.utils import report
 from tvbo.ontology import owl as ontology
+from tvbo.utils import report
 
 
 class ModelConfiguration:
-    """
-    A class that handles parameter settings for a given Neural Mass Model (NMM).
+    """A class that handles parameter settings for a given Neural Mass Model (NMM).
 
-    Attributes
+    Attributes:
     ----------
     model : ontology.NMM
         Neural Mass Model instance or identifier.
@@ -80,7 +76,7 @@ class ModelConfiguration:
     NMM : ontology.NMM or str
         An instance or identifier of the Neural Mass Model.
 
-    Methods
+    Methods:
     -------
     apply_config(config_key)
         Apply a new configuration based on the provided key.
@@ -91,9 +87,8 @@ class ModelConfiguration:
     """
 
     def __init__(self, NMM):
-        """
-        Parameters
-        ----------
+        """Parameters
+
         NMM : ontology.NMM or str
             Neural Mass Model instance or identifier.
         """
@@ -105,8 +100,7 @@ class ModelConfiguration:
         self.config_key = "default"
 
     def apply_config(self, config_key):
-        """
-        Apply a new configuration based on the provided key.
+        """Apply a new configuration based on the provided key.
 
         Parameters
         ----------
@@ -115,13 +109,12 @@ class ModelConfiguration:
         """
         self.config_key = config_key
         new_config = get_param_config(config_key, use_classes=True)
-        for k, v in self.config.items():
+        for k in self.config:
             if k in new_config.keys():
                 self.config[k] = new_config[k]["value"]
 
     def get_report(self, format="latex", decimals=3, **kwargs):
-        """
-        Generate a report for the current configuration.
+        """Generate a report for the current configuration.
 
         Parameters
         ----------
@@ -132,7 +125,7 @@ class ModelConfiguration:
         **kwargs :
             Additional keyword arguments.
 
-        Returns
+        Returns:
         -------
         str
             Generated report.
@@ -141,8 +134,7 @@ class ModelConfiguration:
         return self.report
 
     def save_report(self, path=".", format="latex", **kwargs):
-        """
-        Save the generated report to a file.
+        """Save the generated report to a file.
 
         Parameters
         ----------
@@ -160,8 +152,7 @@ class ModelConfiguration:
 
 
 def get_default(NMM):
-    """
-    Retrieve the default values for a given Neural Mass Model (NMM).
+    """Retrieve the default values for a given Neural Mass Model (NMM).
 
     If the provided NMM is a string identifier, it attempts to fetch the actual NMM instance.
     It then collects the default values for each descendant class of the NMM.
@@ -171,12 +162,12 @@ def get_default(NMM):
     NMM : ontology.NMM or str
         An instance or identifier of the Neural Mass Model.
 
-    Returns
+    Returns:
     -------
     dict
         A dictionary with descendant classes of the NMM as keys and their corresponding default values as values.
 
-    Examples
+    Examples:
     --------
     >>> get_default("some_NMM_identifier")
     {<descendant_class1>: 0.5, <descendant_class2>: 1.2, ...}
@@ -195,11 +186,9 @@ def get_default(NMM):
 
 
 def get_param_config(config_key="default", model=None, return_NMM=False, use_classes=False):
-    """
-    Retrieve the parameter configuration for a given configuration key.
+    """Retrieve the parameter configuration for a given configuration key.
 
-    This function searches the ontology for the provided configuration key and returns a dictionary with the relevant parameter details. Additionally,
-    it checks for ancestors related to Neural Mass Model (NMM) and fetches the relevant variables and instances associated with the configuration.
+    This function searches the ontology for the provided configuration key and returns a dictionary with the relevant parameter details. Additionally, it checks for ancestors related to Neural Mass Model (NMM) and fetches the relevant variables and instances associated with the configuration.
 
     Parameters
     ----------
@@ -210,7 +199,7 @@ def get_param_config(config_key="default", model=None, return_NMM=False, use_cla
     use_classes : bool, optional
         If True, the labels in the returned dictionary will use class objects instead of string labels. Default is False.
 
-    Returns
+    Returns:
     -------
     dict or tuple
         If `return_NMM` is False:
@@ -218,7 +207,7 @@ def get_param_config(config_key="default", model=None, return_NMM=False, use_cla
         If `return_NMM` is True:
             A tuple where the first element is the configuration details dictionary and the second is the NMM.
 
-    Examples
+    Examples:
     --------
     >>> get_param_config("some_config_key")
     {'some_variable': {'category': 'State Variable', 'range': [0.5, 1.2]}}
@@ -261,8 +250,7 @@ def get_param_config(config_key="default", model=None, return_NMM=False, use_cla
 
 def update_default(model_name, config_key=None, config_dict=None):
     # TODO: add all params to docstring
-    """
-    Update the default configuration for a specific model using a given configuration key.
+    """Update the default configuration for a specific model using a given configuration key.
 
     This function first fetches the default values for the provided model using the ontology.
     If the config_key is "default", it returns the fetched default values.
@@ -275,12 +263,12 @@ def update_default(model_name, config_key=None, config_dict=None):
     config_key : str
         The reference key for the parameter configuration that will be used to update the default values.
 
-    Returns
+    Returns:
     -------
     dict
         The updated default configuration values for the model. If config_key is "default", the original default values are returned.
 
-    Examples
+    Examples:
     --------
     >>> update_default("example_model", "default")
     {'param1': 1.2, 'param2': 2.3}
@@ -288,7 +276,7 @@ def update_default(model_name, config_key=None, config_dict=None):
     >>> update_default("example_model", "custom_config")
     {'param1': 1.8, 'param2': 2.3}
 
-    Notes
+    Notes:
     -----
     The function makes use of `ontology` for its operations. Ensure that `ontology` is properly initialized and contains the required data.
     """
@@ -301,16 +289,14 @@ def update_default(model_name, config_key=None, config_dict=None):
         config = get_param_config(config_key)
     else:
         config = config_dict
-    for k, v in default.items():
+    for k in default:
         if k in config.keys():
             updated[k] = config[k]
     return updated
 
 
 def configure_model(tvb_model, config_key):
-    """Apply specific parameter configuration stored in TVB-O. All configurations have been either published in a
-    peer-reviewed journal or tested extensively in our lab. Each configuration has a specific reference with further
-    information.
+    """Apply specific parameter configuration stored in TVB-O. All configurations have been either published in a peer-reviewed journal or tested extensively in our lab. Each configuration has a specific reference with further information.
 
     Parameters
     ----------
@@ -319,7 +305,7 @@ def configure_model(tvb_model, config_key):
     config_key : str
         Reference-key for Parameter configuration.
 
-    Returns
+    Returns:
     -------
     tvb.simulator.models
         Updated model instance with parameter values according to specific configuration.
@@ -382,17 +368,13 @@ def get_model_configurations(model):
     return list(set([inst for inst in ontology.onto.ModelConfiguration.instances() if model in inst.is_a]))
 
 
-############################################
 #              LinkML Functions            #
-############################################
 
 
 def getattr_case_insensitive(obj, attr_name, default=None):
-    """
-    Get the value of an attribute from an object, ignoring case sensitivity.
+    """Get the value of an attribute from an object, ignoring case sensitivity.
 
-    This function searches for an attribute with a case-insensitive match to the given `attr_name` within the `obj` object. If a match is found, the corresponding value is returned. If no match
-    is found, the `default` value is returned.
+    This function searches for an attribute with a case-insensitive match to the given `attr_name` within the `obj` object. If a match is found, the corresponding value is returned. If no match is found, the `default` value is returned.
 
     :param obj: The object to search for the attribute.
     :param attr_name: The name of the attribute to search for.

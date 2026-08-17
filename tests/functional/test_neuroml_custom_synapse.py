@@ -1,15 +1,8 @@
 """Acceptance test: custom conductance-based synapse LEMS emission.
 
-Before the ontology grounding, tvbo could only emit current-based synapses
-(hardcoded ``extends="baseSynapse"``, exposing ``i``). Deco (2014)'s saturating
-NMDA gate (Eqs 3-4) is conductance-based — it exposes ``g`` and extends
-``baseConductanceBasedSynapse`` — so it was downgraded to the linear standard
-``blockingPlasticSynapse``.
+Before the ontology grounding, tvbo could only emit current-based synapses (hardcoded ``extends="baseSynapse"``, exposing ``i``). Deco (2014)'s saturating NMDA gate (Eqs 3-4) is conductance-based — it exposes ``g`` and extends ``baseConductanceBasedSynapse`` — so it was downgraded to the linear standard ``blockingPlasticSynapse``.
 
-This test authors the *faithful* saturating NMDA as a custom tvbo Dynamics and
-checks that it emits, grounded in the ingested NeuroML ontology contract, as a
-valid conductance-based LEMS ComponentType: the base type, the ``g`` exposure,
-the two-ODE saturating gate with a spike-driven ``OnEvent``, and the Mg2+ block.
+This test authors the *faithful* saturating NMDA as a custom tvbo Dynamics and checks that it emits, grounded in the ingested NeuroML ontology contract, as a valid conductance-based LEMS ComponentType: the base type, the ``g`` exposure, the two-ODE saturating gate with a spike-driven ``OnEvent``, and the Mg2+ block.
 """
 
 from __future__ import annotations
@@ -23,8 +16,6 @@ import pytest
 
 from tvbo.classes.experiment import SimulationExperiment
 
-# A two-neuron column whose single edge is the custom saturating NMDA synapse.
-# The cell is a minimal LIF; the synapse carries the faithful Deco Eqs 3-4.
 NMDA_COLUMN_YAML = """
 label: "Custom saturating-NMDA column"
 network:
@@ -97,11 +88,10 @@ integration:
   duration: 500.0
   time_scale: ms
 """
+"""A two-neuron column whose single edge is the custom saturating NMDA synapse: the cell is a minimal LIF, the synapse carries the faithful Deco Eqs 3-4."""
 
 
-# The same column, driven: a pulse makes the presynaptic cell fire so the gate
-# is actually exercised.  Structural validity says nothing about whether the
-# emitted model integrates to the right trajectory, which is what this drives.
+# The same column, driven: a pulse makes the presynaptic cell fire so the gate is actually exercised.  Structural validity says nothing about whether the emitted model integrates to the right trajectory, which is what this drives.
 DRIVEN_COLUMN_YAML = (
     NMDA_COLUMN_YAML.replace(
         """  dynamics:
@@ -142,7 +132,7 @@ def _norm(text: str) -> str:
 
 def _time_derivative(component: str, variable: str) -> str:
     """The TimeDerivative expression for *variable*, whitespace-normalised."""
-    m = re.search(r'<TimeDerivative variable="%s" value="([^"]+)"' % variable, component)
+    m = re.search(rf'<TimeDerivative variable="{variable}" value="([^"]+)"', component)
     assert m, f"no TimeDerivative for {variable} in:\n{component}"
     return _norm(m.group(1))
 
@@ -187,9 +177,7 @@ class TestCustomConductanceSynapseEmission:
     def test_saturating_two_ode_gate(self, nmda_component):
         """Deco Eqs 3-4: the saturating gate and the spike-driven rise ODE.
 
-        Asserted on the parsed expression rather than an exact string, so a
-        change in the symbolic printer's term order or spacing does not fail a
-        run that is still semantically correct.
+        Asserted on the parsed expression rather than an exact string, so a change in the symbolic printer's term order or spacing does not fail a run that is still semantically correct.
         """
         decay = _time_derivative(nmda_component, "s")
         assert "-s/tauDecay" in decay, decay
@@ -212,9 +200,9 @@ class TestCustomConductanceSynapseEmission:
         """The synapse resolves against the real NeuroML baseConductanceBasedSynapse."""
         pytest.importorskip("lems")
         pyneuroml = pytest.importorskip("pyneuroml")
-        from lems.model.model import Model
-
         import glob
+
+        from lems.model.model import Model
 
         libdir = os.path.join(os.path.dirname(pyneuroml.__file__), "lib")
         jars = sorted(glob.glob(os.path.join(libdir, "jNeuroML-*-jar-with-dependencies.jar")))
@@ -245,8 +233,7 @@ class TestCustomConductanceSynapseEmission:
 class TestSynapticTransmissionWiring:
     """The synapse must actually reach the postsynaptic membrane equation.
 
-    A valid synapse ComponentType is not enough: the cell has to host it and sum
-    its current, or the synapse is emitted but inert.
+    A valid synapse ComponentType is not enough: the cell has to host it and sum its current, or the synapse is emitted but inert.
     """
 
     def test_cell_hosts_and_sums_attached_synapses(self, rendered_lems):
@@ -260,16 +247,14 @@ class TestSynapticTransmissionWiring:
     def test_connection_targets_the_synapse(self, rendered_lems):
         """The connection must name the synapse Component, not its ComponentType.
 
-        A ``synapse=`` reference resolves against components; pointing it at the
-        bare ComponentType left jNeuroML with "No component found: syn_edge0".
+        A ``synapse=`` reference resolves against components; pointing it at the bare ComponentType left jNeuroML with "No component found: syn_edge0".
         """
         assert re.search(r'synapse="NMDA_inst"[^>]*destination="synapses"', rendered_lems)
 
     def test_synapse_component_is_instantiated_with_its_values(self, rendered_lems):
         """The ComponentType alone carries no values — the instance must exist.
 
-        Without it the synapse's parameters (the Deco gate constants, and the
-        gbase/erev inherited from the base type) were emitted nowhere at all.
+        Without it the synapse's parameters (the Deco gate constants, and the gbase/erev inherited from the base type) were emitted nowhere at all.
         """
         m = re.search(r"<Component id=\"NMDA_inst\" type=\"NMDA\"[^>]*/>", rendered_lems)
         assert m, "custom synapse ComponentType was never instantiated"
@@ -283,14 +268,12 @@ class TestSynapticTransmissionWiring:
             ("gbase", "0.2"),  # inherited from baseConductanceBasedSynapse
             ("erev", "0"),
         ):
-            assert re.search(r'%s="%s' % (attr, re.escape(value)), inst), f"{attr} missing from {inst}"
+            assert re.search(rf'{attr}="{re.escape(value)}', inst), f"{attr} missing from {inst}"
 
     def test_time_derivatives_are_dimensionally_consistent(self, nmda_component):
         """Gate equations with dimensioned time constants must not be / SEC.
 
-        ``tauDecay``/``alpha`` already carry time dimensions, so the RHS is a
-        rate; dividing by SEC again made it per-time-squared and jNeuroML
-        rejected the model outright.
+        ``tauDecay``/``alpha`` already carry time dimensions, so the RHS is a rate; dividing by SEC again made it per-time-squared and jNeuroML rejected the model outright.
         """
         assert "SEC" not in nmda_component
         assert _time_derivative(nmda_component, "s").endswith("alpha*x*(1 - s)")
@@ -299,17 +282,14 @@ class TestSynapticTransmissionWiring:
 class TestUnknownBaseTypeWarns:
     """A base type tvbo cannot resolve must not fail silently.
 
-    Emitting against an unknown type yields a ComponentType extending something
-    NeuroML has never heard of; without this warning the failure only surfaces
-    much later inside jNeuroML, with nothing pointing at the bad reference.
+    Emitting against an unknown type yields a ComponentType extending something NeuroML has never heard of; without this warning the failure only surfaces much later inside jNeuroML, with nothing pointing at the bad reference.
     """
 
     @staticmethod
     def _resolve(ref):
         from tvbo.adapters.neuroml import _base_type_meta
 
-        # The contract lookup is cached per name, so a warning fires only once
-        # per process for a given type.
+        # The contract lookup is cached per name, so a warning fires only once per process for a given type.
         _base_type_meta.cache_clear()
         return _base_type_meta(ref)
 
@@ -348,8 +328,7 @@ CURRENT_SYNAPSE_YAML = NMDA_COLUMN_YAML.replace(
 class TestCurrentBasedSynapseUnchanged:
     """The default path must not shift when no base type is declared.
 
-    Nothing in the tvbo database exercises the synapse emitter, so this pins the
-    pre-existing current-based behaviour that the ontology grounding defaults to.
+    Nothing in the tvbo database exercises the synapse emitter, so this pins the pre-existing current-based behaviour that the ontology grounding defaults to.
     """
 
     @pytest.fixture(scope="class")
@@ -363,7 +342,7 @@ class TestCurrentBasedSynapseUnchanged:
         assert 'extends="baseSynapse"' in component
 
     def test_declares_own_parameters(self, component):
-        """baseSynapse inherits no parameters, so none are skipped."""
+        """BaseSynapse inherits no parameters, so none are skipped."""
         assert '<Parameter name="gbase"' in component
         assert '<Parameter name="erev"' in component
 
@@ -377,12 +356,7 @@ class TestCurrentBasedSynapseUnchanged:
 class TestDrivenColumnBehaviour:
     """Run the emitted model and check the gate behaves like Deco Eqs 3-4.
 
-    Everything above asserts on the XML.  A model can be perfectly valid XML,
-    resolve against the core types, and still integrate to nothing — which is
-    exactly what happened before: the synapse ComponentType was never
-    instantiated and the connection pointed at a type, so jNeuroML refused to
-    build the network at all.  This class is the guard against that class of
-    failure: it drives the presynaptic cell and reads the trajectory back.
+    Everything above asserts on the XML.  A model can be perfectly valid XML, resolve against the core types, and still integrate to nothing — which is exactly what happened before: the synapse ComponentType was never instantiated and the connection pointed at a type, so jNeuroML refused to build the network at all.  This class is the guard against that class of failure: it drives the presynaptic cell and reads the trajectory back.
     """
 
     @pytest.fixture(scope="class")
@@ -397,12 +371,8 @@ class TestDrivenColumnBehaviour:
         (tmp / "column.yaml").write_text(DRIVEN_COLUMN_YAML)
         xml = SimulationExperiment.from_file(str(tmp / "column.yaml")).render("lems")
 
-        # tvbo emits OutputColumns for population state variables only; the
-        # synapse's own gate is recorded here by path so the trajectory can be
-        # asserted on (emitting these declaratively is a separate gap).
-        gate_cols = "".join(
-            '      <OutputColumn id="%s" quantity="LIFCell_pop[1]/NMDA_inst/%s"/>\n' % (n, n) for n in ("s", "x")
-        )
+        # tvbo emits OutputColumns for population state variables only; the synapse's own gate is recorded here by path so the trajectory can be asserted on (emitting these declaratively is a separate gap).
+        gate_cols = "".join(f'      <OutputColumn id="{n}" quantity="LIFCell_pop[1]/NMDA_inst/{n}"/>\n' for n in ("s", "x"))
         xml = xml.replace("</OutputFile>", gate_cols + "    </OutputFile>", 1)
         (tmp / "driven.xml").write_text(xml)
         (tmp / "results").mkdir()
@@ -425,8 +395,7 @@ class TestDrivenColumnBehaviour:
     def test_gate_saturates_strictly_below_one(self, run_output):
         """Deco's alpha*x*(1-s) term is what bounds s — a linear gate would not.
 
-        The bound is the whole reason the faithful synapse is needed instead of
-        the linear ``blockingPlasticSynapse`` downgrade.
+        The bound is the whole reason the faithful synapse is needed instead of the linear ``blockingPlasticSynapse`` downgrade.
         """
         s = run_output[:, 3]
         assert s.min() >= 0.0, f"gate went negative: {s.min()}"
@@ -439,9 +408,7 @@ class TestDrivenColumnBehaviour:
         assert post.max() > post[0], "postsynaptic voltage never moved"
 
 
-# A Poisson background: the component names its synapse by id
-# (<ComponentReference name="synapse" type="baseSynapse"/>) rather than nesting
-# it, and that synapse hangs off no node and no edge.
+# A Poisson background: the component names its synapse by id (<ComponentReference name="synapse" type="baseSynapse"/>) rather than nesting it, and that synapse hangs off no node and no edge.
 POISSON_BACKGROUND_YAML = DRIVEN_COLUMN_YAML.replace(
     """    Drive:
       iri: "neuroml:pulseGenerator"
@@ -467,9 +434,7 @@ POISSON_BACKGROUND_YAML = DRIVEN_COLUMN_YAML.replace(
 class TestComponentReferences:
     """A referenced component must be emitted, or the reference dangles.
 
-    ``poissonFiringSynapse`` names its synapse by id.  That target is attached
-    to neither a node nor an edge, so nothing in the network builder would
-    otherwise emit it and jNeuroML failed with "No component found".
+    ``poissonFiringSynapse`` names its synapse by id.  That target is attached to neither a node nor an edge, so nothing in the network builder would otherwise emit it and jNeuroML failed with "No component found".
     """
 
     @pytest.fixture(scope="class")
@@ -509,9 +474,7 @@ class TestComponentReferences:
 class TestInputFanOut:
     """One component definition per input, one explicitInput per target.
 
-    A connectivity rule on an input edge attaches an independent copy of the
-    input to every target cell.  Those copies share one component definition —
-    emitting it per target would repeat the same id N times.
+    A connectivity rule on an input edge attaches an independent copy of the input to every target cell.  Those copies share one component definition — emitting it per target would repeat the same id N times.
     """
 
     @pytest.fixture(scope="class")
@@ -528,10 +491,7 @@ class TestInputFanOut:
         assert rendered.count("<explicitInput") == 4
 
 
-# A *standard-types* network (iri: neuroml:*) driving the same input onto several
-# cells. This exercises the standard-NeuroML builder, not the custom-LEMS one, so
-# it pins the input de-duplication the shared small-scale lowering brings to that
-# path — the parity fix from routing both builders through one core.
+# A *standard-types* network (iri: neuroml:*) driving the same input onto several cells. This exercises the standard-NeuroML builder, not the custom-LEMS one, so it pins the input de-duplication the shared small-scale lowering brings to that path — the parity fix from routing both builders through one core.
 STD_SHARED_INPUT_YAML = """
 label: "Standard-types column with a shared input"
 network:
@@ -563,12 +523,7 @@ integration: {method: euler, step_size: 0.01, duration: 10.0, time_scale: s}
 class TestStandardPathInputDedup:
     """The standard-NeuroML builder must de-duplicate inputs like the custom one.
 
-    Two input nodes with identical parameters share one component; two with
-    differing parameters each get a unique id. Before the shared lowering, the
-    standard-types path used a bare ``safe_id(name)`` with no de-duplication, so a
-    repeated input emitted the same id twice (a duplicate component) and a
-    differing one silently collided — the fixes that already lived only in the
-    custom-LEMS builder. Routing both builders through the shared core closes it.
+    Two input nodes with identical parameters share one component; two with differing parameters each get a unique id. Before the shared lowering, the standard-types path used a bare ``safe_id(name)`` with no de-duplication, so a repeated input emitted the same id twice (a duplicate component) and a differing one silently collided — the fixes that already lived only in the custom-LEMS builder. Routing both builders through the shared core closes it.
     """
 
     def test_identical_inputs_share_one_component(self, tmp_path):
@@ -593,10 +548,7 @@ class TestStandardPathInputDedup:
 class TestDeclaredRefractoryPeriod:
     """A model's own refractory period must not be overwritten by the default.
 
-    The refractory regime reads `refract`, so the emitter defaults it in when the
-    model is silent.  When the model DOES declare it, emitting both put two
-    `refract` attributes on the component — and the synthesised "0 ms" came last,
-    so a declared refractory period was silently discarded.
+    The refractory regime reads `refract`, so the emitter defaults it in when the model is silent.  When the model DOES declare it, emitting both put two `refract` attributes on the component — and the synthesised "0 ms" came last, so a declared refractory period was silently discarded.
     """
 
     @pytest.fixture(scope="class")
@@ -617,8 +569,6 @@ class TestDeclaredRefractoryPeriod:
         assert 'refract="2.0 ms"' in m.group(0), m.group(0)
 
 
-# A network-mode column written NUMERICALLY: no physical units anywhere, so the
-# TimeDerivative RHS is a pure number in model-time units.
 NUMERIC_COLUMN_YAML = """
 label: "Numeric (unitless) network-mode column"
 network:
@@ -662,19 +612,13 @@ integration:
   duration: 100.0
   time_scale: ms
 """
+"""A network-mode column written numerically: no physical units anywhere, so the TimeDerivative RHS is a pure number in model-time units."""
 
 
 class TestNetworkModeTimeScaling:
     """`/ SEC` must follow the equations' dimensions, in network mode too.
 
-    SEC converts a TimeDerivative written in model-time units into SI. Applying
-    it to equations that already carry dimensioned time constants makes the
-    derivative per-time-squared and jNeuroML rejects the model; omitting it from
-    equations written as pure numbers integrates 1000x too fast. Network-mode
-    ComponentTypes used to apply it unconditionally, and nothing in the shipped
-    database exercises that path — every database NeuroML experiment has a
-    `network`, but none defines `network.dynamics` — so these are the only tests
-    holding the rule for cells and synapses alike.
+    SEC converts a TimeDerivative written in model-time units into SI. Applying it to equations that already carry dimensioned time constants makes the derivative per-time-squared and jNeuroML rejects the model; omitting it from equations written as pure numbers integrates 1000x too fast. Network-mode ComponentTypes used to apply it unconditionally, and nothing in the shipped database exercises that path — every database NeuroML experiment has a `network`, but none defines `network.dynamics` — so these are the only tests holding the rule for cells and synapses alike.
     """
 
     @pytest.fixture(scope="class")
@@ -683,7 +627,7 @@ class TestNetworkModeTimeScaling:
 
     @staticmethod
     def _component(xml: str, name: str) -> str:
-        m = re.search(r'<ComponentType name="%s".*?</ComponentType>' % name, xml, re.S)
+        m = re.search(rf'<ComponentType name="{name}".*?</ComponentType>', xml, re.S)
         assert m, f"{name} was not emitted in:\n{xml[:2000]}"
         return m.group(0)
 
@@ -712,13 +656,8 @@ class TestNetworkModeTimeScaling:
 class TestConnectionWeightReachesCurrent:
     """The per-connection weight must scale the emitted current, jLEMS-validly.
 
-    NeuroML's gradedSynapse references `weight` in its continuous current, but
-    only after re-declaring the Property locally — jLEMS does not surface the
-    inherited baseSynapse Property to the DerivedVariable checker, so a custom
-    synapse that omits the re-declaration fails to load with "No such variable
-    in map: weight". Deco's w_+ = 1.4 multiplies the summed gating variable, i.e.
-    it sits OUTSIDE each connection's saturating gate, so it scales the current
-    rather than the spike increment.
+    NeuroML's gradedSynapse references `weight` in its continuous current, but only after re-declaring the Property locally — jLEMS does not surface the inherited baseSynapse Property to the DerivedVariable checker, so a custom synapse that omits the re-declaration fails to load with "No such variable in map: weight". Deco's w_+ = 1.4 multiplies the summed gating variable, i.e.
+    it sits OUTSIDE each connection's saturating gate, so it scales the current rather than the spike increment.
     """
 
     def test_weight_property_is_declared(self, nmda_component):

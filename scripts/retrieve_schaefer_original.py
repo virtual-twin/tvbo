@@ -16,7 +16,6 @@ import argparse
 from pathlib import Path
 from urllib.request import urlretrieve
 
-
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "atlas" / "schaefer2018_original_mni"
 

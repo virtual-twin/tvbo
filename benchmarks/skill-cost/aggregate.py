@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """Aggregate skill-cost benchmark results into a median table + chart.
 
-Reads the JSONL written by ``run_matrix.py`` and emits, grouped by
-(harness, model, condition):
+Reads the JSONL written by ``run_matrix.py`` and emits, grouped by (harness, model, condition):
 
   * a Markdown median table (processed/output tokens, tool calls, wall seconds,
     cost USD) plus success rate and N — printed and saved,

@@ -1,12 +1,8 @@
 """Weight `transforms:` are inlined in the generated tvboptim code (self-contained kit).
 
-A declared connectome transform (e.g. ``log(weight+1)/max(log(weight+1))``) is applied at runtime by ``Network.weights_matrix``. A frozen/standalone kit must not depend on that: the
-codegen renders the transform to pure ``jnp`` inside ``create_network`` and is handed the RAW weights, so the transform stays declared in the spec, the raw SC stays in the network file,
-and the exact op is visible in the script rather than hidden in tvbo runtime. These freeze the raw/transformed accessor split, byte-identity of the inlined op against ``weights_matrix``,
-and that the emitted network builder carries the transform as pure ``jnp``.
+A declared connectome transform (e.g. ``log(weight+1)/max(log(weight+1))``) is applied at runtime by ``Network.weights_matrix``. A frozen/standalone kit must not depend on that: the codegen renders the transform to pure ``jnp`` inside ``create_network`` and is handed the RAW weights, so the transform stays declared in the spec, the raw SC stays in the network file, and the exact op is visible in the script rather than hidden in tvbo runtime. These freeze the raw/transformed accessor split, byte-identity of the inlined op against ``weights_matrix``, and that the emitted network builder carries the transform as pure ``jnp``.
 
-A transform equation is written over the network's own edge attributes — ``weight``,
-``length``, ``network.edges.<label>`` — and any reduction in it may be masked, in either of the two spellings. These also freeze that both mean the same thing on both paths.
+A transform equation is written over the network's own edge attributes — ``weight``, ``length``, ``network.edges.<label>`` — and any reduction in it may be masked, in either of the two spellings. These also freeze that both mean the same thing on both paths.
 """
 
 import jax.numpy as jnp
@@ -49,8 +45,7 @@ def test_raw_accessor_is_untouched_transformed_is_normalised():
 
 
 def test_inline_transform_is_byte_identical_to_weights_matrix():
-    """The rendered jax expr applied to the RAW weights reproduces ``weights_matrix`` exactly, so ``experiment.py`` passing ``raw_weights_matrix`` while ``create_network`` inlines the
-    transform is a no-op for every working run."""
+    """The rendered jax expr applied to the RAW weights reproduces ``weights_matrix`` exactly, so ``experiment.py`` passing ``raw_weights_matrix`` while ``create_network`` inlines the transform is a no-op for every working run."""
     net, _ = _net_with_transform()
     transforms, const_env, needs_lengths = weight_transform_codegen(net)
     assert len(transforms) == 1
@@ -104,10 +99,10 @@ def test_rendered_tvboptim_source_inlines_the_transform():
 def test_a_callable_transform_reaches_the_kit():
     """`Function.callable` lowers to an import and a call, matching the runtime.
 
-    Hopf_Pareto_ParallelOpt declares `normalized_graph_laplacian` this way. The codegen used to skip any transform without an `equation:`, so with `experiment.py` handing over
-    raw weights the kit integrated the un-normalised SC — wrong numbers, no error.
+    Hopf_Pareto_ParallelOpt declares `normalized_graph_laplacian` this way. The codegen used to skip any transform without an `equation:`, so with `experiment.py` handing over raw weights the kit integrated the un-normalised SC — wrong numbers, no error.
     """
-    from tvbo.datamodel.schema import Callable as CallableRef, Function
+    from tvbo.datamodel.schema import Callable as CallableRef
+    from tvbo.datamodel.schema import Function
 
     W = np.array([[0, 2.0, 1.0], [4.0, 0, 3.0], [1.0, 5.0, 0]])
     net = Network.from_matrix(weights=W, lengths=np.zeros_like(W))
@@ -165,8 +160,7 @@ def test_transforms_for_matches_the_length_alias():
 def test_an_edge_attribute_is_the_vocabulary_not_an_invented_alias():
     """A transform names `weight`/`length`, resolved by the resolver observations use.
 
-    The equation body used to be written against a private table of `W`/`L`/`W_max` primitives, declared once for the runtime and again as JAX source for the emitter —
-    two lists that had already drifted.
+    The equation body used to be written against a private table of `W`/`L`/`W_max` primitives, declared once for the runtime and again as JAX source for the emitter — two lists that had already drifted.
     """
     W = np.array([[0, 2.0], [4.0, 0]])
     L = np.array([[0, 10.0], [10.0, 0]])
@@ -244,8 +238,7 @@ def test_every_mask_spelling_scopes_the_reduction_at_runtime(spelling):
 def test_every_mask_spelling_reaches_the_kit_unchanged(spelling):
     """Codegen and runtime resolve one expression, so a kit cannot normalise differently.
 
-    A masked expression is also a use of its *base* symbol: `mean(weight[weight > 0])` binds `weight`, not a symbol literally named `weight[weight > 0]`. Checking the raw
-    free-symbol text rejected that as undeclared and refused to render the recipe.
+    A masked expression is also a use of its *base* symbol: `mean(weight[weight > 0])` binds `weight`, not a symbol literally named `weight[weight > 0]`. Checking the raw free-symbol text rejected that as undeclared and refused to render the recipe.
     """
     net = Network.from_matrix(SPARSE, transforms=[{"name": "weight", **SPELLINGS[spelling]}])
     expr, chained = weight_transform_codegen(net)[0][0]
@@ -276,7 +269,7 @@ def test_two_reductions_carry_their_own_predicates():
 
 
 def test_a_masked_extremum_fills_with_its_identity():
-    """max over the empty set is -inf: an all-false mask must poison, not look plausible."""
+    """Max over the empty set is -inf: an all-false mask must poison, not look plausible."""
     net = Network.from_matrix(SPARSE, transforms=[{"name": "weight", "equation": {"rhs": "weight / max(weight[weight < 4])"}}])
     assert np.allclose(np.asarray(net.weights_matrix), SPARSE / SPARSE[SPARSE < 4].max())
 

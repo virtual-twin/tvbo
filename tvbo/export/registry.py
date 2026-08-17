@@ -10,16 +10,15 @@ A backend self-registers an :class:`ExportFormat` describing:
 * a renderer callable                       (dispatch)
 * optional flags                            (``supports_with_data``, …)
 
-Adding a new backend = importing this module and calling
-:func:`register` once. Dispatch (`SimulationExperiment.render`), discovery (`/api/v1/experiments/formats`, OntologyAPI), and the
-extension/UI dropdown all light up automatically.
+Adding a new backend = importing this module and calling :func:`register` once. Dispatch (`SimulationExperiment.render`), discovery (`/api/v1/experiments/formats`, OntologyAPI), and the extension/UI dropdown all light up automatically.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from collections.abc import Callable, Iterable
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
 
 # Renderer signature: (experiment, **kwargs) -> str
 Renderer = Callable[..., str]
@@ -118,9 +117,7 @@ def keys() -> Iterable[str]:
 def render(experiment, fmt_key: str, **kwargs) -> str:
     """Resolve *fmt_key*, invoke its renderer, prune its dead imports, and format it.
 
-    All three happen here rather than in each renderer so that every backend — including the ones that render through an adapter and never touch the template
-    helpers — is held to the same house style. Pruning precedes formatting because it edits statements and black only edits layout. See :mod:`tvbo.codegen.prune` and
-    :mod:`tvbo.codegen.style`.
+    All three happen here rather than in each renderer so that every backend — including the ones that render through an adapter and never touch the template helpers — is held to the same house style. Pruning precedes formatting because it edits statements and black only edits layout. See :mod:`tvbo.codegen.prune` and :mod:`tvbo.codegen.style`.
     """
     fmt = resolve(fmt_key)
     rendered = fmt.renderer(experiment, **kwargs)

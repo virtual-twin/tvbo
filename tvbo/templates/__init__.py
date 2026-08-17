@@ -1,14 +1,7 @@
-#
-# Module: __init__.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-Templates
-=========
+"""Templates.
 
 Templates for generating code.
 """
@@ -17,8 +10,9 @@ import hashlib
 import os
 import subprocess
 import tempfile
+from os.path import abspath, dirname, join
+
 from mako.lookup import TemplateLookup
-from os.path import join, abspath, dirname
 
 root = abspath(dirname(__file__))
 
@@ -26,16 +20,9 @@ root = abspath(dirname(__file__))
 def _mako_module_dir() -> str:
     """A writable directory for mako's compiled-template cache.
 
-    Mako compiles each template to a ``.py`` module and caches it here. The obvious home — a ``modules/`` dir beside the templates — is read-only whenever tvbo is
-    installed read-only, most sharply inside a container: the first render at runtime then dies with ``OSError: [Errno 30] Read-only file system`` (and only at runtime,
-    since the package dir is writable during local dev). Default to a per-user dir under the system temp instead, which is writable and, under SLURM, node-local so
-    concurrent jobs on different nodes don't share it. ``TVBO_MAKO_CACHE`` overrides.
+    Mako compiles each template to a ``.py`` module and caches it here. The obvious home — a ``modules/`` dir beside the templates — is read-only whenever tvbo is installed read-only, most sharply inside a container: the first render at runtime then dies with ``OSError: [Errno 30] Read-only file system`` (and only at runtime, since the package dir is writable during local dev). Default to a per-user dir under the system temp instead, which is writable and, under SLURM, node-local so concurrent jobs on different nodes don't share it. ``TVBO_MAKO_CACHE`` overrides.
 
-    The directory is keyed on the templates root as well as the user. Mako names a compiled module after the template's URI, which is relative to the lookup
-    directories, so two checkouts of tvbo — a second worktree, an editable install beside a container's site-packages — map their own copy of
-    ``neuroml/_lems_componenttype.xml.mako`` onto the same cached module. Whichever rendered last wins, and mako's mtime freshness check compares against that
-    foreign source, so the loser silently renders the other checkout's template and fails as ``'Undefined' object is not callable`` naming a helper the template it
-    thinks it rendered does not define.
+    The directory is keyed on the templates root as well as the user. Mako names a compiled module after the template's URI, which is relative to the lookup directories, so two checkouts of tvbo — a second worktree, an editable install beside a container's site-packages — map their own copy of ``neuroml/_lems_componenttype.xml.mako`` onto the same cached module. Whichever rendered last wins, and mako's mtime freshness check compares against that foreign source, so the loser silently renders the other checkout's template and fails as ``'Undefined' object is not callable`` naming a helper the template it thinks it rendered does not define.
     """
     override = os.environ.get("TVBO_MAKO_CACHE")
     if override:
@@ -76,8 +63,7 @@ lookup = TemplateLookup(
 
 
 def run_julia(julia_code, verbose=0):
-    """
-    Run Julia code as a string using subprocess with manual logging.
+    """Run Julia code as a string using subprocess with manual logging.
 
     Parameters:
     julia_code (str): The Julia code to execute.
@@ -103,8 +89,7 @@ def run_julia(julia_code, verbose=0):
         elif verbose == 1:
             result = subprocess.run(
                 command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
                 check=True,
             )

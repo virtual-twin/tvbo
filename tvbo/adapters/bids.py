@@ -1,5 +1,4 @@
-"""
-BIDS BEP034 Export Module
+"""BIDS BEP034 Export Module.
 
 This module provides utilities for exporting TVB simulation data to BIDS format following the BEP034 Computational Modeling Extension v1.0.0.
 
@@ -14,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import nibabel as nib
 import numpy as np
@@ -36,8 +35,7 @@ except ImportError:
 BEP034_CONFIG_PATH = Path(__file__).parent / "bep034.json"
 
 
-# BIDS pybids rule string for an experiment-result artifact (``<prefix>_result.h5``
-# + ``.yaml`` sidecar). ``suffix``/``extension`` are value-constrained so an invalid combination fails fast; ``desc`` is optional. Customize the naming by editing this pattern — build_path handles entity substitution and optionality.
+# `suffix`/`extension` are value-constrained so an invalid combination fails fast; `desc` is optional.
 RESULT_PATTERNS = [
     "[sub-{subject}_]exp-{experiment}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
 ]
@@ -48,8 +46,7 @@ def result_entities(experiment, extension: str = ".h5") -> dict:
 
     BIDS entity values must be alphanumeric (no spaces/hyphens/underscores), so the id and dynamics name are stripped to ``[A-Za-z0-9]``. The short model
     *name* (``Kuramoto``) is used for ``desc-`` rather than the verbose label, so
-    filenames stay compact. Returns a dict ready for
-    :func:`bids.layout.writing.build_path` with ``RESULT_PATTERNS``.
+    filenames stay compact. Returns a dict ready for :func:`bids.layout.writing.build_path` with ``RESULT_PATTERNS``.
     """
 
     def _alnum(s):
@@ -77,7 +74,7 @@ def build_result_path(experiment=None, *, entities: dict = None, extension: str 
 
 def load_bep034_config() -> dict:
     """Load the BEP034 configuration file."""
-    with open(BEP034_CONFIG_PATH, "r") as f:
+    with open(BEP034_CONFIG_PATH) as f:
         return json.load(f)
 
 
@@ -87,9 +84,7 @@ def compute_id(sidecar_dict: dict) -> str:
     return hashlib.sha256(content.encode()).hexdigest()[:8]
 
 
-# =============================================================================
 # Pydantic Models for BEP034 Metadata (Sidecars)
-# =============================================================================
 
 
 class BEP034BaseModel(BaseModel):
@@ -123,20 +118,20 @@ class GeneratedBy(BEP034BaseModel):
     """GeneratedBy entry for dataset_description.json."""
 
     Name: str
-    Version: Optional[str] = None
-    Description: Optional[str] = None
-    CodeURL: Optional[str] = None
+    Version: str | None = None
+    Description: str | None = None
+    CodeURL: str | None = None
 
 
 class SimulationProvenance(BEP034BaseModel):
     """Provenance information for a simulation."""
 
-    Model: Optional[str] = Field(default=None, description="Neural mass model name")
-    Integrator: Optional[str] = Field(default=None, description="Integration method")
-    Duration: Optional[float] = Field(default=None, description="Simulation duration")
-    StepSize: Optional[float] = Field(default=None, description="Integration step size")
-    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
-    Software: Optional[str] = Field(default="tvbo", description="Software used")
+    Model: str | None = Field(default=None, description="Neural mass model name")
+    Integrator: str | None = Field(default=None, description="Integration method")
+    Duration: float | None = Field(default=None, description="Simulation duration")
+    StepSize: float | None = Field(default=None, description="Integration step size")
+    GeneratedAt: str | None = Field(default=None, description="Timestamp of generation")
+    Software: str | None = Field(default="tvbo", description="Software used")
 
 
 class NetworkSidecar(BEP034BaseModel):
@@ -144,29 +139,29 @@ class NetworkSidecar(BEP034BaseModel):
 
     Description: str = Field(..., description="Description of the network data")
     NumberOfNodes: int = Field(..., description="Number of nodes in the network")
-    Units: Optional[str] = Field(default="a.u.", description="Units of measurement")
-    NodeLabels: Optional[list[str]] = Field(default=None, description="Labels for each node")
-    Source: Optional[str] = Field(default="tvbo simulation", description="Data source")
-    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
-    Atlas: Optional[str] = Field(default=None, description="Atlas used for parcellation")
-    CoordinateSpace: Optional[str] = Field(default=None, description="Coordinate space")
+    Units: str | None = Field(default="a.u.", description="Units of measurement")
+    NodeLabels: list[str] | None = Field(default=None, description="Labels for each node")
+    Source: str | None = Field(default="tvbo simulation", description="Data source")
+    GeneratedAt: str | None = Field(default=None, description="Timestamp of generation")
+    Atlas: str | None = Field(default=None, description="Atlas used for parcellation")
+    CoordinateSpace: str | None = Field(default=None, description="Coordinate space")
 
 
 class TimeSeriesSidecar(BEP034BaseModel):
     """Sidecar metadata for time series files (ts/)."""
 
     Description: str = Field(..., description="Description of the time series")
-    StateVariable: Optional[str] = Field(default=None, description="State variable name")
-    SamplingFrequency: Optional[float] = Field(default=None, description="Sampling frequency in Hz")
-    SamplingPeriod: Optional[float] = Field(default=None, description="Sampling period")
-    SamplingPeriodUnits: Optional[str] = Field(default="ms", description="Units for sampling period")
-    StartTime: Optional[float] = Field(default=0.0, description="Start time of recording")
+    StateVariable: str | None = Field(default=None, description="State variable name")
+    SamplingFrequency: float | None = Field(default=None, description="Sampling frequency in Hz")
+    SamplingPeriod: float | None = Field(default=None, description="Sampling period")
+    SamplingPeriodUnits: str | None = Field(default="ms", description="Units for sampling period")
+    StartTime: float | None = Field(default=0.0, description="Start time of recording")
     NumberOfTimepoints: int = Field(..., description="Number of time points")
     NumberOfNodes: int = Field(..., description="Number of nodes/regions")
-    Columns: Optional[list[str]] = Field(default=None, description="Column names")
-    Units: Optional[str] = Field(default="a.u.", description="Units of measurement")
-    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
-    Provenance: Union[SimulationProvenance, None] = None
+    Columns: list[str] | None = Field(default=None, description="Column names")
+    Units: str | None = Field(default="a.u.", description="Units of measurement")
+    GeneratedAt: str | None = Field(default=None, description="Timestamp of generation")
+    Provenance: SimulationProvenance | None = None
 
 
 class EquationSidecar(BEP034BaseModel):
@@ -175,10 +170,10 @@ class EquationSidecar(BEP034BaseModel):
     Description: str = Field(..., description="Description of the model equations")
     ModelType: str = Field(..., description="Type of neural mass model")
     Format: str = Field(default="tvbo", description="Format of equation specification")
-    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
-    Parameters: Optional[dict[str, Any]] = Field(default=None, description="Model parameters")
-    StateVariables: Optional[list[str]] = Field(default=None, description="State variable names")
-    References: Optional[list[str]] = Field(default=None, description="References for the model")
+    GeneratedAt: str | None = Field(default=None, description="Timestamp of generation")
+    Parameters: dict[str, Any] | None = Field(default=None, description="Model parameters")
+    StateVariables: list[str] | None = Field(default=None, description="State variable names")
+    References: list[str] | None = Field(default=None, description="References for the model")
 
 
 class CoordinateSidecar(BEP034BaseModel):
@@ -186,10 +181,10 @@ class CoordinateSidecar(BEP034BaseModel):
 
     Description: str = Field(..., description="Description of the coordinate data")
     NumberOfNodes: int = Field(..., description="Number of nodes/points")
-    CoordinateSystem: Optional[str] = Field(default="MNI152NLin6Asym", description="Coordinate system")
-    Units: Optional[str] = Field(default="mm", description="Units of measurement")
-    Columns: Optional[list[str]] = Field(default=["x", "y", "z"], description="Column names")
-    NodeLabels: Optional[list[str]] = Field(default=None, description="Labels for each node")
+    CoordinateSystem: str | None = Field(default="MNI152NLin6Asym", description="Coordinate system")
+    Units: str | None = Field(default="mm", description="Units of measurement")
+    Columns: list[str] | None = Field(default=["x", "y", "z"], description="Column names")
+    NodeLabels: list[str] | None = Field(default=None, description="Labels for each node")
 
 
 class TimeSeriesHDF5Sidecar(BEP034BaseModel):
@@ -199,29 +194,26 @@ class TimeSeriesHDF5Sidecar(BEP034BaseModel):
     Format: str = Field(default="HDF5", description="File format")
     Shape: list[int] = Field(..., description="Shape of the data array")
     Dimensions: list[str] = Field(..., description="Dimension names in order")
-    DimensionLabels: Optional[dict[str, list[str]]] = Field(
+    DimensionLabels: dict[str, list[str]] | None = Field(
         default=None,
         description="Labels for each dimension (e.g., {'State Variable': ['V', 'W'], 'Space': ['R1', 'R2']})",
     )
-    SamplingFrequency: Optional[float] = Field(default=None, description="Sampling frequency in Hz")
-    SamplingPeriod: Optional[float] = Field(default=None, description="Sampling period")
-    SamplingPeriodUnits: Optional[str] = Field(default="ms", description="Units for sampling period")
-    StartTime: Optional[float] = Field(default=0.0, description="Start time of recording")
-    Units: Optional[str] = Field(default="a.u.", description="Units of measurement")
-    GeneratedAt: Optional[str] = Field(default=None, description="Timestamp of generation")
-    Provenance: Union[SimulationProvenance, None] = None
-    StateVariables: Optional[list[str]] = Field(default=None, description="State variable names")
-    Datasets: Optional[dict[str, str]] = Field(default=None, description="HDF5 dataset paths and descriptions")
+    SamplingFrequency: float | None = Field(default=None, description="Sampling frequency in Hz")
+    SamplingPeriod: float | None = Field(default=None, description="Sampling period")
+    SamplingPeriodUnits: str | None = Field(default="ms", description="Units for sampling period")
+    StartTime: float | None = Field(default=0.0, description="Start time of recording")
+    Units: str | None = Field(default="a.u.", description="Units of measurement")
+    GeneratedAt: str | None = Field(default=None, description="Timestamp of generation")
+    Provenance: SimulationProvenance | None = None
+    StateVariables: list[str] | None = Field(default=None, description="State variable names")
+    Datasets: dict[str, str] | None = Field(default=None, description="HDF5 dataset paths and descriptions")
 
 
-# =============================================================================
 # BEP034 Path Builder
-# =============================================================================
 
 
 class BEP034PathBuilder:
-    """
-    Build BIDS BEP034-compliant paths using pybids patterns.
+    """Build BIDS BEP034-compliant paths using pybids patterns.
 
     If pybids is not available, falls back to manual path construction.
     """
@@ -230,9 +222,8 @@ class BEP034PathBuilder:
         self.config = load_bep034_config()
         self.patterns = self.config.get("default_path_patterns", [])
 
-    def build_path(self, entities: dict, strict: bool = False) -> Optional[str]:
-        """
-        Build a path from entities using BEP034 patterns.
+    def build_path(self, entities: dict, strict: bool = False) -> str | None:
+        """Build a path from entities using BEP034 patterns.
 
         Parameters
         ----------
@@ -241,7 +232,7 @@ class BEP034PathBuilder:
         strict : bool
             If True, all entities must match pattern
 
-        Returns
+        Returns:
         -------
         str or None
             Built path or None if no pattern matches
@@ -323,9 +314,9 @@ class BEP034PathBuilder:
         subject: str,
         net_type: str,
         id_hash: str,
-        desc: Optional[str] = None,
-        session: Optional[str] = None,
-        run: Optional[int] = None,
+        desc: str | None = None,
+        session: str | None = None,
+        run: int | None = None,
         extension: str = ".tsv",
     ) -> str:
         """Build path for network files (weights/distances)."""
@@ -350,13 +341,12 @@ class BEP034PathBuilder:
         subject: str,
         ts_label: str,
         suffix: str = "State",
-        desc: Optional[str] = None,
-        session: Optional[str] = None,
-        run: Optional[int] = None,
+        desc: str | None = None,
+        session: str | None = None,
+        run: int | None = None,
         extension: str = ".ptseries.nii",
     ) -> str:
-        """
-        Build path for time series files.
+        """Build path for time series files.
 
         Parameters
         ----------
@@ -384,12 +374,12 @@ class BEP034PathBuilder:
         extension : str
             File extension (default: .ptseries.nii)
 
-        Returns
+        Returns:
         -------
         str
             BIDS-compliant file path
 
-        Examples
+        Examples:
         --------
         >>> path_builder.build_ts_path('01', 'V', 'State')    # Raw state V
         'sub-01/ts/sub-01_ts-V_State.ptseries.nii'
@@ -418,9 +408,9 @@ class BEP034PathBuilder:
         self,
         eq_label: str,
         id_hash: str,
-        desc: Optional[str] = None,
-        subject: Optional[str] = None,
-        session: Optional[str] = None,
+        desc: str | None = None,
+        subject: str | None = None,
+        session: str | None = None,
         extension: str = ".json",
     ) -> str:
         """Build path for equation/model files."""
@@ -444,9 +434,9 @@ class BEP034PathBuilder:
         subject: str,
         coord_type: str,
         id_hash: str,
-        desc: Optional[str] = None,
-        session: Optional[str] = None,
-        space: Optional[str] = None,
+        desc: str | None = None,
+        session: str | None = None,
+        space: str | None = None,
         extension: str = ".tsv",
     ) -> str:
         """Build path for coordinate files."""
@@ -467,12 +457,10 @@ class BEP034PathBuilder:
         return self.build_path(entities) or self._manual_build_path(entities)
 
 
-# =============================================================================
 # Helper Functions
-# =============================================================================
 
 
-def to_float(val: Any) -> Optional[float]:
+def to_float(val: Any) -> float | None:
     """Safely convert JAX arrays/tracers to Python floats."""
     if val is None:
         return None
@@ -536,9 +524,7 @@ def write_tsv(
     df.to_csv(path, sep="\t", index=include_index)
 
 
-# =============================================================================
 # CIFTI-2 Export Functions
-# =============================================================================
 
 
 def create_cifti_ptseries(
@@ -546,15 +532,18 @@ def create_cifti_ptseries(
     region_labels: list[str],
     sample_period: float,
     sample_period_unit: str = "ms",
-    state_variable_labels: Optional[list[str]] = None,
-) -> "cifti2.Cifti2Image":
-    """
-    Create a CIFTI-2 ptseries (parcellated time series) image.
+    state_variable_labels: list[str] | None = None,
+) -> cifti2.Cifti2Image:
+    """Create a CIFTI-2 ptseries (parcellated time series) image.
 
     This creates a valid CIFTI-2 file with:
     - ParcelsAxis: Named brain regions with proper structure
     - SeriesAxis: Time dimension with sampling info
     - ScalarAxis: State variable names (if multiple)
+
+    Each parcel is modelled as a single surface vertex under the generic `OTHER` brain structure, which is the usual way to carry parcellated data that has no real surface behind it.
+
+    A ptseries is shaped `(timepoints, parcels)`, so it has nowhere to put a state-variable axis. **Given three-dimensional data, only the first state variable is written.** Multiple state variables need either one file each or a format with a scalar axis, and neither is implemented.
 
     Parameters
     ----------
@@ -571,19 +560,19 @@ def create_cifti_ptseries(
     state_variable_labels : list[str], optional
         Names for each state variable if data has 3 dimensions
 
-    Returns
+    Returns:
     -------
     cifti2.Cifti2Image
         CIFTI-2 image ready to be saved
 
-    Raises
+    Raises:
     ------
     ImportError
         If nibabel is not available
     ValueError
         If data dimensions don't match provided labels
 
-    Examples
+    Examples:
     --------
     >>> img = create_cifti_ptseries(data, region_labels, 1.0, 'ms')
     >>> nib.save(img, 'output.ptseries.nii')
@@ -621,7 +610,6 @@ def create_cifti_ptseries(
         # Assume seconds if unknown
         sample_period_sec = sample_period
 
-    # Create SeriesAxis (time dimension) start=0, step=TR in seconds, size=number of timepoints
     series_axis = cifti2.SeriesAxis(
         start=0.0,
         step=sample_period_sec,
@@ -629,16 +617,8 @@ def create_cifti_ptseries(
         unit="SECOND",
     )
 
-    # Create ParcelsAxis (brain regions)
-    # For parcellated data, we use ParcelsAxis with named regions
-    # Each parcel represents one brain region
-
-    # Create a simple BrainModelAxis for each region as a "surface vertex"
-    # This is a common approach for parcellated data
     parcel_brain_models = []
     for i, label in enumerate(region_labels):
-        # Create a surface-based brain model with a single vertex per parcel
-        # Using 'OTHER' as brain structure for generic parcels
         bm = cifti2.BrainModelAxis.from_surface(
             vertices=[i],
             nvertex=n_regions,
@@ -649,46 +629,14 @@ def create_cifti_ptseries(
     parcels_axis = cifti2.ParcelsAxis.from_brain_models(parcel_brain_models)
 
     if data.ndim == 2:
-        # Single state variable: (time, regions) -> CIFTI shape (time, parcels)
-        # CIFTI ptseries has shape (timepoints, parcels)
         cifti_data = data_for_cifti.astype(np.float32)
-
-        # Create header from axes: (SeriesAxis, ParcelsAxis)
-        header = cifti2.Cifti2Header.from_axes((series_axis, parcels_axis))
-        img = cifti2.Cifti2Image(dataobj=cifti_data, header=header)
-
     else:
-        # Multiple state variables: create separate series for each
-        # Or use ScalarAxis for state variables
-        # For now, we'll flatten: shape becomes (time * n_states, regions)
-        # Better approach: create ScalarAxis for state variable names
-
-        # Create ScalarAxis for state variables
         if state_variable_labels is None:
             state_variable_labels = [f"sv{i}" for i in range(n_states)]
-
-        cifti2.ScalarAxis(name=state_variable_labels)
-
-        # Reshape data: (time, states, regions) -> (time, regions) per state
-        # For ptseries with multiple maps, use (n_maps, parcels) where n_maps = time * states
-        # Actually, ptseries should be (time, parcels), so we need pscalar for scalar maps
-
-        # Best approach: Save each state variable as separate timepoints
-        # Or save as dtseries with multiple series
-        # For simplicity, concatenate all state variables along time axis
-        # Shape: (time * n_states, regions) with ScalarAxis indicating which is which
-
-        # Alternative: use dscalar for each timepoint-state combo
-        # Let's use ptseries with concatenated time for all states and add metadata about which timepoints belong to which state
-
-        # For now, save first state variable only for ptseries
-        # TODO: Support multi-state as separate files or different format
         cifti_data = data_for_cifti[:, 0, :].astype(np.float32)
 
-        header = cifti2.Cifti2Header.from_axes((series_axis, parcels_axis))
-        img = cifti2.Cifti2Image(dataobj=cifti_data, header=header)
-
-    return img
+    header = cifti2.Cifti2Header.from_axes((series_axis, parcels_axis))
+    return cifti2.Cifti2Image(dataobj=cifti_data, header=header)
 
 
 def write_cifti_ptseries(
@@ -697,10 +645,9 @@ def write_cifti_ptseries(
     path: str | Path,
     sample_period: float,
     sample_period_unit: str = "ms",
-    state_variable_labels: Optional[list[str]] = None,
+    state_variable_labels: list[str] | None = None,
 ) -> Path:
-    """
-    Write time series data to a CIFTI-2 ptseries.nii file.
+    """Write time series data to a CIFTI-2 ptseries.nii file.
 
     Parameters
     ----------
@@ -717,7 +664,7 @@ def write_cifti_ptseries(
     state_variable_labels : list[str], optional
         Names for state variables if data is 3D
 
-    Returns
+    Returns:
     -------
     Path
         Path to the created file
@@ -747,9 +694,8 @@ def create_multi_state_cifti(
     state_variable_labels: list[str],
     sample_period: float,
     sample_period_unit: str = "ms",
-) -> dict[str, "cifti2.Cifti2Image"]:
-    """
-    Create separate CIFTI-2 ptseries files for each state variable.
+) -> dict[str, cifti2.Cifti2Image]:
+    """Create separate CIFTI-2 ptseries files for each state variable.
 
     This is the recommended approach for multi-state variable data, creating one ptseries file per state variable.
 
@@ -766,12 +712,11 @@ def create_multi_state_cifti(
     sample_period_unit : str
         Unit for sample period
 
-    Returns
+    Returns:
     -------
     dict[str, Cifti2Image]
         Dictionary mapping state variable names to CIFTI images
     """
-
     data = np.asarray(data)
     if data.ndim != 3:
         raise ValueError(f"Data must be 3D (time, states, regions), got {data.ndim}D")
@@ -797,25 +742,22 @@ def create_multi_state_cifti(
     return images
 
 
-# =============================================================================
 # HDF5 Export Functions
-# =============================================================================
 
 
 def write_hdf5_timeseries(
     data: np.ndarray,
     time: np.ndarray,
     path: str | Path,
-    labels_dimensions: Optional[dict[str, list[str]]] = None,
-    labels_ordering: Optional[tuple[str, ...]] = None,
-    sample_period: Optional[float] = None,
+    labels_dimensions: dict[str, list[str]] | None = None,
+    labels_ordering: tuple[str, ...] | None = None,
+    sample_period: float | None = None,
     sample_period_unit: str = "ms",
-    metadata: Optional[dict] = None,
+    metadata: dict | None = None,
     compression: str = "gzip",
     compression_opts: int = 4,
 ) -> Path:
-    """
-    Write time series data to HDF5 file preserving full dimensionality.
+    """Write time series data to HDF5 file preserving full dimensionality.
 
     This format supports arbitrary dimensionality (e.g., parameter sweeps, multiple modes, etc.) without splitting by state variable.
 
@@ -843,7 +785,7 @@ def write_hdf5_timeseries(
     compression_opts : int
         Compression level
 
-    Returns
+    Returns:
     -------
     Path
         Path to the created file
@@ -926,15 +868,14 @@ def write_hdf5_timeseries(
 
 
 def read_hdf5_timeseries(path: str | Path) -> dict:
-    """
-    Read time series data from HDF5 file.
+    """Read time series data from HDF5 file.
 
     Parameters
     ----------
     path : str or Path
         Path to HDF5 file
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary with 'data', 'time', 'labels_dimensions', 'dimensions', 'metadata'
@@ -977,21 +918,18 @@ def read_hdf5_timeseries(path: str | Path) -> dict:
     return result
 
 
-# =============================================================================
 # BIDS Ingestion Functions
-# =============================================================================
 
 
 def detect_timeseries_format(ts_dir: Path) -> str:
-    """
-    Detect the time series format in a BIDS ts/ directory.
+    """Detect the time series format in a BIDS ts/ directory.
 
     Parameters
     ----------
     ts_dir : Path
         Path to the ts/ directory
 
-    Returns
+    Returns:
     -------
     str
         Format: 'h5', 'cifti', or 'tsv'
@@ -1018,25 +956,23 @@ def detect_timeseries_format(ts_dir: Path) -> str:
 
 def read_bids_sidecar(json_path: Path) -> dict:
     """Read a BIDS JSON sidecar file."""
-    with open(json_path, "r") as f:
+    with open(json_path) as f:
         return json.load(f)
 
 
 def read_cifti_ptseries(path: Path) -> tuple[np.ndarray, list[str], float, str]:
-    """
-    Read a CIFTI-2 ptseries file.
+    """Read a CIFTI-2 ptseries file.
 
     Parameters
     ----------
     path : Path
         Path to the ptseries.nii file
 
-    Returns
+    Returns:
     -------
     tuple
         (data, region_labels, sample_period, sample_period_unit)
     """
-
     img = nib.load(str(path))
     data = np.asarray(img.get_fdata())
 
@@ -1067,10 +1003,9 @@ def read_cifti_ptseries(path: Path) -> tuple[np.ndarray, list[str], float, str]:
 
 def read_bids_timeseries(
     ts_dir: Path,
-    format: Optional[str] = None,
+    format: str | None = None,
 ) -> dict:
-    """
-    Read time series data from a BIDS ts/ directory.
+    """Read time series data from a BIDS ts/ directory.
 
     Automatically detects the format (h5, cifti, tsv) unless specified.
 
@@ -1081,7 +1016,7 @@ def read_bids_timeseries(
     format : str, optional
         Force a specific format ('h5', 'cifti', 'tsv')
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary with:
@@ -1242,15 +1177,14 @@ def read_bids_timeseries(
 
 
 def read_bids_network(net_dir: Path) -> dict:
-    """
-    Read network connectivity from a BIDS net/ directory.
+    """Read network connectivity from a BIDS net/ directory.
 
     Parameters
     ----------
     net_dir : Path
         Path to the net/ directory
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary with 'weights', 'distances', 'region_labels', 'sidecars'
@@ -1289,15 +1223,14 @@ def read_bids_network(net_dir: Path) -> dict:
 
 
 def read_bids_equations(eq_dir: Path) -> dict:
-    """
-    Read model equations from a BIDS eq/ directory.
+    """Read model equations from a BIDS eq/ directory.
 
     Parameters
     ----------
     eq_dir : Path
         Path to the eq/ directory
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary with model information
@@ -1323,15 +1256,14 @@ def read_bids_equations(eq_dir: Path) -> dict:
 
 
 def read_bids_coordinates(coord_dir: Path) -> dict:
-    """
-    Read coordinates from a BIDS coord/ directory.
+    """Read coordinates from a BIDS coord/ directory.
 
     Parameters
     ----------
     coord_dir : Path
         Path to the coord/ directory
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary with 'centres', 'region_labels', 'coordinate_system'
@@ -1362,10 +1294,9 @@ def read_bids_coordinates(coord_dir: Path) -> dict:
 def find_bids_session_path(
     bids_dir: Path,
     subject: str,
-    session: Optional[str] = None,
+    session: str | None = None,
 ) -> Path:
-    """
-    Find the path to a BIDS subject/session directory.
+    """Find the path to a BIDS subject/session directory.
 
     Parameters
     ----------
@@ -1376,7 +1307,7 @@ def find_bids_session_path(
     session : str, optional
         Session ID (with or without 'ses-' prefix)
 
-    Returns
+    Returns:
     -------
     Path
         Path to the subject/session directory
@@ -1411,10 +1342,9 @@ def find_bids_session_path(
 def ingest_bids_session(
     bids_dir: str | Path,
     subject: str,
-    session: Optional[str] = None,
+    session: str | None = None,
 ) -> dict:
-    """
-    Ingest all data from a BIDS BEP034 session.
+    """Ingest all data from a BIDS BEP034 session.
 
     Parameters
     ----------
@@ -1425,7 +1355,7 @@ def ingest_bids_session(
     session : str, optional
         Session ID
 
-    Returns
+    Returns:
     -------
     dict
         Complete ingested data with keys:
@@ -1476,14 +1406,11 @@ def ingest_bids_session(
     return result
 
 
-# ---------------------------------------------------------------------------
 # Utility helpers (merged from tvbo.data.bids_utils)
-# ---------------------------------------------------------------------------
 
 
 def get_unique_entity_values(bids_layout, key) -> set:
-    """
-    Get a set of all unique values for a given entity key from the BIDSLayout files.
+    """Get a set of all unique values for a given entity key from the BIDSLayout files.
 
     Args:
         bids_layout (BIDSLayout): The BIDSLayout object to extract entities from.

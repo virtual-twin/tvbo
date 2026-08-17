@@ -1,18 +1,26 @@
 """Parse TVBO equation strings into SymPy expressions.
 
-Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw string) into a SymPy expression, along with the custom aggregation symbols and the
-`ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`,
-`slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to backend-specific calls.
+Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw string) into a SymPy expression, along with the custom aggregation symbols and the `ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`, `slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to backend-specific calls.
+
+`ARRAY_FUNCTIONS` is the single source of truth for parsing. Each entry is an undefined SymPy `Function` — that is what makes `mean(x)` parse as a call rather than being split by implicit multiplication into `m*e*a*n*(x)`. The names are lowercase to keep them distinct from SymPy's own symbolic `Sum` and `Product`, which need explicit index variables where these reduce over whole arrays, numpy-style. Printer mappings live in `tvbo.codegen.code`.
+
+**Every argument is positional.** SymPy's parser forwards `f(x, axis=0)` into `Basic`'s options and raises `ValueError: Unknown options`, so a primitive can never carry a keyword. Anything that would be one — a metric, an axis, a target range, a distribution, a seed — is a schema field on the DAG step and is lowered into a positional argument, which is why the `Procedural` graph-generator DAG is typed rather than free-form.
+
+The registry covers array manipulation with Python-specific semantics (`window_mean`, `subsample`), structural slice and shape ops so a pipeline that selects a variable of interest, trims a transient or downsamples is authored as declarative equations rather than `source_code`, general ops for per-timestep detectors and permutation-significance tests (`take`, `sum_axis`, `pearson`), the graph-construction primitives a `Procedural` GraphGenerator lowers to, and the distribution samplers.
+
+A sampler takes its PRNG state as the **first** argument, because JAX is functionally pure and a key cannot be threaded implicitly through a rendered expression; the trailing arguments are the sample shape. Draws are *not* bit-identical across backends — numpy's PCG64 is not jax's Threefry.
+
+Symbolic summation uses SymPy's own `Sum`, which needs explicit index variables: `Sum(x[i]*y[i], (i, 0, n-1))`. Index variables are detected from the `Sum` and `Product` limits, and the code printers handle the translation.
 """
 
-from sympy import parse_expr, Symbol, Function, IndexedBase, Sum, Product, sqrt
+from sympy import Function, IndexedBase, Product, Sum, Symbol, parse_expr, sqrt
 from sympy.parsing.sympy_parser import (
-    standard_transformations,
     convert_xor,
-    split_symbols_custom,
-    implicit_multiplication,
-    implicit_application,
     function_exponentiation,
+    implicit_application,
+    implicit_multiplication,
+    split_symbols_custom,
+    standard_transformations,
 )
 
 # Implicit multiplication WITHOUT split_symbols: multi-letter identifiers (e.g. "perturbation") stay as a single Symbol instead of being expanded into the product of their letters. Digit-prefix splitting like "2x" -> "2*x" is unaffected because that lives in `implicit_multiplication`.
@@ -27,10 +35,7 @@ from sympy.parsing.latex import parse_latex
 
 from tvbo.datamodel.schema import Equation
 
-
-# =============================================================================
 # Custom SymPy Classes for Mathematical Aggregation
-# =============================================================================
 
 
 class Mean(Function):
@@ -47,9 +52,7 @@ class Mean(Function):
     def eval(cls, *args):
         """Suppress automatic simplification so the symbol survives to codegen.
 
-        SymPy calls this classmethod when a `Mean(...)` is constructed. Returning
-        `None` signals that no closed-form evaluation should be performed, keeping the expression as an unevaluated `Mean` node that the code printers in
-        [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's mean/reduction call.
+        SymPy calls this classmethod when a `Mean(...)` is constructed. Returning `None` signals that no closed-form evaluation should be performed, keeping the expression as an unevaluated `Mean` node that the code printers in [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's mean/reduction call.
 
         Args:
             *args: The positional arguments the `Mean` was called with (the inner
@@ -61,28 +64,6 @@ class Mean(Function):
         return None
 
 
-# =============================================================================
-# Symbolic Summation Support
-# =============================================================================
-# SymPy's Sum requires explicit index variables: Sum(f(i), (i, a, b))
-#
-# For proper mathematical notation, use:
-#   Sum(x[i]*y[i], (i, 0, n-1))  ->  translates to jnp.sum(x*y)
-#
-# Index variables are detected dynamically from Sum/Product limits.
-# The code printers in tvbo.codegen.code handle the translation.
-
-
-# =============================================================================
-# Array Function Definitions (single source of truth for parsing)
-# =============================================================================
-# These are array reduction/aggregation functions that SymPy doesn't have natively.
-# We define them as undefined SymPy Functions so they parse correctly (preventing implicit multiplication like 'mean(x)' -> 'm*e*a*n*(x)').
-#
-# NOTE: These use lowercase names to distinguish from SymPy's symbolic Sum/Product which require explicit index variables. Our versions are for array reduction operations (like numpy's sum/mean) that reduce over all elements.
-#
-# For printer mappings (jnp.sum, np.mean, etc.), see tvbo.codegen.code
-
 ARRAY_FUNCTIONS = {
     "sum": Function("sum"),
     "mean": Function("mean"),
@@ -93,12 +74,10 @@ ARRAY_FUNCTIONS = {
     "abs": Function("abs"),
     "prod": Function("prod"),
     "concatenate": Function("concatenate"),
-    # Array-manipulation functions that carry Python-specific semantics.
-    # Custom printer methods in tvbo.codegen.code expand these to the correct
-    # JAX / NumPy calls (including .reshape() and keyword args that SymPy cannot represent natively).
+    # Python-specific semantics; the printers expand these to the right JAX / NumPy call.
     "window_mean": Function("window_mean"),  # window_mean(X, w) → jnp.mean(X.reshape(-1, w, *X.shape[1:]), axis=1)
     "subsample": Function("subsample"),  # subsample(X, step[, start]) → X[start::step]
-    # Structural slice/shape ops — let an observation pipeline that selects a voi, trims a transient, or downsamples be authored as declarative equations instead of source_code.
+    # Structural slice/shape ops.
     "slice_axis": Function("slice_axis"),  # slice_axis(X, axis, start, stop[, step]) → bounded slice of one axis (keeps ndim)
     "slice_from": Function(
         "slice_from"
@@ -118,8 +97,7 @@ ARRAY_FUNCTIONS = {
     "strided_convolve": Function(
         "strided_convolve"
     ),  # strided_convolve(X, k, s) → 'valid' conv of X⊛k evaluated only at the [s::s] output indices (fuses convolve+subsample; no full FFT)
-    # General array ops for per-timestep detectors / permutation-significance tests: a
-    # 2-D gather, a single-axis reduction, and Pearson correlation — expressible in any backend's array algebra so a wave / graph / significance observable is authored as declarative equations, not backend source_code.
+    # A 2-D gather, a single-axis reduction, and Pearson correlation.
     "take": Function("take"),  # take(x, idx) → gather x by an int index array (result has idx.shape)
     "sum_axis": Function("sum_axis"),  # sum_axis(x, axis) → reduce one axis ({np,jnp}.sum(x, axis=..))
     "pearson": Function(
@@ -128,9 +106,7 @@ ARRAY_FUNCTIONS = {
     "clip": Function("clip"),  # clip(x, lo, hi) → bound x to [lo, hi] ({np,jnp}.clip); e.g. clip(cos_sim, -1, 1) before acos
     "any": Function("any"),  # any(x) → True if any element is truthy ({np,jnp}.any); e.g. any(p_div <= sig)
     "all": Function("all"),  # all(x) → True if every element is truthy ({np,jnp}.all)
-    # Graph-construction primitives — the vocabulary a `Procedural` GraphGenerator's typed DAG lowers to, so a paper's network construction (distance kernel, stochastic connection mask, Gaussian field, axis normalisation) is authored as metadata and emitted natively per backend instead of living in per-generator Python.
-    #
-    # Every argument is POSITIONAL: SymPy's parser forwards `f(x, axis=0)` into Basic's options and raises `ValueError: Unknown options`, so a primitive can never carry a keyword. Options that would be keywords (metric, axis, target range, distribution, seed) are schema FIELDS on the DAG step and are lowered here into positional arguments — which is the reason the DAG is typed rather than free-form.
+    # Graph-construction primitives: the vocabulary a `Procedural` GraphGenerator's DAG lowers to.
     "grid_positions": Function(
         "grid_positions"
     ),  # grid_positions(nx, ny, x_extent, y_extent) → [nx*ny, 2] regular-lattice node coordinates, x-major
@@ -148,8 +124,7 @@ ARRAY_FUNCTIONS = {
         "minmax_rescale"
     ),  # minmax_rescale(x, lo, hi) → x affinely rescaled from its own min/max onto [lo, hi]
     "eigvals": Function("eigvals"),  # eigvals(M) → eigenvalues of M (e.g. spectral-radius rescaling)
-    # Distribution samplers. One head per distribution, mirroring the backend sampler table in dev/GenericProcedureEngine.md §2.3 (numpy rng.<d> | jax.random.<d> |
-    # Distributions.jl). The PRNG state is the FIRST argument because JAX is functionally pure — a key cannot be threaded implicitly through a rendered expression — and the trailing arguments are the sample shape. Cross-backend bit-identical draws are NOT guaranteed (numpy PCG64 != jax Threefry); see the RNG contract in §4.
+    # One head per distribution, mirroring the backend sampler table in dev/GenericProcedureEngine.md §2.3.
     "sample_normal": Function("sample_normal"),  # sample_normal(key, mean, std, *shape)
     "sample_uniform": Function("sample_uniform"),  # sample_uniform(key, lo, hi, *shape)
     "sample_lognormal": Function("sample_lognormal"),  # sample_lognormal(key, mu, sigma, *shape)
@@ -166,6 +141,8 @@ def parse_eq(
     """Parse the right-hand side of an equation or a raw expression string.
 
     Extends parsing with the ability to pass parameters, functions, symbols, and arbitrary SymPy objects commonly used in nonlinear systems dynamics.
+
+    A user-defined parameter always overrides a SymPy built-in of the same name, so a model free to call something `gamma` or `lambda` gets its own symbol rather than the special function. Indexed variables are detected in the source text and bound as `IndexedBase`, which likewise overrides any `Symbol` of that name — `x[i]` cannot be parsed against a plain `Symbol`. Index variables are picked out of `Sum` and `Product` limits and bound as plain `Symbol`s where they are not already defined.
 
     Parameters
     ----------
@@ -196,17 +173,14 @@ def parse_eq(
     transformations : Iterable[callable]
         Full control over the transformation pipeline (overrides defaults if provided).
 
-    Returns
+    Returns:
     -------
     sympy.Expr
         Parsed SymPy expression.
     """
-
     # Start with user-provided locals (sympy's parse_expr handles pi, E, etc. by default)
     local_dict = dict(kwargs.pop("local_dict", {}))
 
-    # Add SymPy's Sum, Product, IndexedBase for proper mathematical notation
-    # These allow parsing expressions like Sum(x[i], (i, 0, n-1))
     local_dict.setdefault("Sum", Sum)
     local_dict.setdefault("Product", Product)
     local_dict.setdefault("IndexedBase", IndexedBase)
@@ -218,8 +192,6 @@ def parse_eq(
         if name not in local_dict:
             local_dict[name] = fn
 
-    # Helper to coerce iterables/mappings into name -> sympy object entries
-    # IMPORTANT: User-defined parameters OVERRIDE SymPy built-ins (e.g., gamma, lambda)
     def _update_from_names_or_map(container, factory):
         if not container:
             return
@@ -273,17 +245,12 @@ def parse_eq(
 
     import re
 
-    # Auto-detect indexed variables (e.g., x[i], y[j]) and create IndexedBase for them
-    # This allows natural mathematical notation: Sum(x[i]*y[i], (i, 0, n-1))
-    # NOTE: This MUST override any Symbol definitions (including from parameters) because x[i] syntax requires IndexedBase, not Symbol
     indexed_pattern = re.compile(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\[")
     for match in indexed_pattern.finditer(expression):
         var_name = match.group(1)
         # Override even if already defined - indexed access requires IndexedBase
         local_dict[var_name] = IndexedBase(var_name)
 
-    # Auto-detect index variables from Sum/Product limits: Sum(..., (i, a, b))
-    # Pattern matches the first element in limit tuples like (i, 0, n-1)
     limit_pattern = re.compile(r"\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*,\s*[^,]+\s*,\s*[^)]+\)")
     for match in limit_pattern.finditer(expression):
         idx_name = match.group(1)

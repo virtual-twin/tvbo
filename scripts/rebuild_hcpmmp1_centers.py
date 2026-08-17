@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 """Recompute the hcpmmp1 atlas parcel centres from the original Glasser CIFTI dlabel.
 
-The shipped centres had seven right-hemisphere medial parcels (``R_10r``, ``R_10v``,
-``R_25``, ``R_OFC``, ``R_a24``, ``R_p32``, ``R_s32``) pinned at ``x = -0.50`` exactly — a
-clamp, not a computed centroid, placing right-hemisphere parcels left of the midline. Their
-L/R mirror mismatch reached 26.5 mm. Recomputing from the parcellation's own geometry fixes
-those and tightens the worst mirror mismatch to ~7 mm.
+The shipped centres had seven right-hemisphere medial parcels (``R_10r``, ``R_10v``, ``R_25``, ``R_OFC``, ``R_a24``, ``R_p32``, ``R_s32``) pinned at ``x = -0.50`` exactly — a clamp, not a computed centroid, placing right-hemisphere parcels left of the midline. Their L/R mirror mismatch reached 26.5 mm. Recomputing from the parcellation's own geometry fixes those and tightens the worst mirror mismatch to ~7 mm.
 
 Method
 ------
@@ -14,11 +10,7 @@ Method
 - **subcortical / brainstem parcels** — mean voxel centre over each parcel's grayordinates,
   from the dlabel's own volume model and affine.
 
-Nothing here is keyed by position or by a hardcoded name list. The surface structures and
-their vertex counts come from the CIFTI's own brain-model axis, the surfaces are discovered
-in ``--surf-dir`` by hemisphere, and atlas entities are paired with dlabel labels through the
-``alternateName`` crosswalk the atlas already carries (``L_V1`` -> ``L_V1_ROI``,
-``L_Cerebellum`` -> ``CEREBELLUM_LEFT``, ``Brain-Stem`` -> ``BRAIN_STEM``).
+Nothing here is keyed by position or by a hardcoded name list. The surface structures and their vertex counts come from the CIFTI's own brain-model axis, the surfaces are discovered in ``--surf-dir`` by hemisphere, and atlas entities are paired with dlabel labels through the ``alternateName`` crosswalk the atlas already carries (``L_V1`` -> ``L_V1_ROI``, ``L_Cerebellum`` -> ``CEREBELLUM_LEFT``, ``Brain-Stem`` -> ``BRAIN_STEM``).
 
 Usage
 -----
@@ -26,8 +18,7 @@ Usage
         --dlabel .../Q1-Q6_RelatedValidation210..._with_Atlas_ROIs2.32k_fs_LR.dlabel.nii \
         --surf-dir .../hcp_data          # any *.{L,R}.midthickness*.surf.gii pair
 
-Neither input ships with tvbo (~1 MB + 2x1.8 MB); both come from the HCP S1200 release /
-BALSA study RVVG. Pass ``--dry-run`` to print the comparison without writing.
+Neither input ships with tvbo (~1 MB + 2x1.8 MB); both come from the HCP S1200 release / BALSA study RVVG. Pass ``--dry-run`` to print the comparison without writing.
 """
 
 from __future__ import annotations
@@ -75,18 +66,14 @@ CIFTI_STEMS = {"VentralDC": "DIENCEPHALON_VENTRAL"}
 def spelling_variants(entity_name: str) -> list[str]:
     """Every label spelling a connectome might use for this atlas entity.
 
-    An atlas entity is findable only by the exact strings it lists, and ``get_centers()`` /
-    the node-alias crosswalk match purely by label — so a convention the atlas has never heard
-    of silently yields no centre for that region. Rather than add spellings reactively, one
-    pipeline at a time, generate the conventions this codebase actually meets:
+    An atlas entity is findable only by the exact strings it lists, and ``get_centers()`` / the node-alias crosswalk match purely by label — so a convention the atlas has never heard of silently yields no centre for that region. Rather than add spellings reactively, one pipeline at a time, generate the conventions this codebase actually meets:
 
     - **CIFTI / HCP** — ``L_V1_ROI``, ``CEREBELLUM_LEFT``, ``BRAIN_STEM``;
     - **FreeSurfer ``aseg``** — ``Left-Cerebellum-Cortex``, ``Right-Accumbens-area``,
       ``Brainstem``, plus the underscore and ``lh``/``rh`` forms the same tools emit;
     - **FreeSurfer ``aparc`` / BIDS cortical** — ``ctx-lh-V1``, ``L.V1``.
 
-    Every variant stays unique across the 379 entities and keeps its region's hemisphere,
-    which ``tests/test_network_io.py::TestAtlasAliases`` enforces.
+    Every variant stays unique across the 379 entities and keeps its region's hemisphere, which ``tests/test_network_io.py::TestAtlasAliases`` enforces.
     """
     if entity_name == "Brain-Stem":
         return ["BRAIN_STEM", "Brainstem", "BrainStem", "brain-stem"]
@@ -151,8 +138,7 @@ def dlabel_centroids(dlabel: Path, surf_dir: Path) -> tuple[dict[str, np.ndarray
     names = np.asarray(bm.name)
     table = img.header.get_axis(0).label[0]
 
-    # The CIFTI names its own surface structures and their vertex counts; take both from it
-    # rather than assuming which structures a given dlabel carries.
+    # The CIFTI names its own surface structures and their vertex counts; take both from it rather than assuming which structures a given dlabel carries.
     surface_structures = dict(bm.nvertices)
 
     xyz = np.full((keys.size, 3), np.nan)
@@ -270,8 +256,7 @@ def main() -> int:
 
     out_yaml = retemplated(src, TPL)
     out_yaml.write_text(yaml.safe_dump(doc, sort_keys=False, default_flow_style=False, width=120))
-    # No companion `_centers.txt`: Atlas._load_metadata reads one only when the yaml carries
-    # NO centers, and every entity here has one. A second copy could only drift.
+    # No companion `_centers.txt`: Atlas._load_metadata reads one only when the yaml carries NO centers, and every entity here has one. A second copy could only drift.
     stale = [
         src,
         src.with_name(src.name.replace("_dseg.yaml", "_centers.txt")),

@@ -115,12 +115,12 @@ means the same amplitude on every backend (tvboptim, Brian2, NetworkDynamics.jl,
 Julia). `sigma` wins if both are present.
 
 ::: {.callout-warning}
-## `intensity` is deprecated
+## `intensity` was removed in 1.0
 
-The bare `noise: {intensity: ...}` slot is deprecated and warns when read. It is
-interpreted as a **standard deviation**. Declare `parameters: {sigma: ...}` for a
-standard deviation, or `parameters: {nsig: ...}` for a dispersion — a recipe that
-wrote `intensity` meaning a dispersion is off by $\sqrt{2D}/D$.
+The bare `noise: {intensity: ...}` slot is gone; the schema rejects it. It had
+meant a **standard deviation**, so declare `parameters: {sigma: ...}` — or
+`parameters: {nsig: ...}` if the value was a dispersion, which differs by
+$\sqrt{2D}/D$.
 
 ```yaml
 # before                          # after

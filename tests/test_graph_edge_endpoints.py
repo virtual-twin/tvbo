@@ -1,12 +1,6 @@
 """``edge.source`` is a ``Node.id``, and the graph builders must read it as one.
 
-``Network.node_index_map`` is the authority: ``Node.id`` is a ``dcterms:identifier``, not a
-position, so a network may declare ``[{id: 1}, {id: 2}]`` and its edges then address nodes by
-those ids while the matrices stay indexed by declaration order. ``_edge_matrix`` resolves
-endpoints that way; ``graph`` and ``create_graph`` key their nodes by ``node.id`` and so must
-use the endpoint directly. Treating it as a position instead is invisible whenever the ids
-happen to equal the positions, which is every network in the database — hence these tests
-declare ids that do not.
+``Network.node_index_map`` is the authority: ``Node.id`` is a ``dcterms:identifier``, not a position, so a network may declare ``[{id: 1}, {id: 2}]`` and its edges then address nodes by those ids while the matrices stay indexed by declaration order. ``_edge_matrix`` resolves endpoints that way; ``graph`` and ``create_graph`` key their nodes by ``node.id`` and so must use the endpoint directly. Treating it as a position instead is invisible whenever the ids happen to equal the positions, which is every network in the database — hence these tests declare ids that do not.
 """
 
 import numpy as np

@@ -13,7 +13,6 @@ silent truncation or pad; and a builder that supplies none still gets the positi
 default.
 """
 
-from pathlib import Path
 
 import pytest
 import yaml

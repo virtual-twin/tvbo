@@ -1,9 +1,4 @@
-"""``--bundle-dataset`` makes a per-subject workflow kit self-contained: it copies each
-enumerated subject's empirical target (sidecar + payload) into the kit, selecting the
-exact BIDS variant, and rewrites ``dataset.bids_root`` to a relative path that resolves
-against the frozen spec (like a network ``data_file``) — so the kit ships the data its
-fan-out consumes and nothing else, with no separate upload or ``$TVBO_BIDS_ROOT``.
-"""
+"""``--bundle-dataset`` makes a per-subject workflow kit self-contained: it copies each enumerated subject's empirical target (sidecar + payload) into the kit, selecting the exact BIDS variant, and rewrites ``dataset.bids_root`` to a relative path that resolves against the frozen spec (like a network ``data_file``) — so the kit ships the data its fan-out consumes and nothing else, with no separate upload or ``$TVBO_BIDS_ROOT``."""
 
 from __future__ import annotations
 
@@ -32,8 +27,7 @@ def _write_subject(root: Path, subject: str, atlas: str) -> Path:
 
 
 def _stub(dataset, observations, source_file=None):
-    """A duck-typed experiment binding the REAL dataset methods, so the test exercises
-    the shipping code paths without constructing a full SimulationExperiment."""
+    """A duck-typed experiment binding the REAL dataset methods, so the test exercises the shipping code paths without constructing a full SimulationExperiment."""
     stub = SimpleNamespace(dataset=dataset, observations=observations, _source_file=source_file)
     stub.dataset_observation_targets = _SE.dataset_observation_targets.fget(stub)
     for name in (
@@ -72,7 +66,7 @@ def test_bundle_selects_variant_and_payload(cohort: Path):
     manifest = exp.dataset_bundle_files()
 
     assert set(manifest) == {"100206", "100307"}
-    for subj, files in manifest.items():
+    for files in manifest.values():
         names = sorted(f.name for f in files)
         # exactly the HCPMMP1 sidecar + its payload — no Schaefer decoy, no work/ noise
         assert any(n.endswith(".yaml") and "atlas-HCPMMP1" in n for n in names)
@@ -108,8 +102,7 @@ def test_bundle_dataset_copies_and_returns_relative_root(cohort: Path, tmp_path:
 
 
 def test_relative_bids_root_rebases_to_spec_dir(tmp_path: Path):
-    """A bundled kit records ``bids_root: dataset`` and resolves it against the spec file
-    — so `tvbo run spec/exp.yaml` finds spec/dataset regardless of the working dir."""
+    """A bundled kit records ``bids_root: dataset`` and resolves it against the spec file — so `tvbo run spec/exp.yaml` finds spec/dataset regardless of the working dir."""
     spec_dir = tmp_path / "kit" / "spec"
     spec_dir.mkdir(parents=True)
     bundled = spec_dir / "dataset"
@@ -129,8 +122,7 @@ def test_no_dataset_target_bundles_nothing(tmp_path: Path, monkeypatch):
 
 
 def test_missing_payload_raises_not_silently_dropped(tmp_path: Path):
-    """A sidecar whose data_file is absent must fail loudly — bundling a sidecar without
-    its matrix would only break at load time on a compute node."""
+    """A sidecar whose data_file is absent must fail loudly — bundling a sidecar without its matrix would only break at load time on a compute node."""
     root = tmp_path / "fc"
     sidecar = _write_subject(root, "100206", "HCPMMP1")
     sidecar.with_suffix(".h5").unlink()  # payload gone; sidecar still references it
@@ -156,8 +148,7 @@ def test_directory_payload_is_copied_as_tree(tmp_path: Path):
 
 
 def test_bundle_dies_on_unresolved_selection(cohort: Path):
-    """An over-tight --bundle-select (no subject has the variant) is a hard error, not a
-    silent fallback to the machine-specific bids_root."""
+    """An over-tight --bundle-select (no subject has the variant) is a hard error, not a silent fallback to the machine-specific bids_root."""
     exp = _fc_experiment(cohort)
     with pytest.raises(typer.Exit):
         _wf._bundle_dataset(exp, cohort.parent / "kit", {"atlas": "DoesNotExist"})

@@ -1,31 +1,27 @@
 """SymPy expression printers that render symbolic model math to backend source code.
 
-Each printer subclasses a SymPy code printer and layers on TVBO's array-function vocabulary (defined in `tvbo.parse.expression`), the backend-abstracted array
-primitives from `_ArrayFunctionPrinterMixin` (slicing, reductions, broadcasting), and per-backend syntax fixes. `get_printer` selects a printer by target format
-(`numpy`, `jax`, `julia`, `mtk`, `fortran`, `python`, `lems`, `sympy`), and
-`render_expression` is the high-level entry point that parses a string or SymPy expression and prints it for the chosen backend.
+Each printer subclasses a SymPy code printer and layers on TVBO's array-function vocabulary (defined in `tvbo.parse.expression`), the backend-abstracted array primitives from `_ArrayFunctionPrinterMixin` (slicing, reductions, broadcasting), and per-backend syntax fixes. `get_printer` selects a printer by target format (`numpy`, `jax`, `julia`, `mtk`, `fortran`, `python`, `lems`, `sympy`), and `render_expression` is the high-level entry point that parses a string or SymPy expression and prints it for the chosen backend.
+
+Array-manipulation primitives are the ones SymPy cannot represent natively. Each is a handler `(printer, expr) -> code string` in `ARRAY_FUNCTION_PRINTERS`, shared by the NumPy and JAX printers so a new primitive is one dict entry rather than one per backend. A handler stays backend-agnostic by calling the printer's own rendering primitives — `_cat`, `_render_index`, `_slice_axis`, `_transpose`, `_reduce_axis`, `_shape` — which each printer implements for its own conventions: numpy and jax use Python's 0-based slicing, Julia 1-based and `end`-relative. Adding an operation is therefore one handler, plus one primitive override wherever a backend's syntax genuinely differs, and never the same string-building duplicated across printers.
 """
 
 import logging
 
+import sympy.printing.fortran as spf
 import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
-import sympy.printing.fortran as spf
-from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
-from sympy import Symbol, S, Function, preorder_traversal
-from sympy import latex
+from sympy import Function, S, Symbol, latex, preorder_traversal
 from sympy.printing import StrPrinter
+from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
+
 from tvbo.datamodel.schema import Equation
 from tvbo.parse.expression import parse_eq
+from tvbo.utils import bind_function_arguments
 
 logger = logging.getLogger(__name__)
 
 
-# =============================================================================
-# Array Function Printer Mappings
-# =============================================================================
-# Maps the ARRAY_FUNCTIONS (defined in tvbo.parse.expression) to their target implementations for each output format. Printers use these via known_functions.
-
+# The ARRAY_FUNCTIONS of `tvbo.parse.expression` to their per-format implementations, consumed through `known_functions`.
 ARRAY_FUNCTION_MAPPINGS = {
     "jax": {
         # reductions
@@ -142,8 +138,11 @@ ARRAY_FUNCTION_MAPPINGS = {
 
 
 def inline_functions(expr, func_defs):
-    """
-    Inline all function applications in an expression.
+    """Inline all function applications in an expression.
+
+    Each call's body is bound with a single `xreplace`, so binding is simultaneous: substituting one formal at a time lets an actual argument that names a later formal be captured by that later substitution, and `H(x, y) = x - y` called as `H(y, 2)` would inline to `0` rather than `y - 2`.
+
+    Inlining runs to a fixpoint because a body may call another model function (the call graph is a DAG, e.g. `TF_e` -> `sigmaV` -> `muV`); a single pass in dict order would leave such a call behind, and which equations came out clean would depend on the order the recipe happened to declare them.
 
     Parameters
     ----------
@@ -154,12 +153,12 @@ def inline_functions(expr, func_defs):
         where arg_names is a list of argument names and body_expr is the
         sympy expression for the function body.
 
-    Returns
+    Returns:
     -------
     sympy.Expr
         Expression with all function calls replaced by their inlined bodies.
 
-    Example
+    Example:
     -------
     >>> from sympy import symbols, Function
     >>> x, y, v = symbols('x y v')
@@ -170,26 +169,23 @@ def inline_functions(expr, func_defs):
     2*A*e0/(1 + exp(r*(v0 - x + y)))
     """
     result = expr
-    for func_name, (arg_names, body) in func_defs.items():
-        F = Function(func_name)
-        # Find all applications of this function and replace them
-        for sub_expr in list(preorder_traversal(result)):
-            if hasattr(sub_expr, "func") and sub_expr.func == F:
-                # Get the actual arguments
-                actual_args = sub_expr.args
-                # Create substitution dict: formal arg -> actual arg
-                subs = {Symbol(name): arg for name, arg in zip(arg_names, actual_args)}
-                # Substitute into body
-                inlined = body.subs(subs)
-                # Replace in result
-                result = result.subs(sub_expr, inlined)
+    for _ in range(len(func_defs) + 1):
+        replaced = False
+        for func_name, (arg_names, body) in func_defs.items():
+            F = Function(func_name)
+            for sub_expr in list(preorder_traversal(result)):
+                if hasattr(sub_expr, "func") and sub_expr.func == F:
+                    bound = bind_function_arguments(func_name, arg_names, sub_expr.args)
+                    inlined = body.xreplace({Symbol(name): arg for name, arg in bound.items()})
+                    result = result.subs(sub_expr, inlined)
+                    replaced = True
+        if not replaced:
+            break
     return result
 
 
 def print_Piecewise(Printer, expr, verbose=False):
-    """
-    Print Piecewise expressions as nested np.where statements.
-    """
+    """Print Piecewise expressions as nested np.where statements."""
     args = expr.args
 
     # Start with the default case (the last piece)
@@ -213,11 +209,6 @@ def print_Piecewise(Printer, expr, verbose=False):
     return result
 
 
-# Array-manipulation primitives that SymPy cannot represent natively. Each entry maps a function name to a handler ``(printer, expr) -> code string`` that emits the right call for the printer's array module (``printer._module``: np / jnp).
-# Shared by NumPyPrinter and JaxPrinter so a new primitive is one dict entry.
-# Handlers stay backend-agnostic: they call the printer's rendering *primitives* (``_cat``, ``_render_index``, ``_slice_axis``, ``_transpose``, ``_reduce_axis``,
-# ``_shape``, …), which each printer implements for its own conventions (numpy/jax:
-# Python 0-based slicing; Julia: 1-based ``end``-relative). Adding an op is one handler plus, where a backend's syntax differs, one primitive override — never per-backend string-building duplicated across printers.
 def _afp_concatenate(p, expr):
     args = list(expr.args)
     if args and args[-1].is_integer:
@@ -234,10 +225,7 @@ def _afp_window_mean(p, expr):
 def _afp_subsample(p, expr):
     """Strided slice of the leading (time) axis.
 
-    ``subsample(x, step)``        -> ``x[::step]``
-    ``subsample(x, start, step)`` -> ``x[start::step]``
-    The 3-arg form lets a strided downsample (e.g. tvboptim BOLD TR sampling
-    ``data[step::step]``) be authored as a declarative equation, not ``source_code``.
+    ``subsample(x, step)``        -> ``x[::step]`` ``subsample(x, start, step)`` -> ``x[start::step]`` The 3-arg form lets a strided downsample (e.g. tvboptim BOLD TR sampling ``data[step::step]``) be authored as a declarative equation, not ``source_code``.
     """
     a = expr.args
     if len(a) >= 3:
@@ -304,8 +292,7 @@ def _afp_matmul(p, expr):
 def _afp_strided_convolve(p, expr):
     """``strided_convolve(X, k, s)`` -> the ``'valid'`` convolution of ``X`` (leading time axis) with kernel ``k``, evaluated ONLY at output indices ``[s::s]``.
 
-    Fuses a full convolution and a strided subsample: computing just the retained outputs is a small ``(n_kept, len(k))`` window matmul instead of an FFT over the
-    whole signal, so it avoids the FFT buffer entirely. Trailing axes are preserved (per-node), matching ``fftconvolve(..., 'valid')[s::s]``.
+    Fuses a full convolution and a strided subsample: computing just the retained outputs is a small ``(n_kept, len(k))`` window matmul instead of an FFT over the whole signal, so it avoids the FFT buffer entirely. Trailing axes are preserved (per-node), matching ``fftconvolve(..., 'valid')[s::s]``.
     """
     return p._strided_convolve(p._print(expr.args[0]), p._print(expr.args[1]), p._print(expr.args[2]))
 
@@ -324,9 +311,7 @@ def _afp_sum_axis(p, expr):
 
 
 def _afp_pearson(p, expr):
-    """``pearson(x, y)`` -> Pearson correlation of two FLAT/1-D operands (the reduction is over all elements). This is the per-step, node-collapsing correlation an observer
-    needs (e.g. corr(in-strength, flow-potential) for one timestep); it is NOT a columnwise correlation of 2-D operands. Distinct from the loss-helper ``correlation``
-    in ``codegen/functions.py``, which is a preserved call to a generated function, not an inline-expanded expression primitive."""
+    """``pearson(x, y)`` -> Pearson correlation of two FLAT/1-D operands (the reduction is over all elements). This is the per-step, node-collapsing correlation an observer needs (e.g. corr(in-strength, flow-potential) for one timestep); it is NOT a columnwise correlation of 2-D operands. Distinct from the loss-helper ``correlation`` in ``codegen/functions.py``, which is a preserved call to a generated function, not an inline-expanded expression primitive."""
     return p._pearson(p._print(expr.args[0]), p._print(expr.args[1]))
 
 
@@ -343,17 +328,14 @@ def _afp_arity(expr, n, signature):
 def _afp_grid_positions(p, expr):
     """``grid_positions(nx, ny, x_extent, y_extent)`` -> the [nx*ny, 2] coordinates of a regular 2-D lattice spanning [0, x_extent] x [0, y_extent].
 
-    Node ORDER is part of the contract, not an implementation detail: row ``k`` is
-    ``(x[k // ny], y[k % ny])`` (x-major). A connectome's row order is its node identity, so a layout that ordered nodes differently would silently permute every downstream
-    per-node quantity.
+    Node ORDER is part of the contract, not an implementation detail: row ``k`` is ``(x[k // ny], y[k % ny])`` (x-major). A connectome's row order is its node identity, so a layout that ordered nodes differently would silently permute every downstream per-node quantity.
     """
     args = _afp_arity(expr, 4, "grid_positions(nx, ny, x_extent, y_extent)")
     return p._grid_positions(*[p._print(a) for a in args])
 
 
 def _afp_pairwise_distance(p, expr):
-    """``pairwise_distance(pos)`` -> the [n, n] euclidean distance matrix between the rows of ``pos`` ([n, d] positions). The distance kernel every spatially-embedded generator
-    starts from (Koller's 2-D sheet, Roberts 2019, Pang 2023)."""
+    """``pairwise_distance(pos)`` -> the [n, n] euclidean distance matrix between the rows of ``pos`` ([n, d] positions). The distance kernel every spatially-embedded generator starts from (Koller's 2-D sheet, Roberts 2019, Pang 2023)."""
     args = _afp_arity(expr, 1, "pairwise_distance(pos)")
     return p._pairwise_distance(p._print(args[0]))
 
@@ -361,17 +343,14 @@ def _afp_pairwise_distance(p, expr):
 def _afp_fill_diagonal(p, expr):
     """``fill_diagonal(M, v)`` -> ``M`` with its main diagonal replaced by ``v``.
 
-    The declarative form of "no self-connections": a generator sets the diagonal to
-    ``inf`` before a decaying distance kernel (so the kernel evaluates to 0 there) or to
-    0 after one. Generalises ``zero_diagonal``, which is the v=0 special case.
+    The declarative form of "no self-connections": a generator sets the diagonal to ``inf`` before a decaying distance kernel (so the kernel evaluates to 0 there) or to 0 after one. Generalises ``zero_diagonal``, which is the v=0 special case.
     """
     args = _afp_arity(expr, 2, "fill_diagonal(M, value)")
     return p._fill_diagonal(p._print(args[0]), p._print(args[1]))
 
 
 def _afp_gaussian_pdf(p, expr):
-    """``gaussian_pdf(pos, mean, cov)`` -> isotropic multivariate-normal density evaluated at each row of ``pos``. ``mean`` is a coordinate tuple and ``cov`` an isotropic scalar
-    variance, matching the sink/source Gaussian fields that build a spatial gradient."""
+    """``gaussian_pdf(pos, mean, cov)`` -> isotropic multivariate-normal density evaluated at each row of ``pos``. ``mean`` is a coordinate tuple and ``cov`` an isotropic scalar variance, matching the sink/source Gaussian fields that build a spatial gradient."""
     args = _afp_arity(expr, 3, "gaussian_pdf(pos, mean, cov)")
     return p._gaussian_pdf(p._print(args[0]), p._print(args[1]), p._print(args[2]))
 
@@ -386,8 +365,7 @@ def _afp_normalize(p, expr):
 
 
 def _afp_minmax_rescale(p, expr):
-    """``minmax_rescale(x, lo, hi)`` -> ``x`` affinely mapped from its own [min, max] onto [lo, hi] (e.g. a difference-of-Gaussians field rescaled to [-1, 1] as a gradient
-    template)."""
+    """``minmax_rescale(x, lo, hi)`` -> ``x`` affinely mapped from its own [min, max] onto [lo, hi] (e.g. a difference-of-Gaussians field rescaled to [-1, 1] as a gradient template)."""
     args = _afp_arity(expr, 3, "minmax_rescale(x, lo, hi)")
     return p._minmax_rescale(p._print(args[0]), p._print(args[1]), p._print(args[2]))
 
@@ -401,8 +379,7 @@ def _afp_eigvals(p, expr):
 def _afp_sample(distribution, n_params):
     """Build the handler for one distribution's sampler.
 
-    ``sample_<d>(key, <n_params params>, *shape)``. The PRNG state leads because JAX is functionally pure — there is no ambient RNG a rendered expression could reach — so
-    every backend receives the state explicitly and derives the same sub-streams. The trailing arguments are the sample shape.
+    ``sample_<d>(key, <n_params params>, *shape)``. The PRNG state leads because JAX is functionally pure — there is no ambient RNG a rendered expression could reach — so every backend receives the state explicitly and derives the same sub-streams. The trailing arguments are the sample shape.
     """
 
     def handler(p, expr):
@@ -477,12 +454,9 @@ _JULIA_HANDLED_OPS = {
 class _ArrayFunctionPrinterMixin:
     """Shared printer hooks + backend-abstracted array primitives.
 
-    Routes array primitives (``concatenate``, ``subsample``, ``mode_dot``, …) through
-    ``_ARRAY_FUNCTION_PRINTERS`` and ``Piecewise`` through ``print_Piecewise``, deferring to the parent printer otherwise. Kept as a mixin listed first in the MRO
-    so ``super()`` resolves to the concrete SymPy printer base.
+    Routes array primitives (``concatenate``, ``subsample``, ``mode_dot``, …) through ``_ARRAY_FUNCTION_PRINTERS`` and ``Piecewise`` through ``print_Piecewise``, deferring to the parent printer otherwise. Kept as a mixin listed first in the MRO so ``super()`` resolves to the concrete SymPy printer base.
 
-    The ``_*`` primitive methods below emit the **numpy/jax** forms (Python, 0-based slicing). ``JuliaPrinter`` overrides the ones whose syntax differs (1-based,
-    ``end``-relative indexing), so each array op is defined once as a backend-agnostic handler and only its differing syntax is overridden per backend.
+    The ``_*`` primitive methods below emit the **numpy/jax** forms (Python, 0-based slicing). ``JuliaPrinter`` overrides the ones whose syntax differs (1-based, ``end``-relative indexing), so each array op is defined once as a backend-agnostic handler and only its differing syntax is overridden per backend.
     """
 
     # --- routing ---
@@ -509,8 +483,7 @@ class _ArrayFunctionPrinterMixin:
     def _minmax(self, name, args):
         """Fold ``Min``/``Max`` into nested elementwise calls.
 
-        SymPy's own numpy printer emits ``functools.reduce(numpy.minimum, [...])``, which needs a ``functools`` import that generated modules do not carry — an
-        undefined name in code that is otherwise valid. Nesting the binary primitive needs no import and stays elementwise, so it broadcasts like every other term.
+        SymPy's own numpy printer emits ``functools.reduce(numpy.minimum, [...])``, which needs a ``functools`` import that generated modules do not carry — an undefined name in code that is otherwise valid. Nesting the binary primitive needs no import and stays elementwise, so it broadcasts like every other term.
         """
         rendered = [self._print(arg) for arg in args]
         folded = rendered[0]
@@ -552,11 +525,12 @@ class _ArrayFunctionPrinterMixin:
         # numpy/jax: `take` with an int index array returns the index array's shape (a fancy-index gather). JuliaPrinter overrides for 1-based indexing.
         return f"{self._afn('take')}({base}, {idx})"
 
-    # --- graph-construction primitives (Procedural GraphGenerator DAG) ---------
-    # Expanded from the reduction/array primitives above wherever possible, so a backend that already implements those inherits these for free and only a genuinely different syntax needs an override.
+    # --- graph-construction primitives (Procedural GraphGenerator DAG) ---
     def _pairwise_distance(self, pos):
-        # ||p_i - p_j||: broadcast [n,1,d] against [1,n,d] and reduce the coordinate axis.
-        # Built from expand_dims rather than literal `[:, None, :]` slicing so the expansion carries no Python indexing syntax — a backend that spells broadcasting differently overrides `_expand_dims` alone instead of re-deriving the formula.
+        """`||p_i - p_j||`: broadcast `[n,1,d]` against `[1,n,d]` and reduce the coordinate axis.
+
+        Built from `_expand_dims` rather than a literal `[:, None, :]` slice, so the expansion carries no Python indexing syntax and a backend that spells broadcasting differently overrides `_expand_dims` alone instead of re-deriving the formula. That is the pattern for this whole group: expressed through the reduction and array primitives above, so a backend implementing those inherits these for free.
+        """
         rows = self._expand_dims(pos, 1)
         cols = self._expand_dims(pos, 0)
         return f"{self._afn('sqrt')}({self._afn('sum')}(({rows} - {cols})**2, axis=-1))"
@@ -569,9 +543,7 @@ class _ArrayFunctionPrinterMixin:
 
         Built from a flat index rather than meshgrid+reshape so the expansion needs only arange/stack, which every backend's function table already carries.
 
-        The spacing denominators are floored at 1 because a degenerate axis (nx or ny of
-        1 — a line of nodes, the standard 1-D neural-field layout) otherwise divides by zero. With nx=1 every ``k // ny`` is 0, so the coordinate is 0 regardless of the
-        spacing, which is exactly what ``linspace(0, extent, 1)`` returns.
+        The spacing denominators are floored at 1 because a degenerate axis (nx or ny of 1 — a line of nodes, the standard 1-D neural-field layout) otherwise divides by zero. With nx=1 every ``k // ny`` is 0, so the coordinate is 0 regardless of the spacing, which is exactly what ``linspace(0, extent, 1)`` returns.
         """
         k = f"{self._afn('arange')}({nx} * {ny})"
         dx = f"({x_extent} / {self._afn('maximum')}({nx} - 1, 1))"
@@ -601,8 +573,7 @@ class _ArrayFunctionPrinterMixin:
     def _normalize(self, base, axis):
         """``base`` divided by its sum along ``axis``.
 
-        A zero sum is divided by 1 instead, leaving that slice as zeros. Without the guard an unconnected node — which a stochastic connection mask produces routinely
-        at low density — yields an all-NaN column that propagates silently into the connectome instead of a harmless zero column.
+        A zero sum is divided by 1 instead, leaving that slice as zeros. Without the guard an unconnected node — which a stochastic connection mask produces routinely at low density — yields an all-NaN column that propagates silently into the connectome instead of a harmless zero column.
         """
         total = self._reduce_axis("sum", base, axis, keepdims=True)
         return f"({base} / {self._where3(f'{total} == 0', '1', total)})"
@@ -610,8 +581,7 @@ class _ArrayFunctionPrinterMixin:
     def _minmax_rescale(self, x, lo, hi):
         """``x`` affinely mapped from its own [min, max] onto [lo, hi].
 
-        A constant input has zero span; it maps to the MIDPOINT of the target interval rather than dividing by zero. That keeps a degenerate field neutral (a flat field
-        rescaled to [-1, 1] becomes 0, matching what a hand-written generator special-cases it to) instead of emitting NaN everywhere.
+        A constant input has zero span; it maps to the MIDPOINT of the target interval rather than dividing by zero. That keeps a degenerate field neutral (a flat field rescaled to [-1, 1] becomes 0, matching what a hand-written generator special-cases it to) instead of emitting NaN everywhere.
         """
         xmin, xmax = f"{self._afn('min')}({x})", f"{self._afn('max')}({x})"
         span = f"({xmax} - {xmin})"
@@ -630,9 +600,7 @@ class _ArrayFunctionPrinterMixin:
     def _sample(self, distribution, key, substream, params, shape):
         """A draw from ``distribution`` given explicit PRNG state and a sub-stream index.
 
-        ``substream`` selects an independent stream derived from the generator's base seed, so two draws in one procedure are independent *and* every backend derives
-        them the same structural way (here a freshly-seeded Generator; under jax a folded key). Without it, backends would differ in how draws decorrelate — the silent
-        cross-backend divergence the RNG contract exists to prevent.
+        ``substream`` selects an independent stream derived from the generator's base seed, so two draws in one procedure are independent *and* every backend derives them the same structural way (here a freshly-seeded Generator; under jax a folded key). Without it, backends would differ in how draws decorrelate — the silent cross-backend divergence the RNG contract exists to prevent.
         """
         shape_arg = f", size=({', '.join(shape)},)" if shape else ""
         rng = f"{self._module}.random.default_rng({key} + {substream})"
@@ -660,8 +628,10 @@ class _ArrayFunctionPrinterMixin:
         return f"{base}.shape[{axis}]"
 
     def _render_index(self, base, specs):
-        """Render ``base[...]`` with Python 0-based slices. ``specs`` is a per-axis list;
-        each entry is ``None`` (full ``:``) or ``(start, stop, step)`` with ``None`` parts."""
+        """Render ``base[...]`` with Python 0-based slices.
+
+        ``specs`` is a per-axis list; each entry is ``None`` (full ``:``) or ``(start, stop, step)`` with ``None`` parts.
+        """
         parts = []
         for s in specs:
             if s is None:
@@ -686,10 +656,7 @@ class _ArrayFunctionPrinterMixin:
 class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
     """NumPy code printer for TVBO symbolic expressions.
 
-    Extends SymPy's `NumPyPrinter` with the array-function vocabulary from
-    `ARRAY_FUNCTION_MAPPINGS["numpy"]` and the backend-abstracted array primitives supplied by `_ArrayFunctionPrinterMixin`. Known functions and
-    constants are module-qualified with `module`, and `erf`/`erfc` are routed to
-    `scipy.special`.
+    Extends SymPy's `NumPyPrinter` with the array-function vocabulary from `ARRAY_FUNCTION_MAPPINGS["numpy"]` and the backend-abstracted array primitives supplied by `_ArrayFunctionPrinterMixin`. Known functions and constants are module-qualified with `module`, and `erf`/`erfc` are routed to `scipy.special`.
 
     Args:
         settings: Printer settings forwarded to the SymPy base printer.
@@ -712,10 +679,7 @@ class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
 class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
     """JAX code printer for TVBO symbolic expressions.
 
-    Extends SymPy's `JaxPrinter` with the array-function vocabulary from
-    `ARRAY_FUNCTION_MAPPINGS["jax"]` and the mixin's array primitives, routing
-    `erf`/`erfc` to `jsp.special`. When broadcasting inference is enabled it analyzes the index usage of indexed subexpressions to insert explicit axes so
-    that `jnp` operations broadcast correctly.
+    Extends SymPy's `JaxPrinter` with the array-function vocabulary from `ARRAY_FUNCTION_MAPPINGS["jax"]` and the mixin's array primitives, routing `erf`/`erfc` to `jsp.special`. When broadcasting inference is enabled it analyzes the index usage of indexed subexpressions to insert explicit axes so that `jnp` operations broadcast correctly.
 
     Args:
         settings: Printer settings forwarded to the SymPy base printer.
@@ -739,11 +703,9 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
     def _sample(self, distribution, key, substream, params, shape):
         """Draw from ``distribution`` with an explicit, functionally-pure PRNG key.
 
-        ``substream`` is folded into the key, the jax-native way to derive an independent stream from an integer — structurally the same derivation numpy performs by
-        re-seeding, which is what the RNG contract requires of every backend.
+        ``substream`` is folded into the key, the jax-native way to derive an independent stream from an integer — structurally the same derivation numpy performs by re-seeding, which is what the RNG contract requires of every backend.
 
-        jax.random exposes standardised variates, so location/scale families are composed from the standard draw rather than passed as parameters — which is also what keeps
-        the draw differentiable with respect to those parameters. The shape is required (there is no implicit scalar draw), so an empty shape renders as ``()``.
+        jax.random exposes standardised variates, so location/scale families are composed from the standard draw rather than passed as parameters — which is also what keeps the draw differentiable with respect to those parameters. The shape is required (there is no implicit scalar draw), so an empty shape renders as ``()``.
         """
         shape_arg = f"({', '.join(shape)},)" if shape else "()"
         rnd = "jax.random"
@@ -776,7 +738,7 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
 
         For Sum(f(a[i,j]), (j, 0, m-1)) - the result has only index i.
         """
-        from sympy import preorder_traversal, Indexed, Sum
+        from sympy import Indexed, Sum, preorder_traversal
 
         index_positions = {}  # {index_symbol: axis_position}
         max_dims = 0
@@ -822,7 +784,6 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
         - j is at axis 1, but rmse doesn't have it
         - So rmse needs [:, None] to broadcast correctly
         """
-
         base_name = str(expr.base)
         indices = expr.indices
 
@@ -837,9 +798,7 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
         if len(indices) >= max_dims:
             return base_name
 
-        # Need to add broadcasting dimensions
-        # Figure out which axes this indexed expr covers
-        covered_axes = set()
+        covered_axes = set()  # broadcasting dims are added for the axes this expr does not cover
         for idx in indices:
             if idx in index_positions:
                 covered_axes.add(index_positions[idx])
@@ -931,8 +890,6 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
                 result_dims = max_indices - 1
 
                 if result_dims < ctx_max_dims:
-                    # Need to add broadcasting dimensions
-                    # Figure out which axes the remaining indices cover
                     covered_axes = set()
                     for idx in remaining_indices:
                         if idx in ctx_positions:
@@ -950,18 +907,14 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
 
             return sum_code
         else:
-            # Multiple axes but not all: reduce over multiple specific axes
-            # Sort axes in descending order to reduce from back to front
-            axes_tuple = tuple(sorted(axes))
+            axes_tuple = tuple(sorted(axes))  # back to front, so earlier axis numbers stay valid
             return f"{self._module}.sum({self._print(result)}, axis={axes_tuple})"
 
 
 class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     """Julia code printer for TVBO symbolic expressions.
 
-    Extends SymPy's `JuliaCodePrinter` with the `ARRAY_FUNCTION_MAPPINGS["julia"]` vocabulary and Julia-specific overrides of the mixin's array primitives, which
-    use 1-based, `end`-relative indexing. Runs non-strict so unknown constructs print partially rather than raising, maps the legacy `atan2` name onto Julia's
-    two-argument `atan`, and routes domain-restricted powers inside `Piecewise` branches through NaNMath.
+    Extends SymPy's `JuliaCodePrinter` with the `ARRAY_FUNCTION_MAPPINGS["julia"]` vocabulary and Julia-specific overrides of the mixin's array primitives, which use 1-based, `end`-relative indexing. Runs non-strict so unknown constructs print partially rather than raising, maps the legacy `atan2` name onto Julia's two-argument `atan`, and routes domain-restricted powers inside `Piecewise` branches through NaNMath.
 
     Args:
         settings: Printer settings forwarded to the SymPy base printer; `strict`
@@ -983,9 +936,11 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         # Set while printing Piecewise branch bodies so domain-restricted powers are routed through NaNMath (see _print_Pow / _print_Piecewise).
         self._in_piecewise = False
 
-    # Route only the ops with a clean Julia form (slice/stride family + shape) through the shared handlers — which then call the Julia-overridden primitives below. Everything else (concatenate->vcat, transpose, reductions) defers to Julia's name-mappings, so existing
-    # Julia output never regresses. NOTE: bypass the mixin's catch-all _print_Function (which would route *every* registered op) by dispatching to the SymPy base directly.
     def _print_Function(self, expr):
+        """Route only the ops with a clean Julia form through the shared handlers.
+
+        The slice and stride family plus `shape` go through the mixin, which then calls the Julia-overridden primitives below. Everything else — `concatenate` to `vcat`, transposes, reductions — defers to Julia's own name mappings, so existing Julia output cannot regress. That means bypassing the mixin's catch-all `_print_Function`, which would route every registered op, by dispatching to the SymPy base directly.
+        """
         name = expr.func.__name__
         if name in _JULIA_HANDLED_OPS:
             return _ARRAY_FUNCTION_PRINTERS[name](self, expr)
@@ -994,10 +949,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     def _print_Piecewise(self, expr):
         """Print a Piecewise, flagging its branch bodies as domain-unsafe.
 
-        numpy/JAX evaluate every ``where`` branch and let out-of-domain ops yield
-        NaN (harmlessly discarded by the select). Julia's ``ifelse`` is also eager, but its ``sqrt``/``^`` *throw* ``DomainError`` on a negative argument instead
-        of returning NaN — so a dead branch (e.g. ``sqrt`` of a momentarily-negative discriminant) aborts the whole solve. Flag the bodies so ``_print_Pow`` routes
-        domain-restricted powers through NaNMath and restores the numpy contract.
+        numpy/JAX evaluate every ``where`` branch and let out-of-domain ops yield NaN (harmlessly discarded by the select). Julia's ``ifelse`` is also eager, but its ``sqrt``/``^`` *throw* ``DomainError`` on a negative argument instead of returning NaN — so a dead branch (e.g. ``sqrt`` of a momentarily-negative discriminant) aborts the whole solve. Flag the bodies so ``_print_Pow`` routes domain-restricted powers through NaNMath and restores the numpy contract.
         """
         prev = self._in_piecewise
         self._in_piecewise = True
@@ -1009,31 +961,33 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     def _print_Pow(self, expr):
         """Route domain-restricted powers inside Piecewise branches through NaNMath.
 
-        Only fractional exponents are affected (``sqrt`` = exp 1/2, ``x^(1/3)`` …), and only within a Piecewise body; integer powers and every non-Piecewise
-        expression keep SymPy's default Julia rendering, so non-branching models are byte-for-byte unchanged. NaNMath results equal ``Base`` results for in-domain
-        inputs, so this never alters valid numerics.
+        Only fractional exponents are affected (``sqrt`` = exp 1/2, ``x^(1/3)`` …), and only within a Piecewise body; integer powers and every non-Piecewise expression keep SymPy's default Julia rendering, so non-branching models are byte-for-byte unchanged. NaNMath results equal ``Base`` results for in-domain inputs, so this never alters valid numerics.
         """
         from sympy.core.numbers import equal_valued
 
         if self._in_piecewise:
             exp = expr.exp
             if equal_valued(exp, 0.5):
-                return "NaNMath.sqrt(%s)" % self._print(expr.base)
+                return f"NaNMath.sqrt({self._print(expr.base)})"
             if expr.is_commutative and equal_valued(exp, -0.5):
                 sym = "/" if expr.base.is_number else "./"
-                return "1 %s NaNMath.sqrt(%s)" % (sym, self._print(expr.base))
+                return f"1 {sym} NaNMath.sqrt({self._print(expr.base)})"
             if getattr(exp, "is_number", False) and not exp.is_integer:
-                return "NaNMath.pow(%s, %s)" % (self._print(expr.base), self._print(exp))
+                return f"NaNMath.pow({self._print(expr.base)}, {self._print(exp)})"
         return spj.JuliaCodePrinter._print_Pow(self, expr)
 
-    # SymPy's JuliaCodePrinter does not implement IndexedBase by default; our templates occasionally introduce placeholder IndexedBase symbols (e.g. x_i, x_j) for clarity.
-    # For code-generation these act like ordinary scalar symbols, so we just emit the name.
-    def _print_IndexedBase(self, expr):  # noqa: D401
+    def _print_IndexedBase(self, expr):
+        """Emit a placeholder `IndexedBase` (`x_i`, `x_j`) as its bare name.
+
+        SymPy's `JuliaCodePrinter` does not implement `IndexedBase`. Templates introduce these for clarity, and for code generation they behave as ordinary scalar symbols.
+        """
         return str(expr)
 
-    # If an actual indexed object (e.g. A[i]) appears, convert to Julia's 1-based indexing.
-    # We assume symbolic indices start at 0 if produced by Python-centric logic; without concrete numeric indices we cannot safely +1 them, so leave symbolic indices unchanged.
     def _print_Indexed(self, expr):
+        """Convert a real indexed object such as `A[i]` to Julia's 1-based indexing.
+
+        A symbolic index is left alone: Python-centric logic produces 0-based indices, but without a concrete numeric value there is nothing safe to add one to.
+        """
         try:
             base = self._print(expr.base)
             inds = [self._print(i) for i in expr.indices]
@@ -1041,9 +995,9 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         except Exception:
             return str(expr)
 
-    # --- Julia primitive overrides: 1-based, ``end``-relative, column-major indexing ---
-    # ``Piecewise`` reuses the shared ``print_Piecewise`` via this ``_where3`` override (numpy/jax -> ``<mod>.where``; Julia -> ``ifelse``), so no dedicated Julia Piecewise.
+    # --- Julia primitive overrides: 1-based, `end`-relative, column-major indexing ---
     def _where3(self, cond, a, b):
+        """Julia's `ifelse`, which is what lets `print_Piecewise` be shared rather than reimplemented."""
         return f"ifelse({cond}, {a}, {b})"
 
     def _minmax(self, name, args):
@@ -1055,10 +1009,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         return f"size({base}, {axis + 1})"
 
     def _mat_dot(self, a, b):
-        # Multi-mode contraction ``numpy.dot(X, M)``: X is a length-n_modes vector and
-        # M a Vector{Vector} of rows, so numpy's result[j] = sum_i X[i]*M[i][j].
-        # ``reduce(hcat, M)`` stacks the rows as columns (== Mᵀ), so
-        # ``reduce(hcat, M) * X`` reproduces that contraction as a mode vector.
+        # `dot(X, M)` is `result[j] = sum_i X[i]*M[i][j]`; `reduce(hcat, M)` is Mᵀ, so this reproduces it.
         return f"(reduce(hcat, {b}) * {a})"
 
     def _outer(self, a, b):
@@ -1109,10 +1060,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     def _print_Add(self, expr, order=None):
         """Element-wise addition/subtraction (``.+`` / ``.-``).
 
-        Unlike ``*``/``/``/``^`` (which the base Julia printer already emits as
-        ``.*``/``./``/``.^``), scalar+array ``+``/``-`` is NOT auto-broadcast in
-        Julia — ``[1,2] + 1`` raises ``MethodError``. Array-valued models (mode-coupling, quadrature vectors) mix scalar and vector terms, so we
-        emit the dotted forms, which work uniformly for scalars and arrays.
+        Unlike ``*``/``/``/``^`` (which the base Julia printer already emits as ``.*``/``./``/``.^``), scalar+array ``+``/``-`` is NOT auto-broadcast in Julia — ``[1,2] + 1`` raises ``MethodError``. Array-valued models (mode-coupling, quadrature vectors) mix scalar and vector terms, so we emit the dotted forms, which work uniformly for scalars and arrays.
         Mirrors the base printer's term ordering and sign handling.
         """
         from sympy.printing.precedence import precedence
@@ -1128,7 +1076,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
             else:
                 sign = ".+"
             if precedence(term) < prec or term.is_Add:
-                parts.extend([sign, "(%s)" % t])
+                parts.extend([sign, f"({t})"])
             else:
                 parts.extend([sign, t])
         sign = parts.pop(0)
@@ -1142,27 +1090,23 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
 class MTKPrinter(JuliaPrinter):
     """Printer for ModelingToolkit.jl @mtkmodel equations.
 
-    MTK equations are scalar symbolic, so we use plain ``+``, ``-``, ``*``,
-    ``/``, ``^`` instead of Julia's element-wise ``.+``, ``.-``, ``.*``, ``./``,
-    ``.^``.
+    MTK equations are scalar symbolic, so we use plain ``+``, ``-``, ``*``, ``/``, ``^`` instead of Julia's element-wise ``.+``, ``.-``, ``.*``, ``./``, ``.^``.
     """
 
     def _print_Add(self, expr, order=None):
-        # Scalar-symbolic: plain +/- (base CodePrinter behaviour, bypassing
-        # JuliaPrinter's element-wise .+/.- override).
+        # Plain +/-, bypassing JuliaPrinter's element-wise .+/.- override.
         return spj.JuliaCodePrinter._print_Add(self, expr, order=order)
 
     def _print_Pow(self, expr):
-        # MTK builds Symbolics.jl expressions, which can't trace NaNMath.* calls;
-        # keep the plain symbolic ``^`` (bypassing JuliaPrinter's NaNMath routing).
+        # Symbolics.jl cannot trace NaNMath.* calls, so the plain symbolic `^` stays.
         return spj.JuliaCodePrinter._print_Pow(self, expr)
 
     def _print_Mul(self, expr):
-        from sympy import S, Mul, Pow, Rational
+        from sympy import Mul, Pow, Rational, S
         from sympy.printing.precedence import precedence
 
         if expr.is_number and expr.is_imaginary and expr.as_coeff_Mul()[0].is_integer:
-            return "%sim" % self._print(-S.ImaginaryUnit * expr)
+            return f"{self._print(-S.ImaginaryUnit * expr)}im"
 
         prec = precedence(expr)
 
@@ -1203,7 +1147,7 @@ class MTKPrinter(JuliaPrinter):
 
         for item in pow_paren:
             if item.base in b:
-                b_str[b.index(item.base)] = "(%s)" % b_str[b.index(item.base)]
+                b_str[b.index(item.base)] = f"({b_str[b.index(item.base)]})"
 
         # Always scalar: use * and / (never .* or ./)
         def multjoin(a_str):
@@ -1212,9 +1156,9 @@ class MTKPrinter(JuliaPrinter):
         if not b:
             return sign + multjoin(a_str)
         elif len(b) == 1:
-            return "%s / %s" % (sign + multjoin(a_str), b_str[0])
+            return f"{sign + multjoin(a_str)} / {b_str[0]}"
         else:
-            return "%s / (%s)" % (sign + multjoin(a_str), multjoin(b_str))
+            return f"{sign + multjoin(a_str)} / ({multjoin(b_str)})"
 
     def _print_Pow(self, expr):
         from sympy.core.numbers import equal_valued
@@ -1222,21 +1166,20 @@ class MTKPrinter(JuliaPrinter):
 
         PREC = precedence(expr)
         if equal_valued(expr.exp, 0.5):
-            return "sqrt(%s)" % self._print(expr.base)
+            return f"sqrt({self._print(expr.base)})"
         if expr.is_commutative:
             if equal_valued(expr.exp, -0.5):
-                return "1 / sqrt(%s)" % self._print(expr.base)
+                return f"1 / sqrt({self._print(expr.base)})"
             if equal_valued(expr.exp, -1):
-                return "1 / %s" % self.parenthesize(expr.base, PREC)
+                return f"1 / {self.parenthesize(expr.base, PREC)}"
         # Always scalar: use ^ (never .^)
-        return "%s ^ %s" % (self.parenthesize(expr.base, PREC), self.parenthesize(expr.exp, PREC))
+        return f"{self.parenthesize(expr.base, PREC)} ^ {self.parenthesize(expr.exp, PREC)}"
 
 
 class FortranPrinter(spf.FCodePrinter):
     """Fortran code printer for TVBO symbolic expressions.
 
-    Extends SymPy's `FCodePrinter` with free-form source, the Fortran 2003 standard, and array contraction disabled. Symbolic constants (`pi`, `E`, …)
-    are emitted as plain double-precision literals instead of `parameter` declarations, which would be invalid in an expression context.
+    Extends SymPy's `FCodePrinter` with free-form source, the Fortran 2003 standard, and array contraction disabled. Symbolic constants (`pi`, `E`, …) are emitted as plain double-precision literals instead of `parameter` declarations, which would be invalid in an expression context.
 
     Args:
         settings: Printer settings forwarded to the SymPy base printer;
@@ -1250,9 +1193,11 @@ class FortranPrinter(spf.FCodePrinter):
         settings.setdefault("contract", False)
         super().__init__(settings=settings)
 
-    # SymPy's FCodePrinter inlines symbolic constants like ``pi`` and ``E`` by emitting a ``parameter (pi = ...)`` declaration, which is invalid inside an expression context (e.g. ``F(1) = parameter (pi=...) pi*r``).
-    # Render them as plain double-precision literals instead.
     def _print_NumberSymbol(self, expr):
+        """Render `pi` and `E` as plain double-precision literals.
+
+        SymPy's `FCodePrinter` inlines them by emitting a `parameter (pi = ...)` declaration, which is not valid inside an expression: `F(1) = parameter (pi=...) pi*r`.
+        """
         return self._settings.get("precision_str", "%.17g") % float(expr) + "d0"
 
     _print_Catalan = _print_NumberSymbol
@@ -1377,8 +1322,7 @@ class LEMSPrinter(StrPrinter):
     # ── Piecewise → Heaviside product ─────────────────────────────────
 
     def _print_Piecewise(self, expr):
-        # LEMS has no ternary; use H(cond)*val summation as fallback.
-        # True branch last (otherwise case).
+        # LEMS has no ternary, so this is a H(cond)*val sum with the otherwise-branch last.
         from sympy import S as sympy_S
 
         terms = []
@@ -1393,9 +1337,7 @@ class LEMSPrinter(StrPrinter):
 class PythonCodePrinter(_PythonCodePrinter):
     """Plain-Python code printer for TVBO symbolic expressions.
 
-    Extends SymPy's `PythonCodePrinter` to run non-strict (partial printing of unknown constructs) and adds `ceil`, `sign`, and the
-    `ARRAY_FUNCTION_MAPPINGS["python"]` vocabulary. `Piecewise` is rendered as nested conditional expressions and `sign(x)` as an inline comparison, so the
-    output depends only on `math` and the standard library.
+    Extends SymPy's `PythonCodePrinter` to run non-strict (partial printing of unknown constructs) and adds `ceil`, `sign`, and the `ARRAY_FUNCTION_MAPPINGS["python"]` vocabulary. `Piecewise` is rendered as nested conditional expressions and `sign(x)` as an inline comparison, so the output depends only on `math` and the standard library.
 
     Args:
         settings: Printer settings forwarded to the SymPy base printer; `strict`
@@ -1440,11 +1382,7 @@ class PythonCodePrinter(_PythonCodePrinter):
 class Brian2Printer(PythonCodePrinter):
     """Code printer for Brian2 equation strings.
 
-    Brian2's equation DSL is Python-like but expects **unqualified** function names (``exp``, ``sin``, ``abs`` …), not the ``math.``-prefixed forms SymPy's
-    ``PythonCodePrinter`` emits — Brian2 resolves them against its own runtime functions so the same equation compiles under any codegen target. Otherwise
-    the plain-Python scalar printing (including the nested-conditional
-    ``Piecewise``, which Brian2 accepts) is exactly what a per-neuron Brian2 equation needs. Units are not printed here — they are carried by the Brian2
-    namespace and the ``: dimension`` annotations the template adds.
+    Brian2's equation DSL is Python-like but expects **unqualified** function names (``exp``, ``sin``, ``abs`` …), not the ``math.``-prefixed forms SymPy's ``PythonCodePrinter`` emits — Brian2 resolves them against its own runtime functions so the same equation compiles under any codegen target. Otherwise the plain-Python scalar printing (including the nested-conditional ``Piecewise``, which Brian2 accepts) is exactly what a per-neuron Brian2 equation needs. Units are not printed here — they are carried by the Brian2 namespace and the ``: dimension`` annotations the template adds.
     """
 
     # SymPy function name -> Brian2 function name (all unqualified).
@@ -1524,7 +1462,7 @@ def get_printer(format, parameters=None, order=None):
 def render_expression(
     expression,
     format="jax",
-    user_functions={},
+    user_functions=None,
     parameters=None,
     infer_broadcasting=False,
     preserve_order=False,
@@ -1553,9 +1491,10 @@ def render_expression(
         If True, keep the source term order (no SymPy Add/Mul canonicalization)
         so generated code matches reference code operation-for-operation.
     """
+    if user_functions is None:
+        user_functions = {}
     if isinstance(expression, str):
-        # Pass user_functions AND the array-op vocabulary to parse_eq so they're recognized as functions (else implicit multiplication splits e.g.
-        # pad(x) into pad*x).
+        # Both go to parse_eq as functions, else implicit multiplication splits `pad(x)` into `pad*x`.
         func_names = list(user_functions.keys()) if user_functions else []
         func_names += list(ARRAY_FUNCTION_MAPPINGS.get(format, {}).keys())
         # preserve_order: parse unevaluated + print order='none' so SymPy keeps the authored term order (float +/* are non-associative).
@@ -1579,16 +1518,15 @@ def render_expression(
 def render_equation(
     equation: Equation,
     format="jax",
-    local_dict={},
-    user_functions={},
+    local_dict=None,
+    user_functions=None,
     replace=None,
     remove=None,
     inline_funcs=None,
     preserve_order=False,
     **kwargs,
 ):
-    """
-    Render an equation to a target format.
+    """Render an equation to a target format.
 
     Parameters
     ----------
@@ -1613,12 +1551,16 @@ def render_equation(
     **kwargs
         Additional arguments passed to parse_eq.
 
-    Returns
+    Returns:
     -------
     str
         The rendered equation string.
     """
     # latex prints the raw parsed expression (before replace/remove), so it keeps its own short path; every other format shares the route below.
+    if user_functions is None:
+        user_functions = {}
+    if local_dict is None:
+        local_dict = {}
     if format == "latex":
         if preserve_order:  # keep authored term order (see render_expression)
             kwargs.setdefault("evaluate", False)
@@ -1631,8 +1573,7 @@ def render_equation(
 def _prepare_expr(equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs):
     """Parse ``equation`` and resolve its model-function set for printing.
 
-    Shared by :func:`render_equation` and :func:`render_equation_cse` so both take one identical parse -> replace -> remove -> inline route (no drift). Returns
-    ``(expr, uf)`` where ``uf`` maps model-defined function names for the printer.
+    Shared by :func:`render_equation` and :func:`render_equation_cse` so both take one identical parse -> replace -> remove -> inline route (no drift). Returns ``(expr, uf)`` where ``uf`` maps model-defined function names for the printer.
     """
     if preserve_order:  # keep authored term order (see render_expression)
         kwargs.setdefault("evaluate", False)
@@ -1645,8 +1586,7 @@ def _prepare_expr(equation, local_dict, user_functions, replace, remove, inline_
     if inline_funcs:
         expr = inline_functions(expr, inline_funcs)
 
-    # Model-defined functions must be registered so the printer emits ``f(x)``;
-    # printers already know ARRAY_FUNCTION_MAPPINGS.
+    # Registered so the printer emits `f(x)`; it already knows ARRAY_FUNCTION_MAPPINGS.
     uf = dict(user_functions) if isinstance(user_functions, dict) else {}
     if isinstance(local_dict, dict) and local_dict:
         for name, obj in local_dict.items():
@@ -1669,8 +1609,8 @@ def _printer_for(format, uf, preserve_order):
 def render_equation_cse(
     equation: Equation,
     format="numpy",
-    local_dict={},
-    user_functions={},
+    local_dict=None,
+    user_functions=None,
     replace=None,
     remove=None,
     inline_funcs=None,
@@ -1680,13 +1620,14 @@ def render_equation_cse(
 ):
     """Render ``equation`` as ``(setup, final)`` with common subexpressions hoisted.
 
-    ``setup`` is a list of ``(name, expr_str)`` assignments (dependency order) and
-    ``final`` is the return-expression string. Repeated subexpressions — notably repeated model-function calls such as ``muV(fe, fi, ...)`` — are computed once
-    via :func:`sympy.cse`. Interpreted backends (numpy / TVB) would otherwise re-evaluate every occurrence; the jax path keeps the flat ``render_equation``
-    form and leans on XLA's JIT-time CSE. ``setup`` is empty when nothing is shared.
+    ``setup`` is a list of ``(name, expr_str)`` assignments (dependency order) and ``final`` is the return-expression string. Repeated subexpressions — notably repeated model-function calls such as ``muV(fe, fi, ...)`` — are computed once via :func:`sympy.cse`. Interpreted backends (numpy / TVB) would otherwise re-evaluate every occurrence; the jax path keeps the flat ``render_equation`` form and leans on XLA's JIT-time CSE. ``setup`` is empty when nothing is shared.
     """
     from sympy import cse, numbered_symbols
 
+    if user_functions is None:
+        user_functions = {}
+    if local_dict is None:
+        local_dict = {}
     expr, uf = _prepare_expr(equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs)
     printer = _printer_for(format, uf, preserve_order)
 
