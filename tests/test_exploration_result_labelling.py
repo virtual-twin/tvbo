@@ -229,6 +229,44 @@ def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
     assert mism > 0
 
 
+def test_full_grid_coords_follow_the_declared_order_not_sorted():
+    """A descending sweep keeps its DECLARED coordinate order.
+
+    The unstack pivot sorts its index ascending, so the grid is reindexed back onto the
+    declared values — an annealing-style descending axis must not come back sorted.
+    """
+    from tvbo.data.types import _stacked_to_dataarray
+
+    C, W = [0.3, 0.1, 0.2], [2.0, 1.0]
+    cells = [(c, w) for w in W for c in C]  # arrival order differs from the declared axis order
+    stacked = np.array([10 * c + w for (c, w) in cells])
+    da = _stacked_to_dataarray(
+        stacked,
+        [_axis("model.c", C), _axis("model.w", W)],
+        name="obs",
+        cell_coords={"model.c": [c for c, _ in cells], "model.w": [w for _, w in cells]},
+    )
+    assert list(da.dims) == ["model.c", "model.w"]
+    assert list(da.coords["model.c"].values) == C
+    assert list(da.coords["model.w"].values) == W
+    assert float(da.sel({"model.c": 0.1, "model.w": 2.0}).values) == pytest.approx(3.0)
+
+
+def test_single_axis_full_grid_places_scrambled_cells_by_value():
+    """One swept axis pivots without a MultiIndex (unstack needs one); placement is still by value."""
+    from tvbo.data.types import _stacked_to_dataarray
+
+    C = [0.3, 0.1, 0.2]
+    da = _stacked_to_dataarray(
+        np.array([1.0, 2.0, 3.0]),
+        [_axis("model.c", C)],
+        name="obs",
+        cell_coords={"model.c": [0.1, 0.2, 0.3]},
+    )
+    assert list(da.coords["model.c"].values) == C
+    assert float(da.sel({"model.c": 0.1}).values) == 1.0
+
+
 def test_full_grid_with_incomplete_cell_coords_raises():
     """Placement by value needs every declared axis in ``cell_coords`` — a missing one
     means the caller's coordinate readback failed (e.g. a seed axis whose grid column

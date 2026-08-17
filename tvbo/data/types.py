@@ -262,9 +262,11 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
 
     ``cell_coords`` (``{axis_name: per_cell_values}``) is each cell's actual parameter values read back from the grid, in the grid's OWN emission order. It keys results by
     value rather than by position, because a ``Space`` emits cells in pytree-leaf order, which is NOT the ``axes_info`` order whenever the swept axes live on different state
-    sub-objects (dynamics/coupling/graph) — a plain positional reshape would then scramble the surface. For the full Cartesian product each cell is placed into the rectangular
-    grid at the index its values map to (order-independent). For a flat subset (one HPC array task's shard) the result instead gets a single ``point`` dim with each axis's
-    value hung on it as a coordinate, so the shard is self-describing and reassembles by parameter value across tasks.
+    sub-objects (dynamics/coupling/graph) — a plain positional reshape would then scramble the surface. Every keyed payload is first built flat, one ``point`` per cell with
+    each axis's value hung on it as a coordinate. A flat subset (one HPC array task's shard) is returned in that form, self-describing, so it reassembles by parameter value
+    across tasks. A full Cartesian product is additionally pivoted into the rectangular grid by ``set_index`` + ``unstack`` — the same idiom shard reassembly uses — after each
+    cell coordinate is snapped onto the declared grid value it names (:func:`_axis_positions`), because a float that round-tripped through a file need not compare equal to the
+    declared one and unstack places by coordinate identity. Cells whose snapped values collide cannot be a grid and raise.
 
     ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`). ``nodes`` are the network's node labels, hung on
     whichever declared dim is the node axis — a swept observation is selected by label the
@@ -288,10 +290,10 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
         if ax_vals is not None:
             grid_coords[ax_name] = np.asarray(ax_vals)
 
-    # Sharded / non-rectangular subset: the leading axis is a flat list of grid points, not the full Cartesian product, so it cannot be reshaped into one dim per parameter. Emit a single ``point`` dim and hang each axis's per-cell value on it as a (non-dimension) coordinate.
+    # Keyed payloads are built flat first — one ``point`` per cell, axis values as coordinates. A full Cartesian product is then pivoted into the rectangular grid below; a subset keeps the flat, self-describing form.
     _full_grid = bool(grid_sizes) and all(s is not None for s in grid_sizes) and arr.shape[0] == int(np.prod(grid_sizes))
-    # Full rectangular grid with per-cell coords: place each cell BY VALUE (see docstring).
-    if cell_coords is not None and _full_grid and grid_dims:
+    _to_grid = cell_coords is not None and _full_grid and bool(grid_dims)
+    if _to_grid:
         _missing = [n for n in grid_dims if n not in cell_coords or n not in grid_coords]
         if _missing:
             raise ValueError(
@@ -300,18 +302,9 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
                 f"reshape would scramble the surface whenever the Space emission order "
                 f"differs from the declared axis order, so this is an error, not a fallback."
             )
-        _pos = [_axis_positions(cell_coords[_n], grid_coords[_n], _n, name) for _n in grid_dims]
-        _flat_idx = np.ravel_multi_index(tuple(_pos), tuple(grid_sizes))
-        if len(np.unique(_flat_idx)) != arr.shape[0]:
-            raise ValueError(
-                f"cell_coords for observation {name!r} map {arr.shape[0]} cells onto "
-                f"{len(np.unique(_flat_idx))} distinct grid indices — the per-cell values "
-                f"do not identify every cell uniquely."
-            )
-        _rect = np.empty((int(np.prod(grid_sizes)),) + arr.shape[1:], dtype=arr.dtype)
-        _rect[_flat_idx] = arr
-        arr = _rect.reshape(tuple(grid_sizes) + arr.shape[1:])
-        cell_coords = None  # consumed: build the rectangular DataArray from grid_coords
+        cell_coords = {
+            _n: np.asarray(grid_coords[_n])[_axis_positions(cell_coords[_n], grid_coords[_n], _n, name)] for _n in grid_dims
+        }
     if cell_coords is not None or (grid_dims and not _full_grid):
         n_points = arr.shape[0]
         inner_shape = arr.shape[1:]
@@ -340,7 +333,21 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
             inner_dims = inner_dims[:-1]
         all_dims = ["point"] + trial_dims + inner_dims
         coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
-        return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+        da = xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+        if not _to_grid:
+            return da
+        try:
+            if len(grid_dims) > 1:
+                da = da.set_index(point=grid_dims).unstack("point")
+            else:
+                da = da.swap_dims({"point": grid_dims[0]})
+            da = da.reindex({_n: grid_coords[_n] for _n in grid_dims})
+        except ValueError as e:
+            raise ValueError(
+                f"cell_coords for observation {name!r} map {n_points} cells onto fewer "
+                f"distinct grid cells — the per-cell values do not identify every cell uniquely."
+            ) from e
+        return da.transpose(*grid_dims, ...)
 
     # Multi-axis 'product'-mode explorations come back with a flat leading dim of size prod(grid_sizes). Reshape into per-axis dims so the
     # DataArray gets one named axis per parameter.
