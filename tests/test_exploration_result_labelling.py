@@ -327,3 +327,58 @@ def test_a_non_numeric_axis_still_labels_rather_than_raising():
     coords = {"integration.method": np.array(["heun", "euler"], dtype=object)}
     da = _stacked_to_dataarray(np.zeros((2, 5)), axes, cell_coords=coords, name="obs")
     assert da is not None and da.dims[0] == "integration.method"
+
+
+def test_an_array_valued_builder_axis_places_by_value():
+    """An axis whose points are whole matrices is placed by value, like every other axis.
+
+    Its points are neither hashable (the exact-match path) nor elementwise-subtractable against
+    the grid (the numeric path), so both scalar paths reject them and this third one carries the
+    by-value rule one dimension up. Fed a scrambled cell order, the placement recovers the
+    declared order rather than the arrival order.
+
+    Both sides here are matrices. That is the currency an array-valued axis must be placed in,
+    and NOT what a `builder` axis of matrices reaches the container as today — codegen declares
+    point indices for it, so the real path raises instead (see
+    `test_an_index_declared_array_axis_names_the_currency_mismatch`).
+    """
+    from tvbo.data.types import _axis_positions
+
+    points = [np.array([[0.0, c], [c, 0.0]]) for c in (0.01, 0.1, 0.2, 0.5, 1.0)]
+    grid = np.empty(len(points), dtype=object)
+    grid[:] = points
+    order = [2, 0, 4, 1, 3]
+    cells = np.empty(len(order), dtype=object)
+    cells[:] = [points[i] for i in order]
+
+    assert list(_axis_positions(cells, grid, "network.edges.weight", "fc")) == order
+
+
+def test_a_mis_shaped_array_axis_point_is_an_error_not_a_guess():
+    """Points of the wrong width name a different quantity; placing them anyway would
+    silently key the surface on whichever element happened to be nearest."""
+    from tvbo.data.types import _axis_positions
+
+    grid = np.empty(2, dtype=object)
+    grid[:] = [np.zeros((2, 2)), np.ones((2, 2))]
+    cells = np.empty(1, dtype=object)
+    cells[:] = [np.zeros((3, 3))]
+    with pytest.raises(ValueError, match="element points on axis"):
+        _axis_positions(cells, grid, "network.edges.weight", "fc")
+
+
+def test_an_index_declared_array_axis_names_the_currency_mismatch():
+    """Matrix-carrying cells against an index-declared grid must say WHY they cannot be placed.
+
+    This is the shape a `builder` axis of matrices actually reaches the container in: codegen
+    declares `arange(n)` as the axis coordinate because a matrix cannot be an xarray coord, while
+    the dataframe cell carries the whole matrix. Nearest-matching a 4-element matrix against a
+    scalar index would be meaningless, so the error names the missing conversion and where it
+    belongs rather than reporting two widths.
+    """
+    from tvbo.data.types import _axis_positions
+
+    cells = np.empty(3, dtype=object)
+    cells[:] = [np.full((2, 2), c) for c in (0.1, 0.2, 0.3)]
+    with pytest.raises(ValueError, match="different currencies"):
+        _axis_positions(cells, np.arange(3), "network.edges.length", "theta")

@@ -6,8 +6,11 @@ an ``(init, update, finalize)`` running-moment accumulator, so the source trajec
 never materialised. These tests pin:
 
 * the resolver synthesizes the reducer from ``aggregation`` alone (one sum accumulator for
-  ``mean``; a second sum-of-squares for ``std`` / ``variance``), tags it with no ``kind``
-  so it reuses the recurrence emitter, and stays truthy as the bare streaming predicate;
+  ``mean``; a second sum-of-squares for ``std`` / ``variance``), tags it ``kind:
+  recurrence`` so it reuses the recurrence emitter AND declares per-node axes, and stays
+  truthy as the bare streaming predicate;
+* the declared axes reach the container for the stream and for anything derived from it, so
+  a per-node scalar is keyed ``node`` rather than falling back to the positional template;
 * the emitted reducer is byte-identical (to f64 rounding) to the host ``jnp.mean`` /
   ``jnp.std`` / ``jnp.var`` (ddof=0) of the materialised trajectory — the values the
   post-scan ``aggregation`` path computes — both as one block and across ANY block
@@ -29,7 +32,7 @@ from mako.template import Template
 jax.config.update("jax_enable_x64", True)
 
 from tvbo.datamodel.schema import Observation
-from tvbo.templates.tvboptim.utils import resolve_reduction, streaming_post_eval_plan
+from tvbo.templates.tvboptim.utils import observation_dims, resolve_reduction, streaming_post_eval_plan
 
 _OBS_TEMPLATE = Template(filename="tvbo/templates/tvboptim/tvbo-tvboptim-observation.py.mako")
 
@@ -58,7 +61,7 @@ def test_reduce_absent_keeps_the_post_scan_path():
 
 def test_mean_stream_synthesizes_one_accumulator():
     red = resolve_reduction(_stat_observation("mean"))
-    assert "kind" not in red  # routes to the recurrence emitter
+    assert red["kind"] == "recurrence"  # the recurrence emitter, and dims ("node",)
     assert red["source"] == "x"
     assert red["statistic"] == "mean"
     assert red["windowed"] is False
@@ -87,7 +90,7 @@ def test_bare_predicate_without_experiment_is_truthy():
     # The exploration path calls resolve_reduction(obs) with NO experiment as the
     # "is this a streaming reducer?" predicate; the full dict must resolve regardless.
     red = resolve_reduction(_stat_observation("mean"))
-    assert red is not None and "kind" not in red
+    assert red is not None and red["kind"] == "recurrence"
 
 
 # ── Emitted reducer: byte-identity vs the host jnp.mean / jnp.std / jnp.var ─────────────────
@@ -236,6 +239,53 @@ def test_stat_stream_is_folded_in_the_post_eval_plan():
     assert plan["names"] == ["obs"]
     # No convolution reducer to TR-align to -> the block defaults to 1000 (not None).
     assert plan["period_in_steps"] == 1000
+
+
+def test_a_folded_statistic_and_anything_derived_from_it_declare_the_node_axis():
+    """A time-folding stream keeps one value per node, and that axis must be NAMED.
+
+    Left undeclared, the container falls back to its positional ``(variable, node, mode)``
+    template, which right-aligns a lone remaining axis onto ``mode`` — so a per-node scalar
+    arrives keyed by a mode axis the model does not have, and a figure can only bind the
+    node it wants by index. A derived observation over such a stream is elementwise, so it
+    carries the same axis.
+    """
+    stream = _stat_observation("mean", source="r")
+    derived = Observation(name="derived", source=["obs"], pipeline=[{"equation": {"rhs": "obs * 2"}}])
+    dims = observation_dims(_Exp(observations={"obs": stream, "derived": derived}))
+    assert dims["obs"] == ("node",)
+    assert dims["derived"] == ("node",)
+
+
+def test_a_reshaping_pipeline_declares_its_own_axes_not_its_sources(tmp_path):
+    """`compute_fc` is not elementwise, so it must NOT inherit its source's axes.
+
+    The canonical Deco/Schirner spelling is `fc: {source: [bold], pipeline: [compute_fc]}`,
+    where `bold` carries `(time, node)` and `fc` is a node-by-node matrix. Both are rank 2,
+    so nothing downstream can catch a wrong inheritance by shape: the container would hang
+    the node labels on the column axis and call the rows `time`, and a figure's
+    `sel: {node: PFC}` would then select a column of an FC matrix.
+    """
+    bold = _stat_observation("mean", source="x")
+    fc = Observation(
+        name="fc",
+        source=["obs"],
+        pipeline=[{"callable": {"name": "compute_fc", "module": "tvboptim.observations.observation"}}],
+    )
+    dims = observation_dims(_Exp(observations={"obs": bold, "fc": fc}))
+    assert dims["fc"] == ("node", "node_j")
+
+
+def test_an_unrecognised_pipeline_step_leaves_the_observation_unlabelled():
+    """An opaque named step could reshape any way; an unlabelled axis beats a wrong one."""
+    src = _stat_observation("mean", source="x")
+    derived = Observation(
+        name="derived",
+        source=["obs"],
+        pipeline=[{"callable": {"name": "some_unknown_op", "module": "elsewhere"}}],
+    )
+    dims = observation_dims(_Exp(observations={"obs": src, "derived": derived}))
+    assert "derived" not in dims
 
 
 # ── Cumulative co-moment FC reducer (compute_fc pipeline + reduce: streaming) ────────────────

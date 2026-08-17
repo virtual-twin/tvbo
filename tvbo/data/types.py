@@ -103,11 +103,47 @@ def _observation_dataarray(raw_data, dims=None, nodes=None):
         return raw_data
 
     dims = [str(d) for d in dims]
-    coords = {}
-    if nodes:
-        labels = [str(n) for n in nodes]
-        coords = {d: labels for i, d in enumerate(dims) if d in ("node", "node_j") and a.shape[i] == len(labels)}
-    return xr.DataArray(a, dims=dims, coords=coords)
+    return xr.DataArray(a, dims=dims, coords=_node_coords(dims, a.shape, nodes))
+
+
+def _declared_observation_dims(source) -> dict:
+    """Axis names each of *source*'s observations declares, keyed by observation name.
+
+    The reduction an observation declares fixes its axes, so the container can name them
+    instead of writing an unnamed placeholder dim that no reader can select on.
+
+    Labelling is a convenience over an already-finished compute, so it never costs a run:
+    any failure to resolve the declared reductions — the helper unavailable, an observation
+    whose reduction the resolver rejects — yields no names and the caller falls back to its
+    positional template, rather than throwing out of ``save()`` and discarding the result.
+    Logged rather than swallowed, so a spec that cannot be resolved is still visible.
+    """
+    try:
+        from tvbo.templates.tvboptim.utils import observation_dims
+
+        return observation_dims(source)
+    except Exception as exc:
+        logger.warning("could not resolve declared observation axes (%s); saving them unlabelled", exc)
+        return {}
+
+
+_NODE_AXES = ("node", "node_i", "node_j")
+"""Dim names that denote a spatial (per-node) axis, so node labels belong on them.
+
+Covers both edge-matrix spellings the container writes — the ``(node, node_j)`` a co-moment
+reduction declares and the ``(node_i, node_j)`` a per-edge estimate uses.
+"""
+
+
+def _node_coords(dims, shape, nodes) -> dict:
+    """Node labels as coordinates on whichever of *dims* are node axes.
+
+    A node axis is only selectable by label if it carries one, and a spatial axis is the one a reader always wants to select on by name (``sel: {node: PFC}``). Size-matched so a label list can never be hung on an axis that is not the node axis, and a no-op without labels — every caller holding both a declared ``node`` dim and the network's labels binds them here rather than reimplementing the pairing. Emptiness is tested by length, because labels arrive as a numpy array as often as a list and an array has no truth value.
+    """
+    if nodes is None or len(nodes) == 0:
+        return {}
+    labels = [str(n) for n in nodes]
+    return {d: labels for i, d in enumerate(dims) if d in _NODE_AXES and shape[i] == len(labels)}
 
 
 def _inner_dims(post_trial_shape, ts_arr, declared=None):
@@ -173,15 +209,54 @@ def _is_partial_shard(expl) -> bool:
     return bool(counts) and max(counts) < int(np.prod(sizes))
 
 
+def _axis_points_are_arrays(a) -> bool:
+    """Whether an axis's POINTS are arrays rather than scalars.
+
+    Keyed on an element, not on the container's dtype: a string axis is object-dtype too, and treating its points as arrays would try to read floats out of "heun". Asks about the
+    point's EXTENT rather than its type, which is why :func:`tvbo.utils.is_array_valued` does not answer this one: a 0-d array is a container but not an axis of matrices.
+    """
+    if a.ndim > 1:
+        return True
+    return a.dtype == object and a.size > 0 and np.asarray(a.flat[0]).ndim > 0
+
+
 def _axis_positions(cell_vals, grid_vals, axis, name):
     """Index of each cell along one grid axis, matched by value.
 
     A numeric axis matches by nearest value, because a swept float that has round-tripped through a file need not compare equal to the one the grid declares. Anything else
     matches exactly: a string axis (``integration.method`` over "heun"/"euler") cannot be subtracted at all, and placing it by position would be the scrambling this whole path
     exists to prevent.
+
+    An ARRAY-VALUED axis — an ``ExplorationAxis.builder`` whose points are whole matrices — matches on the nearest point in the flattened value, which is the same by-value rule one
+    dimension up. Its points are neither hashable nor elementwise-subtractable against the grid, so both scalar paths reject them. The distance is accumulated one grid point at a
+    time: a swept 379-node connectome carries 143k elements per point, and the outer difference over all of them at once is hundreds of megabytes of temporary for an argmin.
+
+    Both sides must be in the SAME currency. An array-valued axis whose grid side declares point INDICES cannot be placed here at all: only the generated code holds the
+    materialised points, so the matrix-to-index conversion belongs at the binding site, and this raises rather than matching a matrix against an index it happens to be near.
     """
     cell = np.asarray(cell_vals)
     grid = np.asarray(grid_vals)
+    if _axis_points_are_arrays(cell) or _axis_points_are_arrays(grid):
+        _c = np.stack([np.asarray(v, dtype=float).ravel() for v in cell])
+        _g = np.stack([np.asarray(v, dtype=float).ravel() for v in grid])
+        if _c.shape[1] != _g.shape[1]:
+            _scalar_grid = _g.shape[1] == 1 and _c.shape[1] > 1
+            raise ValueError(
+                f"cell_coords for observation {name!r} carry {_c.shape[1]}-element points on "
+                f"axis {axis!r}, which declares {_g.shape[1]}-element ones."
+                + (
+                    " The axis declares one scalar per point (a point index) while the cells "
+                    "carry whole arrays, so the two are in different currencies: the generated "
+                    "code must convert each cell's value to its point index where the "
+                    "materialised points are in scope, since they do not reach the container."
+                    if _scalar_grid
+                    else ""
+                )
+            )
+        dist = np.empty((_c.shape[0], _g.shape[0]), dtype=float)
+        for j in range(_g.shape[0]):
+            dist[:, j] = np.abs(_c - _g[j]).sum(axis=1)
+        return dist.argmin(axis=1)
     if np.issubdtype(cell.dtype, np.number) and np.issubdtype(grid.dtype, np.number):
         return np.abs(cell[:, None] - grid[None, :]).argmin(axis=1)
     index = {v: i for i, v in enumerate(grid.tolist())}
@@ -194,7 +269,7 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
     return np.asarray([index[v] for v in cell.tolist()])
 
 
-def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None):
+def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
 
     Outer dims correspond to exploration axes (parameter names with their explored values as coords). When ``n_trials > 1`` and the leading inner
@@ -208,7 +283,10 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
     grid at the index its values map to (order-independent). For a flat subset (one HPC array task's shard) the result instead gets a single ``point`` dim with each axis's
     value hung on it as a coordinate, so the shard is self-describing and reassembles by parameter value across tasks.
 
-    ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`).
+    ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`). ``nodes`` are the network's node labels, hung on
+    whichever declared dim is the node axis — a swept observation is selected by label the
+    same way an unswept one is, and without them a sweep's node axis is addressable only by
+    index.
     """
     if stacked_arr is None:
         return None
@@ -278,6 +356,7 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
             arr = arr[..., 0]
             inner_dims = inner_dims[:-1]
         all_dims = ["point"] + trial_dims + inner_dims
+        coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
         return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
 
     # Multi-axis 'product'-mode explorations come back with a flat leading dim of size prod(grid_sizes). Reshape into per-axis dims so the
@@ -324,6 +403,7 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
         inner_dims = inner_dims[:-1]
 
     all_dims = grid_dims + trial_dims + inner_dims
+    coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
     return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
 
 
@@ -2167,8 +2247,27 @@ class ExperimentResult:
                 if hasattr(da, "dims"):
                     data_vars[f"integration__{_san(obs_name)}"] = da
 
+        _labels_cache: list = []
+
+        def _node_labels():
+            """RESOLVED node labels, shared by every per-node array this method writes.
+
+            Hydrates ``bids:`` placeholders (``region_<i>``) so a consumer reconciles them all the same way. Resolved on FIRST USE and memoized: hydration can hit the filesystem, and a container holding no per-node array must not pay for a lookup it never reads. Emptiness is tested by length, since a label array has no truth value.
+            """
+            if not _labels_cache:
+                _get = getattr(self.source, "_resolve_model_node_labels", None)
+                raw = _get() if callable(_get) else None
+                if raw is None or len(raw) == 0:
+                    raw = getattr(getattr(self.source, "network", None), "node_labels", None)
+                _labels_cache.append([str(lbl) for lbl in raw] if raw is not None and len(raw) else None)
+            return _labels_cache[0]
+
         # Experiments that produce observations/optimizations without an exploration sweep (e.g. a per-subject FC fit) still carry data to persist: the derived observations (simulated + reconciled empirical FC) and the fit outcome (fitted parameters, final loss, loss trajectory). Coerce to float and skip anything non-numeric so the HDF5 write never trips on Python objects.
-        def _numeric_da(name, arr):
+        def _numeric_da(name, arr, dims=None):
+            """*arr* as a float ``DataArray``, or None when it holds nothing numeric.
+
+            ``dims`` are the caller's DECLARED axis names, used when the value carries none of its own: an unnamed axis is only selectable positionally, so a per-node fit result would otherwise arrive keyed on nothing.
+            """
             if arr is None:
                 return None
             try:
@@ -2185,11 +2284,16 @@ class ExperimentResult:
             # An already-labelled value keeps its own dims and coords: observations are named at construction (`_observation_dataarray`), and re-deriving names here, from shape alone, could only contradict them.
             if getattr(arr, "dims", None) and len(arr.dims) == a.ndim:
                 return xr.DataArray(a, dims=[str(d) for d in arr.dims], coords=getattr(arr, "coords", None))
+            if dims and len(dims) == a.ndim:
+                dims = [str(d) for d in dims]
+                # Labels are asked for only when one of the declared axes is a node axis, so an array with none never pays for resolving them.
+                nodes = _node_labels() if any(d in _NODE_AXES for d in dims) else None
+                return xr.DataArray(a, dims=dims, coords=_node_coords(dims, a.shape, nodes))
             return xr.DataArray(a, dims=[f"{name}_d{i}" for i in range(a.ndim)])
 
-        def _numeric_leaves(prefix, obj):
+        def _numeric_leaves(prefix, obj, dims=None):
             """Yield (var_name, DataArray) for the numeric leaves of a nested pytree."""
-            leaf = _numeric_da(prefix.rsplit("__", 1)[-1], obj)
+            leaf = _numeric_da(prefix.rsplit("__", 1)[-1], obj, dims=dims)
             if leaf is not None:
                 yield prefix, leaf
                 return
@@ -2221,25 +2325,27 @@ class ExperimentResult:
                 for name, da in _numeric_leaves(f"optimization__{_san(opt_name)}__fitted", fitted):
                     data_vars[name] = da
 
-        # Persist algorithm post-tuning observations (achieved fc_corr / fc_rmse / fc) so the fit outcome is legible from the saved result, not only the tuned parameters.
+        # Persist algorithm post-tuning observations (achieved fc_corr / fc_rmse / fc) so the fit outcome is legible from the saved result, not only the tuned parameters. Each keeps the axes its declared reduction implies, so a per-node fit result lands on a labelled `node` axis like the `estimate__` params beside it rather than an unnamed one.
+        _dims_cache: list = []
+
+        def _declared_dims():
+            """Declared axis names per observation, resolved once and only if an algorithm has any."""
+            if not _dims_cache:
+                _dims_cache.append(_declared_observation_dims(self.source))
+            return _dims_cache[0]
+
         for algo_name, algo in (self.algorithms or {}).items():
             post = getattr(algo, "post_tuning", None)
             post_obs = getattr(post, "observations", None) if post is not None else None
             for obs_name, obs in (post_obs or {}).items():
-                for var, da in _numeric_leaves(f"algorithm__{_san(algo_name)}__{_san(obs_name)}", _unwrap_observation(obs)):
+                prefix = f"algorithm__{_san(algo_name)}__{_san(obs_name)}"
+                for var, da in _numeric_leaves(prefix, _unwrap_observation(obs), dims=_declared_dims().get(str(obs_name))):
                     if var not in data_vars:
                         data_vars[var] = da
 
         # Persist each tuned FREE parameter's fitted value as ``estimate__<param>`` so a from_experiment warm-start can reload it as a prior location (point prior). Kept on LABELLED node axes (``node`` for vectors, ``node_i``+``node_j`` for per-edge matrices) — the same convention FC matrices use — so the consumer reconciles by label with the existing `.sel` path, no bespoke reindex. Container-layer only (values already live in AlgorithmResult.state) → no codegen change; free params only, so it can't shadow a ``<sv>_final`` key; sourced from the algorithm that FITS each param (last-writer among fitting passes, see _algo_tuned_params).
         free_names = _free_param_names(self.source) if self.algorithms else set()
         if free_names:  # nothing tunable → skip the flatten entirely
-            # Use the RESOLVED node labels (hydrates `bids:` placeholders like region_<i>) so the estimate coords match what the consumer's _resolve_model_node_labels produces — else the warm-start `.sel` reconcile can't align. Fall back to the raw labels when the source can't resolve (e.g. an inline-network source).
-            _get = getattr(self.source, "_resolve_model_node_labels", None)
-            src_labels = (_get() if callable(_get) else None) or getattr(
-                getattr(self.source, "network", None), "node_labels", None
-            )
-            src_labels = [str(lbl) for lbl in src_labels] if src_labels else None
-            nn = len(src_labels) if src_labels else None
             # Source each estimate from the algorithm that FITS the param (last/most-converged wins), not one that merely carries its init value.
             tuned_by = _algo_tuned_params(self.source)
             for algo_name, algo in self.algorithms.items():
@@ -2254,10 +2360,8 @@ class ExperimentResult:
                         continue
                     # Label per-node vectors / per-edge matrices so the consumer reconciles by label with `.sel`; anything else (scalar) stays unlabelled.
                     label_dims = {1: ["node"], 2: ["node_i", "node_j"]}.get(a.ndim)
-                    if nn and label_dims and all(s == nn for s in a.shape):
-                        da = xr.DataArray(a, dims=label_dims, coords={d: src_labels for d in label_dims})
-                    else:
-                        da = _numeric_da(key, a)
+                    nn = len(_node_labels() or ()) if label_dims else 0
+                    da = _numeric_da(key, a, dims=label_dims if (nn and all(s == nn for s in a.shape)) else None)
                     if da is not None:
                         data_vars[key] = da
 
@@ -4120,7 +4224,7 @@ class TimeSeries:
             # --- Weights matrix ---
             weights_sidecar = NetworkSidecar(
                 Description="Structural connectivity weights matrix",
-                NumberOfNodes=int(network.weights.shape[0]),
+                NumberOfNodes=int(network.matrix("weight").shape[0]),
                 Units="a.u.",
                 Source="tvbo simulation",
                 GeneratedAt=datetime.now().isoformat(),
@@ -4142,7 +4246,7 @@ class TimeSeries:
             weights_json_path = weights_tsv_path.replace(".tsv", ".json")
 
             weights_df = pd.DataFrame(
-                np.asarray(network.weights),
+                np.asarray(network.matrix("weight")),
                 index=region_labels,
                 columns=region_labels,
             )
@@ -4153,7 +4257,7 @@ class TimeSeries:
             # --- Distances (tract lengths) matrix ---
             lengths = network.lengths if hasattr(network, "lengths") else getattr(network, "tract_lengths", None)
             if lengths is None:
-                lengths = np.zeros_like(network.weights)
+                lengths = np.zeros_like(network.matrix("weight"))
             distances_sidecar = NetworkSidecar(
                 Description="Tract lengths (distances) between regions",
                 NumberOfNodes=int(lengths.shape[0]),

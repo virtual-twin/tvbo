@@ -14,8 +14,8 @@ from tvbo.templates.tvboptim.utils import (
     materialise_lazy_params,
     normalize_coupling_aliases, resolve_coupling_input_map,
     get_node_state_overrides, render_jax_default, get_mode_layout,
-    get_all_observations_from_algo, network_axis_leaf, initial_conditions_axis_sv,
-    graph_selection,
+    get_all_observations_from_algo, network_axis_leaf, initial_conditions_axis_sv, noise_axis_param,
+    graph_selection, observation_dims, axis_keypath,
 )
 import numpy as np
 import re
@@ -748,7 +748,27 @@ for expl in exploration_list:
         graph_leaf = None
         is_ic = False
         ic_row = None
-        if pname.startswith('network.'):
+        is_noise_param = False
+        if pname.startswith('noise.'):
+            # `noise.sigma` binds the amplitude leaf on the noise object directly — no wrapper, and `_axis_label` keeps the declared path so grid coords stay named as written.
+            is_noise_param = True
+            pname = noise_axis_param(pname)
+            if not has_noise:
+                raise ValueError(
+                    f"exploration axis '{axis.parameter}': this experiment declares no "
+                    f"noise, so there is no amplitude to sweep. Declare a noise sigma on "
+                    f"a state variable (or on the integration) to sweep it."
+                )
+            if len(set(noise_sigma_targeted)) > 1:
+                raise ValueError(
+                    f"exploration axis '{axis.parameter}': this experiment declares a "
+                    f"HETEROGENEOUS noise amplitude ({noise_sigma_per_state}), and one swept "
+                    f"scalar would overwrite that whole per-state profile — every targeted "
+                    f"state would be driven at the same amplitude, silently answering a "
+                    f"different question than the one declared. Sweep a scale factor, or "
+                    f"declare one sigma shared by every targeted state variable."
+                )
+        elif pname.startswith('network.'):
             # `network` is the reserved singleton-network scope (one Network per
             # experiment): `network.conduction_speed`, `network.edges.<label>`.
             # Split on the FIRST dot so the remainder stays a full attribute path
@@ -795,6 +815,17 @@ for expl in exploration_list:
             prefix, pname = pname.rsplit('.', 1)
             is_coupling_param = (prefix in all_couplings)
             source_key = _to_ci_key(prefix) if is_coupling_param else prefix
+        # Which grid sub-object this axis binds on and the leaf within it, stated ONCE for every append site below, so two axis shapes cannot disagree about scope.
+        _scope_keys = {
+            'is_coupling': is_coupling_param,
+            'is_network': is_network_param,
+            'graph_leaf': graph_leaf,
+            'is_noise': is_noise_param,
+            'coupling_key': source_key if is_coupling_param else None,
+            'dynamics_key': source_key if (not is_coupling_param and not is_network_param and source_key) else None,
+            'element_idx': None,
+            'reduce': _reduce_stat,
+        }
         # from_experiment:branch axis — the swept-parameter VALUES come from the source run's
         # recorded branch (loaded at runtime as _BRANCH_SEED), not from a domain here. This axis
         # carries only its identity (parameter path); the branch-analysis body binds each cell's
@@ -804,12 +835,8 @@ for expl in exploration_list:
             exp_info['axes'].append({
                 'name': pname,
                 'label': _axis_label,
-                'is_coupling': is_coupling_param,
-                'coupling_key': source_key if is_coupling_param else None,
-                'dynamics_key': source_key if (not is_coupling_param and source_key) else None,
-                'element_idx': None,
                 'is_branch': True,
-                'reduce': _reduce_stat,
+                **_scope_keys,
             })
             continue
         # Before the builder branch: a seed axis bakes its integers into the grid at CODEGEN, and the generic parameter path would leave every cell identical under a real-looking ensemble dimension.
@@ -874,14 +901,8 @@ for expl in exploration_list:
             exp_info['axes'].append({
                 'name': pname,
                 'label': _axis_label,
-                'is_coupling': is_coupling_param,
-                'is_network': is_network_param,
-                'graph_leaf': graph_leaf,
-                'coupling_key': source_key if is_coupling_param else None,
-                'dynamics_key': source_key if not is_coupling_param and source_key else None,
-                'element_idx': None,
                 'builder_expr': "%s.%s(%s)" % (_bc.module, _bc.name, ", ".join(_arg_strs)),
-                'reduce': _reduce_stat,
+                **_scope_keys,
             })
             continue
         # `execution.random_seed` → a per-cell SEED axis. Each grid cell reseeds
@@ -966,13 +987,8 @@ for expl in exploration_list:
                     'reduce': _reduce_stat,
                 })
             continue
-        # Auto-expand heterogeneous parameters: if pname matches a dynamics param
-        # with shape containing 'n_nodes', expand to n_nodes element axes automatically.
-        # e.g., K with shape "(n_nodes,)" → K_el0, K_el1, ... K_el(n_nodes-1)
-        # A `network.`-scoped axis is never a dynamics parameter, so it must not be
-        # expanded here even when a Dynamics happens to declare a same-named
-        # per-node parameter — the axis sweeps the graph leaf, not the model.
-        is_hetero_param = (not is_coupling_param and not is_network_param
+        # A per-node dynamics parameter fans out to one element axis per node (K → K_el0…); a SCOPED axis never does, since its leaf lives on the graph or the noise, not on the model that happens to declare the same name.
+        is_hetero_param = (not is_coupling_param and not is_network_param and not is_noise_param
                            and pname in dyn_param_shapes
                            and 'n_nodes' in dyn_param_shapes[pname])
         if is_hetero_param:
@@ -1023,13 +1039,7 @@ for expl in exploration_list:
                     'label': _axis_label,
                     'values': vals,
                     'n': len(vals),
-                    'is_coupling': is_coupling_param,
-                    'is_network': is_network_param,
-                    'graph_leaf': graph_leaf,
-                    'coupling_key': source_key if is_coupling_param else None,
-                    'dynamics_key': source_key if not is_coupling_param and source_key else None,
-                    'element_idx': None,
-                    'reduce': _reduce_stat,
+                    **_scope_keys,
                 })
             else:
                 assert domain.lo is not None, f"domain.lo required for {axis.parameter}"
@@ -1046,13 +1056,7 @@ for expl in exploration_list:
                         'label': _axis_label,
                         'values': _vals,
                         'n': n,
-                        'is_coupling': is_coupling_param,
-                        'is_network': is_network_param,
-                        'graph_leaf': graph_leaf,
-                        'coupling_key': source_key if is_coupling_param else None,
-                        'dynamics_key': source_key if not is_coupling_param and source_key else None,
-                        'element_idx': None,
-                        'reduce': _reduce_stat,
+                        **_scope_keys,
                     })
                 else:
                     exp_info['axes'].append({
@@ -1061,13 +1065,7 @@ for expl in exploration_list:
                         'lo': float(domain.lo),
                         'hi': float(domain.hi),
                         'n': n,
-                        'is_coupling': is_coupling_param,
-                        'is_network': is_network_param,
-                        'graph_leaf': graph_leaf,
-                        'coupling_key': source_key if is_coupling_param else None,
-                        'dynamics_key': source_key if (not is_coupling_param and not is_network_param and source_key) else None,
-                        'element_idx': None,
-                        'reduce': _reduce_stat,
+                        **_scope_keys,
                     })
     observable = expl.observable
     if observable:
@@ -1966,9 +1964,8 @@ def _realign_state_auxiliaries(sol, network):
                     and set(_raw_obs) == set(_base_stream_names)
                     and set(derived_observation_names) <= set(_base_plan['deliverables']))
     _base_bs = _base_plan['period_in_steps'] or 1000
-    # Axis names per observation, declared by the reduction that produces it — taken from
-    # the same plan that chose the reducers, so the two cannot disagree.
-    _obs_dims = _base_plan.get('dims') or {}
+    # Axis names for EVERY observation, from the reduction each one declares — independent of which reducers stream, so a materialised observer is labelled too.
+    _obs_dims = observation_dims(experiment) or {}
 %>
 # observation name -> the axis names its reduction declares (utils.reduction_dims).
 _OBSERVATION_DIMS = ${repr(_obs_dims)}
@@ -2832,44 +2829,36 @@ def run_optimization(
         and _bundled_all <= _bundle_covered
     )
     _bundle_bs = _bundle_plan['period_in_steps'] or 1000
-    # Network-scope axes (e.g. `network.conduction_speed`): the base graph is a
-    # DenseLengthGraph, so the axis sweeps its live `speed` leaf directly. _v_min
-    # (the slowest swept speed) sizes the max_delay_bound history buffer.
-    _network_axes = [ax for ax in expl['axes'] if ax.get('is_network')]
-    _has_network_axis = bool(_network_axes)
+    # prepare() sizes the delay buffer once from the base graph, so both leaves of `delay = length / speed` need it rebuilt for their extreme; a scalar speed and a matrix length are read apart. A swept weight feeds no delay.
+    _speed_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'speed']
+    _length_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'lengths']
+    _has_network_axis = bool(_speed_axes or _length_axes)
+
+    def _length_bound_expr(ax):
+        """Runtime expression for a length axis's swept matrices, whichever way it is declared.
+
+        A builder reuses the value materialised once above; explicit points are emitted as
+        they are; a `domain:` axis is bounded by its `hi`, since that is its longest tract.
+        """
+        if ax.get('builder_expr'):
+            return f"_axisvals_{ax['name']}"
+        if 'values' in ax:
+            return f"jnp.asarray({ax['values']})"
+        return f"jnp.full_like(_lengths, {ax['hi']})"
     _v_min = None
-    if _network_axes:
+    if _speed_axes:
         _vvals = []
-        for _nax in _network_axes:
+        for _nax in _speed_axes:
             _vvals.extend(_nax['values'] if 'values' in _nax else [_nax['lo']])
         _v_min = min(_vvals)
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
     """${expl['label']} - ${grid_desc}."""
     _network = kwargs.get('network')
-% if _has_network_axis:
-    if _network is not None and hasattr(_network.graph, 'lengths'):
-        # Rebuild the base DenseLengthGraph once (outside jit/vmap) so its buffer is
-        # sized for the slowest swept speed; the conduction_speed axis then sweeps its
-        # live `speed` leaf.
-        _v_build = ${conduction_speed}
-        _lengths = _network.graph.lengths
-        _length_graph = DenseLengthGraph(
-            _network.graph.weights, _lengths, speed=_v_build,
-            region_labels=_network.graph.region_labels,
-            # min(): the binding speed is the build speed when every swept speed is faster.
-            # max over lengths/speed (not max(lengths)/speed) + a hair of headroom, so a
-            # float32 ULP never lands the buffer under the graph's own max(delay).
-            max_delay_bound=float(jnp.max(_lengths / min(_v_build, ${_v_min}))) * (1.0 + 1e-4),
-        )
-        _network = type(_network)(
-            _network.dynamics, _network.coupling, _length_graph, noise=_network.noise,
-        )
-% endif
 % if any(ax.get('builder_expr') for ax in expl['axes']):
     # Builder-axis support: resolve a base-sim observation named in a builder argument.
     # `base_observations` is the Bunch of observations the main run computed before this
-    # exploration; `_bov(name)` returns one (unwrapping a monitor result's `.data`).
+    # exploration; `_bov(name)` returns one (unwrapping a monitor result's `.data`). Defined ahead of the graph rebuild, which reads a builder-produced length axis to size the delay buffer.
     _base_obs = kwargs.get('base_observations') or Bunch()
     def _bov(_name):
         assert _name in _base_obs, (
@@ -2887,6 +2876,34 @@ def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
             "via a used: DataRef, but it was not resolved — run() resolves builder_data before "
             "the run; ensure the source experiment has run and results_root points at it")
         return _builder_data[_key]
+% endif
+% for _lax in _length_axes:
+% if _lax.get('builder_expr'):
+    # Materialised here, ahead of the graph rebuild that sizes the delay buffer from it, so the builder is called ONCE: the grid binding below reuses this value rather than re-evaluating an expression that may read base observations or cross-experiment data.
+    _axisvals_${_lax['name']} = jnp.asarray(${_lax['builder_expr']})
+% endif
+% endfor
+% if _has_network_axis:
+    if _network is not None and hasattr(_network.graph, 'lengths'):
+        # Rebuild the base DenseLengthGraph once (outside jit/vmap) so its buffer covers the slowest swept speed over the longest swept tracts; the axes then sweep their live `speed` / `lengths` leaves, which prepare() no longer re-reads.
+        _v_build = ${conduction_speed}
+        _lengths = _network.graph.lengths
+        _bound_lengths = _lengths
+% for _lax in _length_axes:
+        _swept_lengths = ${_length_bound_expr(_lax)}
+        _bound_lengths = jnp.maximum(
+            _bound_lengths, jnp.max(_swept_lengths.reshape((-1,) + _lengths.shape), axis=0)
+        )
+% endfor
+        _length_graph = DenseLengthGraph(
+            _network.graph.weights, _lengths, speed=_v_build,
+            region_labels=_network.graph.region_labels,
+            # Divided by the SLOWEST speed in play (the build speed binds when every swept speed is faster). Elementwise max over lengths/speed, not max(lengths)/speed, + a hair of headroom, so a float32 ULP never lands the buffer under the graph's own max(delay).
+            max_delay_bound=float(jnp.max(_bound_lengths / ${f'min(_v_build, {_v_min})' if _v_min is not None else '_v_build'})) * (1.0 + 1e-4),
+        )
+        _network = type(_network)(
+            _network.dynamics, _network.coupling, _length_graph, noise=_network.noise,
+        )
 % endif
     if _network is not None:
         _solver = get_solver()
@@ -2946,12 +2963,17 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     ## axes, which is 1-D only, so an array-valued axis is given a singleton group: Space's
     ## grouped path index-gathers it, carrying one whole vector per cell. Scalar axes (1-D
     ## values) stay ungrouped, so their behaviour is unchanged.
+    ## A length axis was materialised above to size the delay buffer; reuse it, never re-call.
+    % if not (ax.get('is_network') and ax.get('graph_leaf') == 'lengths'):
     _axisvals_${ax['name']} = jnp.asarray(${ax['builder_expr']})
+    % endif
     _grp_${ax['name']} = "${ax['name']}" if _axisvals_${ax['name']}.ndim > 1 else None
     % if ax.get('is_coupling'):
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
     % elif ax.get('is_network'):
     grid_state.graph.${ax['graph_leaf']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    % elif ax.get('is_noise'):
+    grid_state.noise.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
     % else:
     grid_state.dynamics.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
     % endif
@@ -2968,6 +2990,13 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     grid_state.dynamics._ic_${ax['name']} = DataAxis(jnp.asarray(${ax['values']}))
     % else:
     grid_state.dynamics._ic_${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    % endif
+    % elif ax.get('is_noise'):
+    ## Noise-amplitude axis: a parameter leaf on the noise params, bound directly — no dummy slot, no wrapper.
+    % if 'values' in ax:
+    grid_state.noise.${ax['name']} = DataAxis(jnp.asarray(${ax['values']}))
+    % else:
+    grid_state.noise.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
     % endif
     % elif ax.get('element_idx') is not None:
     ## Element-indexed parameter: create dummy scalar slot for Space discovery
@@ -3508,21 +3537,47 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # subset (flat `point` dim) and the whole grid (keyed by value into the rectangular grid)
     # consume these coords downstream.
     _cell_coords = None
+<%
+    def _scope_of(ax):
+        """Grid sub-object an axis's leaf is bound on — the first segment of its keypath."""
+        return axis_keypath(ax).split('.', 1)[0]
+
+    _axis_scopes = {}
+    for _ax in expl['axes']:
+        _lbl = str(_ax.get('label', _ax['name']))
+        if _ax.get('element_idx') is not None:
+            _lbl = f"{_lbl}[{_ax['element_idx']}]"
+        _axis_scopes[_lbl] = _scope_of(_ax)
+%>\
 % if has_axes:
     _df = grid.to_dataframe()
-    _bare_to_label, _network_label = {}, None
+    # Each axis's grid SCOPE — the first segment of its dataframe column keypath. `noise.sigma` and a model's own `sigma` share a bare leaf name, so only the scope tells the two columns apart.
+    _axis_scope = ${repr(_axis_scopes)}
+    _bare_to_label, _scoped_to_label, _network_label = {}, {}, None
     for _a in _axes_info:
-        _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
-        if str(_a.name) == 'execution.random_seed':
-            _bare_to_label.setdefault('_noise_seed', str(_a.name))  # the seed axis sweeps the dynamics._noise_seed leaf
+        _name = str(_a.name)
+        _scope = _axis_scope.get(_name, 'dynamics')
+
+        def _register(_key, _label=_name, _sc=_scope):
+            _bare_to_label.setdefault(_key, _label)
+            _scoped_to_label.setdefault((_sc, _key), _label)
+
+        _register(_name.rsplit('.', 1)[-1])
+        if _name == 'execution.random_seed':
+            _register('_noise_seed')  # the seed axis sweeps the dynamics._noise_seed leaf
+        if _name.startswith('initial_conditions.'):
+            _register(f"_ic_{_name.rsplit('.', 1)[-1]}")  # an IC axis sweeps the dummy dynamics._ic_<sv> leaf
         if getattr(_a, 'element_idx', None) is not None:
-            _bare = str(_a.name).rsplit('.', 1)[-1].split('[')[0]   # axis "ref.p[i]" sweeps the leaf dynamics._p_el<i>
-            _bare_to_label.setdefault(f'_{_bare}_el{_a.element_idx}', str(_a.name))
-        if str(_a.name).startswith('network.'):
-            _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
+            _bare = _name.rsplit('.', 1)[-1].split('[')[0]   # axis "ref.p[i]" sweeps the leaf dynamics._p_el<i>
+            _register(f'_{_bare}_el{_a.element_idx}')
+        if _name.startswith('network.'):
+            _network_label = _name   # network-scope axis (e.g. conduction_speed)
     _cell_coords, _used = {}, set()
     for _col in _df.columns:
-        _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], None)
+        _parts = str(_col).split('.')
+        _label = _scoped_to_label.get((_parts[0], _parts[-1]), None)
+        if _label is None:
+            _label = _bare_to_label.get(_parts[-1], None)
         # network.conduction_speed sweeps the DenseLengthGraph `speed` leaf, keypath "graph.2":
         # its bare name ("2") matches no axis label, so restore the friendly network name.
         if _label is None and _network_label is not None and str(_col).startswith('graph.'):
@@ -3541,6 +3596,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _stacked_results = None
     _stacked_ts = None
     _observations_xr = {}
+    # Node labels ride along so a swept observation's node axis is selectable by label, exactly as an unswept one's is.
+    _node_labels = getattr(getattr(_network, 'graph', None), 'region_labels', None)
     for _obs_key, _obs_val in _stacked.items():
         if str(_obs_key).startswith('_'):
             continue
@@ -3551,6 +3608,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             n_trials=${expl.get('n_trials', 1)}, name=str(_obs_key),
             cell_coords=_cell_coords,
             dims=_OBSERVATION_DIMS.get(str(_obs_key)),
+            nodes=_node_labels,
         )
 % else:
     _stacked_results = _stacked
@@ -4772,7 +4830,7 @@ if __name__ == "__main__":
 % endif
     )
     # weights RAW — create_network applies the declared transforms.
-    weights = _network.raw_weights_matrix
+    weights = _network.matrix("weight", apply_transforms=False)
     distances = _network.lengths_matrix
     # Get region labels safely (may not be available in all BIDS datasets)
     try:

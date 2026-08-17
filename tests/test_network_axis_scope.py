@@ -84,3 +84,130 @@ def test_error_names_the_sweepable_set():
     msg = str(e.value)
     assert "network.conduction_speed" in msg
     assert "network.edges.weight" in msg
+
+
+# --- codegen: the delay history buffer ---------------------------------------
+pytest.importorskip("tvboptim")
+
+from tvbo import SimulationExperiment  # noqa: E402
+
+_DELAY_SPEC = """
+id: 9
+dynamics:
+  name: Kuramoto
+  label: Kuramoto
+  parameters:
+    omega: {name: omega, value: 0.0628, unit: rad_per_ms}
+  coupling_inputs:
+    c: {name: c, description: "coupling"}
+  state_variables:
+    theta:
+      name: theta
+      unit: rad
+      initial_value: 0.1
+      equation: {lhs: "Derivative(theta, t)", rhs: "omega + c"}
+      variable_of_interest: true
+      coupling_variable: true
+  output: [theta]
+  number_of_modes: 1
+network:
+  number_of_nodes: 2
+  parameters:
+    conduction_speed: {name: conduction_speed, value: 3.0, unit: mm_per_ms}
+  nodes:
+    - {id: 0, label: r0}
+    - {id: 1, label: r1}
+  edges:
+    - {source: 0, target: 1, weight: 0.5, distance: 10.0}
+    - {source: 1, target: 0, weight: 0.5, distance: 10.0}
+coupling:
+  name: KuramotoCoupling
+  label: KuramotoCoupling
+  parameters:
+    a: {name: a, value: 0.01}
+    N: {name: N, value: 1.0}
+  pre_expression: {rhs: "sin(theta_j - theta_i)"}
+  post_expression: {rhs: "a * gx / N"}
+  incoming_states: [theta]
+  local_states: [theta]
+integration:
+  method: Heun
+  duration: 40.0
+  step_size: 1.0
+  transient_time: 0.0
+explorations:
+  delay_sweep:
+    name: delay_sweep
+    mode: product
+    space:
+      - parameter: PARAMETER
+        AXIS
+"""
+
+_LENGTH_BUILDER = "import numpy as np\n\n\ndef longer_tracts(n):\n    return [np.full((2, 2), 10.0 * (i + 1)) for i in range(int(n))]\n"
+
+
+def _render_delay_sweep(tmp_path, parameter, axis):
+    spec = _DELAY_SPEC.replace("PARAMETER", parameter).replace("        AXIS\n", axis)
+    p = tmp_path / "delay.yaml"
+    p.write_text(spec)
+    exp = SimulationExperiment.from_file(str(p))
+    exp.configure()
+    return exp.render_code("tvboptim")
+
+
+def test_a_swept_speed_rebuilds_the_base_graph(tmp_path):
+    """The slowest swept speed sizes the history buffer, so the base graph is rebuilt.
+
+    `_v_build` marks the rebuild: `DenseLengthGraph(` and `max_delay_bound` are emitted for
+    the base network whether or not anything is swept, so neither distinguishes it.
+    """
+    code = _render_delay_sweep(tmp_path, "network.conduction_speed", "        explored_values: [1.0, 3.0]\n")
+    assert "_v_build" in code
+    assert "min(_v_build, 1.0)" in code, "the buffer must be sized for the SLOWEST swept speed"
+
+
+def test_a_swept_tract_length_also_rebuilds_the_base_graph(tmp_path, monkeypatch):
+    """`delay = length / speed`, so a swept LENGTH sizes the buffer exactly as a speed does.
+
+    prepare() sizes the history buffer once from the base graph and never re-reads it, so a
+    length axis whose matrices exceed the base network's leaves every over-long cell
+    integrating against a truncated history — a silently wrong trajectory, not an error.
+    """
+    import sys
+
+    (tmp_path / "length_builder.py").write_text(_LENGTH_BUILDER)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    sys.modules.pop("length_builder", None)
+
+    axis = (
+        "        builder:\n"
+        "          callable: {name: longer_tracts, module: length_builder}\n"
+        "          arguments: {n: {value: 3}}\n"
+    )
+    code = _render_delay_sweep(tmp_path, "network.edges.length", axis)
+    assert "_v_build" in code, "a swept length must rebuild the base graph"
+    assert "_bound_lengths" in code, "the buffer must be sized from the LONGEST swept tracts"
+    assert code.count("longer_tracts(") == 1, (
+        "the builder must be called ONCE — it may read base observations or cross-experiment "
+        "data, and two calls could disagree about the values the grid then sweeps"
+    )
+
+
+def test_a_domain_declared_length_axis_bounds_the_buffer_at_its_hi(tmp_path):
+    """A length axis may be declared `domain:` rather than by explicit points or a builder.
+
+    Reading `values` unconditionally is a bare KeyError at RENDER time for that spelling —
+    the sweep never runs at all. The longest tract a `domain:` axis reaches is its `hi`, so
+    that is what the buffer must cover.
+    """
+    code = _render_delay_sweep(tmp_path, "network.edges.length", "        domain: {lo: 5.0, hi: 40.0, n: 4}\n")
+    assert "jnp.full_like(_lengths, 40.0)" in code
+    assert "_bound_lengths" in code
+
+
+def test_a_swept_weight_leaves_the_buffer_alone(tmp_path):
+    """No delay depends on the weights, so sweeping them needs no rebuild."""
+    code = _render_delay_sweep(tmp_path, "network.edges.weight", "        explored_values: [0.1, 0.5]\n")
+    assert "_bound_lengths" not in code
+    assert "_v_build" not in code

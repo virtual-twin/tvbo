@@ -171,4 +171,5 @@ def test_two_axis_seed_sweep_maps_the_noise_seed_leaf_to_its_label():
     spec["explorations"]["seed_sweep"]["space"].insert(0, {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}})
     code = SimulationExperiment(**spec).render_code("tvboptim")
     squeezed = "".join(code.split()).replace('"', "'")
-    assert "_bare_to_label.setdefault('_noise_seed',str(_a.name))" in squeezed
+    assert "_register('_noise_seed')" in squeezed
+    assert "if_name=='execution.random_seed':" in squeezed
