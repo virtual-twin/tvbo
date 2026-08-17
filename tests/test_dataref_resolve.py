@@ -417,6 +417,20 @@ def test_the_same_subject_shard_in_two_directories_still_raises(tmp_path):
         dr.locate_exp_container(tmp_path, 34)
 
 
+def test_an_aggregate_container_beside_a_shard_still_raises(tmp_path):
+    """Stripping the `sub-` entity collapses these to one stem, but they are two runs.
+
+    A whole-cohort container and a per-subject shard of the same experiment describe
+    different runs — one non-sharded, one sharded — so returning either would be the silent
+    choice the ambiguity check exists to refuse. Only an all-shards set is a cohort.
+    """
+    (tmp_path / "exp-34_desc-Model_result.h5").write_bytes(b"")
+    (tmp_path / "sub-01_exp-34_desc-Model_result.h5").write_bytes(b"")
+
+    with pytest.raises(FileNotFoundError, match="different runs of the same experiment"):
+        dr.locate_exp_container(tmp_path, 34)
+
+
 def test_select_sees_through_the_prefix_on_a_non_dimension_coordinate():
     """The prefix rule applies to coordinates too, not only to dims.
 

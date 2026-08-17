@@ -66,9 +66,11 @@ def locate_exp_container(results_root, source_id) -> Path:
 
     A per-subject COHORT is not that case. ``ExperimentResult._save_per_subject`` writes one
     ``sub-<id>_exp-<N>_…_result.h5`` shard per subject into a single directory, so the glob
-    legitimately matches many files that differ only in their ``sub-`` entity; those collapse
-    to one stem and the first shard is returned as before. Two files sharing a name across
-    directories, or two distinct stems, are the ambiguity that raises.
+    legitimately matches many files that differ only in their ``sub-`` entity; the first
+    shard is returned as before. A cohort is recognised only when EVERY candidate carries a
+    ``sub-`` entity, they collapse to one stem, and no name repeats: an aggregate container
+    beside a shard collapses to that same stem while being a different run, and a repeated
+    name is one shard copied into two directories.
     """
     import re
 
@@ -80,8 +82,13 @@ def locate_exp_container(results_root, source_id) -> Path:
             f"under {root} (looked for '*exp-{source_id}_*.h5'). Run experiment "
             f"{source_id} first so its result is available."
         )
-    stems = {re.sub(r"^sub-[A-Za-z0-9]+_", "", p.name) for p in cands}
-    is_cohort = len(stems) == 1 and len({p.name for p in cands}) == len(cands)
+    subject_prefix = re.compile(r"^sub-[A-Za-z0-9]+_")
+    stems = {subject_prefix.sub("", p.name) for p in cands}
+    is_cohort = (
+        all(subject_prefix.match(p.name) for p in cands)
+        and len(stems) == 1
+        and len({p.name for p in cands}) == len(cands)
+    )
     if len(cands) > 1 and not is_cohort:
         listed = "\n  ".join(str(p) for p in cands[:10])
         more = f"\n  … and {len(cands) - 10} more" if len(cands) > 10 else ""
