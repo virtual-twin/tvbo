@@ -252,6 +252,22 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
     return np.asarray([index[v] for v in cell.tolist()])
 
 
+def _axis_points_dataarray(name, points):
+    """The materialised points of an ARRAY-valued axis, keyed by its point index.
+
+    An axis of whole arrays coordinates its grid dimension on the point INDEX (an xarray
+    coordinate is a 1-D index of scalars), and that index is meaningless once the run ends
+    unless the points ride along — recovering WHICH matrix a cell used otherwise needs the
+    builder that produced them. The leading dim takes the axis's own name with ``arange(n)``
+    coords, so it aligns with the grid dimension when merged into a result Dataset and a
+    cell's coordinate value selects its point directly. Inner dims follow the node-array
+    convention (``node`` for per-node vectors, ``node_i``/``node_j`` for per-edge matrices).
+    """
+    a = np.asarray(points)
+    inner = {1: ["node"], 2: ["node_i", "node_j"]}.get(a.ndim - 1, [f"{name}_d{i}" for i in range(a.ndim - 1)])
+    return xr.DataArray(a, dims=[name, *inner], coords={name: np.arange(a.shape[0])}, name=name)
+
+
 def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
 
@@ -1319,6 +1335,7 @@ class ExplorationResult(Bunch):
         observations=None,
         cell_coords=None,
         is_shard=None,
+        axis_points=None,
         **kwargs,
     ):
         """A sweep's results, labelled against the axes that produced them.
@@ -1330,6 +1347,10 @@ class ExplorationResult(Bunch):
         ``is_shard`` is that marker, declared by the producer — the generated script holds ``kwargs['shard']``. ``None`` means undeclared, and ``_is_partial_shard``
         falls back to counting cells. Nothing downstream can re-derive it reliably: a branch shard's axis ``n`` is taken from the already-sliced index, so the slice
         looks complete.
+
+        ``axis_points`` (``{axis: (n_point, ...) array}``) is the materialised points of each ARRAY-valued axis — only the producer holds them, and the point-index
+        coordinate such an axis sweeps on is meaningless without them. Kept as keyed ``DataArray`` sidecars (see :func:`_axis_points_dataarray`); scalar axes carry
+        nothing extra and are dropped here, so the producer may hand over its whole axis table.
         """
         super().__init__(**kwargs)
         self.name = name
@@ -1340,6 +1361,11 @@ class ExplorationResult(Bunch):
         self.output_names = output_names or []
         self.is_shard = is_shard
         self.cell_coords = cell_coords
+        self.axis_points = {
+            str(k): _axis_points_dataarray(str(k), v)
+            for k, v in (axis_points or {}).items()
+            if v is not None and np.asarray(v).ndim > 1
+        }
         # Per-grid-point observations as {name: xr.DataArray} with grid axes prepended to each observation's intrinsic dims (time/variable/node/mode).
         # Grid codegen already hands over labelled DataArrays; the warm-start / adiabatic path hands over plain arrays, so label those here (against the swept axes) — the class honours its own contract regardless of producer, and every consumer (plotting, save, reassembly) sees DataArrays.
         self.observations = {
@@ -2221,6 +2247,11 @@ class ExperimentResult:
             for obs_name, da in (getattr(expl, "observations", None) or {}).items():
                 if da is not None and hasattr(da, "dims"):
                     by_output[(_san(expl_name), _san(obs_name))] = da
+            # An array-valued axis's materialised points ride along as ``axis_points__<axis>``, aligned with the grid dim of the same name — a whole run only: the gather pass concatenates every shard variable along ``point``, and a shard reproduces its points from the spec sidecar's builder.
+            if not _is_partial_shard(expl):
+                for ax_label, da in (getattr(expl, "axis_points", None) or {}).items():
+                    if da is not None and hasattr(da, "dims"):
+                        by_output[(_san(expl_name), f"axis_points__{_san(ax_label)}")] = da
             if getattr(expl, "results", None) is not None:
                 try:
                     g = expl.as_grid()

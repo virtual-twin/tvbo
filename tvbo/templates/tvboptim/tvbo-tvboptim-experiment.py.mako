@@ -3661,6 +3661,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         axes=_axes_info,
 % if has_axes:
         cell_coords=_cell_coords,
+        # The whole axis table: the container keeps the ARRAY-valued entries as keyed sidecars and drops the scalar ones.
+        axis_points=_array_axis_points,
         # Inside the same guard as the slicing: an axis-less exploration is never sliced, so
         # declaring it sharded would suppress the provenance sidecar for every task.
         is_shard=kwargs.get('shard') is not None,

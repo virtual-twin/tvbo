@@ -367,6 +367,67 @@ def test_a_non_numeric_axis_still_labels_rather_than_raising():
     assert da is not None and da.dims[0] == "integration.method"
 
 
+def test_axis_points_ride_along_keyed_by_point_index():
+    """An array-valued axis's materialised points are kept, keyed by the same point
+    index its grid coordinate uses — the index alone dies with the builder that made
+    it. Scalar axes carry nothing extra, so the producer may hand over its whole
+    axis table.
+    """
+    mats = np.stack([np.full((2, 2), 10.0), np.full((2, 2), 20.0)])
+    r = ExplorationResult(
+        name="sweep",
+        axes=[_axis("net.length", [0, 1])],
+        axis_points={"net.length": mats, "model.c": np.array([0.1, 0.2])},
+    )
+    assert set(r.axis_points) == {"net.length"}
+    pts = r.axis_points["net.length"]
+    assert pts.dims == ("net.length", "node_i", "node_j")
+    assert list(pts.coords["net.length"].values) == [0, 1]
+    np.testing.assert_allclose(pts.sel({"net.length": 1}).values, np.full((2, 2), 20.0))
+
+    vec = ExplorationResult(name="s", axis_points={"ctrl": np.zeros((3, 5))})
+    assert vec.axis_points["ctrl"].dims == ("ctrl", "node")
+
+
+def test_save_writes_axis_points_for_a_whole_run_but_not_a_shard(tmp_path):
+    """The sidecar lands in the result file aligned with its grid dim — whole runs only.
+
+    A shard's variables are all concatenated along ``point`` by the gather pass, which
+    would tile a point-less sidecar; the shard reproduces its points from the spec.
+    """
+    from types import SimpleNamespace
+
+    from tvbo.data.types import ExperimentResult
+
+    mats = np.stack([np.full((2, 2), 10.0), np.full((2, 2), 20.0)])
+
+    def _result(is_shard):
+        expl = ExplorationResult(
+            name="sweep",
+            results=np.zeros((2, 5)),
+            axes=[_axis("net.length", [0, 1])],
+            dt=0.1,
+            cell_coords={"net.length": np.array([0, 1])},
+            axis_points={"net.length": mats},
+            is_shard=is_shard,
+        )
+        return ExperimentResult(explorations={"sweep": expl}, source=SimpleNamespace())
+
+    for is_shard, expected in [(False, True), (True, False)]:
+        out = tmp_path / ("shard" if is_shard else "whole")
+        written = _result(is_shard).save(str(out), compress=False, record_only=False)
+        h5 = [p for p in written if p.endswith(".h5")]
+        assert h5, f"expected an .h5 result, got {written}"
+        ds = xr.open_dataset(h5[0], engine="h5netcdf")
+        try:
+            assert ("axis_points__net.length" in ds.data_vars) is expected
+            if expected:
+                np.testing.assert_allclose(ds["axis_points__net.length"].values, mats)
+                assert ds["axis_points__net.length"].dims == ("net.length", "node_i", "node_j")
+        finally:
+            ds.close()
+
+
 def _object_array(values):
     """An object-dtype array holding *values* — how a matrix-valued axis's points arrive."""
     out = np.empty(len(values), dtype=object)
