@@ -227,36 +227,19 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
     matches exactly: a string axis (``integration.method`` over "heun"/"euler") cannot be subtracted at all, and placing it by position would be the scrambling this whole path
     exists to prevent.
 
-    An ARRAY-VALUED axis — an ``ExplorationAxis.builder`` whose points are whole matrices — matches on the nearest point in the flattened value, which is the same by-value rule one
-    dimension up. Its points are neither hashable nor elementwise-subtractable against the grid, so both scalar paths reject them. The distance is accumulated one grid point at a
-    time: a swept 379-node connectome carries 143k elements per point, and the outer difference over all of them at once is hundreds of megabytes of temporary for an argmin.
-
-    Both sides must be in the SAME currency. An array-valued axis whose grid side declares point INDICES cannot be placed here at all: only the generated code holds the
-    materialised points, so the matrix-to-index conversion belongs at the binding site, and this raises rather than matching a matrix against an index it happens to be near.
+    ARRAY-VALUED points are REFUSED rather than matched. An axis whose points are whole matrices declares one point INDEX per point as its coordinate, because an xarray
+    coordinate is an index of scalars, so cells carrying the matrices themselves are in a different currency. Only the generated code holds the materialised points, which is
+    where the conversion belongs (:func:`tvbo.templates.tvboptim.callbacks.point_indices`); matching them here would key the surface on a coordinate the cells do not share.
     """
     cell = np.asarray(cell_vals)
     grid = np.asarray(grid_vals)
     if _axis_points_are_arrays(cell) or _axis_points_are_arrays(grid):
-        _c = np.stack([np.asarray(v, dtype=float).ravel() for v in cell])
-        _g = np.stack([np.asarray(v, dtype=float).ravel() for v in grid])
-        if _c.shape[1] != _g.shape[1]:
-            _scalar_grid = _g.shape[1] == 1 and _c.shape[1] > 1
-            raise ValueError(
-                f"cell_coords for observation {name!r} carry {_c.shape[1]}-element points on "
-                f"axis {axis!r}, which declares {_g.shape[1]}-element ones."
-                + (
-                    " The axis declares one scalar per point (a point index) while the cells "
-                    "carry whole arrays, so the two are in different currencies: the generated "
-                    "code must convert each cell's value to its point index where the "
-                    "materialised points are in scope, since they do not reach the container."
-                    if _scalar_grid
-                    else ""
-                )
-            )
-        dist = np.empty((_c.shape[0], _g.shape[0]), dtype=float)
-        for j in range(_g.shape[0]):
-            dist[:, j] = np.abs(_c - _g[j]).sum(axis=1)
-        return dist.argmin(axis=1)
+        raise ValueError(
+            f"cell_coords for observation {name!r} carry ARRAY-valued points on axis {axis!r}, "
+            f"but a grid coordinate holds scalars, so these are in different currencies. The "
+            f"producer converts each cell to its point index (callbacks.point_indices) while the "
+            f"materialised points are still in scope; they never reach the container."
+        )
     if np.issubdtype(cell.dtype, np.number) and np.issubdtype(grid.dtype, np.number):
         return np.abs(cell[:, None] - grid[None, :]).argmin(axis=1)
     index = {v: i for i, v in enumerate(grid.tolist())}

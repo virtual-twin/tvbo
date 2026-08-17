@@ -814,6 +814,16 @@ for expl in exploration_list:
         elif '.' in pname:
             prefix, pname = pname.rsplit('.', 1)
             is_coupling_param = (prefix in all_couplings)
+            # An unrecognised scope would fall through to the dynamics path with the prefix DISCARDED, so `nosie.sigma` silently sweeps a model's own `sigma` instead of the noise.
+            _known_dyn = {str(_n).lower() for _n in (model.name, getattr(model, 'label', None), dynamics_class) if _n}
+            if not is_coupling_param and prefix.lower() not in _known_dyn and prefix != 'execution':
+                raise ValueError(
+                    f"exploration axis '{axis.parameter}': unknown scope '{prefix}'. The reserved "
+                    f"scopes are 'noise.', 'network.', 'initial_conditions.' and "
+                    f"'execution.random_seed'; otherwise a dotted parameter names this experiment's "
+                    f"dynamics ('{model.name}') or one of its couplings "
+                    f"({', '.join(sorted(all_couplings)) if all_couplings else 'none declared'})."
+                )
             source_key = _to_ci_key(prefix) if is_coupling_param else prefix
         # Which grid sub-object this axis binds on and the leaf within it, stated ONCE for every append site below, so two axis shapes cannot disagree about scope.
         _scope_keys = {
@@ -1431,7 +1441,7 @@ from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
-from tvbo.templates.tvboptim.callbacks import progress_ticker, resolve_exploration_n_vmap   # grid-batch progress; n_parallel → vmap width
+from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, resolve_exploration_n_vmap   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width
 % endif
 % if _dataset_on_device:
 from tvbo.templates.tvboptim.callbacks import resolve_cohort_batch_size   # dataset.batch_size → subjects per on-device batch
@@ -2956,6 +2966,10 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 % else:
 % if has_axes:
     grid_state = copy.deepcopy(_expl_state)
+    # A graph leaf's dataframe column is POSITIONAL (`graph.2` for `speed`, since the graph pytree carries no field names), so each network axis keeps a reference to the axis object it bound and is recovered from the graph by identity below.
+    _graph_axis_objs = {}
+    # Points of an axis that may be ARRAY-valued. Its grid coordinate is the point index (an xarray coord holds scalars), while its per-cell column holds whole arrays, so the cells are converted with the points that only exist here.
+    _array_axis_points = {}
     % for ax in expl['axes']:
     % if ax.get('builder_expr'):
     ## Builder axis: materialize the sweep values from a callable, then sweep as a DataAxis.
@@ -2968,10 +2982,12 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     _axisvals_${ax['name']} = jnp.asarray(${ax['builder_expr']})
     % endif
     _grp_${ax['name']} = "${ax['name']}" if _axisvals_${ax['name']}.ndim > 1 else None
+    _array_axis_points["${ax.get('label', ax['name'])}"] = _axisvals_${ax['name']}
     % if ax.get('is_coupling'):
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
     % elif ax.get('is_network'):
     grid_state.graph.${ax['graph_leaf']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    _graph_axis_objs["${ax.get('label', ax['name'])}"] = grid_state.graph.${ax['graph_leaf']}
     % elif ax.get('is_noise'):
     grid_state.noise.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
     % else:
@@ -3023,6 +3039,7 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     % else:
     grid_state.graph.${ax['graph_leaf']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
     % endif
+    _graph_axis_objs["${ax.get('label', ax['name'])}"] = grid_state.graph.${ax['graph_leaf']}
     % else:
     % if 'values' in ax:
     grid_state.dynamics.${ax['name']} = DataAxis(${ax['values']})
@@ -3553,7 +3570,24 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _df = grid.to_dataframe()
     # Each axis's grid SCOPE — the first segment of its dataframe column keypath. `noise.sigma` and a model's own `sigma` share a bare leaf name, so only the scope tells the two columns apart.
     _axis_scope = ${repr(_axis_scopes)}
-    _bare_to_label, _scoped_to_label, _network_label = {}, {}, None
+    _bare_to_label, _scoped_to_label = {}, {}
+    # Each network axis is located by IDENTITY among the graph's axis leaves: a positional `graph.N` column has no bare name to key on, and two of them would collide on one label.
+    _graph_leaves = jax.tree_util.tree_leaves(
+        grid_state.graph, is_leaf=lambda _x: isinstance(_x, (DataAxis, GridAxis))
+    )
+    _graph_pos_to_label = {
+        str(_i): _lbl
+        for _lbl, _obj in _graph_axis_objs.items()
+        for _i, _leaf in enumerate(_graph_leaves)
+        if _leaf is _obj
+    }
+    if len(_graph_pos_to_label) != len(_graph_axis_objs):
+        _lost = sorted(set(_graph_axis_objs) - set(_graph_pos_to_label.values()))
+        raise RuntimeError(
+            f"network axis/axes {_lost} were bound onto the graph but could not be located among "
+            f"its {len(_graph_leaves)} axis leaves, so their per-cell coordinates cannot be keyed. "
+            f"Labelling them by position would key the surface on the wrong parameter."
+        )
     for _a in _axes_info:
         _name = str(_a.name)
         _scope = _axis_scope.get(_name, 'dynamics')
@@ -3570,24 +3604,26 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         if getattr(_a, 'element_idx', None) is not None:
             _bare = _name.rsplit('.', 1)[-1].split('[')[0]   # axis "ref.p[i]" sweeps the leaf dynamics._p_el<i>
             _register(f'_{_bare}_el{_a.element_idx}')
-        if _name.startswith('network.'):
-            _network_label = _name   # network-scope axis (e.g. conduction_speed)
     _cell_coords, _used = {}, set()
     for _col in _df.columns:
         _parts = str(_col).split('.')
         _label = _scoped_to_label.get((_parts[0], _parts[-1]), None)
         if _label is None:
             _label = _bare_to_label.get(_parts[-1], None)
-        # network.conduction_speed sweeps the DenseLengthGraph `speed` leaf, keypath "graph.2":
-        # its bare name ("2") matches no axis label, so restore the friendly network name.
-        if _label is None and _network_label is not None and str(_col).startswith('graph.'):
-            _label = _network_label
+        # A graph leaf's column is `graph.<leaf index>`; recover the axis that bound that leaf.
+        if _label is None and str(_col).startswith('graph.'):
+            _label = _graph_pos_to_label.get(_parts[-1])
         if _label is None:
             _label = str(_col)
         if _label in _used:
             _label = str(_col)  # disambiguate a bare-name collision with the keypath
         _used.add(_label)
-        _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
+        _vals = np.asarray(_df[_col].to_numpy())
+        # An array-valued axis coordinates on the point INDEX, so the cells are converted here, where the materialised points are still in scope.
+        _pts = _array_axis_points.get(_label)
+        if _pts is not None and getattr(_pts, "ndim", 1) > 1:
+            _vals = point_indices(_vals, _pts)
+        _cell_coords[_label] = _vals
 % endif
 
 % if returns_bunch:

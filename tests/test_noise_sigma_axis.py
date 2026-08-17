@@ -301,3 +301,37 @@ def test_the_sweep_partials_do_not_respell_the_keypath():
     src = (Path(_pkg.__file__).parent / "tvbo-tvboptim-sweep.py.mako").read_text()
     assert src.count("axis_keypath(axis)") == 2, "a sweep partial stopped using the shared resolver"
     assert '"dynamics.%s"' not in src, "a sweep partial spells a grid keypath itself"
+
+
+# --- reserved-scope gate ------------------------------------------------------
+def test_a_misspelled_scope_is_rejected_rather_than_swept_as_a_model_parameter(tmp_path):
+    """An unrecognised dotted scope must fail at codegen, not fall through to the dynamics.
+
+    The dynamics branch DISCARDS the prefix and keeps the leaf, so `nosie.sigma` on a model
+    carrying its own `sigma` binds `grid_state.dynamics.sigma` and sweeps the wrong quantity
+    with nothing in the result saying so. The same hole hides a real-but-unimplemented scope.
+    """
+    spec = _SPEC.replace("      # NOISE\n", _NOISE).replace(
+        "      - parameter: noise.sigma\n        # AXIS\n",
+        "      - parameter: nosie.sigma\n        explored_values: [0.01, 0.02]\n",
+    )
+    p = tmp_path / "spec.yaml"
+    p.write_text(spec)
+    exp = SimulationExperiment.from_file(str(p))
+    exp.configure()
+    with pytest.raises(ValueError, match="unknown scope 'nosie'"):
+        exp.render_code("tvboptim")
+
+
+def test_the_dynamics_and_coupling_scopes_still_resolve(tmp_path):
+    """The gate must not reject the two spellings that carry every ordinary sweep."""
+    for parameter in ("Kuramoto.omega", "KuramotoCoupling.a"):
+        spec = _SPEC.replace("      # NOISE\n", _NOISE).replace(
+            "      - parameter: noise.sigma\n        # AXIS\n",
+            f"      - parameter: {parameter}\n        explored_values: [0.01, 0.02]\n",
+        )
+        p = tmp_path / "spec.yaml"
+        p.write_text(spec)
+        exp = SimulationExperiment.from_file(str(p))
+        exp.configure()
+        assert exp.render_code("tvboptim"), parameter

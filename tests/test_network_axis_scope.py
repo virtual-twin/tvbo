@@ -211,3 +211,62 @@ def test_a_swept_weight_leaves_the_buffer_alone(tmp_path):
     code = _render_delay_sweep(tmp_path, "network.edges.weight", "        explored_values: [0.1, 0.5]\n")
     assert "_bound_lengths" not in code
     assert "_v_build" not in code
+
+
+_TWO_AXIS_SPACE = """      - parameter: network.conduction_speed
+        explored_values: [1.0, 3.0]
+      - parameter: network.edges.length
+        builder:
+          callable: {name: longer_tracts, module: tract_builder}
+          arguments: {n: {value: 2}}
+"""
+
+
+def _run_two_network_axes(tmp_path, monkeypatch):
+    import sys
+
+    (tmp_path / "tract_builder.py").write_text(_LENGTH_BUILDER)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    sys.modules.pop("tract_builder", None)
+    spec = _DELAY_SPEC.replace(
+        "      - parameter: PARAMETER\n        AXIS\n", _TWO_AXIS_SPACE
+    )
+    p = tmp_path / "two_axes.yaml"
+    p.write_text(spec)
+    exp = SimulationExperiment.from_file(str(p))
+    exp.configure()
+    return exp.run("tvboptim", mode="exploration")
+
+
+def test_two_network_axes_are_each_keyed_by_their_own_declared_name(tmp_path, monkeypatch):
+    """Two `network.` axes in one exploration must both reach the container.
+
+    Graph-leaf columns are POSITIONAL (`graph.1`, `graph.2`) because the graph pytree carries no
+    field names, so resolving them through a single network label lets the last axis win and the
+    other's coordinate arrive under a name matching no declared axis. The container then refuses
+    to place the observation — after the whole compute has finished.
+    """
+    r = _run_two_network_axes(tmp_path, monkeypatch)
+    expl = r.explorations.delay_sweep
+    names = {str(getattr(a, "name", "")) for a in expl.axes}
+    assert names == {"network.conduction_speed", "network.edges.length"}, names
+
+    grid = expl.as_grid()
+    assert "network.conduction_speed" in grid.dims
+    assert "network.edges.length" in grid.dims
+    assert grid.sizes["network.conduction_speed"] == 2
+    assert grid.sizes["network.edges.length"] == 2
+
+
+def test_a_matrix_valued_axis_is_keyed_by_point_index(tmp_path, monkeypatch):
+    """A builder axis of whole matrices rounds trips: its coordinate is the point index.
+
+    A matrix cannot be an xarray coordinate, so codegen declares `arange(n)` while the per-cell
+    column carries the matrices. Converting the cells where the materialised points still exist
+    is what lets the container place them at all.
+    """
+    import numpy as np
+
+    r = _run_two_network_axes(tmp_path, monkeypatch)
+    grid = r.explorations.delay_sweep.as_grid()
+    np.testing.assert_array_equal(np.asarray(grid.coords["network.edges.length"]), [0, 1])
