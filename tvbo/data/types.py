@@ -223,7 +223,9 @@ def _axis_points_are_arrays(a) -> bool:
 def _axis_positions(cell_vals, grid_vals, axis, name):
     """Index of each cell along one grid axis, matched by value.
 
-    A numeric axis matches by nearest value, because a swept float that has round-tripped through a file need not compare equal to the one the grid declares. Anything else
+    A numeric axis matches by nearest value, because a swept float that has round-tripped through a file need not compare equal to the one the grid declares — but only within a
+    round-trip-sized tolerance (relative ``1e-6``, an order above float32 precision). A value farther from every declared point than storage error can explain means the column
+    is paired with the wrong axis or the grid changed under the cells, and snapping it silently would relabel the surface, so it raises instead. Anything else
     matches exactly: a string axis (``integration.method`` over "heun"/"euler") cannot be subtracted at all, and placing it by position would be the scrambling this whole path
     exists to prevent.
 
@@ -241,7 +243,19 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
             f"materialised points are still in scope; they never reach the container."
         )
     if np.issubdtype(cell.dtype, np.number) and np.issubdtype(grid.dtype, np.number):
-        return np.abs(cell[:, None] - grid[None, :]).argmin(axis=1)
+        pos = np.abs(cell[:, None] - grid[None, :]).argmin(axis=1)
+        snapped = grid[pos]
+        err = np.abs(np.asarray(cell, dtype=float) - np.asarray(snapped, dtype=float))
+        tol = 1e-6 * np.maximum(np.abs(cell), np.abs(snapped))
+        if np.any(err > tol):
+            i = int(np.argmax(err - tol))
+            raise ValueError(
+                f"cell_coords for observation {name!r} carry value {cell[i]!r} on axis {axis!r}, "
+                f"too far from every declared grid point (nearest: {snapped[i]!r}) to be a storage "
+                f"round-trip. The column is paired with the wrong axis, or the grid changed under "
+                f"the cells; snapping it silently would relabel the surface."
+            )
+        return pos
     index = {v: i for i, v in enumerate(grid.tolist())}
     absent = sorted({v for v in cell.tolist() if v not in index}, key=repr)
     if absent:
@@ -463,7 +477,8 @@ def reassemble_experiment_results(
 
     Each array task wrote a shard as the same ``<prefix>_result.h5`` Dataset with a flat, self-describing ``point`` dimension (see :meth:`ExperimentResult.save`).
     This concatenates them along ``point`` and pivots by parameter value into the full rectangular grid, giving one standard xarray ``Dataset`` that opens with a
-    plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader.
+    plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader. ``axis_points__*`` variables — one sweep-wide axis table, required identical in every
+    shard — are carried past the concat and re-attached to the grid, so the gathered artifact stays as self-describing as a local run's.
 
     Args:
         shards_root: directory scanned recursively for the shard ``.h5`` files.
@@ -486,7 +501,21 @@ def reassemble_experiment_results(
     if not paths:
         raise FileNotFoundError(f"no shard files matched {pattern!r} under {src!r}")
 
-    combined = xr.concat([xr.open_dataset(p, engine="h5netcdf") for p in paths], dim=point_dim)
+    datasets = [xr.open_dataset(p, engine="h5netcdf") for p in paths]
+    # ``axis_points__*`` vars are one sweep-wide axis table, not per-cell data: concatenating them along ``point`` would tile the sidecar once per shard. Lift them out, require every shard to carry the same table, and re-attach after the pivot.
+    sidecar_names = sorted({str(k) for ds in datasets for k in ds.data_vars if "axis_points__" in str(k)})
+    sidecars = {k: datasets[0][k] for k in sidecar_names if k in datasets[0]}
+    for p, ds in zip(paths, datasets):
+        for k in sidecar_names:
+            if k not in ds.data_vars or (k in sidecars and not ds[k].equals(sidecars[k])):
+                raise ValueError(
+                    f"shard {p!r} disagrees with its siblings on {k!r} — the shards were not "
+                    f"produced by one sweep's axis table, so their point indices do not name "
+                    f"the same points and cannot be reassembled."
+                )
+    if sidecar_names:
+        datasets = [ds.drop_vars(sidecar_names) for ds in datasets]
+    combined = xr.concat(datasets, dim=point_dim)
     coord_names = [c for c in combined.coords if point_dim in combined[c].dims and c != point_dim]
     if len(coord_names) >= 2:
         # Multi-parameter sweep: pivot the flat point dim into one dim per parameter, addressing the full rectangular grid by value (order-independent).
@@ -498,6 +527,9 @@ def reassemble_experiment_results(
         grid = combined.sortby(coord_names[0]).swap_dims({point_dim: coord_names[0]})
     else:
         grid = combined
+    for k, da in sidecars.items():
+        # Shards suffix the sidecar's dim (`<axis>__point`) to keep it clear of the flat per-point coordinate; on the pivoted grid the axis IS a dimension, so the name goes back and the sidecar aligns with it.
+        grid[k] = da.rename({d: str(d)[: -len("__point")] for d in da.dims if str(d).endswith("__point")})
     grid.attrs["tvbo_class"] = "tvbo:ExperimentResult"
     if sidecar is not None:
         grid.attrs["sidecar_file"] = f"{stem}.yaml"
@@ -2240,6 +2272,21 @@ class ExperimentResult:
         def _san(s):
             return "".join(c if (c.isalnum() or c in "._-") else "_" for c in str(s))
 
+        _labels_cache: list = []
+
+        def _node_labels():
+            """RESOLVED node labels, shared by every per-node array this method writes.
+
+            Hydrates ``bids:`` placeholders (``region_<i>``) so a consumer reconciles them all the same way. Resolved on FIRST USE and memoized: hydration can hit the filesystem, and a container holding no per-node array must not pay for a lookup it never reads. Emptiness is tested by length, since a label array has no truth value.
+            """
+            if not _labels_cache:
+                _get = getattr(self.source, "_resolve_model_node_labels", None)
+                raw = _get() if callable(_get) else None
+                if raw is None or len(raw) == 0:
+                    raw = getattr(getattr(self.source, "network", None), "node_labels", None)
+                _labels_cache.append([str(lbl) for lbl in raw] if raw is not None and len(raw) else None)
+            return _labels_cache[0]
+
         # ── collect every output as a data-variable ──────────────────────────
         by_output: dict[tuple, "xr.DataArray"] = {}
         for expl_name, expl in (self.explorations or {}).items():
@@ -2247,11 +2294,15 @@ class ExperimentResult:
             for obs_name, da in (getattr(expl, "observations", None) or {}).items():
                 if da is not None and hasattr(da, "dims"):
                     by_output[(_san(expl_name), _san(obs_name))] = da
-            # An array-valued axis's materialised points ride along as ``axis_points__<axis>``, aligned with the grid dim of the same name — a whole run only: the gather pass concatenates every shard variable along ``point``, and a shard reproduces its points from the spec sidecar's builder.
-            if not _is_partial_shard(expl):
-                for ax_label, da in (getattr(expl, "axis_points", None) or {}).items():
-                    if da is not None and hasattr(da, "dims"):
-                        by_output[(_san(expl_name), f"axis_points__{_san(ax_label)}")] = da
+            # An array-valued axis's materialised points ride along as ``axis_points__<axis>``, aligned with the grid dim of the same name and labelled on their node axes. Written for every run, shards included — the gather pass recognises the reserved prefix and carries the sidecar past its point-concat — so the reassembled artifact is as self-describing as a local one.
+            _shard = _is_partial_shard(expl)
+            for ax_label, da in (getattr(expl, "axis_points", None) or {}).items():
+                if da is not None and hasattr(da, "dims"):
+                    da = da.assign_coords(_node_coords([str(d) for d in da.dims], da.shape, _node_labels()))
+                    if _shard:
+                        # On the flat shard form the axis name is a per-point COORDINATE, and a same-named sidecar dim would silently displace it — the very coordinate reassembly pivots on. The reserved suffix keeps them apart; the gather pass renames it back once the axis is a real dimension.
+                        da = da.rename({da.dims[0]: f"{da.dims[0]}__point"})
+                    by_output[(_san(expl_name), f"axis_points__{_san(ax_label)}")] = da
             if getattr(expl, "results", None) is not None:
                 try:
                     g = expl.as_grid()
@@ -2267,21 +2318,6 @@ class ExperimentResult:
                 da = _unwrap_observation(obs)
                 if hasattr(da, "dims"):
                     data_vars[f"integration__{_san(obs_name)}"] = da
-
-        _labels_cache: list = []
-
-        def _node_labels():
-            """RESOLVED node labels, shared by every per-node array this method writes.
-
-            Hydrates ``bids:`` placeholders (``region_<i>``) so a consumer reconciles them all the same way. Resolved on FIRST USE and memoized: hydration can hit the filesystem, and a container holding no per-node array must not pay for a lookup it never reads. Emptiness is tested by length, since a label array has no truth value.
-            """
-            if not _labels_cache:
-                _get = getattr(self.source, "_resolve_model_node_labels", None)
-                raw = _get() if callable(_get) else None
-                if raw is None or len(raw) == 0:
-                    raw = getattr(getattr(self.source, "network", None), "node_labels", None)
-                _labels_cache.append([str(lbl) for lbl in raw] if raw is not None and len(raw) else None)
-            return _labels_cache[0]
 
         # Experiments that produce observations/optimizations without an exploration sweep (e.g. a per-subject FC fit) still carry data to persist: the derived observations (simulated + reconciled empirical FC) and the fit outcome (fitted parameters, final loss, loss trajectory). Coerce to float and skip anything non-numeric so the HDF5 write never trips on Python objects.
         def _numeric_da(name, arr, dims=None):

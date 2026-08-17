@@ -389,43 +389,64 @@ def test_axis_points_ride_along_keyed_by_point_index():
     assert vec.axis_points["ctrl"].dims == ("ctrl", "node")
 
 
-def test_save_writes_axis_points_for_a_whole_run_but_not_a_shard(tmp_path):
-    """The sidecar lands in the result file aligned with its grid dim — whole runs only.
+MATS = np.stack([np.full((2, 2), 10.0), np.full((2, 2), 20.0)])
 
-    A shard's variables are all concatenated along ``point`` by the gather pass, which
-    would tile a point-less sidecar; the shard reproduces its points from the spec.
-    """
+
+def _matrix_sweep_result(cells, is_shard):
+    """An ExperimentResult holding *cells* of a 2-point matrix-valued sweep."""
     from types import SimpleNamespace
 
     from tvbo.data.types import ExperimentResult
 
-    mats = np.stack([np.full((2, 2), 10.0), np.full((2, 2), 20.0)])
+    expl = ExplorationResult(
+        name="sweep",
+        results=np.zeros((len(cells), 5)),
+        axes=[_axis("net.length", [0, 1])],
+        dt=0.1,
+        cell_coords={"net.length": np.asarray(cells)},
+        axis_points={"net.length": MATS},
+        is_shard=is_shard,
+    )
+    src = SimpleNamespace(network=SimpleNamespace(node_labels=["r0", "r1"]))
+    return ExperimentResult(explorations={"sweep": expl}, source=src)
 
-    def _result(is_shard):
-        expl = ExplorationResult(
-            name="sweep",
-            results=np.zeros((2, 5)),
-            axes=[_axis("net.length", [0, 1])],
-            dt=0.1,
-            cell_coords={"net.length": np.array([0, 1])},
-            axis_points={"net.length": mats},
-            is_shard=is_shard,
-        )
-        return ExperimentResult(explorations={"sweep": expl}, source=SimpleNamespace())
 
-    for is_shard, expected in [(False, True), (True, False)]:
-        out = tmp_path / ("shard" if is_shard else "whole")
-        written = _result(is_shard).save(str(out), compress=False, record_only=False)
-        h5 = [p for p in written if p.endswith(".h5")]
-        assert h5, f"expected an .h5 result, got {written}"
-        ds = xr.open_dataset(h5[0], engine="h5netcdf")
-        try:
-            assert ("axis_points__net.length" in ds.data_vars) is expected
-            if expected:
-                np.testing.assert_allclose(ds["axis_points__net.length"].values, mats)
-                assert ds["axis_points__net.length"].dims == ("net.length", "node_i", "node_j")
-        finally:
-            ds.close()
+def test_save_writes_the_labelled_axis_points_sidecar(tmp_path):
+    """The sidecar lands beside the grid, aligned with its dim and labelled by region."""
+    written = _matrix_sweep_result([0, 1], is_shard=False).save(str(tmp_path), compress=False, record_only=False)
+    h5 = [p for p in written if p.endswith(".h5")]
+    assert h5, f"expected an .h5 result, got {written}"
+    ds = xr.open_dataset(h5[0], engine="h5netcdf")
+    try:
+        pts = ds["axis_points__net.length"]
+        assert pts.dims == ("net.length", "node_i", "node_j")
+        np.testing.assert_allclose(pts.values, MATS)
+        assert list(pts.coords["node_i"].values) == ["r0", "r1"]
+        assert list(pts.coords["node_j"].values) == ["r0", "r1"]
+    finally:
+        ds.close()
+
+
+def test_shards_carry_the_sidecar_through_the_gather_pass(tmp_path):
+    """Each shard writes the sweep-wide axis table; reassembly lifts it past the
+    point-concat (tiling it per shard would be nonsense) and re-attaches it to the
+    grid, so the gathered artifact recovers WHICH matrix a cell used exactly like a
+    local run's.
+    """
+    from tvbo.data.types import reassemble_experiment_results
+
+    for i, cell in enumerate([0, 1]):
+        _matrix_sweep_result([cell], is_shard=True).save(str(tmp_path / f"shard{i}"), compress=False, record_only=False)
+
+    written = reassemble_experiment_results(str(tmp_path), str(tmp_path / "gathered"), pattern="**/result.h5", compress=False)
+    ds = xr.open_dataset(written[0], engine="h5netcdf")
+    try:
+        pts = ds["axis_points__net.length"]
+        assert pts.dims == ("net.length", "node_i", "node_j")
+        np.testing.assert_allclose(pts.values, MATS)
+        assert "net.length" in ds["results"].dims
+    finally:
+        ds.close()
 
 
 def _object_array(values):
@@ -456,6 +477,23 @@ def test_array_valued_points_are_refused_and_name_the_upstream_conversion(cells,
 
     with pytest.raises(ValueError, match="different currencies"):
         _axis_positions(cells, grid, "network.edges.length", "theta")
+
+
+def test_a_value_far_from_every_grid_point_refuses_to_snap():
+    """Nearest-match is a round-trip canonicalization, not a fallback.
+
+    A value no storage round-trip could produce means the column is mispaired with its
+    axis (or the grid changed under the cells); snapping it would relabel the surface
+    silently. A genuine float32 round-trip of a declared float64 value stays inside the
+    tolerance and places normally.
+    """
+    from tvbo.data.types import _axis_positions
+
+    with pytest.raises(ValueError, match="round-trip"):
+        _axis_positions(np.array([0.1, 0.25]), np.array([0.1, 0.2]), "model.c", "obs")
+
+    roundtripped = np.array([0.1, 0.2], dtype=np.float32).astype(float)
+    assert list(_axis_positions(roundtripped, np.array([0.1, 0.2]), "model.c", "obs")) == [0, 1]
 
 
 def test_point_indices_are_placed_through_the_ordinary_numeric_path():
