@@ -173,9 +173,17 @@ def test_prefer_is_inert_when_unambiguous():
     assert dr.match_output(_TWO_ALGORITHMS, "wLRE", prefer=["nothing_like_it"]) == "estimate__wLRE"
 
 
-def test_without_prefer_behaviour_is_unchanged():
-    """Callers binding an author-written name keep the legacy first-match resolution."""
-    assert dr.match_output(_TWO_ALGORITHMS, "S_e_final") == "algorithm__fic__S_e_final"
+def test_ambiguous_bare_name_raises_without_prefer():
+    """No caller may resolve a duplicated bare name by dict iteration order."""
+    with pytest.raises(KeyError, match="recorded by 2 producers"):
+        dr.match_output(_TWO_ALGORITHMS, "S_e_final")
+
+
+def test_single_producer_still_resolves_bare():
+    """The common case — one algorithm, or none — is untouched."""
+    one = ["algorithm__fic_eib__S_e_final", "observation__fc", "estimate__wLRE"]
+    assert dr.match_output(one, "S_e_final") == "algorithm__fic_eib__S_e_final"
+    assert dr.match_output(one, "fc") == "observation__fc"
 
 
 # --------------------------------------------------------------------------- SLICE
@@ -204,6 +212,40 @@ def test_select_numeric_list_on_non_index_coord():
     da = xr.DataArray(np.arange(5.0), dims=["point"], coords={"K": ("point", [700.0, 900.0, 1100.0, 1300.0, 1500.0])})
     out = dr.select_labeled(da, {"K": [817, 1307]})  # nearest -> 900 (idx1), 1300 (idx3)
     np.testing.assert_allclose(out.values, [1.0, 3.0])
+
+
+def test_select_sees_through_the_containers_per_variable_dim_prefix():
+    """A spec says `node`, whatever the container had to rename the axis to.
+
+    A saved result renames an axis to `<variable>__<axis>` when two of its variables carry
+    same-named axes at different sizes. That prefix is a storage detail — a figure binding
+    `sel: {node: PFC}` must not have to know which sibling observation forced it, nor fall
+    back to selecting the module by index.
+    """
+    da = xr.DataArray([10.0, 20.0], dims=["winner__node"], coords={"winner__node": ["PPC", "PFC"]})
+    assert float(dr.select_labeled(da, {"node": "PFC"})) == 20.0
+
+
+def test_select_raises_rather_than_guess_between_two_prefixed_axes():
+    da = xr.DataArray(
+        np.arange(4.0).reshape(2, 2),
+        dims=["winner__node", "t_A__node"],
+        coords={"winner__node": ["PPC", "PFC"], "t_A__node": ["PPC", "PFC"]},
+    )
+    with pytest.raises(KeyError, match="more than one axis"):
+        dr.select_labeled(da, {"node": "PFC"})
+
+
+def test_an_unprefixed_axis_still_wins_over_a_prefixed_one():
+    """The exact name is never overridden by a suffix match."""
+    da = xr.DataArray(
+        np.arange(4.0).reshape(2, 2),
+        dims=["node", "other__node"],
+        coords={"node": ["PPC", "PFC"], "other__node": ["x", "y"]},
+    )
+    out = dr.select_labeled(da, {"node": "PFC"})
+    assert list(out.dims) == ["other__node"]
+    np.testing.assert_allclose(out.values, [2.0, 3.0])
 
 
 def test_select_empty_is_identity():
@@ -322,3 +364,71 @@ def test_resolve_dataref_with_transform(sweep_h5):
     ref = _ref(experiment="32", output="lyapunov_xi", transform="_xsrc_test_endpoint")
     out = dr.resolve_dataref(ref, results_root=root)
     np.testing.assert_allclose(out.values, [4.0, 4.1, 4.2])  # row 4 (last of 5 points)
+
+
+def test_two_runs_of_one_experiment_under_the_root_raise_rather_than_pick_one(tmp_path):
+    """Different runs of the same experiment are not interchangeable.
+
+    A study whose results root also holds retrieved archives has many
+    `exp-34_*_result.h5` under it — thirteen, in the case that found this, with fc_corr
+    spanning NaN to 0.903. Returning the first sorted hit bound a figure to whichever path
+    sorted first and reported 0.070 as the fit: a wrong number that reads as a finding.
+    """
+    (tmp_path / "nc").mkdir()
+    (tmp_path / "nc" / "exp-34_desc-Model_result.h5").write_bytes(b"")
+    (tmp_path / "archive" / "kit_a" / "results" / "34").mkdir(parents=True)
+    (tmp_path / "archive" / "kit_a" / "results" / "34" / "exp-34_desc-Model_result.h5").write_bytes(b"")
+
+    with pytest.raises(FileNotFoundError, match="different runs of the same experiment"):
+        dr.locate_exp_container(tmp_path, 34)
+
+    # Narrowing the root to the canonical container resolves it.
+    assert dr.locate_exp_container(tmp_path / "nc", 34).name == "exp-34_desc-Model_result.h5"
+
+
+def test_the_network_sidecar_is_not_a_second_candidate(tmp_path):
+    """A container ships beside its `*_network.h5`; that pair is ONE run, not an ambiguity."""
+    (tmp_path / "exp-7_desc-Model_result.h5").write_bytes(b"")
+    (tmp_path / "exp-7_desc-Model_result_network.h5").write_bytes(b"")
+    assert dr.locate_exp_container(tmp_path, 7).name == "exp-7_desc-Model_result.h5"
+
+
+def test_a_per_subject_cohort_is_one_run_not_many(tmp_path):
+    """`_save_per_subject` writes one shard per subject into ONE directory.
+
+    A `dataset.batch_mode: on_device` cohort of N subjects produces N files matching
+    `*exp-<id>_*.h5` that differ only in their `sub-` entity — the BIDS result pattern is
+    `[sub-{subject}_]exp-{experiment}[_desc-{description}]_result.h5`. That is one run of the
+    experiment, so every `used:` DataRef and warm start against it must still resolve; only
+    genuinely different runs are the ambiguity worth refusing.
+    """
+    for sid in ("01", "02", "03"):
+        (tmp_path / f"sub-{sid}_exp-34_desc-Model_result.h5").write_bytes(b"")
+    assert dr.locate_exp_container(tmp_path, 34).name == "sub-01_exp-34_desc-Model_result.h5"
+
+
+def test_the_same_subject_shard_in_two_directories_still_raises(tmp_path):
+    """Two copies of one shard are two runs, whatever the `sub-` entity says."""
+    for sub in ("nc", "archive"):
+        (tmp_path / sub).mkdir()
+        (tmp_path / sub / "sub-01_exp-34_desc-Model_result.h5").write_bytes(b"")
+
+    with pytest.raises(FileNotFoundError, match="different runs of the same experiment"):
+        dr.locate_exp_container(tmp_path, 34)
+
+
+def test_select_sees_through_the_prefix_on_a_non_dimension_coordinate():
+    """The prefix rule applies to coordinates too, not only to dims.
+
+    A branch-point array is dimmed by `branch_point` with `K` a 1-D coordinate along it —
+    the case `select_labeled` exists to support. The container renames that coordinate by
+    the same collision rule it applies to axes, so a suffix search over dims alone leaves
+    the spec's `sel: {K: ...}` unresolvable.
+    """
+    da = xr.DataArray(
+        [1.0, 2.0, 3.0],
+        dims=["branch_point"],
+        coords={"winner__K": ("branch_point", [0.1, 0.2, 0.3])},
+    )
+    out = dr.select_labeled(da, {"K": 0.2})
+    assert float(out) == 2.0
