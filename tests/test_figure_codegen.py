@@ -1127,3 +1127,72 @@ def test_annotation_without_a_tail_keeps_the_offset_arrow():
     ast.parse(code)
     assert 'textcoords="axes fraction"' in code
     assert 'textcoords="data"' not in code
+
+
+def test_a_square_heatmap_is_oriented_by_dim_name_not_by_shape():
+    """pcolormesh reads (y, x); a square grid cannot say which orientation it holds.
+
+    The shape test that used to decide this transposed every square heatmap, so a field
+    varying along the y parameter was drawn varying along x — a wrong figure that looks
+    entirely plausible. The dim ORDER of the bound array is what settles it.
+    """
+    import numpy as np
+    import xarray as xr
+
+    from tvbo.adapters.bsplot import heatmap_orientation
+
+    # rows = the y parameter, cols = the x parameter: exactly how a swept container arrives.
+    C = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+    da = xr.DataArray(C, dims=["rho_ppc", "rho_pfc"])
+    out = heatmap_orientation(da, C, "rho_pfc", "rho_ppc", 3, 3)
+    np.testing.assert_allclose(out, C)          # already (y, x): must NOT transpose
+
+    da_t = xr.DataArray(C.T, dims=["rho_pfc", "rho_ppc"])
+    out_t = heatmap_orientation(da_t, C.T, "rho_pfc", "rho_ppc", 3, 3)
+    np.testing.assert_allclose(out_t, C)        # (x, y): transposed back to (y, x)
+
+
+def test_a_heatmap_whose_channels_are_not_dims_keeps_the_shape_fallback():
+    """A matrix addressed by index has no names to decide on, so the old test still applies."""
+    import numpy as np
+    import xarray as xr
+
+    from tvbo.adapters.bsplot import heatmap_orientation
+
+    C = np.arange(6.0).reshape(2, 3)
+    da = xr.DataArray(C, dims=["a", "b"])
+    np.testing.assert_allclose(heatmap_orientation(da, C, "x", "y", 2, 3), C.T)
+    np.testing.assert_allclose(heatmap_orientation(da, C, "x", "y", 3, 2), C)
+
+
+def test_the_heatmaps_coordinate_arrays_follow_the_dim_names_too():
+    """The index fallback must index each channel by ITS dim, not by axis position.
+
+    Orientation is decided by dim name, so `_x`/`_y` have to agree: on a NON-square array
+    whose dims run (y, x) and which carries no coordinate on either, indexing x by axis 0
+    hands pcolormesh an x of the y axis's length and it raises — while a square array
+    silently transposes the field instead.
+    """
+    import re
+
+    import numpy as np
+    import xarray as xr
+
+    from tvbo.adapters.bsplot import heatmap_orientation
+
+    import tvbo
+
+    templates = Path(tvbo.__file__).parent / "templates"
+    src = (templates / "bsplot" / "tvbo-bsplot-figure.py.mako").read_text()
+    body = re.search(r"def _coord\(da, name, axis\):.*?\n    return np\.arange\(da\.shape\[axis\]\)\n", src, re.S)
+    ns = {"np": np}
+    exec(compile(body.group(0), "<coord>", "exec"), ns)
+    _coord = ns["_coord"]
+
+    da = xr.DataArray(np.zeros((5, 3)), dims=["rho_ppc", "rho_pfc"])  # (y, x), no coords
+    _x = _coord(da, "rho_pfc", 0)
+    _y = _coord(da, "rho_ppc", 1)
+    assert (len(_x), len(_y)) == (3, 5)
+
+    C = heatmap_orientation(da, np.asarray(da.values), "rho_pfc", "rho_ppc", len(_x), len(_y))
+    assert C.shape == (len(_y), len(_x)), "pcolormesh(x, y, C) needs C shaped (len(y), len(x))"

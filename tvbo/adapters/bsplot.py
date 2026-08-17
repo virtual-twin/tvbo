@@ -345,6 +345,32 @@ def legend_panel(fig, ax, ctx):
     )
 
 
+def heatmap_orientation(da, C, x, y, nx, ny):
+    """A heatmap's array as ``(y, x)``, the order ``pcolormesh`` reads (public API).
+
+    Decided by DIM NAME whenever the encoding names dims of the array. A SQUARE grid makes
+    the two orientations indistinguishable by shape, so a shape test transposes half of them
+    at random — silently swapping which axis the field varies along, which is a wrong figure
+    rather than an ugly one. Falls back to the shape test only when the encoded channels are
+    not dims of the array (a matrix addressed by index), where names cannot decide it.
+
+    Shared with the emitted plot.py, which imports it: the orientation is a keying decision,
+    so it lives beside the other reference resolvers rather than being inlined per script.
+
+    Args:
+        da: The layer's DataArray, consulted for its dim ORDER only.
+        C: Its values.
+        x: Name encoded on the x channel.
+        y: Name encoded on the y channel.
+        nx: Length of the x coordinate, for the fallback.
+        ny: Length of the y coordinate, for the fallback.
+    """
+    dims = [str(d) for d in getattr(da, "dims", ())]
+    if str(x) in dims and str(y) in dims:
+        return C.T if dims.index(str(x)) < dims.index(str(y)) else C
+    return C.T if C.shape == (nx, ny) else C
+
+
 def registered(registry, name, kind):
     """Look a spec-declared name up in a registry, or raise an actionable error (public API).
 
@@ -946,6 +972,8 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
         "colorbar": colorbar,
         "colorbar_kwargs": colorbar_kwargs,
         "colorbar_label": opts.get("colorbar_label"),
+        # A paper's colourbar tick set is declared intent exactly as `xticks` is, and often carries meaning of its own — the two end values of a deliberately narrow range.
+        "colorbar_ticks": opts.get("colorbar_ticks"),
         # Cells of blank band between two triangle layers, so the halves read as two quantities rather than one field (the paper's own `extra_diagonal`).
         "triangle_gap": int(opts.get("triangle_gap", 0) or 0),
         "axopts": axopts,

@@ -16,8 +16,9 @@ import matplotlib.pyplot as plt
 import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
-                                  load_layer as _load_layer, registered as _registered)
-from tvbo.data.dataref import match_output as _match_output
+                                  load_layer as _load_layer, registered as _registered,
+                                  heatmap_orientation as _orient)
+from tvbo.data.dataref import match_output as _match_output, resolve_sel_keys as _sel_keys
 % for m in code_modules:
 import ${m}  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
 % endfor
@@ -110,9 +111,18 @@ def _color_dim(da, name):
 
 
 def _coord(da, name, axis):
-    """Coordinate values along a named dim, or an integer index if it has no coord."""
+    """Coordinate values along a named dim, or an integer index if it has no coord.
+
+    The index falls back to the dim *name*'s own position when the array declares it, and
+    only then to *axis*. A heatmap whose dims run ``(y, x)`` would otherwise index x by the
+    length of the y axis, and a non-square panel raises inside pcolormesh while a square one
+    silently transposes the field.
+    """
     if name and name in da.coords:
         return np.asarray(da.coords[name].values)
+    dims = [str(d) for d in getattr(da, "dims", ())]
+    if name and str(name) in dims:
+        axis = dims.index(str(name))
     return np.arange(da.shape[axis])
 
 
@@ -284,7 +294,7 @@ def _restore_fixed_axes(snap):
     _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif
 % if L['sel'] is not None:
-    _da = _da.sel(${repr(L['sel'])}, method=${repr(L['sel_method'])})
+    _da = _da.sel(_sel_keys(_da, ${repr(L['sel'])}), method=${repr(L['sel_method'])})
 % endif
     _x = _series3d(_ds, _da, ${repr(L['x'])}, 0)
     _y = _series3d(_ds, _da, ${repr(L['y'])}, 1)
@@ -305,14 +315,13 @@ def _restore_fixed_axes(snap):
     _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif
 % if L['sel'] is not None:
-    _da = _da.sel(${repr(L['sel'])}, method=${repr(L['sel_method'])})
+    _da = _da.sel(_sel_keys(_da, ${repr(L['sel'])}), method=${repr(L['sel_method'])})
 % endif
 % if L['mark'] == 'heatmap':
     _C = np.asarray(_da.values)
     _x = _coord(_da, ${repr(L['x'])}, 0)
     _y = _coord(_da, ${repr(L['y'])}, 1)
-    if _C.shape == (len(_x), len(_y)):
-        _C = _C.T                                   # orient to (y, x) for pcolormesh
+    _C = _orient(_da, _C, ${repr(L['x'])}, ${repr(L['y'])}, len(_x), len(_y))
 % if L['triangle']:
     _C = _triangle(_C, ${repr(L['triangle'])}, ${p['triangle_gap']})
     _x = _y = np.arange(_C.shape[0])                # the gap widens the frame
@@ -354,6 +363,9 @@ def _restore_fixed_axes(snap):
     _cb = fig.colorbar(_im, ax=ax, **${repr(p['colorbar_kwargs'])})   # one scale per panel, not per layer
 % if p['colorbar_label']:
     _cb.set_label(${repr(p['colorbar_label'])})
+% endif
+% if p['colorbar_ticks'] is not None:
+    _cb.set_ticks(${repr(p['colorbar_ticks'])})
 % endif
     _cb.outline.set_linewidth(0.5)
 % endif
