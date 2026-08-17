@@ -897,7 +897,7 @@ def to_tvb(network):
     """
     from tvb.datatypes.connectivity import Connectivity
 
-    _weights = np.asarray(network.weights_matrix, dtype=float)
+    _weights = np.asarray(network.matrix("weight"), dtype=float)
     _lengths = np.asarray(network.lengths_matrix, dtype=float)
     _centres = np.asarray(list(network.get_centers().values()), dtype=float)
     cs_param = getattr(network, "conduction_speed", None)

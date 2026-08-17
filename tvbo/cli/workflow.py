@@ -252,7 +252,7 @@ def _network_has_matrices(net) -> bool:
     try:
         import numpy as _np
 
-        return _np.asarray(net.weights).size > 1
+        return _np.asarray(net.matrix("weight")).size > 1
     except Exception:
         return False
 

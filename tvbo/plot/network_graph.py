@@ -538,7 +538,7 @@ def plot_graph_brain(
     vertices_rh, _ = get_surface_geometry(template=template, hemi="rh", density=density)
 
     # Match atlas labels to surface parcels
-    W = network.weights_matrix
+    W = network.matrix("weight")
     region_labels = network.atlas.region_labels
 
     centers_matched, cortical_idx = _match_cortical_labels(

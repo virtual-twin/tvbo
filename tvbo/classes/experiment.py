@@ -2179,7 +2179,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Run with detailed timing
                 t0 = time.perf_counter()
                 results = ns.run_experiment(
-                    weights=self.network.raw_weights_matrix,
+                    weights=self.network.matrix("weight", apply_transforms=False),
                     distances=self.network.distances,
                     delays=delay_matrix,
                     region_labels=node_labels,
@@ -2195,7 +2195,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 return ExperimentResult(results, experiment_name=self.label, source=self)
             else:
                 raw_results = ns.run_experiment(
-                    weights=self.network.raw_weights_matrix,
+                    weights=self.network.matrix("weight", apply_transforms=False),
                     distances=self.network.distances,
                     delays=delay_matrix,
                     region_labels=node_labels,
@@ -2244,7 +2244,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 or getattr(net, "edges", None)
                 or getattr(net, "data_file", None)
                 or getattr(net, "parcellation", None)
-                or (getattr(net, "weights", None) is not None and np.asarray(net.weights).size > 1)
+                or (net.matrix("weight") is not None and np.asarray(net.matrix("weight")).size > 1)
             )
             if not declared:
                 ts = self.dynamics.run(format="python", duration=duration, dt=self.integration.step_size)
@@ -2644,7 +2644,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         net = getattr(self, "network", None)
         has_matrices = net is not None and (
             (getattr(net, "number_of_nodes", None) or 0) > 1
-            or (getattr(net, "weights", None) is not None and _np.asarray(net.weights).size > 1)
+            or (net.matrix("weight") is not None and _np.asarray(net.matrix("weight")).size > 1)
         )
         if not has_matrices:
             return self.to_yaml()

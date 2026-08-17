@@ -91,7 +91,7 @@ def run_cuda(
         n_steps = int(duration / dt)
 
     # Network data from experiment
-    weights = np.asarray(experiment.network.weights, dtype=np.float32)
+    weights = np.asarray(experiment.network.matrix("weight"), dtype=np.float32)
     lengths = np.asarray(experiment.network.lengths, dtype=np.float32)
     n_node = weights.shape[0]
     n_states = len(experiment.network.dynamics.state_variables)

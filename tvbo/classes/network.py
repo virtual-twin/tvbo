@@ -62,11 +62,6 @@ def _source_dir_on_path(source_dir):
 
 _WEIGHT_TARGETS = ("weight", "weights", "sc")
 _LENGTH_TARGETS = ("length", "lengths")
-_TRANSFORM_TARGET_ALIASES = (_WEIGHT_TARGETS, _LENGTH_TARGETS)
-"""Edge-property spellings that name the same transform target.
-
-Kept in step with the aliases `Network.matrix` resolves when it looks the matrix up, so the lookup and the transform selection cannot disagree.
-"""
 
 
 def _is_weight_name(name) -> bool:
@@ -2728,28 +2723,13 @@ class Network(tvbo_datamodel.Network):
         return self._weights_matrix(apply_transforms=False)
 
     def _weights_matrix(self, apply_transforms: bool = True) -> Optional[Union[np.ndarray, JaxArray]]:
-        """Connection weights as a dense array, via the canonical `matrix` lookup.
+        """Connection weights as a dense array — a thin wrapper over ``matrix("weight")``.
 
-        Adds only what `matrix` does not own: the single-node degenerate case, the
-        pytree payload seen under a JAX transformation, and the edge-derived
-        fallback for a network built from explicit edges.
+        It adds nothing: the pytree payload, the edge-derived fallback and the unconnected
+        zeros all live in `matrix` now. Kept only because the deprecated properties route
+        through it; new callers should use `matrix` directly.
         """
-        if len(self.nodes) == 1:
-            return np.zeros((1, 1))
-        if getattr(self, "_pytree_data", None) is not None:
-            return self._pytree_data[0]
-
-        W = self.matrix("weight", format="dense", apply_transforms=apply_transforms)
-        if W is None:
-            W = self._weights_from_edges()
-            if W is not None and apply_transforms:
-                for t in self.transforms_for("weight"):
-                    W = self._apply_transform(W, t)
-
-        if W is None:
-            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
-            return np.zeros((n, n), dtype=np.float64) if n > 0 else None
-        return W
+        return self.matrix("weight", format="dense", apply_transforms=apply_transforms)
 
     @property
     def weights(self):

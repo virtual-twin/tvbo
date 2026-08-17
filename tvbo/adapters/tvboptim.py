@@ -49,7 +49,7 @@ def _build_graph(network: "Network", delays: bool = True, max_delay: float | Non
         DenseLengthGraph,
     )
 
-    weights = jnp.asarray(np.asarray(network.weights_matrix, dtype=float))
+    weights = jnp.asarray(np.asarray(network.matrix("weight"), dtype=float))
     labels = network.node_labels
 
     if not delays:

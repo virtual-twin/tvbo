@@ -275,7 +275,7 @@ class PyRatesAdapter(BaseAdapter):
         # Check network size for matrix-based edges
         network = getattr(exp, "network", None)
         n_nodes = self._get_node_count(network)
-        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(network, "weights_matrix")
+        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(network, "matrix")
 
         # ── Shared setup: single YAML export + circuit load ──────────
         circuit, tmpdir, pkg_name = self._load_circuit_from_yaml(include_edges=not use_matrix_edges)
@@ -621,7 +621,7 @@ class PyRatesAdapter(BaseAdapter):
         elif network is not None:
             # Base Network/Connectome: all nodes share the default dynamics
             n_nodes = getattr(network, "number_of_nodes", 0)
-            weights = getattr(network, "weights_matrix", None)
+            weights = network.matrix("weight") if hasattr(network, "matrix") else None
             if weights is not None:
                 n_nodes = weights.shape[0]
             if hasattr(network, "node_labels") and network.node_labels:
@@ -716,7 +716,7 @@ class PyRatesAdapter(BaseAdapter):
                 label = getattr(node, "label", None) or f"node_{node.id}"
                 node_labels.append(str(label).replace(" ", "_").replace("-", "_"))
         else:
-            n_nodes = network.weights_matrix.shape[0]
+            n_nodes = network.matrix("weight").shape[0]
             node_labels = [f"node_{i}" for i in range(n_nodes)]
 
         # Get source/target variables from dynamics
@@ -739,7 +739,7 @@ class PyRatesAdapter(BaseAdapter):
             tgt_var = src_var
 
         # Add edges using matrix
-        weights = network.weights_matrix
+        weights = network.matrix("weight")
         if weights is not None and weights.size > 0:
             delays = self._get_delays(network)
             edge_attr = {"delay": delays} if delays is not None else None
