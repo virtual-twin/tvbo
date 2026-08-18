@@ -342,3 +342,74 @@ in full.
   it holds. Beware that *running* the detector can create the staleness it reports: recomputing
   one analysis to test it invalidates everything downstream.
 - **Framework gaps surface late** if you skip Phase 1.5. Find them before the YAML.
+
+- **A quantity can match the published material at r = 1.000 and still be in the wrong unit.** Symptom:
+  every correlation, p-value and scorecard verdict is right, and one axis stops well short of the
+  paper's — ours reached 38 where theirs reached 80. A monotone rescaling leaves Pearson and
+  Spearman untouched, so nothing statistical can see it; only a *range* comparison can. Check a
+  landmark the paper prints in that unit (canonical iTBS is "30 pulses / train"; we read 15) and
+  put the derived quantity in the published-data oracle table so a match is confirmed by range as well
+  as by rank.
+
+- **A panel's title names a column; its axis range names the quantity — and the two disagree
+  more often than you would expect.** Symptom: your rendered field looks right in shape and is
+  off by orders of magnitude in scale. Kadak's per-connection panels are titled
+  `coupling.xx.nu_post` in three figures and plot the absolute weight, the signed change and the
+  unsigned relative magnitude respectively; the published material's plotting cells read a *differenced*
+  frame whose columns kept the original names. Identify the quantity by putting each candidate
+  through and comparing against the published tick labels on all ten panels at once, then
+  register the mismatch as a convention trap.
+
+- **A colourbar that factored out a shared multiplier is a silently wrong axis.** Symptom: a
+  slim bar reads "3, 1, 0" for a field spanning 3e4, or "3, 0, -1" for one spanning 1e-4, with
+  the exponent nowhere on the figure. Always read a bar's printed numbers against its layer's
+  own min/max before believing the panel.
+
+- **Geometry read inside a panel callable is pre-layout geometry.** Symptom: hand-placed labels
+  land inside the plot, or a "square" panel is an ellipse. `ax.get_position()` at draw time
+  returns the box before the layout pass has run. Use `set_aspect`/`box_aspect` and let the
+  engine solve it; anything that genuinely must run after the tidy-up belongs in the renderer's
+  post-format pass, not in the panel.
+
+- **A tick formatter asked for a string before the first draw answers the same for every axis.**
+  Symptom: a pass meant to fix two ticks that print one number instead re-rounds axes that were
+  already correct — 0.00135 becomes 0.0014 everywhere. A `ScalarFormatter` carries state the
+  draw establishes, so a check that consults it early sees every axis as degenerate. Judge the
+  DRAWN labels in a pass over the finished figure, and reach the cells through `child_axes` —
+  `fig.axes` does not contain a grid's insets.
+
+- **Your panel's axis limits are the paper's frame, not your data's extent.** Symptom: the
+  reference marks in your panel sit at different fractions of the width than the same marks in
+  the original, and the clouds "look shifted". Calibrate: two marks whose data values you know
+  give a pixel→data map for the published panel, and the frame falls out of it. Ours auto-scaled
+  to the responsive subset (1–15.5 Hz) where the paper framed the whole protocol space (0–20).
+
+- **Editing importable framework code while a run is in flight kills the run, and the failure
+  names a symbol you just created.** Symptom: `ImportError: cannot import name '<the function
+  you added ten seconds ago>'` from experiments that had not started yet, while the ones already
+  running finish fine. Codegen re-reads its **template per experiment**, but the template's
+  helper module was imported **once** at process start, so a long run ends up executing a new
+  template against an old module. Nothing about the edit is wrong; its timing is. Treat a
+  launched sweep as a freeze on everything importable that it touches — the study's `code/`, the
+  templates, the framework — and hold the edit until it lands. The cost is measured in whole
+  conditions: ours lost a sweep and five baselines and then wiped a results tree on top.
+
+- **A waiter that watches PIDs reports "done" for a run that crashed.** Symptom: the chained
+  step deletes the derived results and re-derives them from a container that is missing half its
+  experiments, so every downstream number is quietly computed on a subset. `wait` returning is
+  evidence that the processes ENDED, not that they SUCCEEDED. Gate the chain on a completeness
+  check of the artifacts themselves — every expected experiment group present, with the expected
+  cell count — and make that gate the thing that decides whether the destructive step runs.
+
+- **A truncated read is not evidence, however plausible the fragment.** Symptom: a confident
+  conclusion about what a published cell computes, drawn from a slice that ended mid-line at
+  `x = df` where the file continues `_full.apply(...)`. Sizing a file before reading it whole is
+  right (a 459-line file can be 95 % data); founding a claim on the part you happened to read is
+  not. When the claim is about one assignment, match that assignment with a regex over every
+  cell and read the whole match.
+
+- **A multi-file edit script that asserts before it writes leaves the earlier files unwritten.**
+  Symptom: the report references a column that the analysis module never gained, because the
+  heredoc's third replacement failed its assertion and aborted the whole script after the first
+  two had only been computed in memory. Either write each file as you finish it, or verify every
+  match before writing any. Confirm with a grep for the new symbol, never with the exit code.

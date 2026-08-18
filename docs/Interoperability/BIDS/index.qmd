@@ -1,107 +1,58 @@
 ---
 title: "BIDS Integration"
-subtitle: "Brain Imaging Data Structure export for computational modeling"
+subtitle: "Reading and writing Brain Imaging Data Structure datasets"
 ---
 
 ## Overview
 
-TVBO supports export to the [Brain Imaging Data Structure (BIDS)](https://bids.neuroimaging.io/) [@Poldrack2024] format, specifically following **BEP034: Computational Modeling Extension v1.0.0** [@Schirner2021].
+TVBO reads and writes [BIDS](https://bids.neuroimaging.io/) [@Poldrack2024] datasets, so a simulation can consume an empirical connectome and publish its results where neuroimaging tooling can find them. Two extension proposals matter here: **BEP034** for computational modelling [@Schirner2021], and **BEP017** for connectivity matrices.
 
-This enables:
-
-- **Standardized file organization** for simulation outputs
-- **Full provenance tracking** of model parameters
-- **Interoperability** with neuroimaging analysis pipelines
-- **Reproducibility** through JSON sidecar metadata
+Both are still drafts. Where TVBO diverges from them, this page says so rather than claiming conformance it does not have.
 
 ## Tutorials
 
 | Tutorial | Description |
 |----------|-------------|
-| [BIDS Export](BIDS_Export.qmd) | Complete export workflow |
-| [Computational Modelling](BIDS_comp_modelling.md) | BEP034 specification details |
+| [BIDS Export](BIDS_Export.qmd) | Running a simulation and exporting it |
+| [Computational Modelling](BIDS_comp_modelling.md) | What BEP034 specifies, and where TVBO differs |
 
-## Directory Structure
+## What TVBO writes
 
-BIDS computational modeling uses a specific directory structure:
+A run persisted with `tvbo run <study>.yaml -o <dir>` produces a derivative dataset:
 
 ```
-derivatives/tvbo/
-├── net/              # Network connectivity
-│   ├── weights.tsv
-│   └── distances.tsv
-├── ts/               # Time series
-│   ├── *_bold.tsv
-│   └── *_states.tsv
-├── eq/               # Model equations
-│   └── model.tvbo
-├── coord/            # Region coordinates
-│   └── coordinates.tsv
-├── map/              # Mapping files
-│   └── parcellation.tsv
-└── code/             # Analysis scripts
-    └── simulate.py
+<dir>/
+├── dataset_description.json     DatasetType: derivative, GeneratedBy: tvbo
+├── exp-3_desc-JansenRit_result.h5     every recorded observation, one container
+├── exp-3_desc-JansenRit_result.json   metadata sidecar
+└── exp-3_desc-JansenRit_result.yaml   the frozen, re-runnable recipe
 ```
 
-## Quick Start
-
-### Export Simulation to BIDS
+The `.h5` is a netCDF-flavoured xarray dataset: each recorded observation is a data variable, and any swept parameters are shared coordinates. A 15,600-cell sweep is one file rather than 15,600, and `xarray.open_dataset` reads it without TVBO installed.
 
 ```python
-from tvbo import SimulationExperiment
+import xarray as xr
 
-# Load and run experiment
-exp = SimulationExperiment.from_file("experiment.yaml")
-results = exp.run()
-
-# Export to BIDS format
-exp.to_bids("output/bids", results=results)
+ds = xr.open_dataset("exp-3_desc-JansenRit_result.h5")
+ds["bold"].sel(G=2.1, speed=10)
 ```
 
-### BIDS File Naming
+## Reading BIDS data
 
-BIDS uses entity-value pairs in filenames with content-based hashing:
+```python
+from tvbo import Network, SimulationExperiment
 
-```
-sub-001_task-rest_model-JansenRit_id-abc123_bold.tsv
-```
-
-Components:
-- `sub-001`: Subject identifier
-- `task-rest`: Task name
-- `model-JansenRit`: Model used
-- `id-abc123`: Hash of JSON sidecar
-- `bold`: Data modality
-
-## Key Features
-
-### JSON Sidecar Metadata
-
-Every data file has an accompanying JSON sidecar with full provenance:
-
-```json
-{
-  "Model": "JansenRit",
-  "Parameters": {
-    "A": 3.25,
-    "B": 22.0,
-    "a": 100.0,
-    "b": 50.0
-  },
-  "Integration": {
-    "method": "Euler",
-    "dt": 0.1,
-    "duration": 1000.0
-  }
-}
+net = Network.from_bids("sub-01/connectome")
+exp = SimulationExperiment.from_bids("derivatives/tvbo", subject="01")
 ```
 
-### Content-Based Hashing
+`Network.to_bep017` writes a connectome out as BEP017 per-measure files, one TSV plus JSON sidecar per edge measure.
 
-File identifiers are computed from metadata to ensure:
-- **Uniqueness**: Same parameters → same ID
-- **Reproducibility**: Easy to verify simulation provenance
-- **Deduplication**: Avoid redundant files
+## Status of the export layout
+
+`SimulationExperiment.to_bids` writes a tree of `net/`, `ts/`, `eq/`, `coord/` and `map/` directories. This follows an early BEP034 draft, **not** the schema compiled from the current BEP034 pull request, which defines a single `model` datatype with `eq` and `param` suffixes and no such directories. TVBO's own `adapters/bep034.json` declares those same names as filename entities rather than directories, so the three do not agree.
+
+Consolidating on the result-container layout above, and the reasoning behind it, is tracked in `dev/bids-bep034-alignment.md` in the repository.
 
 ## See Also
 

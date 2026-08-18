@@ -82,6 +82,31 @@ EXP = STUDY.get_experiment(<base_exp_id>)
 # read output/nc/exp*/…h5 containers, reduce to M[...] once, reference via inline `{python}`
 ```
 
+**Give the paper's numbers ONE home too: `report/analysis/published-values.md`.** The literals
+you are allowed to type are still literals scattered through prose, and scattered literals drift
+— the same correlation gets quoted twice with different rounding, a table and a paragraph
+disagree, and nobody can audit which values came from the manuscript at all. Transcribe every
+published number ONCE into a markdown table in that file, with the version of record named at
+the top, and have the report `read_md_tables` it. Three things follow that are worth the file on
+their own:
+
+- a reader can diff the paper against your transcription in one place, so the transcription
+  itself is reviewable;
+- the report can *join* on it — every results table becomes "published | ours" side by side
+  rather than a bare column of yours with a sentence claiming agreement;
+- the join makes a **concordance test** cheap. Recompute every statistic the paper prints, pair
+  each with its published value, and report the pairing: correlation across all of them,
+  direction agreement, significance-verdict agreement at ONE threshold applied to both sides,
+  and a paired location test (Wilcoxon) with a bootstrap interval on the median difference.
+  That is a numerical answer to "did the replication succeed", instead of a per-figure verdict
+  the reader has to aggregate themselves. Kadak2025 joins 82 published statistics this way and
+  reports Pearson *r* = 0.98 with a median difference whose 95 % interval brackets zero.
+
+Two rules keep the join honest. Quote the paper's own STATISTIC — if it prints *t*, report *t*;
+never convert its *t* to your *r* and call them the same column. And when the paper's
+significance marks are internally inconsistent (they usually are), score both sides with your
+own single rule and say so in the caption, rather than inheriting their bolding.
+
 Build the comparison table's verdict column from the data as well: derive "reproduces" /
 "does not" from `M`, do not assert it. A placeholder panel (TVBO data not yet run) gets a
 labelled placeholder and a "missing" callout, never a green one — showing the paper's own
@@ -135,6 +160,42 @@ the settings sentence, and a description that repeats them goes stale when the r
 Because `citeformat="quarto"` emits the model's citekeys as `@key`, **every citekey the model
 references must exist in `references.bib`** — if a curated model cites `Tsodyks1998`, that
 entry has to be present or Quarto flags an unresolved key.
+
+## The report is the finished work, not the log of making it
+
+A report says what is true now. The reader is deciding whether to trust a result and reuse a
+method; what you believed at an earlier point in the work is not evidence about either, and
+narrating it spends the reader's attention on the author. Three habits creep in and all three
+are cuttable:
+
+- **A "corrections to earlier claims" section.** Superseding a claim is real and worth
+  recording — in the working notes under `report/analysis/`, where the next session reads it
+  and where it stops a wrong "impossible" from being re-derived. In the report, the corrected
+  statement is simply the statement.
+- **Build-state branches.** `if M4 is None: print("this condition has not been run in this
+  build")` reads as a report describing its own incompleteness. **Assert instead**, in the setup
+  cell: a missing result is a broken build, not a section. The exception is a genuine difference
+  in the *reader's* copy — gitignored third-party inputs are absent from a public build, and one
+  sentence saying so is right.
+- **Meta-commentary on the writing.** "This is the kind of entry a register has to be willing
+  to close." The preceding sentence already made the point.
+
+**Guard the rendered Methods by its presence, not only by its purity.** `unrendered_equations`
+catches an equation typed into prose and says nothing about a report carrying no equations at
+all — which is where a report lands when the model section is written as prose and the render
+call is never wired in. Assert both:
+
+```python
+METHODS = STUDY.report("qmd", part="main", level=3)
+assert "$$" in METHODS, "the Methods carry no rendered equations"
+assert not unrendered_equations(Path("report.qmd")), "equations typed into the prose"
+```
+
+Reading that render once will also show you two recipe bugs it merely reflects: an experiment
+that inherits a sibling's `description:` through a YAML anchor prints the sibling's paragraph
+verbatim, and a `label:`/`description:` containing raw `*` or `_` is eaten by the markdown pass
+(`nu_ED*alpha*beta*A` renders as italics). Fix both in the recipe — the render is not the place
+to patch them.
 
 ## An equation is in the report because the code runs it
 
@@ -279,8 +340,16 @@ caption them from metadata wherever metadata exists.
 
 - **Figures**: `![{figure_caption(fig)}](path){#fig-name}` — the caption is the recipe's own
   `Figure.description`, so it cannot drift from the figure, and the `#fig-` id makes it
-  cross-referenceable. Never retype the paper's caption, and never use the A/B framing
-  ("left: paper") — that composite exists only in the internal build.
+  cross-referenceable. Never retype the paper's caption.
+- **Say whose figure it is, in the caption, in every build.** A replication report shows two
+  kinds of picture and the reader cannot tell them apart from the image alone. Open each caption
+  with which original it reproduces (`**Reproducing Figure 3 of @Paper.**`, or nothing at all
+  when the figure is the replication's own addition), and close it with a provenance sentence
+  that is *derived from the build*, not written once: internally "the published original is on
+  the left and this replication on the right", publicly "every panel is this replication's own
+  output". One `figure()` helper emits both, so the two builds can never disagree about which
+  half of the image is whose. Do NOT hardcode the A/B wording — that composite exists only in
+  the internal build.
 - **Tables with a computed caption**: the `tbl-cap` cell option takes a *literal* string, so a
   caption holding a computed value must use Quarto's **cross-reference div** — the div's last
   paragraph is the caption and is ordinary markdown. `crossref_div("tbl-x", table, caption)`
@@ -551,9 +620,13 @@ the generated text was cleaned came from the YAML.
 
 **Structural patterns to kill.**
 
-- **Em-dash inflation.** At most one ` — ` per paragraph. The em-dash is a genuine tool,
-  not a default connector; replace the rest with a period, comma, colon, or parenthesis.
-  (Section-title separators like `## Fig. 2 — …` are one per heading and fine.)
+- **No em-dashes at all in reader-facing text.** Nothing that reaches the PDF may contain
+  one: not the prose, not a figure caption, not a table cell, not a title or subtitle, not a
+  recipe `description:` or `label:`, and not a row of an analysis table the report reads and
+  reprints. Use a period, comma, colon or parenthesis instead. Grep the rendered PDF, not the
+  sources, because generated text has sources you will not think of: `pdftotext -layout
+  report_internal.pdf - | grep -c '—'` must print `0`. That single check doubles as a
+  container check, since a missing result renders as `—` too.
 - **Rule-of-three fetish.** Not every list has three items and not every noun needs three
   adjectives. When there are genuinely three points, keep them, but drop the "threefold /
   First… Second… Third…" scaffolding and vary the count when you can.
@@ -595,8 +668,9 @@ statistical term. Same for "attractor landscape" and other genuine terms of art.
 - Cut before you rewrite; the finished prose should be roughly 20% shorter than the first
   draft.
 
-**Before submitting**, re-scan: count the em-dashes per paragraph, check the banned list,
-check for the three-item-list habit, and confirm no Unicode math slipped in.
+**Before submitting**, re-scan: grep the rendered PDF for em-dashes (it must return none),
+check the banned list, check for the three-item-list habit, and confirm no Unicode math
+slipped in.
 
 ## Render and verify
 
@@ -607,6 +681,7 @@ QUARTO_PYTHON=<repo>/.venv/bin/python quarto render     # no file arg -> the pro
 
 The render must succeed and the public `report.pdf` must contain no copyrighted original (the
 internal PDF is the larger one, carrying the paper figures). Open the PDF and confirm the numbers
-rendered (an absent container shows as `—`, not a crash), the math typeset (no dropped subscripts,
+rendered (an absent container shows as `—`, not a crash, so the em-dash grep above catches
+it), the math typeset (no dropped subscripts,
 no stray `\pm`), the citations resolved (no "Citation key not found", one auto-appended
 bibliography), and the prose passes the slop scan.

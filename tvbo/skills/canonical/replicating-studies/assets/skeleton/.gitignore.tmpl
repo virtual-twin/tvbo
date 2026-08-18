@@ -28,4 +28,8 @@ original_study/
 report/*.pdf
 report/*.log
 report/.quarto/
+# report/_figures/ is report_figure()'s staging dir. Its <name>_ab.png composites embed the
+# paper's © original, so the directory is git-ignored: original_study/ being ignored does not
+# protect a COPY of its figures made under report/.
+report/_figures/
 _dev/

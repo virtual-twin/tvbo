@@ -52,9 +52,31 @@ subagent doing that phase alone.
 | `assets/sweeps.md` | the paper's sweep is a branch / continuation / IC ensemble, not a product grid (Phase 3) |
 | `assets/figures.md` | writing the `figures:` block — layout keys, the size/aspect/type-size protocol, panel binding (Phase 5) |
 | `assets/verification.md` | building the oracle — identity harness, assumption labelling, free conventions, linear inversion (Phase 7) |
-| `assets/deposit-forensics.md` | a number of yours disagrees with a published one and the deposit ships their arrays (Phase 7) |
+| `assets/published-artifacts.md` | **you are about to implement a derived quantity the authors also compute (Phase 4)**, or a number of yours disagrees with a published one and the authors published their own arrays (Phase 7) |
 | `assets/cluster.md` | packing and submitting a cluster kit (Phase 8) |
 | `assets/traps.md` | something returns plausible-but-wrong numbers — indexed by symptom at the end of this file |
+
+## What a published study gives you, named apart
+
+A paper hands you up to **three separable artifacts**, and conflating them is how a report ends
+up claiming more or less than it can support. Name them apart everywhere: in the report, in the
+divergence register, in `targets.md`, and in the directory layout.
+
+| artifact | what it is | what it can settle |
+|---|---|---|
+| **the manuscript** | main text + supplement: prose, equations, tables, figures | what the authors *say* the model is, and every number they print |
+| **the published code** | the released repository: model source, drivers, analysis notebooks, configuration | what the model *actually was*, and every undocumented choice |
+| **the published data** | the authors' own inputs and derived arrays | an exact, per-item oracle for your own outputs |
+
+Two of the three are optional and often absent; the manuscript never is. A study with only a
+manuscript can still be replicated, and its divergence register will be empty *because it is
+invisible*, not because there is nothing to find. Say that explicitly rather than letting the
+open paper look like the sloppy one.
+
+**Do not call any of this "the deposit".** The word names a container rather than a claim, and
+in a report it leaves the reader unable to tell whether a number came from prose the authors
+wrote, code they ran, or an array they saved. Use *the manuscript*, *the published code*, *the
+published data*, or *the published study* when you genuinely mean all three.
 
 ## The non-negotiables (MUST)
 
@@ -192,12 +214,12 @@ Classify each entry, because the classes have different detectability and differ
 | **C. Undocumented configuration** | a choice the paper never states at all | which of several shipped bases; how many modes; which mask |
 | **D. Underdetermined prose** | text admits several readings, one correct | where an average sits relative to a nonlinear step |
 | **E. Convention traps** | same name, different meaning across files | id numbering, time units, initial conditions |
-| **F. Unreleased** | the model or step the paper compares against is not in the deposit at all | a competitor whose figures are drawn from frozen arrays; no source anywhere for its symbols |
+| **F. Unreleased** | the model or step the paper compares against is nowhere in the published code or data | a competitor whose figures are drawn from frozen arrays; no source anywhere for its symbols |
 
-**F is the one class you can find with no deposit to read, and it is usually the sharpest.** The
+**F is the one class you can find with no published code to read, and it is usually the sharpest.** The
 others need code to compare prose against; F needs only the published equations and the published
 parameter values — put one into the other and see whether the reported operating point exists. In
-Pang2023 it does not: the competitor mass model was never deposited (a grep of every `.m` and
+Pang2023 it does not: the competitor mass model was never published (a grep of every `.m` and
 `.py` for any inhibitory symbol returns nothing, and its panel is drawn from frozen arrays), and
 its four published weights, entered into the paper's own equations, yield no 3 Hz fixed point —
 the feedback-inhibition relation returns `w_IE` = 8.933 where the paper prints 7.13, and at 7.13
@@ -217,7 +239,7 @@ Two lessons from Pang2023, where 14 divergences were found and 8 changed a numbe
 bite hardest are **C** (four cases — including the paper using *two different eigenmode bases*
 for different figures and saying so nowhere) because nothing in the text hints they exist; and
 **B** is the most damaging to a reader, because someone implementing the printed equation will
-not reproduce the figures. Note also that the register is only *visible* for open deposits — a
+not reproduce the figures. Note also that the register is only *visible* when the code is published — a
 paper without released code has the same drift and no way to see it, which is worth saying
 plainly in the report rather than implying the open paper is the sloppy one.
 
@@ -235,7 +257,7 @@ there through several sessions of both being cited.)
 **When a row is superseded, REWRITE it and say what it replaced.** A register entry is a dated
 measurement, not a permanent fact, and its worst failure mode is hardening into a documented
 "impossible" that stops anyone re-measuring. Pang2023's D4 recorded that no function of the
-deposit's own affinity matrix reproduces the published variance ("every candidate gives ≈ 4 %")
+published affinity matrix reproduces the published variance ("every candidate gives ≈ 4 %")
 and that embedding it does not return its own gradients ("median |r| 0.42"). Both were true when
 written and both were artifacts of a configuration two changes later superseded — the dense
 graph, and a voxel ordering that was simply wrong. They then blocked the right investigation for
@@ -322,7 +344,7 @@ YAML declares a δ-jump or a `noise.intensity`, not a backend mechanism).
 Tag every target with a **fidelity tier**: *mechanism-level* (a sign / pattern / ordering
 that reproduces on any reasonable input — the paper's central claim) vs *decimal-level* (a
 specific number that needs the paper's exact input). Then confirm that exact input is
-actually obtainable *now* — papers routinely deposit only raw login-walled data (no derived
+actually obtainable *now* — papers routinely publish only raw login-walled data (no derived
 matrix), link a code repo that 404s, or name the wrong author. If the exact input
 (connectome, empirical FC, seeds) is not obtainable, choose a **documented substitute** and
 downgrade its decimal-level targets to mechanism-level up front — do not start a hunt for a
@@ -340,12 +362,12 @@ Tag those targets mechanism-level here, reproduce the distribution's constructio
 deterministic structure too — e.g. generator/consumer roles from the real grid), and **never
 tune the synthesis seed to hit the paper's integer** — that is fitting, not replication.
 Contrast it with the study's *deterministic* inputs, which stay decimal-level. (Taher: P^G is a
-symmetric random bimodal the paper never deposited → 6 vs the paper's 9 solitary is an honest
+symmetric random bimodal the paper never published → 6 vs the paper's 9 solitary is an honest
 realization gap; the real-data P^R reproduces its 11 exactly on the same simulator — which is
 what *proves* the gap is the data, not the code.)
 
-A fourth: **a deposit routinely ships the OPTIMUM but not the search that found it.** Pang2023
-deposits the fitted model's FC/FCD and a 2-element `KS`, and nothing of the 20-point `r_s`
+A fourth: **published artifacts routinely carry the OPTIMUM but not the search that found it.** Pang2023
+publishes the fitted model's FC/FCD and a 2-element `KS`, and nothing of the 20-point `r_s`
 landscape those came from — that curve exists only as a published raster (Extended Data Fig 10).
 So a sweep target's *shape* can be compared only figure-to-figure while its *optimum* compares
 numerically. Tag it accordingly, and when you do read values off their raster, say so — reading
@@ -374,7 +396,7 @@ voxel-wise resting-state fMRI data"*; using the CIFTI subcortical grayordinates 
 88 % of the ROI's voxels rather than 100 %, and produced a similarity field whose spatial
 autocorrelation was several times shorter, which was the whole of a target's shortfall for two
 sessions. **Record the modality in `DATA.md` as a decision, with the Methods sentence quoted**,
-and treat a coverage mismatch against the deposit's own arrays (their matrix is N × N over the
+and treat a coverage mismatch against the authors' own published arrays (their matrix is N × N over the
 full mask, yours is over a subset) as the first evidence that you took a different file.
 
 **Do not vendor sizable or upstream data into git — gitignore it and document how to fetch it.**
@@ -455,6 +477,76 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
   adiabatic branch via `Exploration.sweep_seeding: from_previous`, delayed self-terms
   via the coupling graph) — not a backend mechanism.
 
+**Prose in the recipe IS the report's prose.** Every `description:` and `label:` in the spec is
+public-facing: `Study.report()` prints an experiment's `description:` as its Methods paragraph and
+`figcap()` prints a `Figure.description` as the caption. Three rules, each of which a whole corpus
+of studies broke before anyone wrote them down:
+
+- **One line per paragraph; never hard-wrap prose to a column.** Keep `description: >-` and put the
+  whole paragraph on a single continuation line, blank line between paragraphs. Text wrapped at ~95
+  columns soft-wraps a second time in any editor and turns the block into a ragged staircase, which
+  is the first thing a human reading the recipe sees. A folded block is reflowable only while every
+  line sits at the same indent: a *more-indented* line inside `>-` keeps its literal newline, so a
+  description that built a list that way must be rewritten, not reflowed.
+- **ASCII punctuation in every slot, not just figure captions.** No `—`, no `–`, no ` -- `. They
+  reach xelatex through the report, where the LaTeX-not-Unicode rule already applies to captions and
+  panels, and an em-dash every second sentence is the house tell for machine-written prose. Pick the
+  construct the sentence wants: `:` for the definitional appositive it usually is, `,` before
+  `which`/`so`/`and`, `;` between two clauses, parentheses for a real aside.
+- **Self-sufficient and short.** A reader of the rendered report never sees the YAML around it, so
+  the description names its own subject. It is a caption or a Methods paragraph, not an essay: what
+  the thing is, what it returns, and the one convention a reader would otherwise get wrong.
+
+Which keys are prose is a fact to look up, never a guess: `description:`/`label:` are prose, a
+figure's `layout:` block is a mosaic whose line structure IS the figure, and `rhs:` is an
+expression. A blanket reflow over "every block scalar" destroys the mosaic the first time it runs.
+
+**Bulk-editing a recipe: anchor on content, and prove the value did not change.** Line numbers go
+stale mid-edit, because the user has the file open and one save shifts every anchor below it, so
+match a block by its first line of text and not by `L2433`. A reflow is safe only when you show it
+changed nothing: parse the old block and the new one as standalone scalars and assert the strings
+are equal. That check is what catches the more-indented block above instead of silently mangling it.
+
+**There is no cheap structural check for a recipe fragment.** `yaml.safe_load` cannot parse a study
+at all: `<<: *anchor` onto an `!include`-tagged node fails in PyYAML whichever constructor you
+register, because merge-key flattening runs on the node graph before any constructor does. Use
+`yaml.compose_all` for syntax and tvbo's own loader for semantics. `tvbo validate schema` covers only
+files that carry a `tvbo_class` envelope; an `!include`-able `circuit.yaml` or `dynamics_*.yaml`
+answers `'id' is a required property` and tells you nothing.
+
+**A recipe carries no stacked `#` blocks.** The prose that used to live in a 40-line file header
+belongs in the object it describes: the study's own `description:` takes what the recipe encodes,
+where the custom code stops and what the paper's own working points are; an experiment's
+`description:` takes the rationale that used to sit in its banner; a parameter's takes the one
+sentence explaining its value. What is left is a single line — `# ── Experiment 4: the r_s
+landscape (T21) ──` for navigation, or one line of rationale beside the value it explains. Three
+kinds of comment survive as a block, because none of them is prose: a reference list (the schema
+has no top-level `references:` slot), commented-out configuration kept as a documented toggle, and
+a provenance table of `key: value` lines.
+
+Migrate rather than delete, but check what you are migrating first: a stale header is the reason
+the rule exists. One study's header described a 68-region proxy network while the `network:` block
+below it declared 66 regions from a different source — two descriptions of one thing, and the
+comment was the wrong one. When the spec already says it better, the block is redundant, not
+lost. And a comment that documents a FIGURE's internals (why a mosaic row is empty, why a camera
+elevation is what it is) does not belong in that figure's `description:`, because that field is
+the public caption; collapse it to a line instead.
+
+**Still open — decide this, then replace it with the answer.** No length budget exists for a
+`description:` that becomes a Methods paragraph. The corpus runs from eight words to two hundred
+and fifty with no rule saying which is right, and folding the header prose into the study
+description pushes the top of that range higher still.
+
+**When the recipe grows N near-identical experiments to work around an axis that raises, the
+missing capability is the fix, not the workaround.** Kadak2025 wrote eleven anchored
+per-condition experiments because `network.edges.delay` was not a sweepable graph leaf; the axis
+was then added to tvboptim's codegen with four tests, and the eleven collapse to one. A recipe
+that repeats a block once per value of something is telling you that the something is an axis.
+Weigh it honestly — a framework change costs a day and every later study inherits it, while
+eleven hand-anchored experiments cost the same day and have to be kept in step forever — and
+when the axis genuinely cannot exist, say so in `backend-fit.md` rather than leaving the
+repetition unexplained.
+
 ## Phase 4 — Analyses: declare the non-simulation results too
 
 Study-specific reductions — order parameters, bifurcation / fixed-point detection, spectral
@@ -466,6 +558,19 @@ paper's connectome/observable to your node order, match **by label**, never by p
 (guards silent hemisphere/order swaps). Note the host/grid split: *declared* observations
 run on the host (plain NumPy is fine); only what you put under `record:` runs inside the
 jitted/vmapped grid and must be backend-traceable (a non-traceable recording raises).
+
+**When the authors compute the same derived quantity, pin its DEFINITION against their arrays
+before you write the callable.** A name like "circuit-mean weight change" or "resonance
+distance" rarely determines a construction, and several constructions can be within a decimal of
+the printed value on one figure while disagreeing everywhere else. The check is arithmetic on
+published inputs and costs minutes: recompute the statistic from the paper's own arrays under
+each candidate, and implement the one that reproduces it. **Reproduce the number the published
+CODE prints, not the number the prose quotes** — a published Jupyter notebook stores its
+executed cell outputs, and where the two disagree the prose is a finding for the register, not a target. In
+Kadak2025 matching the manuscript's `.196` selected one construction and matching the notebook's
+own `0.127655` selected a different one; the second reproduces five printed correlations to six
+decimals and the first reproduces none, and the replication shipped the first for two sessions.
+See `assets/published-artifacts.md`, "A derived quantity is DEFINED by the analysis code".
 
 **A result the report quotes but no simulation produces is an `Analysis` in the study's
 `analyses:` block — not a script you ran once.** This is the same rule as non-negotiable #1
@@ -527,7 +632,7 @@ will happily select numerical ripple that precedes the event: Pang2023's time-to
 region's peak *before* the stimulus could reach it, on a 341× smaller amplitude than the real
 arrival, because a 200-mode truncation leaves pre-arrival oscillation everywhere. Restrict the
 search to what the physics allows (`t ≥ t_on + d_min/(γ_s r_s)`) — and before calling the
-difference a discrepancy, **run the same statistic on the deposit's own arrays**: theirs had the
+difference a discrepancy, **run the same statistic on the authors' own published arrays**: theirs had the
 artefact too (7 of 180 regions non-causal, and the correction moves their own published P from
 0.034 to 0.093), which turns "our number disagrees" into a documented property of the published
 definition. The companion instinct to resist: **do not drop the inconvenient unit.** Check the
@@ -629,10 +734,10 @@ silently produce a wrong figure spelled out, and a short paragraph on why one de
 description removes the whole class. This is a headline result, so give it a numbered
 section of its own rather than burying it in Limitations; the full evidence lives in
 `report/analysis/methods-vs-code.md`. State plainly that the divergences are *visible* only
-because the deposit is open — otherwise the section reads as a criticism of the most transparent
+because the code is published — otherwise the section reads as a criticism of the most transparent
 papers.
 
-**Every choice RECOVERED by matching the deposit must be disclosed in the REPORT, not only in
+**Every choice RECOVERED by matching the published material must be disclosed in the REPORT, not only in
 the register — and the report must say what it does and does not license.** This is the single
 easiest way for a replication to overclaim, and it is easy precisely because nothing looks
 wrong: the recipe is honest, the register is honest, the report quotes computed numbers, and a
@@ -659,8 +764,43 @@ The same bullet is where a **declared deviation from the paper's own code** belo
 statistic, a causality constraint), with the uncorrected numbers computed and printed beside the
 corrected ones so the reader can see both.
 
+**The rendered Methods is a deliverable, and its ABSENCE passes every guard you have.**
+`report.unrendered_equations` catches an equation typed into the prose; it says nothing about a
+report that carries no equations at all, which is the state a report drifts into when the model
+section is written as prose and never wired up. So call `STUDY.report("qmd", level=3)` in the
+Methods and assert the call is there:
+
+```python
+METHODS = STUDY.report(format="qmd", part="main", level=3)
+assert "$$" in METHODS, "the Methods carry no rendered equations"
+```
+
+It emits the equations the backend integrates, every symbol with the value the spec gives it,
+one comparison table over the experiments, and each experiment's own paragraph — so the report
+has no second description of the model that could drift from the one that runs. Two failure
+modes to fix in the RECIPE rather than around it, both of which show up the first time you read
+the output: an experiment inheriting a sibling's `description:` through a YAML anchor prints its
+sibling's paragraph verbatim (give each its own), and prose in a `label:`/`description:` that
+uses raw `*` or `_` is eaten by the markdown pass (write those slots in LaTeX math).
+
+**Write the FINAL report, not the log of how you got there.** The reader wants the state of the
+work, not its history: no "corrections to earlier claims", no "we first assumed", no callout
+saying an experiment has not been run in this build. Those belong to `report/analysis/`, where
+the superseded-claims list genuinely earns its place (see the divergence-register rule) and the
+next session will read it. Concretely, in the report:
+
+- **Assert completeness in the setup cell instead of branching on it.** `assert M4 is not None`
+  and `assert all(RAN.values())` turn a missing result into a build failure — which is what it
+  is — and delete a dozen `if … is None:` branches whose text narrates the build. Keep a branch
+  only where the *reader's* copy legitimately differs: the paper's published arrays are
+  gitignored, so a comparison that depends on them is genuinely absent from a public build and
+  should say so in one sentence.
+- **Cut the meta-commentary.** "This is the kind of entry a register has to be willing to
+  close", "which is a better outcome than it sounds" — the sentence before them already made the
+  point, and the aside puts the author in a report that should be about the circuit.
+
 **A number computed in a scratchpad is not a computed number.** Diagnostics done outside the
-recipe — a sensitivity sweep, a cross-tabulation against the deposit — produce exactly the kind
+recipe — a sensitivity sweep, a cross-tabulation against the published data — produce exactly the kind
 of striking figure that ends up typed into prose, where nothing recomputes it and nothing catches
 it drifting. Promote them before they enter the report, and there are only two homes:
 
@@ -668,11 +808,10 @@ it drifting. Promote them before they enter the report, and there are only two h
   sensitivity sweep becomes `<fig>_sensitivity` with its own arguments, and if it needs
   something the recipe does not otherwise declare (a basis carried past the model's mode count)
   it declares that too, labelled as being for the check and nothing else.
-- **The identity harness**, when it must read the deposit — the one place where that is
+- **The identity harness**, when it must read the published data — the one place where that is
   legitimate. Give the harness's report object a `values` dict alongside its pass/fail rows,
   persist it with the summary, and bind the numbers by name. Keep one genuine assertion in the
-  check so it can still fail (the deposit's own vector through your code must return the
-  deposit's own published number); the rest are measurements.
+  check so it can still fail (the authors' own published vector through your code must return their own published number); the rest are measurements.
 
 Two mechanical points that bite here. Shared scalars a diagnostic must agree with the model
 about (`γ_s`, the stimulus window, the step size) should be **YAML-anchored once and referenced
@@ -701,7 +840,20 @@ branches on `QUARTO_DOCUMENT_FILE`; no `--profile`, no post-render hook (see the
 **Stage every figure into `report/_figures/` and embed it from there, never through a link up
 into `../figures/`.** `tvbo.utils.report.report_figure` does the staging, decides per build
 whether the © original is opened at all, and composes the A/B pair — one implementation for every
-study, so no report grows its own `ab()` again. Loop the recipe's own `figures:` block
+study, so no report grows its own `ab()` again.
+
+**`report/_figures/` MUST be git-ignored, and this is the one copyright rule the layout does not
+enforce for you.** The staging dir holds two kinds of file: our own reproductions, and
+`<name>_ab.png` composites that embed the publisher's figure beside them. Ignoring
+`original_study/` protects the originals **where they were downloaded** and does nothing about a
+COPY of them made under `report/`, which is a tracked tree — so the composites sit there as
+untracked-but-not-ignored and the next `git add -A` commits the paper's figures to your history.
+Every replication we have shipped had this hole (eleven studies, `?? report/_figures/` in all of
+them) because the entry was simply missing from the skeleton. Verify rather than assume:
+`git check-ignore -v report/_figures/<fig>_ab.png` must NAME the rule that ignores it; an empty
+answer means it is exposed. The internal A/B build is a **local check**, not a deliverable:
+`report_internal.pdf`, the composites, and `original_study/` are all local-only, and the one
+shareable artifact is `report.pdf`, which opens no © original at all. Loop the recipe's own `figures:` block
 (`figures_in_paper_order`, `figure_title`, `figure_caption`) rather than a hand-written list of
 stems and captions, and derive each figure's status callout from `figure_targets(fig,
 TARGET_ROWS)` so it cannot disagree with the scorecard.
@@ -728,6 +880,29 @@ Replication-specific rules on top of that mechanics:
   by reading each reason: if it describes an obstacle ("needs data that is not released") the
   row is `blocked`, not `out`; if it describes a result, it is `short`.
 
+- **Validate every criterion against the PUBLISHED data before you let it judge you.** A
+  criterion is a claim about the paper, and it is written in Phase 1 from prose you may have
+  read wrong. Run each one on the authors' own arrays first: if the paper's own data fails the
+  paper's own criterion, the criterion is wrong and fixing it is not moving the goalposts. In
+  Kadak2025 two thirds of the `short` verdicts were criteria or scorers at fault, not the
+  model: several transcribed a manuscript number the authors' own published code does not produce
+  (`-.31` where the notebook prints `-0.420365`); one demanded the argmax of a plane where the
+  paper's number is a Gaussian centre; one scored the *sign* of an unsigned magnitude, which
+  carries no sign; one asked for an exact protocol count on a threshold the realisation noise
+  straddles; and one demanded the alpha peak to ±0.25 Hz when the estimator's own spread over
+  eight unstimulated seeds is 0.90 Hz; and one asked for the *identity* of the two conditions a
+  Bonferroni table leaves non-significant, which resampling the authors' own array through the
+  authors' own test reproduces in 32 % of draws. Correcting them, alongside two real faults of
+  ours, moved the scorecard from 20 met / 15 short to 30 met / 5 short. A criterion that scores a
+  **threshold crossing** needs that null explicitly: run the paper's own test on its own data
+  perturbed at the spread your control measured, and score only the verdicts that hold
+  (`assets/published-artifacts.md`, "A criterion cannot demand more precision"). **Every tolerance in a criterion must
+  be traceable to a measured spread, not chosen** — if you cannot name the experiment that sets
+  it, you are testing the authors' noise draw against yours. **Read each scorer against the
+  criterion it cites, and each criterion against the published arrays** — and when you change
+  one, say so in the register with the measurement that forced it, so the correction is evidence
+  rather than convenience.
+
 - **The scorecard maps 1:1 to `targets.md`.** Every criterion `T1..Tn` from Phase 1 is one
   row, tagged with its Phase-1.5 **fidelity tier**: *mechanism-level*
   (a sign or ordering that any reasonable input reproduces) vs *decimal-level* (a number that
@@ -743,6 +918,16 @@ Replication-specific rules on top of that mechanics:
   neighbour; the table still rendered, and the tally was simply wrong. Check that every row
   parsed to the full header width and that each value falls in its expected vocabulary
   (`core|extended|out`, `mech|dec`, `met|short|out|blocked`) before believing the counts.
+- **A quantity defined as a DIFFERENCE has a nonzero zero, and you have to measure it.** Any
+  "post minus pre" built from two finite estimates inherits the offset of its own noise draw, so
+  it is not centred on zero even when nothing happened. Kadak2025's broadband AUC carried
+  −0.03611 of its sweep's seed against an inclusion threshold of 0.061, which is what pushed the
+  responsive count to 174 where the paper has 219; the offset is bit-for-bit reproducible from an
+  unstimulated run of the same condition at the same seed, and subtracting it moved the count to
+  217 and the median ratio from 0.838 to 0.995 while moving no correlation at all. **Declare an
+  unstimulated control experiment per condition and subtract its measured value** — do not assume
+  the zero, and do not fit it. The tell is a count or threshold that misses in one direction
+  while every correlation the same column feeds reproduces.
 - **Score every signed difference against the noise floor of the quantity it is a difference
   OF — and doubt your own POSITIVE results, not only the discrepancies.** A margin between two
   stochastic models measured at one seed is not a result; it is one draw. Declare an
@@ -814,7 +999,7 @@ substitute SC gave FC r=0.27 — the same as tvboptim's 0.32 — proving the sho
 connectome, not the engine; without it we'd have chased an implementation bug that wasn't
 there.)
 
-**When the deposit ships the authors' own derived arrays, verification becomes exact** — run
+**When the authors publish their own derived arrays, verification becomes exact** — run
 our implementation on their inputs and require machine precision. Write it as a standing
 harness (`code/verify_identity.py`) that prints one table, because it is what you re-run after
 every refactor. Classify every check before writing it, because mixing the classes is how a
@@ -823,14 +1008,32 @@ failure is OUR bug**), `convergent` (solver-tolerance-limited — agreement stat
 floor), `stochastic` (depends on an unpublished seed — distributional only, since matching an
 exact number would mean we tuned to it).
 
-Two rules hold whatever the deposit contains:
+**Prove the figures' provenance mechanically — non-negotiable #3 deserves a check, not a
+promise.** "Nothing is faked" is a claim about eighty-odd panels and three hundred layers, which
+is not a claim a reader can audit and not one you can hold in your head across a rebuild. Add a
+harness check that walks the loaded study's `figures:` and asserts, with counts the report
+prints:
+
+- every layer's `used:` names an experiment or an analysis, and every one of those **resolves to
+  a file under `output/`** — so no panel is drawn from the authors' own data;
+- no panel carries a `placeholder:` (or, if some do, they are named — a placeholder is a
+  deliverable, and a report that silently contains one is the failure);
+- no generated `figures/scripts/plot_*.py` contains the string `original_study`;
+- panels with **no layers at all** are listed with the callable that draws them. Those are the
+  schematics — a pulse train, a set of equations — and naming them is what makes the sentence
+  above exact rather than nearly true.
+
+Run it as an assertion in the report's own setup, so a rebuild that breaks a binding fails the
+build instead of shipping a figure with no provenance.
+
+Two rules hold whatever the authors published:
 
 - **A check that cannot run must FAIL, not vanish.** A summary reading "50 checks, 0 failing"
   has to mean fifty were attempted. A check that raises before registering itself reports
   success for itself forever, and ours guarded the sign vectors of every displayed basis.
 - **A convention you cannot verify is an ASSUMPTION — write it down as one**, in `targets.md`
   beside the target it feeds, with the alternatives you rejected and a sensitivity test. Most
-  deposits ship no derived outputs at all, so this is the common case, not the exception, and
+  published repositories carry no derived outputs at all, so this is the common case, not the exception, and
   an assumption hardening into an assertion through repetition is the standard way a
   replication states something it never established.
 
@@ -843,8 +1046,8 @@ procedure, gauging a free convention on the DISPLAY path and never inside the so
 inverting a linear stage instead of fitting a scale, and verifying a figure's shape rather
 than only its numbers.
 
-**When a number of ours disagrees with a published one, `assets/deposit-forensics.md` is the
-playbook** — inventory the deposit by content rather than by filename, find an order-invariant
+**When a number of ours disagrees with a published one, `assets/published-artifacts.md` is the
+playbook** — inventory the published files by content rather than by filename, find an order-invariant
 oracle before trusting any positional comparison, measure the statistic's own stability under
 a choice the paper never fixes before blaming your implementation, prove a step inert with
 algebra rather than hunting it with sweeps, compare two derived matrices as a function of a
@@ -908,6 +1111,8 @@ first, then workflow pitfalls).
 - A dense N×N coupling matmul dominates every step → `graph_representation: sparse` before any thought of HPC.
 - A stage looks I/O-bound → profile it on a COLD cache; ours was one linear-algebra call at 16.6 s of a 19 s subject while a 438 MB read cost 0.2 s.
 - A comment explains why a slow path is necessary → that is a claim; measure the risk it names before accepting *or* removing it.
+- A long run dies with `ImportError` naming a symbol you added minutes ago → codegen re-reads the template per experiment but imported its helper module once; a launched sweep freezes everything importable that it touches.
+- A chained step re-derives on half a container → the waiter gated on PIDs exiting, which is evidence that the processes ENDED, not that they succeeded.
 
 **The artifact is stale, or is the wrong file**
 
@@ -923,6 +1128,10 @@ first, then workflow pitfalls).
 - A script reports success and the intended edit never appears (or the file explodes to megabytes) → `str.replace` on a computed slice that evaluated to the empty string.
 - Paths silently resolve into a sibling study's tree → `Path(__file__).parents[N]` after the module moved; grep for the climb.
 - A partly-refilled cache mixes two algorithms inside one cohort mean → deleting the cache is part of editing the callable that fills it; key the path on the choice that changed.
+- A batch edit lands on the wrong lines partway through a file → the file changed on disk mid-run; anchor bulk edits on content, never on line numbers.
+- One file of a multi-file edit is missing its change while the others took → the script asserted before it wrote; write each file as you finish it, and confirm with a grep for the new symbol rather than the exit code.
+- `yaml.safe_load` rejects the recipe you just edited → a merge key onto an `!include` node; the file is fine and the loader is not, so check syntax with `yaml.compose_all`.
+- A reflowed `description:` renders as several paragraphs, or a figure's panels move → a more-indented line inside `>-` kept its newline, or the pass touched a `layout:` block.
 
 **The claim is wrong even though the numbers are right**
 
@@ -932,6 +1141,7 @@ first, then workflow pitfalls).
 - The whole study ran at an exploration axis's value rather than the model's → a single-value axis still OVERRIDES the parameter it names; express an ensemble with `n_trials` or an `initial_conditions` sweep.
 - An 8 GB outer product instead of an elementwise difference → two runs naming the same axis differently; reconcile by NAME, align by COORDINATE.
 - A published panel is internally inconsistent with the paper's own workbook → a source-data defect; scope it `out` and say why.
+- A confident reading of a published cell turns out to be the opposite of what it computes → the read was truncated mid-assignment; match the assignment with a regex across every cell instead.
 - A generated source file will not compile → a large derived array was inlined instead of declared by `source:`/`producer:`.
 
 **Also in `assets/traps.md`**: keep generated files out of git at the study root; track

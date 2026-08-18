@@ -2,13 +2,13 @@
 
 Read this when you reach Phase 7 of **replicating-studies** and the study has
 something to verify against: a closed form, a reference implementation, or the
-authors' own deposited arrays. The spine states the rules; this file is how you
+authors' own published arrays. The spine states the rules; this file is how you
 build the instrument. If a number of yours already disagrees with a published one
-and you have the deposit open, read `deposit-forensics.md` instead.
+and you have the published material open, read `published-artifacts.md` instead.
 
-## When the paper deposits its own ANALYSIS OUTPUTS, demand identity (r = 1, RMSE ~1e-15)
+## When the paper published repositories its own ANALYSIS OUTPUTS, demand identity (r = 1, RMSE ~1e-15)
 
-Many deposits ship not just inputs but the authors' own *derived* arrays (accuracy curves,
+Many published repositories contain not just inputs but the authors' own *derived* arrays (accuracy curves,
 power spectra, permutation sets). That converts verification from "do we agree roughly?" into
 an exact test: run **our** implementation on **their** inputs and require machine precision.
 Write it as a standing harness (`code/verify_identity.py`) that prints one table, because it
@@ -25,7 +25,7 @@ Identity is a *discriminating instrument*, not a rubber stamp — it localises b
 correlation would hide. Four traps it caught in one study (Pang2023), each of which would
 have produced plausible, wrong figures:
 
-- **The deposit ships several versions of "the same" array.** The basis under
+- **The published data ships several versions of "the same" array.** The basis under
   `results/basis_geometric_*` differed from `template_eigenmodes/*_emode_200.txt` by 4.2e-2.
   Both look right; only one gives identity (5.6e-16 vs 2.6e-6). **Try every candidate and let
   identity pick** — never assume the obviously-named file is the one the figures used.
@@ -79,7 +79,7 @@ failed. Two rules follow:
   (below |cos| 0.5 the reference's own sign is noise, and failing a vector for declining to
   assert one is backwards), and an element deliberately gauged against a different target
   (the indices a figure actually draws may follow the *published panel* rather than the
-  deposited array). Both are one named constant with a register reference; both then show up
+  published array). Both are one named constant with a register reference; both then show up
   in the check's own label (`8 flips, 12 of 20 determined`) so a reader sees the denominator.
 
 Read multi-output containers by the **declared** output name. An analysis returning a dict names
@@ -114,7 +114,7 @@ until you have re-derived it, since a permanently-failing check trains you to ig
 
 ## When NO output data is shipped, an unverified convention is an ASSUMPTION — label it
 
-The identity checks above only exist because that deposit happened to include the authors'
+The identity checks above only exist because that published data happened to include the authors'
 derived arrays. **Most do not.** The failure mode is subtle and expensive: with nothing to
 test against, a plausible reading of the Methods gets written into `targets.md` as though it
 were established, every downstream number inherits it, and the report states it as fact.
@@ -130,7 +130,7 @@ So, when you cannot verify:
 
 1. **Write the assumption down as an assumption**, in `targets.md`, next to the target it
    feeds — not as a statement of what the paper did. Phrase it "we read X as Y; not
-   verifiable from the deposit".
+   verifiable from the published material".
 2. **Enumerate the plausible alternatives you rejected**, and say why. If you cannot name an
    alternative, you have not understood the choice well enough to make it.
 3. **Test sensitivity.** Compute the target under each candidate convention. If they agree
@@ -168,7 +168,7 @@ actually *drove with* against a freshly produced copy of it — ~+1 means one ba
 alignment vector is either an honest record of an arbitrary convention or a bug wearing a
 constant, and only a measurement tells them apart. Enumerate the candidate data-only rules
 (max-|value|, sum, third moment, positive mass, first element) and score each against the
-deposit. Pang2023's scored at **chance** — 94–106 of 200 modes — and its three graph bases
+published data. Pang2023's scored at **chance** — 94–106 of 200 modes — and its three graph bases
 disagree with *each other* on the leading mode, which Perron–Frobenius fixes as non-negative.
 That measurement is what licenses the literal vector; without it, do not write one.
 
@@ -183,10 +183,10 @@ sampling mistake.
 with and without the gauge and assert the worst |Δ| is at rounding (ours: 0.000e+00). A cosmetic
 transform that changes a result is not cosmetic.
 
-**The recipe must run without the deposit; the ORACLE may read it.** This is the general split
+**The recipe must run without the published material; the ORACLE may read it.** This is the general split
 that makes a declared alignment legitimate rather than a hidden dependency on reference data. The
 literal vector goes in the spec as metadata (non-negotiable #1 — the recipe renders a figure
-with no deposit on disk); a `verify_identity` check re-derives it from the published arrays and
+with no published data on disk); a `verify_identity` check re-derives it from the published arrays and
 fails on drift. Same rule for any hardcoded convention: constant in the spec, derivation in the
 oracle, and say in the report which it is.
 
@@ -199,7 +199,7 @@ neither the true scale nor obviously wrong. In Pang2023 the forward fit read 1.8
 4–8 % truncation floor, and sat unexplained for a long time.
 
 Invert the model instead. A linear system's own transfer function is exactly invertible, so
-the deposited OUTPUT determines the INPUT that produced it:
+the published OUTPUT determines the INPUT that produced it:
 `Q(ω) = Φ(ω)·[−ω² + 2iωγ_s + γ_s²(1 + r_s²λ)]/γ_s²`. That returned a flat boxcar of amplitude
 **10.00 ± 0.05** where the Methods said 20 — a factor of exactly 2, settled in one step.
 
@@ -220,7 +220,7 @@ A spin test is the canonical example: naive nearest-neighbour matching of rotate
 *not a permutation* (parcels get duplicated and dropped), which biases the null; the published
 method (Váša `rotate_parcellation.m`) does a greedy "most distant minimum" assignment
 **without replacement**. Also force `det = +1` — the QR of a Gaussian matrix can be a
-*reflection*, which is not a rotation of the sphere. Where the deposit ships its own
+*reflection*, which is not a rotation of the sphere. Where the published material contains its own
 permutation set, use **theirs** to verify your statistic, which isolates the test from your
 RNG; then check your own generator separately (every row a true permutation).
 
@@ -236,7 +236,7 @@ figure is the wrong shape" that survives every value check. A deliberate aspect 
 `description:` as a stated departure, not as an unexplained 1.14-against-1.75. The panel
 counts often disagree because a published raster's panels touch where yours have gutters;
 read the offsets only where the counts agree. Identifying the counterpart is itself worth the
-few minutes: deposits number their images `fig_01…fig_NN` with no mapping to "Extended Data
+few minutes: published repositories number their images `fig_01…fig_NN` with no mapping to "Extended Data
 Fig 10", the offset from main-text numbering is *not* uniform, and the only reliable way is to
 open the candidates — doing so is what turned Pang2023's `r_s` landscape from an
 uncomparable panel into one measurable at aspect 1.272 against 1.280.
