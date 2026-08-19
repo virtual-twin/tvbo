@@ -74,4 +74,6 @@ def test_the_emitted_runtime_bridges_leaf_name_to_declared_axis(code):
     """
     assert "element_idx" in code
     for _i in (0, 1):
-        assert re.search(rf'_k_el{_i} = _ax\(\s*"ElemDecay\.k\[{_i}\]"', code), f"element {_i} bound without its declared label"
+        assert re.search(rf'_k_el{_i} = _ax\(\s*"ElemDecay\.k\[{_i}\]"', code), (
+            f"element {_i} bound without its declared label"
+        )

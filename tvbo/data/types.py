@@ -237,7 +237,9 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
     return np.asarray([index[v] for v in cell.tolist()])
 
 
-def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None):
+def _stacked_to_dataarray(
+    stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None
+):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
 
     Outer dims correspond to exploration axes (parameter names with their explored values as coords). When ``n_trials > 1`` and the leading inner axis matches, a ``trial`` dim is inserted after the grid dims. Remaining inner dims follow the simulation convention ``(time, variable, node, mode)``; the leading ``time`` dim is included only when ``intrinsic_ts`` carries a multi-step time vector matching the leading remaining shape, so time-aggregated observations don't get a spurious ``time`` axis.

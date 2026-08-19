@@ -250,4 +250,5 @@ def test_a_seed_axis_reseeds_a_streamed_observation(tmp_path, mode):
     b = _streamed_cells(tmp_path, mode, [5, 6], f"{mode}_b")
     assert not np.allclose(a, b), (
         f"{mode} + streaming: the cells are identical under two different seed sets, so the "
-        "seed axis never reached the solver's PRNG key")
+        "seed axis never reached the solver's PRNG key"
+    )

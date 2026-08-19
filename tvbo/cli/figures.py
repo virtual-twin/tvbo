@@ -89,8 +89,7 @@ def render(
     base_dir: Path = typer.Option(
         None,
         "--base-dir",
-        help="Study root the result containers are resolved against. "
-        "Defaults to the spec file's directory.",
+        help="Study root the result containers are resolved against. Defaults to the spec file's directory.",
     ),
     name: str = typer.Option(
         None,

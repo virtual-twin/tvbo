@@ -291,5 +291,3 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             raise TypeError(f"Expected str or dict, got {type(source)}")
 
         return cls(**data)
-
-

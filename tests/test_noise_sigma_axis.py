@@ -218,9 +218,7 @@ def test_the_amplitude_coexists_with_a_model_parameter_of_the_same_name(tmp_path
         .replace('rhs: "omega + c"', 'rhs: "omega + sigma * c"')
         .replace(
             "        # AXIS\n",
-            "        explored_values: [0.01, 0.02]\n"
-            "      - parameter: Kuramoto.sigma\n"
-            "        explored_values: [1.0, 2.0]\n",
+            "        explored_values: [0.01, 0.02]\n      - parameter: Kuramoto.sigma\n        explored_values: [1.0, 2.0]\n",
         )
     )
     p = tmp_path / "spec.yaml"
@@ -264,7 +262,9 @@ def test_sweep_yields_monotonically_noisier_trajectories(tmp_path):
 
     cells = np.asarray(grid.transpose("noise.sigma", ...))
     flat = cells.reshape(cells.shape[0], -1)
-    assert np.unique(np.round(flat, 10), axis=0).shape[0] == 4, "cells are identical — the amplitude is not reaching the integrator"
+    assert np.unique(np.round(flat, 10), axis=0).shape[0] == 4, (
+        "cells are identical — the amplitude is not reaching the integrator"
+    )
 
     # Deviation from the deterministic (sigma=0) cell grows with sigma.
     dev = np.abs(flat[1:] - flat[0]).mean(axis=1)

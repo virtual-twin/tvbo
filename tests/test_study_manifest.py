@@ -94,7 +94,9 @@ def test_computed_value_resolves_and_formats(collection, tmp_path):
 
 def test_emit_manifest_writes_quarto_meta_shape(collection, tmp_path):
     _write_container(_member_results(tmp_path), "tally", "n_errors", 17)
-    out, problems = I.emit_manifest(collection, tmp_path / "derivatives" / "tvbo", tmp_path / "_output" / "manuscript_results.yml")
+    out, problems = I.emit_manifest(
+        collection, tmp_path / "derivatives" / "tvbo", tmp_path / "_output" / "manuscript_results.yml"
+    )
     assert problems == []
     import yaml
 
