@@ -38,7 +38,7 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
 
     import tvbo
 
-    loader = tvbo.StudyCollection if "members" in data else tvbo.SimulationStudy
+    loader = tvbo.SimulationStudy
     study = loader.from_file(str(spec_path))
     return as_list(getattr(study, "figures", None)), "study"
 
@@ -46,7 +46,7 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
 def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
     """Emit + run each figure's render script and return the written images.
 
-    The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the root each layer's ``used`` IRI resolves against (``<base_dir>/output/…``).
+    The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the study root each layer's ``used`` IRI resolves against, whose results directory holds the containers.
 
     The image lands directly in ``out_dir`` — the one place the report and every other consumer reads a figure from — while its self-contained, editable ``plot_<name>.py`` goes to ``out_dir/scripts/``. Both are regenerable and gitignored together; separating them just keeps a study with many figures from interleaving twice as many files in the directory people actually browse. The subdirectory is deliberately NOT called ``code``: in a study that name means the authored, tracked, importable code the recipe references by bare module name, which this is not.
     """
@@ -89,7 +89,7 @@ def render(
     base_dir: Path = typer.Option(
         None,
         "--base-dir",
-        help="Root the experiment result containers live under (where output/nc/ sits). "
+        help="Study root the result containers are resolved against. "
         "Defaults to the spec file's directory.",
     ),
     name: str = typer.Option(
@@ -103,7 +103,7 @@ def render(
 ) -> None:
     """Render figures in *spec* via bsplot codegen (all of them, or the ``--name`` subset).
 
-    Each figure's ``<name>.<format>`` image lands in ``<out-dir>`` and its self-contained, editable ``plot_<name>.py`` in ``<out-dir>/scripts/``, so the directory the report reads holds images only. ``<base-dir>`` is the root each layer's ``used`` IRI resolves against (``<base-dir>/output/nc/…``).
+    Each figure's ``<name>.<format>`` image lands in ``<out-dir>`` and its self-contained, editable ``plot_<name>.py`` in ``<out-dir>/scripts/``, so the directory the report reads holds images only. ``<base-dir>`` is the study root each layer's ``used`` IRI resolves against; the containers are read from its results directory.
     """
     spec_path = Path(spec).expanduser()
     if not spec_path.is_file():
@@ -136,7 +136,7 @@ def _select(figures, name: str | None, spec_path: Path) -> list:
 
 @app.command("caption", help="Compose figure captions from the spec (no rendering) into .caption.qmd partials.")
 def caption(
-    spec: str = typer.Argument(..., help="Path to a Figure / SimulationStudy / StudyCollection YAML."),
+    spec: str = typer.Argument(..., help="Path to a Figure or SimulationStudy YAML."),
     out: Path = typer.Option(
         None,
         "-o",

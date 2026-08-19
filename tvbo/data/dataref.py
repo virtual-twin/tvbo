@@ -29,6 +29,26 @@ def experiment_id(iri) -> str | None:
     return m.group(1) if m else None
 
 
+_IRI_KINDS = ("exp", "ana")
+"""The container kinds a tvbo result IRI can name: a run, or a declared analysis."""
+
+
+def iri_scope(iri) -> tuple[str | None, str | None, str | None]:
+    """``(kind, study, name)`` of a tvbo result IRI, or three ``None``.
+
+    ``tvbo:exp/<study>/exp-<id>`` and ``tvbo:ana/<study>/<name>`` each name what kind of container they point at, which study owns it, and the container itself. The kind is READ from its own segment, never inferred from the shape of the last one: a curated IRI whose tail happens to look like an analysis name must not be resolved as one.
+    """
+    if not iri:
+        return (None, None, None)
+    import re
+
+    segments = [s for s in re.split(r"[:/#]", str(iri)) if s]
+    for index, segment in enumerate(segments[:-2]):
+        if segment in _IRI_KINDS:
+            return (segment, segments[index + 1], segments[index + 2])
+    return (None, None, None)
+
+
 def _source_id_int(value) -> int:
     """Numeric experiment id from an Experiment, an ``exp-N``/``N`` string, or an int.
 
@@ -44,31 +64,46 @@ def _source_id_int(value) -> int:
 
 
 def locate_exp_container(results_root, source_id) -> Path:
-    """Path to experiment ``source_id``'s saved result HDF5 under ``results_root``.
+    """Path to experiment ``source_id``'s saved result container in ``results_root``.
 
-    Globs by the ``exp-<id>_`` file stem, skipping the ``*network*`` sidecar, so the output-directory layout (``results/2``, ``output/nc/exp2``, flat BIDS files, …) does not matter. Raises when the source has not been run yet — the actionable "run experiment N first" error shared by every consumer.
+    The results directory is flat, so the container is ``exp-<id>[_<entities>]_result.h5`` directly inside it; the ``_`` boundary keeps ``exp-1`` from matching ``exp-10`` and the network companion is skipped by name. Raises when the source has not been run yet — the actionable "run experiment N first" error shared by every consumer.
     """
     root = Path(results_root) if results_root else Path.cwd()
-    cands = [p for p in root.glob(f"**/*exp-{source_id}_*.h5") if "network" not in p.name]
+    cands = [p for p in root.glob(f"exp-{source_id}_*result.h5") if "network" not in p.name]
     if not cands:
         raise FileNotFoundError(
             f"cross-experiment sourcing: no saved result for experiment {source_id} "
-            f"under {root} (looked for '*exp-{source_id}_*.h5'). Run experiment "
+            f"in {root} (looked for 'exp-{source_id}_*result.h5'). Run experiment "
             f"{source_id} first so its result is available."
         )
     return sorted(cands)[0]
 
 
 def analysis_container_path(results_root, name) -> Path:
-    """``<results_root>/results/<name>/result.h5`` — the analysis-container layout, once."""
+    """``<results_root>/ana-<name>_result.h5`` — the analysis-container name, once.
+
+    Flat and entity-prefixed, like an experiment's own container: ``ana-`` marks a derived result and ``exp-`` a run, so both live in one directory and a cross-reference between them resolves against a single base. The name is built by the same entity machinery the run's own containers use, so ``calcium_c10`` reaches ``ana-calciumc10_result.h5`` from the writer and the reader alike — spelling it as an f-string here is how the two came to disagree.
+    """
+    from bids.layout.writing import build_path
+
+    from tvbo.adapters.bids import RESULT_PATTERNS, analysis_entities
+
     root = Path(results_root) if results_root else Path.cwd()
-    return root / "results" / str(name) / "result.h5"
+    return root / build_path(analysis_entities(name), RESULT_PATTERNS)
+
+
+def sidecar_path(container) -> Path:
+    """The one metadata sidecar beside a result container.
+
+    YAML, and the only sidecar: a second JSON copy of a subset of the same fields is free to drift from it. ``tvbo export`` writes the JSON form from the pydantic representation when a publication step needs it.
+    """
+    return Path(container).with_suffix(".yaml")
 
 
 def locate_analysis_container(results_root, name) -> Path:
-    """Path to the container a study analysis named ``name`` writes under ``results_root``.
+    """Path to the container a study analysis named ``name`` writes in ``results_root``.
 
-    ``<results_root>/results/<name>/result.h5`` — the one place the convention is spelled, so the writer (:mod:`tvbo.data.analysis_io`), the run-time resolver and the figure adapter cannot disagree about where an analysis result lives. Raises when it has not been produced yet, with the command that produces it.
+    :func:`analysis_container_path` is the one place the convention is spelled, so the writer (:mod:`tvbo.data.analysis_io`), the run-time resolver and the figure adapter cannot disagree about where an analysis result lives. Raises when it has not been produced yet, with the command that produces it.
     """
     path = analysis_container_path(results_root, name)
     if not path.is_file():
@@ -91,7 +126,7 @@ def is_local_ref(ref) -> bool:
 def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Path:
     """Resolve a ``DataRef``'s WHERE to a result-container path.
 
-    Precedence ladder (matches the design's one rule): an explicit ``experiment`` id, an ``analysis`` name, or an ``iri`` carrying a trailing experiment number resolves against ``results_root``; a filesystem ``iri`` that exists is taken as-is (a curated / external container); a reference with no WHERE falls back to ``fallback_experiment`` (the enclosing ``initial_state.source_experiment``, so the warm-start ergonomic of naming the sibling once is preserved). Raises when none applies.
+    Precedence ladder (matches the design's one rule): an explicit ``experiment`` id, an ``analysis`` name, or an ``iri`` naming an ``ana/<study>/<name>`` scope or carrying a trailing experiment number resolves against ``results_root``; a filesystem ``iri`` that exists is taken as-is (a curated / external container); a reference with no WHERE falls back to ``fallback_experiment`` (the enclosing ``initial_state.source_experiment``, so the warm-start ergonomic of naming the sibling once is preserved). Raises when none applies.
     """
     exp = getattr(ref, "experiment", None)
     if exp is not None:
@@ -106,12 +141,16 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Pat
         p = Path(str(iri))
         if p.exists():
             return p
+        kind, _study, name = iri_scope(iri)
+        if kind == "ana":
+            return locate_analysis_container(results_root, name)
         eid = experiment_id(iri)
         if eid is not None:
             return locate_exp_container(results_root, int(eid))
         raise FileNotFoundError(
             f"cross-experiment sourcing: could not resolve DataRef iri {iri!r} to a "
-            "container (not an existing path, and no trailing experiment number)."
+            "container (not an existing path, no `ana/<study>/<name>` scope, and no "
+            "trailing experiment number)."
         )
 
     if fallback_experiment is not None:
