@@ -1133,6 +1133,15 @@ first, then workflow pitfalls).
 - `yaml.safe_load` rejects the recipe you just edited → a merge key onto an `!include` node; the file is fine and the loader is not, so check syntax with `yaml.compose_all`.
 - A reflowed `description:` renders as several paragraphs, or a figure's panels move → a more-indented line inside `>-` kept its newline, or the pass touched a `layout:` block.
 
+**The figure renders, and shows something other than what was declared**
+
+- A colour bar sits in a ghost frame with its own 0–1 ticks, and the panel's declared tick options shape the ghost → a blanked slot is re-derived by the figure-wide format pass; re-blank after it, and skip `Axes3D`, which reads as blanked by construction.
+- Panels of one quantity are labelled only on the left and their limits differ → hidden tick labels are a display change; only `share_y:` makes them honest, and a literal `ylim` clips the next run's data.
+- An overlap detector reports collisions that are nowhere in the PNG → an out-of-view tick label still has a bbox; filter by the axis view interval and skip switched-off axes.
+- A declared `height:` has gone negative → a size solver corrected against a stale PNG left behind by a failed render; gate the correction on the output's mtime.
+
+- One condition of a sweep inverts its response and reads as a resonance crossing → recompute the derived column from its own container's inputs before believing it; a named argument emitted positionally binds by whatever order the datamodel yields.
+
 **The claim is wrong even though the numbers are right**
 
 - A metric matches in shape but not magnitude → the definition and the empirical modality it is compared against are part of the claim; read them from the Methods.

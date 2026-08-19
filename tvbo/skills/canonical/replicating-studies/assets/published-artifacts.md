@@ -155,10 +155,10 @@ outputs inside the `.ipynb` — mine them before writing anything:
 
 ```python
 import json
+
 nb = json.load(open("notebooks/analysis.ipynb"))
 for i, c in enumerate(nb["cells"]):
-    out = "".join("".join(o.get("text", "")) or "".join(o.get("data", {}).get("text/plain", ""))
-                  for o in c.get("outputs", []))
+    out = "".join("".join(o.get("text", "")) or "".join(o.get("data", {}).get("text/plain", "")) for o in c.get("outputs", []))
     if out.strip():
         print(f"--- cell {i}", "".join(c["source"])[:80], "\n", out[:300])
 ```

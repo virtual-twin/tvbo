@@ -160,6 +160,16 @@ a `marks:` opt where a figure uses fewer.
 
 ## Mosaic traps, all of them found by rendering
 
+- **The mosaic is the layout's picture — let it carry the proportions, not a ratio list.** A
+  panel twice as tall as its neighbour is two rows against one; `height_ratios` beside the
+  mosaic is a second, invisible description of the same fact, and the two drift. An all-equal
+  ratio list (`[1.0]` x 48) says nothing at all and should be deleted outright. Keep a ratio only
+  for what the grid genuinely cannot say at a sane row count — a hairline spacer of 0.02 of a row
+  — and check first whether the spacer is needed at all, since the layout engine already spaces
+  adjacent panels.
+- **Never pad the mosaic with an empty leading row or column.** It reads as a margin and produces
+  nothing: `trim_margins: true` crops that whitespace away, so the cells are simply spent. Gaps
+  BETWEEN panels are real (they hold the labels); gaps at the edge are not.
 - **Every row of `layout:` must have the same number of columns.** Widen short rows by repeating
   letters, never by adding columns.
 - **A panel may not span across an all-dot spacer row** — matplotlib reports "the label 'k'
@@ -245,6 +255,22 @@ goes wrong:
   same symptom has two causes: a formatter rounding 0.0011300 and 0.0011325 to one string, or a
   neighbour's opaque patch cutting the last two characters off both. tvbo widens the decimals
   automatically for the first, over the DRAWN labels; only the second is yours to fix, with space.
+
+- **Hiding a panel's tick labels does not put it on another panel's scale.** A row of panels
+  showing one quantity against different predictors is drawn once per panel, so each auto-scales
+  to its own layer's extent — including the confidence bands, which is where they diverge. Hiding
+  the tick labels on all but the leftmost then invites the reader to compare heights across three
+  different ranges. Declare the group instead (`share_y: ["c,g,h"]` at figure level): every panel
+  in it ends on the union of the group's limits, hidden labels included. Do not reach for a
+  literal `ylim` — a spec that pins a limit to today's numbers clips tomorrow's run in silence.
+- **A slot a panel blanks is un-blanked by the format pass.** Colour-scale, legend, `grid` and
+  `image` panels switch their host axes off and draw inside it; the figure-wide tidy-up then
+  re-derives ticks for every axes and hands the ghost frame back, with the panel's declared tick
+  options applied to it rather than to the bar. tvbo re-blanks after the format pass and lets a
+  scale panel return the axes its bar lives on, so `nbins`, tick formats and label padding land
+  on the scale. Two consequences worth knowing: `Axes3D` reports itself as blanked by
+  construction, so it is excluded by name; and an overlap check that walks every `Text` will count
+  the ghost's labels until it skips switched-off axes.
 
 ## Choosing WHICH point a marker marks
 
