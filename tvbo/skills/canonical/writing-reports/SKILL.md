@@ -256,9 +256,13 @@ across four files that were entirely correct. The reviewable act is classifying 
 whose numbers it holds; the mechanical part is refusing to transcribe one nobody has classified:
 
 ```python
-NUMBER_OWNERS = {"published-values.md": "paper", "targets.md": "paper",
-                 "methods-vs-code.md": "both", "verification.md": "reference-run"}
-notes = {p.name for p in (ROOT / "report/analysis").glob("*.md")}
+NUMBER_OWNERS = {
+    "published-values.md": "paper",
+    "targets.md": "paper",
+    "methods-vs-code.md": "both",
+    "verification.md": "reference-run",
+}
+notes = {p.name for p in study_path("analysis", root=ROOT).glob("*.md")}
 assert not notes - set(NUMBER_OWNERS), f"unclassified analysis note: {sorted(notes - set(NUMBER_OWNERS))}"
 assert "ours" not in NUMBER_OWNERS.values(), "a result of ours belongs in a computed cell, not a note"
 ```
@@ -534,15 +538,14 @@ that helper and they drifted: different widths, different title wording, one tha
 greyscale scan through the default colormap. The layout lives in `tvbo.utils.report`:
 
 ```python
-from tvbo.utils.report import report_figure, show_report_figure
+from tvbo.utils.report import embed_path, report_figure, show_report_figure
 
 staged = report_figure(
     FIGDIR / f"{fig.name}.png",  # ours
     reference_image_for(fig, ROOT) if INTERNAL else None,  # theirs
-    STAGE,
     credit="Pang et al. 2023 (c)",
 )
-print(f"![**Fig {n}.** {figure_caption(fig)}](_figures/{staged.name}){{width=100%}}")
+print(f"![**Fig {n}.** {figure_caption(fig)}]({embed_path(staged)}){{width=100%}}")
 ```
 
 What that buys, and what a per-report copy kept getting wrong:
@@ -556,8 +559,15 @@ What that buys, and what a per-report copy kept getting wrong:
   Fig 2A/2B.
 - **A greyscale scan stays grey.** `imshow` on a 2-D array applies the default colormap, which
   silently recolours the paper's figure.
-- **The composite is staged into `docs/_figures/`** (gitignored by the layout record), so the copyrighted original
-  reaches exactly one artifact and never the repository.
+- **The stage comes from the layout record**, so no report names a directory: the composite lands
+  in `sourcedata/original_study/fig_comparisons/`, inside the deposit whose figure it embeds, and
+  the one rule that keeps the deposit unpublished covers it. The copyrighted original then reaches
+  exactly one artifact and never the repository. Embed it through `embed_path`, which makes the
+  reference relative to the render: LaTeX prefixes a bare path with `./`, so an absolute one
+  arrives as `./Users/…` and the build fails on an image that is plainly there.
+- **Our own figure is embedded where it was rendered.** With no original to compose against there
+  is nothing to stage, and `report_figure` returns the path it was given; staging a copy would give
+  every public figure a second location to keep current.
 
 Prefer `report_figure` + a markdown embed over `show_report_figure`: the embed gets a real figure
 number, a caption and a cross-reference target. Use `show_report_figure` only where a report
@@ -580,8 +590,8 @@ verdict in the scorecard cannot disagree.
   of `report.qmd` (in `_quarto.yml` instead) removes the collision, and the two distinct input
   stems (`report`, `report_internal`) keep each build's `<stem>.pdf` intermediate from ever being
   the other's final. Track `report.qmd`, `report_internal.qmd`, `_quarto.yml`, and
-  `references.bib`. The generated `.gitignore` already covers the PDFs, `docs/_figures/` and
-  `sourcedata/original_study/` — never hand-edit it.
+  `references.bib`. The generated `.gitignore` already covers the PDFs and the whole of
+  `sourcedata/`, composites included — never hand-edit it.
 Verify by rendering and confirming the public `report.pdf` embeds no © original: the internal
 PDF is visibly larger (it carries the paper figures) and its A/B composites are wide (~2.2+),
 while public figure aspect ratios stay near 1.0–1.5.
@@ -743,8 +753,17 @@ slipped in.
 
 ```bash
 # from docs/ — ONE command renders BOTH report.pdf (public) and report_internal.pdf (A/B, local-only)
-QUARTO_PYTHON=<repo>/.venv/bin/python quarto render     # no file arg -> the project render: list
+PATH=<repo>/.venv/bin:$PATH quarto render     # no file arg -> the project render: list
 ```
+
+**PATH, not `QUARTO_PYTHON`, decides which interpreter executes the cells.** Quarto runs the
+notebook through the `python3` kernelspec, whose `argv` is a bare `python`, resolved against PATH
+at execution time; `QUARTO_PYTHON` only picks the Python that drives the render. Get this wrong
+and the report is executed by whatever `python` came first, which fails as
+`No module named 'tvbo.utils.study_layout'` — a missing-module message that names the module you
+just wrote rather than the one actually absent (`numpy`, imported by `tvbo/utils/__init__.py`).
+Check with `import sys; print(sys.executable)` in the first cell when a render fails on an import
+you are certain exists.
 
 The render must succeed and the public `report.pdf` must contain no copyrighted original (the
 internal PDF is the larger one, carrying the paper figures). Open the PDF and confirm the numbers

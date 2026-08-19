@@ -132,7 +132,18 @@ published data*, or *the published study* when you genuinely mean all three.
    subfolder; a `code/recipe/` split buys nothing and breaks imports if the line is forgotten.)
    Fragments the recipe `!include`s go in `spec/`, each BIDS-named for what it specifies
    (`model-<name>_dynamics.yaml`, `exp-<id>_experiment.yaml`), with its entities present from
-   the start so adding a second one renames nothing.
+   the start so adding a second one renames nothing. **One fragment specifies one entity**: the
+   suffix names the class the file contains, so a `figures.yaml` holding twelve figures becomes
+   twelve `fig-<id>_desc-<slug>_figure.yaml` files. A file whose name cannot say what is inside
+   it is a file no reader can find by name and no validator can check.
+
+   And **the study's own code asks the record for a path, never spells one**. `study_path(role)`,
+   `study_root(any_path_inside)` and `file_relpath(role)` from `tvbo.utils.study_layout` resolve
+   directories; `analysis_container_path(root, name)` and `locate_exp_container(root, exp_id)`
+   from `tvbo.data.dataref` resolve containers, entity naming included. A verification script or
+   report that hardcodes `output/results/` keeps working until the layout moves, then fails in a
+   way that reads like a missing result rather than a stale path — and the fix has to be found in
+   every study separately.
 6. **Nothing large or upstream is vendored, and `.gitignore` is generated, never edited.**
    Git tracks only what you author: the recipe, `spec/`, `code/`, `sourcedata/README.md`, and the
    report source under `docs/`. Everything a run reproduces is ignored, and so is the reproduced
@@ -147,10 +158,14 @@ published data*, or *the published study* when you genuinely mean all three.
    `sourcedata/*` and re-includes `!sourcedata/README.md`, rather than ignoring
    `sourcedata/original_study` and trying to carve exceptions under it; three studies wrote the
    latter and silently kept their targets table, figure map and adherence notes untracked for
-   weeks. And **`docs/_figures/` needs its own rule**: ignoring the originals where they were
-   downloaded does nothing about an A/B composite made under `docs/`. Verify rather than assume —
-   `git check-ignore -v <path>` names the file and line that won, and a `!` rule means the path
-   is kept, not ignored.
+   weeks. And **a derived copy of copyrighted material is only as protected as where it is put**:
+   ignoring the paper's figures where they were downloaded does nothing about an A/B composite
+   made from them somewhere else. That is why the composites are staged *inside* the deposit, at
+   `sourcedata/original_study/fig_comparisons/` — one directory holds everything the publisher
+   owns, so the one rule that keeps the deposit unpublished covers every composite too, and
+   `report_figure` puts them there without any `.qmd` naming a directory. Verify rather than
+   assume — `git check-ignore -v <path>` names the file and line that won, and a `!` rule means
+   the path is kept, not ignored.
 7. **Replication, stated honestly.** Frame it as *replication* (independent code +
    independently-sourced data → same conclusions), not bit-exact *reproduction*. Ship a
    **scorecard** (met / short / out / blocked -- see below) with a **fidelity tier per target**
@@ -476,6 +491,23 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
   drive differs per experiment. This both compacts the recipe (a 4-regime spiking study collapses
   from 4× the network to ~1×) and is the more faithful encoding (an external drive is an input, not
   a cell property).
+- **A package the study needs is declared in the recipe, not in a `requirements.txt`.** Matching
+  a paper's method sometimes means using the paper's tool — a spectral parameterisation, a
+  particular solver — and `requires:` states it, keyed by package name, carrying the version the
+  study was reproduced against and why that tool rather than another:
+  ```yaml
+  requires:
+      fooof:
+          version: "1.1.1"
+          doi: "10.1038/s41593-020-00744-x"
+          description: >-
+              The paper reads the aperiodic exponent and the in-band peak from a FOOOF fit; a
+              different peak-finder estimates a different quantity.
+  ```
+  A loose file beside the recipe is metadata the datamodel cannot see, cannot validate and cannot
+  put in the report; a study whose report imports something nothing declares runs only on the
+  machine that happens to have it. `requires:` says what is needed, `prov-<label>_soft` records
+  what actually ran, so the two can be compared rather than assumed equal.
 - Non-obvious params get a one-line comment tying them to the paper (equation/figure).
 - Overriding a param replaces it wholesale (YAML merge is shallow) — restate `unit`/
   `description`, or don't override when the anchor default already matches.
@@ -665,18 +697,17 @@ producing `<name>.png` in `figures/`. Iterate one figure fast with `tvbo figure 
 results stay put; only the plot re-runs). Copy `assets/figures.snippet.yaml` for the block and
 `assets/figures.py.tmpl` for the panel module.
 
-**`<study>/figures/` is THE render target — one place, gitignored.** The rendered
-`<name>.png` sits at its root and its generated `plot_<name>.py` in
-`figures/scripts/`, so the directory the report and reviewers browse holds IMAGES,
-not twice as many files. That subdirectory is **not** called `code/`: in a study
-that name means the authored, tracked, importable code the recipe references by bare
-module name, and a generated artifact must not borrow it. Not `output/figures/`
-(that is the results tree) and not `code/figures/`. Everything downstream reads from there: the
-report's `FIGS = Path("../figures")`, and any script that still writes a supplement image writes
-there too, so a figure and the report that embeds it can never point at different copies. Add
-`figures/` to the study `.gitignore` — the `<name>.png` **and** the generated
-`scripts/plot_<name>.py`
-are both regenerable artifacts.
+**`docs/figures/` is THE render target — one place, gitignored.** The rendered `<name>.png` sits
+at its root and its generated `plot_<name>.py` in `docs/figures/scripts/`, so the directory the
+report and reviewers browse holds IMAGES, not twice as many files. That subdirectory is **not**
+called `code/`: in a study that name means the authored, tracked, importable code the recipe
+references by bare module name, and a generated artifact must not borrow it. It sits inside the
+report's own Quarto project, so a report embeds a figure where it was rendered instead of staging
+a second copy. Everything downstream resolves it the same way — the report's
+`FIGS = study_path("figures", root=ROOT)`, and any script that still writes a supplement image —
+so a figure and the report that embeds it can never point at different copies. Both the
+`<name>.png` and the generated `scripts/plot_<name>.py` are regenerable, and the record already
+ignores them; never hand-edit the gate to say so.
 
 **A `Figure` is layout + binding + style; keep compute and plotting code out of it.** The
 mechanics are in **`assets/figures.md`** — every `layout` key, the size/aspect/type-size
@@ -706,9 +737,10 @@ look and can misalign, so derive the coordinates from the paper's surface and ve
 mapping **by label** (a `custom` surface/heatmap panel's job).
 
 **A/B compose stays a report concern**, not a `Figure`: the study renders only *our*
-reproduction; the side-by-side against the paper original is drawn in the **report** (the
-`ab()` helper / `assets/compose_ab.py`), gated for copyright by the Phase-6 internal/public
-profile — do **not** bake the © original into any committed/shared image or into a `Figure`.
+reproduction; the side-by-side against the paper original is composed in the **report** by
+`tvbo.utils.report.report_figure` — one implementation, never a per-study `ab()` — gated for
+copyright by the Phase-6 internal/public split and staged inside the deposit. Do **not** bake the
+© original into any committed or shared image, or into a `Figure`.
 
 **Every figure carries an original caption — `Figure.description` is it.** Write each figure a
 `description:` in the `figures:` block: an original sentence or two describing what OUR
@@ -1023,7 +1055,7 @@ harness check that walks the loaded study's `figures:` and asserts, with counts 
 prints:
 
 - every layer's `used:` names an experiment or an analysis, and every one of those **resolves to
-  a file under `output/`** — so no panel is drawn from the authors' own data;
+  a container under `derivatives/tvbo/`** — so no panel is drawn from the authors' own data;
 - no panel carries a `placeholder:` (or, if some do, they are named — a placeholder is a
   deliverable, and a report that silently contains one is the failure);
 - no generated `docs/figures/scripts/plot_*.py` contains the string `original_study`;
@@ -1189,6 +1221,7 @@ restate the tree anywhere else.
   sourcedata/                   inputs the study did not compute
     README.md                   where each input comes from and how to obtain it
     original_study/             material deposited by the work being reproduced: its PDF, figures, published data and code
+      fig_comparisons/          A/B composites placing one of the paper's figures beside ours
   docs/                         the report and everything it reads
     report.qmd                  the report, every number computed from the run
     _quarto.yml
@@ -1203,10 +1236,9 @@ restate the tree anywhere else.
       targets.md                every quantity the reproduction commits to, with the published value beside it and a fidelity tier
       figures.md                the paper's figure inventory, and which of them this study reproduces
       backend-fit.md            why this backend was chosen, from the targets' feature needs rather than by default, and what the alternatives could not do
-    _figures/                   staging for the A/B composites, which embed the original figures
     notes/                      the gap register and open threads, kept local so a note can be blunt
   derivatives/                  nested derivative datasets
-    tvbo/                       one flat derivative dataset holding every container this study computes: `exp-<id>_model-<name>_result.h5` for a run, `ana-<name>_result.h5` for an analysis, each with a sidecar
+    tvbo/                       one flat derivative dataset holding every container this study computes: `exp-<id>_model-<name>_result.h5` for a run, `ana-<name>_result.h5` for an analysis, each beside one `.yaml` sidecar: the frozen, re-runnable spec that produced it
       dataset_description.json  declares the derivative type, the generating tool, and the source dataset, which is the study root two levels up
   prov/                         what was run, when, in what environment, by what software, over what inputs
   logs/                         run logs

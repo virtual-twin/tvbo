@@ -190,9 +190,10 @@ in full.
   END-TO-END, not just `from_file` load.** Loading a study does not import a
   flow-potential/observation callable, so a load-only check will wrongly call a live
   dependency dead (this cost us a broken flow-potential path).
-- **Generated files never land in git at the study root.** KPI/targets tables, extracted
-  arrays, the report PDF/logs → write them into `output/` (gitignored). A generated file
-  tracked at the root reads as a hand-curated deliverable and silently drifts stale.
+- **Generated files never land in git at the study root.** Each one goes where the layout record
+  puts it and is ignored there: containers to `derivatives/tvbo/`, figures to `docs/figures/`,
+  the PDFs to `docs/`, run logs to `logs/`. A generated file tracked at the root reads as a
+  hand-curated deliverable and silently drifts stale.
 - **Cross-references.** The report must stand alone — no "as in the sibling X study".
 - **A lineage of related papers → sibling studies sharing a curated model; pin every
   original-figure lookup.** When one model spans several papers (a foundation and its
@@ -215,7 +216,7 @@ in full.
   changed is the dim you now see), not a leftover. (The CLI now warns on a no-`-o` run, but the
   discipline is: persist, then verify freshness.) (2) A pure forward run that only records a raw
   trajectory (no exploration, no declared observation) — e.g. a NeuroML EPSP-train run — must
-  still write `output/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
+  still write `derivatives/tvbo/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
   `iri: tvbo:result/<Study>/exp-N` can't resolve an unwritten container). Run END-TO-END, not
   `from_file`.
 - **Re-running an experiment does NOT invalidate the analyses computed from it.** An analysis

@@ -10,11 +10,13 @@
 #| echo: false
 import sys, numpy as np, xarray as xr, yaml, matplotlib.pyplot as plt
 from pathlib import Path
-sys.path.insert(0, str(Path("../code").resolve()))   # builder + analysis callables
-ROOT = Path("..").resolve()
-OUT = ROOT / "output"; INPUT = ROOT / "input"
-FIGS = ROOT / "figures"                               # our reproduction figures (git-ignored)
-STAGE = Path("_figures")                              # staged for the render (git-ignored)
+from tvbo.utils.study_layout import study_path, study_root
+# Every path comes from the layout record, so moving a directory there moves it here too.
+ROOT = study_root(Path.cwd())
+sys.path.insert(0, str(study_path("code", root=ROOT)))
+SOURCEDATA = study_path("sourcedata", root=ROOT)
+RESULTS = study_path("results", root=ROOT)
+FIGS = study_path("figures", root=ROOT)
 
 # --- INTERNAL vs PUBLIC build (copyright-safe, chosen by WHICH entry file is rendering) --------
 # Showing the paper's own published figures is copyright-restricted, so ONE report.qmd renders
@@ -30,7 +32,7 @@ STAGE = Path("_figures")                              # staged for the render (g
 # scorecard. This file should end up holding ONLY what is specific to this study -- its metrics.
 from tvbo.cli.figures import reference_image_for
 from tvbo.utils.report import (
-    Scorecard, analysis_scalar, crossref_div, figure_caption, figure_title,
+    Scorecard, analysis_scalar, crossref_div, embed_path, figure_caption, figure_title,
     figures_in_paper_order, fmt, is_internal, md_table, open_result, recipe_param,
     report_figure, result_sidecar, sci, sidecar_value,
 )
@@ -64,9 +66,14 @@ def param(exp_id, name):
     return recipe_param(STUDY.get_experiment(exp_id), name)
 
 # --- Study-specific metric functions: read a container, return a number. Examples: ---
+def peak_rate(exp_id):
+    """The quantity the paper reports, straight out of the run that produced it."""
+    ds = open_result(RESULTS, str(exp_id))
+    return None if ds is None else float(ds["r_E"].max())
+
 def grid_counts():
     """Topology counts from the processed connectome, so the exact-match claims compute."""
-    p = INPUT / "<study>_grid.npz"
+    p = SOURCEDATA / "<study>_grid.npz"
     if not p.exists():
         return {}
     d = np.load(str(p), allow_pickle=True)
@@ -199,13 +206,13 @@ def status_callout(fig):
 for n, fig in enumerate(figures_in_paper_order(STUDY.figures), 1):
     print(f"### {figure_title(fig)}\n")
     theirs, credit = original(fig)
-    staged = report_figure(FIGS / f"{fig.name}.png", theirs, STAGE,
+    staged = report_figure(FIGS / f"{fig.name}.png", theirs,
                            credit=credit, cleared=CLEARED)
     if staged is None:
         print(f"::: {{.callout-warning}}\n`{fig.name}.png` is not rendered — "
               f"run `tvbo run <Study>.yaml`.\n:::\n")
         continue
-    print(f"![**Fig {n}.** {figure_caption(fig)}](_figures/{staged.name})"
+    print(f"![**Fig {n}.** {figure_caption(fig)}]({embed_path(staged)})"
           f"{{#fig-{fig.name.replace('_', '-')} width=100%}}\n")
     print(status_callout(fig))
 ```
@@ -238,7 +245,7 @@ unavailable inputs and stated as limitations, never claimed as matches.
 ```{python}
 #| label: scorecard
 #| output: asis
-SC = Scorecard(ROOT / "docs/analysis/targets.md")
+SC = Scorecard(study_path("analysis", root=ROOT) / "targets.md")
 
 print(crossref_div("tbl-tally", SC.tally_table(),
     "Replication targets by **tier** and **outcome**, each counted once. *Tier*: **core** "

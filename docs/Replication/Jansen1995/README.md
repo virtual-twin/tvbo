@@ -32,7 +32,7 @@ Jansen1995/
       scripts/                  the plotting script each figure generates, kept beside what it renders
     notes/                      the gap register and open threads, kept local so a note can be blunt
   derivatives/                  nested derivative datasets
-    tvbo/                       one flat derivative dataset holding every container this study computes: `exp-<id>_model-<name>_result.h5` for a run, `ana-<name>_result.h5` for an analysis, each with a sidecar
+    tvbo/                       one flat derivative dataset holding every container this study computes: `exp-<id>_model-<name>_result.h5` for a run, `ana-<name>_result.h5` for an analysis, each beside one `.yaml` sidecar: the frozen, re-runnable spec that produced it
       dataset_description.json  declares the derivative type, the generating tool, and the source dataset, which is the study root two levels up
   prov/                         what was run, when, in what environment, by what software, over what inputs
   logs/                         run logs

@@ -17,7 +17,7 @@
 # Rendered via LaTeX (xelatex). A replication report is mostly wide computed tables, and
 # `longtable` is the only engine that breaks one across a page with its header repeated. Run with
 # the tvbo venv:
-#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render      # in docs/  -> BOTH PDFs
+#     PATH=/path/to/tvbo/.venv/bin:$PATH quarto render               # in docs/  -> BOTH PDFs
 project:
   type: default
   render:
