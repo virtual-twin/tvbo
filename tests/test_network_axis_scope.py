@@ -54,6 +54,14 @@ def test_edges_weight_is_not_misparsed_as_dynamics():
     assert network_axis_leaf("network.edges.weight") == "weights"
 
 
+def test_edge_delay_sweeps_the_delay_graph_leaf():
+    """`network.edges.delay` sweeps a delay graph's own `delays` leaf.
+
+    A network that carries explicit per-edge delays lowers onto a DenseDelayGraph, whose delays are a live leaf; without this entry the axis raised "no graph leaf to sweep" and the only way to vary a conduction delay was to write one experiment per value.
+    """
+    assert network_axis_leaf("network.edges.delay") == "delays"
+
+
 def test_unsweepable_edge_attribute_raises():
     """An edge attribute with no graph leaf fails at codegen, not silently.
 
@@ -75,3 +83,4 @@ def test_error_names_the_sweepable_set():
     msg = str(e.value)
     assert "network.conduction_speed" in msg
     assert "network.edges.weight" in msg
+    assert "network.edges.delay" in msg

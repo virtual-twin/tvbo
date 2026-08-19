@@ -459,3 +459,28 @@ in full.
   study was one observation; **(c)** prove a codegen fix at RUNTIME on a short experiment written
   into a scratch container, and compare it against a container written before the regression —
   ours came back bit-identical, which is the only evidence that actually settles it.
+
+- **`--experiment 15,14` does not run 15 first.** Symptom: you reorder the argument to get one
+  experiment early and nothing changes. The list is a FILTER; the run follows the study's own
+  declaration order. When one experiment gates something you want hours early — the last two
+  unscored targets, a figure that has never rendered — give it its own invocation and chain the
+  rest after it. Two sequential calls cost nothing and moved a container from 03:30 to 01:30.
+
+- **One `tvbo run` cannot fill the machine, and a serial sweep leaves most of it idle.** Symptom:
+  a six-experiment job is projected to finish in eleven hours while `top` shows four of twelve
+  cores busy. A single run draws roughly four cores whatever you give it, so N experiments in one
+  invocation is N sequential four-core jobs. Split them across parallel invocations — three jobs
+  of two took the same work from ~13:00 to ~04:00 — and size the split by cores, not by taste:
+  jobs x cores-per-job should land at or just under the core count. Check free memory BEFORE
+  committing (52 % free, peak footprints of 4.8/1.2/1.4/1.3 GB, each job under its own guard),
+  because the failure mode of over-splitting is a swap death, not a slow run.
+
+- **Never regenerate the datamodel, or touch importable framework code, while a run is in
+  flight.** Symptom: experiments written before some moment are right and the ones after are
+  wrong, with no code change to blame. Templates are re-read per experiment and the generated
+  datamodel is imported once per process, so a regeneration mid-sweep changes what later
+  experiments emit while the sweep looks untouched. This is how an argument-ordering latency
+  became a data corruption: the bug existed all along and was harmless until a regeneration
+  reversed a mapping's order at 20:29, splitting one sweep into a correct half and a wrong half.
+  If you must fix the framework during a run, finish the run first, or accept that everything
+  after the edit needs re-running and gate on it.

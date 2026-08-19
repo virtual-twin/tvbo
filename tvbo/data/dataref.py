@@ -277,6 +277,8 @@ def resolve_dataref(
 
     Runs the four steps in order — WHERE (:func:`locate_container`), WHICH (:func:`match_output`), SLICE (:func:`select_labeled`), RECONCILE (:func:`reconcile_by_label`, only when the reference asks for ``by_label`` and a network context is supplied) — and returns the array detached from the source file. ``alias_map`` / ``model_labels`` are the consuming network's ``region_alias_map()`` and node order, injected so this stays network-agnostic.
 
+    An ``output`` naming a DataFrame-backed container as a whole returns the frame instead (:func:`as_table`). SLICE and RECONCILE do not apply to a table, so a reference that declares one of them against that shape raises rather than returning something the directive was never applied to.
+
     For a *local* reference (no WHERE) raises via :func:`locate_container`; callers test :func:`is_local_ref` first and route those to the in-run resolver.
     """
     import xarray as xr
@@ -284,7 +286,24 @@ def resolve_dataref(
     path = locate_container(ref, results_root=results_root, fallback_experiment=fallback_experiment)
     ds = xr.open_dataset(path, engine="h5netcdf")
     try:
-        da = ds[match_output(ds.data_vars, getattr(ref, "output", None))]
+        output = getattr(ref, "output", None)
+        try:
+            da = ds[match_output(ds.data_vars, output)]
+        except KeyError:
+            table = as_table(ds, output)
+            if table is None:
+                raise
+            unapplied = [name for name in ("sel", "transform") if getattr(ref, name, None)]
+            if reconcile_mode(ref) == "by_label":
+                unapplied.append("reconcile")
+            if unapplied:
+                raise ValueError(
+                    f"reference to output {output!r} resolves to a whole table, and the array "
+                    f"pipeline's {', '.join(unapplied)} has no meaning on one — name a single "
+                    "column in `output:` to get a sliceable array, or do the slicing in the "
+                    "consuming callable."
+                ) from None
+            return table
         da = select_labeled(da, sel_dict(ref))
         da = da.load()
     finally:
@@ -294,6 +313,27 @@ def resolve_dataref(
     if reconcile_mode(ref) == "by_label" and alias_map is not None and model_labels is not None:
         da = reconcile_by_label(da, alias_map, model_labels)
     return da
+
+
+def as_table(ds, output=None):
+    """A container written from a ``DataFrame`` read back as that table, or ``None``.
+
+    An analysis that returns a ``DataFrame`` is persisted as one variable per column over a single row dimension named ``<analysis>_row``, so ``output:`` naming the analysis itself has no one variable to match. That spelling means "the whole thing", and for this shape the whole thing is a table — returned with the storage prefix stripped and the written index restored, so the consumer sees the frame it wrote.
+
+    The row dimension has to be *this* ``output``'s, which is what keeps a mistyped column name an error: any other container, and any other name, returns ``None`` and the caller's original lookup failure stands.
+    """
+    import pandas as pd
+
+    dims = {d for v in ds.data_vars.values() for d in v.dims}
+    if len(dims) != 1 or not ds.data_vars:
+        return None
+    dim = str(next(iter(dims)))
+    if dim != (f"{output}_row" if output else dim) or not dim.endswith("_row"):
+        return None
+    if any(v.dims != (dim,) for v in ds.data_vars.values()):
+        return None
+    index = ds[dim].values if dim in ds.coords else None
+    return pd.DataFrame({str(k).split("__", 1)[-1]: v.values for k, v in ds.data_vars.items()}, index=index)
 
 
 def apply_transform(da, name: str | None):

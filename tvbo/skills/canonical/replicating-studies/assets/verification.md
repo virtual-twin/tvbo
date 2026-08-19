@@ -64,6 +64,52 @@ where it left the physical range, the growth rate at each), separate what that *
 attempted and its criterion is not met, which is the one verdict that says so. An unresolved
 verification honestly reported is a result; a missing one is a gap in the replication.
 
+## A container can contradict ITSELF, and that check is free
+
+A derived column stored beside its own inputs is a pure function of them, so recomputing it is a
+verification that needs no oracle, no published data and no second implementation — only the
+container. Do it for every container, every run:
+
+```python
+pre, post = trapezoid(psd_pre, axis=-2), trapezoid(psd_post, axis=-2)
+deviation = abs(stored - (pre - post) / pre).max()  # the formula the recipe declares
+```
+
+Eleven of Kadak2025's twelve sweeps reproduced their stored column to 1e-15 and the twelfth
+missed on all 432 cells, matching the transposed formula exactly. Nothing else had caught it: the
+container was complete, carried every trace, and its numbers were plausible — the condition
+merely looked like a genuine null.
+
+Put the check in **two** places, because they fail differently. In the **completion gate** that
+stands before the destructive re-derive, so a bad container stops the pipeline instead of
+entering three targets; and in the **report's identity harness**, so a build can never ship a
+figure drawn from a container that disagrees with itself. Ours read
+
+    all 13 sweeps carry cum_*, all 11 baselines exist,
+    and all 13 containers reproduce their own power modulation
+
+and refusing on that third clause is what made the difference between a scorecard and a correct
+scorecard.
+
+## Score a blocked target from its container rather than waiting for the derive
+
+A target blocked on compute is not blocked on *knowledge* — its inputs land with the container,
+hours before the analyses are re-derived. Rebuild the frame it reads by calling the SAME
+callables the recipe declares, with the same arguments, and hand it to the same scorer:
+
+```python
+power = KA.power_table(stored, pre_psd, post_psd, iaf, baseline_modulation=base)
+frame = KA.merge_tables(power, weights, calcium, gains, gnmda)
+status, reason = t34(Context(metrics={15: frame}))
+```
+
+This is the recipe's own computation, not a re-derivation of it, so it is a preview and not a
+second implementation. Kadak2025 scored its last five targets this way between two and seven
+hours early, and every number the authoritative derive later produced matched the preview
+exactly — which is itself one more check. Two rules keep it honest: recompute the suspect column
+from the container's own inputs rather than trusting the stored one, and say plainly which rows
+still read stale containers.
+
 ## A harness that ABORTS reports success for every check it never reached
 
 `check_declared_signs` raised on the first multi-output container it met, so the sign vectors it

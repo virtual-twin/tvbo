@@ -3291,8 +3291,18 @@ def edge_const(label: str) -> str:
 
 
 # `network.`-scoped exploration axes sweep a live leaf of the backend graph, so every cell sees its own value without a Network or graph rebuild. Each entry below names the graph leaf carrying an attribute; adding a sweepable edge attribute is one entry here plus a graph leaf that holds it.
-_NETWORK_EDGE_GRAPH_LEAVES = {"weight": "weights", "length": "lengths"}
+_NETWORK_EDGE_GRAPH_LEAVES = {"weight": "weights", "length": "lengths", "delay": "delays"}
 _NETWORK_SCALAR_GRAPH_LEAVES = {"conduction_speed": "speed"}
+# Leaves holding one value per edge. tvboptim rejects a graph shape change after prepare(), so a scalar swept onto one of these is written across the existing edges rather than replacing the matrix.
+_NETWORK_MATRIX_GRAPH_LEAVES = frozenset({"weights", "lengths", "delays"})
+
+
+def network_leaf_is_matrix(leaf: Any) -> bool:
+    """Whether a ``network.``-scoped graph leaf holds a per-edge matrix rather than a scalar.
+
+    A scalar leaf (``speed``) takes the swept value as it stands. A matrix leaf (``weights``, ``lengths``, ``delays``) must keep the graph's topology: the swept value is broadcast onto every edge that exists and the rest of the matrix stays zero, so the sweep varies the attribute without moving an edge.
+    """
+    return leaf in _NETWORK_MATRIX_GRAPH_LEAVES
 
 
 def network_axis_leaf(ref: Any) -> str | None:

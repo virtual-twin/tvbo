@@ -315,3 +315,35 @@ def test_resolve_dataref_with_transform(sweep_h5):
     ref = _ref(experiment="32", output="lyapunov_xi", transform="_xsrc_test_endpoint")
     out = dr.resolve_dataref(ref, results_root=root)
     np.testing.assert_allclose(out.values, [4.0, 4.1, 4.2])  # row 4 (last of 5 points)
+
+
+# --------------------------------------------------------------------------- table fallback
+
+
+@pytest.fixture
+def table_h5(tmp_path):
+    """A DataFrame-backed container: one variable per column over a single ``<analysis>_row`` dim."""
+    ds = xr.Dataset(
+        {"stats__r": (("stats_row",), np.array([0.1, 0.2])), "stats__p": (("stats_row",), np.array([0.5, 0.6]))},
+        coords={"stats_row": ["alpha", "beta"]},
+    )
+    p = tmp_path / "out" / "nc" / "exp7" / "study_exp-7_result.h5"
+    p.parent.mkdir(parents=True)
+    ds.to_netcdf(p, engine="h5netcdf")
+    return tmp_path, p
+
+
+def test_resolve_dataref_returns_the_whole_table(table_h5):
+    """``output`` naming the analysis itself means the frame it wrote, columns unprefixed."""
+    root, _ = table_h5
+    out = dr.resolve_dataref(_ref(experiment="7", output="stats"), results_root=root)
+    assert list(out.columns) == ["r", "p"]
+    assert list(out.index) == ["alpha", "beta"]
+
+
+@pytest.mark.parametrize("extra", [{"sel": _sel(metric="r")}, {"transform": "_xsrc_test_endpoint"}, {"reconcile": "by_label"}])
+def test_table_refuses_a_directive_it_cannot_apply(table_h5, extra):
+    """SLICE / transform / RECONCILE have no meaning on a table, so declaring one raises rather than returning an array the directive never touched."""
+    root, _ = table_h5
+    with pytest.raises(ValueError, match="whole table"):
+        dr.resolve_dataref(_ref(experiment="7", output="stats", **extra), results_root=root)

@@ -3651,7 +3651,7 @@ classes:
                     (e.g. "ReducedWongWang.a"), a coupling key
                     (e.g. "FastLinearCoupling.G"), or one of the reserved scopes:
                     "network." for a connectome leaf (e.g. "network.conduction_speed",
-                    "network.edges.weight"), "execution.random_seed" for a per-cell
+                    "network.edges.weight", "network.edges.delay"), "execution.random_seed" for a per-cell
                     noise-seed ensemble, or "initial_conditions.<state_var>" to sweep
                     the initial value of one state variable (a deterministic
                     initial-condition ensemble). Resolved against the enclosing

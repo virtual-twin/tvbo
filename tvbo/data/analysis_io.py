@@ -605,13 +605,24 @@ def _kwargs_of(analysis, results_root) -> dict:
 def _as_dataset(name: str, produced):
     """The callable's return as an xarray ``Dataset`` of ``observation__<key>`` variables.
 
-    A mapping contributes one variable per key; a ``Dataset`` keeps its own variable names; anything else is a single array keyed by the analysis name. A labelled ``DataArray`` passes through with its dims and coordinates intact — that fidelity is the point, since a figure's ``encoding`` names them.
+    A mapping contributes one variable per key; a ``Dataset`` keeps its own variable names; a ``DataFrame`` contributes one variable per COLUMN, all sharing a single row dimension, so a table survives the round trip as a table rather than as an unlabelled block; anything else is a single array keyed by the analysis name. A labelled ``DataArray`` passes through with its dims and coordinates intact — that fidelity is the point, since a figure's ``encoding`` names them.
     """
     import numpy as np
     import xarray as xr
 
+    row_dim, row_index = None, None
     if isinstance(produced, xr.Dataset):
         items = list(produced.data_vars.items())
+    elif _is_dataframe(produced):
+        row_dim, row_index = f"{name}_row", _row_labels(produced)
+        columns = [str(c) for c in produced.columns]
+        if len(set(columns)) != len(columns):
+            raise ValueError(
+                f"analysis {name!r}: the returned table has repeated column names "
+                f"({sorted({c for c in columns if columns.count(c) > 1})}) — one column is "
+                "one stored array, so a repeat would silently keep only the last."
+            )
+        items = [(str(c), produced[c].to_numpy()) for c in produced.columns]
     elif isinstance(produced, Mapping):
         items = list(produced.items())
     else:
@@ -625,16 +636,48 @@ def _as_dataset(name: str, produced):
         else:
             arr = np.asarray(value)
             if arr.dtype == object:
-                raise TypeError(
-                    f"analysis {name!r}: output {key!r} is not numeric (dtype=object). "
-                    "Return arrays, DataArrays, or scalars — a result container holds "
-                    "labelled numeric arrays."
-                )
-            da = xr.DataArray(arr) if arr.ndim == 0 else xr.DataArray(arr, dims=[f"{key}_d{i}" for i in range(arr.ndim)])
+                arr = _strings_or_raise(name, key, arr)
+            if arr.ndim == 0:
+                da = xr.DataArray(arr)
+            elif row_dim is not None and arr.ndim == 1:
+                da = xr.DataArray(arr, dims=[row_dim])
+            else:
+                da = xr.DataArray(arr, dims=[f"{key}_d{i}" for i in range(arr.ndim)])
         data_vars[f"observation__{key}"] = da.rename(f"observation__{key}")
     if not data_vars:
         raise ValueError(f"analysis {name!r}: the callable returned nothing to persist.")
-    return xr.Dataset(data_vars)
+    coords = {row_dim: row_index} if row_index is not None else None
+    return xr.Dataset(data_vars, coords=coords)
+
+
+def _is_dataframe(obj) -> bool:
+    """True for a pandas DataFrame, without importing pandas to ask."""
+    return type(obj).__name__ == "DataFrame" and hasattr(obj, "columns") and hasattr(obj, "to_numpy")
+
+
+def _row_labels(frame):
+    """A table's index as a coordinate, or ``None`` where it is the plain 0..n-1 counter.
+
+    A table keyed by region, parameter or condition carries its keys in the index; dropping it stores the columns without the names that say which row is which.
+    """
+    import numpy as np
+
+    idx = np.asarray(frame.index.to_numpy())
+    if idx.dtype.kind in "iu" and np.array_equal(idx, np.arange(len(idx))):
+        return None
+    return idx.astype(str) if idx.dtype == object else idx
+
+
+def _strings_or_raise(name: str, key: str, arr):
+    """An object array of strings becomes a string array; anything else is not storable."""
+    flat = arr.ravel()
+    if all(isinstance(v, str) for v in flat):  # vacuously true for an empty column, which is storable
+        return arr.astype(str)
+    raise TypeError(
+        f"analysis {name!r}: output {key!r} is not numeric (dtype=object). "
+        "Return arrays, DataArrays, strings, or scalars — a result container holds "
+        "labelled numeric arrays."
+    )
 
 
 def _provenance(analysis, produced_keys: Iterable[str]) -> dict:

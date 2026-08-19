@@ -253,14 +253,22 @@ print(crossref_div("tbl-targets", SC.target_table(),
     f"claim) and its outcome."))
 ```
 
-### Where the replication falls short {#sec-shortfall}
+### Where the replication stands against its criteria {#sec-outcomes}
 
+<!-- The heading is the SUBJECT, never a count. `## Why {N} targets fall short` reads correctly
+     at fifteen, awkwardly at five and absurdly at zero -- and zero is what you are working
+     toward, so a count-titled section is guaranteed to end up false. Counts belong in the
+     sentences, where falling to zero still reads. Render this block mentally at N = 0 and at
+     N = all before shipping: any sentence that presupposes a non-empty set needs a branch. -->
 ```{python}
-#| label: shortfall
+#| label: outcomes
 #| output: asis
-print(f"Of {len(SC.rows)} declared targets, **{SC.count('met')} are met**. The remaining "
-      f"{len(SC.rows) - SC.count('met')} fall short in different senses, and the distinction "
-      f"matters: only the first group is a failure of this replication.\n")
+unmet = len(SC.rows) - SC.count("met")
+print(f"Of {len(SC.rows)} declared targets, **{SC.count('met')} are met**"
+      + (f" and **{unmet}** do not reach their criterion, in senses the next paragraphs keep "
+         f"apart: only the first is a failure of this replication.\n" if unmet else
+         ", each with the measurement that decided it. Where our numbers still differ from the "
+         "published ones without breaching a criterion is taken apart below.\n"))
 print(SC.shortfall_prose())
 ```
 

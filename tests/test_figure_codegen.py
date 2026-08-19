@@ -618,10 +618,10 @@ def test_render_code_inset_draws_inside_its_host():
     code = bsplot.render_code(_inset_figure(), TAHER_BASE, "out.png")
     ast.parse(code)
     assert "def _a_inset0(fig, ax):" in code
-    assert "_a_inset0(fig, ax.inset_axes([0.55, 0.55, 0.4, 0.4]))" in code
+    assert "_iax = ax.inset_axes([0.55, 0.55, 0.4, 0.4])" in code
     # ...and it is called from the host panel, not from main().
     host = code.split("def _panel_a(fig, ax):")[1].split("\ndef ")[0]
-    assert "_a_inset0(fig, ax.inset_axes(" in host
+    assert "_iax = ax.inset_axes(" in host and "_a_inset0(fig, _iax)" in host
 
 
 def test_render_code_inset_shares_the_panel_drawing_rules():
@@ -651,9 +651,9 @@ def test_render_code_trim_margins_toggle():
 
 
 def test_render_code_panel_numbers_toggle():
-    """A ``bsplot.add_panel_number`` call is emitted iff panel numbering is on."""
-    assert "_bpanels.add_panel_number(axd[" in _emit(panel_numbers=True)
-    assert "_bpanels.add_panel_number(axd[" not in _emit(panel_numbers=False)
+    """A panel-number call is emitted iff panel numbering is on."""
+    assert "_panel_number(axd[" in _emit(panel_numbers=True)
+    assert "_panel_number(axd[" not in _emit(panel_numbers=False)
 
 
 def test_render_code_auto_format_toggle():
@@ -786,15 +786,26 @@ def test_split_triangle_matrix_layers():
     assert code.count("fig.colorbar(") == 1  # one scale for the composed matrix
 
 
-def test_scatter_keeps_its_declared_colour_under_a_colour_encoding():
-    """A colour-mapped LINE drops its fixed ``style.color`` (the map supplies one hue per entry), but a ``scatter`` is drawn straight from ``style`` — popping its colour would silently blank the declared point colour."""
+def test_a_colour_encoding_drops_the_layer_wide_colour():
+    """A ``color`` ENCODING supplies the colour, so the layer's fixed one is dropped — on a scatter as on a line.
+
+    They differ in what the encoding means (a third quantity per point, versus one artist per entry) but not in who wins: a scatter shaded by ``c=`` and a fixed ``color=`` name the same keyword twice. A scatter with NO colour encoding keeps its declared colour, which is what makes a marker layer drawable.
+    """
     scatter = P.Layer(
         mark="scatter",
         used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
         encoding=P.Encoding(x="K", y="delta_omega", color="region"),
         style=P.Style(color="red"),
     )
-    assert bsplot._resolve_layer(scatter, "cartesian", TAHER_BASE)["style"].get("color") == "red"
+    assert "color" not in bsplot._resolve_layer(scatter, "cartesian", TAHER_BASE)["style"]
+
+    marker = P.Layer(
+        mark="scatter",
+        used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+        encoding=P.Encoding(x="K", y="delta_omega"),
+        style=P.Style(color="red"),
+    )
+    assert bsplot._resolve_layer(marker, "cartesian", TAHER_BASE)["style"].get("color") == "red"
 
     line = P.Layer(
         used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
@@ -866,6 +877,33 @@ def test_declared_ticks_survive_the_format_pass():
     assert code.index("format_fig") < code.index("{'xticks': [50, 100, 150, 200]}")
     # A placeholder-only panel has no frame to restore.
     assert bsplot.build_context(_placeholder_figure(), TAHER_BASE, "o.png")["panels"][0]["post_axopts"] == {}
+
+
+def test_shared_scale_unifies_a_panel_group():
+    """Hidden tick labels assert a scale the panels must actually be on, so a declared group ends on the union of its limits."""
+    figure = _cartesian_figure()
+    figure.share_y = ["a,b"]
+    figure.share_x = ["a,b"]
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert bsplot.build_context(figure, TAHER_BASE, "out.png")["shared_scales"] == {"x": [["a", "b"]], "y": [["a", "b"]]}
+    assert "_share_scale(axd, ['a', 'b'], 'y')" in code
+    assert "_share_scale(axd, ['a', 'b'], 'x')" in code
+    assert code.index("format_fig") < code.index(
+        "_share_scale(axd, ['a', 'b'], 'y')"
+    )  # the union is the last word on the limits
+
+    undeclared = bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
+    assert "_share_scale(axd, [" not in undeclared  # the helper is always defined; nothing calls it
+
+
+def test_blanked_slot_survives_the_format_pass():
+    """A colour-scale slot blanks its host axes; the format pass re-derives ticks for every axes, so the blanking is re-applied after it."""
+    code = bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
+    ast.parse(code)
+    blank = code.index("_blank = [")
+    assert 'hasattr(_ax, "zaxis")' in code  # a 3-D axes reads as blanked and must be left alone
+    assert blank < code.index("format_fig") < code.index("_ax.set_axis_off()")
 
 
 def test_annotation_binds_a_computed_number():

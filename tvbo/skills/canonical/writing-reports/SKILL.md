@@ -75,6 +75,34 @@ solver step is the bug — replace it with an `M[...]` entry. And don't excuse o
 run read against a scan's parameter axis) — add the helper and compute it; an "≈" sitting next
 to a typed number in prose is usually the tell.
 
+**Audit every file the report TRANSCRIBES, not just the `.qmd`.** A report that reads a hand-kept
+analysis note and prints its tables has moved the typed numbers, not removed them — and the note
+is the worse place for them, because nothing renders it and nobody re-reads it. Kadak2025's
+`verification.md` held its own alpha peak, seed spread, *t*, CI and argmax ridge as literals and
+the report printed them as a table for weeks; when the run improved, the table did not, and it
+still opened "Fifteen targets score short" at a scorecard of 35 met. The fix is not to update the
+literals. It is to compute them in the report and leave the note a pointer with no numbers in it.
+The rule to apply to a transcribed file is the same asymmetric one: a value only an external run
+can produce (a reference implementation's output, the paper's own print) may be a literal in the
+ONE file that owns it; every value of yours in it is a bug.
+
+**Literals hide as number WORDS, and a digit grep sails past them.** The sentence "T13 disagrees
+with the paper on which **two of eleven** alpha conditions fail a Bonferroni-corrected test" sat
+in a section otherwise computed to three decimals, and matched no `[0-9]` audit. Grep for the
+spelled forms too — one, two, three … dozen, both, neither, all four, half. When that particular
+"two" was finally computed it came out **zero**: the typed number was not merely un-auditable, it
+was wrong, and had been asserting a disagreement the run no longer had.
+
+**Never let a COUNT title a section.** `print(f"## Why {N_SHORT} targets fall short")` is correct
+at fifteen, awkward at five and absurd at zero — and zero is the outcome you are working toward,
+so the heading is guaranteed to end up false. Title a section by its subject, which does not move
+("Where our numbers still differ, and why"), and let the counts live in its sentences, where
+falling to zero reads fine. The same goes for any sentence that presupposes the set is non-empty:
+"the reason beside each non-`met` row" needs an `if` around it, or it promises a column that
+isn't there. Write the boundary case first — render the section mentally at N = 0 and at N = all
+— because a report whose prose only works mid-range will embarrass you exactly when the work
+succeeds.
+
 ```python
 from tvbo.classes.study import SimulationStudy
 STUDY = SimulationStudy.from_file("../<Study>.yaml")
@@ -213,6 +241,23 @@ reader. The check strips executable cells first, so what `STUDY.report()` emits 
 ```python
 bad = report.unrendered_equations("report.qmd")
 assert not bad, f"hand-written equations: {bad}"
+```
+
+**Guard the transcribed notes the same way, by naming the files allowed to hold literals.** The
+equation guard works because it is mechanical; the typed-result rule stays manual and therefore
+rots. Make it mechanical too: list the analysis files that legitimately own external numbers —
+`published-values.md`, and whatever holds a reference implementation's output — and assert that
+every *other* file the report reads carries none. It is a crude check and that is the point; a
+decimal appearing in a note nobody renders is exactly the thing no reviewer will catch.
+
+```python
+OWNS_LITERALS = {"published-values.md", "nftsim-reference.md"}
+typed = {
+    p.name: re.findall(r"(?<![\w.])\d+\.\d+", p.read_text())
+    for p in (ROOT / "report/analysis").glob("*.md")
+    if p.name not in OWNS_LITERALS
+}
+assert not any(typed.values()), f"results typed into a transcribed note: { {k: v for k, v in typed.items() if v} }"
 ```
 
 When an equation is genuinely implemented but no renderer can reach it — a solver-level
