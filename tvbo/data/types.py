@@ -100,13 +100,10 @@ def _observation_dataarray(raw_data, dims=None, nodes=None):
 def _declared_observation_dims(source) -> dict:
     """Axis names each of *source*'s observations declares, keyed by observation name.
 
-    The reduction an observation declares fixes its axes, so the container can name them
-    instead of writing an unnamed placeholder dim that no reader can select on.
+    The reduction an observation declares fixes its axes, so the container can name them instead of writing an unnamed placeholder dim that no reader can select on.
 
     Labelling is a convenience over an already-finished compute, so it never costs a run:
-    any failure to resolve the declared reductions — the helper unavailable, an observation
-    whose reduction the resolver rejects — yields no names and the caller falls back to its
-    positional template, rather than throwing out of ``save()`` and discarding the result.
+    any failure to resolve the declared reductions — the helper unavailable, an observation whose reduction the resolver rejects — yields no names and the caller falls back to its positional template, rather than throwing out of ``save()`` and discarding the result.
     Logged rather than swallowed, so a spec that cannot be resolved is still visible.
     """
     try:
@@ -201,8 +198,7 @@ def _is_partial_shard(expl) -> bool:
 def _axis_points_are_arrays(a) -> bool:
     """Whether an axis's POINTS are arrays rather than scalars.
 
-    Keyed on an element, not on the container's dtype: a string axis is object-dtype too, and treating its points as arrays would try to read floats out of "heun". Asks about the
-    point's EXTENT rather than its type, which is why :func:`tvbo.utils.is_array_valued` does not answer this one: a 0-d array is a container but not an axis of matrices.
+    Keyed on an element, not on the container's dtype: a string axis is object-dtype too, and treating its points as arrays would try to read floats out of "heun". Asks about the point's EXTENT rather than its type, which is why :func:`tvbo.utils.is_array_valued` does not answer this one: a 0-d array is a container but not an axis of matrices.
     """
     if a.ndim > 1:
         return True
@@ -237,17 +233,16 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
     return np.asarray([index[v] for v in cell.tolist()])
 
 
-def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None):
+def _stacked_to_dataarray(
+    stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None
+):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
 
     Outer dims correspond to exploration axes (parameter names with their explored values as coords). When ``n_trials > 1`` and the leading inner axis matches, a ``trial`` dim is inserted after the grid dims. Remaining inner dims follow the simulation convention ``(time, variable, node, mode)``; the leading ``time`` dim is included only when ``intrinsic_ts`` carries a multi-step time vector matching the leading remaining shape, so time-aggregated observations don't get a spurious ``time`` axis.
 
     ``cell_coords`` (``{axis_name: per_cell_values}``) is each cell's actual parameter values read back from the grid, in the grid's OWN emission order. It keys results by value rather than by position, because a ``Space`` emits cells in pytree-leaf order, which is NOT the ``axes_info`` order whenever the swept axes live on different state sub-objects (dynamics/coupling/graph) — a plain positional reshape would then scramble the surface. For the full Cartesian product each cell is placed into the rectangular grid at the index its values map to (order-independent). For a flat subset (one HPC array task's shard) the result instead gets a single ``point`` dim with each axis's value hung on it as a coordinate, so the shard is self-describing and reassembles by parameter value across tasks.
 
-    ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`). ``nodes`` are the network's node labels, hung on
-    whichever declared dim is the node axis — a swept observation is selected by label the
-    same way an unswept one is, and without them a sweep's node axis is addressable only by
-    index.
+    ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`). ``nodes`` are the network's node labels, hung on whichever declared dim is the node axis — a swept observation is selected by label the same way an unswept one is, and without them a sweep's node axis is addressable only by index.
     """
     if stacked_arr is None:
         return None

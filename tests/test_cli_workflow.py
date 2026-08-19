@@ -1961,8 +1961,7 @@ def _profile_jobs(tmp_path, block):
 def test_profile_jobs_cap_comes_from_the_workflow_block(tmp_path):
     """A site's queue limit is declarable beside its partition and account.
 
-    Baked in, a large fan-out is throttled to 100 concurrent jobs with nothing in the recipe
-    able to change it — a silent slowdown rather than a stated one.
+    Baked in, a large fan-out is throttled to 100 concurrent jobs with nothing in the recipe able to change it — a silent slowdown rather than a stated one.
     """
     assert "250" in _profile_jobs(tmp_path, {"jobs": 250})
 
@@ -1976,10 +1975,7 @@ def test_profile_jobs_cap_defaults_to_100(tmp_path, block):
 def test_the_jobs_cap_is_declarable_and_survives_the_frozen_spec():
     """`jobs` needs a schema slot, or the only way to set it is a flag the kit forgets.
 
-    Without one a recipe cannot spell `workflow: {snakemake: {jobs: 250}}` at all, and the
-    `--set` route reaches the emitter through the raw merged dict but is dropped when the
-    frozen spec is rebuilt — so the kit re-emits at 100 and the spec no longer re-emits
-    identically without the flags, which is the whole promise of freezing it.
+    Without one a recipe cannot spell `workflow: {snakemake: {jobs: 250}}` at all, and the `--set` route reaches the emitter through the raw merged dict but is dropped when the frozen spec is rebuilt — so the kit re-emits at 100 and the spec no longer re-emits identically without the flags, which is the whole promise of freezing it.
     """
     from tvbo import datamodel as dm
     from tvbo.cli._workflow import _engine_config_from_dict

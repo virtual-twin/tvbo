@@ -110,6 +110,37 @@ exactly — which is itself one more check. Two rules keep it honest: recompute 
 from the container's own inputs rather than trusting the stored one, and say plainly which rows
 still read stale containers.
 
+## Forensics on the deposit is a THIRD kind of number
+
+A verification note carries three classes of number, not two. Yours come from your containers,
+the paper's come from its pages, and the third is a measurement *you* made on *their* artifact:
+their arrays re-analysed under a candidate definition, their inclusion rule re-run, a reference
+implementation you compiled and ran. It is computed by you and it is not a result of your
+replication, so it will not equal your own number for the same quantity — and that is correct,
+they are measurements on two different datasets. **writing-reports** holds the ownership rule
+and why a caption must never derive it by elimination; two things follow for the note itself.
+
+**Declare the note's own ownership rule in its opening paragraph**, naming the artifact each
+column was measured on, so the report's caption defers to it rather than inventing one.
+
+**Give a deposit measurement a helper, exactly as a container measurement gets one.** The
+deposit is on disk and your loader already reads it, so being external licenses nothing:
+
+```python
+def figure_2d_settings(condition="...", file="..."):
+    """Which inclusion rule and which alpha reference reproduce the printed panel."""
+    df = load_published_results(condition=condition, file=file)
+    rows = [{"Setting": "paper", **{r["Key"]: float(r["r"]) for r in published_values()[SECTION]}}]
+    rows += [{"Setting": s, **rescore(df, s)} for s in CANDIDATE_SETTINGS]
+    return pd.DataFrame(rows)  # the paper's row first, then each candidate setting
+```
+
+The exception worth naming: a **search** is not the helper for the definition it selected. If
+the number came from scanning candidate definitions until one reproduced a printed value, a
+helper that evaluates the winner does not replay the search, and the measurement stays recorded
+until someone writes the scan. Say that in the note, in the same sentence as the number, so a
+reader can tell it apart from every other value on the page.
+
 ## A harness that ABORTS reports success for every check it never reached
 
 `check_declared_signs` raised on the first multi-output container it met, so the sign vectors it

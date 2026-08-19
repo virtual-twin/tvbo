@@ -239,11 +239,7 @@ def _streamed_cells(tmp_path, mode, seeds, tag):
 def test_a_seed_axis_reseeds_a_streamed_observation(tmp_path, mode):
     """The seed must reach `noise.key` on the STREAMING path, and under either grid mode.
 
-    A bundled streaming observation folds into the integrator carry through
-    `prepare(reduce=...)` rather than reading a materialised trajectory, and the per-cell
-    reseeding wrapper composes on top of it. If it did not, every cell of the sweep would
-    integrate the same noise and the container would still report a seed dimension — the
-    fake ensemble the checks above refuse at codegen, arrived at after it.
+    A bundled streaming observation folds into the integrator carry through `prepare(reduce=...)` rather than reading a materialised trajectory, and the per-cell reseeding wrapper composes on top of it. If it did not, every cell of the sweep would integrate the same noise and the container would still report a seed dimension — the fake ensemble the checks above refuse at codegen, arrived at after it.
     """
     import numpy as np
 
@@ -251,4 +247,5 @@ def test_a_seed_axis_reseeds_a_streamed_observation(tmp_path, mode):
     b = _streamed_cells(tmp_path, mode, [5, 6], f"{mode}_b")
     assert not np.allclose(a, b), (
         f"{mode} + streaming: the cells are identical under two different seed sets, so the "
-        "seed axis never reached the solver's PRNG key")
+        "seed axis never reached the solver's PRNG key"
+    )

@@ -1,25 +1,18 @@
 """A graph-generator builder may NAME the nodes it generates.
 
-A motif whose nodes ARE particular regions — a two-node PPC/PFC decision circuit, a
-cortex/thalamus pair — says which is which through the builder's own labels rather than taking
-positional ones (``node_0``, ``node_1``). Everything keyed downstream inherits them: an
-observation's node coordinate, a figure's ``sel: {node: PFC}``, a report's per-node table.
-Unlabelled, the only way to reach one module is by index, which is exactly the positional
-binding the container format exists to remove.
+A motif whose nodes ARE particular regions — a two-node PPC/PFC decision circuit, a cortex/thalamus pair — says which is which through the builder's own labels rather than taking positional ones (``node_0``, ``node_1``). Everything keyed downstream inherits them: an observation's node coordinate, a figure's ``sel: {node: PFC}``, a report's per-node table.
+Unlabelled, the only way to reach one module is by index, which is exactly the positional binding the container format exists to remove.
 
 These pin the contract: a builder returning a dict may supply ``node_labels``, one per node;
-the labels reach ``Network.node_labels``; a wrong-length list is an error rather than a
-silent truncation or pad; and a builder that supplies none still gets the positional
-default.
+the labels reach ``Network.node_labels``; a wrong-length list is an error rather than a silent truncation or pad; and a builder that supplies none still gets the positional default.
 """
-
 
 import pytest
 import yaml
 
 from tvbo.classes.network import Network
 
-_BUILDER_MODULE = '''
+_BUILDER_MODULE = """
 import numpy as np
 
 W = np.array([[0.0, 1.0], [1.0, 0.0]])
@@ -45,7 +38,7 @@ def named_as_array():
 def named_with_params():
     return {"weights": W, "lengths": L, "node_labels": ["PPC", "PFC"],
             "node_params": {"I_e": [0.0118, 0.0]}}
-'''
+"""
 
 
 @pytest.fixture
@@ -98,9 +91,7 @@ def test_a_wrong_length_label_list_raises(two_node_network):
 def test_labels_may_arrive_as_an_array(two_node_network):
     """A builder reading its labels off an atlas hands back a numpy array, not a list.
 
-    Testing an array for emptiness by truthiness asks it for a scalar truth value, which
-    raises for anything longer than one element — so the whole network fails to materialise
-    on the most natural way to produce the labels.
+    Testing an array for emptiness by truthiness asks it for a scalar truth value, which raises for anything longer than one element — so the whole network fails to materialise on the most natural way to produce the labels.
     """
     net = two_node_network("named_as_array")
     assert net.node_labels == ["PPC", "PFC"]

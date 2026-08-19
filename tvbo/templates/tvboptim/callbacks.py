@@ -267,18 +267,11 @@ def progress_ticker(total: int, *, every: int | None = None, label: str = "batch
 def point_indices(cell_values, points):
     """Index of each cell's ARRAY-VALUED axis point among *points*, matched by value.
 
-    An exploration axis whose points are whole arrays (a swept connectome, a per-node control
-    vector) cannot carry those arrays as a coordinate: an xarray coordinate is a 1-D index of
-    scalars, so codegen declares ``arange(n)`` and the axis's grid dimension is the point index.
-    The per-cell dataframe column, though, carries the whole array — so the two are in different
-    currencies and the container cannot pair them. Only the generated script holds the
-    materialised points, which is why the conversion belongs here.
+    An exploration axis whose points are whole arrays (a swept connectome, a per-node control vector) cannot carry those arrays as a coordinate: an xarray coordinate is a 1-D index of scalars, so codegen declares ``arange(n)`` and the axis's grid dimension is the point index.
+    The per-cell dataframe column, though, carries the whole array — so the two are in different currencies and the container cannot pair them. Only the generated script holds the materialised points, which is why the conversion belongs here.
 
-    Matched by nearest flattened L1 distance rather than by equality, because a point that has
-    round-tripped through a device or a file need not compare equal to the one the axis declared.
-    The distance is accumulated one point at a time: a 379-node connectome carries 143k elements
-    per point, and differencing every cell against every point at once is hundreds of megabytes
-    of temporary for an argmin.
+    Matched by nearest flattened L1 distance rather than by equality, because a point that has round-tripped through a device or a file need not compare equal to the one the axis declared.
+    The distance is accumulated one point at a time: a 379-node connectome carries 143k elements per point, and differencing every cell against every point at once is hundreds of megabytes of temporary for an argmin.
 
     Args:
         cell_values: One entry per grid cell, each an array of the axis's point shape.

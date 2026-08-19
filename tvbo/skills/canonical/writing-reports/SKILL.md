@@ -86,6 +86,29 @@ The rule to apply to a transcribed file is the same asymmetric one: a value only
 can produce (a reference implementation's output, the paper's own print) may be a literal in the
 ONE file that owns it; every value of yours in it is a bug.
 
+**There are THREE owners, not two, and the third is the one a caption gets wrong.** Besides
+yours and the paper's there is a measurement *you* made on *their* artifact — the deposit
+re-analysed under a candidate definition, a reference implementation you compiled and ran. It
+is computed by you and it is not a result of your replication, and the tell that you have
+mixed the classes is a caption asserting the leftover rule: Kadak2025's transcription said "a
+column naming NFTsim or the paper says so, and every other column is this replication's own",
+under a table of correlations measured on the authors' arrays. The report then contradicts
+itself in print, because the same four correlations appear computed from our containers
+twenty pages earlier with different values — both correct, on two different datasets. Never
+let a caption derive ownership by elimination. Say which artifact each column was measured on,
+and have the transcribed file state its own rule in its first paragraph so the caption can
+defer to it rather than invent one.
+
+**A deposit measurement is still recomputable, and two typed copies of it will drift.** The
+class being external does not license typing it: `load_published_results()` is right there, so
+give it a helper and let both the note and the prose read the one call. The Fig-2D settings
+scan lived as a typed table in `verification.md` *and* as a typed `p = .088` in the report's
+Results — one measurement, two hand-kept copies, no way to notice when they part. The
+exception worth stating plainly is a measurement no call reproduces: a *search* over candidate
+definitions is not the same helper as one that evaluates the definition it chose, so until
+someone writes the search it stays recorded — and the note should say so in that sentence,
+rather than leaving a number that looks like every other computed one.
+
 **Literals hide as number WORDS, and a digit grep sails past them.** The sentence "T13 disagrees
 with the paper on which **two of eleven** alpha conditions fail a Bonferroni-corrected test" sat
 in a section otherwise computed to three decimals, and matched no `[0-9]` audit. Grep for the
@@ -256,8 +279,12 @@ across four files that were entirely correct. The reviewable act is classifying 
 whose numbers it holds; the mechanical part is refusing to transcribe one nobody has classified:
 
 ```python
-NUMBER_OWNERS = {"published-values.md": "paper", "targets.md": "paper",
-                 "methods-vs-code.md": "both", "verification.md": "reference-run"}
+NUMBER_OWNERS = {
+    "published-values.md": "paper",
+    "targets.md": "paper",
+    "methods-vs-code.md": "both",
+    "verification.md": "reference-run",
+}
 notes = {p.name for p in (ROOT / "report/analysis").glob("*.md")}
 assert not notes - set(NUMBER_OWNERS), f"unclassified analysis note: {sorted(notes - set(NUMBER_OWNERS))}"
 assert "ours" not in NUMBER_OWNERS.values(), "a result of ours belongs in a computed cell, not a note"

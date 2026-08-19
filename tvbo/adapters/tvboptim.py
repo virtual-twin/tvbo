@@ -366,7 +366,7 @@ def to_heterogeneous_network(
 ):
     """Build a tvboptim ``HeterogeneousNetwork`` from a heterogeneous tvbo Network.
 
-    Nodes are partitioned into ``DynamicsGroup``s by their referenced dynamics (graph order = node order); edges are collapsed into ``SignalRoute``s keyed by ``(coupling NAME, target_var, delayed)`` — keying on object identity would split two edges naming one coupling into two routes, applying the shared graph twice. The shared graph is built by the same :func:`_build_graph` the homogeneous path uses, so the connectome weights (with signs) and delays carry over unchanged.
+    Nodes are partitioned into ``NodeGroup``s by their referenced dynamics (graph order = node order); edges are collapsed into ``SignalRoute``s keyed by ``(coupling NAME, target_var, delayed)`` — keying on object identity would split two edges naming one coupling into two routes, applying the shared graph twice. The shared graph is built by the same :func:`_build_graph` the homogeneous path uses, so the connectome weights (with signs) and delays carry over unchanged.
 
     Parameters
     ----------
@@ -384,8 +384,8 @@ def to_heterogeneous_network(
         network's couplings (any ``delayed=True``).
     """
     from tvboptim.experimental.network_dynamics import (
-        DynamicsGroup,
         HeterogeneousNetwork,
+        NodeGroup,
         SignalRoute,
     )
 
@@ -414,7 +414,7 @@ def to_heterogeneous_network(
         )
     graph = _build_graph(network, delays=delays, max_delay=max_delay)
 
-    # --- DynamicsGroups (+ per-group AbstractDynamics for readout validation)
+    # --- NodeGroups (+ per-group AbstractDynamics for readout validation)
     groups = {}
     optim_dyn = {}
     for dname, idxs in group_idx.items():
@@ -423,7 +423,7 @@ def to_heterogeneous_network(
             raise ValueError(f"dynamics {dname!r} not found; pass dynamics_lib or set network.dynamics[{{dname!r}}]")
         D = dyn_obj.execute("tvboptim")
         optim_dyn[dname] = D
-        groups[dname] = DynamicsGroup(
+        groups[dname] = NodeGroup(
             dynamics=D,
             nodes=np.asarray(idxs, dtype=int),
             noise=_extract_noise(dyn_obj),
