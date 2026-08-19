@@ -227,11 +227,7 @@ def test_stat_stream_is_folded_in_the_post_eval_plan():
 def test_a_folded_statistic_and_anything_derived_from_it_declare_the_node_axis():
     """A time-folding stream keeps one value per node, and that axis must be NAMED.
 
-    Left undeclared, the container falls back to its positional ``(variable, node, mode)``
-    template, which right-aligns a lone remaining axis onto ``mode`` — so a per-node scalar
-    arrives keyed by a mode axis the model does not have, and a figure can only bind the
-    node it wants by index. A derived observation over such a stream is elementwise, so it
-    carries the same axis.
+    Left undeclared, the container falls back to its positional ``(variable, node, mode)`` template, which right-aligns a lone remaining axis onto ``mode`` — so a per-node scalar arrives keyed by a mode axis the model does not have, and a figure can only bind the node it wants by index. A derived observation over such a stream is elementwise, so it carries the same axis.
     """
     stream = _stat_observation("mean", source="r")
     derived = Observation(name="derived", source=["obs"], pipeline=[{"equation": {"rhs": "obs * 2"}}])
@@ -243,11 +239,7 @@ def test_a_folded_statistic_and_anything_derived_from_it_declare_the_node_axis()
 def test_a_reshaping_pipeline_declares_its_own_axes_not_its_sources(tmp_path):
     """`compute_fc` is not elementwise, so it must NOT inherit its source's axes.
 
-    The canonical Deco/Schirner spelling is `fc: {source: [bold], pipeline: [compute_fc]}`,
-    where `bold` carries `(time, node)` and `fc` is a node-by-node matrix. Both are rank 2,
-    so nothing downstream can catch a wrong inheritance by shape: the container would hang
-    the node labels on the column axis and call the rows `time`, and a figure's
-    `sel: {node: PFC}` would then select a column of an FC matrix.
+    The canonical Deco/Schirner spelling is `fc: {source: [bold], pipeline: [compute_fc]}`, where `bold` carries `(time, node)` and `fc` is a node-by-node matrix. Both are rank 2, so nothing downstream can catch a wrong inheritance by shape: the container would hang the node labels on the column axis and call the rows `time`, and a figure's `sel: {node: PFC}` would then select a column of an FC matrix.
     """
     bold = _stat_observation("mean", source="x")
     fc = Observation(

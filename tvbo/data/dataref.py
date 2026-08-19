@@ -65,9 +65,7 @@ def locate_exp_container(results_root, source_id) -> Path:
     subject_prefix = re.compile(r"^sub-[A-Za-z0-9]+_")
     stems = {subject_prefix.sub("", p.name) for p in cands}
     is_cohort = (
-        all(subject_prefix.match(p.name) for p in cands)
-        and len(stems) == 1
-        and len({p.name for p in cands}) == len(cands)
+        all(subject_prefix.match(p.name) for p in cands) and len(stems) == 1 and len({p.name for p in cands}) == len(cands)
     )
     if len(cands) > 1 and not is_cohort:
         listed = "\n  ".join(str(p) for p in cands[:10])

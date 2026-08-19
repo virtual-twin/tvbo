@@ -1120,11 +1120,11 @@ def test_a_square_heatmap_is_oriented_by_dim_name_not_by_shape():
     C = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
     da = xr.DataArray(C, dims=["rho_ppc", "rho_pfc"])
     out = heatmap_orientation(da, C, "rho_pfc", "rho_ppc", 3, 3)
-    np.testing.assert_allclose(out, C)          # already (y, x): must NOT transpose
+    np.testing.assert_allclose(out, C)  # already (y, x): must NOT transpose
 
     da_t = xr.DataArray(C.T, dims=["rho_pfc", "rho_ppc"])
     out_t = heatmap_orientation(da_t, C.T, "rho_pfc", "rho_ppc", 3, 3)
-    np.testing.assert_allclose(out_t, C)        # (x, y): transposed back to (y, x)
+    np.testing.assert_allclose(out_t, C)  # (x, y): transposed back to (y, x)
 
 
 def test_a_heatmap_whose_channels_are_not_dims_keeps_the_shape_fallback():
@@ -1143,10 +1143,7 @@ def test_a_heatmap_whose_channels_are_not_dims_keeps_the_shape_fallback():
 def test_the_heatmaps_coordinate_arrays_follow_the_dim_names_too():
     """The index fallback must index each channel by ITS dim, not by axis position.
 
-    Orientation is decided by dim name, so `_x`/`_y` have to agree: on a NON-square array
-    whose dims run (y, x) and which carries no coordinate on either, indexing x by axis 0
-    hands pcolormesh an x of the y axis's length and it raises — while a square array
-    silently transposes the field instead.
+    Orientation is decided by dim name, so `_x`/`_y` have to agree: on a NON-square array whose dims run (y, x) and which carries no coordinate on either, indexing x by axis 0 hands pcolormesh an x of the y axis's length and it raises — while a square array silently transposes the field instead.
     """
     import re
 
