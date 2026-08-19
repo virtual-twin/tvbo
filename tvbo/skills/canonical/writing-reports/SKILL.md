@@ -250,15 +250,36 @@ rots. Make it mechanical too: list the analysis files that legitimately own exte
 every *other* file the report reads carries none. It is a crude check and that is the point; a
 decimal appearing in a note nobody renders is exactly the thing no reviewer will catch.
 
+Do NOT do this with a blanket "no decimals" scan. Most notes legitimately carry the paper's
+criteria and parameters, so it fires on all of them — ours reported 36, 74, 177 and 59 hits
+across four files that were entirely correct. The reviewable act is classifying each note ONCE by
+whose numbers it holds; the mechanical part is refusing to transcribe one nobody has classified:
+
 ```python
-OWNS_LITERALS = {"published-values.md", "nftsim-reference.md"}
-typed = {
-    p.name: re.findall(r"(?<![\w.])\d+\.\d+", p.read_text())
-    for p in (ROOT / "report/analysis").glob("*.md")
-    if p.name not in OWNS_LITERALS
-}
-assert not any(typed.values()), f"results typed into a transcribed note: { {k: v for k, v in typed.items() if v} }"
+NUMBER_OWNERS = {"published-values.md": "paper", "targets.md": "paper",
+                 "methods-vs-code.md": "both", "verification.md": "reference-run"}
+notes = {p.name for p in (ROOT / "report/analysis").glob("*.md")}
+assert not notes - set(NUMBER_OWNERS), f"unclassified analysis note: {sorted(notes - set(NUMBER_OWNERS))}"
+assert "ours" not in NUMBER_OWNERS.values(), "a result of ours belongs in a computed cell, not a note"
 ```
+
+`ours` is a category that must stay empty; it exists so that writing it down feels as wrong as it
+is. A new note then cannot reach a reader without someone answering the one question that matters
+about it.
+
+**One scorer, and the report is it.** A standalone script that computes the scorecard is useful
+while the run is in flight, and it is a liability the moment it diverges from the report. Ours
+did: the script defined its seed-ensemble helper before use, the report defined the same helper
+*after* the cell that called it, and the result was a scorecard printing a clean 35 of 35 beside
+a report that could not compile at all (`NameError`). Neither artifact was wrong about the
+science; there were simply two orderings of one computation and only one of them ran. If you keep
+a standalone scorer, have it import the report's own module rather than restate it, and treat a
+green scorer as no evidence whatsoever that the report builds — render the report.
+
+**A setup cell is a program, so read it as one.** A `.qmd` chunk invites you to append, and
+appending is how a value ends up used forty lines above its own `def`. When you add a term to a
+context object, put the addition *below* everything it reads, and re-render rather than trusting
+that a notebook-shaped file will sort itself out.
 
 When an equation is genuinely implemented but no renderer can reach it — a solver-level
 construction such as the correlated-noise mix in `CorrelatedNoiseSolver` — it is **framework
