@@ -1,0 +1,24 @@
+# The study's entry recipe: `tvbo run <Study>.yaml`. Its directory is the study root.
+tvbo_class: tvbo:SimulationStudy
+
+citekey: <Study>
+title: "<Paper title>"
+label: "<Author> (<Year>): <one line on what the study shows>"
+description: >-
+  What this study simulates and what it claims. Reproduced quantities and their published
+  values belong in docs/analysis/targets.md, not here.
+
+experiments:
+    - name: "1"
+      description: <what this experiment shows>
+      dynamics:
+          iri: tvb-o:<ModelName>
+      integration:
+          method: heun
+          step_size: 0.1
+          duration: 1000.0
+      observations:
+          - name: signal
+            record: <state variable>
+
+# A fragment under spec/ is included, never inlined twice: `- !include spec/exp-2_experiment.yaml`.
