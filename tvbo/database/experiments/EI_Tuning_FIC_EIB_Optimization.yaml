@@ -665,9 +665,9 @@ observations:
           name: fc_corr
           module: tvboptim.observations.observation
         arguments:
-          A:
+          fc1:
             value: fc
-          B:
+          fc2:
             value: fc_target
 
   fc_rmse:
@@ -681,9 +681,9 @@ observations:
           name: rmse
           module: tvboptim.observations.observation
         arguments:
-          A:
+          matrix1:
             value: fc
-          B:
+          matrix2:
             value: fc_target
 
 # =============================================================================
