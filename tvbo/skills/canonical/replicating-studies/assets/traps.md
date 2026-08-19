@@ -173,7 +173,7 @@ in full.
 - **Redundant scripts.** One prep script (emits the tvbo Network directly); figures are
   the declarative `figures:` block, not scripts. Don't hand-write per-figure `plot_*.py`
   or an A/B compose driver — the renderer emits the plot scripts, and bespoke panel code
-  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in `figures/scripts/`
+  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in the render target's `scripts/`
   is *generated*; never author or commit it.)
 - **Moving a module changes what `Path(__file__).parents[N]` means — grep for the climb
   BEFORE you flatten.** Study code routinely locates the study root by climbing from its own

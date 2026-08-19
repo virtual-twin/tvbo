@@ -91,7 +91,7 @@ published data*, or *the published study* when you genuinely mean all three.
    command produces results **and** figures; add
    `--experiment 2,3` to run a subset (`--no-figures` to skip rendering).
 2. **Nothing hardcoded in the report.** Every reported value is computed inline from
-   a result container (`derivatives/tvbo/exp-*_result.h5`) or the recipe metadata — counts, ⟨Δω⟩,
+   a result container (`open_result(study_path("results", root=ROOT), …)`) or the recipe metadata — counts, ⟨Δω⟩,
    decay times, bifurcation thresholds, scaling exponents, spectral peaks, fitted params,
    correlations, whatever the paper reports. If you typed a number into prose, it is a
    bug. (Papers are not ground truth; your own asserted numbers are not either.) The rule
@@ -130,8 +130,9 @@ published data*, or *the published study* when you genuinely mean all three.
    bare name — no driver, no `PYTHONPATH`, no `code_source`. (Set `code_source` **only** to point
    the importable code *elsewhere* — a git repo or a shared directory — never at a local `code/`
    subfolder; a `code/recipe/` split buys nothing and breaks imports if the line is forgotten.)
-   Fragments the recipe `!include`s go in `spec/`, each BIDS-named for what it specifies
-   (`model-<name>_dynamics.yaml`, `exp-<id>_experiment.yaml`), with its entities present from
+   Fragments the recipe `!include`s go in `spec/`, each BIDS-named for what it specifies (the
+   suffix table under **Layout** is generated from the record, so read it there rather than from
+   memory), with its entities present from
    the start so adding a second one renames nothing. **One fragment specifies one entity**: the
    suffix names the class the file contains, so a `figures.yaml` holding twelve figures becomes
    twelve `fig-<id>_desc-<slug>_figure.yaml` files. A file whose name cannot say what is inside
@@ -154,9 +155,10 @@ published data*, or *the published study* when you genuinely mean all three.
 
    Two properties of the generated rules are worth understanding, because both were learned the
    hard way. **A negation cannot rescue a file under a directory an ancestor `.gitignore`
-   excluded** — git does not descend into an excluded directory. That is why the gate ignores
-   `sourcedata/*` and re-includes `!sourcedata/README.md`, rather than ignoring
-   `sourcedata/original_study` and trying to carve exceptions under it; three studies wrote the
+   excluded** — git does not descend into an excluded directory. That is why the gate ignores the whole
+   of `sourcedata/` and re-includes only its README (the rules themselves are generated — read
+   them under **Layout**, never retype one), rather than ignoring the deposit directory and
+   trying to carve exceptions under it; three studies wrote the
    latter and silently kept their targets table, figure map and adherence notes untracked for
    weeks. And **a derived copy of copyrighted material is only as protected as where it is put**:
    ignoring the paper's figures where they were downloaded does nothing about an A/B composite
@@ -693,7 +695,7 @@ paper figure is a `Figure` in `<Study>.yaml`'s `figures:` list (schema `schema/f
 design `dev/figure-spec-design.md`). `tvbo figure render <Study>.yaml` — run automatically by
 `tvbo run <Study>.yaml` — emits a self-contained, editable `docs/figures/scripts/plot_<name>.py`
 **and** runs it,
-producing `<name>.png` in `figures/`. Iterate one figure fast with `tvbo figure render` (the
+producing `<name>.png` beside it. Iterate one figure fast with `tvbo figure render` (the
 results stay put; only the plot re-runs). Copy `assets/figures.snippet.yaml` for the block and
 `assets/figures.py.tmpl` for the panel module.
 
@@ -875,23 +877,25 @@ figures for A/B checking, and `_quarto.yml` lists both and holds the shared `for
 (xelatex) + `bibliography:`. The build branches on `QUARTO_DOCUMENT_FILE`; no `--profile`, no
 post-render hook (see the header comment in `_quarto.yml`).
 
-**Stage every figure into `docs/_figures/` and embed it from there, never through a link up
-into `../figures/`.** `tvbo.utils.report.report_figure` does the staging, decides per build
-whether the © original is opened at all, and composes the A/B pair — one implementation for every
-study, so no report grows its own `ab()` again.
+**Never name a figure directory in a report.** `tvbo.utils.report.report_figure` asks the record
+where a composite is staged, decides per build whether the © original is opened at all, and
+composes the A/B pair; `embed_path` makes the reference relative to the render. One implementation
+for every study, so no report grows its own `ab()` again — and with no original to compose against
+there is nothing to stage, so our own figure is embedded where the run rendered it rather than
+copied somewhere second.
 
-**`docs/_figures/` is git-ignored by the layout, and that is now enforced rather than remembered.**
-The staging dir holds two kinds of file: our own reproductions, and `<name>_ab.png` composites
-that embed the publisher's figure beside them. Ignoring `sourcedata/original_study/` protects the
-originals **where they were downloaded** and does nothing about a COPY of them made under `docs/`,
-which is otherwise a tracked tree — so a missing rule left the composites
-untracked-but-not-ignored, and the next `git add -A` committed the paper's figures to history.
-Every replication we shipped before the record existed had that hole, in all eleven studies,
-because the entry was simply missing from a hand-written skeleton. It is now a `tracked: none`
-field on the directory in `schema/study_layout.yaml`, `tvbo study init` writes the rule from it,
-`tvbo validate study` fails if the file drifts, and a test scaffolds a study and asks git itself.
-Verify rather than assume all the same: `git check-ignore -v docs/_figures/<fig>_ab.png` must NAME
-the rule that ignores it. The internal A/B build is a **local check**, not a deliverable:
+**A composite is staged inside the deposit whose figure it embeds, and that is now enforced rather
+than remembered.** A composite is a COPY of the publisher's figure, and a copy is only as protected
+as where it is put: ignoring the deposit **where it was downloaded** does nothing about one made
+under an otherwise-tracked tree. A missing rule left the composites untracked-but-not-ignored, and
+the next `git add -A` committed the paper's figures to history — every replication shipped before
+the record existed had that hole, in all eleven studies, because the entry was simply missing from
+a hand-written skeleton. Putting the stage under the deposit means the one rule that keeps the
+deposit unpublished covers every composite made from it. It is a `tracked: none` directory in the
+record, `tvbo study init` writes the rule from it, `tvbo validate study` fails if the file drifts,
+and a test scaffolds a study and asks git itself. Verify rather than assume all the same:
+`git check-ignore -v` on the composite must NAME the rule that ignores it. The internal A/B build
+is a **local check**, not a deliverable:
 `report_internal.pdf`, the composites, and `sourcedata/original_study/` are all local-only, and
 the one shareable artifact is `report.pdf`, which opens no © original at all. Loop the recipe's own `figures:` block
 (`figures_in_paper_order`, `figure_title`, `figure_caption`) rather than a hand-written list of
@@ -1202,9 +1206,11 @@ it; and framework gaps surface late if you skip Phase 1.5 — find them before t
 
 ## Layout
 
-Generated from `schema/study_layout.yaml`, the single ground truth. Regenerate with
-`tvbo study layout --sync <file> --template replication`; never edit the block by hand, and never
-restate the tree anywhere else.
+Everything in this section is generated from `schema/study_layout.yaml` and from the code that
+builds the filenames — the single ground truth. Regenerate with
+`tvbo study layout --sync <file> --template replication`; never edit a block by hand, and never
+restate a path, an ignore rule or a filename grammar anywhere else, here or in a study. A rule
+that is written down twice is a rule that will be right in one place.
 
 <!-- BEGIN STUDY LAYOUT (generated by `tvbo study layout --sync`; do not edit) -->
 
@@ -1248,3 +1254,72 @@ restate the tree anywhere else.
 ```
 
 <!-- END STUDY LAYOUT -->
+
+### Naming a spec fragment
+
+<!-- BEGIN SPEC SUFFIXES (generated by `tvbo study layout --sync`; do not edit) -->
+
+| suffix | declares |
+|--------|----------|
+| `_dynamics` | one `Dynamics` |
+| `_network` | one `Network` |
+| `_experiment` | one `SimulationExperiment` |
+| `_analysis` | one `Analysis` |
+| `_figure` | one `Figure` |
+| `_study` | one `SimulationStudy` |
+
+<!-- END SPEC SUFFIXES -->
+
+### Naming a result
+
+<!-- BEGIN RESULT NAMES (generated by `tvbo study layout --sync`; do not edit) -->
+
+```
+[sub-{subject}_]exp-{experiment}[_model-{model}][_desc-{description}][_split-{split}]_{suffix<result>}{extension<.h5|.yaml>}
+ana-{analysis}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml>}
+```
+
+| entity | identifies |
+|--------|------------|
+| `sub-` | The subject a per-subject shard ran, when a dataset fans out over a cohort. Absent for a single-network run. |
+| `exp-` | The experiment id the run came from — the `name` of one entry under the study's `experiments:`. |
+| `ana-` | The name of a declared analysis, in place of `exp-`. A file carries one or the other, never both. |
+| `model-` | The dynamics the run integrated, so the one fact a reader most wants to filter on is queryable rather than buried in `desc-`. |
+| `desc-` | BIDS's free-text discriminator, for two results of the same experiment that differ in nothing a named entity captures. |
+| `split-` | The array-task index of one shard of a sweep, zero-padded. Present only until the shards are gathered. |
+
+<!-- END RESULT NAMES -->
+
+### What is tracked
+
+<!-- BEGIN IGNORE FILES (generated by `tvbo study layout --sync`; do not edit) -->
+
+`.gitignore`
+
+```gitignore
+# Generated by `tvbo study init` from schema/study_layout.yaml (template: replication). Edit the record, not this file.
+sourcedata/*
+!sourcedata/README.md
+docs/.quarto/
+docs/figures/
+docs/notes/
+derivatives/*
+!derivatives/tvbo/
+derivatives/tvbo/*
+!derivatives/tvbo/dataset_description.json
+logs/
+.tvbo/
+docs/report.pdf
+docs/report_internal.pdf
+```
+
+`.bidsignore`
+
+```gitignore
+# Generated by `tvbo study init` from schema/study_layout.yaml (template: replication). Edit the record, not this file.
+spec/
+prov/
+/<Study>.yaml
+```
+
+<!-- END IGNORE FILES -->

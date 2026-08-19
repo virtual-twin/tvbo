@@ -309,3 +309,79 @@ def test_the_gate_ignores_copyrighted_material(scaffold):
     for rel in must_be_tracked:
         ignored, rule = _ignored(scaffold, rel)
         assert not ignored, f"{rel} must be tracked but is ignored by {rule}"
+
+
+SKILLS = Path(__file__).resolve().parent.parent / "tvbo" / "skills" / "canonical"
+
+FREE_FORM = (
+    "code/",
+    "sourcedata/original_study/",
+    "sourcedata/templates/",
+    "docs/analysis/",
+    "docs/notes/",
+    "docs/figures/scripts/",
+)
+"""Directories the record declares but whose CONTENTS it does not: a study names its own files there."""
+
+RETIRED = ("output", "input", "report", "results", "figures", "docs/_figures")
+"""Layout paths that no longer exist. A skill naming one is telling an agent to write where nothing reads."""
+
+_RETIRED = re.compile(r"(?<![\w/.-])(" + "|".join(re.escape(r) for r in RETIRED) + r")/")
+"""Anchored at a path boundary, so `docs/figures/` is not read as the retired top-level `figures/`."""
+
+NOT_A_STUDY_PATH = ("docs/Interoperability/", "docs/CLI/", "docs/Replication/")
+"""Paths into THIS repository's own documentation, which collide with the study's `docs/` by name only."""
+
+
+def _skill_prose() -> list[tuple[str, int, str]]:
+    """Every line of every skill, with its generated regions removed."""
+    lines = []
+    for path in sorted(SKILLS.rglob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        for name in ("STUDY LAYOUT", "BIDS EXCEPTIONS", "IGNORE FILES", "RESULT NAMES", "SPEC SUFFIXES"):
+            begin, end = layout_rules.markers(name)
+            while begin in text and end in text:
+                head, _, rest = text.partition(begin)
+                text = head + rest.partition(end)[2]
+        rel = str(path.relative_to(SKILLS))
+        lines.extend((rel, n, line) for n, line in enumerate(text.splitlines(), 1))
+    return lines
+
+
+def _tokens(line: str, roots: list[str]) -> list[str]:
+    """Path-shaped runs in ``line`` that begin with a study-root directory."""
+    pattern = re.compile(r"(?<![\w/.-])(" + "|".join(re.escape(r) for r in roots) + r")(/[\w.<>{}*-]+)+/?")
+    return [m.group(0).rstrip("/") for m in pattern.finditer(line)]
+
+
+def test_no_skill_names_a_path_the_record_retired():
+    """A skill that still names a directory the record dropped sends an agent to write where nothing reads.
+
+    The record moves; prose does not follow it on its own. The old composite staging directory survived three sweeps of this repository because every one of them searched for the paths that had already changed rather than asking what the record currently has.
+    """
+    offenders = [
+        f"{rel}:{n}: {m.group(0)}"
+        for rel, n, line in _skill_prose()
+        if "hardcodes" not in line
+        for m in _RETIRED.finditer(line)
+    ]
+    assert not offenders, "skills naming a retired layout path:\n" + "\n".join(offenders)
+
+
+def test_every_study_path_a_skill_names_is_one_the_record_declares(record):
+    """The skills may describe the layout, but only in the record's own terms.
+
+    Anything the record governs is spliced into a skill by ``tvbo study layout --sync``; a path typed into prose beside it is a second copy, and the two diverge the first time a directory moves.
+    """
+    known = {rel for rel, _ in layout_rules.walk(record, layout_rules.ANY_TEMPLATE)}
+    known |= {rel for rel, _ in layout_rules.iter_files(record, layout_rules.ANY_TEMPLATE)}
+    roots = sorted({rel.split("/")[0] for rel in known})
+    offenders = []
+    for rel, n, line in _skill_prose():
+        for token in _tokens(line, roots):
+            if token in known or "/".join(token.split("/")[:2]) in known:
+                continue
+            if token.startswith(FREE_FORM) or token.startswith(NOT_A_STUDY_PATH):
+                continue
+            offenders.append(f"{rel}:{n}: {token}")
+    assert not offenders, "skills naming a path the record does not declare:\n" + "\n".join(offenders)

@@ -91,7 +91,7 @@ REQUIRED output: a packed kit + a `docs/analysis/cluster-run.md` (the run route 
   (wildcards, inputs, resources); no `tvbo run` executes, so it cannot catch a runtime
   bug. A per-rule bug fails all N jobs identically (we once launched 1106 that all died
   the same way). Before the real submit, run a single experiment end-to-end inside the
-  SIF (`apptainer exec --bind … <sif> tvbo run spec/<id>/experiment.yaml`), then its
+  SIF (`apptainer exec --bind … <sif> tvbo run <Study>.yaml --experiment <id>`), then its
   dependents, then the full submit. This is Phase 7's "run END-TO-END, not `from_file`"
   at cluster scale. **A *fit* can't be "run once" to smoke-test it** — its whole cost is the
   tuning iterations. Cap them: `tvbo run … --smoke` (= `--max-iterations 1`) or
@@ -115,8 +115,9 @@ REQUIRED output: a packed kit + a `docs/analysis/cluster-run.md` (the run route 
   present (a tag can rebuild to stale cached content; a SIF is named by the URL hash, so
   it lands at the same path — force the pull).
 - **Ship the kit dual-mode so a version-skewed node can still run YOUR code —
-  `--code-source {frozen,spec}`.** A Snakemake study kit emits BOTH the frozen pre-rendered
-  `scripts/<exp>` and the `spec/<exp>`, and each rule can run either: **spec** (default)
+  `--code-source {frozen,spec}`.** A Snakemake study kit emits, inside the kit
+  itself, BOTH the frozen pre-rendered `scripts/<exp>` and its own `spec/` copy, and each rule
+  can run either: **spec** (default)
   re-generates the backend code from the spec at run time (needs a node `tvbo` whose codegen
   matches the emit-time behaviour); **frozen** runs the pre-rendered script as-is via `tvbo run
   --rendered scripts/<exp>`, so the reducer/streaming logic is already baked into the script and
