@@ -4240,6 +4240,7 @@ class Network(tvbo_datamodel.Network):
         arrays = self._get_arrays()
         store = getattr(self, "_store", None)
         candidates = self._matrix_names(name)
+
         def _pick(source):
             """First candidate spelling held by one source, exact match before case-folded.
 

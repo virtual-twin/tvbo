@@ -275,7 +275,9 @@ def test_algorithm_observations_land_on_the_node_axis_their_reduction_declares(t
         algorithms={"fic_eib": SimpleNamespace(state=_algo_state(n), post_tuning=post)},
         source=src,
     )
-    ds = xr.open_dataset([p for p in res.save(str(tmp_path), compress=False, record_only=False) if p.endswith(".h5")][0], engine="h5netcdf")
+    ds = xr.open_dataset(
+        [p for p in res.save(str(tmp_path), compress=False, record_only=False) if p.endswith(".h5")][0], engine="h5netcdf"
+    )
     try:
         per_node = ds["algorithm__fic_eib__mean_H_e"]
         assert per_node.dims == ("node",), f"expected the declared node axis, got {per_node.dims}"
@@ -299,7 +301,9 @@ def test_an_undeclared_algorithm_observation_keeps_its_placeholder_axis(tmp_path
         algorithms={"fic_eib": SimpleNamespace(state=_algo_state(n), post_tuning=post)},
         source=src,
     )
-    ds = xr.open_dataset([p for p in res.save(str(tmp_path), compress=False, record_only=False) if p.endswith(".h5")][0], engine="h5netcdf")
+    ds = xr.open_dataset(
+        [p for p in res.save(str(tmp_path), compress=False, record_only=False) if p.endswith(".h5")][0], engine="h5netcdf"
+    )
     try:
         assert ds["algorithm__fic_eib__mystery"].dims == ("mystery_d0",)
     finally:

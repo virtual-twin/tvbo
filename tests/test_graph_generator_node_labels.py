@@ -13,13 +13,12 @@ silent truncation or pad; and a builder that supplies none still gets the positi
 default.
 """
 
-
 import pytest
 import yaml
 
 from tvbo.classes.network import Network
 
-_BUILDER_MODULE = '''
+_BUILDER_MODULE = """
 import numpy as np
 
 W = np.array([[0.0, 1.0], [1.0, 0.0]])
@@ -45,7 +44,7 @@ def named_as_array():
 def named_with_params():
     return {"weights": W, "lengths": L, "node_labels": ["PPC", "PFC"],
             "node_params": {"I_e": [0.0118, 0.0]}}
-'''
+"""
 
 
 @pytest.fixture

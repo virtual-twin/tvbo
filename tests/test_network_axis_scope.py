@@ -144,7 +144,9 @@ explorations:
         AXIS
 """
 
-_LENGTH_BUILDER = "import numpy as np\n\n\ndef longer_tracts(n):\n    return [np.full((2, 2), 10.0 * (i + 1)) for i in range(int(n))]\n"
+_LENGTH_BUILDER = (
+    "import numpy as np\n\n\ndef longer_tracts(n):\n    return [np.full((2, 2), 10.0 * (i + 1)) for i in range(int(n))]\n"
+)
 
 
 def _render_delay_sweep(tmp_path, parameter, axis):
@@ -226,9 +228,7 @@ def _run_two_network_axes(tmp_path, monkeypatch):
     (tmp_path / "tract_builder.py").write_text(_LENGTH_BUILDER)
     monkeypatch.syspath_prepend(str(tmp_path))
     sys.modules.pop("tract_builder", None)
-    spec = _DELAY_SPEC.replace(
-        "      - parameter: PARAMETER\n        AXIS\n", _TWO_AXIS_SPACE
-    )
+    spec = _DELAY_SPEC.replace("      - parameter: PARAMETER\n        AXIS\n", _TWO_AXIS_SPACE)
     p = tmp_path / "two_axes.yaml"
     p.write_text(spec)
     exp = SimulationExperiment.from_file(str(p))
