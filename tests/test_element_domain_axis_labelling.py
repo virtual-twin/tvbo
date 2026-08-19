@@ -1,10 +1,11 @@
 """An ``element_domains`` exploration axis must be readable back by its declared name.
 
-A heterogeneous parameter swept per element is emitted as one dummy scalar grid leaf per element, ``dynamics._<param>_el<i>``, which is packed back into the array before the run.
-The declared axis, however, is named ``<ref>.<param>[<i>]``. The runtime keys its result grid by matching each grid column's bare name against the declared axis names, so those two spellings have to be bridged explicitly — exactly as the seed axis bridges ``_noise_seed`` to ``execution.random_seed``.
+A heterogeneous parameter swept per element is emitted as one dummy scalar grid leaf per element, ``dynamics._<param>_el<i>``, which is packed back into the array before the run. The declared axis, however, is named ``<ref>.<param>[<i>]``, and the grid's own column carries the leaf's keypath — so the declared label has to travel with the axis object at binding time, which is where the coordinate map reads it back.
 
-Without that bridge every observation of such an exploration fails to place, because keying by value refuses to fall back to a positional reshape (see ``test_exploration_result_labelling.py``). It is a whole axis kind that silently stops working, so both spellings are pinned here.
+Without that label every observation of such an exploration fails to place, because keying by value refuses to fall back to a positional reshape (see ``test_exploration_result_labelling.py``). It is a whole axis kind that silently stops working, so both spellings are pinned here.
 """
+
+import re
 
 import pytest
 
@@ -67,10 +68,10 @@ def test_element_axes_sweep_the_dummy_scalar_leaves(code):
 
 
 def test_the_emitted_runtime_bridges_leaf_name_to_declared_axis(code):
-    """The readback registers an alias for every element axis.
+    """Each element axis binds its dummy leaf under the declared, element-indexed name.
 
-    Asserted on the emitted source rather than a run because the failure it guards is a missing dict entry, and a run would only report it as an unrelated-looking placement error on whichever observation happens to be processed first.
+    Asserted on the emitted source rather than a run because the failure it guards is a label that never reaches the coordinate map, and a run would only report it as an unrelated-looking placement error on whichever observation happens to be processed first.
     """
     assert "element_idx" in code
-    assert "_bare_to_label" in code
-    assert "_el{_a.element_idx}" in code  # the alias key, quote-agnostic: emitted source is auto-formatted
+    for _i in (0, 1):
+        assert re.search(rf'_k_el{_i} = _ax\(\s*"ElemDecay\.k\[{_i}\]"', code), f"element {_i} bound without its declared label"

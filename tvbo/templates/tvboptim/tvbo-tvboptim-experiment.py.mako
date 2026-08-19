@@ -1431,7 +1431,7 @@ from tvboptim.optim.callbacks import MultiCallback, SavingLossCallback, SavingPa
 from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % endif
 % if has_explorations:
-from tvboptim.types import Space, GridAxis, DataAxis
+from tvboptim.types import Space, GridAxis, DataAxis, AbstractAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
 from tvbo.templates.tvboptim.callbacks import progress_ticker, resolve_exploration_n_vmap   # grid-batch progress; n_parallel → vmap width
 % endif
@@ -2939,7 +2939,20 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 % else:
 % if has_axes:
     grid_state = copy.deepcopy(_expl_state)
+    _axis_label_by_id = {}
+
+    def _ax(label, axis):
+        """Bind an axis, remembering the path the recipe declared it as.
+
+        `Space` names its dataframe columns after each swept leaf's pytree keypath, from which the
+        declared path cannot be recovered (`network.conduction_speed` comes back as `graph.2`), so
+        the label travels with the object instead of being guessed back from the column name.
+        """
+        _axis_label_by_id[id(axis)] = label
+        return axis
+
     % for ax in expl['axes']:
+<% _lbl = ax.get('label', ax['name']) + (f"[{ax['element_idx']}]" if ax.get('element_idx') is not None else '') %>\
     % if ax.get('builder_expr'):
     ## Builder axis: materialize the sweep values from a callable, then sweep as a DataAxis.
     ## Values may be whole per-node vectors (array-valued axis). Product mode meshgrids the
@@ -2949,39 +2962,39 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     _axisvals_${ax['name']} = jnp.asarray(${ax['builder_expr']})
     _grp_${ax['name']} = "${ax['name']}" if _axisvals_${ax['name']}.ndim > 1 else None
     % if ax.get('is_coupling'):
-    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % elif ax.get('is_network'):
-    grid_state.graph.${ax['graph_leaf']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    grid_state.graph.${ax['graph_leaf']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % else:
-    grid_state.dynamics.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    grid_state.dynamics.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % endif
     % elif ax.get('is_seed'):
     ## Noise-seed axis: a dummy scalar slot Space sweeps; the wrapper below turns
     ## each cell's integer seed into config.noise.key, so every cell/trial draws an
     ## independent noise realization (a real per-trial ensemble, not a no-op).
-    grid_state.dynamics._noise_seed = DataAxis(jnp.asarray(${ax['values']}, dtype=jnp.uint32))
+    grid_state.dynamics._noise_seed = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']}, dtype=jnp.uint32)))
     % elif ax.get('is_ic'):
     ## Initial-condition axis: a dummy scalar slot Space sweeps; the wrapper below
     ## writes each cell's value into the swept state variable's row of the initial
     ## state, so every cell integrates from its own IC (a deterministic IC ensemble).
     % if 'values' in ax:
-    grid_state.dynamics._ic_${ax['name']} = DataAxis(jnp.asarray(${ax['values']}))
+    grid_state.dynamics._ic_${ax['name']} = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']})))
     % else:
-    grid_state.dynamics._ic_${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.dynamics._ic_${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % elif ax.get('element_idx') is not None:
     ## Element-indexed parameter: create dummy scalar slot for Space discovery
     ## e.g., K[0] → grid_state.dynamics._K_el0 = GridAxis(...)
     % if 'values' in ax:
-    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = DataAxis(${ax['values']})
+    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = _ax('${_lbl}', DataAxis(${ax['values']}))
     % else:
-    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}_${ax['element_idx']}', ${ax['n']}))
+    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}_${ax['element_idx']}', ${ax['n']})))
     % endif
     % elif ax.get('is_coupling'):
     % if 'values' in ax:
-    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(${ax['values']})
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(${ax['values']}))
     % else:
-    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % elif ax.get('is_network'):
     ## Network-scope axis: sweep the graph's live `${ax['graph_leaf']}` leaf
@@ -2990,15 +3003,15 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     ## speed, couplings from weights — so there is no per-cell graph or Network
     ## rebuild, and the leaf stays a differentiable pytree leaf.
     % if 'values' in ax:
-    grid_state.graph.${ax['graph_leaf']} = DataAxis(${ax['values']})
+    grid_state.graph.${ax['graph_leaf']} = _ax('${_lbl}', DataAxis(${ax['values']}))
     % else:
-    grid_state.graph.${ax['graph_leaf']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.graph.${ax['graph_leaf']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % else:
     % if 'values' in ax:
-    grid_state.dynamics.${ax['name']} = DataAxis(${ax['values']})
+    grid_state.dynamics.${ax['name']} = _ax('${_lbl}', DataAxis(${ax['values']}))
     % else:
-    grid_state.dynamics.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.dynamics.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % endif
     % endfor
@@ -3501,38 +3514,16 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endfor
     ]
 
-    # Read each cell's actual parameter values back from the grid so coordinates track the
-    # grid's OWN cell order, never a positional reshape that assumes axes_info order: Space
-    # emits cells in pytree-leaf order, which differs from the declared axis order whenever
-    # axes live on different state sub-objects (dynamics/coupling/graph). Both the sharded
-    # subset (flat `point` dim) and the whole grid (keyed by value into the rectangular grid)
-    # consume these coords downstream.
+    # Each cell's actual parameter values, so coordinates follow the grid's OWN cell order rather than a positional reshape that assumes the declared axis order: a Space emits cells in pytree-leaf order, which differs whenever the swept axes live on different state sub-objects.
     _cell_coords = None
 % if has_axes:
     _df = grid.to_dataframe()
-    _bare_to_label, _network_label = {}, None
-    for _a in _axes_info:
-        _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
-        if str(_a.name) == 'execution.random_seed':
-            _bare_to_label.setdefault('_noise_seed', str(_a.name))  # the seed axis sweeps the dynamics._noise_seed leaf
-        if getattr(_a, 'element_idx', None) is not None:
-            _bare = str(_a.name).rsplit('.', 1)[-1].split('[')[0]   # axis "ref.p[i]" sweeps the leaf dynamics._p_el<i>
-            _bare_to_label.setdefault(f'_{_bare}_el{_a.element_idx}', str(_a.name))
-        if str(_a.name).startswith('network.'):
-            _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
-    _cell_coords, _used = {}, set()
-    for _col in _df.columns:
-        _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], None)
-        # network.conduction_speed sweeps the DenseLengthGraph `speed` leaf, keypath "graph.2":
-        # its bare name ("2") matches no axis label, so restore the friendly network name.
-        if _label is None and _network_label is not None and str(_col).startswith('graph.'):
-            _label = _network_label
-        if _label is None:
-            _label = str(_col)
-        if _label in _used:
-            _label = str(_col)  # disambiguate a bare-name collision with the keypath
-        _used.add(_label)
-        _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
+    # Both sequences come from one flatten of one tree, so rank pairs each column with the axis that bound it and any mismatch raises.
+    _bound = [_l for _l in jax.tree.leaves(grid_state, is_leaf=lambda _x: isinstance(_x, AbstractAxis)) if isinstance(_l, AbstractAxis)]
+    _cell_coords = {
+        _axis_label_by_id[id(_l)]: np.asarray(_df[_c].to_numpy())
+        for _l, _c in zip(_bound, _df.columns, strict=True)
+    }
 % endif
 
 % if returns_bunch:
