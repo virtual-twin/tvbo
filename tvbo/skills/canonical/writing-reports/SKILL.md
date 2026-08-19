@@ -11,7 +11,7 @@ metadata:
 
 # Writing Reports in TVBO
 
-This skill owns the **report** for a study replication: one `report/report.qmd` that
+This skill owns the **report** for a study replication: one `docs/report.qmd` that
 reads like a paper and computes every number it prints. It is the reporting layer that
 **replicating-studies** composes; that skill decides *which* targets you replicate and
 their fidelity tier, and **running-simulations** covers how the runs produce the
@@ -79,10 +79,10 @@ to a typed number in prose is usually the tell.
 from tvbo.classes.study import SimulationStudy
 STUDY = SimulationStudy.from_file("../<Study>.yaml")
 EXP = STUDY.get_experiment(<base_exp_id>)
-# read output/nc/exp*/…h5 containers, reduce to M[...] once, reference via inline `{python}`
+# read derivatives/tvbo/exp-*_result.h5 containers, reduce to M[...] once, reference via inline `{python}`
 ```
 
-**Give the paper's numbers ONE home too: `report/analysis/published-values.md`.** The literals
+**Give the paper's numbers ONE home too: `docs/analysis/published-values.md`.** The literals
 you are allowed to type are still literals scattered through prose, and scattered literals drift
 — the same correlation gets quoted twice with different rounding, a table and a paragraph
 disagree, and nobody can audit which values came from the manuscript at all. Transcribe every
@@ -169,7 +169,7 @@ narrating it spends the reader's attention on the author. Three habits creep in 
 are cuttable:
 
 - **A "corrections to earlier claims" section.** Superseding a claim is real and worth
-  recording — in the working notes under `report/analysis/`, where the next session reads it
+  recording — in the working notes under `docs/analysis/`, where the next session reads it
   and where it stops a wrong "impossible" from being re-derived. In the report, the corrected
   statement is simply the statement.
 - **Build-state branches.** `if M4 is None: print("this condition has not been run in this
@@ -305,7 +305,7 @@ yourself defining `ab()`, `figcap()`, `fmt()`, `_open()` or a scorecard tally, s
 | A/B figure | `report_figure(...)` / `show_report_figure(...)` | a hand-rolled `ab()` |
 | Figure order, title, caption | `figures_in_paper_order`, `figure_title`, `figure_caption` | a hardcoded list of stems and captions |
 | Number for prose | `fmt`, `sci` | a local formatter per report |
-| Result container | `open_result`, `result_sidecar`, `sidecar_value` | globbing `output/nc` inline |
+| Result container | `open_result`, `result_sidecar`, `sidecar_value` | globbing the results dir inline |
 | Declared analysis | `analysis_dataset`, `analysis_output`, `analysis_scalar` | recomputing what the recipe computed |
 | Recipe value | `recipe_param`, `value_of` | reaching into `.parameters` by hand |
 | Scorecard | `Scorecard(targets_md)` | a tally loop and a verdict dict per study |
@@ -446,14 +446,14 @@ report renders two ways: a **PUBLIC** `report.pdf` (your reproduction only, shar
 Quarto-native way to get both from one command is a small **project with two entry files**:
 
 - **`report.qmd`** holds the *whole* report and carries **no YAML front matter** — every
-  format/title/bibliography setting lives in `report/_quarto.yml` (copied from
+  format/title/bibliography setting lives in `docs/_quarto.yml` (seeded from
   `_quarto.yml.tmpl`). This is the only file you write prose in.
 - **`report_internal.qmd`** is a four-line wrapper: its front matter overrides only the
   `output-file` (and title), then `{{< include report.qmd >}}` pulls in the real report.
-- **`report/_quarto.yml`** lists both under `project: render:` and holds the shared
+- **`docs/_quarto.yml`** lists both under `project: render:` and holds the shared
   `format: pdf` (+ `output-file: report.pdf`), `bibliography:`, and `execute:`.
 
-`quarto render` (run in `report/`, no file argument) builds the project's render list → **both
+`quarto render` (run in `docs/`, no file argument) builds the project's render list → **both
 PDFs in one pass**. No `--profile`, no `_quarto-internal.yml`, no post-render shell hook.
 
 - `INTERNAL = tvbo.utils.report.is_internal()` reads `QUARTO_DOCUMENT_FILE` — the input filename,
@@ -490,7 +490,7 @@ What that buys, and what a per-report copy kept getting wrong:
   Fig 2A/2B.
 - **A greyscale scan stays grey.** `imshow` on a 2-D array applies the default colormap, which
   silently recolours the paper's figure.
-- **The composite is staged into `report/_figures/`** (gitignored), so the copyrighted original
+- **The composite is staged into `docs/_figures/`** (gitignored by the layout record), so the copyrighted original
   reaches exactly one artifact and never the repository.
 
 Prefer `report_figure` + a markdown embed over `show_report_figure`: the embed gets a real figure
@@ -514,7 +514,8 @@ verdict in the scorecard cannot disagree.
   of `report.qmd` (in `_quarto.yml` instead) removes the collision, and the two distinct input
   stems (`report`, `report_internal`) keep each build's `<stem>.pdf` intermediate from ever being
   the other's final. Track `report.qmd`, `report_internal.qmd`, `_quarto.yml`, and
-  `references.bib`; git-ignore `report/*.pdf` and the paper's figures under `original_study/`.
+  `references.bib`. The generated `.gitignore` already covers the PDFs, `docs/_figures/` and
+  `sourcedata/original_study/` — never hand-edit it.
 Verify by rendering and confirming the public `report.pdf` embeds no © original: the internal
 PDF is visibly larger (it carries the paper figures) and its A/B composites are wide (~2.2+),
 while public figure aspect ratios stay near 1.0–1.5.
@@ -675,7 +676,7 @@ slipped in.
 ## Render and verify
 
 ```bash
-# from report/ — ONE command renders BOTH report.pdf (public) and report_internal.pdf (A/B, local-only)
+# from docs/ — ONE command renders BOTH report.pdf (public) and report_internal.pdf (A/B, local-only)
 QUARTO_PYTHON=<repo>/.venv/bin/python quarto render     # no file arg -> the project render: list
 ```
 

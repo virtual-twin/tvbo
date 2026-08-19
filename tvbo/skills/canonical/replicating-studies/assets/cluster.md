@@ -13,7 +13,7 @@ to need it: a big *graph* → `graph_representation: sparse` + vectorized coupli
 "needs HPC" run into minutes on one GPU, numerically identical (~1e-16). Assess this
 before packaging anything.
 
-REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site facts).
+REQUIRED output: a packed kit + a `docs/analysis/cluster-run.md` (the run route + site facts).
 
 - **The kit is the same recipe, one command — no drivers, no bash.** `tvbo workflow
   snakemake <Study>.yaml -o <out> --pack` emits the whole study as ONE Snakemake DAG
