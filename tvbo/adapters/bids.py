@@ -35,10 +35,10 @@ except ImportError:
 BEP034_CONFIG_PATH = Path(__file__).parent / "bep034.json"
 
 
-# `suffix`/`extension` are value-constrained so an invalid combination fails fast; `model`, `desc` and `split` are optional. Two patterns because a result comes either from a run (`exp-`) or from a declared analysis (`ana-`), and one universal `_result` suffix names the kind of data for both — a BIDS suffix never encodes the shape of the array inside.
+# `suffix`/`extension` are value-constrained so an invalid combination fails fast; `model`, `desc` and `split` are optional. Two patterns because a result comes either from a run (`exp-`) or from a declared analysis (`ana-`), and one universal `_result` suffix names the kind of data for both — a BIDS suffix never encodes the shape of the array inside. Two extensions, because a container is `.h5` and its one metadata sidecar is the frozen `.yaml` spec that produced it.
 RESULT_PATTERNS = [
-    "[sub-{subject}_]exp-{experiment}[_model-{model}][_desc-{description}][_split-{split}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
-    "ana-{analysis}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
+    "[sub-{subject}_]exp-{experiment}[_model-{model}][_desc-{description}][_split-{split}]_{suffix<result>}{extension<.h5|.yaml>}",
+    "ana-{analysis}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml>}",
 ]
 
 RESULT_ENTITIES = {

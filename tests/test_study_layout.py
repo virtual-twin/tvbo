@@ -69,7 +69,6 @@ def test_gitignore_is_the_copyright_gate(record):
         "!sourcedata/README.md",
         "docs/.quarto/",
         "docs/figures/",
-        "docs/_figures/",
         "docs/notes/",
         "derivatives/*",
         "!derivatives/tvbo/",
@@ -121,6 +120,21 @@ def test_results_and_figures_resolve_where_the_design_puts_them(record):
     assert layout_rules.relpath("results", record) == "derivatives/tvbo"
     assert layout_rules.relpath("figures", record) == "docs/figures"
     assert layout_rules.relpath("kits", record) == ".tvbo/kits"
+
+
+def test_a_composite_is_staged_under_the_deposit_it_embeds(record):
+    """One directory holds everything the publisher owns, so one rule keeps all of it unpublished."""
+    stage = layout_rules.relpath("figures_restricted", record)
+    assert stage.startswith(layout_rules.relpath("original_study", record) + "/")
+
+
+def test_the_only_json_the_layout_declares_marks_a_dataset(record):
+    """Per-container metadata is the frozen YAML spec, and only that.
+
+    Two metadata files per result are two things to keep in agreement, and the JSON could only ever restate fields the YAML already carries. BIDS asks for JSON in exactly one place — the file that declares a directory to be a dataset — so that is the only place the record spells it.
+    """
+    jsons = [rel for rel, _ in layout_rules.iter_files(record, layout_rules.ANY_TEMPLATE) if rel.endswith(".json")]
+    assert [Path(rel).name for rel in jsons] == ["dataset_description.json"] * len(jsons)
 
 
 BIDS_PAGE = Path(__file__).resolve().parent.parent / "docs" / "Interoperability" / "BIDS" / "index.qmd"
@@ -233,6 +247,13 @@ def test_a_fresh_scaffold_validates(scaffold):
     assert result.exit_code == 0, result.output
 
 
+def test_a_study_validates_without_being_told_its_variant(scaffold):
+    """A replication ignores entries a plain study never had, so a check that assumed the plain layout reported a difference that was not a fault. The gate's header names the variant, and the checker reads it back."""
+    assert layout_rules.templates_of((scaffold / ".gitignore").read_text()) == ("replication",)
+    result = CliRunner().invoke(app, ["validate", "study", str(scaffold)])
+    assert result.exit_code == 0, result.output
+
+
 def test_the_seeded_recipe_declares_its_class(scaffold):
     recipe = (scaffold / "Demo1999.yaml").read_text()
     assert "tvbo_class: tvbo:SimulationStudy" in recipe
@@ -259,13 +280,13 @@ def _ignored(scaffold, rel: str) -> tuple[bool, str]:
 def test_the_gate_ignores_copyrighted_material(scaffold):
     """What must never be committed, checked against git rather than by reading the patterns.
 
-    ``sourcedata/original_study/`` holds the reproduced work's own figures, and ``docs/_figures/`` holds A/B composites that embed them. Ignoring the first does nothing about a copy made under the second, which is why each needs its own rule.
+    ``sourcedata/original_study/`` holds the reproduced work's own figures, and the A/B composites that embed them are staged inside it, so the single rule that keeps the deposit unpublished covers every composite made from it.
     """
     subprocess.run(["git", "init", "-q"], cwd=scaffold, check=True)
     must_be_ignored = [
         "sourcedata/original_study/paper.pdf",
         "sourcedata/connectomes/weights.h5",
-        "docs/_figures/fig-3_ab.png",
+        f"{layout_rules.relpath('figures_restricted')}/fig-3_ab.png",
         "docs/figures/fig-3.png",
         # The composites are staged untracked, and so must the report that renders them into a PDF.
         "docs/report_internal.pdf",

@@ -118,6 +118,17 @@ def test_the_software_record_reports_versions_that_actually_ran(study):
     assert packages["tvbo"] == version("tvbo")
 
 
+def test_a_package_the_study_declared_is_recorded_with_what_ran(study):
+    """`requires:` states what the study needs; the record has to say which version answered it, or the two cannot be compared."""
+    from importlib.metadata import version
+
+    import yaml
+
+    _root, files = _records(study, requires=("pytest",))
+    packages = {p["name"]: p["version"] for p in yaml.safe_load(files["prov-exp3_soft.yaml"].read_text())["packages"]}
+    assert packages["pytest"] == version("pytest")
+
+
 def test_the_environment_record_names_the_machine(study):
     import platform
 

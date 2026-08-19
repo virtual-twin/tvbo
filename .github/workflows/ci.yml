@@ -122,7 +122,7 @@ jobs:
                   tvbo study init CiGeneral --in /tmp/layout-check
                   tvbo validate study /tmp/layout-check/CiGeneral
                   tvbo study init CiReplication --in /tmp/layout-check -t replication
-                  tvbo validate study /tmp/layout-check/CiReplication -t replication
+                  tvbo validate study /tmp/layout-check/CiReplication
             - name: The repository's own study validates
               # A scaffold conforms by construction; a study someone has worked in is the case the record has to hold for.
               run: tvbo validate study docs/Replication/Jansen1995

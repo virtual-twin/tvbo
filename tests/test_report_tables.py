@@ -9,6 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from tvbo.utils import study_layout as layout_rules
 from tvbo.utils.report import (
     figure_caption,
     figure_targets,
@@ -185,10 +186,32 @@ def test_extended_data_targets_do_not_leak_into_the_main_figure():
     assert "T5" not in [r["ID"] for r in figure_targets(_fig("S_Fig11_x"), TARGET_ROWS)]
 
 
-def test_the_public_build_stages_our_figure_alone(tmp_path):
+def test_the_public_build_embeds_our_figure_where_it_was_rendered(tmp_path):
+    """With no original to compose against there is nothing to stage, so a copy would be a second path to keep current."""
     ours = _png(tmp_path / "Fig1.png")
-    staged = report_figure(ours, None, tmp_path / "_figures")
-    assert staged.name == "Fig1.png" and staged.parent.name == "_figures"
+    assert report_figure(ours, None, tmp_path / "_figures") == ours
+
+
+def test_an_embedded_figure_is_relative_to_the_render(tmp_path, monkeypatch):
+    """LaTeX prefixes a bare image path with `./`, so an absolute one arrives as `./Users/…` and the build fails on an image that is plainly there."""
+    from tvbo.utils.report import embed_path
+
+    figures = tmp_path / "docs" / "figures"
+    figures.mkdir(parents=True)
+    monkeypatch.chdir(tmp_path / "docs")
+    assert embed_path(_png(figures / "Fig1.png")) == "figures/Fig1.png"
+    assert embed_path(tmp_path / "sourcedata" / "Fig1_ab.png") == "../sourcedata/Fig1_ab.png"
+
+
+def test_an_unstaged_composite_lands_where_the_layout_puts_it(tmp_path, monkeypatch):
+    """A report asks the layout record, so no `.qmd` has to spell a relative directory that the record could move."""
+    monkeypatch.setenv("QUARTO_DOCUMENT_FILE", "report_internal.qmd")
+    (tmp_path / "dataset_description.json").write_text("{}")
+    figures = tmp_path / layout_rules.relpath("figures")
+    figures.mkdir(parents=True)
+    ours, theirs = _png(figures / "Fig1.png"), _png(tmp_path / "paper.png")
+    staged = report_figure(ours, theirs, credit="A et al. (c)")
+    assert staged.parent == tmp_path / layout_rules.relpath("figures_restricted")
 
 
 def test_the_internal_build_composes_the_original_beside_ours(tmp_path, monkeypatch):

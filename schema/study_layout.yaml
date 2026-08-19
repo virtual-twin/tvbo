@@ -88,6 +88,16 @@ subdirs:
           Material deposited by the work being reproduced: its PDF, figures, published data
           and code. Kept apart from the study's own inputs so it is never mistaken for an
           output, and never tracked.
+        subdirs:
+          - name: fig_comparisons
+            role: figures_restricted
+            tracked: none
+            in_templates: [replication]
+            description: >-
+              A/B composites placing one of the paper's figures beside ours. They live under
+              the deposit they embed rather than beside our own figures: one directory then
+              holds everything the publisher owns, so the rule that keeps the original out of
+              the repository covers every composite made from it too.
 
   - name: docs
     role: docs
@@ -132,7 +142,8 @@ subdirs:
         tracked: none
         description: >-
           Render target for the declarative figures, named as the study names them. Untracked,
-          because a run reproduces them.
+          because a run reproduces them. Inside the report's own project directory, so a report
+          embeds a figure where it was rendered rather than staging a second copy of it.
         subdirs:
           - name: scripts
             role: figure_scripts
@@ -164,14 +175,6 @@ subdirs:
             description: >-
               Why this backend was chosen, from the targets' feature needs rather than by default,
               and what the alternatives could not do.
-      - name: _figures
-        role: figures_restricted
-        tracked: none
-        in_templates: [replication]
-        description: >-
-          Staging for the A/B composites, which embed the original figures. Never tracked and
-          never published: `sourcedata/original_study/` being untracked does not protect a copy
-          made here.
       - name: notes
         role: notes
         tracked: none
@@ -191,9 +194,12 @@ subdirs:
         description: >-
           One flat derivative dataset holding every container this study computes:
           `exp-<id>_model-<name>_result.h5` for a run, `ana-<name>_result.h5` for an
-          analysis, each with a sidecar. Flat and single, so a cross-reference from an
-          analysis to an experiment resolves against one base directory. The directory is
-          named for the tool, never for the backend, which the sidecar records instead.
+          analysis, each beside one `.yaml` sidecar: the frozen, re-runnable spec that
+          produced it. That YAML is the only metadata file per container — a second JSON
+          copy of a few of its fields would be one more thing to keep in agreement with it.
+          Flat and single, so a cross-reference from an analysis to an experiment resolves
+          against one base directory. The directory is named for the tool, never for the
+          backend, which the sidecar records instead.
         files:
           - name: dataset_description.json
             role: dataset_description

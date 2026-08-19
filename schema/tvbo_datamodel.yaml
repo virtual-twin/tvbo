@@ -5493,6 +5493,20 @@ classes:
                     a local directory (relative to the recipe YAML or absolute)
                     or a git repository fetched and cached at load time. When
                     absent, the conventional ``<recipe-dir>/code/`` is used.
+            requires:
+                range: SoftwarePackage
+                multivalued: true
+                inlined: true
+                description: >-
+                    Packages this study's own code needs beyond what tvbo itself
+                    installs, keyed by package name and carrying the version it was
+                    reproduced against. A replication that matches a paper's method
+                    often has to use the paper's tool — a spectral parameterisation,
+                    a specific solver — and a study whose report imports one that
+                    nothing declares runs only on the machine that happens to have
+                    it. This states what is required; ``prov-<label>_soft`` records
+                    what actually ran, so the two can be compared rather than
+                    assumed equal.
             members:
                 range: StudyMember
                 multivalued: true

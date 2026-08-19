@@ -484,6 +484,7 @@ def _provenance_ctx(spec: str, obj) -> dict | None:
         "study": str(getattr(obj, "citekey", None) or getattr(obj, "key", None) or Path(spec).stem),
         "fmt": str(getattr(workflow, "provenance_format", None) or "yaml"),
         "started_at": provenance.now(),
+        "requires": tuple(getattr(obj, "requires", None) or ()),
     }
 
 
@@ -503,6 +504,7 @@ def _emit_provenance(ctx: dict | None, container: Path, produced_by: str, output
             produced_by=produced_by,
             outputs=outputs,
             started_at=ctx.get("started_at"),
+            requires=ctx.get("requires", ()),
             fmt=ctx["fmt"],
         )
     except Exception as e:  # noqa: BLE001 — the result stands; only its record is missing

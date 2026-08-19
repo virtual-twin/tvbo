@@ -58,15 +58,15 @@ def digest_of(path: Path) -> datamodel.Digest | None:
     return datamodel.Digest(algorithm=_DIGEST, value=h.hexdigest())
 
 
-def _packages() -> list[datamodel.SoftwarePackage]:
+def _packages(requires=()) -> list[datamodel.SoftwarePackage]:
     """The versions this run actually imported, read from the interpreter rather than from a lockfile.
 
-    A pinned requirement is what was asked for; what ran is what ``importlib.metadata`` reports, which is the claim a provenance record has to be able to make.
+    A pinned requirement is what was asked for; what ran is what ``importlib.metadata`` reports, which is the claim a provenance record has to be able to make. The study's own ``requires:`` are recorded alongside the framework's, so every package the study declared it needs can be compared against the one that was installed.
     """
     from importlib.metadata import PackageNotFoundError, version
 
     packages = []
-    for name in ("tvbo", "tvboptim", "jax", "numpy", "xarray"):
+    for name in dict.fromkeys(("tvbo", "tvboptim", "jax", "numpy", "xarray", *requires)):
         try:
             packages.append(datamodel.SoftwarePackage(name=name, version=version(name)))
         except PackageNotFoundError:
@@ -96,13 +96,14 @@ def build_records(
     started_at: str | None = None,
     ended_at: str | None = None,
     command: str | None = None,
+    requires=(),
 ) -> dict[str, object]:
     """The four records describing one container, keyed by BEP028 record kind.
 
     Every field is a pointer or read off the artifact: the digest and the output names come from the container itself, the versions from the interpreter, the command from the invocation. Nothing restates a value the frozen spec beside the container already carries.
     """
     label = prov_label(produced_by)
-    packages = _packages()
+    packages = _packages(requires)
     entity = datamodel.ResultEntity(
         name=label,
         container=str(Path(container).resolve().relative_to(Path(study_root).resolve()))
@@ -179,6 +180,7 @@ def emit(
     started_at: str | None = None,
     ended_at: str | None = None,
     command: str | None = None,
+    requires=(),
     fmt: str = "yaml",
 ) -> list[Path]:
     """Describe one container's run in ``<study_root>/prov/``, returning the records written.
@@ -196,5 +198,6 @@ def emit(
         started_at=started_at,
         ended_at=ended_at,
         command=command,
+        requires=requires,
     )
     return write_records(records, study_path("provenance", root=study_root), prov_label(produced_by), fmt)

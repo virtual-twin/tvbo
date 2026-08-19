@@ -208,6 +208,17 @@ def _suffix_problems(path: Path) -> list[str]:
     return []
 
 
+def _templates_of(root: Path, name: str, record) -> tuple[str, ...]:
+    """Which layout variant this study was built with, read from its own generated `.gitignore`.
+
+    A replication ignores entries a plain study does not have, so checking one against the other reports a difference that is not a fault. `tvbo study init` stamps the variant into the file's header, which makes the study say what it is instead of the caller having to remember.
+    """
+    from tvbo.utils import study_layout as layout_rules
+
+    gate = root / layout_rules.file_relpath("gitignore", name, record)
+    return layout_rules.templates_of(gate.read_text(encoding="utf-8")) if gate.is_file() else ()
+
+
 @app.command("study", help="Validate a study dataset against the layout record.")
 def study(
     path: Path = typer.Argument(
@@ -224,10 +235,10 @@ def study(
     from tvbo.utils import study_layout as layout_rules
 
     record = layout_rules.load_layout()
-    templates = tuple(template)
     root = path.resolve()
     name = root.name
     problems: list[str] = []
+    templates = tuple(template) or _templates_of(root, name, record)
 
     for rel, directory in layout_rules.walk(record, templates):
         if str(directory.level) == "required" and not (root / rel).is_dir():
@@ -249,7 +260,9 @@ def study(
     ):
         generated = root / layout_rules.file_relpath(role, name, record)
         if generated.is_file() and generated.read_text(encoding="utf-8").splitlines() != lines:
-            problems.append(f"{generated.name}: no longer matches the layout record — regenerate with `tvbo study init --force`")
+            problems.append(
+                f"{generated.name}: no longer matches the layout record — regenerate with `tvbo study init --force`"
+            )
 
     spec_dir = root / layout_rules.relpath("spec", record)
     n_spec = 0
