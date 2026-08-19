@@ -1,6 +1,6 @@
-"""The StudyCollection container: manifest resolution, verify gates, and composed captions.
+"""The study-of-studies container: manifest resolution, verify gates, and composed captions.
 
-Phase 0 of the native-manuscript design. A `StudyCollection` is a study-of-studies whose `results:` are the numbers the prose cites (computed from a container or authored from prior work), whose figures carry `Panel.description` so captions compose from the spec, and whose buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship a wrong number, an orphan figure, or a caption that disagrees with its panels.
+Phase 0 of the native-manuscript design. A study-of-studies is a `SimulationStudy` with `members:` whose `results:` are the numbers the prose cites (computed from a container or authored from prior work), whose figures carry `Panel.description` so captions compose from the spec, and whose buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship a wrong number, an orphan figure, or a caption that disagrees with its panels.
 """
 
 from pathlib import Path
@@ -12,14 +12,36 @@ import xarray as xr
 
 import tvbo
 from tvbo.adapters import bsplot
-from tvbo.data import study_collection as I
+from tvbo.data import study_manifest as I
 
 
 def _write_container(root: Path, name: str, var: str, value) -> None:
-    """Write a scalar analysis container where `resolve_dataref` looks for it."""
-    d = root / "results" / name
-    d.mkdir(parents=True, exist_ok=True)
-    xr.Dataset({var: xr.DataArray(np.array(value))}).to_netcdf(d / "result.h5", engine="h5netcdf")
+    """Write a scalar analysis container where `resolve_dataref` looks for it.
+
+    Through `analysis_container_path`, so the fixture cannot name the container differently from the code under test.
+    """
+    from tvbo.data.dataref import analysis_container_path
+
+    path = analysis_container_path(root, name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    xr.Dataset({var: xr.DataArray(np.array(value))}).to_netcdf(path, engine="h5netcdf")
+
+
+def _write_digest(root: Path, name: str, analysis) -> None:
+    """Record ``analysis``'s declaration digest in its container's sidecar, as a run would."""
+    import yaml
+
+    from tvbo.data.dataref import analysis_container_path, sidecar_path
+
+    sidecar = sidecar_path(analysis_container_path(root, name))
+    sidecar.write_text(yaml.safe_dump({"declaration_digest": I._analysis_fingerprint(analysis)}))
+
+
+def _member_results(tmp_path: Path) -> Path:
+    """Where the ``toy`` member keeps its results, asked of the layout rather than spelled out."""
+    from tvbo.utils.study_layout import study_path
+
+    return study_path("results", root=tmp_path / "members")
 
 
 @pytest.fixture
@@ -34,11 +56,11 @@ def collection(tmp_path):
         "  - {recipe: members/toy.yaml, label: toy}\n"
         "  - {recipe: members/heavy.yaml, label: heavy, optional: true}\n"
         "results:\n"
-        "  - {key: n_errors, used: {analysis: tally, output: n_errors}, format: '{:d}'}\n"
+        "  - {key: n_errors, used: {iri: 'tvbo:ana/toy/tally', output: n_errors}, format: '{:d}'}\n"
         "  - {key: parcels, value: '379', source: Glasser2016, description: HCP parcels}\n",
         encoding="utf-8",
     )
-    return tvbo.StudyCollection.from_file(str(spec))
+    return tvbo.SimulationStudy.from_file(str(spec))
 
 
 def test_from_file_loads_members_results_archive(collection):
@@ -56,23 +78,23 @@ def test_optional_member_dropped_unless_requested(collection):
 
 
 def test_authored_value_resolves_without_a_container(collection, tmp_path):
-    results, prov, problems = I.resolve_results(collection, tmp_path / "output")
+    results, prov, problems = I.resolve_results(collection, tmp_path / "derivatives" / "tvbo")
     assert results["parcels"] == "379"
     assert prov["parcels"] == {"computed": False, "value": "379", "source": "Glasser2016", "description": "HCP parcels"}
     assert any(p.startswith("n_errors:") for p in problems)  # no container yet
 
 
 def test_computed_value_resolves_and_formats(collection, tmp_path):
-    _write_container(tmp_path / "output", "tally", "n_errors", 17)
-    results, prov, problems = I.resolve_results(collection, tmp_path / "output")
+    _write_container(_member_results(tmp_path), "tally", "n_errors", 17)
+    results, prov, problems = I.resolve_results(collection, tmp_path / "derivatives" / "tvbo")
     assert problems == []
     assert results["n_errors"] == "17"
     assert prov["n_errors"]["computed"] is True
 
 
 def test_emit_manifest_writes_quarto_meta_shape(collection, tmp_path):
-    _write_container(tmp_path / "output", "tally", "n_errors", 17)
-    out, problems = I.emit_manifest(collection, tmp_path / "output", tmp_path / "_output" / "manuscript_results.yml")
+    _write_container(_member_results(tmp_path), "tally", "n_errors", 17)
+    out, problems = I.emit_manifest(collection, tmp_path / "derivatives" / "tvbo", tmp_path / "_output" / "manuscript_results.yml")
     assert problems == []
     import yaml
 
@@ -84,13 +106,13 @@ def test_verify_flags_missing_members_and_dead_keys(collection, tmp_path):
     (tmp_path / "members" / "heavy.yaml").write_text("title: Heavy\nkey: heavy\n", encoding="utf-8")
     problems = I.verify(collection, tmp_path)
     assert any("n_errors" in p for p in problems)  # container missing -> dead key
-    _write_container(tmp_path / "output", "tally", "n_errors", 17)
+    _write_container(_member_results(tmp_path), "tally", "n_errors", 17)
     assert I.verify(collection, tmp_path) == []
 
 
 def test_verify_coverage_is_bidirectional(collection, tmp_path):
     (tmp_path / "members" / "heavy.yaml").write_text("title: Heavy\nkey: heavy\n", encoding="utf-8")
-    _write_container(tmp_path / "output", "tally", "n_errors", 17)
+    _write_container(_member_results(tmp_path), "tally", "n_errors", 17)
     problems = I.verify(collection, tmp_path, manuscript_keys={"n_errors", "ghost"})
     assert any("ghost" in p and "cited in the manuscript" in p for p in problems)
     assert any("parcels" in p and "never cited" in p for p in problems)
@@ -139,7 +161,7 @@ def count_investigation(tmp_path):
         "  - {key: n_toy_figs, count: 'toy.figures'}\n",
         encoding="utf-8",
     )
-    return tvbo.StudyCollection.from_file(str(spec))
+    return tvbo.SimulationStudy.from_file(str(spec))
 
 
 def test_count_tallies_member_and_investigation_collections(count_investigation, tmp_path):
@@ -160,7 +182,7 @@ def test_count_unknown_collection_is_a_build_problem(tmp_path):
         "results:\n  - {key: oops, count: 'toy.bogus'}\n",
         encoding="utf-8",
     )
-    inv = tvbo.StudyCollection.from_file(str(spec))
+    inv = tvbo.SimulationStudy.from_file(str(spec))
     _, _, problems = I.resolve_results(inv, tmp_path / "output")
     assert any("oops" in p and "bogus" in p for p in problems)  # typo fails the build, not tallies to 0
 
@@ -175,7 +197,7 @@ def test_count_value_used_are_mutually_exclusive(tmp_path):
         "results:\n  - {key: bad, count: members, value: '5'}\n",
         encoding="utf-8",
     )
-    inv = tvbo.StudyCollection.from_file(str(spec))
+    inv = tvbo.SimulationStudy.from_file(str(spec))
     _, _, problems = I.resolve_results(inv, tmp_path / "output")
     assert any("bad" in p and "mutually exclusive" in p for p in problems)
 
@@ -206,7 +228,7 @@ def figure(tmp_path):
         "        layers: [{used: {experiment: sweep}, mark: line, encoding: {x: time, y: rate}}]\n",
         encoding="utf-8",
     )
-    return tvbo.StudyCollection.from_file(str(spec)).figures[0]
+    return tvbo.SimulationStudy.from_file(str(spec)).figures[0]
 
 
 def test_caption_walks_layout_order_not_declaration_order(figure):
@@ -250,7 +272,7 @@ def grid_figure(tmp_path):
         "          - {used: {analysis: lag_wave, output: lag_wave}}\n",
         encoding="utf-8",
     )
-    return tvbo.StudyCollection.from_file(str(spec)).figures[0]
+    return tvbo.SimulationStudy.from_file(str(spec)).figures[0]
 
 
 def test_a_grid_names_each_source_once_not_once_per_cell(grid_figure):
@@ -291,7 +313,7 @@ def multi_output_figure(tmp_path):
         "             encoding: {x: value}}\n",
         encoding="utf-8",
     )
-    return tvbo.StudyCollection.from_file(str(spec)).figures[0]
+    return tvbo.SimulationStudy.from_file(str(spec)).figures[0]
 
 
 def test_layers_sharing_one_analysis_name_it_once(multi_output_figure):
@@ -312,36 +334,41 @@ def test_a_rule_is_described_by_the_value_it_stands_at(multi_output_figure):
 # ------------------------------------------------- gaps the code review surfaced
 
 
-def test_a_member_container_resolves_from_the_members_own_root(collection, tmp_path):
+def test_a_member_container_resolves_from_the_members_own_layout(collection, tmp_path):
     """A ``used:`` binding into a MEMBER, which the schema documents as supported.
 
-    A member study runs in its own directory and writes ``<member-dir>/output/results/<name>/result.h5``. Searching only the collection's root left every such key unresolved, so the build died right after a successful multi-hour run — contradicting the slot's own description.
+    The IRI's ``<study>`` segment names the member; the member's own directory then answers where its results live. Nothing searches, so a member's container is found in exactly one place — its own.
     """
-    _write_container(tmp_path / "members" / "output", "tally", "n_errors", 7)
-    results, _prov, problems = I.resolve_results(collection, tmp_path / "output")
+    _write_container(_member_results(tmp_path), "tally", "n_errors", 7)
+    results, _prov, problems = I.resolve_results(collection, tmp_path / "derivatives" / "tvbo")
     assert not problems, problems
     assert results["n_errors"] == "7"
 
 
-def test_the_collections_own_root_is_searched_first(collection, tmp_path):
-    """When both hold the container, the collection's own wins — members are the fallback."""
-    _write_container(tmp_path / "output", "tally", "n_errors", 1)
-    _write_container(tmp_path / "members" / "output", "tally", "n_errors", 99)
-    results, _prov, problems = I.resolve_results(collection, tmp_path / "output")
+def test_a_container_in_the_owning_studys_root_is_not_used_for_a_member_binding(collection, tmp_path):
+    """The failure the search order used to hide: a same-named container in the wrong study.
+
+    Both studies can declare an analysis called ``tally``. Resolving by identity means the member's binding reads the member's number, never whichever root happened to be searched first.
+    """
+    _write_container(tmp_path / "derivatives" / "tvbo", "tally", "n_errors", 1)
+    _write_container(_member_results(tmp_path), "tally", "n_errors", 99)
+    results, _prov, problems = I.resolve_results(collection, tmp_path / "derivatives" / "tvbo")
     assert not problems, problems
-    assert results["n_errors"] == "1"
+    assert results["n_errors"] == "99"
 
 
-def test_an_unresolvable_key_still_names_the_primary_root(collection, tmp_path):
-    """Searching several roots must not make the failure message name an incidental one."""
-    _, _prov, problems = I.resolve_results(collection, tmp_path / "output")
+def test_a_binding_naming_a_study_that_is_not_a_member_fails(collection, tmp_path):
+    """Rather than falling back to the owning study's root and reporting someone else's number."""
+    collection.results[0].used.iri = "tvbo:ana/stranger/tally"
+    _write_container(tmp_path / "derivatives" / "tvbo", "tally", "n_errors", 1)
+    _, _prov, problems = I.resolve_results(collection, tmp_path / "derivatives" / "tvbo")
+    assert problems and "stranger" in problems[0]
+
+
+def test_an_unresolvable_key_is_reported_against_its_own_study(collection, tmp_path):
+    """A missing container must name the key, not an incidental directory."""
+    _, _prov, problems = I.resolve_results(collection, tmp_path / "derivatives" / "tvbo")
     assert problems and "n_errors" in problems[0]
-
-
-def test_container_roots_lists_the_collection_then_each_member(collection, tmp_path):
-    roots = I.container_roots(collection, tmp_path / "output")
-    assert roots[0] == tmp_path / "output"
-    assert (tmp_path / "members" / "output") in roots
 
 
 # ----------------------------------------------------------------- staleness gate
@@ -368,7 +395,7 @@ def test_an_unrelated_spec_edit_does_not_mark_an_analysis_stale(tmp_path):
     root = tmp_path / "output"
     _write_container(root, "tally", "n_errors", 3)
     analysis = _analysis()
-    (root / "results" / "tally" / ".fingerprint").write_text(I._analysis_fingerprint(analysis))
+    _write_digest(root, "tally", analysis)
 
     spec = tmp_path / "spec.yaml"
     spec.write_text("title: later than the container\n", encoding="utf-8")
@@ -379,7 +406,7 @@ def test_an_unrelated_spec_edit_does_not_mark_an_analysis_stale(tmp_path):
 def test_editing_the_analysis_itself_does_mark_it_stale(tmp_path):
     root = tmp_path / "output"
     _write_container(root, "tally", "n_errors", 3)
-    (root / "results" / "tally" / ".fingerprint").write_text(I._analysis_fingerprint(_analysis(rhs="the previous body")))
+    _write_digest(root, "tally", _analysis(rhs="the previous body"))
     inv = SimpleNamespace(analyses=[_analysis()])
     problems = I._stale_or_missing_analyses(inv, root, tmp_path / "spec.yaml")
     assert problems and "edited but not re-run" in problems[0]
@@ -417,9 +444,12 @@ def test_run_analysis_records_the_fingerprint_it_will_be_checked_against(tmp_pat
     )
     analysis.arguments = {"a": SimpleNamespace(name="a", value=[1.0, 2.0, 3.0], used=None)}
     path = run_analysis(analysis, tmp_path / "output")
-    stamp = path.parent / ".fingerprint"
-    assert stamp.exists()
-    assert stamp.read_text().strip() == I._analysis_fingerprint(analysis)
+    import yaml
+
+    from tvbo.data.dataref import sidecar_path
+
+    record = yaml.safe_load(sidecar_path(path).read_text())
+    assert record["declaration_digest"] == I._analysis_fingerprint(analysis)
 
 
 # ------------------------------------------------------- `tvbo verify --manuscript`
@@ -499,9 +529,9 @@ def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monke
         "title: Demo\nmembers:\n  - {recipe: members/toy.yaml, label: toy}\n"
         "results:\n  - {key: parcels, value: '379', source: s}\n"
     )
-    obj = tvbo.StudyCollection.from_file(str(spec))
+    obj = tvbo.SimulationStudy.from_file(str(spec))
     with pytest.raises((SystemExit, typer.Exit, typer.BadParameter)):
-        run_cli._run_study_collection(obj, str(spec), tmp_path / "output")
+        run_cli._run_with_members(obj, str(spec), tmp_path / "output")
     assert not emitted, "the manifest was written from a failed run"
 
 
@@ -530,7 +560,7 @@ def figured(tmp_path):
         "        layers: [{used: {analysis: fc}, encoding: {x: region, y: region}}]\n",
         encoding="utf-8",
     )
-    inv = tvbo.StudyCollection.from_file(str(spec))
+    inv = tvbo.SimulationStudy.from_file(str(spec))
     caps = tmp_path / "figures"
     bsplot.write_caption(inv.figures[0], caps)
     return inv, caps
