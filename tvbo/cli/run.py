@@ -154,7 +154,7 @@ def run(
     skip: list[str] = typer.Option(
         [],
         "--skip",
-        help="When SPEC is a StudyCollection, skip these member studies (by label or recipe "
+        help="When SPEC declares members, skip these member studies (by label or recipe "
         "stem), comma-separated/repeatable — their committed figures/results are reused "
         "as-is. Members flagged `optional:` are skipped by default; pass --all-members "
         "to include them.",
@@ -162,18 +162,18 @@ def run(
     all_members: bool = typer.Option(
         False,
         "--all-members",
-        help="When SPEC is a StudyCollection, also run members flagged `optional:` (the heavy studies skipped by default).",
+        help="When SPEC declares members, also run members flagged `optional:` (the heavy studies skipped by default).",
     ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
-        help="When SPEC is a StudyCollection, list the members, analyses and result keys that "
+        help="When SPEC declares members, list the members, analyses and result keys that "
         "WOULD run (honouring --skip / --all-members) and emit nothing.",
     ),
     manifest_only: bool = typer.Option(
         False,
         "--manifest-only",
-        help="When SPEC is a StudyCollection, emit the results manifest from existing containers "
+        help="When SPEC declares members, emit the results manifest from existing containers "
         "and authored values only — run no members or experiments. The fast refresh for the "
         "two-tier build (the heavy `tvbo run` produces the containers; this restamps the "
         "manifest the manuscript reads).",
@@ -200,6 +200,9 @@ def run(
         return
 
     kind, obj = _common.resolve_spec(spec)
+    # Resolved once, so every writer and reader below is handed the same concrete directory and a run persists whether or not -o was passed.
+    if not _has_members(obj):
+        out_dir = _results_root(spec, out_dir)
 
     # Flags that select or reshape SIMULATION work.
     _sim_flags = [
@@ -219,8 +222,8 @@ def run(
         if v is not None
     ]
 
-    if kind == "study_collection":
-        # A StudyCollection runs every member end to end with fixed save options, so any of these is silently dropped — turning a one-container request into the whole study, or reporting success for a --save-all that saved record-only.
+    if _has_members(obj):
+        # A study-of-studies runs every member end to end with fixed save options, so any of these is silently dropped — turning a one-container request into the whole study, or reporting success for a --save-all that saved record-only.
         rejected = _sim_flags + [
             f
             for f, v in (
@@ -233,11 +236,11 @@ def run(
         ]
         if rejected:
             _common.die(
-                f"{spec} is a StudyCollection, which runs every member study end to end; "
+                f"{spec} declares members, so it runs every member study end to end; "
                 f"{', '.join(rejected)} would be ignored. Point the flag at the member "
                 "study that declares the work."
             )
-        _run_study_collection(
+        _run_with_members(
             obj,
             spec,
             out_dir,
@@ -331,6 +334,7 @@ def run(
             _apply_metadata_overrides(exp, set_)
             _apply_axis_pins(exp, pin)
             _apply_max_iterations(exp, eff_max_iterations)
+            kwargs["prov_ctx"] = _provenance_ctx(spec, obj)
             _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after") if whole_study else True
         if not whole_study and shard is None:
@@ -349,6 +353,7 @@ def run(
         _apply_metadata_overrides(obj, set_)
         _apply_axis_pins(obj, pin)
         _apply_max_iterations(obj, eff_max_iterations)
+        kwargs["prov_ctx"] = _provenance_ctx(spec, obj)
         _run_one(obj, _effective_backend(obj, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
@@ -401,7 +406,7 @@ def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experimen
 
     if not analyses:
         return
-    root = _container_root(spec, out_dir)
+    root = _results_root(spec, out_dir)
     produced = set(recomputed)
     stale = [
         n
@@ -436,7 +441,7 @@ def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) 
     if missing:
         _common.die(f"No analysis named {', '.join(missing)} in {spec}. Declared: {', '.join(sorted(by_name)) or '(none)'}")
 
-    root = _container_root(spec, out_dir)
+    root = _results_root(spec, out_dir)
     needed = analysis_closure(analyses, names, exists=lambda n: container_path(n, root).exists())
     ordered = [a for a in analyses if analysis_name(a) in needed]
     if len(ordered) > len(names):
@@ -454,27 +459,60 @@ def _spec_base(spec: str) -> Path:
     return spec_path.resolve().parent if spec_path.is_file() else Path.cwd()
 
 
-def _container_root(spec: str, out_dir: Path | None) -> Path:
+def _results_root(spec: str, out_dir: Path | None) -> Path:
     """The directory holding THIS run's result containers.
 
-    ``<root>/results/<name>/result.h5`` for an analysis, ``<root>/exp-N_*.h5`` for an experiment; figures resolve them under ``<root's parent>/output/…``, so the root is always a directory named ``output``. The single place ``--out-dir`` is mapped onto that layout, because the analysis WRITER and the figure READER disagreeing is invisible:
-    with the documented ``-o output/nc`` the analyses landed in ``output/nc/results/`` while the figures looked in ``output/results/``, so one command rendered this run's experiments against a previous run's analyses.
+    The study's own results directory (:mod:`tvbo.utils.study_layout`, role ``results``), holding ``exp-<id>_*_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, flat. A run persists there by default; ``--out-dir`` overrides the location and nothing else. Writer and reader ask this one function, because two independent answers disagreeing is invisible: a run would render this run's experiments against a previous run's analyses and report success.
     """
-    base = _spec_base(spec)
-    if out_dir is None:
-        return base / "output"
-    od = Path(out_dir).resolve()
-    if od.name == "nc" and od.parent.name == "output":
-        return od.parent
-    if od.name == "output":
-        return od
-    return od / "output"
+    from tvbo.utils.study_layout import study_path
+
+    return Path(out_dir).resolve() if out_dir is not None else study_path("results", root=_spec_base(spec))
+
+
+def _provenance_ctx(spec: str, obj) -> dict | None:
+    """How this run records what it did, or ``None`` when the study switches it off.
+
+    The records land in the STUDY's ``prov/`` even when ``-o`` sends the data elsewhere: provenance describes what this study did, and following the data out of the study would scatter it wherever a caller happened to point.
+    """
+    from tvbo.data import provenance
+
+    workflow = getattr(obj, "workflow", None)
+    if workflow is not None and getattr(workflow, "emit_provenance", None) is False:
+        return None
+    return {
+        "study_root": _spec_base(spec),
+        "study": str(getattr(obj, "citekey", None) or getattr(obj, "key", None) or Path(spec).stem),
+        "fmt": str(getattr(workflow, "provenance_format", None) or "yaml"),
+        "started_at": provenance.now(),
+    }
+
+
+def _emit_provenance(ctx: dict | None, container: Path, produced_by: str, outputs=()) -> None:
+    """Record one container's run, reporting rather than raising if it cannot be written.
+
+    A run that computed its result has succeeded; failing it afterwards over its own bookkeeping would throw away the compute. The warning names what is missing so the gap is visible rather than silent.
+    """
+    if ctx is None:
+        return
+    from tvbo.data import provenance
+
+    try:
+        provenance.emit(
+            container=Path(container),
+            study_root=ctx["study_root"],
+            produced_by=produced_by,
+            outputs=outputs,
+            started_at=ctx.get("started_at"),
+            fmt=ctx["fmt"],
+        )
+    except Exception as e:  # noqa: BLE001 — the result stands; only its record is missing
+        _common.warn(f"provenance for {Path(container).name} not written ({type(e).__name__}: {e})")
 
 
 def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str) -> bool:
     """Execute one stage of a study's declarative ``analyses:``; True when the stage held.
 
-    Each writes ``<root>/results/<name>/result.h5`` — the container a figure layer or a later analysis binds with ``used: {analysis: <name>}``, at the root :func:`_container_root` resolves for this run.
+    Each writes ``<root>/ana-<name>_result.h5`` — the container a figure layer or a later analysis binds with ``used: {analysis: <name>}``, in the directory :func:`_results_root` resolves for this run.
 
     A failure is only ever SWALLOWED when there are completed experiments to protect. The ``before`` stage raises — nothing has run yet, and an experiment may source the missing analysis. A ``named`` stage (``--analysis``) raises too: it ran no experiments, the analysis is the whole of what was asked for, and a warning there would exit zero on a job that produced nothing. Only the ``after`` stage reports and returns False, because the experiments already succeeded and must not be lost to a reduction; the figures that would read the missing container are then skipped rather than drawn from absent data.
     """
@@ -483,13 +521,19 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
     if not analyses:
         return True
     base = _spec_base(spec)
-    root = _container_root(spec, out_dir)
+    root = _results_root(spec, out_dir)
+    ctx = _provenance_ctx(spec, obj) if (obj := _analysis_owner(spec)) is not None else None
+
+    def _done(name, path):
+        _common.info(f"  wrote {path.relative_to(base) if path.is_relative_to(base) else path}")
+        _emit_provenance(ctx, path, f"tvbo:ana/{ctx['study']}/{name}" if ctx else "", _container_vars(path))
+
     try:
         run_analyses(
             analyses,
             root,
             on_start=lambda n: _common.info(f"running analysis: {n}"),
-            on_done=lambda n, p: _common.info(f"  wrote {p.relative_to(base) if p.is_relative_to(base) else p}"),
+            on_done=_done,
         )
     except Exception as e:
         if stage in ("before", "named"):
@@ -506,9 +550,10 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
 def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
     """Render a study's declarative ``figures:`` after its experiments have run.
 
-    Reuses the exact ``tvbo figure render`` path (``figures.render_figures``), so the images and render scripts a one-command ``tvbo run`` produces are byte-identical to a follow-up ``tvbo figure render`` — the study run just fuses the two steps. ``base_dir`` is the study file's directory (the root each layer's ``used`` IRI resolves against, ``<base>/output/…``); figures land in ``<base>/figures`` to match the render command's default. A study with no ``figures:`` is a silent no-op. A render failure is reported but does not fail the run — the experiments already succeeded and their results are on disk.
+    Reuses the exact ``tvbo figure render`` path (``figures.render_figures``), so the images and render scripts a one-command ``tvbo run`` produces are byte-identical to a follow-up ``tvbo figure render`` — the study run just fuses the two steps. ``base_dir`` is the study file's own directory, the root each layer's ``used`` IRI resolves against; the images land in the study's figures directory, where the report reads them. A study with no ``figures:`` is a silent no-op. A render failure is reported but does not fail the run — the experiments already succeeded and their results are on disk.
     """
     from tvbo.utils import as_list
+    from tvbo.utils.study_layout import study_path
 
     from .figures import render_figures
 
@@ -517,22 +562,9 @@ def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
         return
 
     base = _spec_base(spec)
-    # A run persists results only when --out-dir is given (see _exec_one). With no -o and no results already on disk under <base>/output, every layer would resolve to nothing and each panel would be an empty placeholder — skip and tell the user how to get real figures, rather than emit blank plots. Prior results under output/ still render.
-    if out_dir is None:
-        if not (base / "output").is_dir():
-            _common.info(
-                f"skipping figures: this run saved no results (pass -o to persist them, e.g. `tvbo run {spec} -o output`)."
-            )
-            return
-        # output/ exists but THIS run did not persist (no -o): the figures below render from a PREVIOUS run's results, which may be stale. Warn rather than silently mislead.
-        _common.warn(
-            f"rendering figures from existing results under {base}/output — this run did not "
-            f"persist (no -o), so the figures reflect a PREVIOUS run, not this one. Pass -o "
-            f"(e.g. `tvbo run {spec} -o output/nc`) to render this run's own results."
-        )
-    # Figures resolve result containers under <fig_base>/output/… — the SAME mapping the analysis stage writes through, so the two cannot disagree about where this run's containers are.
-    fig_base = _container_root(spec, out_dir).parent
-    out_figs = base / "figures"
+    # Layers resolve their containers against the study root, whose results directory is where the run and the analysis stage just wrote — so reader and writer cannot disagree about where this run's containers are.
+    fig_base = base
+    out_figs = study_path("figures", root=base)
     _common.info(f"rendering {len(figs)} figure(s) -> {out_figs}")
     try:
         render_figures(figs, fig_base, out_figs)
@@ -547,9 +579,10 @@ def _run_whole_study(obj, spec: str, out_dir: Path | None, *, backend: str | Non
     """Run a study's WHOLE pipeline — every experiment, its before/after analyses, its figures.
 
     The subset of the ``kind == "study"`` branch with no per-run selectors (no --experiment /
-    --shard / --pin / --set), reused for each StudyCollection member and for the collection's
-    own demo content. Returns whether the after-analysis stage held (figures are skipped if it did not), mirroring the study branch.
+    --shard / --pin / --set), reused for each member study and for the aggregating study's
+    own demo content. Returns whether the after-analysis stage held (figures are skipped if it did not), mirroring the study branch. ``out_dir`` is resolved against this study's own root, so a collection member writes into its own results directory rather than the collection's.
     """
+    out_dir = _results_root(spec, out_dir)
     _import_figure_code_modules(obj)
     analyses_before, analyses_after = _study_analysis_stages(obj)
     _run_study_analyses(analyses_before, spec, out_dir, stage="before")
@@ -577,7 +610,14 @@ def _run_whole_study(obj, spec: str, out_dir: Path | None, *, backend: str | Non
     return ok
 
 
-def _run_study_collection(
+def _has_members(obj) -> bool:
+    """Whether this study aggregates others, which is the only thing that changes how a run proceeds."""
+    from tvbo.utils import as_list
+
+    return bool(as_list(getattr(obj, "members", None)))
+
+
+def _run_with_members(
     inv,
     spec: str,
     out_dir: Path | None,
@@ -589,13 +629,12 @@ def _run_study_collection(
     dry_run: bool = False,
     manifest_only: bool = False,
 ) -> None:
-    """Run a StudyCollection: every member study, the collection's own demo content, then emit the results manifest the manuscript reads.
+    """Run a study-of-studies: every member study, then this study's own content, then the results manifest the manuscript reads.
 
-    Optional members are skipped unless ``all_members``; ``skip`` drops named members (by label or recipe stem); ``dry_run`` lists what would run and emits nothing. The manifest lands at ``<collection-dir>/manuscript_results.yml`` — a committed derived artifact (the seam Quarto reads as ``{{< meta results.* >}}``), so the build never needs the generated run containers;
-    an unresolved result key hard-fails the run.
+    Optional members are skipped unless ``all_members``; ``skip`` drops named members (by label or recipe stem); ``dry_run`` lists what would run and emits nothing. Each member runs in its own directory, so its results land in its own layout rather than the aggregating study's. The manifest lands at ``<study-dir>/manuscript_results.yml`` — a committed derived artifact (the seam Quarto reads as ``{{< meta results.* >}}``), so the build never needs the generated run containers; an unresolved result key hard-fails the run.
     """
     from tvbo.data.analysis_io import analysis_name, study_analyses
-    from tvbo.data.study_collection import MANIFEST_NAME, emit_manifest
+    from tvbo.data.study_manifest import MANIFEST_NAME, emit_manifest
     from tvbo.utils import as_list
 
     base = Path(getattr(inv, "_source_file", spec)).resolve().parent
@@ -607,7 +646,7 @@ def _run_study_collection(
     n_results = len(as_list(getattr(inv, "results", None)))
 
     if dry_run:
-        _common.info(f"[dry-run] study collection: {getattr(inv, 'title', None) or spec}")
+        _common.info(f"[dry-run] study of studies: {getattr(inv, 'title', None) or spec}")
         for label, p in to_run:
             _common.info(f"  member: {label}  ({p})")
         for label in skipped:
@@ -618,8 +657,7 @@ def _run_study_collection(
         _common.info(f"  would emit {MANIFEST_NAME} with {n_results} result key(s)")
         return
 
-    inv_out = Path(out_dir) if out_dir is not None else (base / "output" / "nc")
-    results_root = _container_root(spec, inv_out)
+    inv_out = results_root = _results_root(spec, out_dir)
 
     def _emit() -> None:
         out_path, problems = emit_manifest(inv, results_root, base / MANIFEST_NAME)
@@ -636,11 +674,10 @@ def _run_study_collection(
     for label, p in to_run:
         _common.info(f"=== member: {label} ({p}) ===")
         kind, mobj = _common.resolve_spec(str(p))
-        if kind not in ("study", "study_collection"):
+        if kind != "study":
             _common.warn(f"member {label!r} resolves to a {kind}, not a study; skipping.")
             continue
-        member_out = Path(p).resolve().parent / "output" / "nc"
-        if not _run_whole_study(mobj, str(p), member_out, backend=backend, figures=figures):
+        if not _run_whole_study(mobj, str(p), None, backend=backend, figures=figures):
             failed.append(label)
 
     if not _run_whole_study(inv, spec, inv_out, backend=backend, figures=figures):
@@ -880,7 +917,7 @@ def _drop_exploration_axis(experiment, parameter: str) -> None:
 def _run_one(
     experiment,
     backend: str,
-    out_dir: Path | None,
+    out_dir: Path,
     kwargs: dict,
     chunk_i: int | None,
     chunk_n: int | None,
@@ -938,33 +975,67 @@ def _run_one(
             )
         shard_kwargs = dict(kwargs)
         shard_kwargs["shard"] = (chunk_i, chunk_n)
+        # Names this task's slice `split-<i>`, so N tasks writing one directory cannot overwrite each other.
+        experiment._active_split = chunk_i
         _exec_one(experiment, backend, out_dir, shard_kwargs)
         return
 
     _exec_one(experiment, backend, out_dir, kwargs)
 
 
-def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> None:
+def _analysis_owner(spec: str):
+    """The study an analysis stage belongs to, for the provenance its records carry."""
+    try:
+        kind, obj = _common.resolve_spec(spec)
+    except Exception:  # noqa: BLE001 — the caller already loaded it; a second failure is not this stage's to report
+        return None
+    return obj if kind == "study" else None
+
+
+def _container_vars(path: Path) -> list[str]:
+    """The data variables a written container actually holds, read back from it."""
+    import xarray as xr
+
+    try:
+        with xr.open_dataset(path, engine="h5netcdf") as ds:
+            return sorted(str(v) for v in ds.data_vars)
+    except Exception:  # noqa: BLE001 — an unreadable container is reported by whoever needs its data
+        return []
+
+
+def _exec_one(experiment, backend: str, out_dir: Path, kwargs: dict) -> None:
+    """Run one experiment and persist its container into ``out_dir``.
+
+    ``out_dir`` is the study's results directory, already resolved by :func:`_results_root`: a run always persists, so nothing here has to warn that the figures a caller is about to draw came from a previous run. ``--results-root`` still wins, for a run whose cross-experiment sources live elsewhere.
+    """
     compress = kwargs.pop("compress", True)  # save options, not backend-run kwargs
     record_only = kwargs.pop("record_only", True)
-    # The output dir's parent covers results/<key> and output/nc/exp<id> alike; --results-root wins.
-    results_root = kwargs.pop("results_root", None) or (out_dir.parent if out_dir is not None else None)
+    prov_ctx = kwargs.pop("prov_ctx", None)
+    results_root = kwargs.pop("results_root", None) or out_dir
     result = experiment.run(format=backend, results_root=results_root, **kwargs)
     _common.info(f"done: {type(result).__name__}")
-    if out_dir is None:
-        _common.warn(
-            f"result NOT saved: no --out-dir, so this run computed {type(result).__name__} "
-            f"and discarded it. Any figures/report built afterwards will read STALE results "
-            f"from a previous run, not this one. Pass -o to persist, e.g. "
-            f"`tvbo run <spec> -o output/nc`."
-        )
-        return
     out_dir.mkdir(parents=True, exist_ok=True)
     if hasattr(result, "save"):
         saved = result.save(str(out_dir), compress=compress, record_only=record_only)
         _common.info(f"wrote {saved}")
+        _record_run(prov_ctx, experiment, saved)
     else:
         _common.info(f"(result has no .save(); skipping write to {out_dir})")
+
+
+def _record_run(ctx: dict | None, experiment, saved) -> None:
+    """Describe the container this run just wrote, in the study's own ``prov/``.
+
+    The written paths are the authority on which file to describe — a run that shards, fans over subjects, or writes nothing at all is then recorded as what it actually produced rather than as what the stem predicted.
+    """
+    if ctx is None:
+        return
+    containers = [
+        Path(p) for p in ([saved] if isinstance(saved, (str, Path)) else list(saved or [])) if str(p).endswith(".h5")
+    ]
+    eid = getattr(experiment, "id", None) or getattr(experiment, "name", None)
+    for container in containers:
+        _emit_provenance(ctx, container, f"tvbo:exp/{ctx['study']}/exp-{eid}", _container_vars(container))
 
 
 def _dispatch_to_engine(
