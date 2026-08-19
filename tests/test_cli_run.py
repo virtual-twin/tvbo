@@ -221,8 +221,8 @@ def test_max_iterations_none_is_a_no_op():
 
 
 # ── study figure rendering (`tvbo run <study>` closes the replication loop) ──────────────
-def test_render_study_figures_renders_into_base_figures_dir(monkeypatch, tmp_path: Path):
-    """A study run renders its declarative `figures:` via the same path as `tvbo figure render`: base = the spec file's dir, output = <base>/figures — so the one-command result is interchangeable with a follow-up `tvbo figure render`."""
+def test_render_study_figures_renders_into_the_layouts_figures_dir(monkeypatch, tmp_path: Path):
+    """A study run renders its declarative `figures:` via the same path as `tvbo figure render`: base = the spec file's dir, output = the figures directory the layout record names — so the one-command result is interchangeable with a follow-up `tvbo figure render`."""
     seen = {}
 
     def _fake_render(figures, base_dir, out_dir):
@@ -237,11 +237,13 @@ def test_render_study_figures_renders_into_base_figures_dir(monkeypatch, tmp_pat
     spec.write_text("name: s\n", encoding="utf-8")
     study = SimpleNamespace(figures=[SimpleNamespace(name="Fig1")])
 
-    run_cli._render_study_figures(study, str(spec), out_dir=tmp_path / "output" / "nc")
+    run_cli._render_study_figures(study, str(spec), out_dir=None)
+
+    from tvbo.utils.study_layout import study_path
 
     assert seen["figures"] == list(study.figures)
     assert seen["base"] == tmp_path  # spec dir, not the results out-dir
-    assert seen["out"] == tmp_path / "figures"
+    assert seen["out"] == study_path("figures", root=tmp_path)
 
 
 def test_render_study_figures_no_figures_is_a_no_op(monkeypatch, tmp_path: Path):
@@ -357,7 +359,7 @@ def test_analysis_is_refused_when_the_spec_is_an_experiment(monkeypatch, tmp_pat
 
 @pytest.fixture
 def collection_spec(tmp_path: Path) -> str:
-    """A minimal StudyCollection on disk, with one member and one authored result."""
+    """A minimal study-of-studies on disk, with one member and one authored result."""
     (tmp_path / "members").mkdir()
     (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\nsimulation_experiments: []\n", encoding="utf-8")
     spec = tmp_path / "collection.yaml"
@@ -385,7 +387,7 @@ def collection_spec(tmp_path: Path) -> str:
     ],
 )
 def test_a_flag_a_collection_cannot_honour_is_refused(collection_spec, flag):
-    """A StudyCollection runs every member with fixed save options.
+    """A study-of-studies runs every member with fixed save options.
 
     Accepting one of these and dropping it turns a one-container request into the whole study — hours of cluster time — or reports success for a ``--save-all`` that in fact wrote record-only. Each must fail fast, naming the flag.
 
