@@ -4923,6 +4923,14 @@ classes:
                 range: integer
                 minimum_value: 1
                 description: "Total cores for local engines (Snakemake --cores)."
+            jobs:
+                range: integer
+                minimum_value: 1
+                description: >-
+                    Concurrent jobs the workflow engine keeps in flight (Snakemake
+                    ``--jobs``, written into the emitted profile). A site's queue limit
+                    is a property of the run, so it belongs beside partition and account;
+                    unset means 100.
             executor:
                 range: string
                 description: "Executor to run the pipeline through (Nextflow process.executor)."

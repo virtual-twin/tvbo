@@ -248,3 +248,59 @@ def test_unlabelled_source_falls_back_to_generic(tmp_path):
         assert "node" not in ds["estimate__J_i"].coords  # no label coords
     finally:
         ds.close()
+
+
+def _folded_stat_observation(name, source="H_e"):
+    """A cumulative per-node statistic — reduction kind ``recurrence``, dims ``("node",)``."""
+    from tvbo.datamodel.tvbo_datamodel import Observation
+
+    return Observation(name=name, source=[source], aggregation="mean", reduce="streaming")
+
+
+def test_algorithm_observations_land_on_the_node_axis_their_reduction_declares(tmp_path):
+    """A per-node fit observation is keyed by ``node``, like the ``estimate__`` beside it.
+
+    A folded statistic keeps one value per node, so the axis is known from the declared
+    reduction. Left unnamed the writer emits a placeholder ``<name>_d0`` dimension, and the
+    fit outcome is then selectable only by position — while an identically-shaped
+    ``estimate__J_i`` in the same container carries labels. One container, two conventions.
+    """
+    xr = pytest.importorskip("xarray")
+    n = 4
+    labels = [f"R{i}" for i in range(n)]
+    src = _fake_source(labels)
+    src.observations = {"mean_H_e": _folded_stat_observation("mean_H_e")}
+    post = SimpleNamespace(observations={"mean_H_e": np.linspace(3.0, 4.0, n), "fc_corr": 0.9030})
+    res = ExperimentResult(
+        algorithms={"fic_eib": SimpleNamespace(state=_algo_state(n), post_tuning=post)},
+        source=src,
+    )
+    ds = xr.open_dataset([p for p in res.save(str(tmp_path), compress=False, record_only=False) if p.endswith(".h5")][0], engine="h5netcdf")
+    try:
+        per_node = ds["algorithm__fic_eib__mean_H_e"]
+        assert per_node.dims == ("node",), f"expected the declared node axis, got {per_node.dims}"
+        assert list(per_node["node"].values) == labels
+        # a scalar stays a scalar — there is no axis to name
+        assert ds["algorithm__fic_eib__fc_corr"].shape == ()
+    finally:
+        ds.close()
+
+
+def test_an_undeclared_algorithm_observation_keeps_its_placeholder_axis(tmp_path):
+    """No declared reduction → no guessed axis.
+
+    Naming one from shape alone is how a time axis comes to be called ``node``; an honest placeholder is the correct fallback.
+    """
+    xr = pytest.importorskip("xarray")
+    n = 4
+    src = _fake_source([f"R{i}" for i in range(n)])
+    post = SimpleNamespace(observations={"mystery": np.arange(n, dtype=float)})
+    res = ExperimentResult(
+        algorithms={"fic_eib": SimpleNamespace(state=_algo_state(n), post_tuning=post)},
+        source=src,
+    )
+    ds = xr.open_dataset([p for p in res.save(str(tmp_path), compress=False, record_only=False) if p.endswith(".h5")][0], engine="h5netcdf")
+    try:
+        assert ds["algorithm__fic_eib__mystery"].dims == ("mystery_d0",)
+    finally:
+        ds.close()

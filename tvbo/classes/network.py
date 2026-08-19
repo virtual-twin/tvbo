@@ -4,6 +4,7 @@ Defines [`Network`](#tvbo.classes.network.Network) and its matrix-style subclass
 """
 
 import os
+import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -56,13 +57,45 @@ def _source_dir_on_path(source_dir):
                 pass
 
 
-_WEIGHT_TARGETS = ("weight", "weights")
+_WEIGHT_TARGETS = ("weight", "weights", "sc")
 _LENGTH_TARGETS = ("length", "lengths")
-_TRANSFORM_TARGET_ALIASES = (_WEIGHT_TARGETS, _LENGTH_TARGETS)
-"""Edge-property spellings that name the same transform target.
 
-Kept in step with the aliases `Network.matrix` resolves when it looks the matrix up, so the lookup and the transform selection cannot disagree.
-"""
+
+def _is_weight_name(name) -> bool:
+    """Whether *name* spells the connection-weight property."""
+    low = str(name).lower()
+    return low in _WEIGHT_TARGETS or low in _WEIGHT_MEASURES
+
+
+def _is_length_name(name) -> bool:
+    """Whether *name* spells the tract-length property."""
+    low = str(name).lower()
+    return low in _LENGTH_TARGETS or low in _LENGTH_MEASURES
+
+
+def _alias_group(name) -> tuple:
+    """Every spelling of the edge property *name* names, canonical spellings first.
+
+    The ONE place spellings are grouped. `Network.matrix` resolves a matrix through it and
+    `Network.transforms_for` selects transforms through it, so a lookup and its transform
+    cannot disagree about whether two names mean the same property — the failure that let
+    `matrix("sc")` return the weight array with its declared transforms silently skipped.
+    Names are lowercase; callers match source keys case-insensitively.
+    """
+    if _is_weight_name(name):
+        return _WEIGHT_TARGETS + tuple(sorted(_WEIGHT_MEASURES.difference(_WEIGHT_TARGETS)))
+    if _is_length_name(name):
+        return _LENGTH_TARGETS + tuple(sorted(_LENGTH_MEASURES.difference(_LENGTH_TARGETS)))
+    return (str(name).lower(),)
+
+
+def _warn_superseded_accessor(old: str, new: str) -> None:
+    """Emit the deprecation for a connectivity accessor superseded by `Network.matrix`."""
+    warnings.warn(
+        f"Network.{old} is deprecated; use Network.{new} instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
 
 
 def graph_laplacian(M):
@@ -160,21 +193,6 @@ _LENGTH_MEASURES = {
     "tract_length",
     "tract_lengths",
 }
-
-
-def _length_like_key(keys) -> str | None:
-    """Find the edge key holding tract lengths among *keys*.
-
-    Prefers the canonical ``length`` / ``lengths``; otherwise accepts any length-like name in :data:`_LENGTH_MEASURES` (``tract_length``, ``tractLength``, …). Unlike weights (selected by ``primary_weight`` / ``weight`` / ``weights`` / ``sc``), the length matrix has no explicit selector, so this by-meaning resolution is what makes a length edge findable regardless of how a sidecar names it — and delayed simulations depend on it being found.
-    """
-    ks = list(keys)
-    for canonical in ("length", "lengths"):
-        if canonical in ks:
-            return canonical
-    for k in ks:
-        if str(k).lower() in _LENGTH_MEASURES:
-            return k
-    return None
 
 
 def _discover_bids_measures(bids_dir) -> list[str]:
@@ -724,6 +742,12 @@ class Network(tvbo_datamodel.Network):
 
         Each route yields a `Network`, a dict with at least a `weights` key, or a tuple `(weights, lengths)` / `(weights, lengths, node_params)`.
         `source_dir` is forwarded so Python builders can load companion artefacts.
+
+        A generated node keeps a positional label (`node_<i>`) unless the builder names it
+        through a `node_labels` key. A motif whose nodes ARE particular regions (a PPC-PFC
+        pair) has to be able to say so: every keyed selection downstream — an observation's
+        node coord, a figure's `sel: {node: ...}` — resolves against these labels, and
+        `node_0` forces the reader back to binding by index.
         """
         from tvbo.graph_generators.catalog import declared_defaults
 
@@ -812,13 +836,17 @@ class Network(tvbo_datamodel.Network):
                 if v is not None:
                     setattr(self, cache, v)
         else:
-            # Two shapes accepted: dict with `weights` (and optional `lengths`, `node_parameters`), or tuple `(weights, lengths[, node_params])`.
+            # Two shapes accepted: dict with `weights` (and optional `lengths`, `node_parameters`, `node_labels`), or tuple `(weights, lengths[, node_params])`.
+            node_labels = None
             if isinstance(result, dict):
                 if "weights" not in result:
                     raise TypeError("graph_generator materialiser dict must include a `weights` key.")
                 weights = np.asarray(result["weights"])
                 lengths = np.asarray(result["lengths"]) if result.get("lengths") is not None else None
                 node_params = result.get("node_parameters") or result.get("node_params") or None
+                node_labels = result.get("node_labels")
+                if node_labels is not None and len(node_labels) == 0:  # emptiness by length: a label array has no truth value
+                    node_labels = None
             elif isinstance(result, tuple) and len(result) in (2, 3):
                 weights = np.asarray(result[0])
                 lengths = np.asarray(result[1]) if result[1] is not None else None
@@ -831,7 +859,13 @@ class Network(tvbo_datamodel.Network):
                 )
             n_nodes = weights.shape[0]
             self.number_of_nodes = n_nodes
-            self.nodes = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)]
+            if node_labels is not None and len(node_labels) != n_nodes:
+                raise ValueError(
+                    f"graph_generator returned {len(node_labels)} node_labels for a "
+                    f"{n_nodes}-node weight matrix; one label per node is required."
+                )
+            labels = [str(lbl) for lbl in node_labels] if node_labels is not None else [f"node_{i}" for i in range(n_nodes)]
+            self.nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
             # The generator supplies the internal weight matrix only. Preserve any declared edges (e.g. cross-layer routing edges on a subnetwork); only default to empty when none were authored.
             if not getattr(self, "edges", None):
                 self.edges = []
@@ -1377,7 +1411,7 @@ class Network(tvbo_datamodel.Network):
         )
 
         # Access structural connectivity
-        print(network.weights_matrix.shape)  # (84, 84)
+        print(network.matrix("weight").shape)  # (84, 84)
         ```
         """
         from pathlib import Path
@@ -1713,7 +1747,7 @@ class Network(tvbo_datamodel.Network):
         >>> net = Network.from_db("dk87")
         >>> net.number_of_nodes       # metadata: instant, no I/O
         87
-        >>> net.weights_matrix.shape  # arrays: loaded on first access
+        >>> net.matrix("weight").shape  # arrays: loaded on first access
         (87, 87)
         """
         from tvbo.data.network_io import load_network
@@ -2236,7 +2270,7 @@ class Network(tvbo_datamodel.Network):
             weights_arr, lengths_arr = self._pytree_data
         else:
             # Use weights_matrix/lengths_matrix properties which handle edges, Matrix, or defaults
-            weights_arr = self.weights_matrix
+            weights_arr = self._weights_matrix()
             lengths_arr = self.lengths_matrix
 
             # Fallback to zeros if properties return None
@@ -2568,108 +2602,28 @@ class Network(tvbo_datamodel.Network):
 
     @property
     def weights_matrix(self) -> np.ndarray | JaxArray | None:
-        """Connection weights matrix with declared `transforms:` applied."""
+        """Deprecated: use ``matrix("weight")``."""
+        _warn_superseded_accessor("weights_matrix", 'matrix("weight")')
         return self._weights_matrix(apply_transforms=True)
 
     @property
     def raw_weights_matrix(self) -> np.ndarray | JaxArray | None:
-        """Weights BEFORE any `transforms:` are applied.
-
-        The tvboptim codegen path passes this and the generated ``create_network`` applies the declared transform inline, so a frozen/standalone kit is self-contained: raw SC stays in the network file, the transform stays declared in the spec, and the exact op is visible in the rendered script rather than hidden in this runtime. Equals ``weights_matrix`` when no weight transform is declared.
-        """
+        """Deprecated: use ``matrix("weight", apply_transforms=False)``."""
+        _warn_superseded_accessor("raw_weights_matrix", 'matrix("weight", apply_transforms=False)')
         return self._weights_matrix(apply_transforms=False)
 
     def _weights_matrix(self, apply_transforms: bool = True) -> np.ndarray | JaxArray | None:
-        """Connection weights matrix as numpy/JAX array.
+        """Connection weights as a dense array — a thin wrapper over ``matrix("weight")``.
 
-        Returns cached matrix if available (from from_matrix), otherwise computes from edges. If transforms are defined, applies them sequentially.
-
-        Returns:
-        -------
-        np.ndarray or jax.Array, optional
-            Connection weights matrix (N x N), or None if no edges/matrix
-
-        Examples:
-        --------
-        ```python
-        net = Network.from_matrix(weights, lengths)
-        W = net.weights_matrix
-        print(f"Shape: {W.shape}, Mean: {W.mean():.3f}")
-        ```
+        It adds nothing: the pytree payload, the edge-derived fallback and the unconnected zeros all live in `matrix` now. Kept only because the deprecated properties route through it; new callers should use `matrix` directly.
         """
-        if len(self.nodes) == 1:
-            return np.zeros((1, 1))
-        # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
-        if hasattr(self, "_pytree_data") and self._pytree_data is not None:
-            return self._pytree_data[0]
-
-        # Check _arrays (set by set_matrix / add_edges). When the sidecar declares a `primary_weight`, that named edge wins over the default weight / weights / sc lookup — lets one Network file expose several variants under named edges and pick the active one.
-        _arrs = self._get_arrays()
-        _primary = getattr(self, "primary_weight", None)
-        if _primary and _primary in _arrs:
-            from scipy import sparse as _sp
-
-            W = _arrs[_primary]
-            if _sp.issparse(W):
-                W = W.toarray()
-        elif "weight" in _arrs:
-            from scipy import sparse as _sp
-
-            W = _arrs["weight"]
-            if _sp.issparse(W):
-                W = W.toarray()
-        elif "weights" in _arrs:
-            from scipy import sparse as _sp
-
-            W = _arrs["weights"]
-            if _sp.issparse(W):
-                W = W.toarray()
-        elif "sc" in _arrs:
-            from scipy import sparse as _sp
-
-            W = _arrs["sc"]
-            if _sp.issparse(W):
-                W = W.toarray()
-        # Check for cached matrix from from_matrix (performance optimization)
-        elif hasattr(self, "_cached_weights") and self._cached_weights is not None:
-            W = self._cached_weights
-            from scipy import sparse as _sp
-
-            if _sp.issparse(W):
-                W = W.toarray()
-        elif hasattr(self, "_store") and self._store is not None:
-            # Lazy load from companion file (set by load_network)
-            arrays = self._store.arrays
-            if _primary and _primary in arrays:
-                self._cached_weights = arrays[_primary]
-                W = self._cached_weights
-            elif "weight" in arrays:
-                self._cached_weights = arrays["weight"]
-                W = self._cached_weights
-            elif "weights" in arrays:
-                self._cached_weights = arrays["weights"]
-                W = self._cached_weights
-            else:
-                W = self._weights_from_edges()
-        else:
-            # Compute from edges (fallback for networks built from explicit edges)
-            W = self._weights_from_edges()
-
-        if W is None:
-            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
-            if n > 0:
-                return np.zeros((n, n), dtype=np.float64)
-            return None
-
-        if apply_transforms:
-            for t in self.transforms_for("weight"):
-                W = self._apply_transform(W, t)
-        return W
+        return self.matrix("weight", format="dense", apply_transforms=apply_transforms)
 
     @property
     def weights(self):
-        """Connectivity weight matrix (alias for `weights_matrix`)."""
-        return self.weights_matrix
+        """Deprecated: use ``matrix("weight")``."""
+        _warn_superseded_accessor("weights", 'matrix("weight")')
+        return self._weights_matrix(apply_transforms=True)
 
     @property
     def lengths_matrix(self) -> np.ndarray | JaxArray | None:
@@ -2692,41 +2646,8 @@ class Network(tvbo_datamodel.Network):
         """
         if len(self.nodes) == 1:
             return np.zeros((1, 1))
-        # Check if we have cached PyTree data from tree_unflatten (during JAX transformations)
-        if hasattr(self, "_pytree_data") and self._pytree_data is not None:
-            return self._pytree_data[1]
-
-        # Check _arrays (set by set_matrix / add_edges). Resolve the length edge by meaning, not just the canonical name, so a sidecar naming it e.g. tract_length still drives delayed simulations.
-        from scipy import sparse as _sp
-
-        L = None
-        _arrs = self._get_arrays()
-        _lk = _length_like_key(_arrs)
-        if _lk is not None:
-            _raw = _arrs[_lk]
-            L = _raw.toarray() if _sp.issparse(_raw) else _raw
-        # Cached matrix from from_matrix (performance optimization)
-        elif hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
-            L = self._cached_lengths
-        elif hasattr(self, "_store") and self._store is not None:
-            # Lazy load from companion file (set by load_network)
-            arrays = self._store.arrays
-            _lk = _length_like_key(arrays)
-            if _lk is not None:
-                self._cached_lengths = arrays[_lk]
-                L = self._cached_lengths
-
-        # Compute from edges (fallback for networks built from explicit edges)
-        if L is None:
-            L = self._lengths_from_edges()
-        if L is None:
-            # None, not a zeros matrix: "no tract lengths" is not "every tract has length zero". Standing in a dense N x N of zeros defeats every `lengths_matrix is not None` guard downstream, and makes an undelayed mesh-scale network pay three N x N allocations to discover it has no delays.
-            return None
-
-        # Apply transforms targeting "length" (mirrors weights_matrix; the add_transform contract lists "length" as a valid edge-property target).
-        for t in self.transforms_for("length"):
-            L = self._apply_transform(L.toarray() if _sp.issparse(L) else np.asarray(L), t)
-        return L
+        # None, not zeros: "no tract lengths" is not "every tract has length zero", and standing in a dense N x N of zeros defeats every `is not None` delay guard downstream.
+        return self.matrix("length", format="dense")
 
     @property
     def lengths(self):
@@ -2826,7 +2747,7 @@ class Network(tvbo_datamodel.Network):
         """
         G = nx.MultiDiGraph()
 
-        W = self.weights_matrix
+        W = self._weights_matrix()
 
         # Step 1: Add nodes (prefer explicit nodes, fall back to matrix size)
         if self.nodes:
@@ -3195,7 +3116,7 @@ class Network(tvbo_datamodel.Network):
         ```python
         sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.normalize_weights("weight / max(weight)")  # Normalize to [0, 1]
-        normalized = sc.weights_matrix  # Returns normalized weights
+        normalized = sc.matrix("weight")  # Returns normalized weights
         ```
 
         See Also:
@@ -3234,7 +3155,7 @@ class Network(tvbo_datamodel.Network):
         import numpy as np
         from matplotlib.colors import LogNorm
 
-        weights = self.weights_matrix
+        weights = self._weights_matrix()
         if weights is None:
             weights = np.zeros((1, 1))
 
@@ -3503,7 +3424,7 @@ class Network(tvbo_datamodel.Network):
             return G
 
         # Priority 2: Fall back to weight matrix representation
-        W = self.weights_matrix
+        W = self._weights_matrix()
         D = self.calculate_delays() if self.lengths_matrix is not None else None
         N_regions = self.number_of_regions
 
@@ -3740,7 +3661,7 @@ class Network(tvbo_datamodel.Network):
 
         # Threshold edges
         if threshold_percentile > 0:
-            _threshold_graph(G, self.weights, threshold_percentile)
+            _threshold_graph(G, self._weights_matrix(), threshold_percentile)
 
         # Resolve node positions
         resolved_pos = _resolve_positions(
@@ -4094,7 +4015,7 @@ class Network(tvbo_datamodel.Network):
         ```python
         sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.normalize()
-        normalized_weights = sc.weights_matrix  # Now in [0, 1] range
+        normalized_weights = sc.matrix("weight")  # Now in [0, 1] range
         ```
 
         See Also:
@@ -4263,23 +4184,43 @@ class Network(tvbo_datamodel.Network):
 
         self._ensure_template_edge(name)
 
+    def _matrix_names(self, name: str) -> tuple:
+        """Spellings to try for a named edge matrix, most specific first.
+
+        A declared ``primary_weight`` wins for every weight spelling, so one sidecar can carry several connectivity variants (band-specific reweightings, shuffled
+        controls) and still present one of them as the active weight. Beyond that the order is
+        :func:`_alias_group`'s, which also drives transform selection.
+        """
+        primary = getattr(self, "primary_weight", None) if _is_weight_name(name) else None
+        head = (str(primary).lower(),) if primary else ()
+        return tuple(dict.fromkeys(head + _alias_group(name)))
+
     def matrix(
         self,
         name: str,
         format: str | None = None,
+        apply_transforms: bool = True,
     ):
         """Get a named edge matrix, optionally in a specific format.
 
-        Resolution order: ``_arrays`` (user-set) → ``_store`` (lazy file) → ``_cached_*`` (legacy) → ``None``.
+        The single canonical connectivity accessor. Resolution order: the ``_pytree_data`` payload (the live matrices under a JAX transformation) → ``_arrays`` (user-set) → ``_store`` (the lazy companion file) → ``_cached_*`` (legacy) → edges → ``None``, so a stale legacy cache can never shadow the companion file the spec points at. Each SOURCE is exhausted across every alias spelling before the next is consulted — precedence is between sources, and a spelling is not a precedence, so a companion file holding ``weight`` cannot shadow a user-set ``weights``.
+
+        Being canonical means subsuming what the deprecated properties returned, so a WEIGHT target on a node set with no edges yields zeros rather than ``None``: an unconnected network is a legitimate one, and every consumer of this builds an ``(n, n)`` array from the result.
 
         Parameters
         ----------
         name : str
-            Matrix name (e.g. ``"weight"``, ``"length"``).
+            Matrix name (e.g. ``"weight"``, ``"length"``). Alias spellings
+            (``weights``/``sc``, ``lengths``) resolve to the same matrix.
         format : str, optional
             Return format: ``"dense"``, ``"csr"``, ``"coo"``, ``"lil"``.
             If ``None``, returns the matrix in whatever format it is
             currently stored in.
+        apply_transforms : bool
+            Apply the declared ``transforms:`` targeting this matrix. Pass
+            ``False`` for the raw matrix — the tvboptim codegen path does, so a
+            frozen kit keeps raw SC in the network file and the declared op
+            visible in the rendered script rather than hidden in this runtime.
 
         Returns:
         -------
@@ -4288,29 +4229,71 @@ class Network(tvbo_datamodel.Network):
         from scipy import sparse
         from scipy.sparse import coo_matrix, csr_matrix, lil_matrix
 
-        mat = None
-        # 1. User-set matrices (highest priority)
+        # Under a JAX transformation the live matrices are the pytree payload, not the pre-trace attributes, so it wins outright — reading around it returns stale weights silently.
+        _pytree = getattr(self, "_pytree_data", None)
+        if _pytree is not None:
+            if _is_weight_name(name):
+                return _pytree[0]
+            if _is_length_name(name):
+                return _pytree[1]
+
         arrays = self._get_arrays()
-        if name in arrays:
-            mat = arrays[name]
-        # 2. Lazy store (from file)
-        elif hasattr(self, "_store") and self._store is not None and name in self._store:
-            mat = self._store[name]
-        # 3. Legacy caches
-        elif name in ("weight", "weights") and hasattr(self, "_cached_weights") and self._cached_weights is not None:
-            mat = self._cached_weights
-        elif name in ("length", "lengths") and hasattr(self, "_cached_lengths") and self._cached_lengths is not None:
-            mat = self._cached_lengths
+        store = getattr(self, "_store", None)
+        candidates = self._matrix_names(name)
+        def _pick(source):
+            """First candidate spelling held by one source, exact match before case-folded.
+
+            The exact pass keeps a lazy store lazy; only a miss enumerates its keys, which is
+            what makes a sidecar spelling lengths ``tractLength`` resolvable at all.
+            """
+            if source is None:
+                return None
+            for cand in candidates:
+                if cand in source:
+                    return source[cand]
+            keys = getattr(source, "arrays", None)
+            keys = keys if keys is not None else (source if hasattr(source, "keys") else None)
+            if not keys:
+                return None
+            folded = {}
+            for k in keys.keys():
+                folded.setdefault(str(k).lower(), k)
+            for cand in candidates:
+                k = folded.get(cand)
+                if k is not None:
+                    return source[k]
+            return None
+
+        mat = _pick(arrays)
+        if mat is None:
+            mat = _pick(store)
+        if mat is None:
+            if _is_weight_name(name) and getattr(self, "_cached_weights", None) is not None:
+                mat = self._cached_weights
+            elif _is_length_name(name) and getattr(self, "_cached_lengths", None) is not None:
+                mat = self._cached_lengths
+            elif _is_weight_name(name):
+                mat = self._weights_from_edges()
+            elif _is_length_name(name):
+                mat = self._lengths_from_edges()
+
+        # No edges is zero weights, not absent ones: a single-node model and an uncoupled ensemble are both legitimate, and every consumer builds an (n, n) array from this.
+        _unconnected = False
+        if mat is None and _is_weight_name(name):
+            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
+            if n > 0:
+                mat, _unconnected = np.zeros((n, n), dtype=np.float64), True
 
         if mat is None:
             return None
 
-        # Apply transforms targeting this matrix
-        for t in self.transforms_for(name):
-            mat = self._apply_transform(
-                mat.toarray() if sparse.issparse(mat) else np.asarray(mat),
-                t,
-            )
+        # A declared transform describes real connectivity; over an all-zero stand-in a normalisation like `W / mean(W[W > 0])` yields nan rather than zeros.
+        if apply_transforms and not _unconnected:
+            for t in self.transforms_for(name):
+                mat = self._apply_transform(
+                    mat.toarray() if sparse.issparse(mat) else np.asarray(mat),
+                    t,
+                )
 
         if format is None:
             return mat
@@ -4459,8 +4442,8 @@ class Network(tvbo_datamodel.Network):
         Returns:
             List of `Function` transforms declared against *target*.
         """
-        names = next((a for a in _TRANSFORM_TARGET_ALIASES if target in a), (target,))
-        return [t for t in (self.transforms or []) if transform_target(t) in names]
+        names = _alias_group(target)
+        return [t for t in (self.transforms or []) if str(transform_target(t)).lower() in names]
 
     def transform_expression(self, func):
         """A transform's equation as a sympy expression, with its arguments substituted.

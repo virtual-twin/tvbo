@@ -132,9 +132,9 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     free_names = {c["parameter"] for c in constraints}
 
     # Connectivity matrix as a Julia literal (rows ';'-separated).
-    W = np.asarray(network.weights_matrix, dtype=float)
+    W = np.asarray(network.matrix("weight"), dtype=float)
     if W.shape != (n_nodes, n_nodes):
-        raise ValueError(f"weights_matrix shape {W.shape} != ({n_nodes}, {n_nodes})")
+        raise ValueError(f"weight matrix shape {W.shape} != ({n_nodes}, {n_nodes})")
     w_const = "[" + ";\n ".join(" ".join(repr(float(v)) for v in row) for row in W) + "]"
 
     # Coupling source = the state variable flagged coupling_variable (fallback: sv[0]).

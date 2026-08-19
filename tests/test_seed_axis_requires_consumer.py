@@ -156,4 +156,99 @@ def test_two_axis_seed_sweep_maps_the_noise_seed_leaf_to_its_label():
     spec["explorations"]["seed_sweep"]["space"].insert(0, {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}})
     code = SimulationExperiment(**spec).render_code("tvboptim")
     squeezed = "".join(code.split()).replace('"', "'")
-    assert "_bare_to_label.setdefault('_noise_seed',str(_a.name))" in squeezed
+    assert "_register('_noise_seed')" in squeezed
+    assert "if_name=='execution.random_seed':" in squeezed
+
+
+_ZIP_STREAM_SPEC = """
+id: 9
+dynamics:
+  name: Kuramoto
+  label: Kuramoto
+  parameters:
+    omega: {name: omega, value: 0.0628, unit: rad_per_ms}
+  coupling_inputs:
+    c: {name: c, description: "coupling"}
+  state_variables:
+    theta:
+      name: theta
+      unit: rad
+      initial_value: 0.1
+      equation: {lhs: "Derivative(theta, t)", rhs: "omega + c"}
+      variable_of_interest: true
+      coupling_variable: true
+      noise: {additive: true, gaussian: true, parameters: {sigma: {value: 0.5}}}
+  output: [theta]
+  number_of_modes: 1
+network:
+  number_of_nodes: 2
+  nodes:
+    - {id: 0, label: r0}
+    - {id: 1, label: r1}
+  edges:
+    - {source: 0, target: 1, weight: 0.5}
+    - {source: 1, target: 0, weight: 0.5}
+coupling:
+  name: KuramotoCoupling
+  label: KuramotoCoupling
+  parameters:
+    a: {name: a, value: 0.01}
+    N: {name: N, value: 1.0}
+  pre_expression: {rhs: "sin(theta_j - theta_i)"}
+  post_expression: {rhs: "a * gx / N"}
+  incoming_states: [theta]
+  local_states: [theta]
+integration:
+  method: Heun
+  duration: 40.0
+  step_size: 1.0
+  transient_time: 0.0
+observations:
+  m:
+    source: theta
+    aggregation: mean
+    reduce: streaming
+execution:
+  random_seed: 3
+explorations:
+  seed_sweep:
+    name: seed_sweep
+    mode: MODE
+    space:
+      - parameter: Kuramoto.omega
+        explored_values: [0.05, 0.07]
+      - parameter: execution.random_seed
+        explored_values: SEEDS
+"""
+
+
+def _streamed_cells(tmp_path, mode, seeds, tag):
+    """The observation values of a bundled STREAMING exploration, one row per cell."""
+    import numpy as np
+
+    spec = _ZIP_STREAM_SPEC.replace("MODE", mode).replace("SEEDS", str(list(seeds)))
+    path = tmp_path / f"{tag}.yaml"
+    path.write_text(spec)
+    exp = SimulationExperiment.from_file(str(path))
+    exp.configure()
+    obs = exp.run("tvboptim", mode="exploration").explorations.seed_sweep.observations
+    return np.asarray(obs["m" if "m" in obs else next(iter(obs))])
+
+
+@pytest.mark.parametrize("mode", ["zip", "product"])
+def test_a_seed_axis_reseeds_a_streamed_observation(tmp_path, mode):
+    """The seed must reach `noise.key` on the STREAMING path, and under either grid mode.
+
+    A bundled streaming observation folds into the integrator carry through
+    `prepare(reduce=...)` rather than reading a materialised trajectory, and the per-cell
+    reseeding wrapper composes on top of it. If it did not, every cell of the sweep would
+    integrate the same noise and the container would still report a seed dimension — the
+    fake ensemble the checks above refuse at codegen, arrived at after it.
+    """
+    import numpy as np
+
+    a = _streamed_cells(tmp_path, mode, [0, 1], f"{mode}_a")
+    b = _streamed_cells(tmp_path, mode, [5, 6], f"{mode}_b")
+    assert not np.allclose(a, b), (
+        f"{mode} + streaming: the cells are identical under two different seed sets, so the "
+        "seed axis never reached the solver's PRNG key")

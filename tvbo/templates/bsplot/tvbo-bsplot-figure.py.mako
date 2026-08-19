@@ -17,8 +17,8 @@ import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   load_layer as _load_layer, registered as _registered,
-                                  scale_colormap as _scale_cmap)
-from tvbo.data.dataref import match_output as _match_output
+                                  scale_colormap as _scale_cmap, heatmap_orientation as _orient)
+from tvbo.data.dataref import match_output as _match_output, resolve_sel_keys as _sel_keys
 % for m in code_modules:
 import ${m}  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
 % endfor
@@ -81,7 +81,7 @@ def _distinct_ticks(fig):
     from matplotlib.ticker import FormatStrFormatter
 
     fig.canvas.draw()
-    _bars = {id(_cb.ax) for _cb, _ in _COLORBAR_POST} | {id(_a) for _a in _SCALE_AXES.values()}
+    _bars = {id(_cb.ax) for _cb, _, _ in _COLORBAR_POST} | {id(_a) for _a in _SCALE_AXES.values()}
     pending, seen = list(fig.axes), []
     while pending:                          # a grid's cells are child_axes, not fig.axes
         ax = pending.pop()
@@ -116,7 +116,7 @@ def _numeric_text(text):
     return True
 
 
-def _format_colorbar(cb, decimals):
+def _format_colorbar(cb, decimals, declared_ticks=False):
     """Colourbar ticks that carry their own magnitude, dropping one that collides with a neighbour.
 
     A slim bar has nowhere to put a shared exponent: factored out, a field spanning 3e4 reads
@@ -124,6 +124,11 @@ def _format_colorbar(cb, decimals):
     *decimals* where the spec declares them, and with `%g` otherwise. The tick rule places one
     at each end and one at the centre value; when the data barely crosses that centre, two land
     on the same pixel and print over each other, so the middle one goes.
+
+    A panel that declared its own `colorbar_ticks` keeps every one of them: the marks are then
+    the paper's, and dropping one because it crowds a neighbour would be the renderer overruling
+    the spec. Their text is still written in full, which is the half of this pass that is about
+    magnitude rather than about which marks appear.
     """
     bsplot.style.format_colorbar(cb, colorbar_decimals=decimals)
     ax = cb.ax
@@ -135,7 +140,8 @@ def _format_colorbar(cb, decimals):
     ticks = list(axis.get_ticklocs())
     span = abs(lim[1] - lim[0]) or 1.0
     keep = [t for i, t in enumerate(ticks)
-            if i in (0, len(ticks) - 1) or min(abs(t - ticks[0]), abs(t - ticks[-1])) / span > 0.12]
+            if declared_ticks or i in (0, len(ticks) - 1)
+            or min(abs(t - ticks[0]), abs(t - ticks[-1])) / span > 0.12]
     if len(keep) != len(ticks):
         axis.set_ticks(keep)
     _fmt = axis.get_major_formatter() if decimals is not None else (lambda v, pos: _tick_text(v))
@@ -234,9 +240,18 @@ def _color_dim(da, name):
 
 
 def _coord(da, name, axis):
-    """Coordinate values along a named dim, or an integer index if it has no coord."""
+    """Coordinate values along a named dim, or an integer index if it has no coord.
+
+    The index falls back to the dim *name*'s own position when the array declares it, and
+    only then to *axis*. A heatmap whose dims run ``(y, x)`` would otherwise index x by the
+    length of the y axis, and a non-square panel raises inside pcolormesh while a square one
+    silently transposes the field.
+    """
     if name and name in da.coords:
         return np.asarray(da.coords[name].values)
+    dims = [str(d) for d in getattr(da, "dims", ())]
+    if name and str(name) in dims:
+        axis = dims.index(str(name))
     return np.arange(da.shape[axis])
 
 
@@ -505,8 +520,11 @@ def _restore_fixed_axes(snap):
 % if p['colorbar_label']:
     _cb.set_label(${repr(p['colorbar_label'])})
 % endif
+% if p['colorbar_ticks'] is not None:
+    _cb.set_ticks(${repr(p['colorbar_ticks'])})
+% endif
     _cb.outline.set_linewidth(0.5)
-    _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}))   # re-applied after the format pass
+    _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}, ${repr(p['colorbar_ticks'] is not None)}))   # re-applied after the format pass
 % endif
 </%def>\
 <%def name="draw(p)">\
@@ -533,7 +551,7 @@ def _restore_fixed_axes(snap):
     _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif
 % if L['sel'] is not None:
-    _da = _da.sel(${repr(L['sel'])}, method=${repr(L['sel_method'])})
+    _da = _da.sel(_sel_keys(_da, ${repr(L['sel'])}), method=${repr(L['sel_method'])})
 % endif
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     _y = _channel(_ds, _da, ${repr(L['y'])}, 1)
@@ -558,14 +576,13 @@ ${colorbar(p)}\
     _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif
 % if L['sel'] is not None:
-    _da = _da.sel(${repr(L['sel'])}, method=${repr(L['sel_method'])})
+    _da = _da.sel(_sel_keys(_da, ${repr(L['sel'])}), method=${repr(L['sel_method'])})
 % endif
 % if L['mark'] == 'heatmap':
     _C = np.asarray(_da.values)
     _x = _coord(_da, ${repr(L['x'])}, 0)
     _y = _coord(_da, ${repr(L['y'])}, 1)
-    if _C.shape == (len(_x), len(_y)):
-        _C = _C.T                                   # orient to (y, x) for pcolormesh
+    _C = _orient(_da, _C, ${repr(L['x'])}, ${repr(L['y'])}, len(_x), len(_y))
 % if L['triangle']:
     _C = _triangle(_C, ${repr(L['triangle'])}, ${p['triangle_gap']})
     _x = _y = np.arange(_C.shape[0])                # the gap widens the frame
@@ -735,8 +752,8 @@ def main():
         _bare(_pax)
     for _iax, _iopts in _INSET_POST:                        # an inset's declared frame, same rule as a panel's
         _apply_axopts(_iax, _iopts)
-    for _cbar, _dec in _COLORBAR_POST:                      # declared decimals beat the tidy-up's multiplier
-        _format_colorbar(_cbar, _dec)
+    for _cbar, _dec, _declared in _COLORBAR_POST:           # declared decimals beat the tidy-up's multiplier
+        _format_colorbar(_cbar, _dec, _declared)
 % for p in panels:
 % if p['post_axopts']:
     if axd[${repr(p['key'])}] not in _PLACEHOLDER_AXES:   # a slot that fell back to a placeholder stays bare

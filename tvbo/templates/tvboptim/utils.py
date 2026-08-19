@@ -735,7 +735,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
 
     _source_dir = getattr(network, "_source_dir", None)
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
-    raw = getattr(network, "raw_weights_matrix", None)
+    raw = network.matrix("weight", apply_transforms=False) if hasattr(network, "matrix") else None
     n_nodes = None if raw is None else np.asarray(raw).shape[0]
     transforms: list[tuple[str, list[str]]] = []
     const_env: list[str] = []
@@ -1103,7 +1103,7 @@ def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
     """Synthesize a cumulative streaming reducer from ``aggregation``.
 
     An observation marked ``reduce: streaming`` whose ``aggregation`` is ``mean``, ``std``, ``variance`` or ``first_passage`` — and which has no HRF/BOLD ``pipeline`` — folds into the integrator carry as an accumulator instead of materialising the source trajectory.
-    ``mean`` carries one accumulator (a running sum, divided by the sample count at finalize); ``std``/``variance`` add a sum-of-squares and read ``sqrt(E[x^2] - E[x]^2)`` (variance without the ``sqrt``) — the ddof=0 form that matches the host ``jnp.std`` / ``jnp.var``. ``first_passage`` carries a latch and a counter, giving the same crossing index the post-scan ``argmax`` form returns; streaming it is what lets a first-passage sweep reach production size, since the host form needs every cell's whole trajectory. The returned dict is shaped exactly as the recurrence resolver's, with no ``kind`` tag, so a stat stream reuses :func:`render_recurrence_reduction` unchanged.
+    ``mean`` carries one accumulator (a running sum, divided by the sample count at finalize); ``std``/``variance`` add a sum-of-squares and read ``sqrt(E[x^2] - E[x]^2)`` (variance without the ``sqrt``) — the ddof=0 form that matches the host ``jnp.std`` / ``jnp.var``. ``first_passage`` carries a latch and a counter, giving the same crossing index the post-scan ``argmax`` form returns; streaming it is what lets a first-passage sweep reach production size, since the host form needs every cell's whole trajectory. The returned dict is shaped exactly as the recurrence resolver's and tagged ``kind: recurrence``, so a stat stream reuses :func:`render_recurrence_reduction` unchanged and declares that kind's axes — folding over time leaves one value per node, which is what ``recurrence`` names.
 
     ``last`` carries a memory state rather than an accumulator: it overwrites instead of reading itself, so the carry holds the newest folded sample and the readout is that sample. In ``first_passage``, ``_fp_hit`` latches at the first crossing while ``_fp_idx`` counts the samples before it and then stops, landing on the crossing index and saturating at the sample count when the source never crosses. The latch is inlined into the counter rather than read from the state because both update from the previous carry, and a crossing on the very first sample has to yield 0.
 
@@ -1187,6 +1187,7 @@ def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
         "histogram": None,
         "windowed": False,
         "skip_inclusive": True,  # pure accumulator: fold the sample AT skip, not the next
+        "kind": "recurrence",
     }
 
 
@@ -1321,6 +1322,67 @@ def reduction_dims(red: dict[str, Any] | None) -> tuple:
     if not red:
         return ()
     return _REDUCTION_DIMS.get(str(red.get("kind")), ())
+
+
+_PIPELINE_STEP_KINDS = {
+    "compute_fc": "comoment",
+}
+"""Reduction kind a NAMED pipeline step computes, for the steps that do not preserve their input's axes.
+
+Keyed to a KIND rather than to axis names, so a step and the streaming reducer that replaces it (``compute_fc`` / ``windowed_fc``, which declares ``comoment``) cannot end up naming the same node-by-node matrix's axes differently. :data:`_REDUCTION_DIMS` stays the one place a kind's axes are spelled.
+
+A step carrying only an ``equation`` is elementwise and keeps its source's axes. A named step (``callable``/``function``, or a bare ``name``) is an opaque operation of the same rank or another: ``compute_fc`` turns a ``(time, node)`` trajectory into a node-by-node matrix, so propagating the source's axes through it would hang the node labels on the column axis and call the row axis ``time``. A named step absent from this table leaves the derived observation unlabelled rather than guessed.
+"""
+
+
+def _derived_dims(obs: Any, src_dims: tuple) -> tuple | None:
+    """Axes *obs*'s pipeline leaves on a source carrying *src_dims*, or None when unknown.
+
+    A step is elementwise only when it carries its OWN ``equation``; every other step is a named operation whose reduction kind is looked up in :data:`_PIPELINE_STEP_KINDS` and whose axes then come from :func:`reduction_dims`. Testing for the equation positively is what keeps this honest: a step may name its operation through ``name`` alone (:func:`_step_reducer_name` accepts that), so inferring "elementwise" from the ABSENCE of ``callable``/``function`` would propagate the source's axes straight through an operation that reshapes.
+    """
+    dims: tuple | None = src_dims
+    for step in as_list(get_attr(obs, "pipeline")):
+        if get_attr(step, "equation") is not None:
+            continue
+        kind = _PIPELINE_STEP_KINDS.get(_step_reducer_name(step).lower())
+        dims = reduction_dims({"kind": kind}) if kind else None
+        if not dims:
+            return None
+    return dims
+
+
+def observation_dims(experiment: Any) -> dict[str, tuple]:
+    """Every observation's declared axis names, keyed by observation name.
+
+    :func:`reduction_dims` names the axes of ONE reduction; this asks it of every observation an experiment declares, so the result container labels all of them and not only the ``reduce: streaming`` subset. An observation whose reduction declares nothing is absent, and the container falls back to its positional template for that one alone.
+
+    Derived observations are then given the axes their pipeline leaves on the observations they source (:data:`_PIPELINE_STEP_KINDS`): elementwise through an ``equation`` step, re-declared by a named step that reshapes. Sources that disagree, sources that are themselves unlabelled, and pipelines whose steps are not all recognised leave the derived observation unlabelled rather than guessed. Iterating to a fixed point handles a chain of derived-of-derived in any declaration order.
+    """
+    obs = get_attr(experiment, "observations") or {}
+    obs_by_name = dict(obs.items()) if hasattr(obs, "items") else {str(get_attr(o, "name")): o for o in obs}
+    dims: dict[str, tuple] = {}
+    for n, o in obs_by_name.items():
+        d = reduction_dims(resolve_reduction(o, experiment))
+        if d:
+            dims[str(n)] = d
+    changed = True
+    while changed:
+        changed = False
+        for n, o in obs_by_name.items():
+            n = str(n)
+            if n in dims:
+                continue
+            srcs = [str(get_attr(s, "name", s)) for s in as_list(get_attr(o, "source"))]
+            obs_srcs = [s for s in srcs if s in obs_by_name]
+            if not obs_srcs or len(obs_srcs) != len(srcs):
+                continue
+            src_dims = {dims.get(s) for s in obs_srcs}
+            if len(src_dims) == 1 and None not in src_dims:
+                d = _derived_dims(o, src_dims.pop())
+                if d:
+                    dims[n] = d
+                    changed = True
+    return dims
 
 
 def _partition_group_count(pdef: dict[str, Any], gather: str) -> int:
@@ -1771,9 +1833,10 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
       the empirical target). Observations that need the raw trajectory (e.g. a post-scan
       ``mean`` over a state variable) are intentionally absent — at fit scale they cannot be materialised anyway;
     - ``period_in_steps``: the block-size unit — a multiple of every reducer's
-      ``ds_steps * tr_stride`` — so BOLD TR boundaries align to integrator block boundaries (a partial-TR block would misalign the reducer's slot writing);
-    - ``dims``: each streamed observation's axis names, from the reduction that produces
-      it (:func:`reduction_dims`), so the result container binds declared labels rather than inferring them from the array's shape.
+      ``ds_steps * tr_stride`` — so BOLD TR boundaries align to integrator block boundaries (a partial-TR block would misalign the reducer's slot writing).
+
+    Observation AXIS NAMES are not part of this plan: they describe every observation an experiment declares, streamed or materialised, so :func:`observation_dims` answers that
+    independently and the caller asks it directly.
 
     Both the experiment template (which builds the streaming ``post_model_fn``) and the algorithm template (which consumes it) call this, so the two sides cannot drift.
     """
@@ -1791,7 +1854,7 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
         if r is not None and not r.get("windowed") and (_is_streaming(o) or r.get("kind") == "wave"):
             streaming[str(n)] = r
     if not streaming:
-        return {"names": [], "deliverables": [], "period_in_steps": None, "dims": {}}
+        return {"names": [], "deliverables": [], "period_in_steps": None}
 
     def _is_static_source(o):
         s = as_list(get_attr(o, "source"))
@@ -1832,7 +1895,6 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
         "names": sorted(streaming),
         "deliverables": deliverables,
         "period_in_steps": period,
-        "dims": {n: reduction_dims(r) for n, r in streaming.items() if reduction_dims(r)},
     }
 
 
@@ -3339,6 +3401,56 @@ def network_axis_leaf(ref: Any) -> str | None:
             f"{', '.join('network.edges.' + k for k in sorted(_NETWORK_EDGE_GRAPH_LEAVES))})."
         )
     return leaf
+
+
+_NOISE_SCOPE = "noise."
+_NOISE_PARAM_LEAVES = ("sigma",)
+
+
+def noise_axis_param(ref: Any) -> str | None:
+    """Noise parameter swept by a ``noise.``-scoped exploration axis, else None.
+
+    ``noise.sigma`` sweeps the noise AMPLITUDE across grid cells. The amplitude is declared
+    per state variable (``state_variables.<sv>.noise.parameters.sigma``) or once for the
+    integration, and a backend holds it as an ordinary parameter leaf beside the dynamics
+    parameters — so it is swept like any other parameter once the axis can name it. The
+    scope is the experiment's noise as a whole, matching how an amplitude is applied: one
+    diffusion coefficient, scaled per targeted state.
+
+    Returns the bare parameter name; None for a reference outside the ``noise.`` scope,
+    which callers route through the dynamics/coupling path.
+
+    Raises:
+        ValueError: the reference is ``noise.``-scoped but names no sweepable noise
+            parameter — failing at codegen rather than silently writing the axis into the
+            dynamics scope, where it would sweep nothing.
+    """
+    if not isinstance(ref, str) or not ref.startswith(_NOISE_SCOPE):
+        return None
+    attr = ref[len(_NOISE_SCOPE) :]
+    if attr not in _NOISE_PARAM_LEAVES:
+        raise ValueError(
+            f"exploration axis '{ref}': unknown noise parameter '{attr}' "
+            f"(sweepable: {', '.join(_NOISE_SCOPE + p for p in _NOISE_PARAM_LEAVES)})."
+        )
+    return attr
+
+
+def axis_keypath(ax: Any) -> str:
+    """Grid keypath an exploration axis binds on — ``<sub-object>.<leaf>``.
+
+    ONE definition of WHERE an axis writes, so the grid binding, the warm-start / adiabatic sweep and the branch-analysis restart cannot disagree. A coupling axis lands on its
+    coupling instance, a ``network.`` axis on the delay graph, a ``noise.`` axis on the noise parameters, and everything else on the dynamics. Disagreement here is silent rather
+    than loud: routing ``noise.sigma`` to ``dynamics.sigma`` sweeps a same-named model parameter, or nothing at all, and the run still completes.
+    """
+    name = str(ax.get("name"))
+    if ax.get("is_coupling"):
+        return f"coupling.{ax.get('coupling_key')}.{name}"
+    if ax.get("is_network"):
+        return f"graph.{ax.get('graph_leaf')}"
+    if ax.get("is_noise"):
+        return f"noise.{name}"
+    return f"dynamics.{name}"
 
 
 _INITIAL_CONDITIONS_SCOPE = "initial_conditions."

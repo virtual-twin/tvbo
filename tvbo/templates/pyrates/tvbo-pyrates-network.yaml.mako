@@ -25,8 +25,8 @@ else:
 
 def get_weights_matrix(network):
     """Get weights matrix from Network."""
-    if hasattr(network, 'weights_matrix'):
-        return network.weights_matrix
+    if hasattr(network, 'matrix'):
+        return network.matrix("weight")
     elif hasattr(network, 'weights') and network.weights is not None:
         if hasattr(network.weights, 'data'):
             return np.array(network.weights.data)

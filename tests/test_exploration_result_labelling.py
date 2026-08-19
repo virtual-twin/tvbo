@@ -302,3 +302,45 @@ def test_a_non_numeric_axis_still_labels_rather_than_raising():
     coords = {"integration.method": np.array(["heun", "euler"], dtype=object)}
     da = _stacked_to_dataarray(np.zeros((2, 5)), axes, cell_coords=coords, name="obs")
     assert da is not None and da.dims[0] == "integration.method"
+
+
+def _object_array(values):
+    """An object-dtype array holding *values* — how a matrix-valued axis's points arrive."""
+    out = np.empty(len(values), dtype=object)
+    out[:] = list(values)
+    return out
+
+
+@pytest.mark.parametrize(
+    "cells,grid",
+    [
+        (_object_array([np.full((2, 2), c) for c in (0.1, 0.2)]), np.arange(2)),
+        (_object_array([np.zeros((2, 2))]), _object_array([np.zeros((2, 2)), np.ones((2, 2))])),
+        (_object_array([np.zeros((3, 3))]), _object_array([np.zeros((2, 2)), np.ones((2, 2))])),
+    ],
+    ids=["index-declared-grid", "matrices-both-sides", "mismatched-width"],
+)
+def test_array_valued_points_are_refused_and_name_the_upstream_conversion(cells, grid):
+    """A grid coordinate holds scalars, so array-valued points cannot be placed here at all.
+
+    An axis of whole matrices coordinates on the point INDEX, and only the generated script holds
+    the materialised points to convert against — so the container refuses and names that
+    conversion. Matching the matrices here instead would place the cells against a coordinate they
+    do not share, and the surface would come out keyed on something no reader can select by.
+    """
+    from tvbo.data.types import _axis_positions
+
+    with pytest.raises(ValueError, match="different currencies"):
+        _axis_positions(cells, grid, "network.edges.length", "theta")
+
+
+def test_point_indices_are_placed_through_the_ordinary_numeric_path():
+    """Converted upstream, a matrix axis is just an integer axis, placed by value like any other.
+
+    Fed a scrambled cell order, the placement recovers the declared order rather than the arrival
+    order — the property the whole by-value rule exists for.
+    """
+    from tvbo.data.types import _axis_positions
+
+    order = [2, 0, 4, 1, 3]
+    assert list(_axis_positions(np.asarray(order), np.arange(5), "network.edges.length", "theta")) == order
