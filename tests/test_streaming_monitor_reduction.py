@@ -33,6 +33,7 @@ from tvbo.datamodel.schema import (
     StateVariable,
 )
 from tvbo.templates.tvboptim.utils import (
+    observation_dims,
     reduction_dims,
     resolve_reduction,
     streaming_post_eval_plan,
@@ -124,7 +125,7 @@ def test_post_eval_plan_aligns_the_block_to_the_emission_period():
     plan = streaming_post_eval_plan(exp)
     assert plan["names"] == ["obs"]
     assert plan["period_in_steps"] == 720
-    assert plan["dims"] == {"obs": ("time", "node")}
+    assert observation_dims(exp) == {"obs": ("time", "node")}
 
 
 def test_reduce_streaming_on_an_observer_keeps_the_observer_not_the_pipeline_resolver():

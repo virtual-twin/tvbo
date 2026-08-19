@@ -3806,7 +3806,7 @@ classes:
                     (e.g. "ReducedWongWang.a"), a coupling key
                     (e.g. "FastLinearCoupling.G"), or one of the reserved scopes:
                     "network." for a connectome leaf (e.g. "network.conduction_speed",
-                    "network.edges.weight"), "execution.random_seed" for a per-cell
+                    "network.edges.weight", "network.edges.delay"), "execution.random_seed" for a per-cell
                     noise-seed ensemble, or "initial_conditions.<state_var>" to sweep
                     the initial value of one state variable (a deterministic
                     initial-condition ensemble). Resolved against the enclosing
@@ -5078,6 +5078,14 @@ classes:
                 range: integer
                 minimum_value: 1
                 description: "Total cores for local engines (Snakemake --cores)."
+            jobs:
+                range: integer
+                minimum_value: 1
+                description: >-
+                    Concurrent jobs the workflow engine keeps in flight (Snakemake
+                    ``--jobs``, written into the emitted profile). A site's queue limit
+                    is a property of the run, so it belongs beside partition and account;
+                    unset means 100.
             executor:
                 range: string
                 description: "Executor to run the pipeline through (Nextflow process.executor)."

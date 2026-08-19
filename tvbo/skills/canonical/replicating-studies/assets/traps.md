@@ -413,3 +413,74 @@ in full.
   heredoc's third replacement failed its assertion and aborted the whole script after the first
   two had only been computed in memory. Either write each file as you finish it, or verify every
   match before writing any. Confirm with a grep for the new symbol, never with the exit code.
+
+- **A panel that blanks its slot gets the slot back from the format pass.** Symptom: a colour
+  bar sits inside a ghost frame carrying its own 0–1 ticks, and the tick options declared on that
+  panel shape the ghost instead of the bar. A scale/legend/grid drawer calls `ax.axis("off")` on
+  its host axes and then a figure-wide tidy-up re-derives ticks for **every** axes in the figure,
+  including the one just blanked. Re-apply the blanking after the format pass, and let a scale
+  panel hand back the axes its bar actually lives on so a declared frame lands there. One caveat
+  that will bite: `Axes3D` reports `axison == False` by construction (it draws its own frame), so
+  a blanket "re-blank everything that was off" erases every 3-D panel — exclude them explicitly.
+
+- **Hiding a panel's tick labels asserts a shared scale the axes do not have.** Symptom: three
+  panels of the same quantity, only the leftmost labelled, and their limits differ by a third —
+  the reader compares heights that are not comparable. Hiding labels is a *display* change;
+  sharing a scale is a *limits* change, and only the second makes the first honest. Declare the
+  group (`share_y: ["c,g,h"]`) so every panel in it ends on the union of the group's limits.
+  Never paper over it with a literal `ylim`: the run that follows moves the data and the literal
+  silently clips it.
+
+- **An out-of-view tick label still has a window extent.** Symptom: an overlap detector reports
+  collisions between labels that are nowhere in the rendered PNG, and you chase them for an hour.
+  A locator emits ticks past the view limits; matplotlib does not draw those, but they remain
+  `Text` artists with `get_visible() == True` and a real bbox. Filter tick labels by the axis's
+  view interval, and skip the artists of any axes that is switched off, before measuring anything.
+
+- **A size solver that reads a stale PNG walks the declared size off a cliff.** Symptom: a
+  figure's `height:` is negative in the spec and matplotlib refuses the figsize. The solver
+  corrects `declared += (target - measured)`; when the render fails it leaves the previous PNG in
+  place, the solver measures that, and every iteration corrects against a size it never produced.
+  Gate on the output's mtime: no fresh file, no correction — restore what was declared and stop.
+
+- **A stored column can contradict the columns it was computed from, and nothing raises.**
+  Symptom: one condition of a sweep is a dramatic outlier — the response inverts, the responsive
+  count halves, a correlation goes non-significant — and it reads as a resonance crossing or a
+  genuine null. Before believing it, recompute the derived column from its own container's
+  inputs. Ours reproduced the stored `power_modulation` to 1e-15 in eleven containers and failed
+  on the twelfth for all 432 cells, matching `(post - pre)/post` exactly where the recipe declares
+  `(pre - post)/pre`. The cause was codegen emitting a NAMED argument positionally, so which array
+  landed where was decided by the order the datamodel yielded the arguments mapping — and
+  regenerating the datamodel mid-sweep reversed it. Three lessons, in order of durability:
+  **(a)** put the self-consistency check in the gate that stands before the destructive re-derive,
+  not in your head — the old gate gave the corrupt container a clean bill because it was complete
+  and carried every trace; **(b)** enumerate the exposure rather than guess it — only a callable
+  taking TWO OR MORE observation-valued arguments can be scrambled this way, which in a whole
+  study was one observation; **(c)** prove a codegen fix at RUNTIME on a short experiment written
+  into a scratch container, and compare it against a container written before the regression —
+  ours came back bit-identical, which is the only evidence that actually settles it.
+
+- **`--experiment 15,14` does not run 15 first.** Symptom: you reorder the argument to get one
+  experiment early and nothing changes. The list is a FILTER; the run follows the study's own
+  declaration order. When one experiment gates something you want hours early — the last two
+  unscored targets, a figure that has never rendered — give it its own invocation and chain the
+  rest after it. Two sequential calls cost nothing and moved a container from 03:30 to 01:30.
+
+- **One `tvbo run` cannot fill the machine, and a serial sweep leaves most of it idle.** Symptom:
+  a six-experiment job is projected to finish in eleven hours while `top` shows four of twelve
+  cores busy. A single run draws roughly four cores whatever you give it, so N experiments in one
+  invocation is N sequential four-core jobs. Split them across parallel invocations — three jobs
+  of two took the same work from ~13:00 to ~04:00 — and size the split by cores, not by taste:
+  jobs x cores-per-job should land at or just under the core count. Check free memory BEFORE
+  committing (52 % free, peak footprints of 4.8/1.2/1.4/1.3 GB, each job under its own guard),
+  because the failure mode of over-splitting is a swap death, not a slow run.
+
+- **Never regenerate the datamodel, or touch importable framework code, while a run is in
+  flight.** Symptom: experiments written before some moment are right and the ones after are
+  wrong, with no code change to blame. Templates are re-read per experiment and the generated
+  datamodel is imported once per process, so a regeneration mid-sweep changes what later
+  experiments emit while the sweep looks untouched. This is how an argument-ordering latency
+  became a data corruption: the bug existed all along and was harmless until a regeneration
+  reversed a mapping's order at 20:29, splitting one sweep into a correct half and a wrong half.
+  If you must fix the framework during a run, finish the run first, or accept that everything
+  after the edit needs re-running and gate on it.

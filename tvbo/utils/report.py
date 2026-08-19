@@ -242,6 +242,27 @@ def sci(x, digits: int = 2, missing: str = _MISSING) -> str:
     return f"{x:.{digits}e}"
 
 
+def p_text(p, floor: float = 1e-3) -> str:
+    """A p value as its own clause, so a tiny one reads as a bound rather than as `p = 0.000`.
+
+    Written the way a results sentence wants it, operator included, because `p = < .001` is what happens when the operator is fixed in the sentence and the bound arrives from the number.
+    """
+    p = float(p)
+    return f"p < {floor:g}".replace("0.", ".") if p < floor else f"p = {p:.3f}".replace("= 0.", "= .")
+
+
+_NUMBER_WORDS = ("no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve")
+
+
+def spelled(n: int) -> str:
+    """A small computed count as a word, so a sentence can open with it.
+
+    Reports compute their own counts, and a computed count often lands where prose wants a word rather than a numeral. Anything past twelve stays a numeral, which is where the convention itself gives up.
+    """
+    n = int(n)
+    return _NUMBER_WORDS[n] if 0 <= n < len(_NUMBER_WORDS) else str(n)
+
+
 def value_of(obj):
     """The `.value` of a recipe object, or the object itself when it is already a scalar."""
     return getattr(obj, "value", obj)
@@ -436,12 +457,12 @@ def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list
 
 
 DIVERGENCE_CLASSES = {
-    "A": "Value drift — same symbol, different number",
-    "B": "Algorithm substitution — code computes a different operation",
-    "C": "Undocumented configuration — never stated at all",
-    "D": "Underdetermined prose — several readings, one correct",
-    "E": "Convention traps — same name, different meaning",
-    "F": "Unreleased — no code to compare against",
+    "A": "Value drift: same symbol, different number",
+    "B": "Algorithm substitution: code computes a different operation",
+    "C": "Undocumented configuration: never stated at all",
+    "D": "Underdetermined prose: several readings, one correct",
+    "E": "Convention traps: same name, different meaning",
+    "F": "Unreleased: no code to compare against",
 }
 
 
@@ -1439,10 +1460,20 @@ def _safe_latex(expression):
 
 
 def _axis_range(axis):
-    """An exploration axis's extent, whether it lists values or bounds a domain."""
+    """An exploration axis's extent, whether it lists values, bounds a domain, or builds them.
+
+    An axis whose values come from a ``builder`` has no list to print and no domain to bound; naming the builder is the only honest extent, and saying nothing left the sentence reading "sweeping $ppb$ over , $f_ibf$ over ,".
+    """
     if present(slot(axis, "explored_values")):
         return range_text(axis)
-    return range_text(slot(axis, "domain")) or ""
+    text = range_text(slot(axis, "domain"))
+    if text:
+        return text
+    builder = slot(axis, "builder", None)
+    if present(builder):
+        name = slot(builder, "name", None) or slot(slot(builder, "callable", None), "name", None)
+        return f"values built by `{name}`" if name else "built values"
+    return ""
 
 
 def sweep_axes(experiment):
@@ -1501,6 +1532,28 @@ def _reference_text(experiment):
     return ", ".join(r for r in out if r)
 
 
+def _edge_delay_text(net, unit=None):
+    """The delays an explicit network declares on its own edges.
+
+    A connectome states one conduction speed and derives delays from distance; a small circuit states the delay on the edge itself, and there the delay is what the backend integrates. Reading only the speed left the comparison table blank for exactly the studies whose experiments differ in nothing else -- eleven corticothalamic sweeps separated solely by their edge delay came out as eleven identical rows.
+
+    Tract lengths win over edge delays, which is the rule :func:`tvbo.templates.tvboptim.utils.graph_selection` lowers by: a network that measures lengths derives its delays from the conduction speed, so a delay it also happens to declare is not what runs and is not what the table reports.
+
+    Read through :func:`tvbo.utils.edge_param`, the one reader every backend goes through, so the recipe may spell the delay as an ``Edge`` slot or as a ``parameters:`` entry and the table says the same thing either way.
+    """
+    from tvbo.utils import edge_param
+
+    edges = slot(net, "edges", None) or []
+    if any(edge_param(e, "distance") for e in edges):
+        return ""
+    delays = sorted({float(d) for d in (edge_param(e, "delay") for e in edges) if d is not None})
+    if not delays:
+        return ""
+    if len(delays) == 1:
+        return time_text(delays[0], unit)
+    return f"{time_text(delays[0], unit)}-{time_text(delays[-1], unit)}"
+
+
 def experiment_facts(experiment, shared_parameters=()):
     """Ordered ``{column: cell}`` of everything an experiment can differ from its siblings in.
 
@@ -1517,7 +1570,7 @@ def experiment_facts(experiment, shared_parameters=()):
     if nodes is None and present(slot(net, "nodes", None)):
         nodes = len(slot(net, "nodes"))
     facts["Nodes"] = "" if nodes is None else str(nodes)
-    facts["Delays"] = _speed_text(slot(net, "conduction_speed"))
+    facts["Delays"] = _edge_delay_text(net, unit) or _speed_text(slot(net, "conduction_speed"))
     facts["Method"] = str(slot(integ, "method", "") or "")
     facts["$\\Delta t$"] = time_text(slot(integ, "step_size", None), unit)
     facts["Duration"] = time_text(slot(integ, "duration", None), unit)
@@ -1589,7 +1642,10 @@ def settings_sentence(experiment):
         clauses.append(f"the first {time_text(slot(integ, 'transient_time'), unit)} discarded")
     swept = sweep_axes(experiment)
     if swept:
-        clauses.append("sweeping " + ", ".join(f"${_symbol_latex(a.split('.')[-1])}$ over {r}" for a, r in swept.items()))
+        clauses.append(
+            "sweeping "
+            + ", ".join(f"${_symbol_latex(a.split('.')[-1])}$" + (f" over {r}" if r else "") for a, r in swept.items())
+        )
     if not clauses:
         return ""
     sentence = ", ".join(clauses) + "."

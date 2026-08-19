@@ -49,9 +49,16 @@ def docs_kernel(tmp_path_factory):
 
 
 def get_all_qmd_files():
-    """Get all .qmd files from docs/ directory."""
+    """Every ``.qmd`` SOURCE page under ``docs/``.
+
+    Quarto keeps its build and cache output beside the sources, in directories it marks with a leading underscore or dot (``_site``, ``_freeze``, ``_archive``, ``.jupyter_cache``). Those hold rendered copies of the very pages collected here, so globbing them runs each doc twice — once as written and once as it stood at the last render. The stale copy then fails on an API the source has already migrated off, blaming a page whose committed text is correct.
+    """
     pattern = str(DOCS_DIR / "**" / "*.qmd")
-    return glob.glob(pattern, recursive=True)
+    return [
+        path
+        for path in glob.glob(pattern, recursive=True)
+        if not any(part.startswith(("_", ".")) for part in Path(path).relative_to(DOCS_DIR).parts[:-1])
+    ]
 
 
 def has_python_cells(qmd_path: str) -> bool:

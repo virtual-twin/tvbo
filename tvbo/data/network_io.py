@@ -534,7 +534,7 @@ def load_network(path):
     - **single self-describing file** — a ``.h5``/``.zarr`` carrying its own sidecar in
       the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is its own array store, so one path is the whole Network.
 
-    Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.weights_matrix).
+    Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.matrix("weight")).
 
     Parameters
     ----------

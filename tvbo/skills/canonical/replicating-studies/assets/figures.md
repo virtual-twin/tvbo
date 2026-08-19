@@ -160,6 +160,16 @@ a `marks:` opt where a figure uses fewer.
 
 ## Mosaic traps, all of them found by rendering
 
+- **The mosaic is the layout's picture — let it carry the proportions, not a ratio list.** A
+  panel twice as tall as its neighbour is two rows against one; `height_ratios` beside the
+  mosaic is a second, invisible description of the same fact, and the two drift. An all-equal
+  ratio list (`[1.0]` x 48) says nothing at all and should be deleted outright. Keep a ratio only
+  for what the grid genuinely cannot say at a sane row count — a hairline spacer of 0.02 of a row
+  — and check first whether the spacer is needed at all, since the layout engine already spaces
+  adjacent panels.
+- **Never pad the mosaic with an empty leading row or column.** It reads as a margin and produces
+  nothing: `trim_margins: true` crops that whitespace away, so the cells are simply spent. Gaps
+  BETWEEN panels are real (they hold the labels); gaps at the edge are not.
 - **Every row of `layout:` must have the same number of columns.** Widen short rows by repeating
   letters, never by adding columns.
 - **A panel may not span across an all-dot spacer row** — matplotlib reports "the label 'k'
@@ -183,6 +193,27 @@ a `marks:` opt where a figure uses fewer.
   the space you took was holding a colourbar's tick labels or a neighbour's axis title apart. Go
   from 20 columns to 23 and give every block its share; the letters are relative widths, not a
   fixed budget.
+- **Widening a gutter shrinks the panels, and past a point that costs more than it buys.** The
+  layout is constrained, so it re-packs rather than honouring empty cells: an extra spacer row is
+  partly reclaimed, while the panels either side genuinely lose the width you moved. Kadak2025's
+  densest supplementary figure went from **10 overlapping text pairs to 40** on one such widening
+  — the panels lost enough width that their own titles reached their neighbours' ticks, a
+  collision class that had not existed before. Widen by ONE unit and re-measure; a jump of three
+  is how you discover this.
+- **When geometry stops paying, type size is the lever that scales with the problem.** Every
+  collision in a dense figure is text against text, so a size cut shortens every offender at
+  once, including the rotated axis titles whose overlap is along their length. The same figure
+  went 10 → 4 on `font_size: 5.5 → 4.4` alone, and to 0 with one gutter column and a panel-letter
+  offset on top. Check the original's own type size first: a dense four-quadrant supplementary
+  figure is usually set smaller than the paper's main figures, so this is often a move TOWARD
+  fidelity rather than away from it — but verify in the rendered PDF at final scale, since the
+  page shrinks it again.
+- **Ask the reference image before inventing a fix.** Two of four collision sets in Kadak2025
+  were the original telling us we had the layout wrong: its three stacked spectra are SEPARATED,
+  and ours were flush, so at every boundary the lower panel's top tick printed on top of the
+  upper panel's bottom tick; and its two calcium panels are EQUAL width, where ours were 2 and 3
+  mosaic columns and the narrow one ran its own x-labels together. Matching the paper fixed the
+  text and the fidelity in the same edit. Look before you tune.
 
 ## A `grid` panel's spacing is subtracted from its cells
 
@@ -245,6 +276,40 @@ goes wrong:
   same symptom has two causes: a formatter rounding 0.0011300 and 0.0011325 to one string, or a
   neighbour's opaque patch cutting the last two characters off both. tvbo widens the decimals
   automatically for the first, over the DRAWN labels; only the second is yours to fix, with space.
+
+- **Hiding a panel's tick labels does not put it on another panel's scale.** A row of panels
+  showing one quantity against different predictors is drawn once per panel, so each auto-scales
+  to its own layer's extent — including the confidence bands, which is where they diverge. Hiding
+  the tick labels on all but the leftmost then invites the reader to compare heights across three
+  different ranges. Declare the group instead (`share_y: ["c,g,h"]` at figure level): every panel
+  in it ends on the union of the group's limits, hidden labels included. Do not reach for a
+  literal `ylim` — a spec that pins a limit to today's numbers clips tomorrow's run in silence.
+- **A slot a panel blanks is un-blanked by the format pass.** Colour-scale, legend, `grid` and
+  `image` panels switch their host axes off and draw inside it; the figure-wide tidy-up then
+  re-derives ticks for every axes and hands the ghost frame back, with the panel's declared tick
+  options applied to it rather than to the bar. tvbo re-blanks after the format pass and lets a
+  scale panel return the axes its bar lives on, so `nbins`, tick formats and label padding land
+  on the scale. Two consequences worth knowing: `Axes3D` reports itself as blanked by
+  construction, so it is excluded by name; and an overlap check that walks every `Text` will count
+  the ghost's labels until it skips switched-off axes.
+- **An overlap checker's coordinates are the CANVAS's; the saved file is a crop of it.**
+  `trim_margins: true` saves with `bbox_inches="tight"`, so the PNG starts at the tight box's
+  origin while `get_window_extent(renderer)` keeps reporting canvas pixels. The overlap *counts*
+  survive this — detection compares two extents to each other and the offset cancels — but every
+  coordinate you print is displaced, so cropping a reported box shows blank paper. That looks
+  exactly like a false positive, and it cost a session's confidence in a detector that was right
+  all along: the "invisible" text turned out to be two glyphs printed squarely on top of each
+  other, 180 px away. Convert before reporting a position:
+
+  ```python
+  tb = fig.get_tightbbox(renderer)  # inches, y-up, canvas origin
+  x0, y1 = tb.x0 * fig.dpi, tb.y1 * fig.dpi
+  png_xy = lambda x, y: (round(x - x0), round(y1 - y))
+  ```
+- **Report each colliding text's OWN box, and key them by identity, not by their string.** A
+  figure has many texts reading `2` or `20`, so a `{label: box}` dict silently keeps the last one
+  and prints a box belonging to a different glyph than the one that collided. Carry the pair's
+  two extents through with the hit.
 
 ## Choosing WHICH point a marker marks
 

@@ -46,7 +46,7 @@ network:
   iri: tvbo:DesikanKilliany
   transforms:
     - name: weight
-      equation: {rhs: "W / mean(W[W > 0])"}
+      equation: {rhs: "weight / mean(weight[weight > 0])"}
   coupling:
     c_glob:
       delayed: false

@@ -27,15 +27,8 @@ def load_matrix(source: str) -> np.ndarray:
         net = Network.from_db(source)
     net._resolve()
 
-    for attr in ("weights_matrix", "weights", "weight"):
-        m = getattr(net, attr, None)
-        if m is None:
-            continue
-        if callable(m):
-            try:
-                m = m()
-            except TypeError:
-                continue
+    m = net.matrix("weight", format="dense")
+    if m is not None:
         arr = np.asarray(m)
         if arr.ndim == 2:
             return arr
