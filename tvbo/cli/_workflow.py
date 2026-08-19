@@ -679,8 +679,8 @@ def plan(
     from ._common import experiment_key as _experiment_key  # canonical (id-first) key
 
     experiment_key = _experiment_key(experiment)
-    # Results land in a kit-relative ``results/`` by default (the emitted scripts run from the kit dir, which already encodes study/experiment/engine — like ``logs/``). An explicit out_dir (relative or absolute) overrides it; the {study}/{experiment} placeholders still resolve for custom templates.
-    out_dir = str(spec.get("out_dir") or "results")
+    # Results land in the kit's own ``derivatives/tvbo/`` by default — the same role the study's layout gives them, so a kit that travels comes back holding a derivative dataset rather than a bare ``results/``. An explicit out_dir (relative or absolute) overrides it; the {study}/{experiment} placeholders still resolve for custom templates.
+    out_dir = str(spec.get("out_dir") or "derivatives/tvbo")
     out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", experiment_key)
 
     # A ``from_experiment`` initial state makes this experiment depend on another experiment's completed result (its operating point). Recorded as an ordering edge so DAG engines run the source first (Snakemake input; SLURM afterok).
