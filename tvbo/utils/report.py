@@ -261,16 +261,23 @@ def recipe_param(experiment, name, group: str = "dynamics"):
     return next((value_of(p) for n, p in items if n == name), None)
 
 
-def open_result(out_dir, experiment: str | None = None):
-    """The result container of an experiment, or None when it has not been run.
+def _result_files(out_dir, experiment: str | None, suffix: str) -> list[Path]:
+    """Result files of ``experiment`` in the flat results directory ``out_dir``.
 
-    Network sidecars share the directory and are excluded by name — opening one instead of the result is the failure this exists to prevent.
+    ``exp-<id>[_<entities>]_result.<suffix>``, with the ``_`` boundary so ``exp-1`` never matches ``exp-10``, and the network companion excluded by name — opening one instead of the result is the failure this exists to prevent. With no ``experiment`` every result in the directory is a candidate.
     """
+    root = Path(out_dir)
+    if not root.is_dir():
+        return []
+    pattern = f"exp-{experiment}_*result{suffix}" if experiment else f"*result{suffix}"
+    return [f for f in sorted(root.glob(pattern)) if "network" not in f.name]
+
+
+def open_result(out_dir, experiment: str | None = None):
+    """The result container of an experiment, or None when it has not been run."""
     import xarray as xr
 
-    out_dir = Path(out_dir)
-    root = out_dir / "nc" / experiment if experiment else out_dir
-    files = [f for f in sorted(root.rglob("*.h5")) if "network" not in f.name]
+    files = _result_files(out_dir, experiment, ".h5")
     return xr.open_dataset(files[0], engine="h5netcdf") if files else None
 
 
@@ -278,8 +285,7 @@ def result_sidecar(out_dir, experiment: str) -> dict:
     """The YAML sidecar `tvbo run` wrote beside a result, or an empty dict."""
     import yaml
 
-    root = Path(out_dir) / "nc" / experiment
-    files = [f for f in sorted(root.glob("*.yaml")) if "network" not in f.name] if root.is_dir() else []
+    files = _result_files(out_dir, experiment, ".yaml")
     return yaml.safe_load(files[0].read_text()) if files else {}
 
 

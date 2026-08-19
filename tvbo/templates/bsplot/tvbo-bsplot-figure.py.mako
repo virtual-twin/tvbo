@@ -25,7 +25,17 @@ import ${m}  # noqa: F401 — registers this study's custom panels/transforms in
 
 @functools.lru_cache(maxsize=None)
 def _open(path):
-    """Open a run's result container once per distinct path (xarray)."""
+    """Open a run's result container once per distinct path (xarray).
+
+    An empty path means the layer's container was not on disk when this script was generated. A
+    panel declaring a ``placeholder`` catches this and draws the label; one that does not gets
+    the reason rather than a bare open failure.
+    """
+    if not path:
+        raise FileNotFoundError(
+            "this layer's result container was not found when the figure was generated. "
+            "Run the study so the source is on disk, then re-render."
+        )
     return xr.open_dataset(path, engine="h5netcdf")
 
 
