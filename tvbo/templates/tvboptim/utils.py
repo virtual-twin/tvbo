@@ -3440,7 +3440,7 @@ def axis_keypath(ax: Any) -> str:
     """Grid keypath an exploration axis binds on — ``<sub-object>.<leaf>``.
 
     ONE definition of WHERE an axis writes, so the grid binding, the warm-start / adiabatic sweep and the branch-analysis restart cannot disagree. A coupling axis lands on its
-    coupling instance, a ``network.`` axis on the delay graph, a ``noise.`` axis on the noise parameters, and everything else on the dynamics. Disagreement here is silent rather
+    coupling instance, a ``network.`` axis on the delay graph, a ``noise.`` axis on the noise parameters, an ``<event>.`` axis on that external input, and everything else on the dynamics. Disagreement here is silent rather
     than loud: routing ``noise.sigma`` to ``dynamics.sigma`` sweeps a same-named model parameter, or nothing at all, and the run still completes.
     """
     name = str(ax.get("name"))
@@ -3450,6 +3450,8 @@ def axis_keypath(ax: Any) -> str:
         return f"graph.{ax.get('graph_leaf')}"
     if ax.get("is_noise"):
         return f"noise.{name}"
+    if ax.get("is_external"):
+        return f"external.{ax.get('external_key')}.{name}"
     return f"dynamics.{name}"
 
 
