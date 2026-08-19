@@ -1,0 +1,241 @@
+tvbo_class: tvbo:StudyLayout
+name: study
+description: >-
+  Directory layout of a TVBO simulation study, as a BIDS study dataset. This record is the
+  single ground truth: `tvbo study init` builds the tree from it, the path resolvers ask it
+  where results and figures go, the `.gitignore` and `.bidsignore` writers derive their
+  contents from it, `tvbo validate study` checks a study against it, and the documentation
+  renders its tree from it. Nothing restates the layout.
+
+  One record covers every kind of study. An entry marked `in_templates` belongs only to the
+  named `tvbo study init --template` variants; everything unmarked is part of any study.
+dataset_type: study
+bids_version: 1.11.1
+
+files:
+  - name: dataset_description.json
+    role: dataset_description
+    level: required
+    generated: true
+    description: "Declares the dataset type, its name, and the BIDS version it was written against."
+  - name: README.md
+    role: readme
+    level: required
+    template: README.md.tmpl
+    description: What the study does, and how to run it.
+  - name: CITATION.cff
+    role: citation
+    level: recommended
+    template: CITATION.cff.tmpl
+  - name: "{study}.yaml"
+    role: recipe
+    level: required
+    template: recipe.yaml.tmpl
+    bids: unsanctioned
+    expires_with: >-
+      BEP034+, which would sanction a recipe at the study root. A named entry rather than a
+      `*.yaml` glob, so a root YAML that later ought to be validated is not silently exempt.
+    description: >-
+      The entry recipe: the one specification a run is given. Includes the fragments under
+      `spec/`, so the output root resolves to this file's own directory.
+  - name: .gitignore
+    role: gitignore
+    generated: true
+  - name: .bidsignore
+    role: bidsignore
+    generated: true
+
+subdirs:
+  - name: spec
+    role: spec
+    level: recommended
+    bids: unsanctioned
+    expires_with: >-
+      BEP034+, which proposes `spec/` as a study-root directory for the model and experiment
+      definitions a run reads.
+    description: >-
+      Recipe fragments the entry recipe includes, each named for what it specifies:
+      `model-<name>_dynamics.yaml`, `atlas-<name>_network.yaml`, `exp-<id>_experiment.yaml`,
+      `ana-<name>_analysis.yaml`, `fig-<id>_figure.yaml`. Every fragment carries its
+      entities from the start, so adding a second instance renames nothing.
+
+  - name: code
+    role: code
+    opaque: true
+    description: >-
+      Callables the recipe references by bare `module:` name: builders, transforms,
+      observation and analysis functions. Opaque to BIDS, which specifies nothing here.
+
+  - name: sourcedata
+    role: sourcedata
+    opaque: true
+    tracked: declared_files
+    description: >-
+      Inputs the study did not compute. Only the README is tracked, so third-party and
+      copyrighted material is documented without being redistributed.
+    files:
+      - name: README.md
+        role: readme
+        level: required
+        template: sourcedata-README.md.tmpl
+        description: Where each input comes from and how to obtain it.
+    subdirs:
+      - name: original_study
+        role: original_study
+        tracked: none
+        in_templates: [replication]
+        description: >-
+          Material deposited by the work being reproduced: its PDF, figures, published data
+          and code. Kept apart from the study's own inputs so it is never mistaken for an
+          output, and never tracked.
+
+  - name: docs
+    role: docs
+    opaque: true
+    description: >-
+      The report and everything it reads. Human-readable names here; BIDS names live in
+      `spec/` and `derivatives/`.
+    files:
+      - name: report.qmd
+        level: recommended
+        template: report.qmd.tmpl
+        description: The report, every number computed from the run.
+      - name: _quarto.yml
+        template: _quarto.yml.tmpl
+      - name: references.bib
+        level: recommended
+      - name: report_internal.qmd
+        template: report_internal.qmd.tmpl
+        in_templates: [replication]
+        description: >-
+          The A/B wrapper that places our figure beside the original. Renders locally only,
+          since the composite embeds copyrighted material.
+      - name: report.pdf
+        tracked: none
+        description: >-
+          Rendered from `report.qmd`, so it is a product like any other. Shareable as a file
+          without being carried in the history.
+      - name: report_internal.pdf
+        tracked: none
+        in_templates: [replication]
+        description: >-
+          Rendered from `report_internal.qmd`, which draws the paper's own figures beside ours.
+          Never tracked: `sourcedata/original_study/` being untracked does not protect a
+          rendering that embeds it.
+    subdirs:
+      - name: .quarto
+        tracked: none
+        bids: hidden
+        description: Quarto's own cache for this project, rewritten on every render.
+      - name: figures
+        role: figures
+        tracked: none
+        description: >-
+          Render target for the declarative figures, named as the study names them. Untracked,
+          because a run reproduces them.
+        subdirs:
+          - name: scripts
+            role: figure_scripts
+            tracked: none
+            description: The plotting script each figure generates, kept beside what it renders.
+      - name: analysis
+        role: analysis
+        in_templates: [replication]
+        description: >-
+          What the reproduction claims and how it is checked: the target values, the figure
+          inventory, the backend comparison, the adherence scorecard.
+        files:
+          - name: targets.md
+            level: required
+            template: analysis/targets.md.tmpl
+            in_templates: [replication]
+            description: >-
+              Every quantity the reproduction commits to, with the published value beside it and
+              a fidelity tier. The scorecard is read from this file, so the criteria are written
+              once and the verdicts cannot disagree with them.
+          - name: figures.md
+            level: required
+            template: analysis/figures.md.tmpl
+            in_templates: [replication]
+            description: The paper's figure inventory, and which of them this study reproduces.
+          - name: backend-fit.md
+            template: analysis/backend-fit.md.tmpl
+            in_templates: [replication]
+            description: >-
+              Why this backend was chosen, from the targets' feature needs rather than by default,
+              and what the alternatives could not do.
+      - name: _figures
+        role: figures_restricted
+        tracked: none
+        in_templates: [replication]
+        description: >-
+          Staging for the A/B composites, which embed the original figures. Never tracked and
+          never published: `sourcedata/original_study/` being untracked does not protect a copy
+          made here.
+      - name: notes
+        role: notes
+        tracked: none
+        description: The gap register and open threads, kept local so a note can be blunt.
+
+  - name: derivatives
+    role: derivatives
+    opaque: true
+    tracked: declared_files
+    description: >-
+      Nested derivative datasets. A run reproduces everything in them except the
+      description that declares each one, which is tracked so a fresh checkout validates.
+    subdirs:
+      - name: tvbo
+        role: results
+        bids: nested_dataset
+        description: >-
+          One flat derivative dataset holding every container this study computes:
+          `exp-<id>_model-<name>_result.h5` for a run, `ana-<name>_result.h5` for an
+          analysis, each with a sidecar. Flat and single, so a cross-reference from an
+          analysis to an experiment resolves against one base directory. The directory is
+          named for the tool, never for the backend, which the sidecar records instead.
+        files:
+          - name: dataset_description.json
+            role: dataset_description
+            level: required
+            generated: true
+            description: >-
+              Declares the derivative type, the generating tool, and the source dataset,
+              which is the study root two levels up.
+
+  - name: prov
+    role: provenance
+    bids: proposed
+    expires_with: >-
+      BEP028, which adds `prov/` to the study root and names the records
+      `prov-<label>_{act,ent,env,soft}.json`. The remaining gap is the extension: these are
+      written as YAML by default, which BEP028 does not yet accept, and as JSON on request.
+    description: >-
+      What was run, when, in what environment, by what software, over what inputs. Tracked,
+      unlike everything else a run produces: it is the evidence, it is small, and a record no
+      one can read without re-running the study cannot be cited or reviewed. Serialized from
+      the datamodel's own provenance classes, so the records cannot drift from the metadata a
+      run already carries.
+
+  - name: logs
+    role: logs
+    opaque: true
+    tracked: none
+    description: Run logs.
+
+  - name: .tvbo
+    role: build
+    bids: hidden
+    tracked: none
+    description: >-
+      Build root. Everything here is a pure product of the spec and reproduces from it, so
+      it is hidden rather than published: dot-prefixed, which validators skip by convention.
+    subdirs:
+      - name: kits
+        role: kits
+        description: >-
+          Self-contained runnable kits packaged from the spec, each with its own shards
+          under `<kit>/shards/`, named `split-<index>`.
+      - name: cache
+        role: cache
+        description: Cached intermediate results, keyed on their inputs.

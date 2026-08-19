@@ -147,6 +147,8 @@ graphify-out
 tvbo/datamodel/schema.py
 tvbo/datamodel/pydantic.py
 tvbo/datamodel/tvbo_datamodel.schema.json
+# Copy of schema/study_layout.yaml, materialized by the same hook so a wheel can read it.
+tvbo/rules/
 
 # Build artifacts
 dist/
