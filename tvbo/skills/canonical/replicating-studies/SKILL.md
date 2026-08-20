@@ -1168,6 +1168,8 @@ first, then workflow pitfalls).
 - The paper's exact control value gives the wrong regime → a near-bifurcation operating point is discretisation-specific; re-tune to the phenomenon and cite the precedent.
 - An FC/PLV/order-parameter number well below the paper's → duration, trial count and operating regime, before "structure-limited".
 - A published unstable branch that exhaustive continuation and root searches cannot find → replay the paper's own fsolve from random seeds and classify residuals; a near-threshold model leaves merit-function ghosts (singular Jacobian → "not stable") that unfiltered solver output plots as fixed points.
+- A bistability onset that moves when the scan is refined, or "the node folds at X yet the network never folds above X" reads as a contradiction → don't scan for fold windows: invert the fixed-point condition into the closed-form drive locus and read the window off its interior extrema; Newton-solve (and residual-check) any inner elimination; and say which AXIS each threshold lives on.
+- A native analysis observation inverts a cross-variant ordering the paper claims → recompute it host-side at the same operating point before believing it, and check agreement PER VARIANT — two of three matching does not validate the third when it exercises a different code path.
 
 **It ran out of memory, or took absurdly long**
 

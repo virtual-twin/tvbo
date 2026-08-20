@@ -28,6 +28,39 @@ in full.
   found as true roots, and a variant test showing no plausible mis-transcription of the
   equations makes the terminus an exact root; (4) state the conclusion as an inference about
   unpublished code unless the paper's solver script is released.
+
+- **Never locate a fold window by scanning the drive axis, and never trust an inner
+  elimination you did not residual-check — both misplace the bistability threshold, and a
+  misplaced threshold reads as a self-contradiction.** Two measured failure modes from one
+  Deco2014 question ("at which J_NMDA does the node fold?"): a *damped* fixed-point iteration
+  for the slaved variable stopped converging exactly where the recurrence gets interesting
+  (residual up to 0.1 in S_I) and its error wiggles counted as extra nullcline crossings,
+  moving the onset from the true 0.28 to 0.20; and an honest scan with a Newton-solved inner
+  variable still stepped over windows narrower than its grid (8e-6 nA at the cusp against a
+  5e-4 step). The discipline: invert the fixed-point condition into the closed-form drive
+  locus `x*(S) = H⁻¹(r(S)) − c(S)` and read the window edges off its interior extrema — exact,
+  catches windows of any width, no scan — and Newton-solve every inner elimination. Then say
+  which AXIS each threshold lives on: a node that folds in *drive*, inside a window of
+  deficits that the network's additive coupling can never deliver, does not make the network
+  fold in *G* — "the node folds from 0.28" and "the network never folds up to 0.70" are
+  simultaneously true, and prose that omits the axis reads as 0.70-versus-0.28 nonsense.
+
+- **Before a native analysis observation is allowed to overturn a cross-variant ordering,
+  reproduce it host-side at the same operating point — a mistargeted stimulus lowering
+  produces smooth, plausible, wrong curves.** Deco2014's Fig-6f Fisher information came out
+  inverted (FIC lowest where the paper has it highest) from the recipe-native path, while a
+  host recomputation at the identical operating point — one that reproduced the native E-E
+  and FFI curves EXACTLY — put FIC highest, matching the paper. The inversion traced to
+  stimulus-targeting regressions in the backend (the event's `target_regions` dropped, so
+  external inputs broadcast to every node; the fisher observation's node mask resolved
+  empty), not to the model — and the broken value was unfalsifiable from its own output:
+  smooth, decreasing, right units, right order of magnitude. The discipline: any analysis
+  observation that carries a conclusion gets an independent host-side recomputation (same
+  Jacobian convention, same noise, same operating point), checked PER VARIANT — matching for
+  two variants of three validates nothing about the third when the third exercises a
+  different code path (here: the FIC constraint solve).
+
+- **Size `step_size` from the STIFFEST thing the experiment actually integrates — not from the
   paper's fitted parameter, and not from the sibling experiment whose `integration:` block you
   inherited.** A step chosen for the optimum is wrong for the sweep that visits the rest of the
   grid, and wrong again for the same equation solved in a different space. Both failures are
