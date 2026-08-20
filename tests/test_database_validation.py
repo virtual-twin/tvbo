@@ -56,9 +56,7 @@ def test_database_yaml_validates(validators, path, target_class):
 def test_every_directory_of_metadata_has_a_class():
     """No corner of the database may be authored metadata that nothing validates.
 
-    ``coordinate_spaces`` and ``reducers`` each sat outside `TARGETS` for as long as they
-    existed, so nothing checked them — one had a `description` its class did not declare,
-    the other had no class at all.
+    ``coordinate_spaces`` and ``reducers`` each sat outside `TARGETS` for as long as they existed, so nothing checked them — one had a `description` its class did not declare, the other had no class at all.
     """
     assert not uncovered(), (
         "database directories no entry of TARGETS claims: "

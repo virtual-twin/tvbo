@@ -1,14 +1,8 @@
 """`get_info` states as much of a class as that class carries, and refuses to guess.
 
-Most of the ontology is not fully annotated: of its ~1500 classes, roughly half carry no
-``definition`` and a dozen carry no ``label``, and every class reached through an import
-carries no TVB-O annotation property at all. Reading any of them unconditionally is why
-this used to raise ``AttributeError`` on more classes than it printed.
+Most of the ontology is not fully annotated: of its ~1500 classes, roughly half carry no ``definition`` and a dozen carry no ``label``, and every class reached through an import carries no TVB-O annotation property at all. Reading any of them unconditionally is why this used to raise ``AttributeError`` on more classes than it printed.
 
-Resolving a name is held to the opposite standard: exact or nothing. The ontology's
-``label_search`` matches loosely, which is right for a search box and wrong here — asked
-for ``Annotation`` it answers with ``annotation criteria application``, a different class,
-giving no sign that it guessed.
+Resolving a name is held to the opposite standard: exact or nothing. The ontology's ``label_search`` matches loosely, which is right for a search box and wrong here — asked for ``Annotation`` it answers with ``annotation criteria application``, a different class, giving no sign that it guessed.
 """
 
 from __future__ import annotations

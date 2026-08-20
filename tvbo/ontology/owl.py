@@ -325,15 +325,9 @@ the metadata-only ontology to load, so it is done once rather than per lookup.""
 def resolve_class(name: str):
     """The ontology class *name* refers to, by IRI fragment or by label.
 
-    ``onto[...]`` resolves a fragment only within the ontology's own IRI, so every class
-    reached through an import — ``Annotation``, ``Space``, the UBERON and NCBITaxon terms
-    — is invisible to it. The imported classes are searched here too.
+    ``onto[...]`` resolves a fragment only within the ontology's own IRI, so every class reached through an import — ``Annotation``, ``Space``, the UBERON and NCBITaxon terms — is invisible to it. The imported classes are searched here too.
 
-    Both lookups are exact. The ontology's own ``label_search`` matches loosely, which is
-    right for a search box and wrong for resolving a name: it answers ``'Annotation'``
-    with ``'annotation criteria application'``, a different class, with no sign that it
-    guessed. A name that matches nothing raises rather than yielding ``None`` for the
-    caller to fail on later.
+    Both lookups are exact. The ontology's own ``label_search`` matches loosely, which is right for a search box and wrong for resolving a name: it answers ``'Annotation'`` with ``'annotation criteria application'``, a different class, with no sign that it guessed. A name that matches nothing raises rather than yielding ``None`` for the caller to fail on later.
 
     Raises:
         KeyError: If no class carries that IRI fragment or that exact label.
@@ -362,13 +356,7 @@ def resolve_class(name: str):
 def get_info(cls) -> str:
     """Build a formatted text summary of an ontology class with its definition and references.
 
-    A class states as much of itself as it carries. 776 of the ontology's 1516 classes
-    have no ``definition`` and 13 have no ``label``; reading either unconditionally is
-    what made this raise ``AttributeError`` on more than half of them. The IRI fragment
-    stands in for a missing label, and a missing definition simply leaves that section
-    out. ``definition`` and ``has_reference`` are annotation properties TVB-O declares,
-    so a class from an imported ontology — ``owl:Thing`` among them — does not carry the
-    properties at all, let alone empty ones.
+    A class states as much of itself as it carries. 776 of the ontology's 1516 classes have no ``definition`` and 13 have no ``label``; reading either unconditionally is what made this raise ``AttributeError`` on more than half of them. The IRI fragment stands in for a missing label, and a missing definition simply leaves that section out. ``definition`` and ``has_reference`` are annotation properties TVB-O declares, so a class from an imported ontology — ``owl:Thing`` among them — does not carry the properties at all, let alone empty ones.
 
     Args:
         cls: The ontology class, or a string naming it by IRI fragment or by label.

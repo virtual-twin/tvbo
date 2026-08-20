@@ -1,7 +1,6 @@
 """An addressed name has to be a name, and it is held to it where the recipe says it.
 
-Three keyed slots carry a name the rest of the spec refers to rather than displays, and
-every Python backend turns each into a definition or a binding:
+Three keyed slots carry a name the rest of the spec refers to rather than displays, and every Python backend turns each into a definition or a binding:
 
 * an ``events`` key is the part before the dot in ``priors: {stimulus.amplitude: ...}``,
   a free symbol in the right-hand side the author writes, and five separate positions in
@@ -9,14 +8,9 @@ every Python backend turns each into a definition or a binding:
 * an ``observations`` key is named by ``source:`` and rendered as a ``def`` under jax;
 * a ``functions`` key is named by the pipeline step that calls it, and likewise rendered.
 
-Mangling such a name into an identifier is not open. The author's own equations and
-dotted references still spell it the original way, an unrecognised dotted prefix resolves
-to the dynamics scope rather than raising, and for events a partial mangling is not even a
-syntax error — it is a ``hasattr`` that fails, substituting 0.0 for the stimulus.
+Mangling such a name into an identifier is not open. The author's own equations and dotted references still spell it the original way, an unrecognised dotted prefix resolves to the dynamics scope rather than raising, and for events a partial mangling is not even a syntax error — it is a ``hasattr`` that fails, substituting 0.0 for the stimulus.
 
-These tests assert outcomes rather than spellings: an accepted name reaches the generated
-module in each position it is emitted in, and a rejected one is reported against the
-recipe key as the recipe is read.
+These tests assert outcomes rather than spellings: an accepted name reaches the generated module in each position it is emitted in, and a rejected one is reported against the recipe key as the recipe is read.
 """
 
 from __future__ import annotations
@@ -100,10 +94,7 @@ def _member_experiment(observation: str = "recorded_ts", function: str = "subsam
 def test_an_event_name_reaches_every_position_it_is_emitted_in():
     """One name, five emitted forms — they have to agree or the stimulus is dropped.
 
-    The local is bound from ``external`` by attribute, and that attribute exists only
-    because the ``external_input`` dict was keyed with the same string. A disagreement
-    between them is not a syntax error but a ``hasattr`` that fails, which substitutes
-    0.0 — a simulation that runs to completion having applied no stimulus at all.
+    The local is bound from ``external`` by attribute, and that attribute exists only because the ``external_input`` dict was keyed with the same string. A disagreement between them is not a syntax error but a ``hasattr`` that fails, which substitutes 0.0 — a simulation that runs to completion having applied no stimulus at all.
     """
     code = _event_experiment("flash_burst").render_code(format="tvboptim")
 
@@ -127,11 +118,7 @@ def test_observation_and_function_names_are_emitted_as_definitions(fmt: str):
 def test_an_event_name_that_is_not_a_name_is_refused_when_the_recipe_is_read(name: str):
     """Refused at load, before anything downstream gets a worse way to say it.
 
-    Reading the recipe is the moment the author is still looking at what they wrote. Held
-    any later, the same names arrive as somebody else's error: `lambda` and `flash.burst`
-    reach SymPy first, which reports a `SyntaxError` against a mangled prefix of the
-    author's own right-hand side, and a name with a space reaches black, which reports a
-    parse error against a line of generated code.
+    Reading the recipe is the moment the author is still looking at what they wrote. Held any later, the same names arrive as somebody else's error: `lambda` and `flash.burst` reach SymPy first, which reports a `SyntaxError` against a mangled prefix of the author's own right-hand side, and a name with a space reaches black, which reports a parse error against a line of generated code.
     """
     with pytest.raises(ValueError, match="event name is not a name") as excinfo:
         _event_experiment(name)
@@ -152,9 +139,7 @@ def test_every_addressed_slot_is_held_to_the_same_rule(slot: str):
 def test_a_target_variable_is_a_name_too():
     """It becomes the event's name, so checking only the key it is filed under misses it.
 
-    `_resolve_events` replaces the name with `target_variable` when one is given, and
-    that happens after construction — so a recipe keyed acceptably could still reach
-    codegen carrying an unusable one.
+    `_resolve_events` replaces the name with `target_variable` when one is given, and that happens after construction — so a recipe keyed acceptably could still reach codegen carrying an unusable one.
     """
     raw = yaml.safe_load(EVENT_RECIPE.format(name="drive"))
     raw["events"]["drive"]["target_variable"] = "flash burst"
@@ -176,8 +161,7 @@ def test_a_models_own_functions_are_held_to_it_as_well():
 def test_the_loader_that_skips_init_checks_too():
     """`from_datamodel` builds through `cls.__new__`, so `__init__`'s checks never run.
 
-    Every `from_file` / `from_string` load takes that path. Without its own call the
-    suite stays green while the entry point users actually use accepts the name.
+    Every `from_file` / `from_string` load takes that path. Without its own call the suite stays green while the entry point users actually use accepts the name.
     """
     from tvbo.datamodel import schema as tvbo_schema
 

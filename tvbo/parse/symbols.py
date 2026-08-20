@@ -1,33 +1,19 @@
 """Parsing namespaces: the names an expression is allowed to mean.
 
-Parsing an expression is not a pure function of its text. `"beta * x"` is a product of two
-symbols in a model that declares a parameter `beta`, and a call to SymPy's beta function in
-one that does not; `"I"` is a state variable in one model and the imaginary unit in another.
+Parsing an expression is not a pure function of its text. `"beta * x"` is a product of two symbols in a model that declares a parameter `beta`, and a call to SymPy's beta function in one that does not; `"I"` is a state variable in one model and the imaginary unit in another.
 The namespace handed to the parser decides, so it is part of the input.
 
-TVBO used to keep that namespace in a single dict imported from `sympy.abc._clash1` and
-mutated in place — by this package at import, by the ontology loader per equation, by the
-stimulus code per stimulus, and by SymPy's own `auto_symbol`, which rewrites its `local_dict`
-as a side effect of parsing. Every parse therefore saw a namespace that depended on which
-parses had already run, in that interpreter, in that order. Two consequences followed: a
-model could parse differently depending on import order, and any other library in the process
-that used `sympy.abc._clash1` silently got TVBO's names.
+TVBO used to keep that namespace in a single dict imported from `sympy.abc._clash1` and mutated in place — by this package at import, by the ontology loader per equation, by the stimulus code per stimulus, and by SymPy's own `auto_symbol`, which rewrites its `local_dict` as a side effect of parsing. Every parse therefore saw a namespace that depended on which parses had already run, in that interpreter, in that order. Two consequences followed: a model could parse differently depending on import order, and any other library in the process that used `sympy.abc._clash1` silently got TVBO's names.
 
-[`SymbolContext`](#tvbo.parse.symbols.SymbolContext) replaces it. A context is frozen, so it
-cannot pick up names from a previous parse, and it is never handed to SymPy directly —
-[`parse`](#tvbo.parse.symbols.SymbolContext.parse) passes a private copy, absorbing the
-mutation. Deriving a namespace is explicit and returns a new context rather than editing a
-shared one.
+[`SymbolContext`](#tvbo.parse.symbols.SymbolContext) replaces it. A context is frozen, so it cannot pick up names from a previous parse, and it is never handed to SymPy directly — [`parse`](#tvbo.parse.symbols.SymbolContext.parse) passes a private copy, absorbing the mutation. Deriving a namespace is explicit and returns a new context rather than editing a shared one.
 
-Nothing here is a default that applies "unless overridden": a caller states the namespace it
-means. The only shared piece is
-[`BUILTIN_SHADOW`](#tvbo.parse.symbols.BUILTIN_SHADOW), which covers the names SymPy would
-otherwise resolve to its own objects.
+Nothing here is a default that applies "unless overridden": a caller states the namespace it means. The only shared piece is [`BUILTIN_SHADOW`](#tvbo.parse.symbols.BUILTIN_SHADOW), which covers the names SymPy would otherwise resolve to its own objects.
 """
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 import sympy.abc
 from sympy import Basic, Symbol
@@ -48,16 +34,9 @@ __all__ = [
 def assumptions_of(element: Any = None) -> dict[str, bool]:
     """The SymPy assumptions a declared quantity clearly implies.
 
-    A modelled quantity is real. That alone is the difference between SymPy answering a
-    question and not: asked for the fixed points of `Generic2dOscillator` it must otherwise
-    consider complex branches, and does not terminate in 45 s; told the parameters are real
-    it returns in under one.
+    A modelled quantity is real. That alone is the difference between SymPy answering a question and not: asked for the fixed points of `Generic2dOscillator` it must otherwise consider complex branches, and does not terminate in 45 s; told the parameters are real it returns in under one.
 
-    A declared `domain` says more — a lower bound at or above zero makes the symbol positive
-    or nonnegative, which is what lets `sqrt(x**2)` reduce and a sign test resolve. Nothing
-    beyond that is inferred: a bound admitting negative values implies realness only, and an
-    absent domain implies nothing further. Assumptions SymPy is told are assumptions it will
-    act on, so an over-claim is a wrong answer rather than a missed simplification.
+    A declared `domain` says more — a lower bound at or above zero makes the symbol positive or nonnegative, which is what lets `sqrt(x**2)` reduce and a sign test resolve. Nothing beyond that is inferred: a bound admitting negative values implies realness only, and an absent domain implies nothing further. Assumptions SymPy is told are assumptions it will act on, so an over-claim is a wrong answer rather than a missed simplification.
     """
     assumptions = {"real": True}
     domain = getattr(element, "domain", None) if element is not None else None
@@ -70,15 +49,9 @@ def assumptions_of(element: Any = None) -> dict[str, bool]:
 def symbol_in(scope: Mapping | None, name: Any) -> Any:
     """Whatever a parsed expression uses for *name* — symbol, `y0(t)`, or function head.
 
-    For code that holds an expression and the namespace it was parsed against, but not the
-    model: resolving through the scope is what makes a later `subs` or `free_symbols` test
-    meet the same symbol the parser produced. Falls back to a bare symbol for a name the
-    scope does not declare, which is the right answer for one it never bound — an unbound
-    name is exactly what SymPy's `auto_symbol` turns into a bare symbol while parsing.
+    For code that holds an expression and the namespace it was parsed against, but not the model: resolving through the scope is what makes a later `subs` or `free_symbols` test meet the same symbol the parser produced. Falls back to a bare symbol for a name the scope does not declare, which is the right answer for one it never bound — an unbound name is exactly what SymPy's `auto_symbol` turns into a bare symbol while parsing.
 
-    Function heads resolve too, because `Function("f") != Function("f", real=True)` and the
-    two `srepr` identically: rebuilding a head to write `f(x)` on a left-hand side yields a
-    different class from the one every calling equation contains.
+    Function heads resolve too, because `Function("f") != Function("f", real=True)` and the two `srepr` identically: rebuilding a head to write `f(x)` on a left-hand side yields a different class from the one every calling equation contains.
     """
     resolved = (scope or {}).get(str(name))
     if isinstance(resolved, (Basic, UndefinedFunction)):
@@ -104,16 +77,10 @@ def _rejects_mutation(method: str):
 class SymbolContext(dict):
     """A frozen mapping of name to SymPy object, usable as a parser namespace.
 
-    Subclasses `dict` because that is what SymPy means by a `local_dict`, so a context can be
-    inspected, compared and merged with ordinary mapping code. It is frozen because the two
-    bugs it exists to prevent are both writes: SymPy's `auto_symbol` rewriting the namespace
-    while parsing, and callers extending a shared namespace in place so that a later,
-    unrelated parse sees the addition.
+    Subclasses `dict` because that is what SymPy means by a `local_dict`, so a context can be inspected, compared and merged with ordinary mapping code. It is frozen because the two bugs it exists to prevent are both writes: SymPy's `auto_symbol` rewriting the namespace while parsing, and callers extending a shared namespace in place so that a later, unrelated parse sees the addition.
 
-    A value of [`AUTO`](#tvbo.parse.symbols.AUTO) declares a name without committing to what
-    it is: SymPy resolves it to a `Function` when the text calls it and a `Symbol` otherwise.
-    That is the only way to say "this name is the model's, whatever SymPy would make of it"
-    without inspecting the expression first.
+    A value of [`AUTO`](#tvbo.parse.symbols.AUTO) declares a name without committing to what it is: SymPy resolves it to a `Function` when the text calls it and a `Symbol` otherwise.
+    That is the only way to say "this name is the model's, whatever SymPy would make of it" without inspecting the expression first.
 
     Example:
         >>> scope = BUILTIN_SHADOW.extend(x=Symbol("x"))
@@ -148,20 +115,14 @@ class SymbolContext(dict):
     def parse(self, expression, **kwargs):
         """Parse `expression` against this namespace, which `parse_eq` copies before use.
 
-        The copy is what makes freezing workable: SymPy resolves an
-        [`AUTO`](#tvbo.parse.symbols.AUTO) name by writing the object it chose back into the
-        `local_dict`, and `parse_expr` pops its bookkeeping key afterwards. Both writes land
-        on `parse_eq`'s own copy, so a context yields the same result however many times it
-        is used — and equally for a caller that hands a context straight to `parse_eq`.
+        The copy is what makes freezing workable: SymPy resolves an [`AUTO`](#tvbo.parse.symbols.AUTO) name by writing the object it chose back into the `local_dict`, and `parse_expr` pops its bookkeeping key afterwards. Both writes land on `parse_eq`'s own copy, so a context yields the same result however many times it is used — and equally for a caller that hands a context straight to `parse_eq`.
         """
         return parse_eq(expression, local_dict=self, **kwargs)
 
     def __reduce__(self):
         """Rebuild by construction, because restoring a `dict` subclass assigns its items.
 
-        `copy`, `deepcopy` and `pickle` all reach for `__reduce_ex__`, which replays items
-        through `__setitem__` — exactly what freezing blocks. Without this, any object graph
-        holding a context is uncopyable, and an `Exploration` deep-copies one per cell.
+        `copy`, `deepcopy` and `pickle` all reach for `__reduce_ex__`, which replays items through `__setitem__` — exactly what freezing blocks. Without this, any object graph holding a context is uncopyable, and an `Exploration` deep-copies one per cell.
         """
         return type(self), (dict(self),)
 

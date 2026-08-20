@@ -3492,6 +3492,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % if ax.get('element_idx') is not None:
             element_idx=${ax['element_idx']},
 % endif
+% if ax.get('is_ic'):
+            grid_leaf='_ic_${ax['name']}',
+% endif
 % if ax.get('reduce'):
             reduce='${ax['reduce']}',
 % endif
@@ -3513,6 +3516,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
         if str(_a.name) == 'execution.random_seed':
             _bare_to_label.setdefault('_noise_seed', str(_a.name))  # the seed axis sweeps the dynamics._noise_seed leaf
+        if getattr(_a, 'grid_leaf', None):
+            _bare_to_label.setdefault(_a.grid_leaf, str(_a.name))   # an initial_conditions.<sv> axis sweeps the dummy dynamics._ic_<sv> leaf
         if getattr(_a, 'element_idx', None) is not None:
             _bare = str(_a.name).rsplit('.', 1)[-1].split('[')[0]   # axis "ref.p[i]" sweeps the leaf dynamics._p_el<i>
             _bare_to_label.setdefault(f'_{_bare}_el{_a.element_idx}', str(_a.name))

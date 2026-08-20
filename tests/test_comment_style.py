@@ -1,8 +1,6 @@
 """The stacked-comment rule is checked by a script, so the script is checked here.
 
-A run of two or more consecutive whole-line ``#`` comments is what the convention
-forbids. The check reads a diff rather than the tree, so that the blocks already in the
-repository need not be cleared before the rule can hold for everything written after it.
+A run of two or more consecutive whole-line ``#`` comments is what the convention forbids. The check reads a diff rather than the tree, so that the blocks already in the repository need not be cleared before the rule can hold for everything written after it.
 """
 
 from __future__ import annotations
@@ -70,9 +68,7 @@ def test_the_run_at_the_end_of_a_hunk_is_still_reported():
 def _repo(tmp_path: Path, *files: tuple[str, str]) -> Path:
     """A git repo with one base commit, then *files* written on top but uncommitted.
 
-    ``git add -N`` registers the intent to add, which is what puts an as-yet-untracked
-    file into ``git diff`` at all — without it the checker would see an empty diff and
-    the test would pass for the wrong reason.
+    ``git add -N`` registers the intent to add, which is what puts an as-yet-untracked file into ``git diff`` at all — without it the checker would see an empty diff and the test would pass for the wrong reason.
     """
 
     def run(*cmd):

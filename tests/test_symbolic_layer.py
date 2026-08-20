@@ -1,13 +1,8 @@
 """One symbolic layer between a model's metadata and everything rendered from it.
 
-`metadata → symbolic → render`. Every consumer — codegen, the report, the function
-inliner, `get_equations`, `symbolic` — reads equations that were parsed once, against one
-symbol table, and kept. Before this there were three independent builders with three
-hand-made scopes: loading `ZerlautAdaptationSecondOrder` parsed its 27 equations 264 times,
-and each `render_code` and `generate_report` parsed all 27 again.
+`metadata → symbolic → render`. Every consumer — codegen, the report, the function inliner, `get_equations`, `symbolic` — reads equations that were parsed once, against one symbol table, and kept. Before this there were three independent builders with three hand-made scopes: loading `ZerlautAdaptationSecondOrder` parsed its 27 equations 264 times, and each `render_code` and `generate_report` parsed all 27 again.
 
-The tests here pin the two properties that make the layer worth having and the two that
-make caching safe on a mutable model:
+The tests here pin the two properties that make the layer worth having and the two that make caching safe on a mutable model:
 
 * an equation is parsed once, however many consumers ask for it;
 * the two public views are projections of that one parse, not re-derivations;
@@ -51,8 +46,7 @@ def count_parses(monkeypatch):
 def test_rendering_reuses_the_parsed_equations(model: Dynamics, count_parses):
     """Rendering a model, in any format and any number of times, parses nothing new.
 
-    The first render populates the layer; everything after reads it. A regression here
-    means a consumer has gone back to parsing metadata directly.
+    The first render populates the layer; everything after reads it. A regression here means a consumer has gone back to parsing metadata directly.
     """
     model.render_code(format="jax")
     count_parses.clear()
@@ -68,13 +62,13 @@ def test_rendering_reuses_the_parsed_equations(model: Dynamics, count_parses):
 def test_both_views_come_from_one_parse(model: Dynamics, count_parses):
     """`get_equations` and `symbolic` are projections, so a second call costs nothing."""
     model.get_equations()
-    model.symbolic
+    _ = model.symbolic
     count_parses.clear()
 
     model.get_equations()
     model.get_equations(format="dict")
     model.get_equations(format="state-equations")
-    model.symbolic
+    _ = model.symbolic
 
     assert count_parses == []
 
@@ -83,9 +77,7 @@ def test_both_views_come_from_one_parse(model: Dynamics, count_parses):
 def test_the_two_views_agree_on_every_equation(model: Dynamics):
     """Same equations, differing only in how a variable is written.
 
-    `get_equations` binds `y0` to a `Symbol`; `symbolic` binds it to `y0(t)` so that
-    `Derivative(y0(t), t)` survives. If the two ever disagreed on *which* equations exist,
-    a report and its generated code would be describing different models.
+    `get_equations` binds `y0` to a `Symbol`; `symbolic` binds it to `y0(t)` so that `Derivative(y0(t), t)` survives. If the two ever disagreed on *which* equations exist, a report and its generated code would be describing different models.
     """
     from tvbo.utils import report
 
@@ -114,11 +106,9 @@ def test_changing_an_equation_invalidates_the_cache(model: Dynamics):
 def test_reordering_does_not_reparse_but_does_reorder(model: Dynamics, count_parses):
     """Sorting into dependency order rearranges equations; it does not change any.
 
-    `update_metadata` sorts three collections on every load, so treating a reorder as a
-    content change would re-parse the whole model several times over for no new result.
+    `update_metadata` sorts three collections on every load, so treating a reorder as a content change would re-parse the whole model several times over for no new result.
 
-    The collection is reordered in place, the way `sort_equations` does it: assigning to a
-    multivalued slot replaces it with a `JsonObj`, which is not how this is ever reordered.
+    The collection is reordered in place, the way `sort_equations` does it: assigning to a multivalued slot replaces it with a `JsonObj`, which is not how this is ever reordered.
     """
     model.get_equations()
     count_parses.clear()
@@ -136,8 +126,7 @@ def test_reordering_does_not_reparse_but_does_reorder(model: Dynamics, count_par
 def test_the_cache_never_reaches_the_serialised_record(model: Dynamics):
     """`tvbo/database/` is the published record; a SymPy cache must not appear in it.
 
-    `yaml.SafeDumper` cannot represent a SymPy object, so without the `_items` filter this
-    fails loudly — but a filter that stopped working would be caught by nothing else.
+    `yaml.SafeDumper` cannot represent a SymPy object, so without the `_items` filter this fails loudly — but a filter that stopped working would be caught by nothing else.
     """
     model.get_equations()
     assert "_symbolic_cache" in model.__dict__
@@ -164,8 +153,7 @@ def test_every_group_is_keyed_by_the_name_it_defines(name: str):
 def test_the_analysis_view_carries_assumptions(model: Dynamics):
     """SymPy is told what the schema already knows: these quantities are real.
 
-    Without it every symbol is `real=None` and SymPy must consider complex branches, which
-    is the difference between an analysis returning and not.
+    Without it every symbol is `real=None` and SymPy must consider complex branches, which is the difference between an analysis returning and not.
     """
     equations = model.symbolic["state"]
     symbols = {s for eq in equations for s in eq.rhs.free_symbols}
@@ -196,10 +184,7 @@ def test_a_declared_domain_becomes_a_sign_assumption():
 def test_the_codegen_view_stays_plain(model: Dynamics):
     """Assumptions enter `Symbol.sort_key`, so they reorder printed products.
 
-    A backend that parses, inlines and prints without ever simplifying gains nothing from
-    them and every emitted file is compared against a frozen reference, so the codegen view
-    is deliberately plain. This also keeps the two views unmixable: a symbol from one never
-    compares equal to the same name from the other.
+    A backend that parses, inlines and prints without ever simplifying gains nothing from them and every emitted file is compared against a frozen reference, so the codegen view is deliberately plain. This also keeps the two views unmixable: a symbol from one never compares equal to the same name from the other.
     """
     codegen = model.get_symbolic_elements()
     analysis = model.get_symbolic_elements(time_dependent=True)
@@ -213,12 +198,9 @@ def test_the_codegen_view_stays_plain(model: Dynamics):
 def test_the_analysis_view_is_a_system_of_odes(model: Dynamics):
     """`Derivative(y0(t), t)` must survive `doit()`, which pins the two `t`s together.
 
-    The derivative is taken with respect to a symbol resolved from the scope, so it is the
-    same object as the one inside `y0(t)`. Built fresh it is not, and SymPy then reads the
-    left-hand side as a derivative with respect to an absent variable and evaluates it to
+    The derivative is taken with respect to a symbol resolved from the scope, so it is the same object as the one inside `y0(t)`. Built fresh it is not, and SymPy then reads the left-hand side as a derivative with respect to an absent variable and evaluates it to
     **zero** — while `str()` still prints `Derivative(y0(t), t)`, which is why nothing else
-    in this suite noticed. Every consumer that treats `symbolic` as a system of ODEs
-    (`Matrix.jacobian`, `dsolve`, fixed-point `solve`) is handed `0 = rhs` instead.
+    in this suite noticed. Every consumer that treats `symbolic` as a system of ODEs (`Matrix.jacobian`, `dsolve`, fixed-point `solve`) is handed `0 = rhs` instead.
     """
     equation = model.symbolic["state"][0]
 
@@ -232,9 +214,7 @@ def test_every_left_hand_side_is_the_symbol_the_equations_use(name: str):
     """A left-hand side is resolved from the scope, never minted beside it.
 
     `Symbol("x") != Symbol("x", real=True)` and `Function("f") != Function("f", real=True)`;
-    both pairs `srepr` identically and `subs` across either does nothing rather than
-    raising. So a derived parameter whose left-hand side was rebuilt substitutes into none
-    of its own equations, and a function's formal argument does not occur in its own body.
+    both pairs `srepr` identically and `subs` across either does nothing rather than raising. So a derived parameter whose left-hand side was rebuilt substitutes into none of its own equations, and a function's formal argument does not occur in its own body.
     """
     model = Dynamics.from_file(str(MODEL_ROOT / f"{name}.yaml"))
     scope = model.get_symbolic_elements(time_dependent=True)
@@ -261,14 +241,9 @@ def test_every_left_hand_side_is_the_symbol_the_equations_use(name: str):
 def test_a_function_formal_does_not_shadow_a_variable(name: str):
     """`H(x)`'s bound `x` and a derived variable `x` are different quantities.
 
-    Both models declare a function `H(x)` and a derived variable `x`. Registering formals in
-    the model-wide table let the formal win, so the analysis view held `x` constant: its own
-    definition read `Eq(x, … S(t) …)` — a constant equal to a function of time — and every
-    Jacobian taken through `H` silently lost the chain-rule term.
+    Both models declare a function `H(x)` and a derived variable `x`. Registering formals in the model-wide table let the formal win, so the analysis view held `x` constant: its own definition read `Eq(x, … S(t) …)` — a constant equal to a function of time — and every Jacobian taken through `H` silently lost the chain-rule term.
 
-    A formal is bound by its function, like a lambda parameter. Keeping it out of the model's
-    namespace is also what lets a function be declared once and reused, where its argument is
-    not tied to any one host's variables.
+    A formal is bound by its function, like a lambda parameter. Keeping it out of the model's namespace is also what lets a function be declared once and reused, where its argument is not tied to any one host's variables.
     """
     from sympy import Symbol
 
@@ -293,9 +268,7 @@ def test_a_function_formal_does_not_shadow_a_variable(name: str):
 def test_editing_a_domain_invalidates_the_cache():
     """A `domain` is not an equation, but it decides a symbol's sign assumption.
 
-    `assumptions_of` reads `domain.lo`, so a cache keyed only on equations serves symbols
-    carrying the old assumptions — and those compare unequal to freshly parsed ones, so
-    nothing substitutes across the two.
+    `assumptions_of` reads `domain.lo`, so a cache keyed only on equations serves symbols carrying the old assumptions — and those compare unequal to freshly parsed ones, so nothing substitutes across the two.
     """
     model = Dynamics.from_file(str(MODEL_ROOT / "Generic2dOscillator.yaml"))
     name = next(
@@ -314,8 +287,7 @@ def test_editing_a_domain_invalidates_the_cache():
 def test_the_parameter_map_substitutes_into_its_own_equations(model: Dynamics):
     """`symbolic["parameters"]` must be keyed by the symbols the equations actually use.
 
-    Rebuilding those keys yields names that look identical and compare unequal, so the
-    substitution silently replaces nothing — the failure mode assumptions introduce.
+    Rebuilding those keys yields names that look identical and compare unequal, so the substitution silently replaces nothing — the failure mode assumptions introduce.
     """
     symbolic = model.symbolic
     substituted = symbolic["state"][0].rhs.subs(symbolic["parameters"])

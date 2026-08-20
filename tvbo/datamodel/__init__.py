@@ -138,7 +138,7 @@ def _open_unit_slot_classes():
         if obj.__module__ != _schema.__name__:
             continue
         for field in dataclasses.fields(obj):
-            if field.name == "unit" and field.type == typing.Optional[str]:
+            if field.name == "unit" and field.type == (str | None):
                 yield obj
 
 

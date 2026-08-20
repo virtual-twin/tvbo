@@ -377,7 +377,10 @@ def _boundary_plan(field_dynamics, svars, names) -> list:
     """Dirichlet constraints per state variable.
 
     Only Dirichlet is lowered. A declared Neumann/Robin/Periodic condition raises rather than being silently dropped: on a closed surface (the cortical case) there is no boundary at all and the distinction never arises, but on a bounded domain quietly ignoring it changes the solution. Every condition is checked before one is taken, so a Neumann/Robin declared beside a Dirichlet raises instead of being skipped by an early exit.
+
+    The slot promises a constant, a parameter, or an expression, so a bare parameter name is resolved against the field's own declarations. An expression raises: held at 0.0 it would read as a physically meaningful homogeneous boundary, and nothing in the emitted code would say otherwise.
     """
+    parameters = getattr(field_dynamics, "parameters", None) or {}
     out = []
     for row, var in enumerate(svars):
         bcs = list(getattr(var, "boundary_conditions", None) or []) or list(
@@ -394,9 +397,15 @@ def _boundary_plan(field_dynamics, svars, names) -> list:
             declared = getattr(bc, "equation", None)
             if declared is None:
                 declared = getattr(bc, "value", None)
-            try:
-                value = float(_rhs_text(declared) or 0.0)
-            except ValueError:
-                raise FieldPlanError(f"non-constant Dirichlet value on {names[row]!r} is not supported") from None
+            text = _rhs_text(declared) or "0.0"
+            value = _scalar(parameters.get(text)) if text in parameters else None
+            if value is None:
+                try:
+                    value = float(text)
+                except ValueError:
+                    raise FieldPlanError(
+                        f"Dirichlet boundary on {names[row]!r} is held at {text!r}: this lowering holds a boundary "
+                        "at a constant or a declared parameter, not at an expression"
+                    ) from None
             out.append({"row": row, "value": value, "on_region": getattr(bc, "on_region", None) or None})
     return out

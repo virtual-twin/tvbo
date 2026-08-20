@@ -1,18 +1,10 @@
 """An equation may state its right-hand side, or only its conditional branches.
 
-Both spellings are valid in the schema and `parse_eq` resolves both. Only the first is
-exercised by the curated database: every conditional model there also carries an `rhs`,
-so **no** curated model proves the second works. That is the gap this closes.
+Both spellings are valid in the schema and `parse_eq` resolves both. Only the first is exercised by the curated database: every conditional model there also carries an `rhs`, so **no** curated model proves the second works. That is the gap this closes.
 
-It is not hypothetical. Reaching past an equation to `.rhs` yields `None` when the branches
-are the whole definition, and `None` fails differently in each consumer — the Julia emitter
-omitted a `NaNMath` import the emitted model then used, the NeuroML templates skipped the
-element and emitted a component with **no dynamics at all**, and the report raised
-`SympifyError: None`. None of those is a loud failure at the point of the mistake.
+It is not hypothetical. Reaching past an equation to `.rhs` yields `None` when the branches are the whole definition, and `None` fails differently in each consumer — the Julia emitter omitted a `NaNMath` import the emitted model then used, the NeuroML templates skipped the element and emitted a component with **no dynamics at all**, and the report raised `SympifyError: None`. None of those is a loud failure at the point of the mistake.
 
-The model here is deliberately small and synthetic rather than added to the database: it
-exists to be a shape no curated model has, and putting it in `tvbo/database/` would make it
-part of the published record.
+The model here is deliberately small and synthetic rather than added to the database: it exists to be a shape no curated model has, and putting it in `tvbo/database/` would make it part of the published record.
 """
 
 from __future__ import annotations
@@ -67,8 +59,7 @@ def model() -> Dynamics:
 
 
 def test_the_fixture_really_has_no_right_hand_side(model: Dynamics):
-    """Guards the premise. If a normalisation ever fills `rhs` in, every other test here
-    silently stops testing anything."""
+    """Guards the premise. If a normalisation ever fills `rhs` in, every other test here silently stops testing anything."""
     stated = {
         "state_variables.v": model.state_variables["v"].equation,
         "derived_variables.gated": model.derived_variables["gated"].equation,
@@ -84,8 +75,7 @@ def test_the_fixture_really_has_no_right_hand_side(model: Dynamics):
 def test_every_emitter_keeps_the_branches(model: Dynamics, fmt: str):
     """Each emitter renders all three equations, branch condition included.
 
-    `thr` appears only inside a branch condition, so a lowering that dropped the branches
-    would emit a model that never mentions it.
+    `thr` appears only inside a branch condition, so a lowering that dropped the branches would emit a model that never mentions it.
     """
     code = model.render_code(format=fmt)
     for name in ("gated", "scale", "thr"):

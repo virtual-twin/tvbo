@@ -2,13 +2,9 @@
 
 `compile_cuda` looked the kernel name up on `experiment.network.dynamics` — the network's
 *library* of models, a keyed dict — while the template renders the one model the kernel
-integrates, `experiment.dynamics`. So `exp.run("cuda")` raised `AttributeError: 'dict'
-object has no attribute 'name'` before it ever reached a GPU, and had it not, the name
-would have been the hemodynamic model rather than the integrated one. `n_states` sized the
-state buffer from the same wrong place.
+integrates, `experiment.dynamics`. So `exp.run("cuda")` raised `AttributeError: 'dict' object has no attribute 'name'` before it ever reached a GPU, and had it not, the name would have been the hemodynamic model rather than the integrated one. `n_states` sized the state buffer from the same wrong place.
 
-None of this needs a GPU to check: the emitted source names the kernel, and the driver
-computes the name it will ask for. CI has no GPU, so this is the part that can be pinned.
+None of this needs a GPU to check: the emitted source names the kernel, and the driver computes the name it will ask for. CI has no GPU, so this is the part that can be pinned.
 """
 
 import re
@@ -57,8 +53,7 @@ def test_the_state_buffer_is_sized_from_the_integrated_model(experiment):
 def test_every_emitted_kernel_declares_c_linkage(experiment):
     """Without it `get_function` cannot find them: PyCUDA compiles with `no_extern_c=True`.
 
-    It has to, because the kernel includes `<curand_kernel.h>`, whose templates may not
-    carry the C linkage `SourceModule` otherwise wraps a whole source in.
+    It has to, because the kernel includes `<curand_kernel.h>`, whose templates may not carry the C linkage `SourceModule` otherwise wraps a whole source in.
     """
     source = experiment.render_code("cuda")
 

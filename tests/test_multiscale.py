@@ -121,10 +121,7 @@ def test_size_guard_disabled_with_none(patched_engine):
 class TestCrossScaleClock:
     """Flattening leaves one network, so it leaves one clock.
 
-    The subnetwork's `step_size` and the parent's are numbers on two different
-    scales that may be written in two different units. Copying one onto the other
-    — which is what happened before — is wrong twice over: it integrates the
-    reservoir at the macro step, and it does so without converting the unit.
+    The subnetwork's `step_size` and the parent's are numbers on two different scales that may be written in two different units. Copying one onto the other — which is what happened before — is wrong twice over: it integrates the reservoir at the macro step, and it does so without converting the unit.
     """
 
     def _two_scale(self, *, inner_unit=None, inner_step=0.1, outer_unit=None):
@@ -153,9 +150,7 @@ class TestCrossScaleClock:
     def test_a_step_in_another_unit_is_converted_not_copied(self, patched_engine):
         """0.1 s into a network clocked in ms is 100 ms — coarser than the parent's 1.0.
 
-        Copied verbatim it would read 0.1 and silently win, integrating the whole
-        network 1000x finer than either scale asked for. The number stays plausible,
-        which is exactly why nothing catches this downstream.
+        Copied verbatim it would read 0.1 and silently win, integrating the whole network 1000x finer than either scale asked for. The number stays plausible, which is exactly why nothing catches this downstream.
         """
         fr = multiscale.flatten_reservoir(self._two_scale(inner_unit="s", outer_unit="ms"))
 
@@ -170,8 +165,7 @@ class TestCrossScaleClock:
     def test_an_undeclared_subnetwork_inherits_the_parents_unit(self, patched_engine):
         """Silence means "same clock", not "the `ms` fallback".
 
-        Resolved against the fallback instead, a subnetwork in a network clocked in
-        `s` would be converted by 1/1000 for having said nothing at all.
+        Resolved against the fallback instead, a subnetwork in a network clocked in `s` would be converted by 1/1000 for having said nothing at all.
         """
         fr = multiscale.flatten_reservoir(self._two_scale(outer_unit="s"))
 

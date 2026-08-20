@@ -1,7 +1,6 @@
 """QUDT vendoring generator for TVB-O units.
 
-Transcribes the unit facts TVBO reasons about from QUDT rather than restating them
-locally, and emits two artifacts from one pass:
+Transcribes the unit facts TVBO reasons about from QUDT rather than restating them locally, and emits two artifacts from one pass:
 
 - ``ontology/tvb-o-units.ttl`` — the semantic module merged into ``tvbo.owl``. Every
   ``UnitEnum`` value becomes an individual carrying the QUDT facts it was vendored
@@ -14,16 +13,9 @@ locally, and emits two artifacts from one pass:
 - ``tvbo/data/ontology/unit_facts.json`` — the compiled projection ``tvbo.utils.units``
   loads at runtime (stdlib ``json``, no rdflib on the hot path).
 
-Only one thing here is authored by TVBO: ``DECOMPOSITIONS``, the factor-unit reading
-of the values QUDT publishes no IRI for. Everything else — multiplier, dimension
-vector, quantity kind, symbol, UCUM code — is copied or derived arithmetically.
+Only one thing here is authored by TVBO: ``DECOMPOSITIONS``, the factor-unit reading of the values QUDT publishes no IRI for. Everything else — multiplier, dimension vector, quantity kind, symbol, UCUM code — is copied or derived arithmetically.
 
-That is also what makes a SymPy expression unnecessary to author. A unit is exactly
-``multiplier x product(base_unit ** exponent)`` over the seven SI base units, and both
-halves come from QUDT, so ``mV`` is ``Rational(1,1000) * kilogram*meter**2 /
-(second**3 * ampere)`` — exact, canonical, and distinguishable from ``V``. An earlier
-draft of this work authored ``mV -> milli*volt`` by hand for every value; deriving it
-removes that table and the chance of it disagreeing with the dimension vector beside it.
+That is also what makes a SymPy expression unnecessary to author. A unit is exactly ``multiplier x product(base_unit ** exponent)`` over the seven SI base units, and both halves come from QUDT, so ``mV`` is ``Rational(1,1000) * kilogram*meter**2 / (second**3 * ampere)`` — exact, canonical, and distinguishable from ``V``. An earlier draft of this work authored ``mV -> milli*volt`` by hand for every value; deriving it removes that table and the chance of it disagreeing with the dimension vector beside it.
 
 Regenerate with ``make gen-units`` whenever ``UnitEnum`` gains a value.
 """
@@ -141,8 +133,7 @@ def parse_dimension_vector(code: str) -> dict[str, int]:
 def format_dimension_vector(exponents: dict[str, Fraction]) -> str:
     """Base-dimension exponents back into a qkdv code, so compounds round-trip.
 
-    QUDT's trailing `D` component flags a dimensionless quantity, so it is 1 exactly
-    when no base dimension survives.
+    QUDT's trailing `D` component flags a dimensionless quantity, so it is 1 exactly when no base dimension survives.
     """
     parts = [f"{letter}{_number(exponents.get(BASE_DIMENSIONS[letter], Fraction(0)))}" for letter in "AELIMHT"]
     return "".join(parts) + f"D{0 if exponents else 1}"
@@ -155,8 +146,7 @@ def _number(value: Fraction) -> str:
 def compose(name: str, factors: dict[str, int], atoms: dict[str, dict]) -> dict:
     """The facts for a compound, computed from its vendored atoms.
 
-    The multiplier is the exact product of the atoms' multipliers raised to their
-    exponents, kept as a `Fraction` so `mm/ms` is exactly 1 rather than 0.9999999.
+    The multiplier is the exact product of the atoms' multipliers raised to their exponents, kept as a `Fraction` so `mm/ms` is exactly 1 rather than 0.9999999.
     """
     multiplier = Fraction(1)
     exponents: dict[str, Fraction] = {}
@@ -202,7 +192,7 @@ def vendor() -> dict:
     needed = set(direct.values()) | {atom for f in DECOMPOSITIONS.values() for atom in f}
 
     with ThreadPoolExecutor(max_workers=8) as pool:
-        fetched = dict(zip(sorted(needed), pool.map(_safe_fetch, sorted(needed))))
+        fetched = dict(zip(sorted(needed), pool.map(_safe_fetch, sorted(needed)), strict=True))
 
     broken = {iri: r for iri, r in fetched.items() if isinstance(r, VendorError)}
     atoms = {}

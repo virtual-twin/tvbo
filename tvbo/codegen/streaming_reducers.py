@@ -123,9 +123,7 @@ def _spec_from_metadata(recipe) -> StreamingReducerSpec:
 def _load_reducer_recipes() -> None:
     """Register every ``database/reducers/*.yaml`` recipe for its declared backends.
 
-    Loaded as a schema ``Reducer`` rather than a raw dict, so a typo in a recipe is a
-    validation error where every other database file reports one, not a ``KeyError`` at
-    import time.
+    Loaded as a schema ``Reducer`` rather than a raw dict, so a typo in a recipe is a validation error where every other database file reports one, not a ``KeyError`` at import time.
     """
     from tvbo.datamodel.schema import Reducer
     from tvbo.utils import yaml_loader

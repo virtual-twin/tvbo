@@ -123,13 +123,10 @@ def test_coupling_explicit_name_preserved():
 def test_both_generated_forms_resolve_an_iri_the_same_way(curie):
     """One YAML cannot mean two different couplings depending on which loader read it.
 
-    The behaviour is attached to both generated forms, but they do not share a
-    construction hook — the dataclasses call ``__post_init__``, the Pydantic models
-    ``model_post_init``. With only the first, everything loaded through
-    ``tvbo.utils.pydantic_loader`` came back as a bare default ``Linear``, unpopulated,
-    with no error to say so.
+    The behaviour is attached to both generated forms, but they do not share a construction hook — the dataclasses call ``__post_init__``, the Pydantic models ``model_post_init``. With only the first, everything loaded through ``tvbo.utils.pydantic_loader`` came back as a bare default ``Linear``, unpopulated, with no error to say so.
     """
-    from tvbo.datamodel import pydantic as pdm, schema
+    from tvbo.datamodel import pydantic as pdm
+    from tvbo.datamodel import schema
 
     dataclass_form = schema.Coupling(iri=curie)
     pydantic_form = pdm.Coupling(iri=curie)

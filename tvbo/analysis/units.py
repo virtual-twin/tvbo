@@ -2,26 +2,13 @@
 
 The symbolic layer knows a quantity is *real*. This is what lets it know a quantity is
 *a voltage*: units travel **beside** the expression, as a map from the scope's own
-symbols to the unit each was declared in, and propagate through the equation rather
-than being multiplied into it.
+symbols to the unit each was declared in, and propagate through the equation rather than being multiplied into it.
 
-Beside, not inside, for three reasons. 87% of quantities in the curated database declare
-no unit, so an expression carrying `Quantity` factors would be inconsistent by
-construction for almost every model; every consumer of the symbolic layer would have to
-strip those factors before printing; and the frozen codegen corpus would move. None of
-that buys anything a separate map does not.
+Beside, not inside, for three reasons. 87% of quantities in the curated database declare no unit, so an expression carrying `Quantity` factors would be inconsistent by construction for almost every model; every consumer of the symbolic layer would have to strip those factors before printing; and the frozen codegen corpus would move. None of that buys anything a separate map does not.
 
-The verdict is three-valued — `consistent`, `inconsistent`, `underdetermined` — because
-"I cannot tell" is a different claim from "this is wrong", and collapsing them is how a
-checker becomes noise. An undeclared quantity is the common case, and treating it as
-dimensionless silently corrupts the answer: `hhcell_1` declares units for 92% of its
-symbols and reports `dv/dt` as `1/capacitance` — not voltage over time — purely because
-its one undeclared symbol was assumed dimensionless.
+The verdict is three-valued — `consistent`, `inconsistent`, `underdetermined` — because "I cannot tell" is a different claim from "this is wrong", and collapsing them is how a checker becomes noise. An undeclared quantity is the common case, and treating it as dimensionless silently corrupts the answer: `hhcell_1` declares units for 92% of its symbols and reports `dv/dt` as `1/capacitance` — not voltage over time — purely because its one undeclared symbol was assumed dimensionless.
 
-Two strictnesses over one map (U2). `dimensional` compares base-dimension vectors, so
-`mV/ms` and `V/s` agree; `exact` compares the full quantity, so they do not, and the
-disagreement is reported as the exact rational ratio `1` vs `1000`. The ratio is the
-part that names the bug — a boolean does not.
+Two strictnesses over one map (U2). `dimensional` compares base-dimension vectors, so `mV/ms` and `V/s` agree; `exact` compares the full quantity, so they do not, and the disagreement is reported as the exact rational ratio `1` vs `1000`. The ratio is the part that names the bug — a boolean does not.
 """
 
 from __future__ import annotations
@@ -76,9 +63,7 @@ class Verdict:
 def quantity_name(expression):
     """The name of the quantity *expression* stands for.
 
-    `y0` for all of `y0`, `y0(t)` and `Derivative(y0(t), t)` — a quantity is the
-    same quantity however the notation renders it, and every caller (a verdict's
-    label, a report row keyed by parameter name) wants that one name.
+    `y0` for all of `y0`, `y0(t)` and `Derivative(y0(t), t)` — a quantity is the same quantity however the notation renders it, and every caller (a verdict's label, a report row keyed by parameter name) wants that one name.
     """
     target = expression.expr if isinstance(expression, sp.Derivative) else expression
     if isinstance(target, sp.core.function.AppliedUndef):
@@ -120,22 +105,13 @@ def _base_powers(unit):
 class _Propagator:
     """Walks an expression assigning a unit to every subexpression.
 
-    Constraints are exactly the three that hold without solving anything: addends of a
-    sum share a unit, a transcendental function's argument is dimensionless, and a
-    derivative divides by the unit of its variable. Anything needing a general linear
-    solve over base-dimension exponents reports `underdetermined` instead of guessing —
-    the bound is deliberate, because a checker that occasionally invents a constraint is
-    worse than one that admits it does not know.
+    Constraints are exactly the three that hold without solving anything: addends of a sum share a unit, a transcendental function's argument is dimensionless, and a derivative divides by the unit of its variable. Anything needing a general linear solve over base-dimension exponents reports `underdetermined` instead of guessing — the bound is deliberate, because a checker that occasionally invents a constraint is worse than one that admits it does not know.
     """
 
     def __init__(self, units: dict, time_unit):
         """Index the declared units by name, not by symbol object.
 
-        A unit is declared for a *quantity*, and the same quantity reaches this walk
-        under more than one symbol: an inlined function body carries the codegen view's
-        bare ``Symbol("e0")`` where the equation around it carries the analysis view's
-        ``Symbol("e0", real=True)``. Those compare unequal, so a symbol-keyed lookup
-        reports a declared parameter as undeclared.
+        A unit is declared for a *quantity*, and the same quantity reaches this walk under more than one symbol: an inlined function body carries the codegen view's bare ``Symbol("e0")`` where the equation around it carries the analysis view's ``Symbol("e0", real=True)``. Those compare unequal, so a symbol-keyed lookup reports a declared parameter as undeclared.
         """
         self.units = {str(symbol): unit for symbol, unit in units.items()}
         self.time_unit = time_unit
@@ -145,10 +121,7 @@ class _Propagator:
     def unit_of(self, expression):
         """The unit of *expression*, propagated from the declared ones around it.
 
-        Declared quantities are recognised before the transcendental branch below: a
-        state variable bound as ``Function(name)(t)`` is a *quantity*, not a function
-        being applied, and reaching that branch would demand its argument ``t`` be
-        dimensionless.
+        Declared quantities are recognised before the transcendental branch below: a state variable bound as ``Function(name)(t)`` is a *quantity*, not a function being applied, and reaching that branch would demand its argument ``t`` be dimensionless.
         """
         expression = sp.sympify(expression)
 
@@ -268,8 +241,7 @@ class DimensionalClash(Exception):
 def declared_units(model) -> dict:
     """The third projection of the symbolic layer: `{scope symbol: declared unit}`.
 
-    Keyed by the scope's own symbols, like `Dynamics.symbolic["parameters"]` — rebuilt
-    keys look identical, compare unequal, and would silently match nothing.
+    Keyed by the scope's own symbols, like `Dynamics.symbolic["parameters"]` — rebuilt keys look identical, compare unequal, and would silently match nothing.
     """
     scope = model.get_symbolic_elements(time_dependent=True)
     collections = (
@@ -305,14 +277,7 @@ def _function_bodies(model):
 def _inline(expression, bodies):
     """Expand model-defined calls before checking.
 
-    A user function carries no unit of its own, so a call to one is opaque to
-    propagation: `Jansen1995` reports its sigmoid's argument as non-dimensionless purely
-    because `Sigm(...)` is undeclared. Inlining resolves it exactly — `r` is `per_mV`
-    and `v0` is `mV`, so the argument really is dimensionless — which is why only four
-    of the curated models declare functions and none of them needs a `Function.unit`
-    slot. It works because the analysis view's function heads are now the same objects
-    the bodies were parsed against; before that, substituting across the two views
-    matched nothing, silently.
+    A user function carries no unit of its own, so a call to one is opaque to propagation: `Jansen1995` reports its sigmoid's argument as non-dimensionless purely because `Sigm(...)` is undeclared. Inlining resolves it exactly — `r` is `per_mV` and `v0` is `mV`, so the argument really is dimensionless — which is why only four of the curated models declare functions and none of them needs a `Function.unit` slot. It works because the analysis view's function heads are now the same objects the bodies were parsed against; before that, substituting across the two views matched nothing, silently.
     """
     if not bodies:
         return expression
@@ -387,8 +352,6 @@ def check_units(model, strictness: str = "dimensional", time_unit: str | None = 
 def dimension_exponents(unit) -> dict:
     """ISO 80000-1 base-dimension exponents of a declared unit, for reporting (U25).
 
-    `dim Q = L²MT⁻³I⁻¹` is what makes an inconsistency legible: `L²MT⁻³I⁻¹` against
-    `L²MT⁻⁴I⁻¹` shows where the discrepancy is, where "voltage vs something else" does
-    not.
+    `dim Q = L²MT⁻³I⁻¹` is what makes an inconsistency legible: `L²MT⁻³I⁻¹` against `L²MT⁻⁴I⁻¹` shows where the discrepancy is, where "voltage vs something else" does not.
     """
     return unit_dimensions(unit)

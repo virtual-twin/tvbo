@@ -23,12 +23,7 @@ if TYPE_CHECKING:
 def compile_cuda(experiment: SimulationExperiment) -> tuple[Any, Any]:
     """Compile CUDA kernel for experiment.
 
-    Compiled with `no_extern_c=True`. The kernel includes `<curand_kernel.h>` for its
-    noise, and the block `SourceModule` otherwise wraps a whole source in gives those
-    headers C linkage — which their templates may not have, so every compile failed with
-    33 errors out of curand rather than anything to do with the model. The kernels declare
-    `extern "C"` themselves instead, which is what keeps `get_function` able to find them
-    under their unmangled names.
+    Compiled with `no_extern_c=True`. The kernel includes `<curand_kernel.h>` for its noise, and the block `SourceModule` otherwise wraps a whole source in gives those headers C linkage — which their templates may not have, so every compile failed with 33 errors out of curand rather than anything to do with the model. The kernels declare `extern "C"` themselves instead, which is what keeps `get_function` able to find them under their unmangled names.
 
     Args:
         experiment: SimulationExperiment instance
@@ -68,11 +63,7 @@ def run_cuda(
 
     All configuration comes from experiment metadata.
 
-    The kernel integrates in the model's own time unit — it multiplies *dt* straight into
-    the model's equations — while indexing the delay ring as ``length / speed / dt``, which
-    is millimetres over metres-per-second and so is milliseconds. The two agree only for a
-    model whose time unit is ``ms``; anything else gets the right trajectory on the wrong
-    delays, so *dt* is passed through in model units rather than converted onto either.
+    The kernel integrates in the model's own time unit — it multiplies *dt* straight into the model's equations — while indexing the delay ring as ``length / speed / dt``, which is millimetres over metres-per-second and so is milliseconds. The two agree only for a model whose time unit is ``ms``; anything else gets the right trajectory on the wrong delays, so *dt* is passed through in model units rather than converted onto either.
 
     Args:
         experiment: SimulationExperiment instance

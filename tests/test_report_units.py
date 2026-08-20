@@ -1,9 +1,6 @@
 """What the report says about units, and what it refuses to say.
 
-The report is the published record. A unit it prints is a claim the paper makes,
-so the two things that matter here are that a declared unit reaches the page
-typeset as a unit rather than as a product of italic variables, and that a unit
-nobody declared is never printed as though somebody had.
+The report is the published record. A unit it prints is a claim the paper makes, so the two things that matter here are that a declared unit reaches the page typeset as a unit rather than as a product of italic variables, and that a unit nobody declared is never printed as though somebody had.
 """
 
 from __future__ import annotations
@@ -32,9 +29,7 @@ class TestNamingADerivedUnit:
     def test_an_ambiguous_dimension_is_not_given_one_of_its_names(self):
         """`Hz`, `per_s` and `rad_per_s` are all exactly `1/second`.
 
-        Naming a derived quantity `Hz` would assert it is a frequency on evidence
-        that says only "per second". The base expression is the weaker claim and
-        the true one.
+        Naming a derived quantity `Hz` would assert it is a frequency on evidence that says only "per second". The base expression is the weaker claim and the true one.
         """
         assert unit_named(unit_expression("Hz")) is None
         assert unit_named(unit_expression("per_s")) is None
@@ -106,7 +101,7 @@ class TestDeclaredVersusDerived:
 
 class TestVerdictTable:
     def test_each_equation_is_named_in_the_reports_own_notation(self, jansen):
-        """`\\dot{y_0}`, not `Derivative(y0(t), t)` and not `\\dot{y_0(t)}`."""
+        r"""`\dot{y_0}`, not `Derivative(y0(t), t)` and not `\dot{y_0(t)}`."""
         table = report.unit_verdict_table(report.unit_verdicts(jansen))
 
         assert r"$\dot{y_{0}}$" in table
@@ -114,10 +109,9 @@ class TestVerdictTable:
         assert r"\left(t \right)" not in table
 
     def test_a_first_derivative_is_order_one_even_with_assumptions(self):
-        """`Symbol("t")` and `Symbol("t", real=True)` print alike and compare unequal.
+        r"""`Symbol("t")` and `Symbol("t", real=True)` print alike and compare unequal.
 
-        Counting by identity read order 0 for every equation in the analysis view,
-        which typesets as the nonsense `\\frac{d^0}{d t^0}`.
+        Counting by identity read order 0 for every equation in the analysis view, which typesets as the nonsense `\frac{d^0}{d t^0}`.
         """
         t = sp.Symbol("t", real=True)
         y = sp.Function("y", real=True)(t)

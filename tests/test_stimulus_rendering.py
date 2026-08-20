@@ -1,19 +1,15 @@
 """A rendered stimulus must be something TVB can actually evaluate.
 
-TVBO used to render a stimulus three different ways depending on how its equation happened
-to be written down, and two of the three produced a string TVB rejects:
+TVBO used to render a stimulus three different ways depending on how its equation happened to be written down, and two of the three produced a string TVB rejects:
 
 * a `Piecewise` stated in `rhs` was printed as a Python `a if c else b`, which `numexpr` —
   TVB's evaluator — refuses, and left the time symbol as `t` when TVB binds `var`;
 * an equation stated as `conditionals` was post-processed into `where(...)` by a regex over
   the printed Python, keeping the `and` that `numexpr` also refuses.
 
-Only the third, a plain right-hand side, worked. The single stimulus in the database is of
-the first kind, so the code TVBO emitted for it could not run.
+Only the third, a plain right-hand side, worked. The single stimulus in the database is of the first kind, so the code TVBO emitted for it could not run.
 
-All three now parse once and print once, through the `tvb` printer. These tests assert the
-outcome rather than the spelling: the emitted string is handed to TVB's own `Equation` and
-its values compared against SymPy's, which is what "the stimulus means what it says" means.
+All three now parse once and print once, through the `tvb` printer. These tests assert the outcome rather than the spelling: the emitted string is handed to TVB's own `Equation` and its values compared against SymPy's, which is what "the stimulus means what it says" means.
 """
 
 from __future__ import annotations
@@ -86,8 +82,7 @@ def test_no_spelling_emits_python_the_evaluator_rejects(spelling: str):
     """Both branch spellings take the one printer path, so neither emits Python syntax.
 
     A Python conditional or a Python boolean connective is not a stylistic difference here:
-    `numexpr` raises on both, which is exactly how the old three-way branch shipped code
-    that could not run.
+    `numexpr` raises on both, which is exactly how the old three-way branch shipped code that could not run.
     """
     default = _default_of(_stimulus(**SPELLINGS[spelling]))
     assert default.startswith("where("), default
@@ -104,11 +99,7 @@ def test_a_stimulus_names_time_the_way_tvb_binds_it():
 def test_an_authored_pycode_wins_over_an_equation_tvbo_cannot_parse():
     """`Equation.pycode` is the escape hatch, so it must be consulted *before* parsing.
 
-    The right-hand side here is deliberately unparseable, because that is the only
-    situation `pycode` exists for. Written with a *parseable* `rhs` — as this test first
-    was — it passes whether or not the escape hatch works, which is how a template that
-    parsed unconditionally shipped green: it raised on exactly the equations `pycode` was
-    there to rescue.
+    The right-hand side here is deliberately unparseable, because that is the only situation `pycode` exists for. Written with a *parseable* `rhs` — as this test first was — it passes whether or not the escape hatch works, which is how a template that parsed unconditionally shipped green: it raised on exactly the equations `pycode` was there to rescue.
     """
     stimulus = _stimulus(rhs="some_undeclared_thing(var, ??)", pycode="where(var > 5, 1.0, 0.0)")
     assert 'default="where(var > 5, 1.0, 0.0)"' in stimulus.render_code(format="tvb")
@@ -117,8 +108,7 @@ def test_an_authored_pycode_wins_over_an_equation_tvbo_cannot_parse():
 def test_an_equation_may_not_state_a_branch_as_a_where_call():
     """The ontology's `where(...)` spelling is rejected, not silently reinterpreted.
 
-    It used to be rewritten into a `Piecewise` by a hand-written string splitter — a third
-    producer, and one that no equation in the shipped ontology or database actually needs.
+    It used to be rewritten into a `Piecewise` by a hand-written string splitter — a third producer, and one that no equation in the shipped ontology or database actually needs.
     """
     from tvbo.classes.equation import sympify_value
 
@@ -146,10 +136,7 @@ def test_an_equation_may_not_state_a_branch_as_a_where_call():
 def test_the_emitted_class_name_is_always_importable(label, expected):
     """A label is free prose; a class name is Python grammar.
 
-    `label` carries a human title, so nothing stops it holding a space, a leading digit,
-    or nothing at all. Concatenating it into a `class` statement emitted a module that
-    would not parse, and the failure surfaced at import of the generated file rather than
-    at the spelling that caused it.
+    `label` carries a human title, so nothing stops it holding a space, a leading digit, or nothing at all. Concatenating it into a `class` statement emitted a module that would not parse, and the failure surfaced at import of the generated file rather than at the spelling that caused it.
     """
     stimulus = _stimulus(rhs="amplitude")
     stimulus.label = label

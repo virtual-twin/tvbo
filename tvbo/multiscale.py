@@ -196,18 +196,9 @@ def flatten_reservoir(
 def _folded_integration(exp: dict, subnet: dict) -> dict:
     """The one clock the flat network runs on, in the parent's time unit.
 
-    Flattening leaves a single network, so it leaves a single clock, and the
-    parent's unit is the one that survives — the flat nodes *are* the parent's
-    nodes. Two things then have to happen, and neither did before: a subnetwork
-    that declares a finer ``step_size`` has to impose it, or its dynamics are
-    integrated at the macro step they were never meant to be; and if the two
-    scales declare different ``time_unit``s, that step has to be *converted*
-    rather than copied. A reservoir with ``step_size: 0.1`` in ``s`` folding into
-    a network in ``ms`` needs 100, not 0.1 — a factor of 1000 that is invisible
-    in the output of every backend, because the number stays plausible.
+    Flattening leaves a single network, so it leaves a single clock, and the parent's unit is the one that survives — the flat nodes *are* the parent's nodes. Two things then have to happen, and neither did before: a subnetwork that declares a finer ``step_size`` has to impose it, or its dynamics are integrated at the macro step they were never meant to be; and if the two scales declare different ``time_unit``s, that step has to be *converted* rather than copied. A reservoir with ``step_size: 0.1`` in ``s`` folding into a network in ``ms`` needs 100, not 0.1 — a factor of 1000 that is invisible in the output of every backend, because the number stays plausible.
 
-    ``duration`` and ``transient_time`` stay the parent's: they measure the
-    experiment, not the reservoir.
+    ``duration`` and ``transient_time`` stay the parent's: they measure the experiment, not the reservoir.
     """
     from tvbo.utils.units import time_unit_factor
 

@@ -1,10 +1,6 @@
 """A BIDS connectome arrives with its units declared; TVBO now reads them.
 
-`to_bids` has always written `MeasureUnits` into each relmat sidecar from the
-edge's `unit`. Nothing read it back, so a network that round-tripped through BIDS
-came home unitless and fell to the `mm` default whatever its sidecar said — and
-`distance_unit` is what divides `conduction_speed` to give delays, so the default
-being wrong is not a labelling problem, it is a thousandfold error in every delay.
+`to_bids` has always written `MeasureUnits` into each relmat sidecar from the edge's `unit`. Nothing read it back, so a network that round-tripped through BIDS came home unitless and fell to the `mm` default whatever its sidecar said — and `distance_unit` is what divides `conduction_speed` to give delays, so the default being wrong is not a labelling problem, it is a thousandfold error in every delay.
 """
 
 from __future__ import annotations
@@ -37,9 +33,7 @@ def bids_dir(tmp_path):
 def test_the_declared_length_unit_reaches_the_delay_conversion(bids_dir):
     """Lengths in metres against a speed in mm/ms: delays are 1000x, exactly.
 
-    This is the whole point of reading the field. Left at the `mm` default, the
-    same connectome yields delays a thousand times too short, and every number
-    downstream stays plausible.
+    This is the whole point of reading the field. Left at the `mm` default, the same connectome yields delays a thousand times too short, and every number downstream stays plausible.
     """
     network = Network.from_bids(bids_dir, atlas="Probe")
 
@@ -67,9 +61,7 @@ def test_an_explicit_distance_unit_still_wins(bids_dir):
 def test_a_non_length_unit_is_refused_rather_than_believed(bids_dir):
     """A dataset with no tract lengths puts a count second; it is not a distance.
 
-    Accepting `arbitrary` as `distance_unit` would divide a speed by a count and
-    produce delays in a unit that means nothing — worse than the `mm` default,
-    which is at least wrong in a known direction.
+    Accepting `arbitrary` as `distance_unit` would divide a speed by a count and produce delays in a unit that means nothing — worse than the `mm` default, which is at least wrong in a known direction.
     """
     network = Network.from_bids(bids_dir, atlas="Probe", structural_measures=["tractLength", "streamlineCount"])
 
@@ -90,8 +82,7 @@ def test_a_sidecar_without_the_field_changes_nothing(bids_dir):
 def test_the_shipped_connectome_declares_what_it_always_assumed():
     """`dk_average` says `mm`, which is the default — so nothing moves today.
 
-    Worth asserting: it is the reason this change is provably inert on the shipped
-    database while being live for any dataset that says something else.
+    Worth asserting: it is the reason this change is provably inert on the shipped database while being live for any dataset that says something else.
     """
     network = Network.from_bids(
         SHIPPED,

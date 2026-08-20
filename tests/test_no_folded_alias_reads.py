@@ -1,13 +1,8 @@
 """No source reads a slot alias off a constructed object.
 
-The TVBO dialect folds a declared alias into its canonical slot at construction, so the
-alias is NOT an attribute afterwards. `getattr(obj, "<alias>", default)` therefore returns
-the default forever — silently, and the defaults are plausible, which is how three of these
-survived: Brian2 scaled every declared time unit by 1, `run_cuda` integrated at 0.1
-whatever the recipe said, and every Dirichlet boundary condition came out 0.0.
+The TVBO dialect folds a declared alias into its canonical slot at construction, so the alias is NOT an attribute afterwards. `getattr(obj, "<alias>", default)` therefore returns the default forever — silently, and the defaults are plausible, which is how three of these survived: Brian2 scaled every declared time unit by 1, `run_cuda` integrated at 0.1 whatever the recipe said, and every Dirichlet boundary condition came out 0.0.
 
-Reading the alias as a *fallback* after the canonical name is fine and common
-(`number_of_nodes or number_of_regions`): the alias branch is dead, not wrong.
+Reading the alias as a *fallback* after the canonical name is fine and common (`number_of_nodes or number_of_regions`): the alias branch is dead, not wrong.
 """
 
 import ast
@@ -39,20 +34,15 @@ def _real_slot_names():
     """Every slot name some generated class actually declares.
 
     A name that is a real slot somewhere cannot be judged from the text alone:
-    ``target_variable`` is an ``Edge`` alias but ``Event``'s own slot, so flagging every
-    read of it would demand a rename that breaks the class owning the name.
+    ``target_variable`` is an ``Edge`` alias but ``Event``'s own slot, so flagging every read of it would demand a rename that breaks the class owning the name.
 
-    Read from either generated representation. Asking only for ``__dataclass_fields__``
-    would return an empty set the day the datamodel becomes Pydantic — which is this
-    branch's own direction — and an empty set silently widens the check onto names that
-    classes legitimately own, failing the hook on correct code.
+    Read from either generated representation. Asking only for ``__dataclass_fields__`` would return an empty set the day the datamodel becomes Pydantic — which is this branch's own direction — and an empty set silently widens the check onto names that classes legitimately own, failing the hook on correct code.
     """
 
     def declared(cls, attribute):
         """*cls*'s field names under *attribute*, or none.
 
-        Guarded because the generated enums resolve **any** attribute as an enum code and
-        raise ``ValueError`` for one that names no permissible value.
+        Guarded because the generated enums resolve **any** attribute as an enum code and raise ``ValueError`` for one that names no permissible value.
         """
         try:
             return set(getattr(cls, attribute, None) or {})
@@ -80,7 +70,7 @@ def _sources():
             yield path
 
 
-ACCESSOR_READ = re.compile(r"(?:%s)\(\s*(?P<obj>[^,()\n]+?)\s*,\s*['\"](?P<name>\w+)['\"]" % "|".join(ACCESSORS))
+ACCESSOR_READ = re.compile(rf"(?:{'|'.join(ACCESSORS)})\(\s*(?P<obj>[^,()\n]+?)\s*,\s*['\"](?P<name>\w+)['\"]")
 """``getattr(obj, "name"`` and friends, for templates that no parser will accept.
 
 The object group admits neither parentheses nor a newline: widening it let a call with no
@@ -97,10 +87,8 @@ WINDOW = 5
 def _parsed_reads(text):
     """``(accessor reads, attribute reads)`` from the syntax tree, or ``None`` if unparsable.
 
-    Parsing rather than matching, because the object decides whether a canonical read
-    excuses an alias read beside it, and text cannot say what the object *is*:
-    ``nodes[0]``, ``get(obj)`` and a call wrapped over three lines are all ordinary here,
-    and a regex either misreads them or refuses them.
+    Parsing rather than matching, because the object decides whether a canonical read excuses an alias read beside it, and text cannot say what the object *is*:
+    ``nodes[0]``, ``get(obj)`` and a call wrapped over three lines are all ordinary here, and a regex either misreads them or refuses them.
     """
     try:
         tree = ast.parse(text)
@@ -143,9 +131,7 @@ def _reads(text):
 def _bare_alias_reads(path):
     """Alias reads in *path* with no canonical read *of the same object* beside them.
 
-    Same object, not merely the same name somewhere near: canonical slots include `rhs`,
-    `nodes` and `step_size`, which appear on most lines of an adapter, so a proximity test
-    on the name alone excuses nearly every alias read there is.
+    Same object, not merely the same name somewhere near: canonical slots include `rhs`, `nodes` and `step_size`, which appear on most lines of an adapter, so a proximity test on the name alone excuses nearly every alias read there is.
     """
     text = path.read_text(errors="ignore")
     rel = str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else path.name
@@ -205,8 +191,7 @@ def test_the_guard_accepts_the_canonical_first_fallback(tmp_path):
     ],
 )
 def test_the_guard_does_not_fire_on_these(label, body, tmp_path):
-    """Shapes that are correct code. This runs as a pre-push hook, so a false positive
-    blocks a push on work that has nothing wrong with it — which is worse than a miss."""
+    """Shapes that are correct code. This runs as a pre-push hook, so a false positive blocks a push on work that has nothing wrong with it — which is worse than a miss."""
     source = tmp_path / "source.py"
     source.write_text(body)
 
@@ -222,8 +207,7 @@ def test_the_slot_index_is_not_empty():
 def test_a_canonical_read_of_a_DIFFERENT_object_does_not_excuse_the_alias(tmp_path):
     """The excuse is same-object, not same-name-nearby.
 
-    Canonicals like `rhs`/`nodes`/`step_size` appear on most lines of an adapter, so a
-    proximity test on the name alone excused nearly every alias read in the file.
+    Canonicals like `rhs`/`nodes`/`step_size` appear on most lines of an adapter, so a proximity test on the name alone excused nearly every alias read in the file.
     """
     alias, canonical = next(iter(CHECKED.items()))
     offender = tmp_path / "offender.py"
@@ -235,9 +219,7 @@ def test_a_canonical_read_of_a_DIFFERENT_object_does_not_excuse_the_alias(tmp_pa
 def test_ambiguous_names_are_excluded_from_the_check():
     """A name that is also a real slot somewhere cannot be judged statically.
 
-    `Edge` aliases `target_variable` to `target_var`, but `Event` and `TuningObjective`
-    declare `target_variable` as their own slot — flagging every read of it would demand
-    a rename that breaks the classes that own the name.
+    `Edge` aliases `target_variable` to `target_var`, but `Event` and `TuningObjective` declare `target_variable` as their own slot — flagging every read of it would demand a rename that breaks the classes that own the name.
     """
     assert "target_variable" not in CHECKED
     assert "target_variable" in _REAL_SLOTS

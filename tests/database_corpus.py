@@ -1,14 +1,9 @@
 """Which schema class each directory of ``tvbo/database/`` holds.
 
-Shared by the two tests that walk the whole database — schema validation and the golden
-dump — so a new directory cannot be covered by one and silently invisible to the other.
-That is not hypothetical: ``coordinate_spaces`` and ``reducers`` were absent from the
-validation map, and neither their missing ``description`` slot nor their missing class was
-caught until something tried to load them.
+Shared by the two tests that walk the whole database — schema validation and the golden dump — so a new directory cannot be covered by one and silently invisible to the other.
+That is not hypothetical: ``coordinate_spaces`` and ``reducers`` were absent from the validation map, and neither their missing ``description`` slot nor their missing class was caught until something tried to load them.
 
-Deliberately stdlib-only. ``test_database_validation`` must not import ``tvbo`` — LinkML's
-enums are mutated to an unhashable form once it does, so that test validates through the
-shipped JSON Schema instead, and importing this module must not change that.
+Deliberately stdlib-only. ``test_database_validation`` must not import ``tvbo`` — LinkML's enums are mutated to an unhashable form once it does, so that test validates through the shipped JSON Schema instead, and importing this module must not change that.
 """
 
 from __future__ import annotations
@@ -44,8 +39,7 @@ def collect() -> list[tuple[Path, str]]:
 def uncovered() -> list[str]:
     """Database subdirectories holding YAML that no entry of `TARGETS` claims.
 
-    A directory of authored metadata that nothing knows the class of is validated by
-    nothing and frozen by nothing — the state ``reducers`` was in.
+    A directory of authored metadata that nothing knows the class of is validated by nothing and frozen by nothing — the state ``reducers`` was in.
     """
     return sorted(
         directory.name

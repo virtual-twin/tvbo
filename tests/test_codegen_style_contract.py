@@ -200,16 +200,9 @@ FROZEN_PYTHON = sorted(
 def test_frozen_generated_python_binds_every_name_it_reads(path: Path):
     """No frozen reference reads a name nothing binds.
 
-    The gate above holds one hand-written spec to the whole contract. This holds every
-    curated model to the single rule that means the module cannot run, and reads the
-    references rather than re-rendering: they are the bytes that ship, and the corpus
-    already fails if they have gone stale.
+    The gate above holds one hand-written spec to the whole contract. This holds every curated model to the single rule that means the module cannot run, and reads the references rather than re-rendering: they are the bytes that ship, and the corpus already fails if they have gone stale.
 
-    Its own gate because the parameter unpack is *selected* — a template emits
-    ``mu = _p.mu`` only for the parameters it believes the body reads — so a gap in that
-    belief drops the binding and leaves the use. That is not hypothetical: selecting by
-    searching printed source for the name found nothing in `tent_map`, whose one
-    parameter is read only from inside a conditional branch.
+    Its own gate because the parameter unpack is *selected* — a template emits ``mu = _p.mu`` only for the parameters it believes the body reads — so a gap in that belief drops the binding and leaves the use. That is not hypothetical: selecting by searching printed source for the name found nothing in `tent_map`, whose one parameter is read only from inside a conditional branch.
     """
     codes = _lint(path.read_text(encoding="utf-8"), _ruff())
 

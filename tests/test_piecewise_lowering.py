@@ -1,15 +1,9 @@
 """Emitted branch code must *mean* what the `Piecewise` it came from means.
 
 The golden corpus freezes the text every emitter produces. Text identity is not meaning:
-a `Piecewise` lowered to the wrong arithmetic is frozen just as faithfully as one lowered
-to the right arithmetic, and stays frozen. This module closes that gap for the one lowering
-that cannot be read at a glance — LEMS, which has no ternary and no `Piecewise` and must
-express branch selection as a sum of Heaviside-gated terms.
+a `Piecewise` lowered to the wrong arithmetic is frozen just as faithfully as one lowered to the right arithmetic, and stays frozen. This module closes that gap for the one lowering that cannot be read at a glance — LEMS, which has no ternary and no `Piecewise` and must express branch selection as a sum of Heaviside-gated terms.
 
-It caught four shipped models. `tent_map`, `pomeau_manneville_map`, `Hopfield` and
-`EpileptorCodim3` each emitted their else-branch *un-gated*, so it was added to whichever
-branch was taken rather than replacing it — the tent map differed from its own definition
-over 63% of its domain. Two independent defects produced that:
+It caught four shipped models. `tent_map`, `pomeau_manneville_map`, `Hopfield` and `EpileptorCodim3` each emitted their else-branch *un-gated*, so it was added to whichever branch was taken rather than replacing it — the tent map differed from its own definition over 63% of its domain. Two independent defects produced that:
 
 * `Piecewise` is first-match-wins, so every term after the first is reachable only when no
   earlier condition held. Summing the terms un-gated is correct only when the conditions
@@ -17,9 +11,7 @@ over 63% of its domain. Two independent defects produced that:
 * The branch value was interpolated without parentheses, so a value that prints as a sum
   escaped its own gate: `H(x .gt. 0.5) * -4*x + 3` gates `-4*x` and adds `3` always.
 
-The backend-independent printers are checked alongside it. They lower to `where`/`ifelse`
-and have no equivalent trap, which is exactly why they belong here: this is the test that
-says so rather than assuming it.
+The backend-independent printers are checked alongside it. They lower to `where`/`ifelse` and have no equivalent trap, which is exactly why they belong here: this is the test that says so rather than assuming it.
 """
 
 from __future__ import annotations
@@ -52,9 +44,7 @@ _LEMS_RELATIONS = ((".geq.", ">="), (".leq.", "<="), (".neq.", "!="), (".gt.", "
 def _lems_as_python(text: str) -> str:
     """Read emitted LEMS math back as an evaluable Python expression.
 
-    Each `H(...)` argument is wrapped before `.and.`/`.or.` are translated: LEMS
-    `x .gt. 0 .and. x .lt. 1` is one boolean expression, but Python's `&` binds tighter
-    than `>`, so a direct substitution would mean `x > (0 & x) < 1`.
+    Each `H(...)` argument is wrapped before `.and.`/`.or.` are translated: LEMS `x .gt. 0 .and. x .lt. 1` is one boolean expression, but Python's `&` binds tighter than `>`, so a direct substitution would mean `x > (0 & x) < 1`.
     """
     for lems, python in _LEMS_RELATIONS:
         text = text.replace(lems, python)
@@ -120,17 +110,11 @@ def test_lems_branches_evaluate_as_the_piecewise_does(label: str):
 def test_array_backends_branch_as_the_piecewise_does(fmt: str, label: str):
     """`np.where` / `jnp.where` / TVB `where` lowering agrees with SymPy, on arrays.
 
-    Arrays rather than scalars on purpose: `where` evaluates *both* arms and selects
-    elementwise, so a lowering that is right for a scalar can still be wrong for a vector.
+    Arrays rather than scalars on purpose: `where` evaluates *both* arms and selects elementwise, so a lowering that is right for a scalar can still be wrong for a vector.
 
-    `tvb` is evaluated by `numexpr` — the evaluator TVB actually hands an
-    `Equation.equation` string to — rather than by `eval`. That is the whole point of the
-    target: `numexpr` rejects a Python `a if c else b` and Python's `and`/`or` outright, so
-    a stimulus lowered that way is not merely differently spelled, it does not run.
+    `tvb` is evaluated by `numexpr` — the evaluator TVB actually hands an `Equation.equation` string to — rather than by `eval`. That is the whole point of the target: `numexpr` rejects a Python `a if c else b` and Python's `and`/`or` outright, so a stimulus lowered that way is not merely differently spelled, it does not run.
 
-    The tolerance follows the backend's own precision — JAX computes in float32 unless x64
-    is enabled, which this must not turn on process-wide. What is under test is which arm
-    each element takes, and picking the wrong arm moves a value far more than a rounding.
+    The tolerance follows the backend's own precision — JAX computes in float32 unless x64 is enabled, which this must not turn on process-wide. What is under test is which arm each element takes, and picking the wrong arm moves a value far more than a rounding.
     """
     expr = CASES[label]
     emitted = get_printer(fmt).doprint(expr)
@@ -158,8 +142,7 @@ def test_array_backends_branch_as_the_piecewise_does(fmt: str, label: str):
 def test_zero_default_is_not_emitted():
     """A zero default adds nothing to a sum, so it is left out rather than gated.
 
-    Without this, every single-branch expression grows a `(1 - H(…)) * 0` tail — six
-    curated models carry one.
+    Without this, every single-branch expression grows a `(1 - H(…)) * 0` tail — six curated models carry one.
     """
     emitted = get_printer("lems").doprint(CASES["one arm, zero default"])
     assert "* 0" not in emitted and not emitted.rstrip().endswith("+ 0"), emitted
@@ -193,11 +176,7 @@ def test_branch_value_cannot_escape_its_gate():
 def test_no_second_lowering_path_survives(module: str, names: list[str]):
     """Nothing may re-enter the string-rewriting path a `Piecewise` used to take.
 
-    A `Piecewise` is now built in exactly one place (`parse_eq`), printed in exactly one
-    place (`print_Piecewise`, through each printer's `_where3`), and rendered for humans in
-    exactly one place (`sympy.latex`). Each of these names was the second of one of those,
-    reachable by importing it — which is how the two spellings drifted apart in the first
-    place. Asserting their absence is what keeps the count at one.
+    A `Piecewise` is now built in exactly one place (`parse_eq`), printed in exactly one place (`print_Piecewise`, through each printer's `_where3`), and rendered for humans in exactly one place (`sympy.latex`). Each of these names was the second of one of those, reachable by importing it — which is how the two spellings drifted apart in the first place. Asserting their absence is what keeps the count at one.
     """
     import importlib
 

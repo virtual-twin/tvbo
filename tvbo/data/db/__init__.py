@@ -103,9 +103,7 @@ def load_study(citationkey: str):
 def load_bibliography():
     """Parse the bundled BibTeX literature database.
 
-    Cached: the file ships with the package and cannot change within a process, while
-    `get_citation` is called once per reference from inside template comprehensions — an
-    eight-reference report re-read the same 45 KiB, 115-entry file eight times at ~30 ms each.
+    Cached: the file ships with the package and cannot change within a process, while `get_citation` is called once per reference from inside template comprehensions — an eight-reference report re-read the same 45 KiB, 115-entry file eight times at ~30 ms each.
 
     Returns:
         The parsed `pybtex` bibliography for `tvbo/database/references.bib`.

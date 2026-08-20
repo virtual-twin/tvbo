@@ -1,17 +1,11 @@
 """Inspect the curated unit vocabulary, and promote a unit into it.
 
-TVBO reasons about a unit only when it holds that unit's facts — its scale, its base
-dimensions, its quantity kind. Those are vendored from QUDT rather than written here,
-so "curating a unit" means pulling its authoritative record in, not inventing one.
+TVBO reasons about a unit only when it holds that unit's facts — its scale, its base dimensions, its quantity kind. Those are vendored from QUDT rather than written here, so "curating a unit" means pulling its authoritative record in, not inventing one.
 
-The `unit` slot itself is open: an uncurated unit is recorded as written and carries no
-dimensional claim, so nothing is blocked while it waits. `add` is what turns it from
-recorded into reasoned-about.
+The `unit` slot itself is open: an uncurated unit is recorded as written and carries no dimensional claim, so nothing is blocked while it waits. `add` is what turns it from recorded into reasoned-about.
 """
 
 from __future__ import annotations
-
-from typing import List, Optional
 
 import typer
 
@@ -85,8 +79,8 @@ def show(unit: str = typer.Argument(..., help="A UnitEnum value, or any unit str
 @app.command("add")
 def add(
     unit: str = typer.Argument(..., help="The UnitEnum value to curate."),
-    qudt: Optional[str] = typer.Option(None, "--qudt", help="QUDT unit IRI, e.g. NanoSEC."),
-    factors: Optional[List[str]] = typer.Option(
+    qudt: str | None = typer.Option(None, "--qudt", help="QUDT unit IRI, e.g. NanoSEC."),
+    factors: list[str] | None = typer.Option(
         None,
         "--factor",
         help="Factor unit as QUDT_IRI:EXPONENT, repeatable — for a compound QUDT has no IRI for.",
@@ -94,10 +88,7 @@ def add(
 ) -> None:
     """Pull a unit's QUDT record into the vendored ontology.
 
-    Either name the QUDT unit directly, or decompose it into factor units TVBO already
-    vendors. The facts are transcribed or computed from those atoms — nothing about the
-    unit is authored here, which is what keeps the vocabulary authoritative rather than
-    locally parsed.
+    Either name the QUDT unit directly, or decompose it into factor units TVBO already vendors. The facts are transcribed or computed from those atoms — nothing about the unit is authored here, which is what keeps the vocabulary authoritative rather than locally parsed.
     """
     if bool(qudt) == bool(factors):
         raise typer.BadParameter("give exactly one of --qudt or one or more --factor")
