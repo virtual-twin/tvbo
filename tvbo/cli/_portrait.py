@@ -53,6 +53,16 @@ THEMES = {
 
 # Coverage ramp for the logo when the output cannot carry ``▀``/``▄``.
 SHADES_ASCII = " .:*#"
+# The wordmark, drawn in the brand blue. The real artwork is a raster mark; at
+# a dozen character cells it turns to mush, so the banner spells the name out
+# instead — ``hero(mark="logo")`` draws the artwork for anyone re-testing it.
+LOGO = (
+    "█████ █   █ ████   ███ ",
+    "  █   █   █ █   █ █   █",
+    "  █   █   █ ████  █   █",
+    "  █    █ █  █   █ █   █",
+    "  █     █   ████   ███ ",
+)
 TAGLINE = "The Virtual Brain Ontology"
 TAGLINE_SHORT = "Virtual Brain Ontology"
 
@@ -569,62 +579,68 @@ def _draw_flow(canvas: Canvas, th: dict, landed: list, x_min: int, x_max: int) -
 def hero(
     *,
     subtitle: str = "",
+    mark: str = "wordmark",
     theme: str = "dark",
     color_mode: str | None = None,
     width: int | None = None,
     cortex_path: Path | str = ASSET,
     logo_path: Path | str = LOGO_ASSET,
 ) -> str:
-    """The bare-``tvbo`` banner: the TVB-O logo left, a cortex right, one caption.
+    """The bare-``tvbo`` banner: the name on the left, a cortex on the right.
 
-    Both columns are the same height and the pair spans the full width — the
-    logo sits at the left edge, the cortex at the right. The logo is the real
-    mark, painted two pixels per character cell; the cortex is the shipped
+    The two columns share a height and the pair spans the full width — the mark
+    at the left edge, the cortex at the right. The cortex is the shipped
     surface shaded through :data:`SURFACE_RAMP`, which reads as a brain at this
-    size where a spec's own characters would not. ``tvbo brain`` is the
-    full-size, spec-drawn portrait.
+    size where a spec's own characters would not; ``tvbo brain`` is the
+    full-size, spec-drawn portrait. Pass ``mark="logo"`` to draw the raster
+    artwork instead of the wordmark.
     """
     th = THEMES[theme]
     mode = _color_mode(color_mode)
     cortex = load_cortex(cortex_path)
-    logo = load_logo(logo_path)
     cols = width or shutil.get_terminal_size((96, 30)).columns - 4
     ratio = len(cortex.light[0]) / len(cortex.light)
-    aspect = logo.width / logo.height
 
-    rows, logo_w, brain_w = _hero_layout(cols, aspect, ratio)
-    canvas = Canvas(cols, rows + 2)
+    if mark == "logo":
+        logo = load_logo(logo_path)
+        left_w, block = round(2 * HERO["min_rows"] * logo.width / logo.height), []
+    else:
+        logo = None
+        block = list(LOGO) + ["", TAGLINE] + ([subtitle] if subtitle else [])
+        left_w = max(len(line) for line in block)
 
-    _draw_logo(canvas, resample_logo(logo, logo_w, 2 * rows), th, blocks=mode != "none" and _blocks_printable())
+    rows, brain_w = _hero_layout(cols, left_w, len(block), ratio)
+    canvas = Canvas(cols, rows)
+
+    top = max(0, (rows - (len(block) or rows)) // 2)
+    if logo is not None:
+        _draw_logo(canvas, resample_logo(logo, min(left_w, cols), 2 * rows), th, blocks=mode != "none" and _blocks_printable())
+    for row, line in enumerate(block):
+        colour = th["accent"] if row < len(LOGO) else th["ink"]
+        for x, ch in enumerate(line[:cols]):
+            canvas.put(x, top + row, ch, colour)
+
     if brain_w:
         x_off = cols - brain_w
         ramp = SURFACE_RAMP if theme == "dark" else SURFACE_RAMP[::-1]
         for ch, x, y, tone, _, _, _ in _landed(cortex, ramp, {}, brain_w, rows, x_off, theme):
             canvas.put(x, y, ch, _grey(th, tone))
-
-    caption = f"{TAGLINE if len(TAGLINE) <= cols else TAGLINE_SHORT}"
-    if subtitle:
-        caption = f"{caption} · {subtitle}"
-    for x, ch in enumerate(caption[:cols]):
-        canvas.put(x, rows + 1, ch, th["ink"])
     return canvas.render(mode)
 
 
-def _hero_layout(cols: int, logo_aspect: float, cortex_ratio: float) -> tuple[int, int, int]:
-    """Pick ``(rows, logo_width, cortex_width)`` — equal-height columns that fit.
+def _hero_layout(cols: int, left_w: int, left_rows: int, cortex_ratio: float) -> tuple[int, int]:
+    """Pick ``(rows, cortex_width)`` — the tallest banner that fits both columns.
 
-    Both marks keep their own proportions, so the shared row count is what sets
-    each width; the tallest that still fits between the two edges wins. Below
-    the point where both fit, the cortex gives way and the logo stands alone.
+    The cortex keeps its own proportions, so the shared row count sets its
+    width; the left column is centred in whatever band that gives. Below the
+    width where both fit, the cortex gives way and the name stands alone.
     """
-    for rows in range(HERO["max_rows"], HERO["min_rows"] - 1, -1):
-        logo_w = round(2 * rows * logo_aspect)
+    floor = max(HERO["min_rows"], left_rows)
+    for rows in range(HERO["max_rows"], floor - 1, -1):
         brain_w = round(rows * cortex_ratio)
-        if logo_w + HERO["gutter"] + brain_w <= cols:
-            return rows, logo_w, brain_w
-    rows = HERO["min_rows"]
-    logo_w = min(round(2 * rows * logo_aspect), cols)
-    return rows, logo_w, 0
+        if left_w + HERO["gutter"] + brain_w <= cols:
+            return rows, brain_w
+    return floor, 0
 
 
 def render(

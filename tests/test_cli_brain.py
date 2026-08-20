@@ -44,11 +44,6 @@ def test_render_colours_a_terminal():
     assert "\x1b[38;2;" in out and out.endswith("\x1b[0m")
 
 
-def test_hero_paints_the_logo_with_a_backdrop_in_truecolor():
-    banner = _portrait.hero(color_mode="truecolor", width=90)
-    assert "\x1b[48;2;" in banner, "half-block cells carry a second pixel as their backdrop"
-
-
 def test_narrow_terminal_drops_the_spec_column():
     out = _portrait.render(color_mode="none", width=70, height=34)
     assert "name: ModelJansen1995" not in out
@@ -109,36 +104,39 @@ def test_resample_logo_keeps_its_aspect():
     assert abs(small.height / small.width - logo.height / logo.width) < 0.12
 
 
-def test_hero_spans_the_width_with_equal_height_columns():
+def test_hero_spans_the_width_with_the_cortex_at_the_right_edge():
     cols = 78
     banner = _portrait.hero(subtitle="tvbo 0.0.0", color_mode="none", width=cols)
     lines = banner.split("\n")
-    assert len(lines) <= _portrait.HERO["max_rows"] + 2, "the bare-tvbo banner stays small"
+    assert len(lines) <= _portrait.HERO["max_rows"], "the bare-tvbo banner stays small"
     assert max(len(line) for line in lines) == cols, "the cortex is flush with the right edge"
-
-    body = [line for line in lines[:-2]]
-    logo_rows = [y for y, line in enumerate(body) if line[:20].strip()]
-    cortex_rows = [y for y, line in enumerate(body) if line[cols - 20 :].strip()]
-    assert logo_rows and cortex_rows
-    assert max(logo_rows) - min(logo_rows) == max(cortex_rows) - min(cortex_rows), "columns share a height"
+    cortex_rows = [y for y, line in enumerate(lines) if line[cols - 20 :].strip()]
+    assert min(cortex_rows) == 0 and max(cortex_rows) == len(lines) - 1, "the cortex fills the band"
 
 
-def test_hero_caption_names_the_project_and_version():
+def test_hero_names_the_project_and_version_under_the_wordmark():
     banner = _portrait.hero(subtitle="tvbo 0.0.0", color_mode="none", width=78)
-    assert banner.split("\n")[-1].strip() == f"{_portrait.TAGLINE} · tvbo 0.0.0"
+    left = [line[:30].rstrip() for line in banner.split("\n")]
+    assert _portrait.TAGLINE in left and "tvbo 0.0.0" in left
+    assert left.index(_portrait.TAGLINE) > left.index(_portrait.LOGO[-1].rstrip())
 
 
-def test_hero_draws_the_logo_and_a_shaded_cortex():
+def test_hero_draws_the_wordmark_and_a_shaded_cortex():
     banner = _portrait.hero(color_mode="none", width=78)
-    assert any(ch in banner for ch in "▀▄" + _portrait.SHADES_ASCII[1:]), "the mark is drawn"
+    assert _portrait.LOGO[0].strip() in banner, "the wordmark is drawn"
     assert any(ch in banner for ch in _portrait.SURFACE_RAMP[1:]), "the cortex is shaded"
 
 
-def test_hero_keeps_the_logo_and_drops_the_cortex_when_very_narrow():
+def test_hero_keeps_the_name_and_drops_the_cortex_when_very_narrow():
     banner = _portrait.hero(color_mode="none", width=26)
     lines = banner.split("\n")
     assert max(len(line) for line in lines) <= 26
-    assert lines[0].strip(), "the logo still stands alone"
+    assert _portrait.LOGO[0].strip() in banner
+
+
+def test_hero_can_still_draw_the_raster_mark():
+    banner = _portrait.hero(mark="logo", color_mode="truecolor", width=78)
+    assert "\x1b[48;2;" in banner, "half-block cells carry a second pixel as their backdrop"
 
 
 def test_bare_tvbo_prints_the_command_list_when_captured():

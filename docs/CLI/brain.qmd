@@ -5,11 +5,11 @@ description: "The ASCII spec-to-cortex portrait: a model spec coming apart and r
 
 `tvbo brain` draws a model spec dissolving into a cortical surface built out of the spec's own characters — the terminal form of bsplot's [Spec to cortex](https://virtual-twin.github.io/bsplot/Usage/AsciiSpecPortrait/AsciiSpecPortrait.html) portrait.
 
-A bare `tvbo` shows the same surface at banner scale — the TVB-O logo pinned to the left edge, a cortex pinned to the right, the two columns the same height, and the command list underneath. Three details make that banner work:
+A bare `tvbo` shows the same surface at banner scale — the name on the left edge, a cortex on the right, and the command list underneath. Three details make that banner work:
 
-- the **logo** is the real mark, rendered from `docs/_static/tvbo_python_square.svg`. Each target pixel takes the *dominant* brand colour of its source block rather than a blend, so the mark stays two flat colours instead of smearing into intermediate tones, and it is painted two pixels per character cell — `▀` in the upper pixel's colour with the lower pixel as its backdrop. On a dark terminal it is lifted toward white, since the artwork is drawn for paper.
+- the **mark** is the wordmark spelled out in block characters, in the TVB-O brand blue. The real artwork is a raster logo; at a dozen character cells its letterforms turn to mush, so the banner spells the name instead. The artwork path is still there — `hero(mark="logo")` draws it, and `tvbo brain --save-logo` rebuilds its asset — for whenever a mark that survives the size turns up.
 - the **cortex** is shaded through the coarse `" .:-=+*#%@"` ramp, not a letters ramp: at a dozen rows tonal contrast is what makes it read as a brain, and letterforms only add noise. The lighting is re-stretched after resampling, because box-averaging a 156×60 grid down to 30 columns otherwise flattens every cell toward the mean.
-- both marks keep their own proportions, so the **shared row count** sets each width; the tallest pair that still fits between the two edges wins. Below the width where both fit, the cortex gives way and the logo stands alone.
+- the cortex keeps its own proportions, so the **shared row count** sets its width; the tallest band that still fits both columns between the two edges wins, and the name is centred in it. Below the width where both fit, the cortex gives way and the name stands alone.
 
 ## Synopsis
 
