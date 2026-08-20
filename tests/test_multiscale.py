@@ -7,10 +7,7 @@
 #
 """Smoke tests for the reservoir multi-scale flattening (``tvbo.multiscale``).
 
-The graph-generator engine (reservoir recurrence, SC loading, weight sampling)
-is monkeypatched with tiny synthetic arrays so the lowering logic — Kronecker
-assembly of ``W_global`` and the OOM size guard — is exercised without a real
-network file.
+The graph-generator engine (reservoir recurrence, SC loading, weight sampling) is monkeypatched with tiny synthetic arrays so the lowering logic — Kronecker assembly of ``W_global`` and the OOM size guard — is exercised without a real network file.
 """
 
 import numpy as np
@@ -101,8 +98,7 @@ def test_the_legacy_size_parameter_is_rejected_not_silently_defaulted(patched_en
     """`n` was the size parameter until it was replaced by `n_nodes`.
 
     Ignoring it would leave the size to fall through to the hardcoded 100-unit default:
-    a spec asking for 500 units would build 100, run to completion, and produce a
-    plausible reservoir with no indication the size was wrong.
+    a spec asking for 500 units would build 100, run to completion, and produce a plausible reservoir with no indication the size was wrong.
     """
     spec = _minimal_experiment()
     params = spec["network"]["node_template"]["subnetwork"]["graph_generator"]["parameters"]

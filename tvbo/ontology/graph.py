@@ -1,12 +1,7 @@
-#  graph.py
-#
-# Created on Mon Aug 07 2023
-# Author: Leon K. Martin
-#
-# Copyright (c) 2023 Charité Universitätsmedizin Berlin
-#
-"""
-# Graph-based representation of the ontology.
+# Copyright © 2023 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
+
+"""# Graph-based representation of the ontology.
 
 This module contains functions for representing ontology-based structures as graphs, and various utilities for manipulating and visualizing these graphs.
 
@@ -23,7 +18,7 @@ This module contains functions for representing ontology-based structures as gra
 # TODO: review the commented code in this file
 import re
 from itertools import count
-from typing import Dict, Any, List
+from typing import Any
 
 import networkx as nx
 import numpy as np
@@ -32,15 +27,11 @@ from sympy import latex, symbols
 
 from tvbo.ontology import owl as ontology
 
-
-###################
 # networkX Graphs #
-###################
 
 
 def edge_exists(G: nx.MultiDiGraph, source, target, edge_type: str) -> bool:
-    """
-    Check if an edge with the given type exists between source and target in a MultiDiGraph.
+    """Check if an edge with the given type exists between source and target in a MultiDiGraph.
 
     Args:
         G (nx.MultiDiGraph): The graph.
@@ -60,8 +51,7 @@ def edge_exists(G: nx.MultiDiGraph, source, target, edge_type: str) -> bool:
 def onto2graph(
     onto="default", add_object_properties: bool = True, storid: bool = False, object2string: bool = True
 ) -> nx.MultiDiGraph:
-    """
-    Convert an ontology into a NetworkX directed graph.
+    """Convert an ontology into a NetworkX directed graph.
 
     The function generates a directed graph (`DiGraph`) where:
 
@@ -191,8 +181,7 @@ def onto2graph(
 
 # TODO: add_object_properties is not used, remove it?
 def owl2nx_digraph(onto="default", add_object_properties: bool = True, object2string: bool = True) -> nx.MultiDiGraph:
-    """
-    Convert an ontology into a NetworkX directed graph.
+    """Convert an ontology into a NetworkX directed graph.
 
     The function generates a directed graph (`DiGraph`) where:
 
@@ -297,8 +286,7 @@ def owl2nx_digraph(onto="default", add_object_properties: bool = True, object2st
 
 
 def nx2mermaid(G: nx.Graph, id_as_label: bool = False) -> str:
-    """
-    Convert a NetworkX graph to a Mermaid representation.
+    """Convert a NetworkX graph to a Mermaid representation.
 
     Parameters:
     -----------
@@ -340,20 +328,19 @@ def nx2mermaid(G: nx.Graph, id_as_label: bool = False) -> str:
             s = s.replace(k, v)
             o = o.replace(k, v)
 
-        mm_list.append("{}[{}] --> {}[{}]".format(s_id, s, o_id, o))
+        mm_list.append(f"{s_id}[{s}] --> {o_id}[{o}]")
 
     mm = "\n".join(["\t" + m for m in mm_list])
 
-    mm_graph = """
+    mm_graph = f"""
     flowchart TD
-    {}
-    """.format(mm)
+    {mm}
+    """
     return mm_graph
 
 
-def get_color_mapping(g: nx.Graph, by: str = "type") -> Dict[Any, int]:
-    """
-    Map nodes of a graph to distinct colors based on a node attribute.
+def get_color_mapping(g: nx.Graph, by: str = "type") -> dict[Any, int]:
+    """Map nodes of a graph to distinct colors based on a node attribute.
 
     Parameters:
     -----------
@@ -374,9 +361,7 @@ def get_color_mapping(g: nx.Graph, by: str = "type") -> Dict[Any, int]:
     return color_mapping
 
 
-###################
 # Model Selection #
-###################
 
 
 def subset2graph(
@@ -384,13 +369,12 @@ def subset2graph(
     add_object_properties: bool = True,
     add_annotation_properties: bool = True,
     add_individuals: bool = True,
-    individual_relationships: List[str] = ["has_reference"],
+    individual_relationships: list[str] | None = None,
     expand_nodes: bool = False,
 ) -> nx.MultiDiGraph:
     """Build a directed multigraph from a subset of ontology classes.
 
-    Each class in `subset` becomes a node with `is_a` edges to its parent classes and, optionally, edges derived from object-property restrictions and
-    links from individuals that reference the class.
+    Each class in `subset` becomes a node with `is_a` edges to its parent classes and, optionally, edges derived from object-property restrictions and links from individuals that reference the class.
 
     Args:
         subset: Iterable of ontology classes (owlready2 `ThingClass`) to include
@@ -412,6 +396,8 @@ def subset2graph(
         A `networkx.MultiDiGraph` of the subset with hierarchy, object-property,
         and individual-reference edges.
     """
+    if individual_relationships is None:
+        individual_relationships = ["has_reference"]
     G = nx.MultiDiGraph()
     for cls in subset:
         if isinstance(cls, owl.class_construct.Restriction):
@@ -447,8 +433,7 @@ def subset2graph(
 def hierarchy_graph(G: nx.MultiDiGraph) -> nx.MultiDiGraph:
     """Extract the `is_a` hierarchy of a graph into a new multigraph.
 
-    Copies only the edges whose `type` attribute equals `"is_a"`, together with their incident nodes and attributes, dropping all object-property and other
-    relation edges.
+    Copies only the edges whose `type` attribute equals `"is_a"`, together with their incident nodes and attributes, dropping all object-property and other relation edges.
 
     Args:
         G: Source graph whose edges carry a `type` attribute.
@@ -471,9 +456,7 @@ def hierarchy_graph(G: nx.MultiDiGraph) -> nx.MultiDiGraph:
 def model2graph(model) -> nx.MultiDiGraph:
     """Build a dependency graph of a model's dynamics components.
 
-    Resolves `model` (by name if given as a string), walks its descendant classes, and keeps only those categorised as a `Parameter`, `StateVariable`,
-    `TimeDerivative`, `Function`, or `ConditionalDerivedVariable`. Each retained class becomes a node tagged with its category, with `is_a` edges to parent
-    classes and object-property edges to other in-model classes.
+    Resolves `model` (by name if given as a string), walks its descendant classes, and keeps only those categorised as a `Parameter`, `StateVariable`, `TimeDerivative`, `Function`, or `ConditionalDerivedVariable`. Each retained class becomes a node tagged with its category, with `is_a` edges to parent classes and object-property edges to other in-model classes.
 
     Args:
         model: A model class, or the name of a model to resolve via
@@ -511,34 +494,25 @@ def model2graph(model) -> nx.MultiDiGraph:
 
         for isa in cls.is_a:
             if isinstance(isa, owl.ThingClass):
-                # print(cls, "is_a", isa)
                 G.add_edge(cls, isa, type="is_a")
 
             if isinstance(isa, owl.Restriction) and isa.value in model.descendants():
                 if isinstance(isa.property, owl.prop.DataPropertyClass):
                     continue
-                # print(cls, isa.property.name, isa.value)
                 G.add_edge(cls, isa.value, type=isa.property.name)
 
-        # if isinstance(isa, owl.Restriction) and isa.value in model.descendants(
-        #     include_self=False
-        # ):
-
     G = G.subgraph(include_nodes)
-    # isolated = list(nx.isolates(G))
     G = G.copy()
-    # G.remove_nodes_from(isolated)
 
     return G
 
 
 def adjust_positions(
-    pos: Dict[Any, np.ndarray], threshold_percent: int = 10, direction: str = "xy", mode: str = "outward"
-) -> Dict[Any, np.ndarray]:
+    pos: dict[Any, np.ndarray], threshold_percent: int = 10, direction: str = "xy", mode: str = "outward"
+) -> dict[Any, np.ndarray]:
     """Nudge node positions apart or together along the chosen axes.
 
-    Compares every pair of points and, where their separation along an axis is below (outward mode) or above (inward mode) a threshold expressed as a
-    percentage of the layout span, shifts the two points relative to each other to enforce the spacing.
+    Compares every pair of points and, where their separation along an axis is below (outward mode) or above (inward mode) a threshold expressed as a percentage of the layout span, shifts the two points relative to each other to enforce the spacing.
 
     Args:
         pos: Mapping from node to its 2-D position array.
@@ -588,11 +562,10 @@ def adjust_positions(
     return adjusted_pos
 
 
-def labels_as_symbols(G: nx.Graph) -> Dict[Any, str]:
+def labels_as_symbols(G: nx.Graph) -> dict[Any, str]:
     """Map graph nodes to LaTeX-rendered symbol labels.
 
-    For each node exposing a non-empty `symbol` annotation, the label is that symbol typeset as inline LaTeX (e.g. `$x$`); nodes without a symbol map to
-    themselves.
+    For each node exposing a non-empty `symbol` annotation, the label is that symbol typeset as inline LaTeX (e.g. `$x$`); nodes without a symbol map to themselves.
 
     Args:
         G: Graph whose nodes may carry a `symbol` annotation property.

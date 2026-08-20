@@ -1,10 +1,6 @@
 """The PDE/FEM backend integrates the equation that was declared.
 
-The backend it replaces never parsed ``equation.rhs``: it summed ``operators[].coefficient``
-into one scalar and assembled ``M + dt*D*K``, so a spec could print one equation and run
-another — the exact failure a declarative framework exists to prevent. These tests pin the
-operator to the declaration, and check the physics rather than the emitted text: a grep
-over generated source cannot tell a Laplacian from its negative.
+The backend it replaces never parsed ``equation.rhs``: it summed ``operators[].coefficient`` into one scalar and assembled ``M + dt*D*K``, so a spec could print one equation and run another — the exact failure a declarative framework exists to prevent. These tests pin the operator to the declaration, and check the physics rather than the emitted text: a grep over generated source cannot tell a Laplacian from its negative.
 """
 
 import numpy as np
@@ -61,9 +57,7 @@ def _gaussian(nodes):
 
 
 def test_diffusion_conserves_its_integral_on_a_closed_domain(mesh_path):
-    """With no boundary constraint the natural BC is zero-flux, so ``int(u)`` is exactly
-    invariant. The conserved quantity is ``1.M.u`` — the nodal sum is not conserved and
-    checking it instead would report a spurious 2 % drift."""
+    """With no boundary constraint the natural BC is zero-flux, so ``int(u)`` is exactly invariant. The conserved quantity is ``1.M.u`` — the nodal sum is not conserved and checking it instead would report a spurious 2 % drift."""
     exp = _experiment(mesh_path, [_sv("u", "D * laplacian(u)")], {"D": {"name": "D", "value": 0.01}})
     ns = exp.execute("pde")
     meta = ns["meta"]
@@ -90,8 +84,7 @@ def test_dirichlet_boundary_drains_the_field(mesh_path):
 
 
 def test_reaction_term_decays_at_the_declared_rate(mesh_path):
-    """``- k*u`` is a term the old backend could not express at all: it only assembled a
-    diffusion operator, so this equation would have run as pure diffusion."""
+    """``- k*u`` is a term the old backend could not express at all: it only assembled a diffusion operator, so this equation would have run as pure diffusion."""
     k = 2.0
     exp = _experiment(
         mesh_path,
@@ -120,8 +113,7 @@ vanishes and the system is exactly critically damped: ``phi = phi0 (1 + g t) exp
 
 @pytest.mark.parametrize("method,expected_order", [("crank-nicolson", 2.0), ("implicit Euler", 1.0)])
 def test_damped_wave_matches_the_analytic_solution_at_the_stated_order(mesh_path, method, expected_order):
-    """A second-order-in-time system, which the previous backend could not express: it
-    read only ``state_variables[0]`` and assembled a single first-order equation."""
+    """A second-order-in-time system, which the previous backend could not express: it read only ``state_variables[0]`` and assembled a single first-order equation."""
     g = 2.0
     errors = []
     for dt in (0.02, 0.01, 0.005):
@@ -137,9 +129,7 @@ def test_damped_wave_matches_the_analytic_solution_at_the_stated_order(mesh_path
 
 
 def test_divergence_form_with_constant_coefficient_equals_a_plain_laplacian(mesh_path):
-    """``div(c*grad(u))`` at constant ``c`` and ``c*laplacian(u)`` are the same operator,
-    so they must agree to round-off — the check that the weighted assembly is not merely
-    plausible but identical where the two forms coincide."""
+    """``div(c*grad(u))`` at constant ``c`` and ``c*laplacian(u)`` are the same operator, so they must agree to round-off — the check that the weighted assembly is not merely plausible but identical where the two forms coincide."""
     varying = _experiment(mesh_path, [_sv("u", "div(c * grad(u))")], {"c": {"name": "c", "value": None}})
     ns = varying.execute("pde")
     assert ns["meta"]["requires_fields"] == ["c"]
@@ -155,8 +145,7 @@ def test_divergence_form_with_constant_coefficient_equals_a_plain_laplacian(mesh
 
 
 def test_spatially_varying_coefficient_still_conserves(mesh_path):
-    """The divergence form is conservative whatever the coefficient does — that is the
-    reason to prefer it over ``c(x)*laplacian(u)`` for a heterogeneous medium."""
+    """The divergence form is conservative whatever the coefficient does — that is the reason to prefer it over ``c(x)*laplacian(u)`` for a heterogeneous medium."""
     varying = _experiment(mesh_path, [_sv("u", "div(c * grad(u))")], {"c": {"name": "c", "value": None}})
     build = varying.execute("pde")["build"]
     _, _, meta = build(fields={"c": 0.01})
@@ -192,15 +181,10 @@ def producer_module(tmp_path_factory):
 
 
 def test_a_produced_coefficient_field_needs_no_hand_off(mesh_path, producer_module):
-    """A coefficient declaring a ``producer:`` is resolved at codegen, so the experiment runs
-    unattended — ``run("pde")`` with nothing passed in.
+    """A coefficient declaring a ``producer:`` is resolved at codegen, so the experiment runs unattended — ``run("pde")`` with nothing passed in.
 
     Without this the PDE backend could express a heterogeneous medium but not *declare* one:
-    ``solve_pde`` was None whenever a field parameter existed, so every such experiment
-    needed a Python caller to hand the array to ``build()``, which is the driver a
-    declarative recipe exists to remove. The produced values are checked to reach the
-    operator rather than merely to exist: an array that resolved but was dropped would leave
-    this identical to the constant-coefficient run.
+    ``solve_pde`` was None whenever a field parameter existed, so every such experiment needed a Python caller to hand the array to ``build()``, which is the driver a declarative recipe exists to remove. The produced values are checked to reach the operator rather than merely to exist: an array that resolved but was dropped would leave this identical to the constant-coefficient run.
     """
     from tvbo.data.mesh_io import read_mesh
 
@@ -238,8 +222,7 @@ def test_a_produced_coefficient_field_needs_no_hand_off(mesh_path, producer_modu
 
 
 def test_a_field_coefficient_on_a_bare_laplacian_is_refused(mesh_path):
-    """``c(x)*laplacian(u)`` has no exact FEM assembly. Refusing it names the divergence
-    form instead of silently assembling something adjacent."""
+    """``c(x)*laplacian(u)`` has no exact FEM assembly. Refusing it names the divergence form instead of silently assembling something adjacent."""
     exp = _experiment(mesh_path, [_sv("u", "c * laplacian(u)")], {"c": {"name": "c", "value": None}})
     with pytest.raises(FieldPlanError, match="divergence form"):
         field_assembly_plan(exp)
@@ -257,8 +240,7 @@ def test_an_unimplemented_boundary_condition_raises(mesh_path):
 
 
 def test_the_equation_drives_the_operator_not_the_operators_list(mesh_path):
-    """The regression that motivated the rewrite: changing only the coefficient in the
-    EQUATION must change the result, even when ``operators:`` says something else."""
+    """The regression that motivated the rewrite: changing only the coefficient in the EQUATION must change the result, even when ``operators:`` says something else."""
     plans = []
     for value in (0.01, 0.05):
         exp = _experiment(mesh_path, [_sv("u", "D * laplacian(u)")], {"D": {"name": "D", "value": value}})
@@ -276,8 +258,7 @@ def test_run_returns_a_timeseries_with_one_entry_per_field_variable(mesh_path):
 
 
 def test_a_constant_source_term_in_the_equation_is_actually_applied(mesh_path):
-    """A term the block assembly cannot take (here a constant drive) is evaluated each
-    step rather than dropped. Steady state of ``u_t = D*lap(u) - k*u + S`` is ``S/k``."""
+    """A term the block assembly cannot take (here a constant drive) is evaluated each step rather than dropped. Steady state of ``u_t = D*lap(u) - k*u + S`` is ``S/k``."""
     k, S = 2.0, 6.0
     exp = _experiment(
         mesh_path,
@@ -309,9 +290,7 @@ V1_PULSE = {
 
 
 def test_a_declared_stimulus_event_actually_drives_the_field(mesh_path):
-    """`events:` is how a recipe declares a drive, so the backend must substitute it into
-    the equation that names it. Dropping it leaves a field that is quiet, plausible and
-    wrong — the failure mode that motivated parsing the RHS in the first place."""
+    """`events:` is how a recipe declares a drive, so the backend must substitute it into the equation that names it. Dropping it leaves a field that is quiet, plausible and wrong — the failure mode that motivated parsing the RHS in the first place."""
     exp = _experiment(
         mesh_path,
         [_sv("u", "D * laplacian(u) - k * u + Q")],
@@ -347,8 +326,7 @@ def test_an_event_redefining_a_model_parameter_is_refused(mesh_path):
 def sphere_path(tmp_path_factory, icosphere):
     """A closed surface written out as a mesh file — the cortical case in miniature.
 
-    Closed means no boundary facets at all, which is the geometry every brain-surface field
-    equation is posed on and the one a planar test cannot exercise.
+    Closed means no boundary facets at all, which is the geometry every brain-surface field equation is posed on and the one a planar test cannot exercise.
     """
     import meshio
 
@@ -372,9 +350,7 @@ def _wave_experiment(path, gamma, r_s, dt, duration):
 def _modal_system(meta, gamma, r_s, n_modes=None):
     """The eigenbasis of the assembled operators, and each mode's damped-oscillator matrix.
 
-    Solving ``K psi = lambda M psi`` with ``psi`` mass-orthonormal is what turns eq (9) into
-    one ODE per mode: the Laplacian becomes multiplication by ``-lambda`` and the equations
-    stop referring to each other.
+    Solving ``K psi = lambda M psi`` with ``psi`` mass-orthonormal is what turns eq (9) into one ODE per mode: the Laplacian becomes multiplication by ``-lambda`` and the equations stop referring to each other.
     """
     from scipy.linalg import eigh
 
@@ -404,11 +380,7 @@ def _integrate_modes(modes, jacobians, meta, phi0, steps, theta=0.5):
 def test_the_field_solution_is_exactly_its_modal_ode_system(sphere_path):
     """Pang2023 integrates ODEs, not the PDE it prints — and that is not an approximation.
 
-    Expanding the field in the Laplace-Beltrami eigenbasis turns eq (9) into one damped
-    oscillator per mode; with the FULL discrete basis the reformulation is exact, so the two
-    solutions must agree to round-off rather than merely closely. Pinning it as an equality
-    is what licenses reading the study's residual as truncation and nothing else: a
-    reformulation that were only approximate would put its own error in that number.
+    Expanding the field in the Laplace-Beltrami eigenbasis turns eq (9) into one damped oscillator per mode; with the FULL discrete basis the reformulation is exact, so the two solutions must agree to round-off rather than merely closely. Pinning it as an equality is what licenses reading the study's residual as truncation and nothing else: a reformulation that were only approximate would put its own error in that number.
     """
     gamma, r_s, dt, steps = 116.0, 28.9, 1e-4, 200
     ns = _wave_experiment(sphere_path, gamma, r_s, dt, steps * dt).execute("pde")
@@ -427,10 +399,7 @@ def test_the_field_solution_is_exactly_its_modal_ode_system(sphere_path):
 
 
 def test_truncating_the_mode_basis_is_what_makes_the_two_disagree(sphere_path):
-    """The paper keeps 200 modes of a 32k-vertex surface and states no error for it. Here
-    the same truncation is applied to a surface small enough to hold its whole basis, so
-    the residual against the field solution is attributable: it falls monotonically as
-    modes are added and reaches round-off only when the basis is complete."""
+    """The paper keeps 200 modes of a 32k-vertex surface and states no error for it. Here the same truncation is applied to a surface small enough to hold its whole basis, so the residual against the field solution is attributable: it falls monotonically as modes are added and reaches round-off only when the basis is complete."""
     gamma, r_s, dt, steps = 116.0, 28.9, 1e-4, 200
     ns = _wave_experiment(sphere_path, gamma, r_s, dt, steps * dt).execute("pde")
     meta = ns["meta"]
@@ -453,8 +422,7 @@ def test_truncating_the_mode_basis_is_what_makes_the_two_disagree(sphere_path):
 
 
 def test_a_state_dependent_nonlinear_term_is_integrated_explicitly(mesh_path):
-    """Logistic growth is nonlinear, so it cannot enter the implicit block; it is carried
-    as the explicit remainder and must still reach the declared carrying capacity."""
+    """Logistic growth is nonlinear, so it cannot enter the implicit block; it is carried as the explicit remainder and must still reach the declared carrying capacity."""
     exp = _experiment(
         mesh_path,
         [_sv("u", "D * laplacian(u) + r*u*(1 - u)", initial_value=0.1)],

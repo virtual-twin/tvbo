@@ -1,18 +1,13 @@
 """Tests for the declarative ``equation:`` analysis form and its tvboptim renderer.
 
-Locks in the contract that makes an analysis metadata-native rather than a pointer at
-arbitrary ``code/`` Python: the expression lowers to JAX, ``apply_on_dimension`` becomes
-a vmap over that axis, ``aggregate`` reduces a named one, and the output's axis names are
-DERIVED from that declaration and cross-checked against the result — never read off its
-shape. An expression that reshapes must say so with ``dims:``.
+Locks in the contract that makes an analysis metadata-native rather than a pointer at arbitrary ``code/`` Python: the expression lowers to JAX, ``apply_on_dimension`` becomes a vmap over that axis, ``aggregate`` reduces a named one, and the output's axis names are DERIVED from that declaration and cross-checked against the result — never read off its shape. An expression that reshapes must say so with ``dims:``.
 
-The sharding tests read the device count from ``conftest`` rather than requesting their
-own. Appending a second ``--xla_force_host_platform_device_count`` here used to override
-it, but only when this module was imported before JAX — so the suite saw 4 devices alone
-and 8 alongside other tests, and an assertion that held at 4 failed at 8.
+The sharding tests read the device count from ``conftest`` rather than requesting their own. Appending a second ``--xla_force_host_platform_device_count`` here used to override it, but only when this module was imported before JAX — so the suite saw 4 devices alone and 8 alongside other tests, and an assertion that held at 4 failed at 8.
 """
 
 from __future__ import annotations
+
+import os
 
 import numpy as np
 import pytest
@@ -193,7 +188,7 @@ def test_equation_without_rhs_is_refused():
 
 
 def test_mapped_and_serial_results_agree():
-    """vmap over the declared axis must not change the answer."""
+    """Vmap over the declared axis must not change the answer."""
     rng = np.random.default_rng(0)
     a = _da(rng.normal(size=(6, 4)), ["subject", "mode"])
     b = _da(rng.normal(size=(4,)), ["mode"])
@@ -291,16 +286,13 @@ COHORT_SIZE = 7
 def _shard_count(workers):
     """Shards the renderer will use: ``min(workers, devices, items)``.
 
-    The clamp is three-way, so the shard count is NOT the device count whenever the
-    cohort is smaller than the machine — 8 devices and 7 subjects shard 7 ways. Asserting
-    against the device count instead passed only on hosts with at most 7 usable devices.
+    The clamp is three-way, so the shard count is NOT the device count whenever the cohort is smaller than the machine — 8 devices and 7 subjects shard 7 ways. Asserting against the device count instead passed only on hosts with at most 7 usable devices.
     """
     return min(workers, _device_count(), COHORT_SIZE)
 
 
 def _cohort(n=COHORT_SIZE, m=3, seed=0):
-    """A ragged cohort — 7 subjects, never evenly divisible — so padding and trimming
-    are always exercised."""
+    """A ragged cohort — 7 subjects, never evenly divisible — so padding and trimming are always exercised."""
     rng = np.random.default_rng(seed)
     a = _da(rng.normal(size=(n, m)), ["subject", "mode"], {"subject": np.arange(n)})
     b = _da(rng.normal(size=(m,)), ["mode"])
@@ -411,6 +403,73 @@ def test_auto_width_is_bounded_by_the_per_lane_memory_budget(monkeypatch):
     analysis = _Analysis(apply_on_dimension="subject", execution=_Execution(n_workers=1))
     _, n_vmap = analysis_io._device_plan(analysis, 64, 512)
     assert n_vmap == max(1, 1024 // (512 * callbacks.shared_ram_device_count()))
+
+
+class _FakeDevice:
+    """Stand-in for a JAX device, carrying only the platform the resolvers read."""
+
+    def __init__(self, platform):
+        self.platform = platform
+
+
+def _patch_devices(monkeypatch, platform, count):
+    from tvbo.templates.tvboptim import callbacks
+
+    monkeypatch.setattr(callbacks, "_devices", lambda: tuple(_FakeDevice(platform) for _ in range(count)))
+
+
+def test_cpu_replicas_stop_at_the_cores_the_process_may_use(monkeypatch):
+    """`xla_force_host_platform_device_count` slices one machine, so replicas past its cores contend rather than compute."""
+    from tvbo.templates.tvboptim import callbacks
+
+    _patch_devices(monkeypatch, "cpu", 8)
+    monkeypatch.setattr(callbacks, "usable_cpu_count", lambda: 2)
+    assert callbacks.resolve_exploration_n_pmap(1024, 1) == 2
+    assert callbacks.shared_ram_device_count() == 8
+
+
+def test_cpu_slices_within_the_core_budget_still_fan_out(monkeypatch):
+    """One cell's integration rarely saturates a large node, so the slices below the core bound are real parallelism."""
+    from tvbo.templates.tvboptim import callbacks
+
+    _patch_devices(monkeypatch, "cpu", 64)
+    monkeypatch.setattr(callbacks, "usable_cpu_count", lambda: 64)
+    assert callbacks.resolve_exploration_n_pmap(1024, 1) == 64
+
+
+def test_accelerators_keep_their_count(monkeypatch):
+    """Each GPU is its own hardware, so a grid wide enough to use them all fans out across them."""
+    from tvbo.templates.tvboptim import callbacks
+
+    _patch_devices(monkeypatch, "gpu", 4)
+    assert callbacks.resolve_exploration_n_pmap(1024, 1) == 4
+    assert callbacks.shared_ram_device_count() == 1
+
+
+@pytest.mark.parametrize("grid_n,n_vmap,expected", [(4, 1, 4), (4, 2, 2), (4, 4, 1), (1, 1, 1)])
+def test_no_more_replicas_than_the_grid_has_chunks(monkeypatch, grid_n, n_vmap, expected):
+    """Replicas past `ceil(grid_n / n_vmap)` would only pad the batch with cells nobody asked for."""
+    from tvbo.templates.tvboptim import callbacks
+
+    _patch_devices(monkeypatch, "gpu", 8)
+    assert callbacks.resolve_exploration_n_pmap(grid_n, n_vmap) == expected
+
+
+def test_a_cpuset_narrower_than_the_machine_bounds_the_fan_out(monkeypatch):
+    """A container or Slurm allocation gives the process a subset of the host's CPUs; sizing by the host would oversubscribe it."""
+    from tvbo.templates.tvboptim import callbacks
+
+    monkeypatch.setattr(os, "sched_getaffinity", lambda _pid: {0, 1, 2}, raising=False)
+    monkeypatch.delattr(os, "process_cpu_count", raising=False)
+    assert callbacks.usable_cpu_count() == 3
+
+
+def test_a_missing_device_list_still_resolves(monkeypatch):
+    """JAX absent or refusing to enumerate leaves one replica, not a crash mid-run."""
+    from tvbo.templates.tvboptim import callbacks
+
+    monkeypatch.setattr(callbacks, "_devices", lambda: ())
+    assert callbacks.resolve_exploration_n_pmap(1024, 1) == 1
 
 
 # ------------------------------------------------------- accelerator is declared too

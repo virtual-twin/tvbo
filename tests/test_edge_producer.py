@@ -1,16 +1,8 @@
 """An `Edge` may declare a `producer:`, so a matrix is computed rather than pre-built.
 
-`producer:` already said HOW a derived value is made, but only a `Parameter` carried it —
-so a network whose weight matrix is a deterministic function of the spec's own inputs (a
-mesh operator, a rule-generated connectome) had no way to say so. Anything too large to
-inline had to be written out by a prep script and referenced by path, which means the spec
-could not execute until someone ran that script, and the file could drift from the recipe
-that described it without anything noticing.
+`producer:` already said HOW a derived value is made, but only a `Parameter` carried it — so a network whose weight matrix is a deterministic function of the spec's own inputs (a mesh operator, a rule-generated connectome) had no way to say so. Anything too large to inline had to be written out by a prep script and referenced by path, which means the spec could not execute until someone ran that script, and the file could drift from the recipe that described it without anything noticing.
 
-The trap this pins is the one that actually bit: the accessors do NOT agree on one entry
-point. `matrix()` walks a resolution order; `weights` reads `_arrays` directly. Resolving
-the producer in only one of them leaves the other silently falling through to whatever it
-does when a connectome is missing — a full run that completes and is wrong.
+The trap this pins is the one that actually bit: the accessors do NOT agree on one entry point. `matrix()` walks a resolution order; `weights` reads `_arrays` directly. Resolving the producer in only one of them leaves the other silently falling through to whatever it does when a connectome is missing — a full run that completes and is wrong.
 """
 
 from __future__ import annotations
@@ -87,7 +79,7 @@ def test_it_is_built_once_however_many_accessors_ask(producer_module):
 
     net = _network(_call("ring", n=4))
     net.matrix("weight")
-    net.weights
+    _ = net.weights
     net.matrix("weight")
     assert len(edge_producers.CALLS) == 1
 
@@ -109,9 +101,12 @@ def test_output_picks_one_array_out_of_a_producer_returning_several(producer_mod
 
 
 def test_the_edge_label_names_the_matrix_it_produces(producer_module):
-    """A producer on `length` must not answer a request for `weight`."""
+    """A producer on `length` must not answer a request for `weight`.
+
+    The weight target falls back to the unconnected zeros every consumer expects, NOT to the ring the length producer built — a produced matrix answering under the wrong name is a run that completes against the wrong connectome.
+    """
     net = _network(_call("ring", n=4), label="length")
-    assert net.matrix("weight") is None
+    np.testing.assert_array_equal(np.asarray(net.matrix("weight")), np.zeros((4, 4)))
     assert net.matrix("length") is not None
 
 
@@ -127,14 +122,21 @@ def test_a_failed_producer_is_retried_rather_than_latched(producer_module):
     with pytest.raises(ValueError):
         net.matrix("weight")
     with pytest.raises(ValueError, match="returned nothing"):
-        net.weights
+        _ = net.weights
 
 
 def test_an_edge_without_a_producer_costs_nothing(producer_module):
+    """A declared edge carrying no producer resolves nothing — no module import, no call.
+
+    The weight target still yields the unconnected zeros, which is the resolution's floor rather than anything this edge contributed.
+    """
+    import edge_producers
+
     from tvbo.datamodel.schema import Edge
 
     net = Network(number_of_nodes=2, nodes=[], edges=[Edge(label="weight", weighted=True)])
-    assert net.matrix("weight") is None
+    np.testing.assert_array_equal(np.asarray(net.matrix("weight")), np.zeros((2, 2)))
+    assert edge_producers.CALLS == []
 
 
 def test_producer_and_a_literal_are_mutually_exclusive(producer_module):

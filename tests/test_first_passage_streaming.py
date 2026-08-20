@@ -1,15 +1,8 @@
 """A first-passage observation must be able to stream instead of keeping its trajectory.
 
-``aggregation: first_passage`` is computed post-scan as an ``argmax`` over the time axis, which
-means every cell of a sweep has to deliver its whole trajectory to the host before the reduction
-runs. That is what caps a declarative first-passage sweep: a 31x31 grid of the Schirner2023
-decision circuit was OOM-killed at an 8.3 GB peak, in the phase after the last grid batch, while
-the same grid through a row-chunked reference integrator held 371 MB.
+``aggregation: first_passage`` is computed post-scan as an ``argmax`` over the time axis, which means every cell of a sweep has to deliver its whole trajectory to the host before the reduction runs. That is what caps a declarative first-passage sweep: a 31x31 grid of the Schirner2023 decision circuit was OOM-killed at an 8.3 GB peak, in the phase after the last grid batch, while the same grid through a row-chunked reference integrator held 371 MB.
 
-The crossing index is a two-scalar recurrence, so ``reduce: streaming`` now folds it into the
-integrator carry. Streaming is only worth having if it agrees with the post-scan form exactly,
-so that equality is the test — on a source that crosses mid-run, on one that crosses at the very
-first sample, and on one that never crosses at all.
+The crossing index is a two-scalar recurrence, so ``reduce: streaming`` now folds it into the integrator carry. Streaming is only worth having if it agrees with the post-scan form exactly, so that equality is the test — on a source that crosses mid-run, on one that crosses at the very first sample, and on one that never crosses at all.
 """
 
 import numpy as np
@@ -54,9 +47,7 @@ observations:
 def run(k, x0):
     exp = SimulationExperiment.from_string(SPEC % {"k": k, "x0": x0})
     obs = exp.run("tvboptim").observations
-    # Squeezed: the post-scan path keeps a leading singleton axis the streaming path does not,
-    # for a streamed mean as much as for this — a shape difference between the two reduction
-    # paths that predates streaming first passage and is not what this test is about.
+    # Squeezed: the post-scan path keeps a leading singleton axis the streaming path does not, for a streamed mean as much as for this — a shape difference between the two reduction paths that predates streaming first passage and is not what this test is about.
     return tuple(np.squeeze(np.asarray(getattr(obs[n], "values", obs[n]))) for n in ("t_host", "t_stream"))
 
 
@@ -97,8 +88,7 @@ LAST_SPEC = SPEC.replace(
 def test_streamed_last_equals_the_post_scan_form():
     """``last`` streams too, because the decision panels need it beside the crossing index.
 
-    A first-passage sweep is only trajectory-free if *every* observation it feeds is: one
-    post-scan ``data[-1]`` left behind puts the whole trajectory back on the host.
+    A first-passage sweep is only trajectory-free if *every* observation it feeds is: one post-scan ``data[-1]`` left behind puts the whole trajectory back on the host.
     """
     obs = SimulationExperiment.from_string(LAST_SPEC % {"k": 0.5, "x0": 0.0}).run("tvboptim").observations
     host, stream = (np.squeeze(np.asarray(getattr(obs[n], "values", obs[n]))) for n in ("last_host", "last_stream"))

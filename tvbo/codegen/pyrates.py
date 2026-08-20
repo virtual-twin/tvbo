@@ -1,14 +1,8 @@
-#
-# Module: pyrates.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-PyRates Integration Module
-==========================
+
+"""PyRates Integration Module.
 
 Provides modular conversion between TVBO Dynamics/Network models and PyRates YAML format.
 
@@ -23,7 +17,7 @@ TVBO Templates (modular):
 - tvbo-pyrates-network.yaml.mako: NodeTemplate + CircuitTemplate (topology)
 - tvbo-pyrates-experiment.yaml.mako: Complete runnable YAML (model + network)
 
-Example
+Example:
 -------
 >>> from tvbo import Dynamics
 >>> model = Dynamics("JansenRitModel")
@@ -46,7 +40,7 @@ Example
 >>> network = Network(connectome)
 >>> network.to_yaml(format="pyrates", filepath="circuit.yaml")
 
-References
+References:
 ----------
 - PyRates documentation: https://pyrates.readthedocs.io/
 """
@@ -60,20 +54,6 @@ if TYPE_CHECKING:
     from tvbo.classes.dynamics import Dynamics
     from tvbo.classes.network import Network
 
-# Single source of truth for PyRates-safe variable renaming, imported by
-# tvbo/adapters/pyrates.py and tvbo-pyrates-model.yaml.mako (the reverse map
-# below is DERIVED, never hand-maintained — so there is exactly one mapping to
-# keep correct).
-#
-# These names must be suffixed before codegen because a bare occurrence
-# resolves to something other than a free symbol when the equation renderer
-# sympifies it: SymPy functions/singletons (`gamma`->FunctionClass,
-# `I`->ImaginaryUnit, `S`->SingletonRegistry, `Q`->AssumptionKeys, …) crash
-# with "unsupported operand type(s) for *: 'FunctionClass' and 'Symbol'";
-# `lambda` is a Python keyword; `y`/`dy`/`epsilon` collide with PyRates'
-# internal slots. (Verified: dropping the SymPy entries breaks ~29 models.)
-# Capital `Gamma`/`Beta` auto-symbolize and are admitted raw by
-# _patch_pyrates_reserved_names instead, so they are intentionally absent.
 PYRATES_REPL = {
     "I": "I_",
     "gamma": "gamma_",
@@ -90,9 +70,8 @@ PYRATES_REPL = {
     "dy": "dy_",
 }
 
-# Reverse mapping (PyRates-safe name -> original TVBO name), derived from
-# PYRATES_REPL so the two can never drift.
 _PYRATES_REPL_REVERSE = {safe: original for original, safe in PYRATES_REPL.items()}
+"""PyRates-safe name back to the original TVBO name, derived so the two cannot drift."""
 
 
 def _unrename_pyrates(name: str) -> str:
@@ -125,10 +104,8 @@ def _extract_sign_arg(cond):
 def _convert_piecewise(pw):
     """Rewrite a ``Piecewise`` as sign arithmetic, which PyRates can evaluate.
 
-    ``Piecewise((a, x > c), (b, True))`` becomes
-    ``(a + b)/2 + (a - b)/2 * sign(x - c)``; a ``<`` comparison flips the sign term.
-    Extra branches nest from the last backwards. A branch whose condition is not a simple relational cannot be expressed this way, and the original is returned
-    untouched so the failure surfaces in PyRates rather than as a silent misread.
+    ``Piecewise((a, x > c), (b, True))`` becomes ``(a + b)/2 + (a - b)/2 * sign(x - c)``; a ``<`` comparison flips the sign term.
+    Extra branches nest from the last backwards. A branch whose condition is not a simple relational cannot be expressed this way, and the original is returned untouched so the failure surfaces in PyRates rather than as a silent misread.
     """
     import sympy
 
@@ -170,9 +147,7 @@ def _renamed_scope(model) -> dict:
 
     Equations are sympified against this so a declared name shadows SymPy's globals — without it PinskyRinzelCA3's ``chi`` parses as the hyperbolic cosine integral.
 
-    The rebuild is what makes renaming survive the round trip. Binding the safe name to the *original* symbol makes ``sympify("gamma_")`` return ``Symbol("gamma")``, which
-    prints back as ``gamma`` and undoes the rename — the equation then said ``gamma*x`` while the variable block declared ``gamma_``, and PyRates resolved the orphaned
-    ``gamma`` to SymPy's gamma function.
+    The rebuild is what makes renaming survive the round trip. Binding the safe name to the *original* symbol makes ``sympify("gamma_")`` return ``Symbol("gamma")``, which prints back as ``gamma`` and undoes the rename — the equation then said ``gamma*x`` while the variable block declared ``gamma_``, and PyRates resolved the orphaned ``gamma`` to SymPy's gamma function.
     """
     import sympy
 
@@ -191,9 +166,7 @@ def _renamed_scope(model) -> dict:
 def operator_template(model, op_name: str | None = None) -> dict:
     """Resolve a Dynamics model into the fields of a PyRates ``OperatorTemplate``.
 
-    Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined
-    (PyRates YAML has no user functions), and unsupported constructs are rewritten by
-    :func:`_pyrates_compatible`.
+    Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined (PyRates YAML has no user functions), and unsupported constructs are rewritten by :func:`_pyrates_compatible`.
 
     Equations are sympified against :func:`_renamed_scope`, keyed by the renamed spelling because renaming has already been applied to the equation strings.
 
@@ -258,7 +231,7 @@ def operator_template(model, op_name: str | None = None) -> dict:
     }
 
 
-def to_pyrates_model_yaml(dynamics: "Dynamics", filepath: str | None = None) -> str:
+def to_pyrates_model_yaml(dynamics: Dynamics, filepath: str | None = None) -> str:
     """Export a Dynamics model to PyRates OperatorTemplate YAML (model only).
 
     This generates ONLY the OperatorTemplate (dynamics/equations).
@@ -271,7 +244,7 @@ def to_pyrates_model_yaml(dynamics: "Dynamics", filepath: str | None = None) -> 
     filepath : str, optional
         Path to write the YAML file. If None, returns the YAML string.
 
-    Returns
+    Returns:
     -------
     str
         YAML string (or filepath if written to file).
@@ -290,8 +263,8 @@ def to_pyrates_model_yaml(dynamics: "Dynamics", filepath: str | None = None) -> 
 
 
 def to_pyrates_network_yaml(
-    dynamics: "Dynamics | None" = None,
-    network: "Network | None" = None,
+    dynamics: Dynamics | None = None,
+    network: Network | None = None,
     filepath: str | None = None,
 ) -> str:
     """Export to PyRates NodeTemplate + CircuitTemplate YAML (network topology only).
@@ -308,7 +281,7 @@ def to_pyrates_network_yaml(
     filepath : str, optional
         Path to write the YAML file. If None, returns the YAML string.
 
-    Returns
+    Returns:
     -------
     str
         YAML string (or filepath if written to file).
@@ -327,8 +300,8 @@ def to_pyrates_network_yaml(
 
 
 def to_pyrates_yaml_string(
-    dynamics: "Dynamics | dict[str, Dynamics] | None" = None,
-    network: "Network | None" = None,
+    dynamics: Dynamics | dict[str, Dynamics] | None = None,
+    network: Network | None = None,
     filepath: str | None = None,
 ) -> str:
     """Export to complete PyRates experiment YAML (model + network, ready to run).
@@ -345,7 +318,7 @@ def to_pyrates_yaml_string(
     filepath : str, optional
         Path to write the YAML file. If None, returns the YAML string.
 
-    Returns
+    Returns:
     -------
     str
         YAML string (or filepath if written to file).
@@ -371,7 +344,7 @@ def to_pyrates_yaml_string(
 
 
 # Alias for backward compatibility
-def network_to_pyrates_yaml_string(network: "Network", filepath: str | None = None) -> str:
+def network_to_pyrates_yaml_string(network: Network, filepath: str | None = None) -> str:
     """Export a TVBO Network to complete PyRates experiment YAML.
 
     Alias for to_pyrates_yaml_string(network=network, filepath=filepath).
@@ -399,19 +372,19 @@ def from_pyrates_yaml(filepath: str, operator_key: str | None = None) -> dict:
         Name of the specific OperatorTemplate to load (without _op suffix).
         If None, loads the first OperatorTemplate found.
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary suitable for Dynamics(**dict) constructor.
 
-    Raises
+    Raises:
     ------
     ValueError
         If operator_key is specified but not found in the file.
     """
     import yaml
 
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         yaml_data = yaml.safe_load(f)
 
     # Find all OperatorTemplates
@@ -562,8 +535,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
 def _parse_single_operator(template_name: str, template_def: dict) -> dict:
     """Parse a single OperatorTemplate into a Dynamics-compatible dict.
 
-    Automatically reverses PYRATES_REPL renames (e.g. ``y_`` -> ``y``,
-    ``gamma_`` -> ``gamma``) so that round-tripped models recover the original TVBO variable names.
+    Automatically reverses PYRATES_REPL renames (e.g. ``y_`` -> ``y``, ``gamma_`` -> ``gamma``) so that round-tripped models recover the original TVBO variable names.
     """
     state_variables = {}
     parameters = {}
@@ -638,9 +610,7 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
                 if var_spec == "output" or (isinstance(var_spec, str) and "output(" in var_spec):
                     output.append(var_name)
 
-    # Parse variables that are not state/derived/output
-    # Track which raw names were already consumed (as state vars or derived)
-    _consumed_raw = set()
+    _consumed_raw = set()  # raw names already taken as state variables or derived
     for eq in equations:
         eq = str(eq).strip()
         m = re.match(r"(\w+)'\s*=\s*", eq) or re.match(r"d/dt\s*\*\s*(\w+)\s*=\s*", eq) or re.match(r"(\w+)\s*=\s*", eq)
@@ -687,7 +657,7 @@ def from_pyrates_yaml_all(filepath: str) -> dict[str, dict]:
     filepath : str
         Path to PyRates YAML file.
 
-    Returns
+    Returns:
     -------
     dict[str, dict]
         Dictionary mapping operator names to Dynamics-compatible dicts.
@@ -695,7 +665,7 @@ def from_pyrates_yaml_all(filepath: str) -> dict[str, dict]:
     """
     import yaml
 
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         yaml_data = yaml.safe_load(f)
 
     dynamics_dict = {}

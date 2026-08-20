@@ -1,8 +1,6 @@
 """Runtime wrapper around the auto-generated :class:`tvbo_datamodel.Event`.
 
-Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal is built generically from the event's symbolic equation and its parameters,
-mirroring the pattern used by :class:`tvbo.classes.dynamics.Dynamics` and
-:class:`tvbo.classes.perturbation.Stimulus`.
+Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal is built generically from the event's symbolic equation and its parameters, mirroring the pattern used by :class:`tvbo.classes.dynamics.Dynamics` and :class:`tvbo.classes.perturbation.Stimulus`.
 """
 
 from __future__ import annotations
@@ -19,12 +17,9 @@ class Event(tvbo_datamodel.Event):
     def _signal(self):
         """Return ``callable(t)`` for the event's signal.
 
-        Generic: works for any ``event.equation.rhs`` expressed in terms of
-        ``t`` and the event's own parameters.
+        Generic: works for any ``event.equation.rhs`` expressed in terms of ``t`` and the event's own parameters.
         """
-        # Imported here rather than at module top: this module is imported by
-        # ``tvbo.datamodel`` to attach the Event helpers, and parse.expression imports back from ``tvbo.datamodel.schema`` — a module-top import would form an import cycle when parse.expression is imported first.
-        from tvbo.parse.expression import parse_eq
+        from tvbo.parse.expression import parse_eq  # module-top would cycle through tvbo.datamodel
 
         params = {name: Symbol(name) for name in (self.parameters or {})}
         params.setdefault("t", Symbol("t"))
@@ -92,15 +87,12 @@ class Event(tvbo_datamodel.Event):
         return ax
 
 
-# Make the helpers available on the auto-generated schema class itself, so
-# ``schema.Event(...).plot()`` works without requiring callers to import the wrapper explicitly. This mirrors the ``__class__`` patching pattern used for
-# Network/Continuation in :mod:`tvbo.classes.experiment`.
+# So `schema.Event(...).plot()` works without importing this wrapper, as for Network/Continuation.
 for _name in ("plot", "_signal", "_default_window"):
     setattr(tvbo_datamodel.Event, _name, getattr(Event, _name))
 
 
-# Back-compatibility: the stimulus-targeting slots were renamed
-# ``regions`` -> ``nodes`` and ``weighting`` -> ``weights`` (the old names are kept as LinkML aliases). LinkML aliases are metadata only and are not accepted as constructor kwargs, so map the deprecated names here at construction time.
+# A LinkML alias is metadata only and not accepted as a constructor kwarg, so it is mapped here.
 _SLOT_ALIASES = {"regions": "nodes", "weighting": "weights"}
 _orig_event_init = tvbo_datamodel.Event.__init__
 

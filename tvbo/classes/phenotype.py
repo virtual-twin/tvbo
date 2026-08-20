@@ -1,7 +1,6 @@
 """Runtime :class:`Phenotype` class.
 
-Carries a cohort's per-subject phenotype scores (cognitive, clinical, behavioral, demographic, physiological, derived) for multi-subject
-studies that correlate simulated quantities with empirical measurements.
+Carries a cohort's per-subject phenotype scores (cognitive, clinical, behavioral, demographic, physiological, derived) for multi-subject studies that correlate simulated quantities with empirical measurements.
 BIDS-aligned (BIDS ``phenotype/`` directory standard).
 
 Sidecar format mirrors the existing TVBO ``Network`` pattern:
@@ -21,8 +20,8 @@ See ``tools/build_schirner2023_phenotype.py`` for an example writer.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Mapping, Sequence
 
 import h5py
 import numpy as np
@@ -35,11 +34,9 @@ from tvbo.utils import yaml_loader
 class Phenotype(tvbo_datamodel.Phenotype):
     """Runtime wrapper around the auto-generated ``Phenotype`` schema.
 
-    The schema class carries the YAML-side descriptor (subjects, measures names, provenance, optional Cognitive Atlas IRIs via
-    ``measure_specs``); this subclass adds lazy h5 access via
-    :attr:`values` plus ``from_file`` / ``to_file`` round-tripping.
+    The schema class carries the YAML-side descriptor (subjects, measures names, provenance, optional Cognitive Atlas IRIs via ``measure_specs``); this subclass adds lazy h5 access via :attr:`values` plus ``from_file`` / ``to_file`` round-tripping.
 
-    Example
+    Example:
     -------
     .. code-block:: python
 
@@ -54,16 +51,13 @@ class Phenotype(tvbo_datamodel.Phenotype):
     _yaml_path: str | os.PathLike | None = None
     _values_cache: dict | None = None
 
-    # ------------------------------------------------------------------
     # Construction
-    # ------------------------------------------------------------------
 
     @classmethod
-    def from_file(cls, path: str | os.PathLike) -> "Phenotype":
+    def from_file(cls, path: str | os.PathLike) -> Phenotype:
         """Load a Phenotype sidecar from a YAML descriptor.
 
-        Resolves ``data_file`` relative to the YAML's directory so the h5 companion can sit next to it. Numeric arrays are NOT loaded
-        eagerly — call :meth:`get` (or read :attr:`values`) to fault one in.
+        Resolves ``data_file`` relative to the YAML's directory so the h5 companion can sit next to it. Numeric arrays are NOT loaded eagerly — call :meth:`get` (or read :attr:`values`) to fault one in.
         """
         path = Path(path).resolve()
         with open(path) as f:
@@ -134,9 +128,7 @@ class Phenotype(tvbo_datamodel.Phenotype):
         self._h5_path = str(h5_path)
         self._yaml_path = str(path)
 
-    # ------------------------------------------------------------------
     # Value access
-    # ------------------------------------------------------------------
 
     @property
     def values(self) -> dict:

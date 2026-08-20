@@ -1,16 +1,10 @@
 """Figure -> distributed-workflow emitter.
 
-Wires TVBO's declarative :class:`~tvbo.datamodel.pydantic.Figure` codegen into the
-HPC/workflow emission so that figures render as their own scheduler jobs, siblings of the experiment rules ``tvbo workflow snakemake`` already emits.
+Wires TVBO's declarative :class:`~tvbo.datamodel.pydantic.Figure` codegen into the HPC/workflow emission so that figures render as their own scheduler jobs, siblings of the experiment rules ``tvbo workflow snakemake`` already emits.
 
-The idea in one line: *a figure's PROV ``used`` edges are its workflow dependency edges.* Every layer of a figure binds to an experiment result container (via
-``bsplot._container_path``); those containers are exactly the render rule's
-``input:``, so the rule schedules after the experiments that produce them. The per-figure resource request comes from ``Figure.workflow_overrides`` (a
-``WorkflowConfig``) merged over the study-level ``workflow`` — the same override pattern experiments use.
+The idea in one line: *a figure's PROV ``used`` edges are its workflow dependency edges.* Every layer of a figure binds to an experiment result container (via ``bsplot._container_path``); those containers are exactly the render rule's ``input:``, so the rule schedules after the experiments that produce them. The per-figure resource request comes from ``Figure.workflow_overrides`` (a ``WorkflowConfig``) merged over the study-level ``workflow`` — the same override pattern experiments use.
 
-Resolution (used->inputs, workflow_overrides->resources, unit conversion) lives here in Python; the rule *structure* lives in
-``tvbo/templates/workflow/snakemake/tvbo-figure-rule.smk.mako`` (the house codegen rule). ``emit_figure_rules`` returns the Snakemake rule text; ``write_figure_kit``
-also freezes each figure's self-contained ``plot.py`` and the ``.smk`` snippet to disk.
+Resolution (used->inputs, workflow_overrides->resources, unit conversion) lives here in Python; the rule *structure* lives in ``tvbo/templates/workflow/snakemake/tvbo-figure-rule.smk.mako`` (the house codegen rule). ``emit_figure_rules`` returns the Snakemake rule text; ``write_figure_kit`` also freezes each figure's self-contained ``plot.py`` and the ``.smk`` snippet to disk.
 """
 
 from __future__ import annotations
@@ -35,13 +29,9 @@ _RULE_TEMPLATE = "tvbo-figure-rule.smk.mako"
 def _figure_block(workflow, overrides, engine: str = "snakemake"):
     """Merge ``figure.workflow_overrides`` over the study ``workflow`` -> (spec, block).
 
-    Reuses the ``_workflow`` merge machinery so the semantics match the experiment emitter exactly: name-keyed engine slots (env/options) merge by name, and the
-    engine block inherits the engine-agnostic resource keys (and, for Snakemake, the
-    SLURM scheduler identity) from the ``slurm`` block when it does not set them — unset falls back, an override wins only where it names a key.
+    Reuses the ``_workflow`` merge machinery so the semantics match the experiment emitter exactly: name-keyed engine slots (env/options) merge by name, and the engine block inherits the engine-agnostic resource keys (and, for Snakemake, the SLURM scheduler identity) from the ``slurm`` block when it does not set them — unset falls back, an override wins only where it names a key.
 
-    ``gres`` is NOT among the inherited keys: it is accelerator-scoped and a figure render is
-    CPU, so an inherited GPU ``gres`` would land on a ``medium``-partition rule the executor
-    plugin then rejects. A figure that wants one declares it itself.
+    ``gres`` is NOT among the inherited keys: it is accelerator-scoped and a figure render is CPU, so an inherited GPU ``gres`` would land on a ``medium``-partition rule the executor plugin then rejects. A figure that wants one declares it itself.
     """
     base = _wf._canonicalize_engine_maps(_wf._as_plain_dict(workflow))
     over = _wf._canonicalize_engine_maps(_wf._as_plain_dict(overrides))
@@ -67,10 +57,7 @@ def _figure_block(workflow, overrides, engine: str = "snakemake"):
 def _rule_resources(block: dict) -> dict:
     """Lower a merged engine block into a Snakemake ``resources:`` map.
 
-    Returns ``{key: python-literal-string}`` (already repr'd so the template emits
-    ``key=<literal>`` verbatim). ``cpus_per_task``/``mem_mb``/``runtime`` map across engines; the SLURM scheduler identity (partition/account) is surfaced as the
-    executor's ``slurm_partition``/``slurm_account`` resources, and a per-figure ``gres`` as the executor's NATIVE ``gres`` resource (never ``slurm_extra='--gres='``, which the
-    modern slurm executor plugin rejects — it manages GRES itself). ``options`` pass through verbatim.
+    Returns ``{key: python-literal-string}`` (already repr'd so the template emits ``key=<literal>`` verbatim). ``cpus_per_task``/``mem_mb``/``runtime`` map across engines; the SLURM scheduler identity (partition/account) is surfaced as the executor's ``slurm_partition``/``slurm_account`` resources, and a per-figure ``gres`` as the executor's NATIVE ``gres`` resource (never ``slurm_extra='--gres='``, which the modern slurm executor plugin rejects — it manages GRES itself). ``options`` pass through verbatim.
     """
     r: dict = {}
     if block.get("cpus_per_task"):
@@ -98,10 +85,8 @@ def _rule_resources(block: dict) -> dict:
 def _exp_key_of(iri, keys) -> str | None:
     """The kit experiment key a figure ``used.iri`` points at, or ``None`` for an external reference.
 
-    Uses the same STRICT matcher as ``bsplot._container_path`` (``dataref.experiment_id``, which requires the last segment to BE an experiment token): a name that merely
-    contains a digit — an analysis called ``fig2_spectrum``, a curated
-    ``rec-avgMatrix_atlas-HCPMMP1`` — must not be read as experiment 2 and bound to that rule's outputs. A loose digit strip made the workflow disagree with the ``plot.py``
-    about which container a layer meant."""
+    Uses the same STRICT matcher as ``bsplot._container_path`` (``dataref.experiment_id``, which requires the last segment to BE an experiment token): a name that merely contains a digit — an analysis called ``fig2_spectrum``, a curated ``rec-avgMatrix_atlas-HCPMMP1`` — must not be read as experiment 2 and bound to that rule's outputs. A loose digit strip made the workflow disagree with the ``plot.py`` about which container a layer meant.
+    """
     if not iri:
         return None
     last = re.split(r"[:/#]", str(iri))[-1]
@@ -114,14 +99,9 @@ def _exp_key_of(iri, keys) -> str | None:
 def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]:
     """This figure's ``used`` result dependencies, deduped, as ``{value, raw}`` items.
 
-    A ``used`` edge to a KIT experiment resolves to that experiment's own output files — the ``expand()`` over its fanned grid (so the figure waits for EVERY cell) or its single
-    group-run path — emitted RAW so Snakemake evaluates the ``expand``. A ``used`` edge to something the kit does not produce (an external/author-time container, or an analysis's
-    own container) falls back to the single resolved container path via the same
-    ``bsplot._container_path`` the ``plot.py`` reads, emitted as a quoted string. Unresolved edges are dropped — a rule cannot depend on a file that does not exist.
+    A ``used`` edge to a KIT experiment resolves to that experiment's own output files — the ``expand()`` over its fanned grid (so the figure waits for EVERY cell) or its single group-run path — emitted RAW so Snakemake evaluates the ``expand``. A ``used`` edge to something the kit does not produce (an external/author-time container, or an analysis's own container) falls back to the single resolved container path via the same ``bsplot._container_path`` the ``plot.py`` reads, emitted as a quoted string. Unresolved edges are dropped — a rule cannot depend on a file that does not exist.
 
-    The reference is read through ``bsplot._used_ref``, so the short ``experiment:`` and
-    ``analysis:`` forms register their dependency exactly as a full ``iri`` does. Both a layer's ``used`` (a plotted result) and an annotation's ``used`` (a printed statistic
-    read from a run) carry the same PROV edge, so both are walked — a figure whose only binding to an experiment is a computed annotation still waits for that run.
+    The reference is read through ``bsplot._used_ref``, so the short ``experiment:`` and ``analysis:`` forms register their dependency exactly as a full ``iri`` does. Both a layer's ``used`` (a plotted result) and an annotation's ``used`` (a printed statistic read from a run) carry the same PROV edge, so both are walked — a figure whose only binding to an experiment is a computed annotation still waits for that run.
     """
     inputs, seen = [], set()
     for panel in as_list(getattr(figure, "panels", None)):
@@ -147,10 +127,8 @@ def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]
 def _has_unresolved_used(figure, base_dir: Path, exp_plans_by_key: dict) -> bool:
     """True when a ``used`` edge names data neither the kit nor the author's tree resolves.
 
-    ``_figure_inputs`` drops such an edge — a rule cannot depend on a file that does not exist —
-    which leaves the figure looking self-contained while its render still opens that container.
-    Reported separately so the figure is kept out of the default target rather than added to it
-    with a dependency silently missing.
+    ``_figure_inputs`` drops such an edge — a rule cannot depend on a file that does not exist — which leaves the figure looking self-contained while its render still opens that container.
+    Reported separately so the figure is kept out of the default target rather than added to it with a dependency silently missing.
     """
     for panel in as_list(getattr(figure, "panels", None)):
         layers = getattr(panel, "layers", None) or []
@@ -195,17 +173,15 @@ def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) 
 
 
 def _activation_lines(block: dict) -> list[str]:
-    """Shell lines that put the declared environment in place (modules, then venv, then the verbatim ``setup`` lines) — mirrors the experiment rules' ``_activation`` so a figure
-    renders in the same interpreter its data was produced with."""
-    lines = ["module load %s" % m for m in (block.get("modules") or [])]
+    """Shell lines that put the declared environment in place (modules, then venv, then the verbatim ``setup`` lines) — mirrors the experiment rules' ``_activation`` so a figure renders in the same interpreter its data was produced with."""
+    lines = [f"module load {m}" for m in (block.get("modules") or [])]
     if block.get("venv"):
-        lines.append("source %s/bin/activate" % shlex.quote(str(block["venv"])))
+        lines.append("source {}/bin/activate".format(shlex.quote(str(block["venv"]))))
     return lines + list(block.get("setup") or [])
 
 
 def figure_contexts(figures, base_dir=".", workflow=None, exp_plans=None, bundled_code=False) -> list[dict]:
-    """Per-figure template contexts (fan-aware inputs). ``exp_plans`` are the emitter's per-experiment dicts; without them (author-time render) inputs fall back to
-    ``output/nc`` containers. Public so the study emitter can read the figure outputs it must add to the default target before it renders the Snakefile."""
+    """Per-figure template contexts (fan-aware inputs). ``exp_plans`` are the emitter's per-experiment dicts; without them (author-time render) inputs fall back to the author's own result containers. Public so the study emitter can read the figure outputs it must add to the default target before it renders the Snakefile."""
     keys = {ep["key"]: ep for ep in (exp_plans or [])}
     return [_figure_context(f, base_dir, workflow, keys, bundled_code) for f in figures]
 
@@ -221,7 +197,7 @@ def emit_figure_rules(
     Args:
         figures: An iterable of ``Figure`` objects (e.g. ``study.figures``).
         base_dir: Root the experiment result containers live under; each figure's
-            ``used`` IRIs resolve to ``<base_dir>/output/nc/<exp>/*.h5``.
+            ``used`` IRIs resolve against the ``results`` role under ``base_dir``.
         workflow: The study-level ``WorkflowConfig`` (or ``None``); each figure's
             ``workflow_overrides`` merges over it for that figure's resources.
         kit_dir: Directory the companion :func:`write_figure_kit` writes to (kept for
@@ -231,7 +207,7 @@ def emit_figure_rules(
         exp_plans: The emitter's per-experiment dicts; a figure ``used`` edge to one of
             them becomes an ``expand()`` over that experiment's fanned cells (the whole
             grid), so the render waits for the sweep. Without them, inputs fall back to
-            author-time ``output/nc`` containers.
+            the author's own result containers.
         bundled_code: Whether the kit carries a ``code/`` dir the figure's custom-panel
             modules were bundled into (put on the rule's ``PYTHONPATH``).
 
@@ -248,15 +224,9 @@ def emit_figure_rules(
 def _rebase_containers_to_kit(code: str, figure, base_dir, exp_plans_by_key: dict, out_dir: str) -> str:
     """Rewrite each layer's author-time container path to the KIT path the render rule uses.
 
-    ``bsplot.render_code`` bakes each ``used`` edge as its author-time resolved container
-    (``<base_dir>/output/nc/<file>``), but the kit stores that experiment's result at
-    ``<out_dir>/<key>/<stem>`` — the SAME path ``_figure_inputs`` puts in the rule's ``input:``.
-    Left unrewritten, the frozen ``plot.py`` reads an absolute laptop path that does not exist on
-    the compute node. Only a single-file (group / on-device-vectorized grid) experiment is
-    rebased; a workflow-FANNED experiment and an on-device COHORT both resolve to several cell
-    files with no single container a plot could point at, so they are left alone, as is an edge
-    whose author-time container does not resolve (an empty path would splice the kit path
-    between every character of the script)."""
+    ``bsplot.render_code`` bakes each ``used`` edge as its author-time resolved container (``<base_dir>/derivatives/tvbo/<file>``), but the kit stores that experiment's result at ``<out_dir>/<key>/<stem>`` — the SAME path ``_figure_inputs`` puts in the rule's ``input:``.
+    Left unrewritten, the frozen ``plot.py`` reads an absolute laptop path that does not exist on the compute node. Only a single-file (group / on-device-vectorized grid) experiment is rebased; a workflow-FANNED experiment and an on-device COHORT both resolve to several cell files with no single container a plot could point at, so they are left alone, as is an edge whose author-time container does not resolve (an empty path would splice the kit path between every character of the script).
+    """
     for panel in as_list(getattr(figure, "panels", None)):
         layers = getattr(panel, "layers", None) or []
         annotations = getattr(panel, "annotations", None) or []
@@ -271,7 +241,7 @@ def _rebase_containers_to_kit(code: str, figure, base_dir, exp_plans_by_key: dic
             author = bsplot._container_path(iri, Path(base_dir))
             if not author:
                 continue
-            kit = "%s/%s/%s" % (out_dir, key, _wf.cell_out_relpath(plan))
+            kit = f"{out_dir}/{key}/{_wf.cell_out_relpath(plan)}"
             code = code.replace(str(author), kit)
     return code
 
@@ -288,10 +258,7 @@ def write_figure_kit(
           figures/<name>.<fmt>          # the rendered image (what the rule declares)
           figures/scripts/plot_<name>.py  # self-contained bsplot script per figure
 
-    Each ``plot_<name>.py`` is ``bsplot.render_code(figure, base_dir, outfile=…)`` with
-    ``outfile`` set to the rule's declared ``output`` (``figures/<name>.<fmt>``), so running ``python figures/scripts/plot_<name>.py`` from the kit root produces
-    exactly what the rule promises. The kit mirrors the local render layout — image in ``figures/``, script in ``figures/scripts/`` — so a cluster run and a laptop
-    run put the same artefact in the same place. Returns the kit directory.
+    Each ``plot_<name>.py`` is ``bsplot.render_code(figure, base_dir, outfile=…)`` with ``outfile`` set to the rule's declared ``output`` (``figures/<name>.<fmt>``), so running ``python figures/scripts/plot_<name>.py`` from the kit root produces exactly what the rule promises. The kit mirrors the local render layout — image in ``figures/``, script in ``figures/scripts/`` — so a cluster run and a laptop run put the same artefact in the same place. Returns the kit directory.
     """
     out_dir = Path(out_dir)
     (out_dir / "figures" / "scripts").mkdir(parents=True, exist_ok=True)

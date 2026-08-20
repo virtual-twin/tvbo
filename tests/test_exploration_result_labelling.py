@@ -1,10 +1,6 @@
 """Tests for the ``ExplorationResult`` labelling contract.
 
-Every results payload carries named dims, whatever the producer handed over, so
-consumers select by key rather than by position. Labelling does not reshape: the
-payload keeps the shape the backend emitted, and ``as_grid()`` is what expands the
-flat run axis into one dim per exploration axis. No path returns a bare array — a
-payload that cannot be reshaped is still labelled.
+Every results payload carries named dims, whatever the producer handed over, so consumers select by key rather than by position. Labelling does not reshape: the payload keeps the shape the backend emitted, and ``as_grid()`` is what expands the flat run axis into one dim per exploration axis. No path returns a bare array — a payload that cannot be reshaped is still labelled.
 """
 
 import numpy as np
@@ -13,7 +9,6 @@ import xarray as xr
 
 from tvbo.data.types import ExplorationResult, _is_partial_shard
 from tvbo.utils import Bunch
-
 
 C_VALS = np.array([0.1, 0.2, 0.3])
 W_VALS = np.array([1.0, 2.0])
@@ -101,9 +96,7 @@ def test_scalar_results_are_labelled():
 def test_as_grid_never_returns_a_bare_array():
     """A payload that cannot be reshaped into the grid is still labelled.
 
-    The grid shape here disagrees with the payload's leading dim, so the reshape is
-    skipped — previously that fell back to the raw array, handing consumers
-    positional data with no indication anything had gone wrong.
+    The grid shape here disagrees with the payload's leading dim, so the reshape is skipped — previously that fell back to the raw array, handing consumers positional data with no indication anything had gone wrong.
     """
     data = np.zeros((7, 50, 2, 1))  # 7 does not match the 3-point axis
     r = ExplorationResult(
@@ -143,9 +136,7 @@ def _stacked(shape, dims=None, ts=None, cell_coords=None):
 def test_declared_dims_name_a_swept_observation():
     """A streamed observation's axes come from what it DECLARED, not from a template.
 
-    `(time, node)` and the positional `(node, mode)` fallback have the same rank, so
-    nothing raises when the guess is wrong — a 1,338-frame BOLD time axis simply comes
-    back named `node`, and every downstream `.sel` is then keyed on the wrong axis.
+    `(time, node)` and the positional `(node, mode)` fallback have the same rank, so nothing raises when the guess is wrong — a 1,338-frame BOLD time axis simply comes back named `node`, and every downstream `.sel` is then keyed on the wrong axis.
     """
     da = _stacked((len(C_VALS), 1338, 200), dims=("time", "node"))
     assert da.dims == ("model.c", "time", "node")
@@ -187,14 +178,9 @@ def test_an_undeclared_trailing_singleton_is_still_squeezed():
 
 
 def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
-    """A full product whose cells arrive in the Space (pytree-leaf) order — NOT the declared
-    axis order — is keyed into the grid BY VALUE, never by a positional reshape.
+    """A full product whose cells arrive in Space (pytree-leaf) order is keyed into the grid BY VALUE, never by a positional reshape.
 
-    When swept axes live on different state sub-objects (dynamics / coupling / graph), Space
-    emits cells in pytree-leaf order, which differs from the declared ``axes_info`` order. A
-    bare ``reshape(grid_sizes)`` then scrambles the surface (each cell reads another cell's
-    value). ``cell_coords`` — the per-cell parameter values in the grid's own order — lets
-    the assembler place each cell at the index its values map to.
+    When swept axes live on different state sub-objects (dynamics / coupling / graph), Space emits cells in pytree-leaf order, which differs from the declared ``axes_info`` order. A bare ``reshape(grid_sizes)`` then scrambles the surface (each cell reads another cell's value). ``cell_coords`` — the per-cell parameter values in the grid's own order — lets the assembler place each cell at the index its values map to.
     """
     from tvbo.data.types import _stacked_to_dataarray
 
@@ -220,8 +206,7 @@ def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
                 got = float(da.sel({"Osc.omega": o, "Cpl.a": k, "network.v": v}).values)
                 assert got == pytest.approx(enc(o, k, v)), (o, k, v, got)
 
-    # Without cell_coords the same Space-order data is reshaped positionally and scrambles,
-    # so at least one label reads the wrong cell — this is exactly the bug cell_coords fixes.
+    # Without cell_coords the same Space-order data is reshaped positionally and scrambles, so at least one label reads the wrong cell — this is exactly the bug cell_coords fixes.
     bare = _stacked_to_dataarray(stacked, axes, name="obs")
     mism = sum(
         float(bare.sel({"Osc.omega": o, "Cpl.a": k, "network.v": v}).values) != enc(o, k, v) for o in OM for k in K for v in V
@@ -268,12 +253,7 @@ def test_single_axis_full_grid_places_scrambled_cells_by_value():
 
 
 def test_full_grid_with_incomplete_cell_coords_raises():
-    """Placement by value needs every declared axis in ``cell_coords`` — a missing one
-    means the caller's coordinate readback failed (e.g. a seed axis whose grid column
-    is the ``dynamics._noise_seed`` state leaf, not the declared label). Falling back
-    to a positional reshape here is what once wrote a seed-major (seed, r_s) fan into
-    an (r_s, seed)-labelled container, so the mismatch raises instead.
-    """
+    """Placement by value needs every declared axis in ``cell_coords`` — a missing one means the caller's coordinate readback failed (e.g. a seed axis whose grid column is the ``dynamics._noise_seed`` state leaf, not the declared label). Falling back to a positional reshape here is what once wrote a seed-major (seed, r_s) fan into an (r_s, seed)-labelled container, so the mismatch raises instead."""
     from tvbo.data.types import _stacked_to_dataarray
 
     axes = [_axis("model.c", [0.1, 0.2]), _axis("execution.random_seed", [0, 1, 2])]
@@ -308,9 +288,7 @@ def _expl(cell_counts, axis_sizes, **kw):
 def test_a_whole_sweep_is_not_mistaken_for_an_hpc_shard():
     """`cell_coords` is set for every keyed sweep, so presence alone must not mean "shard".
 
-    Reading it as a shard marker made `save()` skip the YAML provenance sidecar for
-    every local sweep — silently, since the write is best-effort. The run then claimed
-    to be self-describing while shipping only the .h5.
+    Reading it as a shard marker made `save()` skip the YAML provenance sidecar for every local sweep — silently, since the write is best-effort. The run then claimed to be self-describing while shipping only the .h5.
     """
     assert _is_partial_shard(_expl(6, [2, 3])) is False
 
@@ -329,8 +307,7 @@ def test_an_undecidable_exploration_defaults_to_writing_provenance():
 def test_the_producer_declaration_beats_the_cell_count():
     """A branch shard's axis `n` comes from the already-sliced index, so counting says "whole run".
 
-    Only the generated script knows — it holds `kwargs['shard']` — so a declared
-    `is_shard` wins over the fallback in both directions.
+    Only the generated script knows — it holds `kwargs['shard']` — so a declared `is_shard` wins over the fallback in both directions.
     """
     assert _is_partial_shard(_expl(6, [2, 3], is_shard=True)) is True
     assert _is_partial_shard(_expl(2, [2, 3], is_shard=False)) is False
@@ -355,9 +332,7 @@ def test_an_axis_is_read_however_the_producer_shaped_it():
 def test_a_non_numeric_axis_still_labels_rather_than_raising():
     """Placement subtracts coordinates, which strings cannot do.
 
-    Newly reachable: `cell_coords` is now set for every sweep, so a full grid over
-    `integration.method` reaches the by-value placement it used to skip. The TypeError
-    escaped `as_grid` entirely rather than falling back to the positional reshape.
+    Newly reachable: `cell_coords` is now set for every sweep, so a full grid over `integration.method` reaches the by-value placement it used to skip. The TypeError escaped `as_grid` entirely rather than falling back to the positional reshape.
     """
     from tvbo.data.types import _stacked_to_dataarray
 
@@ -468,10 +443,7 @@ def _object_array(values):
 def test_array_valued_points_are_refused_and_name_the_upstream_conversion(cells, grid):
     """A grid coordinate holds scalars, so array-valued points cannot be placed here at all.
 
-    An axis of whole matrices coordinates on the point INDEX, and only the generated script holds
-    the materialised points to convert against — so the container refuses and names that
-    conversion. Matching the matrices here instead would place the cells against a coordinate they
-    do not share, and the surface would come out keyed on something no reader can select by.
+    An axis of whole matrices coordinates on the point INDEX, and only the generated script holds the materialised points to convert against — so the container refuses and names that conversion. Matching the matrices here instead would place the cells against a coordinate they do not share, and the surface would come out keyed on something no reader can select by.
     """
     from tvbo.data.types import _axis_positions
 
@@ -499,8 +471,7 @@ def test_a_value_far_from_every_grid_point_refuses_to_snap():
 def test_point_indices_are_placed_through_the_ordinary_numeric_path():
     """Converted upstream, a matrix axis is just an integer axis, placed by value like any other.
 
-    Fed a scrambled cell order, the placement recovers the declared order rather than the arrival
-    order — the property the whole by-value rule exists for.
+    Fed a scrambled cell order, the placement recovers the declared order rather than the arrival order — the property the whole by-value rule exists for.
     """
     from tvbo.data.types import _axis_positions
 

@@ -1,35 +1,28 @@
-#
-# Module: functions.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Plotting helpers for coupling functions and temporal equations.
 
 Renders TVBO ontology entities and SymPy expressions as matplotlib figures:
-`plot_coupling_function` draws a `CouplingFunction`'s response curve (2-D or
-3-D depending on the number of free symbols), and `plot_temporal_equation` draws a temporal equation over a time vector. Both substitute the curated
-default parameters from the ontology before evaluating.
+`plot_coupling_function` draws a `CouplingFunction`'s response curve (2-D or 3-D depending on the number of free symbols), and `plot_temporal_equation` draws a temporal equation over a time vector. Both substitute the curated default parameters from the ontology before evaluating.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import owlready2 as owl
 from sympy import lambdify, latex, symbols
 
-from tvbo.ontology import owl as ontology, config  # Assuming this module handles your equations
 from tvbo.classes import equation as equations
+from tvbo.ontology import config
+from tvbo.ontology import owl as ontology  # Assuming this module handles your equations
 
 
 def plot_coupling_function(CF: Any, ax: Any = None):
     """Plot a `CouplingFunction`'s response curve over a sensible input range.
 
-    Picks the input domain based on the function's name (`±π` for Kuramoto,
-    `±1000` for Sigmoidal, `±10` otherwise), substitutes the curated default parameters, and renders the SymPy expression as a 1-D curve with a LaTeX
-    title.
+    Picks the input domain based on the function's name (`±π` for Kuramoto, `±1000` for Sigmoidal, `±10` otherwise), substitutes the curated default parameters, and renders the SymPy expression as a 1-D curve with a LaTeX title.
 
     Args:
         CF: The coupling function (an instance of `Coupling`-derived class
@@ -95,7 +88,6 @@ def plot_coupling_function(CF: Any, ax: Any = None):
             ax.get_zlim()[1]
             + 0.5 * (ax.get_zlim()[1] - ax.get_zlim()[0]),  # if CF.name == "KuramotoCouplingFunction" else ax.get_zlim()[1],
             f"${latex_eq}$",
-            # fontsize=12,
             ha="left",
             va="top",
             bbox=dict(boxstyle="round,pad=0.5", facecolor=(1, 1, 1, 0.8), edgecolor="black"),
@@ -114,7 +106,6 @@ def plot_coupling_function(CF: Any, ax: Any = None):
             ax.get_xlim()[0] + 0.05 * (ax.get_xlim()[1] - ax.get_xlim()[0]),
             ax.get_ylim()[1] - 0.05 * (ax.get_ylim()[1] - ax.get_ylim()[0]),
             f"${latex_eq}$",
-            # fontsize=12,
             ha="left",
             va="top",
             bbox=dict(boxstyle="round,pad=0.5", facecolor=(1, 1, 1, 0.8), edgecolor="black"),
@@ -129,14 +120,13 @@ def plot_temporal_equation(
     EQ: Any,
     t_ms: Any,
     title: str = "Stimulation pulse sequence",
-    plot_kwargs: Optional[dict] = None,
+    plot_kwargs: dict | None = None,
     ax: Any = None,
     **kwargs: Any,
 ):
     """Plot a temporal equation (SymPy expression or ontology entity) over a time vector.
 
-    Substitutes ontology-curated default parameters (overridable via
-    `**kwargs`) and evaluates the expression pointwise at each value of *t_ms*.
+    Substitutes ontology-curated default parameters (overridable via `**kwargs`) and evaluates the expression pointwise at each value of *t_ms*.
 
     Args:
         EQ: A SymPy expression or an owlready2 class representing a temporal equation.

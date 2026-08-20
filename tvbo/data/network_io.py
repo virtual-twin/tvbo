@@ -5,29 +5,28 @@ Supported companion formats:
   .zarr/        — Zarr (cloud-native, S3-compatible)
   .csv          — CSV legacy (one file = one matrix = first template edge)
 
-YAML sidecars are loaded via linkml_runtime.loaders.yaml_loader — the same loader used by Dynamics, Coupling, and SimulationExperiment. This
-ensures schema validation and proper nested object construction. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
+YAML sidecars are loaded via linkml_runtime.loaders.yaml_loader — the same loader used by Dynamics, Coupling, and SimulationExperiment. This ensures schema validation and proper nested object construction. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
 
 See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
 
 import json
-import yaml as _yaml
-import numpy as np
 from pathlib import Path
-from typing import Optional
-from linkml_runtime.loaders import yaml_loader
+
+import numpy as np
+import yaml as _yaml
 from linkml_runtime.dumpers import yaml_dumper
+from linkml_runtime.loaders import yaml_loader
 
 from tvbo.utils import yaml_loader as tvbo_yaml_loader
 
 SCHEMA_VERSION = "tvb-datamodel/0.7.0"
 
 from tvbo.data.matrix_io import (
+    LazyArrayStore,
+    auto_format,
     read_matrix,
     write_matrix,
-    auto_format,
-    LazyArrayStore,
 )
 
 # ── BIDS filename patterns (canonical definition, used by converters) ─
@@ -59,8 +58,7 @@ SENSOR_PATTERNS = [
 def _template_edges(edges) -> list:
     """Template edges = entries without source/target (matrix measures).
 
-    Works with both dicts (from yaml_loader.load_as_dict) and
-    LinkML Edge objects (from Network.edges).
+    Works with both dicts (from yaml_loader.load_as_dict) and LinkML Edge objects (from Network.edges).
     """
     if not edges:
         return []
@@ -78,8 +76,7 @@ def _template_edges(edges) -> list:
 def _read_edges(store, meta: dict) -> tuple[dict, dict]:
     """Read all template-edge matrices + edge parameters from a store.
 
-    Works identically for h5py.File and zarr.Group — both support
-    ``"path" in store`` and ``store["path"]`` access.
+    Works identically for h5py.File and zarr.Group — both support ``"path" in store`` and ``store["path"]`` access.
     """
     edges = _template_edges(meta.get("edges", []))
     arrays, params = {}, {}
@@ -183,8 +180,7 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
 def _nodes_are_placeholders(nodes, number_of_nodes) -> bool:
     """True when ``nodes`` is exactly what ``Network(number_of_nodes=N)`` would synthesise.
 
-    A Network materialises `node_0 … node_{N-1}` whenever nodes are not authored, so such a list carries no information the node count does not already hold — and at
-    mesh scale (32,492 vertices) writing it out makes the sidecar larger than the matrices it describes.
+    A Network materialises `node_0 … node_{N-1}` whenever nodes are not authored, so such a list carries no information the node count does not already hold — and at mesh scale (32,492 vertices) writing it out makes the sidecar larger than the matrices it describes.
     """
     if not nodes or len(nodes) != (number_of_nodes or 0):
         return False
@@ -216,7 +212,7 @@ def _v07_postprocess(meta: dict) -> dict:
     def _strip_param_name(params):
         if not isinstance(params, dict):
             return
-        for key, body in params.items():
+        for body in params.values():
             if isinstance(body, dict):
                 body.pop("name", None)
 
@@ -333,10 +329,7 @@ def _write_nodes(store, network):
     - ``nodes/coordinates``: (N,3) float32 array from Node.position (if present)
     - every other ``nodes/<name>`` dataset the network was loaded from, copied through
 
-    The copy-through is what makes a re-save lossless. A companion may carry per-node arrays
-    this writer knows nothing about — a study's own fitted intervals, a per-region scaling —
-    and an observation may reference one as ``network.nodes.<name>``. Dropping them here turns
-    a packed kit into a spec whose references cannot resolve on the target host.
+    The copy-through is what makes a re-save lossless. A companion may carry per-node arrays this writer knows nothing about — a study's own fitted intervals, a per-region scaling — and an observation may reference one as ``network.nodes.<name>``. Dropping them here turns a packed kit into a spec whose references cannot resolve on the target host.
 
     Called after ``_write_edges`` during ``save_network``.
     """
@@ -401,9 +394,7 @@ def _write_nodes(store, network):
 def _write_mesh(store, network):
     """Write mesh data (vertices, elements, normals) to ``/mesh/`` group.
 
-    Reads mesh arrays from ``_mesh_vertices``, ``_mesh_elements``,
-    ``_mesh_normals`` attributes on the network. These are set by
-    ``from_tvb_surface()`` or directly by user code.
+    Reads mesh arrays from ``_mesh_vertices``, ``_mesh_elements``, ``_mesh_normals`` attributes on the network. These are set by ``from_tvb_surface()`` or directly by user code.
 
     Called after ``_write_nodes`` during ``save_network``.
     """
@@ -468,11 +459,10 @@ generic ``metadata`` key cannot be mistaken for one of ours.
 """
 
 
-def read_embedded_metadata(path) -> Optional[dict]:
+def read_embedded_metadata(path) -> dict | None:
     """The sidecar dict embedded in a self-describing companion, or ``None``.
 
-    ``None`` covers every "this is not a self-describing binary" case — a YAML/JSON sidecar path, a companion written without the attribute, an unreadable or
-    non-JSON payload — so callers can treat it as a plain feature probe.
+    ``None`` covers every "this is not a self-describing binary" case — a YAML/JSON sidecar path, a companion written without the attribute, an unreadable or non-JSON payload — so callers can treat it as a plain feature probe.
     """
     path = Path(path)
     ext = path.suffix.lower()
@@ -535,8 +525,7 @@ def write_embedded_metadata(companion_path, meta: dict) -> None:
 def load_network(path):
     """Load a tvbo Network from a sidecar, or from a self-describing companion.
 
-    Uses linkml yaml_loader or json_loader to construct a schema-validated
-    Network instance directly — same pattern as Dynamics.from_file().
+    Uses linkml yaml_loader or json_loader to construct a schema-validated Network instance directly — same pattern as Dynamics.from_file().
 
     Two layouts are accepted:
 
@@ -545,14 +534,14 @@ def load_network(path):
     - **single self-describing file** — a ``.h5``/``.zarr`` carrying its own sidecar in
       the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is its own array store, so one path is the whole Network.
 
-    Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.weights_matrix).
+    Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.matrix("weight")).
 
     Parameters
     ----------
     path : str or Path
         Path to a YAML/JSON sidecar, or to a self-describing ``.h5``/``.zarr``.
 
-    Returns
+    Returns:
     -------
     Network
         Fully constructed tvbo.Network with lazy array references.
@@ -567,8 +556,7 @@ def load_network(path):
         meta_dict.pop("data_file", None)
         data_file = path.name
     else:
-        # Load as dict first so data_file can be handled here. It IS a schema slot, but
-        # `Network._resolve_from_data_file` treats it as an indirect reference to ANOTHER network's sidecar, so leaving it on the constructor kwargs would recurse.
+        # Load as dict first so data_file can be handled here. It IS a schema slot, but `Network._resolve_from_data_file` treats it as an indirect reference to ANOTHER network's sidecar, so leaving it on the constructor kwargs would recurse.
         meta_dict = yaml_loader.load_as_dict(str(path))
         data_file = meta_dict.pop("data_file", None)
     # Extract non-schema fields that are YAML-only metadata
@@ -579,8 +567,7 @@ def load_network(path):
     # Reconstruct clean YAML without non-schema fields for LinkML loader
     import yaml as _yaml
 
-    # This loader attaches connectivity itself, so the constructor must not resolve it:
-    # `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `_resolve` runs below, once `_store` is in place.
+    # This loader attaches connectivity itself, so the constructor must not resolve it: `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `_resolve` runs below, once `_store` is in place.
     clean_yaml = _yaml.dump({**meta_dict, "_defer_connectivity": True}, Dumper=_yaml.SafeDumper)
     net = yaml_loader.loads(clean_yaml, Network)
 
@@ -601,8 +588,7 @@ def load_network(path):
     else:
         net._store = None
 
-    # `_store` now makes the network materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; a sidecar carrying only a
-    # `parcellation:` still resolves its normative connectome here as before.
+    # `_store` now makes the network materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; a sidecar carrying only a `parcellation:` still resolves its normative connectome here as before.
     net._resolve(source_dir=str(path.parent))
 
     return net
@@ -648,6 +634,8 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     """Save a tvbo Network as sidecar + binary companion.
 
     Uses LinkML yaml_dumper or json_dumper for schema-valid sidecar output — no manual field unpacking or yaml.dump() calls.
+
+    The generic canonical keys `weight` and `length` that `from_matrix` produces are remapped onto the edge names the sidecar declares, because they are only two of arbitrarily many edge attributes a sidecar may bundle (`weight_NMF_*`, `fc`, `local_connectivity`). Two guards keep that from doing harm: an array already named by a template edge is left alone, so a directly-named `length` edge is never renamed away; and where no template edge matches, the generic key stays, since the loader resolves `weight`/`length` directly and renaming on a guess would misplace the matrix.
 
     Parameters
     ----------
@@ -699,14 +687,9 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     # Network._items() hides _cached_* attrs, so yaml_dumper works directly
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
 
-    # Remap the GENERIC canonical keys ("weight"/"length", as produced by from_matrix) onto the sidecar's declared edge names. Match by MEANING, never by position:
-    # weight/length are only two of arbitrarily many edge attributes a sidecar may bundle (weight_NMF_*, fc, local_connectivity, …), and they may appear in any order, so the length matrix — the one delayed simulations require — must be routed to the length-like template edge, not to "the second edge". Guards:
-    #   * skip when the array is already correctly named (the template declares it), so
-    #     a directly-named `length` edge is never renamed away; and
-    #   * if no matching template edge is found, keep the generic key (the loader
-    #     resolves "weight"/"length" directly) rather than risk misplacing the matrix.
+    # Remap the generic `weight`/`length` keys onto the sidecar's declared edge names — see this function's docstring for why, and for the two guards.
     if arrays:
-        from tvbo.classes.network import _WEIGHT_MEASURES, _LENGTH_MEASURES
+        from tvbo.classes.network import _LENGTH_MEASURES, _WEIGHT_MEASURES
 
         names = [te.get("name") or te.get("label") for te in _template_edges(meta.get("edges", []))]
         names = [nm for nm in names if nm]

@@ -1,14 +1,8 @@
-#
-# Module: continuation.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-Continuation
-============
+"""Continuation.
+
 Runtime wrapper around the auto-generated ``Continuation`` dataclass.
 
 Provides ``from_file`` / ``from_string`` factory methods so that a continuation specification can be loaded from YAML just like ``Dynamics``.
@@ -30,9 +24,8 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
-from tvbo.utils import yaml_loader
-
 from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo.utils import yaml_loader
 
 if TYPE_CHECKING:
     pass
@@ -41,8 +34,7 @@ if TYPE_CHECKING:
 class Continuation(tvbo_datamodel.Continuation):
     """Runtime continuation specification with factory constructors.
 
-    Inherits all schema-defined fields (``free_parameters``, ``ds``,
-    ``max_steps``, ``branches``, etc.) from the generated datamodel and adds convenience factory methods.
+    Inherits all schema-defined fields (``free_parameters``, ``ds``, ``max_steps``, ``branches``, etc.) from the generated datamodel and adds convenience factory methods.
     """
 
     def __init__(self, name="continuation", **kwargs):
@@ -50,16 +42,14 @@ class Continuation(tvbo_datamodel.Continuation):
             kwargs["name"] = str(name)
         super().__init__(**kwargs)
 
-    # ------------------------------------------------------------------
     # Factory constructors
-    # ------------------------------------------------------------------
     @classmethod
-    def from_datamodel(cls, cont_meta: tvbo_datamodel.Continuation) -> "Continuation":
+    def from_datamodel(cls, cont_meta: tvbo_datamodel.Continuation) -> Continuation:
         """Create from an auto-generated datamodel instance."""
         return cls(**cont_meta._as_dict)
 
     @classmethod
-    def from_file(cls, path: str | os.PathLike) -> "Continuation":
+    def from_file(cls, path: str | os.PathLike) -> Continuation:
         """Load a Continuation from a YAML file.
 
         The file can be either:
@@ -71,7 +61,7 @@ class Continuation(tvbo_datamodel.Continuation):
         path : str or PathLike
             Path to the YAML file.
 
-        Returns
+        Returns:
         -------
         Continuation
             The loaded continuation specification.
@@ -79,7 +69,7 @@ class Continuation(tvbo_datamodel.Continuation):
         return yaml_loader.load(str(path), cls)
 
     @classmethod
-    def from_string(cls, yaml_string: str) -> "Continuation":
+    def from_string(cls, yaml_string: str) -> Continuation:
         """Create a Continuation from a YAML string.
 
         Parameters
@@ -87,14 +77,14 @@ class Continuation(tvbo_datamodel.Continuation):
         yaml_string : str
             YAML-formatted string defining the continuation.
 
-        Returns
+        Returns:
         -------
         Continuation
         """
         return yaml_loader.loads(yaml_string, target_class=cls)
 
     @classmethod
-    def from_db(cls, name: str) -> "Continuation":
+    def from_db(cls, name: str) -> Continuation:
         """Load a Continuation by name from the tvbo database."""
         from tvbo.data.registry import resolve
 

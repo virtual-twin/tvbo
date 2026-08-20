@@ -1,10 +1,11 @@
 """Heterogeneous-network tvboptim adapter (``tvbo.adapters.tvboptim``).
 
-Covers the P1 interoperability path: a network with different dynamics per node
-is lowered to a tvboptim ``HeterogeneousNetwork`` (nodes partitioned into
-``DynamicsGroup``s, edges collapsed into a ``SignalRoute``) and run in process
-via ``exp.run("tvboptim")``.
+Covers the P1 interoperability path: a network with different dynamics per node is lowered to a tvboptim ``HeterogeneousNetwork`` (nodes partitioned into ``NodeGroup``s, edges collapsed into a ``SignalRoute``) and run in process via ``exp.run("tvboptim")``.
+
+The module skips only when the installed tvboptim ships no ``network_dynamics`` module at all. Presence is decided by ``find_spec``, which does not execute the module, so every other import failure — a renamed member, a broken upstream import — raises here instead of reading as "API absent"; that silent skip is what left the adapter broken until a doc notebook hit the same import. The names imported below are exactly the ones the adapter imports.
 """
+
+import importlib.util
 
 import numpy as np
 import pytest
@@ -12,22 +13,14 @@ import yaml
 
 pytest.importorskip("jax")
 pytest.importorskip("tvboptim")
+if importlib.util.find_spec("tvboptim.experimental.network_dynamics") is None:
+    pytest.skip("tvboptim has no heterogeneous network-dynamics API", allow_module_level=True)
 
-# The adapter's heterogeneous path targets a tvboptim network-dynamics API
-# (DynamicsGroup / HeterogeneousNetwork / SignalRoute) that is not present in the pinned
-# tvboptim — the feature only recently landed upstream and the names are still settling.
-# Skip until that integration lands (see tvbo.adapters.tvboptim.to_heterogeneous_network).
-try:
-    from tvboptim.experimental.network_dynamics import (  # noqa: F401
-        DynamicsGroup,
-        HeterogeneousNetwork,
-        SignalRoute,
-    )
-except Exception:
-    pytest.skip(
-        "tvboptim heterogeneous-network API not available in the installed tvboptim",
-        allow_module_level=True,
-    )
+from tvboptim.experimental.network_dynamics import (  # noqa: E402, F401
+    HeterogeneousNetwork,
+    NodeGroup,
+    SignalRoute,
+)
 
 from tvbo import Dynamics, Network, SimulationExperiment  # noqa: E402
 from tvbo.adapters.tvboptim import (  # noqa: E402
@@ -38,11 +31,9 @@ from tvbo.adapters.tvboptim import (  # noqa: E402
 
 
 def test_single_group_equivalence():
-    """The heterogeneous engine reproduces the homogeneous engine exactly on a
-    degenerate one-group partition (same model on every node).
+    """The heterogeneous engine reproduces the homogeneous engine exactly on a degenerate one-group partition (same model on every node).
 
-    This is the strongest guard: if the segmented pack/route/scatter machinery
-    were subtly wrong it would show up as a nonzero difference here.
+    This is the strongest guard: if the segmented pack/route/scatter machinery were subtly wrong it would show up as a nonzero difference here.
     """
     from tvboptim.experimental.network_dynamics import prepare, solve
     from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
@@ -154,8 +145,7 @@ def test_adapter_partitions_and_routes():
 
 
 def test_heterogeneous_run_regions_and_union():
-    """exp.run('tvboptim') integrates the heterogeneous network; per-region /
-    per-variable indexing works and a node holds NaN for variables it lacks."""
+    """exp.run('tvboptim') integrates the heterogeneous network; per-region / per-variable indexing works and a node holds NaN for variables it lacks."""
     exp = _hetero_experiment()
     res = exp.run("tvboptim")
 

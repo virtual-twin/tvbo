@@ -195,6 +195,16 @@ slots:
             and an intermediate one is not. Set false to suppress recording.
 
 enums:
+    ProvenanceFormat:
+        description: >-
+            How the ``prov/`` records are serialized. BEP028 names JSON; YAML is the
+            form every other tvbo record takes and the one this study proposes.
+        permissible_values:
+            yaml:
+                description: "One ``.yaml`` per record (the default)."
+            json:
+                description: "One ``.json`` per record, as BEP028 currently names them."
+
     AlgorithmCompositionMode:
         description: >-
             How an included algorithm is composed with the outer algorithm.
@@ -1135,10 +1145,13 @@ classes:
                 #   - linkml:elements
 
     Provenance:
-        class_uri: prov:Entity
+        class_uri: tvbo:Provenance
         description: >-
-            W3C PROV-O aligned provenance. Reusable on any entity
-            (Network, TimeSeries, Dynamics, etc.).
+            W3C PROV-O aligned provenance ABOUT the artifact that carries it —
+            reusable on any entity (Network, TimeSeries, Dynamics, ...), which is
+            why it holds no identity of its own: the parent supplies that. The
+            identified ``prov:Entity`` a standalone provenance record names is
+            ``ResultEntity``, which carries one of these.
         slots:
             - derived_from
             - references
@@ -1166,6 +1179,27 @@ classes:
                     ``hashlib.sha256(yaml.safe_dump(normalized_yaml).encode()).hexdigest()``
                     over the fully resolved (post-``!include``) experiment
                     block.
+            digest:
+                multivalued: true
+                range: Digest
+                inlined: true
+                exact_mappings:
+                    - prov:value
+                description: >-
+                    Checksums of the artifact itself, keyed by function name. BEP028's
+                    ``Digest``, and distinct from ``experiment_yaml_hash``, which digests
+                    the spec that produced the artifact rather than the artifact.
+            activities:
+                multivalued: true
+                range: Activity
+                inlined: true
+                inlined_as_list: true
+                exact_mappings:
+                    - prov:wasGeneratedBy
+                description: >-
+                    The runs that produced this artifact, serialized to BEP028's activity
+                    record. Each names the command, the software that carried it out and
+                    what it consumed.
             inputs:
                 multivalued: true
                 range: ReferenceFingerprint
@@ -1177,6 +1211,127 @@ classes:
                     of the underlying file at the time the artifact was
                     produced. A downstream cache hit requires every
                     fingerprint to match the current file state.
+
+    ResultEntity:
+        class_uri: prov:Entity
+        description: >-
+            One persisted result container, described. The ``prov:Entity`` of
+            BEP028's ``prov-<label>_ent`` record: what the file is, what produced
+            it, and what it holds. Every field is either a pointer or read off the
+            artifact when it is written — nothing here restates a value the frozen
+            spec beside the container already carries, which is what made the
+            earlier curated JSON sidecar drift from the YAML next to it.
+
+            Named for the entity rather than for the experiment because an analysis
+            container (``ana-<name>_result.h5``) gets one too, and because the
+            in-memory ``tvbo.data.types.ExperimentResult`` is a different thing: the
+            arrays themselves, not the description of the file holding them.
+        slots:
+            - name
+            - description
+            - iri
+        attributes:
+            container:
+                range: string
+                required: true
+                description: >-
+                    Path of the container this record describes, relative to the
+                    study root, so the record stays valid wherever the study is
+                    checked out.
+            produced_by:
+                range: uriorcurie
+                description: >-
+                    The experiment or analysis that computed it, by IRI
+                    (``tvbo:exp/<study>/exp-<id>``, ``tvbo:ana/<study>/<name>``) —
+                    the same scope grammar a ``DataRef`` resolves through, so a
+                    record and a reference name the producer the one way.
+            outputs:
+                multivalued: true
+                range: string
+                description: >-
+                    The data variables the container actually holds, read from it at
+                    write time rather than predicted from the spec: a run that
+                    recorded less than it declared is then visible in the record.
+            provenance:
+                range: Provenance
+                inlined: true
+                description: >-
+                    When it was made, under what licence, by which activities, from
+                    which inputs, and its checksums — the PROV assertions about this
+                    entity, in the one class that already carries them.
+
+    Activity:
+        class_uri: prov:Activity
+        description: >-
+            One thing that was done: a solve, a fit, an analysis, a render. The PROV
+            complement of ``Provenance``, which describes an artifact — an artifact is
+            ``prov:wasGeneratedBy`` an Activity, and an Activity ``prov:used`` the
+            artifacts and environment it consumed. Slot names follow BEP028's activity
+            record (``Id``, ``Label``, ``Command``, ``AssociatedWith``, ``Used``,
+            ``StartedAtTime``, ``EndedAtTime``) so a ``prov/`` record serializes to it
+            without a translation table.
+        slots:
+            - name
+            - description
+            - iri
+        attributes:
+            command:
+                range: string
+                description: >-
+                    The command performed, parameters included. Null for something done by
+                    hand, which BEP028 reads as a manual step and asks a ``description`` for.
+            associated_with:
+                multivalued: true
+                range: SoftwarePackage
+                inlined: false
+                exact_mappings:
+                    - prov:wasAssociatedWith
+                description: "The software that carried the activity out (BEP028 ``AssociatedWith``)."
+            used:
+                multivalued: true
+                range: uriorcurie
+                exact_mappings:
+                    - prov:used
+                description: >-
+                    IRIs of the inputs, outputs and environment the activity consumed
+                    (BEP028 ``Used``).
+            started_at:
+                range: string
+                exact_mappings:
+                    - prov:startedAtTime
+                description: "ISO 8601 start time."
+            ended_at:
+                range: string
+                exact_mappings:
+                    - prov:endedAtTime
+                description: "ISO 8601 end time."
+            type:
+                multivalued: true
+                range: uriorcurie
+                exact_mappings:
+                    - prov:type
+                description: "Controlled-vocabulary terms narrowing what kind of activity this was."
+
+    Digest:
+        class_uri: tvbo:Digest
+        description: >-
+            One checksum of an artifact, keyed by the function that produced it. Collected
+            on ``Provenance.digest``, whose collection KEY is the function name — BEP028
+            takes the names ``MD5``, ``SHA1``, ``SHA-256`` and the rest of that list, and
+            allows an arbitrary label otherwise. Keyed rather than a bare string so an
+            artifact can carry several digests and a reader knows which function to check
+            with.
+        attributes:
+            algorithm:
+                key: true
+                range: string
+                annotations:
+                    collection_key: true
+                description: "Checksum function name, e.g. ``SHA-256``."
+            value:
+                range: string
+                required: true
+                description: "The checksum as computed by ``algorithm``."
 
     ReferenceFingerprint:
         class_uri: tvbo:ReferenceFingerprint
@@ -2352,7 +2507,7 @@ classes:
               solve, it is scheduled on its own — before or after the experiments,
               according to what it uses. Declared in ``SimulationStudy.analyses``, where
               the result is persisted as its own container
-              (``output/results/<name>/result.h5``) — which is what lets a figure bind it
+              (``derivatives/tvbo/ana-<name>_result.h5``) — which is what lets a figure bind it
               with ``used: {analysis: <name>}`` exactly as it binds a run, and why a study
               needs no driver script for its non-simulation figures. ``name`` is then
               required and unique, since it keys that container. The invocation yields a
@@ -3220,9 +3375,9 @@ classes:
                     square in that axis, symmetric and positive semi-definite; its diagonal
                     carries per-element variances and need NOT be unity, so unequal
                     variances and cross-element correlation are expressed together. The
-                    realised increment is `intensity` times a draw from this covariance, so
-                    a scalar `intensity` continues to mean what it means for uncorrelated
-                    noise. Absent (the default) means the increment is independent across
+                    realised increment is the declared sigma times a draw from this
+                    covariance, so `parameters: {sigma: ...}` continues to mean what it
+                    means for uncorrelated noise. Absent (the default) means the increment is independent across
                     that axis. Being a `Parameter`, it carries the full provenance triple:
                     a literal `value:`, existing bytes via `source:`+`measure:`, or — the
                     usual case for a derived operator — `producer:`, whose FunctionCall
@@ -3266,19 +3421,6 @@ classes:
                 ifabsent: integer(42)
             random_state:
                 range: RandomStream
-                inlined: true
-            intensity:
-                description: >-
-                    Noise amplitude as a standard deviation (sigma). Superseded by the
-                    `sigma` entry of `parameters`, which states the same quantity where
-                    every other declared quantity lives; a dispersion (TVB's nsig,
-                    D = sigma^2/2) is the `nsig` entry there.
-                deprecated: >-
-                    Use `parameters: {sigma: ...}` for a standard deviation, or
-                    `parameters: {nsig: ...}` for a dispersion. `intensity` is read as a
-                    standard deviation; a recipe that meant a dispersion is off by
-                    sqrt(2 D)/D.
-                range: Parameter
                 inlined: true
             distribution:
                 range: Distribution
@@ -3664,7 +3806,7 @@ classes:
                     (e.g. "ReducedWongWang.a"), a coupling key
                     (e.g. "FastLinearCoupling.G"), or one of the reserved scopes:
                     "network." for a connectome leaf (e.g. "network.conduction_speed",
-                    "network.edges.weight"), "execution.random_seed" for a per-cell
+                    "network.edges.weight", "network.edges.delay"), "execution.random_seed" for a per-cell
                     noise-seed ensemble, or "initial_conditions.<state_var>" to sweep
                     the initial value of one state variable (a deterministic
                     initial-condition ensemble). Resolved against the enclosing
@@ -5016,7 +5158,7 @@ classes:
                 description: >-
                     Output directory template. ``{study}`` and ``{experiment}`` are
                     substituted with the study and experiment keys at emit time.
-                    Unset means ``out/{study}/{experiment}``.
+                    Unset means the kit's own ``derivatives/tvbo``.
             container:
                 range: string
                 description: >-
@@ -5061,12 +5203,25 @@ classes:
             emit_provenance:
                 range: boolean
                 description: >-
-                    Whether to emit provenance sidecars alongside results. Unset
-                    means enabled. Named apart from the ``provenance`` slot carrying
-                    PROV-O metadata (Network, Figure, ...): LinkML maps every slot of
-                    a given name onto one property, so a boolean here and a
-                    ``Provenance`` object there would make ``tvbo:provenance`` both an
-                    owl:DatatypeProperty and an owl:ObjectProperty — not OWL-DL.
+                    Whether a run writes the ``prov/`` records (BEP028's activity,
+                    entity, environment and software sets). Unset means enabled, and
+                    it applies to any run, not only a workflow kit. Named apart from
+                    the ``provenance`` slot carrying PROV-O metadata (Network,
+                    Figure, ...): LinkML maps every slot of a given name onto one
+                    property, so a boolean here and a ``Provenance`` object there
+                    would make ``tvbo:provenance`` both an owl:DatatypeProperty and
+                    an owl:ObjectProperty — not OWL-DL.
+            provenance_format:
+                range: ProvenanceFormat
+                ifabsent: string(yaml)
+                description: >-
+                    Serialization of the ``prov/`` records: ``yaml`` (the default,
+                    and the form every other tvbo record takes) or ``json`` (what
+                    BEP028 currently names). One file per record in one format,
+                    never both — two serializations of one record are two things
+                    that can disagree. Declared in the spec rather than configured
+                    per machine, because two people running one recipe must get the
+                    same provenance.
             chunk:
                 range: integer
                 minimum_value: 1
@@ -5338,6 +5493,57 @@ classes:
                     a local directory (relative to the recipe YAML or absolute)
                     or a git repository fetched and cached at load time. When
                     absent, the conventional ``<recipe-dir>/code/`` is used.
+            requires:
+                range: SoftwarePackage
+                multivalued: true
+                inlined: true
+                description: >-
+                    Packages this study's own code needs beyond what tvbo itself
+                    installs, keyed by package name and carrying the version it was
+                    reproduced against. A replication that matches a paper's method
+                    often has to use the paper's tool — a spectral parameterisation,
+                    a specific solver — and a study whose report imports one that
+                    nothing declares runs only on the machine that happens to have
+                    it. This states what is required; ``prov-<label>_soft`` records
+                    what actually ran, so the two can be compared rather than
+                    assumed equal.
+            members:
+                range: StudyMember
+                multivalued: true
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    Other studies this one aggregates, each a reference to a study
+                    recipe (``recipe``) plus whether it is ``optional`` (skipped unless
+                    requested, for runs too heavy to recompute per build). A study with
+                    members is a study-of-studies — a whole manuscript as one runnable
+                    specification — and recursion comes through the pointer: a member's
+                    own recipe may declare members of its own. ``tvbo run`` executes each
+                    member's experiments, analyses and figures, then the owning study's
+                    own, which are the paper-native demos belonging to no member.
+                    Legitimized by COMBINE/OMEX, SED-ML and the ISA ``Investigation``
+                    top-level container it parallels.
+            results:
+                range: ResultBinding
+                multivalued: true
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    The named numbers the prose cites, each keyed by the manuscript
+                    token that stands in for it (``key``) and bound either to a computed
+                    value (``used:`` a DataRef into this study's or a member's analysis)
+                    or to an authored constant quoted from prior work (``value`` +
+                    ``source``). ``tvbo run`` collects these into a results manifest the
+                    document reads, so no reported figure is transcribed by hand and a
+                    stale or missing key fails the build rather than printing a wrong
+                    number.
+            archive:
+                range: ArchiveConfig
+                inlined: true
+                description: >-
+                    How to package the run into a COMBINE/OMEX archive — the single
+                    supplementary artifact from which every figure, number and caption
+                    regenerates. Unset means no archive is emitted.
 
     CodeSource:
         class_uri: tvbo:CodeSource
@@ -5370,59 +5576,10 @@ classes:
                     Subdirectory within the source to place on the import path
                     (defaults to the source root).
 
-    StudyCollection:
-        class_uri: tvbo:StudyCollection
-        is_a: SimulationStudy
-        description: >-
-            The whole manuscript as one runnable specification: a study that
-            aggregates the member studies a paper reports (``members``) and also
-            owns the paper's own demonstration experiments, analyses and figures
-            (the SimulationStudy slots it inherits). ``tvbo run`` walks the members
-            and the owned content, emits every reported number to a results manifest
-            (``results``) and every figure with its composed caption, then packages
-            the lot as a COMBINE/OMEX archive (``archive``) — so the paper becomes an
-            instance of the reproducibility it argues for. A Study-of-studies, which
-            no SimulationStudy is (``experiments`` ranges over experiments, not
-            studies); legitimized by COMBINE/OMEX, SED-ML and the ISA ``Investigation``
-            top-level container it parallels.
-        attributes:
-            members:
-                range: StudyMember
-                multivalued: true
-                inlined: true
-                inlined_as_list: true
-                description: >-
-                    The member studies this collection aggregates, each a reference
-                    to a study recipe (``recipe``) plus whether it is ``optional``
-                    (skipped unless requested, for runs too heavy to recompute per
-                    build). ``tvbo run`` executes each member's own experiments,
-                    analyses and figures; the ``figures``/``analyses`` inherited here
-                    are instead the paper-native demos that belong to no member.
-            results:
-                range: ResultBinding
-                multivalued: true
-                inlined: true
-                inlined_as_list: true
-                description: >-
-                    The named numbers the prose cites, each keyed by the manuscript
-                    token that stands in for it (``key``) and bound either to a computed
-                    value (``used:`` a DataRef into a member's or its own analysis) or to
-                    an authored constant quoted from prior work (``value`` + ``source``).
-                    ``tvbo run`` collects these into a results manifest the document
-                    reads, so no reported figure is transcribed by hand and a stale or
-                    missing key fails the build rather than printing a wrong number.
-            archive:
-                range: ArchiveConfig
-                inlined: true
-                description: >-
-                    How to package the run into a COMBINE/OMEX archive — the single
-                    supplementary artifact from which every figure, number and caption
-                    regenerates. Unset means no archive is emitted.
-
     StudyMember:
         class_uri: tvbo:StudyMember
         description: >-
-            One member of an StudyCollection: a reference to a study recipe on disk (or
+            One member of a study-of-studies: a reference to a study recipe on disk (or
             by IRI) and whether it is optional. The recipe carries its own experiments,
             analyses, figures and code_source; the member only states where it is and
             how heavy it is to run.
@@ -5434,7 +5591,7 @@ classes:
                 required: true
                 description: >-
                     Path to the member's study recipe YAML, relative to this
-                    StudyCollection file, or an IRI resolving to one.
+                    owning study's recipe, or an IRI resolving to one.
             optional:
                 range: boolean
                 description: >-
@@ -5447,7 +5604,7 @@ classes:
     ResultBinding:
         class_uri: tvbo:ResultBinding
         description: >-
-            One entry in an StudyCollection's results manifest: a manuscript key bound to
+            One entry in a study's results manifest: a manuscript key bound to
             the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN —
             ``used:`` a DataRef reading a scalar out of a member's or the collection's
             own analysis/experiment, formatted through ``format`` — COMPUTED FROM THE SPEC
@@ -5503,14 +5660,14 @@ classes:
     ArchiveConfig:
         class_uri: tvbo:ArchiveConfig
         description: >-
-            How an StudyCollection packages its run into a COMBINE/OMEX archive: the output
+            How a study packages its run into a COMBINE/OMEX archive: the output
             location and format, plus any extra files to include beyond the recipes,
             derived containers, figures and manifest added automatically.
         attributes:
             path:
                 range: string
                 description: >-
-                    Output archive path, relative to the StudyCollection file. Defaults to
+                    Output archive path, relative to the study recipe. Defaults to
                     ``<name>.omex``.
             format:
                 range: string

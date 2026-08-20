@@ -1,12 +1,7 @@
 """`SimulationStudy.report` writes each shared thing once.
 
 A per-experiment Methods section repeats the model for every experiment that uses it:
-Jansen1995's seven experiments emitted 1209 lines and about thirty tables, of which the
-six state equations, the symbol table and the parameter table were the same text over and
-over. These tests pin the contract that removes that — one system per family, deltas for
-variants, one comparison table carrying only what differs — and the two properties a
-generated cross-referenced document breaks silently without: unique anchors, and no
-number left to drift.
+Jansen1995's seven experiments emitted 1209 lines and about thirty tables, of which the six state equations, the symbol table and the parameter table were the same text over and over. These tests pin the contract that removes that — one system per family, deltas for variants, one comparison table carrying only what differs — and the two properties a generated cross-referenced document breaks silently without: unique anchors, and no number left to drift.
 """
 
 import re
@@ -15,7 +10,6 @@ from types import SimpleNamespace
 import pytest
 
 from tvbo import SimulationStudy
-
 
 RECIPE = """
 title: A study whose experiments share one model
@@ -136,12 +130,9 @@ _BLOCK = re.compile(r"\$\$(.+?)\$\$(\s*\{#(eq-[a-z0-9-]+)\})?", re.S)
 
 
 def _unnumbered(text):
-    """Display equations in *text* carrying neither a Quarto anchor nor a ``\\tag``.
+    r"""Display equations in *text* carrying neither a Quarto anchor nor a ``\\tag``.
 
-    Matched by capturing the optional anchor, never by a negative lookahead: `$$.+?$$`
-    followed by `(?!...)` backtracks *past the closing delimiter* to satisfy the
-    lookahead, so it silently reports whatever makes the assertion pass. The first
-    version of this check did exactly that and could not fail.
+    Matched by capturing the optional anchor, never by a negative lookahead: `$$.+?$$` followed by `(?!...)` backtracks *past the closing delimiter* to satisfy the lookahead, so it silently reports whatever makes the assertion pass. The first version of this check did exactly that and could not fail.
     """
     return [" ".join(m.group(1).split())[:60] for m in _BLOCK.finditer(text) if not m.group(3) and "\\tag{" not in m.group(1)]
 
@@ -172,9 +163,7 @@ def test_sharing_an_auxiliary_variable_does_not_merge_two_systems(study):
     """A shared readout variable is not evidence of a shared model.
 
     Membership is subset-or-superset of the family's first model, never bare overlap.
-    Overlap merged Pang2023's wave field with its BEI mass model because both carry the
-    four Balloon-Windkessel haemodynamic variables, and the report then presented a mass
-    model the paper never deposited as a *variant* of the wave field.
+    Overlap merged Pang2023's wave field with its BEI mass model because both carry the four Balloon-Windkessel haemodynamic variables, and the report then presented a mass model the paper never deposited as a *variant* of the wave field.
     """
     from tvbo.utils import report
 
@@ -199,9 +188,7 @@ def test_a_superset_of_the_state_stays_in_the_family(study):
 def test_every_emitted_table_is_captioned(study):
     """An uncaptioned table still steps LaTeX's table counter, so it shifts every number.
 
-    Pang2023's events table was the one left bare, and it pushed the report's first
-    captioned table to "Table 2" — the reader sees a document whose tables start at two,
-    and the float they cannot see is the one that took the number.
+    Pang2023's events table was the one left bare, and it pushed the report's first captioned table to "Table 2" — the reader sees a document whose tables start at two, and the float they cannot see is the one that took the number.
     """
     import re
 
@@ -244,7 +231,7 @@ def test_time_carries_the_integrator_unit(study):
 
 
 def test_markdown_numbers_equations_where_it_cannot_anchor(study):
-    """Plain markdown has no anchor syntax, so numbering falls back to \\tag."""
+    r"""Plain markdown has no anchor syntax, so numbering falls back to \\tag."""
     report = study.report("markdown", part="all")
     assert r"\tag{1}" in report and "{#eq-" not in report
 
@@ -252,9 +239,7 @@ def test_markdown_numbers_equations_where_it_cannot_anchor(study):
 def test_every_display_equation_carries_a_number(study):
     """One unnumbered equation is one the prose cannot cite, and nothing flags it.
 
-    The coupling equation was rendered by the coupling's own template, which had no
-    access to the report's numbering — so across ten studies every state equation was
-    numbered and the eleven equations joining the nodes into a network were not.
+    The coupling equation was rendered by the coupling's own template, which had no access to the report's numbering — so across ten studies every state equation was numbered and the eleven equations joining the nodes into a network were not.
     """
     for fmt in ("qmd", "markdown"):
         bare = _unnumbered(study.report(fmt, part="all"))
@@ -262,8 +247,7 @@ def test_every_display_equation_carries_a_number(study):
 
 
 def test_the_coupling_equation_is_numbered_with_the_rest(study):
-    """The bug this pins: the coupling rendered through its own template, which had no
-    access to the report's numbering, so it emitted bare `$$`."""
+    """The bug this pins: the coupling rendered through its own template, which had no access to the report's numbering, so it emitted bare `$$`."""
     from tvbo.utils import report
 
     exps = [study.get_experiment(i) for i in study.experiment_ids()]
@@ -274,9 +258,7 @@ def test_the_coupling_equation_is_numbered_with_the_rest(study):
 def test_a_declared_state_variable_always_renders_its_equation(study):
     """A state variable whose equation never renders leaves a hole nothing reports.
 
-    Heterogeneous networks declare their models as plain datamodel objects, which lack
-    the symbolic machinery; treating that as "no equations" gave Mongillo2008's
-    twenty-nine experiments a Methods section with no mathematics at all.
+    Heterogeneous networks declare their models as plain datamodel objects, which lack the symbolic machinery; treating that as "no equations" gave Mongillo2008's twenty-nine experiments a Methods section with no mathematics at all.
     """
     from tvbo.utils import report
 
@@ -314,8 +296,7 @@ def test_unknown_part_is_refused(study):
 def test_a_label_does_not_repeat_the_id_the_heading_carries(study):
     """Recipes open a label with the experiment's own number, giving "Experiment 30: Exp 30 …".
 
-    Six of Schirner2023's ten read that way, and the dash the recipe used to attach the
-    number went with it.
+    Six of Schirner2023's ten read that way, and the dash the recipe used to attach the number went with it.
     """
     from tvbo.utils.report import experiment_title
 
@@ -327,8 +308,7 @@ def test_a_label_does_not_repeat_the_id_the_heading_carries(study):
 
 
 def test_an_identity_half_of_the_coupling_is_a_clause_not_an_equation(study):
-    """`c_pre = local_states` and `c_post = gx` state nothing, and `local_states` is an
-    alias token `symbolic()` substitutes — printed raw it typesets as a variable."""
+    """`c_pre = local_states` and `c_post = gx` state nothing, and `local_states` is an alias token `symbolic()` substitutes — printed raw it typesets as a variable."""
     from tvbo.utils import report
 
     exps = [study.get_experiment(i) for i in study.experiment_ids()]
@@ -381,8 +361,7 @@ def test_the_reported_line_number_survives_a_stripped_cell(tmp_path):
 def test_a_grid_too_small_to_be_a_float_is_written_as_a_sentence(rows, expected):
     """A captioned float tells the reader to look something up; two numbers do not earn one.
 
-    Pang2023 spent a numbered table on the fact that its model declares one event, and
-    Schirner2023 spent one on two experiments differing only in duration.
+    Pang2023 spent a numbered table on the fact that its model declares one event, and Schirner2023 spent one on two experiments differing only in duration.
     """
     from tvbo.utils.report import table_or_prose
 
@@ -452,8 +431,7 @@ def test_a_pipeline_step_is_named_by_what_the_recipe_calls_it():
 
 
 def test_a_setting_every_observation_shares_is_stated_once(study):
-    """`time_scale` defaults to `ms` in the schema, so it was printed on all 34 rows of one
-    study's table and all 29 of another — a default nobody chose, on every line."""
+    """`time_scale` defaults to `ms` in the schema, so it was printed on all 34 rows of one study's table and all 29 of another — a default nobody chose, on every line."""
     from tvbo.utils import report
 
     exps = [study.get_experiment(i) for i in study.experiment_ids()]
@@ -493,8 +471,7 @@ def _param(value, unit="", description=""):
 def test_a_coupling_parameter_the_model_already_declares_is_not_listed_twice():
     """Jansen1995's coupling restates the model's sigmoid constants at the model's values.
 
-    They were a second, uncaptioned table after the coupling block — three rows the reader
-    had just read in the glossary.
+    They were a second, uncaptioned table after the coupling block — three rows the reader had just read in the glossary.
     """
     from tvbo.utils.report import symbol_table
 
@@ -506,11 +483,43 @@ def test_a_coupling_parameter_the_model_already_declares_is_not_listed_twice():
 
 
 def test_a_value_written_two_ways_is_one_setting():
-    """`6` and `6.0` compared as text are two settings, and the report then invents a
-    difference: Jansen1995's glossary listed $v_0$ twice, once as a symbol the coupling
-    supposedly introduces."""
+    """`6` and `6.0` compared as text are two settings, and the report then invents a difference: Jansen1995's glossary listed $v_0$ twice, once as a symbol the coupling supposedly introduces."""
     from tvbo.utils.report import symbol_table
 
     model = SimpleNamespace(state_variables={}, derived_parameters={}, parameters={"v0": _param(6)})
     coupling = SimpleNamespace(parameters={"v0": _param(6.0)})
     assert symbol_table(model, couplings=[coupling]).count("$v_{0}$") == 1
+
+
+def _edge(**kw):
+    """An explicit edge stub: the attributes the readers ask for, absent ones as None."""
+    return SimpleNamespace(parameters=None, weight=0.5, **{"delay": None, "distance": None, **kw})
+
+
+def _delay_experiment(net):
+    return SimpleNamespace(
+        id=1,
+        references=[],
+        network=net,
+        connectivity=None,
+        part="main",
+        integration=SimpleNamespace(unit="ms", method="Heun", step_size=None, duration=None, transient_time=None),
+        dynamics=SimpleNamespace(parameters={}),
+        explorations=None,
+    )
+
+
+def test_a_network_that_measures_tract_lengths_is_reported_by_its_speed():
+    """The comparison table says what the backend integrates, and lengths win over edge delays.
+
+    `graph_selection` lowers a network carrying both onto a length graph, whose delays are lengths / conduction_speed; reporting the edge delay there prints a number no cell ever runs with.
+    """
+    from tvbo.utils.report import experiment_facts
+
+    speed = SimpleNamespace(value=3.0, unit="mm_per_ms")
+    on_edges = _delay_experiment(SimpleNamespace(number_of_nodes=2, edges=[_edge(delay=2.0)], conduction_speed=speed))
+    on_lengths = _delay_experiment(
+        SimpleNamespace(number_of_nodes=2, edges=[_edge(delay=2.0, distance=30.0)], conduction_speed=speed)
+    )
+    assert experiment_facts(on_edges)["Delays"] == "2 ms"
+    assert experiment_facts(on_lengths)["Delays"] == "3 mm/ms"

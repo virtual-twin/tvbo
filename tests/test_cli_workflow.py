@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import re
 import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -18,14 +18,11 @@ from tvbo.cli._backends import (
     resolve_backend,
 )
 
-
 runner = CliRunner()
 EXP = "experiment:JR_MEG_FrequencyGradient_Optimization"
 
 
-# ---------------------------------------------------------------------------
 # Backend table (ontology-derived)
-# ---------------------------------------------------------------------------
 
 
 def test_backends_match_ontology_keys():
@@ -62,9 +59,7 @@ def test_axis_kind_of(path, kind):
     assert axis_kind_of(path) == kind
 
 
-# ---------------------------------------------------------------------------
 # CLI: workflow backends / plan
-# ---------------------------------------------------------------------------
 
 
 def test_workflow_backends_lists_all():
@@ -104,9 +99,7 @@ def test_workflow_plan_tvb_fans_out_both_axes():
 
 
 def test_a_run_venv_wins_over_a_declared_container():
-    """Declaring both a container and a run venv silently ran tasks in the container and
-    ignored the venv; an explicit slurm.venv must WIN — drop the container — so a venv/GPU
-    run needs only `--set slurm.venv=…`, not also `--set container=`."""
+    """Declaring both a container and a run venv silently ran tasks in the container and ignored the venv; an explicit slurm.venv must WIN — drop the container — so a venv/GPU run needs only `--set slurm.venv=…`, not also `--set container=`."""
     import json
 
     img = "docker://ghcr.io/virtual-twin/tvbo:dev"
@@ -185,11 +178,7 @@ integration: {{method: RungeKutta4thOrder, duration: 10.0, step_size: 1.0, trans
 def test_used_dataref_dependency_ignores_curated_entities():
     """A `used:` DataRef adds an ordering edge only for a sibling *experiment* iri.
 
-    A curated / dataset iri that merely contains digits must not register a phantom
-    dependency on a non-existent experiment: the old heuristic stripped non-digits, so
-    ``tvbo:dataset/HCP1200`` became a dep on experiment '1200' (and an atlas iri on
-    experiment '1'), deadlocking the DAG on a rule that is never emitted. A real
-    ``…/exp-7`` still registers its edge.
+    A curated / dataset iri that merely contains digits must not register a phantom dependency on a non-existent experiment: the old heuristic stripped non-digits, so ``tvbo:dataset/HCP1200`` became a dep on experiment '1200' (and an atlas iri on experiment '1'), deadlocking the DAG on a rule that is never emitted. A real ``…/exp-7`` still registers its edge.
     """
     from tvbo.classes.experiment import SimulationExperiment
     from tvbo.cli import _workflow
@@ -203,9 +192,7 @@ def test_used_dataref_dependency_ignores_curated_entities():
     assert deps("tvbo:exp/s/exp-7") == ["7"]  # sibling experiment → real edge
 
 
-# ---------------------------------------------------------------------------
 # CLI: workflow snakemake / slurm / nextflow kit emission
-# ---------------------------------------------------------------------------
 
 
 def test_workflow_snakemake_emits_kit(tmp_path: Path):
@@ -214,29 +201,21 @@ def test_workflow_snakemake_emits_kit(tmp_path: Path):
     assert r.exit_code == 0, r.stdout
     assert (out / "Snakefile").is_file()
     assert (out / "README.md").is_file()
-    # Each experiment is frozen into its own self-contained spec/<key>/ directory,
-    # so one Snakefile fans a whole study (per experiment, per subject / sweep cell).
+    # Each experiment is frozen into its own self-contained spec/<key>/ directory, so one Snakefile fans a whole study (per experiment, per subject / sweep cell).
     frozen = list(out.glob("spec/*/experiment.yaml"))
     assert frozen, "expected a frozen spec/<key>/experiment.yaml"
     smk = (out / "Snakefile").read_text()
     assert "rule" in smk
-    # A rule runs the frozen spec through `tvbo run` (the resolution layer needed
-    # for per-subject targets), not the raw backend script.
+    # A rule runs the frozen spec through `tvbo run` (the resolution layer needed for per-subject targets), not the raw backend script.
     assert "tvbo run spec/" in smk
-    # The README's Layout must describe where the specs actually are. The snakemake
-    # emitter always writes spec/<key>/experiment.yaml — including for one
-    # experiment — so a flat `spec/<key>.yaml` claim would send the reader nowhere.
+    # The README's Layout must describe where the specs actually are. The snakemake emitter always writes spec/<key>/experiment.yaml — including for one experiment — so a flat `spec/<key>.yaml` claim would send the reader nowhere.
     readme = (out / "README.md").read_text()
     assert "spec/<experiment>/experiment.yaml" in readme
     assert not any(line.startswith(f"- `spec/{p.parent.name}.yaml`") for p in frozen for line in readme.splitlines())
 
 
 def test_snakemake_rule_emits_the_resolved_backend_never_none(tmp_path: Path):
-    """Emitting WITHOUT `--backend` must pin the plan's resolved backend on each rule,
-    not the raw ``None``. The plan resolves an unset backend to the experiment's
-    ``execution.backend`` (else tvboptim); if the raw None leaks through, the rule
-    renders ``--backend=None`` and every cell dies at backend resolution
-    (``experiment.run(format="None")`` -> ValueError)."""
+    """Emitting WITHOUT `--backend` must pin the plan's resolved backend on each rule, not the raw ``None``. The plan resolves an unset backend to the experiment's ``execution.backend`` (else tvboptim); if the raw None leaks through, the rule renders ``--backend=None`` and every cell dies at backend resolution (``experiment.run(format="None")`` -> ValueError)."""
     out = tmp_path / "kit"
     r = runner.invoke(app, ["workflow", "snakemake", EXP, "-o", str(out)])
     assert r.exit_code == 0, r.stdout
@@ -248,9 +227,7 @@ def test_snakemake_rule_emits_the_resolved_backend_never_none(tmp_path: Path):
 def test_study_rules_do_not_share_one_experiments_resources():
     """Declared resources belong to the rule that declared them, and to no other.
 
-    Both directions have shipped broken: with no per-rule block every rule inherited
-    whichever experiment the freeze loop ended on, and with an empty block treated as
-    "unset" a heavyweight experiment's 128G/24h leaked onto every trivial sibling.
+    Both directions have shipped broken: with no per-rule block every rule inherited whichever experiment the freeze loop ended on, and with an empty block treated as "unset" a heavyweight experiment's 128G/24h leaked onto every trivial sibling.
     """
     from tvbo.cli.workflow import _render_template
 
@@ -275,8 +252,7 @@ def test_study_rules_do_not_share_one_experiments_resources():
 
     grid = smk[smk.index("rule exp_40:") : smk.index("rule exp_1:")]
     sheet = smk[smk.index("rule exp_1:") :]
-    # 128 GiB, not 128_000 MB: Slurm sizes are binary, so a decimal conversion would
-    # reserve ~2.4% less than the recipe declared.
+    # 128 GiB, not 128_000 MB: Slurm sizes are binary, so a decimal conversion would reserve ~2.4% less than the recipe declared.
     assert "mem_mb=131072" in grid and "runtime=1440" in grid
     assert "OMP_NUM_THREADS" in grid
     # The sheet experiment declared nothing: no reservation, no borrowed env.
@@ -303,9 +279,7 @@ def test_study_rules_do_not_share_one_experiments_resources():
 def test_runtime_minutes_accepts_every_sbatch_walltime_spelling(walltime, minutes):
     """A declared walltime must survive into Snakemake's ``runtime`` resource.
 
-    The day-prefixed spellings are the ones that matter: when ``3-00:00:00`` parsed
-    to None the resource was omitted entirely and every job silently inherited the
-    partition's default limit instead of the 3 days the study asked for.
+    The day-prefixed spellings are the ones that matter: when ``3-00:00:00`` parsed to None the resource was omitted entirely and every job silently inherited the partition's default limit instead of the 3 days the study asked for.
     """
     from tvbo.cli._workflow import runtime_minutes
 
@@ -342,10 +316,7 @@ def test_declared_walltime_reaches_the_snakemake_rule():
 def test_retries_escalation_emits_attempt_scaled_resources():
     """workflow.retries wires Snakemake retry + per-attempt escalation into the rule.
 
-    A GPU rule (gres) must NOT raise host mem on retry; it adds an attempt-scaled
-    `nvmap_max` RESOURCE (params callables never receive `attempt`, only resources do)
-    and exports it as TVBO_NVMAP_MAX so the re-run shrinks the on-device vmap batch. A
-    CPU rule scales host mem/time up instead. retries=0 emits none of it (opt-in).
+    A GPU rule (gres) must NOT raise host mem on retry; it adds an attempt-scaled `nvmap_max` RESOURCE (params callables never receive `attempt`, only resources do) and exports it as TVBO_NVMAP_MAX so the re-run shrinks the on-device vmap batch. A CPU rule scales host mem/time up instead. retries=0 emits none of it (opt-in).
     """
     from tvbo.cli.workflow import _render_template
 
@@ -399,12 +370,7 @@ def test_retries_escalation_emits_attempt_scaled_resources():
 def test_fanout_snakefile_is_executable_python():
     """The emitted Snakefile must actually *run*, not merely contain the right text.
 
-    Paths are built with f-strings (to interpolate OUT_DIR), and an f-string eats
-    single braces — so a wildcard written as `{subject}` is evaluated as a Python
-    name and the Snakefile dies at parse time with `NameError: name 'subject' is not
-    defined`, before Snakemake sees a single rule. Text assertions sail straight past
-    that, so execute the module instead. `expand`/`f-string` must yield the literal
-    `{subject}` a wildcard needs.
+    Paths are built with f-strings (to interpolate OUT_DIR), and an f-string eats single braces — so a wildcard written as `{subject}` is evaluated as a Python name and the Snakefile dies at parse time with `NameError: name 'subject' is not defined`, before Snakemake sees a single rule. Text assertions sail straight past that, so execute the module instead. `expand`/`f-string` must yield the literal `{subject}` a wildcard needs.
     """
     from tvbo.cli.workflow import _render_template
 
@@ -429,9 +395,7 @@ def test_fanout_snakefile_is_executable_python():
         ],
     )
 
-    # Evaluate every path f-string the Snakefile builds, with only OUT_DIR bound —
-    # exactly the namespace Snakemake parses them in. A wildcard that leaked a single
-    # brace resolves as a Python name here and raises NameError.
+    # Evaluate every path f-string the Snakefile builds, with only OUT_DIR bound — exactly the namespace Snakemake parses them in. A wildcard that leaked a single brace resolves as a Python name here and raises NameError.
     literals = re.findall(r'f"[^"\n]*"', smk)
     assert literals, "expected f-string paths in the emitted Snakefile"
     resolved = [eval(lit, {"OUT_DIR": "results"}) for lit in literals]
@@ -443,8 +407,7 @@ def test_fanout_snakefile_is_executable_python():
 def _snakemake_cmd(tmp_path, monkeypatch, *, sbatch: bool, ship_profile: bool, cores=None, profile=None):
     """Capture the snakemake argv `_execute_engine_artefact` would run for a kit.
 
-    *sbatch* toggles whether a scheduler is discoverable; *ship_profile* whether the
-    kit carries a SLURM `profile/`. Returns the launched command (minus argv[0]).
+    *sbatch* toggles whether a scheduler is discoverable; *ship_profile* whether the kit carries a SLURM `profile/`. Mocking `_resolve_launcher` controls both, since `has_scheduler` consults it and it checks the venv sibling as well as `$PATH`. Returns the launched command (minus argv[0]).
     """
     from tvbo.cli import workflow as wf
 
@@ -454,8 +417,6 @@ def _snakemake_cmd(tmp_path, monkeypatch, *, sbatch: bool, ship_profile: bool, c
         (kit / "profile" / "config.yaml").write_text("executor: slurm\n", encoding="utf-8")
     (kit / "Snakefile").write_text("rule all:\n    input: []\n", encoding="utf-8")
 
-    # has_scheduler consults _resolve_launcher (which itself checks the venv sibling AND
-    # $PATH), so mocking it fully controls both the launcher path and scheduler discovery.
     monkeypatch.setattr(
         wf,
         "_resolve_launcher",
@@ -476,9 +437,7 @@ def _snakemake_cmd(tmp_path, monkeypatch, *, sbatch: bool, ship_profile: bool, c
 def test_snakemake_explicit_cores_runs_local_but_keeps_the_profile(tmp_path, monkeypatch):
     """`--cores` forces a LOCAL run, overriding only the profile's *executor*.
 
-    The profile carries the container deployment method and its bind mounts, retries
-    and keep-going alongside the SLURM executor. Dropping it to run locally would
-    silently execute every rule outside the kit's declared container.
+    The profile carries the container deployment method and its bind mounts, retries and keep-going alongside the SLURM executor. Dropping it to run locally would silently execute every rule outside the kit's declared container.
     """
     cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=True, ship_profile=True, cores="4")
     assert cmd[1:] == ["--profile", "profile", "--executor", "local", "--cores", "4"]
@@ -491,9 +450,7 @@ def test_snakemake_shipped_profile_used_only_when_scheduler_present(tmp_path, mo
 
 
 def test_snakemake_falls_back_to_local_cores_without_a_scheduler(tmp_path, monkeypatch):
-    """A kit's SLURM executor can't work on a machine with no `sbatch`; a bare run must
-    still execute — auto-fall back to a local executor so the SAME kit runs natively
-    locally, still inside the container the profile declares."""
+    """A kit's SLURM executor can't work on a machine with no `sbatch`; a bare run must still execute — auto-fall back to a local executor so the SAME kit runs natively locally, still inside the container the profile declares."""
     cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=False, ship_profile=True)
     assert cmd[1:] == ["--profile", "profile", "--executor", "local", "--cores", "all"]
 
@@ -520,9 +477,7 @@ def test_snakemake_explicit_profile_wins_over_shipped(tmp_path, monkeypatch):
 def test_submit_dry_run_reports_without_queueing(tmp_path: Path, monkeypatch, engine, expected_tail):
     """`--dry-run` must reach the engine and must not queue anything.
 
-    Validating a kit before a large submission is the whole point, so the Slurm
-    path must also skip the `finalize.sbatch` afterok chain — there is no array job
-    id to depend on when nothing was submitted.
+    Validating a kit before a large submission is the whole point, so the Slurm path must also skip the `finalize.sbatch` afterok chain — there is no array job id to depend on when nothing was submitted.
     """
     calls = []
 
@@ -548,10 +503,7 @@ def test_submit_dry_run_reports_without_queueing(tmp_path: Path, monkeypatch, en
 def test_scalar_set_override_lands_as_one_bind(tmp_path: Path):
     """`--set container_binds=/data/cephfs-1` is ONE bind, not one per character.
 
-    A `--set` override arrives as a string into a multivalued slot. Strings are
-    iterable, so a naive `list()` expands `/data/cephfs-1` into 14 single-character
-    binds and the emitted flag reads `--bind /,d,a,t,a,…` — which apptainer accepts
-    as nonsense mounts rather than failing loudly.
+    A `--set` override arrives as a string into a multivalued slot. Strings are iterable, so a naive `list()` expands `/data/cephfs-1` into 14 single-character binds and the emitted flag reads `--bind /,d,a,t,a,…` — which apptainer accepts as nonsense mounts rather than failing loudly.
     """
     from tvbo.utils import as_list
 
@@ -618,10 +570,7 @@ def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=(
 
 
 def test_env_layer_provisions_requirements_container_or_not():
-    """Requirements need provisioning wherever the tasks run: `needs_env_layer` is true as
-    soon as requirements exist (a native venv, or one layered on a container). The narrower
-    `needs_container_layer` only fires when a container is ALSO declared (the Slurm --env
-    path); with requirements but no container it stays a native venv.
+    """Requirements need provisioning wherever the tasks run: `needs_env_layer` is true as soon as requirements exist (a native venv, or one layered on a container). The narrower `needs_container_layer` only fires when a container is ALSO declared (the Slurm --env path); with requirements but no container it stays a native venv.
 
     A provided run venv (`slurm.venv`) IS the environment: a `--system-site-packages` venv layered on it does not chain, so pip would re-resolve the whole stack (a CPU jaxlib shadowing `jax[cuda]`). Trust the venv and emit no setup.sh.
     """
@@ -637,8 +586,7 @@ def test_env_layer_provisions_requirements_container_or_not():
 
 
 def test_concrete_container_reference_passes_through_unchanged():
-    """A pinned image — local .sif path or a tagged/digested registry ref — is the
-    author's exact choice and must survive resolution verbatim."""
+    """A pinned image — local .sif path or a tagged/digested registry ref — is the author's exact choice and must survive resolution verbatim."""
     from tvbo.cli._workflow import resolve_container_ref
 
     for ref in (
@@ -652,9 +600,7 @@ def test_concrete_container_reference_passes_through_unchanged():
 
 
 def test_unpinned_reference_resolves_to_version_matched_image(monkeypatch):
-    """A reference that leaves the version open — the symbolic `tvbo`, or a tvbo
-    registry ref with no tag — pulls the image matching the running CLI, so the kit
-    runs the tvbo it was emitted with instead of failing to resolve."""
+    """A reference that leaves the version open — the symbolic `tvbo`, or a tvbo registry ref with no tag — pulls the image matching the running CLI, so the kit runs the tvbo it was emitted with instead of failing to resolve."""
     from tvbo.cli import _workflow
 
     monkeypatch.delenv("TVBO_CONTAINER", raising=False)
@@ -667,9 +613,7 @@ def test_unpinned_reference_resolves_to_version_matched_image(monkeypatch):
 
 
 def test_no_container_means_none_even_with_requirements():
-    """Requirements do NOT force a container: an undeclared container stays None (the deps
-    are provisioned into a native venv by setup.sh), and no container + no requirements is
-    a bare run. The `container` field alone chooses the substrate."""
+    """Requirements do NOT force a container: an undeclared container stays None (the deps are provisioned into a native venv by setup.sh), and no container + no requirements is a bare run. The `container` field alone chooses the substrate."""
     from tvbo.cli import _workflow
 
     assert _workflow.resolve_container_ref(None) is None
@@ -677,8 +621,7 @@ def test_no_container_means_none_even_with_requirements():
 
 
 def test_full_container_env_override_wins_verbatim(monkeypatch):
-    """TVBO_CONTAINER supplies a complete reference — a site mirror, a pinned digest —
-    that overrides both the default repository and tag."""
+    """TVBO_CONTAINER supplies a complete reference — a site mirror, a pinned digest — that overrides both the default repository and tag."""
     from tvbo.cli import _workflow
 
     monkeypatch.setenv("TVBO_CONTAINER", "docker://mirror.local/tvbo:pinned")
@@ -686,9 +629,7 @@ def test_full_container_env_override_wins_verbatim(monkeypatch):
 
 
 def test_fan_input_expr_expands_over_every_fanned_cell():
-    """A figure (or cross-experiment dep) that reads a FANNED experiment must depend on
-    ALL its cells, so it waits for the whole sweep — the input is the `expand()` over the
-    fan's value lists. A group run (no axes) is its single result path."""
+    """A figure (or cross-experiment dep) that reads a FANNED experiment must depend on ALL its cells, so it waits for the whole sweep — the input is the `expand()` over the fan's value lists. A group run (no axes) is its single result path."""
     from tvbo.cli._workflow import fan_input_expr
 
     fanned = {
@@ -711,9 +652,7 @@ def test_fan_input_expr_expands_over_every_fanned_cell():
 
 
 def test_setup_sh_layers_requirements_onto_the_image_via_system_site_venv():
-    """setup.sh must build the venv WITH --system-site-packages (so pip installs only the
-    delta and reuses the image's packages) and install with the IMAGE's own pip (so a
-    native wheel like igl is ABI-correct) — not rebuild the SIF."""
+    """setup.sh must build the venv WITH --system-site-packages (so pip installs only the delta and reuses the image's packages) and install with the IMAGE's own pip (so a native wheel like igl is ABI-correct) — not rebuild the SIF."""
     from tvbo.cli.workflow import _render_template
 
     sh = _render_template("setup.sh.mako", plan=_layer_plan())
@@ -725,9 +664,7 @@ def test_setup_sh_layers_requirements_onto_the_image_via_system_site_venv():
 
 
 def test_setup_sh_provisions_a_native_venv_when_no_container():
-    """With requirements but NO container, setup.sh builds a NATIVE --system-site-packages
-    venv (no `singularity exec` prefix) — so `tvbo workflow submit` provisions the study's
-    deps on the host with no manual `pip install`."""
+    """With requirements but NO container, setup.sh builds a NATIVE --system-site-packages venv (no `singularity exec` prefix) — so `tvbo workflow submit` provisions the study's deps on the host with no manual `pip install`."""
     from tvbo.cli.workflow import _render_template
 
     sh = _render_template("setup.sh.mako", plan=_layer_plan(container=None, binds=()))
@@ -738,9 +675,7 @@ def test_setup_sh_provisions_a_native_venv_when_no_container():
 
 
 def test_snakemake_rule_prepends_the_native_venv_to_pythonpath():
-    """A native run (no container) still prepends the requirements venv to PYTHONPATH — the
-    Snakemake prepend is a plain shell export, substrate-agnostic — so a host observation's
-    `import igl` resolves without any manual install."""
+    """A native run (no container) still prepends the requirements venv to PYTHONPATH — the Snakemake prepend is a plain shell export, substrate-agnostic — so a host observation's `import igl` resolves without any manual install."""
     from tvbo.cli.workflow import _render_template
 
     ep = {
@@ -764,8 +699,7 @@ def test_snakemake_rule_prepends_the_native_venv_to_pythonpath():
 
 
 def test_run_sbatch_exposes_the_layer_via_pythonpath_and_guards_on_setup():
-    """Each task must see the layered deps (PYTHONPATH into the venv site-packages) and
-    fail loudly if setup.sh was never run, rather than crashing mid-import on the node."""
+    """Each task must see the layered deps (PYTHONPATH into the venv site-packages) and fail loudly if setup.sh was never run, rather than crashing mid-import on the node."""
     from tvbo.cli.workflow import _render_template
 
     sb = _render_template(
@@ -778,10 +712,10 @@ def test_run_sbatch_exposes_the_layer_via_pythonpath_and_guards_on_setup():
 
 
 def test_snakemake_rule_prepends_the_container_layer_to_pythonpath():
-    """The Snakemake fan-out runs each cell's `tvbo run` INSIDE the container, so the
-    layered deps (setup.sh's venv) must reach it via PYTHONPATH on every rule — this is
-    the per-cell path a host (igl) observation needs, where slurm's --shard vmaps a chunk.
-    Double braces survive Snakemake's `.format()` (single braces are wildcards)."""
+    """The Snakemake fan-out runs each cell's `tvbo run` INSIDE the container, so the layered deps (setup.sh's venv) must reach it via PYTHONPATH on every rule — this is the per-cell path a host (igl) observation needs, where slurm's --shard vmaps a chunk.
+
+    Double braces survive Snakemake's `.format()` (single braces are wildcards).
+    """
     from tvbo.cli.workflow import _render_template
 
     ep = {
@@ -807,9 +741,7 @@ def test_snakemake_rule_prepends_the_container_layer_to_pythonpath():
 
 
 def test_a_venv_rule_opts_out_of_the_study_global_container():
-    """Mixed study — most experiments containerized, one declaring a venv. The venv rule must
-    emit `container: None` to opt out of the study-wide `container:`, else apptainer deployment
-    wraps its venv activation in the image and the image's interpreter shadows the venv."""
+    """Mixed study — most experiments containerized, one declaring a venv. The venv rule must emit `container: None` to opt out of the study-wide `container:`, else apptainer deployment wraps its venv activation in the image and the image's interpreter shadows the venv."""
     from tvbo.cli.workflow import _render_template
 
     img = {
@@ -835,10 +767,10 @@ def test_a_venv_rule_opts_out_of_the_study_global_container():
 
 
 def test_snakemake_fans_a_model_param_axis_via_pin_not_set():
-    """A fanned exploration axis must emit `--pin`, not `--set`: `--pin` sets the base
-    parameter AND drops the axis so the cell is a single point (its host observation lands
-    there), whereas `--set` on a swept model param neither resolves nor collapses the sweep.
-    The dataset subject axis keeps `--subject`."""
+    """A fanned exploration axis must emit `--pin`, not `--set`: `--pin` sets the base parameter AND drops the axis so the cell is a single point (its host observation lands there), whereas `--set` on a swept model param neither resolves nor collapses the sweep.
+
+    The dataset subject axis keeps `--subject`.
+    """
     from tvbo.cli.workflow import _render_template
 
     ep = {
@@ -864,14 +796,7 @@ def test_snakemake_fans_a_model_param_axis_via_pin_not_set():
 
 
 def test_snakemake_fanned_parameter_experiment_is_spec_only(tmp_path: Path):
-    """A workflow-fanned `parameters` sweep (one `--pin` per cell — e.g. a per-cell host
-    observation) must NOT be frozen. A frozen script bakes the model/coupling params at one
-    point and hardcodes the whole grid, so the per-cell `--pin` never reaches them: every
-    cell re-runs the entire grid and a non-jittable host observation traces inside it
-    (TracerArrayConversionError, the Koller exp-41 failure). Such an experiment emits
-    spec-only — no frozen script and no `--rendered`, so it re-renders per cell (where the
-    pin collapses the exploration to the pinned point) even if the kit was packed
-    `--code-source frozen`."""
+    """A workflow-fanned `parameters` sweep (one `--pin` per cell — e.g. a per-cell host observation) must NOT be frozen. A frozen script bakes the model/coupling params at one point and hardcodes the whole grid, so the per-cell `--pin` never reaches them: every cell re-runs the entire grid and a non-jittable host observation traces inside it (TracerArrayConversionError, the Koller exp-41 failure). Such an experiment emits spec-only — no frozen script and no `--rendered`, so it re-renders per cell (where the pin collapses the exploration to the pinned point) even if the kit was packed `--code-source frozen`."""
     out = tmp_path / "kit"
     r = runner.invoke(app, ["workflow", "snakemake", EXP, "--backend", "tvb", "-o", str(out), "--code-source", "frozen"])
     assert r.exit_code == 0, r.stdout
@@ -919,11 +844,9 @@ workflow:
 
 def test_slurm_rejects_explicit_per_cell_workflow_fanout(tmp_path: Path):
     """The slurm array shards + vectorizes a sweep — it has no per-cell `--pin` fan-out.
-    An experiment that EXPLICITLY declares `distribute.workflow` over model params asked
-    for per-cell fan-out (e.g. a non-jittable host observation per cell); slurm would
-    silently vectorize it, tracing the host obs inside the vmap (the exp-41 crash). The
-    slurm emitter fails fast and points at snakemake — and the SAME recipe emits cleanly
-    via snakemake (spec-only, one --pin per cell)."""
+
+    An experiment that EXPLICITLY declares `distribute.workflow` over model params asked for per-cell fan-out (e.g. a non-jittable host observation per cell); slurm would silently vectorize it, tracing the host obs inside the vmap (the exp-41 crash). The slurm emitter fails fast and points at snakemake — and the SAME recipe emits cleanly via snakemake (spec-only, one --pin per cell).
+    """
     recipe = tmp_path / "fanned.yaml"
     recipe.write_text(_FANNED_WORKFLOW_RECIPE)
 
@@ -940,8 +863,7 @@ def test_slurm_rejects_explicit_per_cell_workflow_fanout(tmp_path: Path):
 
 
 def test_submit_provisions_the_container_layer_before_submitting(tmp_path, monkeypatch):
-    """`tvbo workflow submit <archive>` must run setup.sh itself, so the whole cluster step
-    is one command (no manual `bash setup.sh`). A layer failure aborts the submit."""
+    """`tvbo workflow submit <archive>` must run setup.sh itself, so the whole cluster step is one command (no manual `bash setup.sh`). A layer failure aborts the submit."""
     from tvbo.cli import workflow as wf
 
     kit = tmp_path / "kit"
@@ -997,10 +919,7 @@ def test_no_container_layer_means_no_pythonpath_injection():
 def test_profile_carries_container_binds(tmp_path: Path):
     """``container_binds`` is what makes the container usable at a site.
 
-    A container sees only ``$HOME`` and ``$PWD`` by default, so a home directory
-    that symlinks into another filesystem dangles inside it — and a library that
-    touches such a path at import time fails before the task starts. The binds
-    reach the run as ``apptainer-args``.
+    A container sees only ``$HOME`` and ``$PWD`` by default, so a home directory that symlinks into another filesystem dangles inside it — and a library that touches such a path at import time fails before the task starts. The binds reach the run as ``apptainer-args``.
     """
     from tvbo.cli.workflow import _write_snakemake_profile
 
@@ -1028,10 +947,7 @@ def test_profile_carries_container_binds(tmp_path: Path):
 def test_mem_mb_uses_binary_units_and_every_sbatch_suffix(mem, mib):
     """A declared memory size must reach Slurm as the size that was declared.
 
-    Two failure modes this pins: a decimal conversion under-reserves against a
-    binary ``--mem`` and OOM-kills a task sized to its own limit, and an
-    unrecognised suffix returning None drops the resource entirely so the job
-    silently inherits the partition default.
+    Two failure modes this pins: a decimal conversion under-reserves against a binary ``--mem`` and OOM-kills a task sized to its own limit, and an unrecognised suffix returning None drops the resource entirely so the job silently inherits the partition default.
     """
     from tvbo.cli._workflow import mem_mb
 
@@ -1041,9 +957,7 @@ def test_mem_mb_uses_binary_units_and_every_sbatch_suffix(mem, mib):
 def test_bind_paths_survive_spaces_and_commas():
     """Binds reach the runtime as distinct, shell-safe arguments.
 
-    A comma cannot be escaped inside one ``--bind``, and the Slurm emitters splice
-    these flags straight into a command line — so comma-joining or leaving a space
-    unquoted turns one bind into two bogus arguments.
+    A comma cannot be escaped inside one ``--bind``, and the Slurm emitters splice these flags straight into a command line — so comma-joining or leaving a space unquoted turns one bind into two bogus arguments.
     """
     from tvbo.cli._workflow import WorkflowPlan
 
@@ -1056,13 +970,13 @@ def test_bind_paths_survive_spaces_and_commas():
 def test_profile_quotes_container_args_containing_a_quote():
     """`container_args` is the verbatim escape hatch, so it may contain a quote.
 
-    Interpolated raw into a double-quoted YAML scalar it closes the scalar early
-    and the whole profile fails to parse.
+    Interpolated raw into a double-quoted YAML scalar it closes the scalar early and the whole profile fails to parse.
     """
+    import tempfile
+
     import yaml
 
     from tvbo.cli.workflow import _write_snakemake_profile
-    import tempfile
 
     with tempfile.TemporaryDirectory() as td:
         plan = _container_plan(binds=["/data"], args='--env FOO="bar"')
@@ -1073,8 +987,9 @@ def test_profile_quotes_container_args_containing_a_quote():
 
 def test_profile_omits_default_resources_when_nothing_to_put_in_it():
     """A `default-resources:` key whose only content is a comment parses as null."""
-    import yaml
     import tempfile
+
+    import yaml
 
     from tvbo.cli.workflow import _write_snakemake_profile
 
@@ -1087,9 +1002,7 @@ def test_profile_omits_default_resources_when_nothing_to_put_in_it():
 def test_per_experiment_partition_reaches_its_own_rule():
     """Partition is declarable per experiment, so it cannot live only in the profile.
 
-    The profile carries one study-wide default; an experiment that overrides it
-    (a long sweep needing a longer-walltime partition) must carry its own, or it
-    is submitted to a sibling's partition and killed at that partition's cap.
+    The profile carries one study-wide default; an experiment that overrides it (a long sweep needing a longer-walltime partition) must carry its own, or it is submitted to a sibling's partition and killed at that partition's cap.
     """
     from tvbo.cli.workflow import _render_template
 
@@ -1122,10 +1035,7 @@ def test_per_experiment_partition_reaches_its_own_rule():
 def test_snakemake_rule_activates_declared_venv_and_modules():
     """A rule's shell runs in a clean shell on the compute node.
 
-    The kit is emitted by one interpreter and executed by another, so a declared
-    `venv:`/`modules:` must be activated inside the rule or the job dies on
-    `tvbo: command not found` seconds after it starts. The Slurm emitter has always
-    done this; the Snakemake emitter silently ignored both.
+    The kit is emitted by one interpreter and executed by another, so a declared `venv:`/`modules:` must be activated inside the rule or the job dies on `tvbo: command not found` seconds after it starts. The Slurm emitter has always done this; the Snakemake emitter silently ignored both.
     """
     from tvbo.cli.workflow import _render_template
 
@@ -1186,14 +1096,11 @@ def test_venv_path_with_a_space_is_shell_quoted():
 def test_experiment_override_does_not_clear_inherited_list():
     """An override replaces only the slots its author filled in.
 
-    LinkML gives an unfilled multivalued slot an empty list, not None — so an
-    experiment that overrides just its walltime still carries
-    `container_binds: []`. Merged naively that wipes the study's binds, and only
-    that experiment's tasks run unbound: they die at import time, far from the
-    walltime override that caused it.
+    LinkML gives an unfilled multivalued slot an empty list, not None — so an experiment that overrides just its walltime still carries `container_binds: []`. Merged naively that wipes the study's binds, and only that experiment's tasks run unbound: they die at import time, far from the walltime override that caused it.
     """
-    from tvbo.cli._workflow import merge_workflow_spec
     from types import SimpleNamespace as NS
+
+    from tvbo.cli._workflow import merge_workflow_spec
 
     study = NS(workflow=NS(container="img", container_binds=["/data/cephfs-1"], container_args=None, requirements=[]))
     exp = NS(workflow=NS(container=None, container_binds=[], container_args=None, requirements=[], slurm=NS(time="48:00:00")))
@@ -1207,8 +1114,7 @@ def test_experiment_override_does_not_clear_inherited_list():
 def test_nextflow_enables_the_container_runtime():
     """`process.container` is inert unless a runtime is switched on.
 
-    Without `singularity.enabled` Nextflow runs the task on the bare host and the
-    declared image — and every bind — is silently ignored.
+    Without `singularity.enabled` Nextflow runs the task on the bare host and the declared image — and every bind — is silently ignored.
     """
     from tvbo.cli.workflow import _render_template
 
@@ -1233,9 +1139,7 @@ def test_nextflow_enables_the_container_runtime():
 def test_profile_accepts_prebuilt_image_path(tmp_path: Path):
     """A path to an image already built on the target is a valid ``container``.
 
-    It pins the exact image and needs no pull, which is why the schema carries no
-    staging-directory slot: where a registry reference gets materialised is a
-    run-time concern (``--apptainer-prefix``), not part of the study.
+    It pins the exact image and needs no pull, which is why the schema carries no staging-directory slot: where a registry reference gets materialised is a run-time concern (``--apptainer-prefix``), not part of the study.
     """
     from tvbo.cli.workflow import _write_snakemake_profile
 
@@ -1259,9 +1163,7 @@ def test_profile_omits_apptainer_keys_when_no_container(tmp_path: Path):
 def test_study_readme_covers_every_experiment():
     """A whole-study README must describe the whole study, not its last experiment.
 
-    ``_emit_snakemake_study`` freezes each experiment in a loop; deriving the README
-    from the loop variable made an 18-experiment kit announce itself as its final
-    experiment with ``workflow cells: 1``.
+    ``_emit_snakemake_study`` freezes each experiment in a loop; deriving the README from the loop variable made an 18-experiment kit announce itself as its final experiment with ``workflow cells: 1``.
     """
     from types import SimpleNamespace as NS
 
@@ -1344,9 +1246,7 @@ def test_workflow_slurm_emits_env_exports(tmp_path: Path):
 def test_env_set_merges_by_name_not_replace():
     """--set slurm.env.X overrides one var in a YAML env list, keeping the rest.
 
-    Guards the GPU footgun: a YAML env: [{name,value}] list and a --set mapping
-    must merge by name, else overriding one XLA flag silently drops the others
-    (e.g. losing XLA_PYTHON_CLIENT_PREALLOCATE=false grabs all VRAM on GPU).
+    Guards the GPU footgun: a YAML env: [{name,value}] list and a --set mapping must merge by name, else overriding one XLA flag silently drops the others (e.g. losing XLA_PYTHON_CLIENT_PREALLOCATE=false grabs all VRAM on GPU).
     """
     from tvbo.cli._workflow import _canonicalize_engine_maps, _normalize_env
     from tvbo.utils import deep_merge
@@ -1386,8 +1286,7 @@ def test_workflow_nextflow_emits_kit(tmp_path: Path):
     ],
 )
 def test_env_and_options_render_across_engines(tmp_path, engine, artefact, opt_needle, env_needle):
-    """env + options are name-keyed passthroughs rendered by every engine's emitter,
-    each in its native form (Slurm #SBATCH / Snakemake resources / Nextflow process)."""
+    """Env + options are name-keyed passthroughs rendered by every engine's emitter, each in its native form (Slurm #SBATCH / Snakemake resources / Nextflow process)."""
     opt = {"slurm": "qos=normal", "snakemake": "slurm_partition=gpu", "nextflow": "clusterOptions=--gres=gpu:1"}[engine]
     out = tmp_path / "kit"
     r = runner.invoke(
@@ -1413,9 +1312,10 @@ def test_env_and_options_render_across_engines(tmp_path, engine, artefact, opt_n
 
 
 def test_frozen_spec_captures_merged_workflow_for_reproducibility(tmp_path: Path):
-    """The emitted spec records the effective workflow config (study < experiment <
-    --set), so re-emitting from it reproduces the run with no flags — one-click
-    provenance rather than the overrides living only in run.sbatch."""
+    """The emitted spec records the effective workflow config.
+
+    Study < experiment < --set, so re-emitting from it reproduces the run with no flags — one-click provenance rather than the overrides living only in run.sbatch.
+    """
     k1 = tmp_path / "k1"
     r = runner.invoke(
         app,
@@ -1463,15 +1363,15 @@ def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
     [
         # Slurm submits the array with --parsable (then chains a gather job).
         ("slurm", ["sbatch", "--parsable", "run.sbatch"], "run.sbatch"),
-        # Snakemake ships a SLURM-executor profile, so with a scheduler present submit
-        # runs the login-node orchestrator that dispatches each rule to it (not local
-        # --cores). Without a scheduler it auto-falls back to --cores; a `sbatch` mock
-        # below pins the HPC branch so this asserts the profile path deterministically.
         ("snakemake", ["snakemake", "--profile", "profile"], "Snakefile"),
         ("nextflow", ["nextflow", "run", "main.nf"], "main.nf"),
     ],
 )
 def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, engine, expected_cmd, expected_file):
+    """`workflow run` emits the kit and hands it to the engine's own submission command.
+
+    Snakemake ships a SLURM-executor profile, so with a scheduler present it submits through the login-node orchestrator that dispatches each rule (not a local `--cores` run); without one it auto-falls back to `--cores`. `shutil.which` is mocked to make a scheduler discoverable, pinning the HPC branch so the profile path is asserted deterministically.
+    """
     calls = []
 
     def _fake_run(cmd, check=True, cwd=None, **kwargs):
@@ -1479,8 +1379,6 @@ def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, eng
         return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
 
     monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
-    # Pin a discoverable scheduler so the snakemake kit uses its shipped SLURM profile
-    # (the HPC branch) rather than the no-`sbatch` local-cores fallback — the test's intent.
     monkeypatch.setattr("shutil.which", lambda n: f"/usr/bin/{n}")
 
     out = tmp_path / "kit"
@@ -1490,16 +1388,13 @@ def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, eng
     )
     assert r.exit_code == 0, r.stdout
     assert (out / expected_file).is_file()
-    # Filter to the engine's submission commands — a globally-patched subprocess.run
-    # also captures an incidental platform `uname -p` (jax init) on some hosts.
+    # Filter to the engine's submission commands — a globally-patched subprocess.run also captures an incidental platform `uname -p` (jax init) on some hosts.
     submits = [c for c in calls if c["cmd"] and Path(c["cmd"][0]).name in {"sbatch", "snakemake", "nextflow"}]
     assert submits, "expected workflow run to execute engine command"
-    # argv[0] is an absolute path when the launcher is installed beside this
-    # interpreter, so compare the program name plus the arguments.
+    # argv[0] is an absolute path when the launcher is installed beside this interpreter, so compare the program name plus the arguments.
     assert [Path(submits[0]["cmd"][0]).name, *submits[0]["cmd"][1:]] == expected_cmd
     assert Path(submits[0]["cwd"]) == out
-    # EXP is a single array task (chunk=1): that one task IS the whole result, so
-    # slurm submits just the array — no gather job to reassemble a single shard.
+    # EXP is a single array task (chunk=1): that one task IS the whole result, so slurm submits just the array — no gather job to reassemble a single shard.
     if engine == "slurm":
         assert not (out / "finalize.sbatch").exists()
         assert not any("--dependency=afterok" in a for c in submits for a in c["cmd"])
@@ -1528,8 +1423,7 @@ def test_workflow_run_slurm_chains_gather_when_sharded(tmp_path: Path, monkeypat
 def test_workflow_submit_accepts_packaged_archive(tmp_path: Path, monkeypatch):
     """`tvbo workflow submit` extracts a packaged .tar.gz kit and submits it.
 
-    The archive ships on its own (no kit directory next to it), so the submit path
-    must auto-extract before launching — the "no manual unzip" workflow.
+    The archive ships on its own (no kit directory next to it), so the submit path must auto-extract before launching — the "no manual unzip" workflow.
     """
     import shutil
     import tarfile
@@ -1557,15 +1451,13 @@ def test_workflow_submit_accepts_packaged_archive(tmp_path: Path, monkeypatch):
     r = runner.invoke(app, ["workflow", "submit", str(archive)])
     assert r.exit_code == 0, r.stdout
     assert (ship / "kit" / "Snakefile").is_file(), "archive must auto-extract beside itself"
-    # The launcher is resolved to an absolute path when one is found, so match on the
-    # program name rather than the exact argv[0].
+    # The launcher is resolved to an absolute path when one is found, so match on the program name rather than the exact argv[0].
     submits = [c for c in calls if c and Path(c[0]).name == "snakemake"]
     assert submits, "expected the extracted kit to be submitted"
 
 
 def test_slurm_pack_emits_only_tarball(tmp_path: Path):
-    """`tvbo workflow slurm … --pack` writes ONLY <kit>.tar.gz and removes the loose
-    kit directory (the tarball is the shippable artifact; submit/run re-extract it)."""
+    """`tvbo workflow slurm … --pack` writes ONLY <kit>.tar.gz and removes the loose kit directory (the tarball is the shippable artifact; submit/run re-extract it)."""
     kit = tmp_path / "mykit"
     r = runner.invoke(app, ["workflow", "slurm", EXP, "--backend", "jax", "-o", str(kit), "--pack"])
     assert r.exit_code == 0, r.stdout
@@ -1574,10 +1466,7 @@ def test_slurm_pack_emits_only_tarball(tmp_path: Path):
 
 
 def test_pack_warns_on_machine_specific_bids_root(tmp_path: Path, monkeypatch):
-    """A per-subject dataset fan-out kit bakes an absolute ``bids_root`` that will not
-    resolve on another host — emitting/packing it must warn with the exact submit-time
-    override, so a kit is never shipped silently wrong. (Capture ``_common.warn``
-    directly: caplog's root propagation is polluted by the shared tvbo logging setup.)"""
+    """A per-subject dataset fan-out kit bakes an absolute ``bids_root`` that will not resolve on another host — emitting/packing it must warn with the exact submit-time override, so a kit is never shipped silently wrong. (Capture ``_common.warn`` directly: caplog's root propagation is polluted by the shared tvbo logging setup.)."""
     from tvbo.cli import workflow as workflow_cli
 
     warned: list[str] = []
@@ -1597,8 +1486,7 @@ def test_pack_warns_on_machine_specific_bids_root(tmp_path: Path, monkeypatch):
 
 
 def test_no_bids_root_warning_without_dataset(tmp_path: Path, monkeypatch):
-    """A kit whose frozen spec has no ``dataset.bids_root`` (e.g. a group-average fit)
-    emits no portability warning."""
+    """A kit whose frozen spec has no ``dataset.bids_root`` (e.g. a group-average fit) emits no portability warning."""
     from tvbo.cli import workflow as workflow_cli
 
     warned: list[str] = []
@@ -1612,10 +1500,7 @@ def test_no_bids_root_warning_without_dataset(tmp_path: Path, monkeypatch):
 
 
 def test_pack_warns_when_figure_inputs_live_outside_the_kit(tmp_path: Path, monkeypatch):
-    """A figure whose PROV `used` edges are the author's ANALYSIS containers puts absolute
-    foreign paths in its rule's `input:`. The kit runs experiments, so nothing makes them,
-    and the default target dies on another host with a path from this machine. Warn at emit
-    time instead, naming the target that does work."""
+    """A figure whose PROV `used` edges are the author's ANALYSIS containers puts absolute foreign paths in its rule's `input:`. The kit runs experiments, so nothing makes them, and the default target dies on another host with a path from this machine. Warn at emit time instead, naming the target that does work."""
     from tvbo.cli import workflow as workflow_cli
 
     warned: list[str] = []
@@ -1657,13 +1542,9 @@ def test_no_figure_warning_when_every_input_is_in_the_kit(tmp_path: Path, monkey
 
 
 def test_a_figure_whose_data_stayed_home_leaves_every_default_target(monkeypatch):
-    """A figure reading the author's analysis container keeps its rule and loses its place
-    in `all_figures`.
+    """A figure reading the author's analysis container keeps its rule and loses its place in `all_figures`.
 
-    Warning about it was not enough: `snakemake` and `snakemake all_figures` are the two
-    targets the kit's own README advertises, and both died on a path from another machine,
-    which reads as a broken kit rather than as one figure whose data did not travel. The
-    rule stays so the figure can be rendered where its container lives.
+    Warning about it was not enough: `snakemake` and `snakemake all_figures` are the two targets the kit's own README advertises, and both died on a path from another machine, which reads as a broken kit rather than as one figure whose data did not travel. The rule stays so the figure can be rendered where its container lives.
     """
     from tvbo.adapters import figure_workflow as fw
 
@@ -1696,10 +1577,7 @@ def test_a_figure_whose_data_stayed_home_leaves_every_default_target(monkeypatch
 
 
 def test_the_kit_lists_the_input_files_it_names_but_does_not_carry(tmp_path: Path):
-    """Producer-sourced inputs — a surface mesh, a parcellation — are read at run time and
-    were never staged or even listed, so a kit landed on the cluster looking complete and
-    failed on the first rule that opened one. The manifest turns that into an rsync list.
-    """
+    """Producer-sourced inputs — a surface mesh, a parcellation — are read at run time and were never staged or even listed, so a kit landed on the cluster looking complete and failed on the first rule that opened one. The manifest turns that into an rsync list."""
     from tvbo.cli import workflow as workflow_cli
 
     study = tmp_path / "study"
@@ -1734,10 +1612,7 @@ def test_the_kit_lists_the_input_files_it_names_but_does_not_carry(tmp_path: Pat
 
 
 def test_figure_kit_rebases_author_container_to_the_kit_path(monkeypatch):
-    """The kit's frozen ``plot.py`` must read the result where the KIT stores it
-    (``results/<key>/<stem>`` — the same path the render rule's ``input:`` uses), not the
-    author's absolute ``output/nc`` path ``bsplot.render_code`` bakes, which does not exist
-    on a compute node."""
+    """The kit's frozen ``plot.py`` must read the result where the KIT stores it (``results/<key>/<stem>`` — the same path the render rule's ``input:`` uses), not the author's absolute ``output/nc`` path ``bsplot.render_code`` bakes, which does not exist on a compute node."""
     from tvbo.adapters import figure_workflow as fw
 
     figure = SimpleNamespace(panels=[SimpleNamespace(layers=[SimpleNamespace(used={"experiment": "3"})], annotations=[])])
@@ -1841,9 +1716,7 @@ def test_workflow_run_slurm_array_throttle(tmp_path: Path, monkeypatch):
     assert "--array=0-39%1" in sbatch_calls[0]["cmd"]
 
 
-# ---------------------------------------------------------------------------
 # CLI: validate stubs (C5)
-# ---------------------------------------------------------------------------
 
 
 def test_validate_sedml_stub_rejects_non_xml(tmp_path: Path):
@@ -1877,18 +1750,14 @@ def test_validate_omex_stub_accepts_zip_with_manifest(tmp_path: Path):
     assert r.exit_code == 0
 
 
-# ---------------------------------------------------------------------------
 # Backend templates expose a runnable __main__ entry point
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("fmt", ["jax", "tvb", "tvboptim"])
 def test_python_experiment_script_has_main_block(fmt):
     """All Python backends that emit a full experiment script must be runnable.
 
-    The workflow kit (`tvbo workflow ...`) freezes the rendered script and
-    invokes it via `python scripts/<exp>.py`, so the script itself must define
-    an `if __name__ == "__main__":` block.
+    The workflow kit (`tvbo workflow ...`) freezes the rendered script and invokes it via `python scripts/<exp>.py`, so the script itself must define an `if __name__ == "__main__":` block.
     """
     from tvbo import SimulationExperiment
 
@@ -1906,11 +1775,9 @@ def test_pde_experiment_template_has_main_block():
 
 
 def test_bundler_carries_a_callables_local_helper_but_not_stdlib_or_installed(tmp_path, monkeypatch):
-    """A recipe callable often imports a LOCAL helper of its own (e.g. Koller's
-    wave_detection_methods, pulled in via a runtime sys.path insert). The kit must carry it
-    — else `import <helper>` fails on the node and the kit is not self-contained. But stdlib
-    and installed packages must NOT be swept in (they ship via requirements)."""
+    """A recipe callable often imports a LOCAL helper of its own (e.g. Koller's wave_detection_methods, pulled in via a runtime sys.path insert). The kit must carry it — else `import <helper>` fails on the node and the kit is not self-contained. But stdlib and installed packages must NOT be swept in (they ship via requirements)."""
     import sys
+
     from tvbo.cli.workflow import _local_module_deps
 
     (tmp_path / "helper_b.py").write_text("VALUE = 1\n")
@@ -1929,9 +1796,10 @@ def test_bundler_carries_a_callables_local_helper_but_not_stdlib_or_installed(tm
 
 
 def test_benchmark_and_smoke_reach_the_snakemake_rule():
-    """`--benchmark` attaches Snakemake's native `benchmark:` directive (per-cell TSV next
-    to the output), and `--max-iterations`/`--smoke` threads `tvbo run --max-iterations`.
-    Both are run modifiers carried on the exp_plan, never in the frozen workflow block."""
+    """`--benchmark` attaches Snakemake's native `benchmark:` directive (per-cell TSV next to the output), and `--max-iterations`/`--smoke` threads `tvbo run --max-iterations`.
+
+    Both are run modifiers carried on the exp_plan, never in the frozen workflow block.
+    """
     from tvbo.cli.workflow import _render_template
 
     ep = {
@@ -1967,8 +1835,7 @@ def test_benchmark_and_smoke_reach_the_snakemake_rule():
 def test_experiment_targets_returns_the_validated_rules(tmp_path):
     """The mapped targets, not a recomputation of them.
 
-    The list was built, checked, then thrown away and derived a second time in the
-    ``return`` — so the validation and the value could drift apart silently.
+    The list was built, checked, then thrown away and derived a second time in the ``return`` — so the validation and the value could drift apart silently.
     """
     from tvbo.cli.workflow import _experiment_targets
 
@@ -1977,9 +1844,7 @@ def test_experiment_targets_returns_the_validated_rules(tmp_path):
 
 
 def test_experiment_targets_matches_study_prefixed_rule_names(tmp_path):
-    """A study pack emits ``<study>_exp_<key>`` rules; a selector matches by the ``exp_<key>``
-    suffix, else ``--experiment <subset>`` on a multi-experiment pack finds no rules and aborts.
-    """
+    """A study pack emits ``<study>_exp_<key>`` rules; a selector matches by the ``exp_<key>`` suffix, else ``--experiment <subset>`` on a multi-experiment pack finds no rules and aborts."""
     from tvbo.cli.workflow import _experiment_targets
 
     (tmp_path / "Snakefile").write_text(
@@ -2007,8 +1872,7 @@ def test_experiment_selector_without_a_snakefile_is_an_error(tmp_path):
 def test_experiment_on_a_slurm_kit_is_refused_before_submission(tmp_path, monkeypatch):
     """The slurm chain submits the WHOLE array and takes no per-experiment target.
 
-    The guard lived in the branch a non-dry-run slurm kit never reaches, so the selector
-    was dropped and the study's full allocation went to the scheduler.
+    The guard lived in the branch a non-dry-run slurm kit never reaches, so the selector was dropped and the study's full allocation went to the scheduler.
     """
     import typer
 
@@ -2024,8 +1888,7 @@ def test_experiment_on_a_slurm_kit_is_refused_before_submission(tmp_path, monkey
 def test_two_constants_sharing_a_basename_is_an_error(tmp_path):
     """The kit resolves a constant by basename, so a collision fits the wrong operator.
 
-    Silently copying the second over the first produces a run that completes and reports
-    numbers derived from the wrong empirical target.
+    Silently copying the second over the first produces a run that completes and reports numbers derived from the wrong empirical target.
     """
     import typer
 
@@ -2058,10 +1921,7 @@ def test_a_constant_missing_on_this_machine_is_reported_not_dropped(tmp_path, ca
 
 
 def test_figure_rule_does_not_inherit_the_accelerators_gres():
-    """A figure render is CPU: it inherits the run identity (venv/partition/account) from the
-    study workflow but NOT the accelerator's ``gres`` — an inherited GPU gres would land on the
-    ``medium``-partition figure rule, which the modern slurm executor plugin rejects. A gres the
-    figure declares itself is emitted as the NATIVE ``gres`` resource, never ``slurm_extra``."""
+    """A figure render is CPU: it inherits the run identity (venv/partition/account) from the study workflow but NOT the accelerator's ``gres`` — an inherited GPU gres would land on the ``medium``-partition figure rule, which the modern slurm executor plugin rejects. A gres the figure declares itself is emitted as the NATIVE ``gres`` resource, never ``slurm_extra``."""
     from tvbo.adapters.figure_workflow import _figure_block, _rule_resources
 
     study_wf = {
@@ -2101,8 +1961,7 @@ def _profile_jobs(tmp_path, block):
 def test_profile_jobs_cap_comes_from_the_workflow_block(tmp_path):
     """A site's queue limit is declarable beside its partition and account.
 
-    Baked in, a large fan-out is throttled to 100 concurrent jobs with nothing in the recipe
-    able to change it — a silent slowdown rather than a stated one.
+    Baked in, a large fan-out is throttled to 100 concurrent jobs with nothing in the recipe able to change it — a silent slowdown rather than a stated one.
     """
     assert "250" in _profile_jobs(tmp_path, {"jobs": 250})
 
@@ -2116,10 +1975,7 @@ def test_profile_jobs_cap_defaults_to_100(tmp_path, block):
 def test_the_jobs_cap_is_declarable_and_survives_the_frozen_spec():
     """`jobs` needs a schema slot, or the only way to set it is a flag the kit forgets.
 
-    Without one a recipe cannot spell `workflow: {snakemake: {jobs: 250}}` at all, and the
-    `--set` route reaches the emitter through the raw merged dict but is dropped when the
-    frozen spec is rebuilt — so the kit re-emits at 100 and the spec no longer re-emits
-    identically without the flags, which is the whole promise of freezing it.
+    Without one a recipe cannot spell `workflow: {snakemake: {jobs: 250}}` at all, and the `--set` route reaches the emitter through the raw merged dict but is dropped when the frozen spec is rebuilt — so the kit re-emits at 100 and the spec no longer re-emits identically without the flags, which is the whole promise of freezing it.
     """
     from tvbo import datamodel as dm
     from tvbo.cli._workflow import _engine_config_from_dict

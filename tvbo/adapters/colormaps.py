@@ -1,14 +1,10 @@
 """Colormaps a figure can name that the plotting stack does not ship.
 
-A replication reproduces a published figure's colour convention, and the convention is usually whatever the authors' tool defaulted to. Where that map exists in matplotlib the
-spec just names it; where it does not, every study otherwise carries its own copy of the same anchor table — so the tables live here once and :func:`resolve` turns any declared
-name into something the backend accepts.
+A replication reproduces a published figure's colour convention, and the convention is usually whatever the authors' tool defaulted to. Where that map exists in matplotlib the spec just names it; where it does not, every study otherwise carries its own copy of the same anchor table — so the tables live here once and :func:`resolve` turns any declared name into something the backend accepts.
 
 Adding a map here is a format-support decision, not a styling one: it makes a NAME resolvable, and which map a figure uses stays entirely in the spec.
 
-``parula`` is MATLAB's default since R2014b, and so the colour convention of a large share of published neuroimaging figures. Neither matplotlib nor bsplot ships it, and bsplot's
-``fake_parula`` is a visibly different map — it starts violet (0.267, 0.033, 0.619) where parula starts blue — so a figure reproduced with the lookalike is off from its original at
-every value.
+``parula`` is MATLAB's default since R2014b, and so the colour convention of a large share of published neuroimaging figures. Neither matplotlib nor bsplot ships it, and bsplot's ``fake_parula`` is a visibly different map — it starts violet (0.267, 0.033, 0.619) where parula starts blue — so a figure reproduced with the lookalike is off from its original at every value.
 """
 
 from __future__ import annotations
@@ -88,8 +84,7 @@ _CACHE: dict[str, object] = {}
 def resolve(name):
     """A declared colormap name as something the plotting backend accepts (public API).
 
-    A name the backend already knows is passed through untouched — matplotlib's and bsplot's own catalogues stay authoritative — so this only fills the gaps in
-    :data:`TABLES`. ``None`` passes through as ``None`` (the backend's default).
+    A name the backend already knows is passed through untouched — matplotlib's and bsplot's own catalogues stay authoritative — so this only fills the gaps in :data:`TABLES`. ``None`` passes through as ``None`` (the backend's default).
     """
     if name is None or str(name) not in TABLES:
         return name

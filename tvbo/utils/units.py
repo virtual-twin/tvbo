@@ -1,9 +1,6 @@
-"""
-Unit and Dimension Utilities
-============================
+"""Unit and Dimension Utilities.
 
-Central mapping between TVBO's ``UnitEnum`` (QUDT-backed), LEMS dimensions,
-SymPy units, and legacy free-text unit strings found in older model YAMLs.
+Central mapping between TVBO's ``UnitEnum`` (QUDT-backed), LEMS dimensions, SymPy units, and legacy free-text unit strings found in older model YAMLs.
 
 The ``UnitEnum`` values use conventional abbreviations (ms, mV, nA, etc.) as defined in the LinkML schema (``schema/tvbo_datamodel.yaml``).
 
@@ -91,8 +88,7 @@ _UNIT_TO_LEMS_DIM = {
 def unit_to_lems_dimension(unit):
     """Return the LEMS dimension name for a UnitEnum value (or string).
 
-    Returns the proper LEMS dimension (e.g. ``"voltage"``, ``"capacitance"``) when the unit has a known mapping, or ``"none"`` for dimensionless /
-    unknown units.
+    Returns the proper LEMS dimension (e.g. ``"voltage"``, ``"capacitance"``) when the unit has a known mapping, or ``"none"`` for dimensionless / unknown units.
     """
     if unit is None:
         return "none"
@@ -136,8 +132,7 @@ _UNIT_TO_LEMS_SYMBOL = {
 def unit_to_lems_symbol(unit):
     """Return the LEMS unit symbol string for appending to numeric values.
 
-    For dimensioned parameters (e.g. ``pF``, ``nS``, ``mV``), returns the matching LEMS unit symbol.  For dimensionless or unknown units, returns
-    ``""``.
+    For dimensioned parameters (e.g. ``pF``, ``nS``, ``mV``), returns the matching LEMS unit symbol.  For dimensionless or unknown units, returns ``""``.
     """
     if unit is None:
         return ""
@@ -171,8 +166,7 @@ _TIME_UNITS = {
 def unit_has_time_dimension(unit):
     """Return True if the unit carries a time component (T or T⁻¹).
 
-    This is the key signal for NeuroML LEMS export: if any parameter in the RHS equation has a time dimension, the equation already
-    carries time normalisation and ``/ SEC`` is not needed.
+    This is the key signal for NeuroML LEMS export: if any parameter in the RHS equation has a time dimension, the equation already carries time normalisation and ``/ SEC`` is not needed.
     """
     if unit is None:
         return False
@@ -323,10 +317,9 @@ _UNIT_TO_LATEX = {
 
 
 def unit_to_latex(unit):
-    """Return a LaTeX string for the unit, suitable for wrapping in ``$...$``.
+    r"""Return a LaTeX string for the unit, suitable for wrapping in ``$...$``.
 
-    Converts enum values like ``per_ms`` → ``\\mathrm{ms}^{-1}``,
-    ``rad_per_ms`` → ``\\mathrm{rad}\\,\\mathrm{ms}^{-1}``.
+    Converts enum values like ``per_ms`` → ``\\mathrm{ms}^{-1}``, ``rad_per_ms`` → ``\\mathrm{rad}\\,\\mathrm{ms}^{-1}``.
     Returns an empty string for dimensionless / unknown units.
     """
     if unit is None:
@@ -684,8 +677,7 @@ def normalize_unit(raw):
 
 # ── UnitEnum → display symbol ────────────────────────────────────────
 
-# For compound underscore forms, map to the conventional notation
-# Uses SymPy-parseable symbols (no unicode) so equations render in any context
+# Compound underscore forms in conventional notation, SymPy-parseable so they render anywhere.
 _DISPLAY_SYMBOLS = {
     "per_s": "1/s",
     "per_ms": "1/ms",

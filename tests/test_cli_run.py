@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -21,9 +21,9 @@ from tvbo.cli import run as run_cli
 def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, engine: str, expected_workflow_file: str):
     """``tvbo run --engine`` emits the kit in-process into a directory.
 
-    The emit runs in-process (no re-shelling ``tvbo``), so it must not depend on
-    ``tvbo`` being on ``$PATH``; only the engine submission (sbatch/snakemake/
-    nextflow) shells out. The artefact must land inside the kit directory.
+    The emit runs in-process (no re-shelling ``tvbo``), so it must not depend on ``tvbo`` being on ``$PATH``; only the engine submission (sbatch/snakemake/nextflow) shells out, and it does so from the kit directory. The artefact must land inside that directory.
+
+    Submissions are recognised by launcher BASENAME: ``_resolve_launcher`` returns snakemake's absolute path when it sits next to the running interpreter (the venv-off-``PATH`` case — a cluster user runs ``.venv/bin/tvbo`` without activating), so ``cmd[0]`` may be ``/…/.venv/bin/snakemake`` rather than the bare name. Matching on the basename is also what filters out unrelated subprocess calls a library may make, such as ``uname -p``.
     """
     calls = []
 
@@ -31,7 +31,6 @@ def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, e
         calls.append({"cmd": cmd, "cwd": cwd})
         return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
 
-    # Only the engine submission shells out; it lives in workflow now.
     monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
 
     kit_dir = tmp_path / "kit"
@@ -46,19 +45,11 @@ def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, e
 
     # Kit emitted in-process into the directory (not a bare artefact file).
     assert (kit_dir / expected_workflow_file).is_file()
-    # The submission shells out from the kit dir; none re-invokes `tvbo` on PATH.
-    # Match the launcher by BASENAME: `_resolve_launcher` returns snakemake's
-    # ABSOLUTE path when it sits next to the running interpreter (the venv-off-PATH
-    # case — a cluster user runs `.venv/bin/tvbo` without activating), so cmd[0] may
-    # be `/…/.venv/bin/snakemake`, not the bare name. This is exactly why it works
-    # both locally and on HPC. (Filter out unrelated subprocess calls a library may
-    # make, e.g. `uname -p`.)
     submits = [c for c in calls if Path(c["cmd"][0]).name in {"sbatch", "snakemake", "nextflow"}]
     assert submits, calls
     assert all(Path(c["cwd"]) == kit_dir for c in submits)
     assert all(Path(c["cmd"][0]).name != "tvbo" for c in calls)
-    # JR_MEG dispatches as a single array task (chunk=1) — that one task IS the
-    # whole result, so slurm submits just the array; no gather job is chained.
+    # JR_MEG dispatches as a single array task (chunk=1) — that one task IS the whole result, so slurm submits just the array; no gather job is chained.
     if engine == "slurm":
         assert submits[0]["cmd"] == ["sbatch", "--parsable", "run.sbatch"]
         assert not (kit_dir / "finalize.sbatch").exists()
@@ -95,10 +86,7 @@ def test_dispatch_to_engine_slurm_single_task_no_gather(monkeypatch, tmp_path: P
 def test_unloadable_spec_reports_every_attempt(tmp_path: Path):
     """A spec that loads as nothing must say why, not blame the last fallback.
 
-    ``_load_from_file`` tries study -> experiment -> dynamics. It used to swallow
-    each failure, so the caller only ever saw the *dynamics* error — which, for a
-    file that is plainly an experiment (e.g. one written by a newer tvbo than the
-    one reading it), sends the reader chasing a malformed Dynamics that never was.
+    ``_load_from_file`` tries study -> experiment -> dynamics. It used to swallow each failure, so the caller only ever saw the *dynamics* error — which, for a file that is plainly an experiment (e.g. one written by a newer tvbo than the one reading it), sends the reader chasing a malformed Dynamics that never was.
     """
     import typer
 
@@ -121,9 +109,7 @@ def test_unloadable_spec_reports_every_attempt(tmp_path: Path):
     assert excinfo.value.__cause__ is not None
 
 
-# ---------------------------------------------------------------------------
 # --pin: the fanned-exploration-axis per-cell restriction (the --subject sibling)
-# ---------------------------------------------------------------------------
 def _exp_with_sweep():
     """A 1-node experiment sweeping a dynamics param, so pinning is observable."""
     from tvbo import SimulationExperiment
@@ -152,8 +138,7 @@ def _exp_with_sweep():
 
 
 def test_pin_sets_the_dynamics_param_and_drops_the_axis():
-    """--pin must BOTH set the base parameter (so the representative run uses it) AND remove
-    the axis from the sweep — else the exploration re-expands it and the cell is not a point."""
+    """--pin must BOTH set the base parameter (so the representative run uses it) AND remove the axis from the sweep — else the exploration re-expands it and the cell is not a point."""
     exp = _exp_with_sweep()
     run_cli._apply_axis_pins(exp, ["Osc.a=0.5"])
     assert exp.dynamics.parameters["a"].value == 0.5  # base param set
@@ -190,7 +175,7 @@ def test_pin_leaves_other_axes_sweeping():
     )
     run_cli._apply_axis_pins(exp, ["Osc.a=0.5"])
     assert exp.dynamics.parameters["a"].value == 0.5
-    remaining = list((exp.explorations["g"].space or {}))
+    remaining = list(exp.explorations["g"].space or {})
     assert remaining and all("Osc.a" not in str(getattr(exp.explorations["g"].space[k], "parameter", k)) for k in remaining)
 
 
@@ -209,8 +194,7 @@ def _algo(n_iterations, stages=None):
 
 
 def test_max_iterations_caps_algorithms_and_stages_only_downward():
-    """`--max-iterations N` caps every algorithm's and stage's `n_iterations` to N, and
-    never RAISES a smaller count — it is a smoke ceiling, applied to the loaded object only."""
+    """`--max-iterations N` caps every algorithm's and stage's `n_iterations` to N, and never RAISES a smaller count — it is a smoke ceiling, applied to the loaded object only."""
     exp = SimpleNamespace(
         algorithms={
             "fic": _algo(200),
@@ -237,10 +221,8 @@ def test_max_iterations_none_is_a_no_op():
 
 
 # ── study figure rendering (`tvbo run <study>` closes the replication loop) ──────────────
-def test_render_study_figures_renders_into_base_figures_dir(monkeypatch, tmp_path: Path):
-    """A study run renders its declarative `figures:` via the same path as `tvbo figure
-    render`: base = the spec file's dir, output = <base>/figures — so the one-command
-    result is interchangeable with a follow-up `tvbo figure render`."""
+def test_render_study_figures_renders_into_the_layouts_figures_dir(monkeypatch, tmp_path: Path):
+    """A study run renders its declarative `figures:` via the same path as `tvbo figure render`: base = the spec file's dir, output = the figures directory the layout record names — so the one-command result is interchangeable with a follow-up `tvbo figure render`."""
     seen = {}
 
     def _fake_render(figures, base_dir, out_dir):
@@ -255,11 +237,13 @@ def test_render_study_figures_renders_into_base_figures_dir(monkeypatch, tmp_pat
     spec.write_text("name: s\n", encoding="utf-8")
     study = SimpleNamespace(figures=[SimpleNamespace(name="Fig1")])
 
-    run_cli._render_study_figures(study, str(spec), out_dir=tmp_path / "output" / "nc")
+    run_cli._render_study_figures(study, str(spec), out_dir=None)
+
+    from tvbo.utils.study_layout import study_path
 
     assert seen["figures"] == list(study.figures)
     assert seen["base"] == tmp_path  # spec dir, not the results out-dir
-    assert seen["out"] == tmp_path / "figures"
+    assert seen["out"] == study_path("figures", root=tmp_path)
 
 
 def test_render_study_figures_no_figures_is_a_no_op(monkeypatch, tmp_path: Path):
@@ -305,8 +289,7 @@ def _die_raises(monkeypatch):
 def _run_kwargs(**over):
     """Explicit defaults for a direct `run()` call.
 
-    Calling the typer-decorated function leaves every unpassed default an `OptionInfo`,
-    which `is not None` — so the flag-conflict check would see every flag as given.
+    Calling the typer-decorated function leaves every unpassed default an `OptionInfo`, which `is not None` — so the flag-conflict check would see every flag as given.
     """
     base = dict(
         engine="local",
@@ -330,8 +313,7 @@ def _run_kwargs(**over):
 def test_analysis_is_refused_on_a_non_local_engine(monkeypatch, tmp_path: Path):
     """The kit fans out experiments, so dispatching would run the WHOLE study.
 
-    Silently, and on a cluster — the same "exit 0 having simulated nothing" class the
-    local guards refuse, inverted into simulating everything the user excluded.
+    Silently, and on a cluster — the same "exit 0 having simulated nothing" class the local guards refuse, inverted into simulating everything the user excluded.
     """
     _die_raises(monkeypatch)
     dispatched = False
@@ -377,7 +359,7 @@ def test_analysis_is_refused_when_the_spec_is_an_experiment(monkeypatch, tmp_pat
 
 @pytest.fixture
 def collection_spec(tmp_path: Path) -> str:
-    """A minimal StudyCollection on disk, with one member and one authored result."""
+    """A minimal study-of-studies on disk, with one member and one authored result."""
     (tmp_path / "members").mkdir()
     (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\nsimulation_experiments: []\n", encoding="utf-8")
     spec = tmp_path / "collection.yaml"
@@ -405,15 +387,11 @@ def collection_spec(tmp_path: Path) -> str:
     ],
 )
 def test_a_flag_a_collection_cannot_honour_is_refused(collection_spec, flag):
-    """A StudyCollection runs every member with fixed save options.
+    """A study-of-studies runs every member with fixed save options.
 
-    Accepting one of these and dropping it turns a one-container request into the whole
-    study — hours of cluster time — or reports success for a ``--save-all`` that in fact
-    wrote record-only. Each must fail fast, naming the flag.
+    Accepting one of these and dropping it turns a one-container request into the whole study — hours of cluster time — or reports success for a ``--save-all`` that in fact wrote record-only. Each must fail fast, naming the flag.
 
-    Driven through the CLI rather than by calling ``run()``: invoked directly, every
-    typer default is an unresolved ``OptionInfo``, so the guard fires for every flag at
-    once and the test passes without testing anything.
+    Driven through the CLI rather than by calling ``run()``: invoked directly, every typer default is an unresolved ``OptionInfo``, so the guard fires for every flag at once and the test passes without testing anything.
     """
     from typer.testing import CliRunner
 

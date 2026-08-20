@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-"""
-Auto-generate the 'Replication Studies' section of _toc.yml by scanning
-Replication/*/ for .qmd files and reading their YAML frontmatter.
+"""Auto-generate the 'Replication Studies' section of _toc.yml.
+
+Scans Replication/*/ for .qmd files and reads their YAML frontmatter.
 
 Publication gate
 ----------------
-Replication results are embargoed until the corresponding paper is published, so
-this generator is **default-deny**: a study page is listed only if it explicitly
-declares ``publish: true`` in its frontmatter.
+Replication results are embargoed until the corresponding paper is published, so this generator is **default-deny**: a study page is listed only if it explicitly declares ``publish: true`` in its frontmatter.
 
 Every study page must make the decision explicit:
 
@@ -18,18 +16,16 @@ Every study page must make the decision explicit:
   and prints that URL.
 * **missing**         -> hard error. Omission must never be a silent publish.
 
-Run with ``--strict`` (recommended in CI and any deploy job) to also fail on
-``publish: false``, guaranteeing that a withheld study never reaches a built site.
+Run with ``--strict`` (recommended in CI and any deploy job) to also fail on ``publish: false``, guaranteeing that a withheld study never reaches a built site.
 
-Rewrites the block between # BEGIN:replication-autogen … # END:replication-autogen
-markers in _toc.yml.
+Rewrites the block between # BEGIN:replication-autogen … # END:replication-autogen markers in _toc.yml.
 """
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
-import re
 
 DOCS_DIR = Path(__file__).parent.parent
 TOC_FILE = DOCS_DIR / "_toc.yml"
@@ -83,13 +79,22 @@ def publish_state(qmd_path: Path) -> bool | None:
 
 
 def study_pages() -> list[Path]:
-    """Every .qmd inside a Replication/<Study>/ subdirectory."""
+    """Every .qmd a study offers as a page: at its root, or under the layout's docs role.
+
+    A study is a BIDS study dataset, which keeps its report in ``docs/`` (see :mod:`tvbo.utils.study_layout`). A study embedded in this site may instead keep its page at its root, because the site owns the Quarto project and a nested one would split the build.
+    Both are listed, so where a study puts its report is the study's choice rather than a rule the sidebar imposes.
+    """
     if not REPL_DIR.is_dir():
         return []
+    from tvbo.utils.study_layout import relpath
+
+    docs_role = relpath("docs")
     pages: list[Path] = []
     for study_dir in sorted(REPL_DIR.iterdir()):
-        if study_dir.is_dir():
-            pages.extend(sorted(study_dir.glob("*.qmd")))
+        if not study_dir.is_dir():
+            continue
+        pages.extend(sorted(study_dir.glob("*.qmd")))
+        pages.extend(sorted((study_dir / docs_role).glob("*.qmd")))
     return pages
 
 
@@ -143,8 +148,7 @@ def enforce_gate(strict: bool) -> list[Path]:
     return published
 
 
-# Section-level pages that are not studies. They live directly in Replication/ and
-# would otherwise be orphaned: rendered by the glob but absent from the sidebar.
+# Section-level pages that are not studies. They live directly in Replication/ and would otherwise be orphaned: rendered by the glob but absent from the sidebar.
 SECTION_PAGES = [
     ("The replication pipeline", "Replication/pipeline.qmd"),
     ("Custom figure panels", "Replication/custom-panels.qmd"),

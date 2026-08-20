@@ -2,13 +2,12 @@
 
 Replaces the legacy pyjulia (``julia`` package) which is unmaintained and emits spurious MainInclude warnings on Julia ≥ 1.3.
 
-Julia package management is handled automatically by juliapkg via
-``tvbo/juliapkg.json``. When juliacall is first imported, juliapkg will install Julia (if needed) and all declared packages.
+Julia package management is handled automatically by juliapkg via ``tvbo/juliapkg.json``. When juliacall is first imported, juliapkg will install Julia (if needed) and all declared packages.
 """
 
 import logging
 import re
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ def get_julia(compiled_modules=True):
         Ignored (kept for API compatibility). juliacall always uses
         precompiled modules.
 
-    Returns
+    Returns:
     -------
     (None, Main)
         Tuple of ``(None, Main)`` for backward compatibility.
@@ -41,13 +40,13 @@ def get_julia(compiled_modules=True):
     if _julia_main is None:
         try:
             from juliacall import Main
-        except ImportError:
-            raise ImportError("juliacall package not installed. Run: pip install juliacall")
+        except ImportError as exc:
+            raise ImportError("juliacall package not installed. Run: pip install juliacall") from exc
         _julia_main = Main
     return None, _julia_main
 
 
-def install_julia_package(package_name: str, Main: Optional[Any] = None, update: bool = False):
+def install_julia_package(package_name: str, Main: Any | None = None, update: bool = False):
     """Install a Julia package if not already installed.
 
     Args:
@@ -93,7 +92,7 @@ def eval_with_auto_install(code, max_retries=3):
                     continue
                 except Exception:
                     logger.warning("Failed to auto-install %s, re-raising original error", package_name)
-                    raise e
+                    raise e from None
             else:
                 # Not a package error or max retries reached
                 raise

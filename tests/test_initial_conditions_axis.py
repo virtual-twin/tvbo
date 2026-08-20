@@ -1,12 +1,9 @@
 """`initial_conditions.<sv>` exploration axis: a deterministic IC ensemble.
 
-The scope sweeps the initial value of one state variable across grid cells (one
-trajectory per swept value) — distinct from the stochastic `n_trials` +
-`StateVariable.distribution` ensemble. Resolution is a pure string parser
-(`initial_conditions_axis_sv`, mirroring `network_axis_leaf`); codegen lowers the
-axis to a dummy `_ic_<sv>` grid slot plus a per-cell wrapper that writes each
-cell's value into the state variable's row of the initial state.
+The scope sweeps the initial value of one state variable across grid cells (one trajectory per swept value) — distinct from the stochastic `n_trials` + `StateVariable.distribution` ensemble. Resolution is a pure string parser (`initial_conditions_axis_sv`, mirroring `network_axis_leaf`); codegen lowers the axis to a dummy `_ic_<sv>` grid slot plus a per-cell wrapper that writes each cell's value into the state variable's row of the initial state.
 """
+
+import re
 
 import pytest
 
@@ -56,8 +53,6 @@ pytest.importorskip("tvboptim")
 
 from tvbo import SimulationExperiment  # noqa: E402
 
-# Minimal 2-node Kuramoto with an initial-condition sweep on theta.
-# `# DIST` and the exploration `# AXIS` are substituted per test.
 _SPEC = """
 id: 7
 dynamics:
@@ -109,6 +104,7 @@ explorations:
       - parameter: initial_conditions.theta
         # AXIS
 """
+"""Minimal 2-node Kuramoto with an initial-condition sweep on theta; the `# DIST` and exploration `# AXIS` placeholders are substituted per test."""
 
 
 def _render(tmp_path, axis, dist=""):
@@ -123,7 +119,7 @@ def _render(tmp_path, axis, dist=""):
 def test_domain_axis_lowers_to_slot_and_wrapper(tmp_path, unwrapped):
     """A domain lo/hi/n IC axis emits a GridAxis dummy slot and the injecting wrapper."""
     code = _render(tmp_path, "        domain: {lo: 0.0, hi: 1.0, n: 5}\n")
-    assert "grid_state.dynamics._ic_theta = GridAxis(" in code
+    assert re.search(r'_ic_theta = _ax\(\s*"initial_conditions\.theta",\s*GridAxis\(', code)
     # The wrapper writes the swept value into theta's row (row 0) of the initial state.
     assert unwrapped("s.initial_state.dynamics = s.initial_state.dynamics.at[0].set(s.dynamics._ic_theta)") in unwrapped(code)
     # The result dimension keeps the declared dotted name.
@@ -133,7 +129,7 @@ def test_domain_axis_lowers_to_slot_and_wrapper(tmp_path, unwrapped):
 def test_explored_values_axis_lowers_to_data_slot(tmp_path, unwrapped):
     """Explicit explored_values emit a DataAxis dummy slot."""
     code = _render(tmp_path, "        explored_values: [0.1, 0.2, 0.3]\n")
-    assert "grid_state.dynamics._ic_theta = DataAxis(" in code
+    assert re.search(r'_ic_theta = _ax\(\s*"initial_conditions\.theta",\s*DataAxis\(', code)
     assert unwrapped("s.initial_state.dynamics.at[0].set(s.dynamics._ic_theta)") in unwrapped(code)
 
 
@@ -163,9 +159,7 @@ def test_unknown_sv_message(tmp_path):
 def test_sweep_yields_distinct_per_cell_trajectories(tmp_path):
     """Each swept IC integrates from its own initial value into a distinct trajectory.
 
-    The result is a keyed xarray with a first-class `initial_conditions.theta`
-    dimension; the first post-step sample of each cell is its swept theta(0) plus
-    one RK4 step of the omega drift, so the cells are ordered and distinct.
+    The result is a keyed xarray with a first-class `initial_conditions.theta` dimension; the first post-step sample of each cell is its swept theta(0) plus one RK4 step of the omega drift, so the cells are ordered and distinct.
     """
     import numpy as np
 

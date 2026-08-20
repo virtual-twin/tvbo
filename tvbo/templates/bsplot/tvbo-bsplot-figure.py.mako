@@ -17,7 +17,7 @@ import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   load_layer as _load_layer, registered as _registered,
-                                  heatmap_orientation as _orient)
+                                  scale_colormap as _scale_cmap, heatmap_orientation as _orient)
 from tvbo.data.dataref import match_output as _match_output, resolve_sel_keys as _sel_keys
 % for m in code_modules:
 import ${m}  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
@@ -26,7 +26,17 @@ import ${m}  # noqa: F401 — registers this study's custom panels/transforms in
 
 @functools.lru_cache(maxsize=None)
 def _open(path):
-    """Open a run's result container once per distinct path (xarray)."""
+    """Open a run's result container once per distinct path (xarray).
+
+    An empty path means the layer's container was not on disk when this script was generated. A
+    panel declaring a ``placeholder`` catches this and draws the label; one that does not gets
+    the reason rather than a bare open failure.
+    """
+    if not path:
+        raise FileNotFoundError(
+            "this layer's result container was not found when the figure was generated. "
+            "Run the study so the source is on disk, then re-render."
+        )
     return xr.open_dataset(path, engine="h5netcdf")
 
 
@@ -41,7 +51,136 @@ def _var(ds, output):
     return ds[_match_output(ds.data_vars, output)]
 
 
+def _mesh_style(style, values):
+    """Mesh kwargs from a declared style, with the colormap resolved and any ``center`` folded in.
+
+    Both go through :func:`tvbo.adapters.bsplot.scale_colormap`, the same call the standalone
+    ``kind: colorbar`` panel makes, so a bar cannot key a mesh that was built from a different
+    map. An undeclared colormap stays undeclared: the mesh then takes the stylesheet's own.
+    """
+    kw = dict(style)
+    c = kw.pop("center", None)
+    if c is None:
+        if kw.get("cmap") is not None:
+            kw["cmap"] = _scale_cmap(kw["cmap"])
+        return kw
+    finite = np.asarray(values)[np.isfinite(values)]
+    lo = float(kw["vmin"]) if kw.get("vmin") is not None else float(finite.min())
+    hi = float(kw["vmax"]) if kw.get("vmax") is not None else float(finite.max())
+    kw["cmap"] = _scale_cmap(kw.get("cmap"), lo, hi, float(c))
+    kw["vmin"], kw["vmax"] = lo, hi
+    return kw
+
+
+def _distinct_ticks(fig):
+    """Widen the decimals of any linear axis whose ticks print the same number twice.
+
+    A tick budget small enough for a dense cell can put two neighbouring values inside one
+    rounding step, and the axis then reads "0.00113, 0.00113" — two marks, one number, no
+    scale. The reader cannot recover the spacing from that, so the axis carries whatever
+    precision it takes to tell its own ticks apart.
+
+    It judges the DRAWN labels, which is why it is a pass over the finished figure rather than
+    one more directive in ``_apply_axopts``: a tick formatter carries state a draw establishes,
+    so asking one for a string before then answers for every axis alike and would re-round the
+    axes that were already fine. A colourbar is left alone — panel-attached or standing in its
+    own slot, its own pass has already written the precision the spec asked for — and so is any
+    axis whose labels are not numbers, where a repeat is two entries with the same name rather
+    than a rounding collision.
+    """
+    from matplotlib.ticker import FormatStrFormatter
+
+    fig.canvas.draw()
+    _bars = {id(_cb.ax) for _cb, _, _ in _COLORBAR_POST} | {id(_a) for _a in _SCALE_AXES.values()}
+    pending, seen = list(fig.axes), []
+    while pending:                          # a grid's cells are child_axes, not fig.axes
+        ax = pending.pop()
+        seen.append(ax)
+        pending.extend(getattr(ax, "child_axes", []))
+    for ax in seen:
+        if id(ax) in _bars:
+            continue
+        for axis, scale in ((ax.xaxis, ax.get_xscale()), (ax.yaxis, ax.get_yscale())):
+            if scale != "linear":
+                continue
+            lo, hi = sorted(axis.get_view_interval())
+            locs, texts = list(axis.get_majorticklocs()), [t.get_text() for t in axis.get_ticklabels()]
+            if len(locs) != len(texts):
+                continue
+            shown = [(v, s) for v, s in zip(locs, texts) if lo <= v <= hi and s]
+            if len(shown) < 2 or len({s for _, s in shown}) == len(shown) or not all(_numeric_text(s) for _, s in shown):
+                continue
+            vals = [v for v, _ in shown]
+            for d in range(1, 12):
+                if len({f"%.{d}f" % v for v in vals}) == len(vals):
+                    axis.set_major_formatter(FormatStrFormatter(f"%.{d}f"))
+                    break
+
+
+def _numeric_text(text):
+    """True when a drawn tick label is the number it sits at, minus signs and all."""
+    try:
+        float(text.replace("\N{MINUS SIGN}", "-"))
+    except ValueError:
+        return False
+    return True
+
+
+def _format_colorbar(cb, decimals, declared_ticks=False):
+    """Colourbar ticks that carry their own magnitude, dropping one that collides with a neighbour.
+
+    A slim bar has nowhere to put a shared exponent: factored out, a field spanning 3e4 reads
+    "3, 1, 0" and one spanning 1e-4 reads "3, 0, -1". So each tick is written in full — to
+    *decimals* where the spec declares them, and with `%g` otherwise. The tick rule places one
+    at each end and one at the centre value; when the data barely crosses that centre, two land
+    on the same pixel and print over each other, so the middle one goes.
+
+    A panel that declared its own `colorbar_ticks` keeps every one of them: the marks are then
+    the paper's, and dropping one because it crowds a neighbour would be the renderer overruling
+    the spec. Their text is still written in full, which is the half of this pass that is about
+    magnitude rather than about which marks appear.
+    """
+    bsplot.style.format_colorbar(cb, colorbar_decimals=decimals)
+    ax = cb.ax
+    _pos, (_fw, _fh) = ax.get_position(), ax.figure.get_size_inches()
+    _thick = 72 * min(_pos.width * _fw, _pos.height * _fh)
+    ax.tick_params(length=min(float(plt.rcParams["ytick.major.size"]), 0.5 * _thick))   # the bar is thinner than the figure's own tick is long
+    vertical = str(getattr(cb, "orientation", "vertical")) != "horizontal"   # the bar's declared orientation, not its slot's shape
+    axis, lim = (ax.yaxis, ax.get_ylim()) if vertical else (ax.xaxis, ax.get_xlim())
+    ticks = list(axis.get_ticklocs())
+    span = abs(lim[1] - lim[0]) or 1.0
+    keep = [t for i, t in enumerate(ticks)
+            if declared_ticks or i in (0, len(ticks) - 1)
+            or min(abs(t - ticks[0]), abs(t - ticks[-1])) / span > 0.12]
+    if len(keep) != len(ticks):
+        axis.set_ticks(keep)
+    _fmt = axis.get_major_formatter() if decimals is not None else (lambda v, pos: _tick_text(v))
+    axis.set_major_formatter(lambda v, pos: _zeroless(_fmt(v, pos)))
+
+
+def _tick_text(v):
+    """A colourbar tick written in full, at a precision that suits its own magnitude."""
+    a = abs(v)
+    if a == 0:
+        return "0"
+    if a >= 1e4:
+        return f"{v:.0f}"
+    return f"{v:.4g}" if a >= 1 else f"{v:g}"
+
+
+def _zeroless(text):
+    """A tick label stripped of a minus sign it only has because the value rounds to zero.
+
+    At the printed precision the value IS zero, and "-0.00000" reads as a distinct negative
+    quantity rather than the end of a scale that stops at nothing.
+    """
+    return text.lstrip("-") if text.lstrip("-").strip("0.") == "" else text
+
+
 _PLACEHOLDER_AXES = []          # re-bared after the format pass, which re-derives ticks
+_INSET_POST = []                # (inset axes, declared frame) — the tidy-up must not win over it
+_COLORBAR_POST = []             # (colourbar, decimals) — same rule, for a bar whose scale is declared
+_SCALE_AXES = {}                # panel key -> the bar inside a `kind: colorbar` slot, which is what a declared frame is about
 
 
 def _bare(ax):
@@ -143,17 +282,77 @@ def _bounds(da, x, output):
     return v[:, 0], v[:, 1]
 
 
+def _apply_tick_format(ax, o):
+    """Tick notation: 'sci' factors a shared exponent out to the axis corner, 'plain' writes it in full.
+
+    A row of small panels whose values span 1e-5 cannot print its ticks in full without the
+    neighbours running together, which is why the published figure carries the magnitude once at
+    the corner. The format pass installs a fixed-point formatter, so a declared notation has to be
+    re-applied after it, like a declared rotation.
+    """
+    from matplotlib.ticker import ScalarFormatter
+    for _axis, _key in ((ax.xaxis, "xtick_format"), (ax.yaxis, "ytick_format")):
+        _mode = o.get(_key)
+        if _mode is None:
+            continue
+        _fmt = ScalarFormatter(useMathText=True)
+        _fmt.set_scientific(str(_mode) == "sci")
+        if str(_mode) == "sci":
+            _fmt.set_powerlimits((-2, 3))
+        _axis.set_major_formatter(_fmt)
+
+
+def _apply_tick_rotation(ax, o):
+    """Slant a panel's tick labels, in degrees counter-clockwise.
+
+    Separate from the rest of ``_apply_axopts`` because the format pass resets tick parameters,
+    so a declared rotation has to be re-applied after it — the same rule that governs declared
+    ticks and colourbar decimals. A rotated x label is anchored at its tick rather than centred
+    under it, which is what stops a dense row of panels running its numbers together.
+    """
+    for _axis, _key in (("x", "xtick_rotation"), ("y", "ytick_rotation")):
+        if o.get(_key) is None:
+            continue
+        _rot = float(o[_key])
+        ax.tick_params(axis=_axis, labelrotation=_rot)
+        if _axis == "x" and _rot % 180:
+            for _lab in ax.get_xticklabels():
+                _lab.set_rotation_mode("anchor")
+                _lab.set_ha("right" if _rot > 0 else "left")
+
+
 def _apply_axopts(ax, o):
     """Apply a grammar panel's resolved axis directives (labels, limits, ticks, legend)."""
     for _key, _draw in (("axhline", ax.axhline), ("axvline", ax.axvline)):
         _at = o.get(_key)
-        if _at is not None:
-            for _v in (_at if isinstance(_at, (list, tuple)) else [_at]):
-                _draw(_v, color="0.6", lw=0.7, ls=":", zorder=0)
+        if _at is None:
+            continue
+        _at = list(_at) if isinstance(_at, (list, tuple)) else [_at]
+        _c = o.get(_key + "_color", "0.6")   # one colour, or one per rule where they name different things
+        _c = list(_c) if isinstance(_c, (list, tuple)) else [_c]
+        for _i, _v in enumerate(_at):
+            _draw(_v, color=_c[min(_i, len(_c) - 1)], lw=0.7, ls=":", zorder=0)
+    for _ax, _key, _far in ((ax.xaxis, "xtick_side", "top"), (ax.yaxis, "ytick_side", "right")):
+        _side = o.get(_key)
+        if _side:                       # ticks and label on the named side, as the paper prints them
+            _ax.set_ticks_position(str(_side))
+            _ax.set_label_position(str(_side))
+            if str(_side) == _far:
+                ax.spines[_far].set_visible(True)
+    for _ax, _key in ((ax.xaxis, "xlabel_side"), (ax.yaxis, "ylabel_side")):
+        if o.get(_key):                 # the label alone crosses the axis; the tick numbers stay put
+            _ax.set_label_position(str(o[_key]))
+    _reg = o.get("region")
+    if _reg is not None:                            # a window RINGED on the field, not shaded over it
+        from matplotlib.patches import Rectangle
+        _x0, _x1, _y0, _y1 = [float(v) for v in _reg]
+        ax.add_patch(Rectangle((_x0, _y0), _x1 - _x0, _y1 - _y0, fill=False, zorder=5,
+                               edgecolor=o.get("region_color", "w"), linewidth=0.8,
+                               linestyle=(0, (3, 2))))
     if o.get("xlabel") is not None:
-        ax.set_xlabel(o["xlabel"])
+        ax.set_xlabel(o["xlabel"], **({"labelpad": float(o["xlabel_pad"])} if o.get("xlabel_pad") is not None else {}))
     if o.get("ylabel") is not None:
-        ax.set_ylabel(o["ylabel"])
+        ax.set_ylabel(o["ylabel"], **({"labelpad": float(o["ylabel_pad"])} if o.get("ylabel_pad") is not None else {}))
     if o.get("title"):
         ax.set_title(o["title"])
     if o.get("xscale"):
@@ -175,10 +374,11 @@ def _apply_axopts(ax, o):
         ax.invert_xaxis()
     if o.get("invert_y"):
         ax.invert_yaxis()
-    if o.get("nbins"):
-        from matplotlib.ticker import MaxNLocator   # a declared tick budget, not a tidy-up
-        ax.xaxis.set_major_locator(MaxNLocator(nbins=o["nbins"], prune=None))
-        ax.yaxis.set_major_locator(MaxNLocator(nbins=o["nbins"], prune=None))
+    if o.get("nbins") or o.get("tick_prune"):
+        from matplotlib.ticker import MaxNLocator   # a declared tick budget; either directive stands on its own
+        _loc = {"nbins": o.get("nbins") or "auto", "prune": o.get("tick_prune") or None}
+        ax.xaxis.set_major_locator(MaxNLocator(**_loc))
+        ax.yaxis.set_major_locator(MaxNLocator(**_loc))
     if o.get("xticks") is not None:
         ax.set_xticks(o["xticks"])
     if o.get("yticks") is not None:
@@ -187,21 +387,39 @@ def _apply_axopts(ax, o):
         ax.set_xticklabels([])
     if o.get("hide_yticklabels"):
         ax.set_yticklabels([])
+    _ticks = {_k: float(o[_v]) for _k, _v in (("labelsize", "tick_size"), ("length", "tick_length")) if o.get(_v)}
+    if _ticks:
+        ax.tick_params(**_ticks)          # a dense grid's cells cannot carry the figure's own tick geometry
+    _apply_tick_format(ax, o)
+    _apply_tick_rotation(ax, o)
     if o.get("legend"):
         ax.legend(loc=o["legend"] if isinstance(o["legend"], str) else "best",
                   frameon=False)
 
 
-def _series3d(ds, da, name, axis):
-    """One 1-D channel of a line3d panel: a data_var, a value along a component coord
-    (e.g. select ``E`` along a ``var=[E,x,u]`` dim), or the index if the name is a plain dim."""
-    if name and name in ds.data_vars:
-        return np.asarray(ds[name].values).squeeze()
-    for c in getattr(da, "coords", {}):
-        vals = np.asarray(da.coords[c].values)
-        if vals.dtype.kind in "US" and name in set(vals.tolist()):
-            dim = da.coords[c].dims[0] if da.coords[c].dims else c
-            return np.asarray(da.sel({dim: name}).values).squeeze()
+def _channel(ds, da, name, axis=0):
+    """One 1-D channel of a panel, by NAME: a data_var, a value along a component coord
+    (e.g. select ``E`` along a ``var=[E,x,u]`` dim), or the index if the name is a plain dim.
+
+    Serves the depth axis of a line3d panel and the colour of a shaded scatter — both ask the
+    same question (give me this named quantity, one value per point) and must answer it the
+    same way, so a panel's z and its c cannot resolve a name differently.
+
+    A coord of the plotted array wins over a same-named sibling variable: it is aligned to the
+    points by construction, where a sibling is only aligned if its shape happens to agree. Both
+    the coord and the index fallback are read through :func:`_coord`, so a name resolves to a
+    coordinate in exactly one place."""
+    coords = getattr(da, "coords", {})
+    if name and name not in coords:
+        for c in coords:
+            vals = np.asarray(da.coords[c].values)
+            if vals.dtype.kind in "US" and name in set(vals.tolist()):
+                dim = da.coords[c].dims[0] if da.coords[c].dims else c
+                return np.asarray(da.sel({dim: name}).values).squeeze()
+        try:                              # a sibling variable, under whatever prefix it is stored
+            return np.asarray(_var(ds, name).values).squeeze()
+        except KeyError:
+            pass
     return _coord(da, name, axis)
 
 
@@ -209,7 +427,7 @@ def _apply_axopts3d(ax, o):
     """3-D axis directives for a line3d panel: labels, limits, camera, per-axis inversion,
     and an opaque white box (no default grey panes). Applied after the 2-D-shared labels."""
     if o.get("zlabel") is not None:
-        ax.set_zlabel(o["zlabel"])
+        ax.set_zlabel(o["zlabel"], labelpad=float(o.get("zlabel_pad", 4.0)))
     if o.get("zlim"):
         ax.set_zlim(*o["zlim"])
     if o.get("elev") is not None or o.get("azim") is not None:
@@ -223,6 +441,20 @@ def _apply_axopts3d(ax, o):
             pass                                      # older mpl without the zoom kwarg
     for _pa in (ax.xaxis, ax.yaxis, ax.zaxis):        # white box, faint edges
         _pa.pane.set_facecolor("white"); _pa.pane.set_alpha(1.0); _pa.pane.set_edgecolor("0.8")
+
+
+def _panel_number(ax, label, kwargs):
+    """Draw a panel's letter, including on a 3-D axes.
+
+    ``Axes3D.text`` takes (x, y, z, s), so the shared 2-D placement call raises there and a
+    line3d panel would silently lose its letter — or, as it did, take the whole figure down.
+    ``text2D`` is the 3-D axes' own flat-overlay call, which is what a panel letter is."""
+    if hasattr(ax, "get_zlim"):   # defaults mirror add_panel_number, so 3-D letters match their 2-D siblings
+        ax.text2D(kwargs.get("x_shift", 0.0), 1.0 + kwargs.get("y_shift", 0.0), str(label),
+                  transform=ax.transAxes, ha=kwargs.get("ha", "center"), va=kwargs.get("va", "bottom"),
+                  fontsize=kwargs.get("fontsize", 16), fontweight="bold")
+        return
+    _bpanels.add_panel_number(ax, label, **kwargs)
 
 
 def _cell_axes(ax):
@@ -243,6 +475,24 @@ def _cell_axes(ax):
             if child not in axes:
                 axes.extend(_cell_axes(child))
     return axes
+
+
+def _share_scale(axd, keys, axis):
+    """Put every panel in *keys* on the union of the group's limits along *axis*.
+
+    A declared shared scale is what makes hidden tick labels honest: without it the
+    panels are drawn at whatever range their own data implied, and the reader compares
+    two pictures that are not on one scale.
+    """
+    axes = [axd[k] for k in keys if k in axd]
+    if len(axes) < 2:
+        return
+    get, set_ = (("get_xlim", "set_xlim") if axis == "x" else ("get_ylim", "set_ylim"))
+    limits = [getattr(a, get)() for a in axes]
+    lo = min(min(l) for l in limits)
+    hi = max(max(l) for l in limits)
+    for a, (l0, l1) in zip(axes, limits):
+        getattr(a, set_)((hi, lo) if l0 > l1 else (lo, hi))
 
 
 def _snapshot_fixed_axes(ax):
@@ -274,6 +524,19 @@ def _restore_fixed_axes(snap):
             a.yaxis.set_major_locator(yloc); a.yaxis.set_major_formatter(yfmt); a.set_ylim(ylim)
 
 
+<%def name="colorbar(p)">\
+% if p['colorbar']:
+    _cb = fig.colorbar(_im, ax=ax, **${repr(p['colorbar_kwargs'])})   # one scale per panel, not per layer
+% if p['colorbar_label']:
+    _cb.set_label(${repr(p['colorbar_label'])})
+% endif
+% if p['colorbar_ticks'] is not None:
+    _cb.set_ticks(${repr(p['colorbar_ticks'])})
+% endif
+    _cb.outline.set_linewidth(0.5)
+    _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}, ${repr(p['colorbar_ticks'] is not None)}))   # re-applied after the format pass
+% endif
+</%def>\
 <%def name="draw(p)">\
 % if p['placeholder_only']:
     _placeholder(ax, ${repr(p['placeholder'])})
@@ -282,7 +545,11 @@ def _restore_fixed_axes(snap):
     ax.axis("off")
 % elif p['kind'] == 'grid':
     ax.axis("off")          # the cells below carry the drawing; this axes is only their frame
-% elif p['kind'] in ('custom', 'surface', 'colorbar', 'legend'):
+% elif p['kind'] in ('colorbar', 'legend'):
+    _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
+    if hasattr(_drawn, "xaxis"):
+        _SCALE_AXES[${repr(p['key'])}] = _drawn   # the bar, not the slot: a declared frame belongs on it, the panel letter on the slot behind it
+% elif p['kind'] in ('custom', 'surface'):
     _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
 % elif p['kind'] == 'line3d':
     _spec = ax.get_subplotspec(); ax.remove()           # swap the 2-D cell for a 3-D axis
@@ -296,15 +563,19 @@ def _restore_fixed_axes(snap):
 % if L['sel'] is not None:
     _da = _da.sel(_sel_keys(_da, ${repr(L['sel'])}), method=${repr(L['sel_method'])})
 % endif
-    _x = _series3d(_ds, _da, ${repr(L['x'])}, 0)
-    _y = _series3d(_ds, _da, ${repr(L['y'])}, 1)
-    _z = _series3d(_ds, _da, ${repr(L['z'])}, 2)
-% if L['mark'] == 'scatter':
+    _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
+    _y = _channel(_ds, _da, ${repr(L['y'])}, 1)
+    _z = _channel(_ds, _da, ${repr(L['z'])}, 2)
+% if L['mark'] == 'scatter' and L['color']:
+    _im = ax.scatter(_x, _y, _z, c=_channel(_ds, _da, ${repr(L['color'])}),
+                     cmap=${repr(L['cmap'] or 'viridis')}, **${repr(L['style'])})
+% elif L['mark'] == 'scatter':
     ax.scatter(_x, _y, _z, **${repr(L['style'])})
 % else:
     ax.plot(_x, _y, _z, **${repr(L['style'])})
 % endif
 % endfor
+${colorbar(p)}\
     _apply_axopts(ax, ${repr(p['axopts'])})
     _apply_axopts3d(ax, ${repr(p['axopts'])})
 % else:
@@ -326,10 +597,17 @@ def _restore_fixed_axes(snap):
     _C = _triangle(_C, ${repr(L['triangle'])}, ${p['triangle_gap']})
     _x = _y = np.arange(_C.shape[0])                # the gap widens the frame
 % endif
-    _im = ax.pcolormesh(_x, _y, _C, shading="auto", **${repr(L['style'])})
+    _im = ax.pcolormesh(_x, _y, _C, shading="auto", **_mesh_style(${repr(L['style'])}, _C))
 % elif L['mark'] == 'scatter':
     _x = _coord(_da, ${repr(L['x'])}, 0)
+% if L['color']:
+    # Colour is a THIRD QUANTITY per point, not a fan of artists: one cloud shaded by the variable it is not plotted against.
+    _im = ax.scatter(_x, np.asarray(_da.values).squeeze(),
+                     c=_channel(_ds, _da, ${repr(L['color'])}),
+                     cmap=${repr(L['cmap'] or 'viridis')}, **${repr(L['style'])})
+% else:
     ax.scatter(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+% endif
 % elif L['mark'] == 'bar':
     _x = _coord(_da, ${repr(L['x'])}, 0)
     ax.bar(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
@@ -359,16 +637,7 @@ def _restore_fixed_axes(snap):
     ax.plot(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
 % endif
 % endfor
-% if p['colorbar']:
-    _cb = fig.colorbar(_im, ax=ax, **${repr(p['colorbar_kwargs'])})   # one scale per panel, not per layer
-% if p['colorbar_label']:
-    _cb.set_label(${repr(p['colorbar_label'])})
-% endif
-% if p['colorbar_ticks'] is not None:
-    _cb.set_ticks(${repr(p['colorbar_ticks'])})
-% endif
-    _cb.outline.set_linewidth(0.5)
-% endif
+${colorbar(p)}\
     _apply_axopts(ax, ${repr(p['axopts'])})
 % endif
 % if p['title']:
@@ -408,9 +677,13 @@ def _restore_fixed_axes(snap):
                 textcoords="axes fraction", zorder=10, **${repr(a['kwargs'])},
                 arrowprops={"arrowstyle": "-|>", "color": "k", "lw": 0.8,
                             "shrinkA": 0, "shrinkB": 0})   # above a composite panel's sub-axes
-% else:
+% elif a['layer']:
     ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.transAxes, zorder=10,
+            bbox={"facecolor": fig.get_facecolor(), "edgecolor": "none", "pad": 1.0,
+                  "alpha": 0.75},   # a statistic printed over its own scatter stays readable
             **${repr(a['kwargs'])})
+% else:
+    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.transAxes, zorder=10, **${repr(a['kwargs'])})
 % endif
 % endfor
 </%def>\
@@ -422,7 +695,11 @@ def ${name}(fig, ax):
     """${what} ${d['key']} — ${d['kind']}."""
 ${draw(d)}\
 % for ins in d['insets']:
-    _${ins['key']}(fig, ax.inset_axes(${repr(ins['bounds'])}))   # drawn after the body, over it
+    _iax = ax.inset_axes(${repr(ins['bounds'])})   # drawn after the body, over it
+    _${ins['key']}(fig, _iax)
+% if ins['post_axopts']:
+    _INSET_POST.append((_SCALE_AXES.get(${repr(ins['key'])}, _iax), ${repr(ins['post_axopts'])}))   # re-applied after the format pass
+% endif
 % endfor
     return ax
 
@@ -473,17 +750,24 @@ def main():
 % if custom_keys:
     _fixed = [_snapshot_fixed_axes(axd[_k]) for _k in ${repr(custom_keys)}]   # drawer's own fixed ticks
 % endif
+    _blank = [_ax for _ax in fig.axes if not _ax.axison and not hasattr(_ax, "zaxis")]   # a 2-D slot the panel blanked stays blank
     bsplot.style.format_fig(fig, add_panel_numbers=False, **${repr(format_kwargs)})   # normalise ticks/labels; panel letters below
+    for _ax in _blank:
+        _ax.set_axis_off()
 % if custom_keys:
     for _s in _fixed:                                       # ...restored so the format pass can't overwrite them
         _restore_fixed_axes(_s)
 % endif
     for _pax in _PLACEHOLDER_AXES:                          # a placeholder slot has no ticks to normalise
         _bare(_pax)
+    for _iax, _iopts in _INSET_POST:                        # an inset's declared frame, same rule as a panel's
+        _apply_axopts(_iax, _iopts)
+    for _cbar, _dec, _declared in _COLORBAR_POST:           # declared decimals beat the tidy-up's multiplier
+        _format_colorbar(_cbar, _dec, _declared)
 % for p in panels:
 % if p['post_axopts']:
     if axd[${repr(p['key'])}] not in _PLACEHOLDER_AXES:   # a slot that fell back to a placeholder stays bare
-        _apply_axopts(axd[${repr(p['key'])}], ${repr(p['post_axopts'])})   # declared frame wins over the tidy-up
+        _apply_axopts(_SCALE_AXES.get(${repr(p['key'])}, axd[${repr(p['key'])}]), ${repr(p['post_axopts'])})   # declared frame wins over the tidy-up
 % endif
 % endfor
 % endif
@@ -499,13 +783,19 @@ def main():
         _iax.invert_xaxis()
 % endif
 % endfor
+% for _axis, _groups in shared_scales.items():
+% for _group in _groups:
+    _share_scale(axd, ${repr(_group)}, ${repr(_axis)})
+% endfor
+% endfor
 % if panel_numbers:
 % for p in panels:
 % if p['letter'] is not None:
-    _bpanels.add_panel_number(axd[${repr(p['key'])}], ${repr(p['letter'])}, **${repr(p['number_kwargs'])})
+    _panel_number(axd[${repr(p['key'])}], ${repr(p['letter'])}, ${repr(p['number_kwargs'])})
 % endif
 % endfor
 % endif
+    _distinct_ticks(fig)                                    # an axis whose ticks repeat one number carries no scale
     fig.savefig(${repr(outfile)}, **${repr(savefig_kwargs)})
     print("wrote", ${repr(outfile)})
     return fig

@@ -1,10 +1,6 @@
 """Unit tests for the shared cross-experiment DataRef resolver (``tvbo/data/dataref.py``).
 
-Light — synthetic xarray datasets written to a temp HDF5, no JAX, no big grids. Covers
-every resolution path the design enumerates: intra-study ``experiment`` id, ``iri``
-(trailing number and filesystem path), the ``source_experiment`` fallback, the local
-no-WHERE guard, ``sel`` nearest on an indexed *and* a non-index coordinate, the
-``output`` ``__``-suffix matcher, and ``by_label`` reconcile (identity + permuted).
+Light — synthetic xarray datasets written to a temp HDF5, no JAX, no big grids. Covers every resolution path the design enumerates: intra-study ``experiment`` id, ``iri`` (trailing number and filesystem path), the ``source_experiment`` fallback, the local no-WHERE guard, ``sel`` nearest on an indexed *and* a non-index coordinate, the ``output`` ``__``-suffix matcher, and ``by_label`` reconcile (identity + permuted).
 """
 
 from __future__ import annotations
@@ -42,8 +38,7 @@ def sweep_h5(tmp_path):
         {"observation__lyapunov_xi": (("branch_point", "node"), xi)},
         coords={"KuramotoInertia.K": ("branch_point", K), "node": ["A", "B", "C"]},
     )
-    p = tmp_path / "sub" / "study_exp-32_result.h5"
-    p.parent.mkdir(parents=True)
+    p = tmp_path / "exp-32_model-KuramotoInertia_result.h5"
     ds.to_netcdf(p, engine="h5netcdf")
     return tmp_path, p
 
@@ -52,8 +47,7 @@ def sweep_h5(tmp_path):
 def vec_h5(tmp_path):
     """A per-node vector with string node labels, for reconcile tests."""
     ds = xr.Dataset({"g": (("node",), np.array([10.0, 20.0, 30.0]))}, coords={"node": ["A", "B", "C"]})
-    p = tmp_path / "out" / "nc" / "exp5" / "study_exp-5_result.h5"
-    p.parent.mkdir(parents=True)
+    p = tmp_path / "exp-5_model-M_result.h5"
     ds.to_netcdf(p, engine="h5netcdf")
     return tmp_path, p
 
@@ -80,9 +74,10 @@ def test_locate_container_by_experiment(sweep_h5):
 
 
 def test_locate_container_by_experiment_exp_dash_spelling(sweep_h5):
-    """The ``exp-N`` spelling (as written in a recipe's ``used: {experiment: exp-32}``)
-    resolves at resolve time, matching the planner — it must not raise on ``int('exp-32')``.
-    Covers both the direct ``experiment`` path and the from_experiment fallback path."""
+    """The ``exp-N`` spelling (as written in a recipe's ``used: {experiment: exp-32}``) resolves at resolve time, matching the planner — it must not raise on ``int('exp-32')``.
+
+    Covers both the direct ``experiment`` path and the from_experiment fallback path.
+    """
     root, path = sweep_h5
     assert dr.locate_container(_ref(experiment="exp-32"), results_root=root) == path
     assert dr.locate_container(_ref(), results_root=root, fallback_experiment="exp-32") == path
@@ -123,12 +118,13 @@ def test_is_local_ref():
 
 
 def test_skip_network_sidecar(tmp_path):
-    (tmp_path / "study_exp-7_network.h5").write_bytes(b"")
+    """The frozen connectome companion shares the directory and must never be opened as the result."""
+    (tmp_path / "exp-7_model-M_network.h5").write_bytes(b"")
     xr.Dataset({"g": (("node",), [1.0])}, coords={"node": ["A"]}).to_netcdf(
-        tmp_path / "study_exp-7_result.h5", engine="h5netcdf"
+        tmp_path / "exp-7_model-M_result.h5", engine="h5netcdf"
     )
     got = dr.locate_container(_ref(experiment="7"), results_root=tmp_path)
-    assert got.name == "study_exp-7_result.h5"
+    assert got.name == "exp-7_model-M_result.h5"
 
 
 # --------------------------------------------------------------------------- WHICH
@@ -148,8 +144,7 @@ def test_match_output_missing():
         dr.match_output(["a", "b"], "nope")
 
 
-# A run with two algorithms records every observation twice — `algorithm__fic__S_e_final` beside
-# `algorithm__fic_eib__S_e_final`. A caller that cannot tolerate an arbitrary pick passes `prefer`.
+# A run with two algorithms records every observation twice — `algorithm__fic__S_e_final` beside `algorithm__fic_eib__S_e_final`. A caller that cannot tolerate an arbitrary pick passes `prefer`.
 _TWO_ALGORITHMS = [
     "algorithm__fic__S_e_final",
     "algorithm__fic_eib__S_e_final",
@@ -207,8 +202,7 @@ def test_select_exact_label():
 
 
 def test_select_numeric_list_on_non_index_coord():
-    # A numeric list on a non-dimension coordinate uses nearest per element (not exact isin,
-    # which would silently miss on a continuous sweep).
+    # A numeric list on a non-dimension coordinate uses nearest per element (not exact isin, which would silently miss on a continuous sweep).
     da = xr.DataArray(np.arange(5.0), dims=["point"], coords={"K": ("point", [700.0, 900.0, 1100.0, 1300.0, 1500.0])})
     out = dr.select_labeled(da, {"K": [817, 1307]})  # nearest -> 900 (idx1), 1300 (idx3)
     np.testing.assert_allclose(out.values, [1.0, 3.0])
@@ -217,10 +211,7 @@ def test_select_numeric_list_on_non_index_coord():
 def test_select_sees_through_the_containers_per_variable_dim_prefix():
     """A spec says `node`, whatever the container had to rename the axis to.
 
-    A saved result renames an axis to `<variable>__<axis>` when two of its variables carry
-    same-named axes at different sizes. That prefix is a storage detail — a figure binding
-    `sel: {node: PFC}` must not have to know which sibling observation forced it, nor fall
-    back to selecting the module by index.
+    A saved result renames an axis to `<variable>__<axis>` when two of its variables carry same-named axes at different sizes. That prefix is a storage detail — a figure binding `sel: {node: PFC}` must not have to know which sibling observation forced it, nor fall back to selecting the module by index.
     """
     da = xr.DataArray([10.0, 20.0], dims=["winner__node"], coords={"winner__node": ["PPC", "PFC"]})
     assert float(dr.select_labeled(da, {"node": "PFC"})) == 20.0
@@ -309,9 +300,7 @@ def test_sel_dict_and_reconcile_mode():
 
 
 def test_sel_dict_reads_the_keyed_dict_spelling():
-    """A study writes ``sel: {variable: phi}`` — a NAME-KEYED collection, which is what the
-    loader hands back. Reading only the list spelling silently dropped the selection, so a
-    sourced argument arrived unsliced (whole trajectory instead of one state variable)."""
+    """A study writes ``sel: {variable: phi}`` — a NAME-KEYED collection, which is what the loader hands back. Reading only the list spelling silently dropped the selection, so a sourced argument arrived unsliced (whole trajectory instead of one state variable)."""
     sel = {
         "variable": SimpleNamespace(name="variable", value="phi"),
         "time": SimpleNamespace(name="time", value=[0.006, 0.016]),
@@ -366,13 +355,45 @@ def test_resolve_dataref_with_transform(sweep_h5):
     np.testing.assert_allclose(out.values, [4.0, 4.1, 4.2])  # row 4 (last of 5 points)
 
 
+# --------------------------------------------------------------------------- table fallback
+
+
+@pytest.fixture
+def table_h5(tmp_path):
+    """A DataFrame-backed container: one variable per column over a single ``<analysis>_row`` dim."""
+    ds = xr.Dataset(
+        {"stats__r": (("stats_row",), np.array([0.1, 0.2])), "stats__p": (("stats_row",), np.array([0.5, 0.6]))},
+        coords={"stats_row": ["alpha", "beta"]},
+    )
+    p = tmp_path / "out" / "nc" / "exp7" / "study_exp-7_result.h5"
+    p.parent.mkdir(parents=True)
+    ds.to_netcdf(p, engine="h5netcdf")
+    return tmp_path, p
+
+
+def test_resolve_dataref_returns_the_whole_table(table_h5):
+    """``output`` naming the analysis itself means the frame it wrote, columns unprefixed."""
+    root, _ = table_h5
+    out = dr.resolve_dataref(_ref(experiment="7", output="stats"), results_root=root)
+    assert list(out.columns) == ["r", "p"]
+    assert list(out.index) == ["alpha", "beta"]
+
+
+@pytest.mark.parametrize("extra", [{"sel": _sel(metric="r")}, {"transform": "_xsrc_test_endpoint"}, {"reconcile": "by_label"}])
+def test_table_refuses_a_directive_it_cannot_apply(table_h5, extra):
+    """SLICE / transform / RECONCILE have no meaning on a table, so declaring one raises rather than returning an array the directive never touched."""
+    root, _ = table_h5
+    with pytest.raises(ValueError, match="whole table"):
+        dr.resolve_dataref(_ref(experiment="7", output="stats", **extra), results_root=root)
+
+
+# --------------------------------------------------------------------------- one run per experiment
+
+
 def test_two_runs_of_one_experiment_under_the_root_raise_rather_than_pick_one(tmp_path):
     """Different runs of the same experiment are not interchangeable.
 
-    A study whose results root also holds retrieved archives has many
-    `exp-34_*_result.h5` under it — thirteen, in the case that found this, with fc_corr
-    spanning NaN to 0.903. Returning the first sorted hit bound a figure to whichever path
-    sorted first and reported 0.070 as the fit: a wrong number that reads as a finding.
+    A study whose results root also holds retrieved archives has many `exp-34_*_result.h5` under it — thirteen, in the case that found this, with fc_corr spanning NaN to 0.903. Returning the first sorted hit bound a figure to whichever path sorted first and reported 0.070 as the fit: a wrong number that reads as a finding.
     """
     (tmp_path / "nc").mkdir()
     (tmp_path / "nc" / "exp-34_desc-Model_result.h5").write_bytes(b"")
@@ -396,11 +417,7 @@ def test_the_network_sidecar_is_not_a_second_candidate(tmp_path):
 def test_a_per_subject_cohort_is_one_run_not_many(tmp_path):
     """`_save_per_subject` writes one shard per subject into ONE directory.
 
-    A `dataset.batch_mode: on_device` cohort of N subjects produces N files matching
-    `*exp-<id>_*.h5` that differ only in their `sub-` entity — the BIDS result pattern is
-    `[sub-{subject}_]exp-{experiment}[_desc-{description}]_result.h5`. That is one run of the
-    experiment, so every `used:` DataRef and warm start against it must still resolve; only
-    genuinely different runs are the ambiguity worth refusing.
+    A `dataset.batch_mode: on_device` cohort of N subjects produces N files matching `*exp-<id>_*.h5` that differ only in their `sub-` entity — the BIDS result pattern is `[sub-{subject}_]exp-{experiment}[_desc-{description}]_result.h5`. That is one run of the experiment, so every `used:` DataRef and warm start against it must still resolve; only genuinely different runs are the ambiguity worth refusing.
     """
     for sid in ("01", "02", "03"):
         (tmp_path / f"sub-{sid}_exp-34_desc-Model_result.h5").write_bytes(b"")
@@ -420,9 +437,7 @@ def test_the_same_subject_shard_in_two_directories_still_raises(tmp_path):
 def test_an_aggregate_container_beside_a_shard_still_raises(tmp_path):
     """Stripping the `sub-` entity collapses these to one stem, but they are two runs.
 
-    A whole-cohort container and a per-subject shard of the same experiment describe
-    different runs — one non-sharded, one sharded — so returning either would be the silent
-    choice the ambiguity check exists to refuse. Only an all-shards set is a cohort.
+    A whole-cohort container and a per-subject shard of the same experiment describe different runs — one non-sharded, one sharded — so returning either would be the silent choice the ambiguity check exists to refuse. Only an all-shards set is a cohort.
     """
     (tmp_path / "exp-34_desc-Model_result.h5").write_bytes(b"")
     (tmp_path / "sub-01_exp-34_desc-Model_result.h5").write_bytes(b"")
@@ -434,10 +449,7 @@ def test_an_aggregate_container_beside_a_shard_still_raises(tmp_path):
 def test_select_sees_through_the_prefix_on_a_non_dimension_coordinate():
     """The prefix rule applies to coordinates too, not only to dims.
 
-    A branch-point array is dimmed by `branch_point` with `K` a 1-D coordinate along it —
-    the case `select_labeled` exists to support. The container renames that coordinate by
-    the same collision rule it applies to axes, so a suffix search over dims alone leaves
-    the spec's `sel: {K: ...}` unresolvable.
+    A branch-point array is dimmed by `branch_point` with `K` a 1-D coordinate along it — the case `select_labeled` exists to support. The container renames that coordinate by the same collision rule it applies to axes, so a suffix search over dims alone leaves the spec's `sel: {K: ...}` unresolvable.
     """
     da = xr.DataArray(
         [1.0, 2.0, 3.0],

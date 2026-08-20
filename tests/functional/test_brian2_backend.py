@@ -1,14 +1,8 @@
 """Native Brian2 backend — the Deco 2014 spiking column.
 
-The adapter lowers the fully-connected 160E+40I conductance-based LIF column onto
-Brian2 via O(N) summed "hub" population sums (not O(N^2) `Synapses`), and
-reproduces the paper's Table-2 spontaneous rates (E 2.92 Hz / I 7.54 Hz). These
-tests pin: (1) `render("brian2")` emits a valid, self-contained, runnable script;
-(2) `run(format="brian2")` reproduces the Table-2 regime; (3) the rendered script
-and the in-process run agree at a fixed seed (render == run).
+The adapter lowers the fully-connected 160E+40I conductance-based LIF column onto Brian2 via O(N) summed "hub" population sums rather than O(N^2) `Synapses`. These tests pin: (1) `render("brian2")` emits a valid, self-contained, runnable script; (2) `run(format="brian2")` reproduces the paper's Table-2 spontaneous rates (E 2.92 Hz / I 7.54 Hz); (3) the rendered script and the in-process run agree at a fixed seed (render == run).
 
-The column is declared inline (no external recipe) so the test is self-contained.
-It is the same structure as the manuscript recipe's experiment 7.
+The column is declared inline (no external recipe) so the test is self-contained. It is the same structure as the manuscript recipe's experiment 7.
 """
 
 from __future__ import annotations
@@ -23,18 +17,13 @@ from tvbo.classes.experiment import SimulationExperiment
 def squashed(script: str) -> str:
     """The script with all whitespace removed, for asserting on call structure.
 
-    Generated Python is formatted before it is returned, so a long call is wrapped
-    across lines. Assertions about which arguments a call receives must therefore
-    not depend on where the formatter chose to break it.
+    Generated Python is formatted before it is returned, so a long call is wrapped across lines. Assertions about which arguments a call receives must therefore not depend on where the formatter chose to break it.
     """
     return re.sub(r"\s+", "", script)
 
 
 pytest.importorskip("brian2")
 
-# A self-contained Deco 2014 cortical column: 160 E + 40 I, all-to-all recurrent
-# AMPA (rec) + saturating NMDA (Mg block) + GABA-A, independent 2.4 kHz Poisson
-# background per neuron. Constants from Deco (2014) Table 2.
 DECO_COLUMN_YAML = """
 label: "Deco 2014 column (Brian2 backend test)"
 network:
@@ -149,6 +138,7 @@ network:
     - {source: 3, target: 3, dynamics: GABA_I, connectivity: all_to_all, allow_self_connections: false, parameters: {weight: {value: 1.0}}}
 integration: {method: euler, step_size: 0.02, duration: 1500.0, time_scale: ms}
 """
+"""Recipe for the column: recurrent AMPA (rec) + saturating NMDA (Mg block) + GABA-A, with an independent 2.4 kHz Poisson background per neuron. Constants from Deco (2014) Table 2."""
 
 
 @pytest.fixture(scope="module")
@@ -192,8 +182,7 @@ class TestBrian2ReproducesTable2:
         res = column.run(format="brian2", seed=3, settle_ms=500.0)
         rates = res._extras["rates"]
         rE, rI = rates["ExcitatoryCell"], rates["InhibitoryCell"]
-        # Table 2 targets: E 2.92 Hz, I 7.54 Hz. Assert the correct regime with a
-        # margin for the finite window; the balance (E < I, ~1:2.6) must hold.
+        # Table 2 targets: E 2.92 Hz, I 7.54 Hz. Assert the correct regime with a margin for the finite window; the balance (E < I, ~1:2.6) must hold.
         assert 2.0 <= rE <= 4.0, f"E rate {rE:.3f} outside Table-2 regime"
         assert 6.0 <= rI <= 9.5, f"I rate {rI:.3f} outside Table-2 regime"
         assert rE < rI
@@ -201,10 +190,7 @@ class TestBrian2ReproducesTable2:
     def test_render_and_run_agree(self, column):
         """The generated script and the in-process run are the same computation.
 
-        Both at seed 3 with numpy codegen and the same stationary window, so the
-        result is spike-level identical — a regression here means render() drifted
-        from run(). (The default settle window matches the script's, so no
-        ``settle_ms`` override is passed to run().)
+        Both at seed 3 with numpy codegen and the same stationary window, so the result is spike-level identical — a regression here means render() drifted from run(). (The default settle window matches the script's, so no ``settle_ms`` override is passed to run().)
         """
         run_rates = column.run(format="brian2", seed=3)._extras["rates"]
         script = column.render("brian2", seed=3)
@@ -215,10 +201,6 @@ class TestBrian2ReproducesTable2:
         assert gen_rates["InhibitoryCell"] == pytest.approx(run_rates["InhibitoryCell"], abs=1e-9)
 
 
-# A recurrent E population wired with SPARSE random connectivity through a facilitating
-# Tsodyks-Markram synapse. Unlike the all-to-all column, a genuinely sparse projection is
-# emitted as a real Brian2 `Synapses` (not a summed hub): the conductance decays on the
-# post-synaptic neuron, STP (u, x) lives on the synapse as (event-driven) variables.
 SPARSE_STP_YAML = """
 label: "Sparse facilitating E->E network (Brian2 sparse-path test)"
 network:
@@ -267,6 +249,7 @@ network:
        parameters: {weight: {value: 1.0}, connection_probability: {value: 0.12}}}
 integration: {method: euler, step_size: 0.05, duration: 800.0, time_scale: ms}
 """
+"""Recipe for a recurrent E population wired with sparse random connectivity through a facilitating Tsodyks-Markram synapse."""
 
 
 class TestBrian2SparseConnectivity:
@@ -291,8 +274,10 @@ class TestBrian2SparseConnectivity:
         assert 'connect(p=0.12,condition="i!=j")' in squashed(script)
 
     def test_conductance_delivered_postsynaptically(self, script):
-        # Decaying conductance on the post-synaptic cell, incremented event-driven by on_pre.
-        # Objects are named by (synapse, source, target) so block-structured nets never collide.
+        """The conductance decays on the post-synaptic cell and is incremented event-driven by `on_pre`.
+
+        Objects are named by (synapse, source, target) so block-structured networks never collide.
+        """
         assert "dgsyn_STP_fac_E_from_ExcitatoryCell_to_ExcitatoryCell/dt = -gsyn" in script
         assert "gsyn_STP_fac_E_from_ExcitatoryCell_to_ExcitatoryCell_post +=" in script
 
@@ -313,10 +298,6 @@ class TestBrian2SparseConnectivity:
         assert ns["RATES"]["ExcitatoryCell"] == pytest.approx(run_rates["ExcitatoryCell"], abs=1e-9)
 
 
-# A deterministic timed current pulse (pulseGenerator) drives a cell only within its window.
-# This is the declarative loading / nonspecific-readout primitive: a rectangular current
-# (delay, duration, amplitude) summed into the target's membrane current. No Poisson, so the
-# behaviour is fully deterministic — the cell fires only while the pulse is on.
 PULSE_YAML = """
 label: "Timed current pulse (Brian2 pulseGenerator test)"
 network:
@@ -346,6 +327,7 @@ network:
     - {source: 5, target: 2, connectivity: all_to_all}
 integration: {method: euler, step_size: 0.05, duration: 800.0, time_scale: ms}
 """
+"""Recipe for the declarative loading / nonspecific-readout primitive: a `pulseGenerator` (delay, duration, amplitude) summed into the target's membrane current, with no Poisson background so the behaviour is fully deterministic."""
 
 
 class TestBrian2TimedCurrentPulse:
@@ -393,12 +375,6 @@ class TestBrian2TimedCurrentPulse:
         assert ns["RATES"]["ExcitatoryCell"] == pytest.approx(run_rate, abs=1e-9)
 
 
-# The faithful Mongillo/Amit-Brunel form: a CURRENT-BASED LIF (tau_m dV/dt = -V + mu_ext + iSyn,
-# V_rest 0) with an instantaneous (delta) PSC recurrent synapse (a spike jumps v_post directly,
-# no conductance / no synaptic time constant) carrying short-term facilitation, plus additive
-# Gaussian white-noise external drive. Two selective E sub-populations wired sparsely through the
-# facilitating delta synapse (potentiated within-population, baseline across) exercise the
-# block-structured delta path; a timed pulse loads one population.
 DELTA_STP_YAML = """
 label: "Current-based delta-PSC facilitating network (Brian2 delta+noise test)"
 network:
@@ -449,6 +425,10 @@ network:
     - {source: 30, target: 10, connectivity: all_to_all}
 integration: {method: euler, step_size: 0.05, duration: 1500.0, time_scale: ms}
 """
+"""Recipe in the faithful Mongillo/Amit-Brunel form: `tau_m dV/dt = -V + mu_ext + iSyn` with V_rest 0, and short-term facilitation on the recurrent synapse.
+
+Two selective E sub-populations wired sparsely through that synapse (potentiated within-population, baseline across) exercise the block-structured delta path; a timed pulse loads one population.
+"""
 
 
 class TestBrian2DeltaPscAndNoise:
@@ -494,8 +474,7 @@ class TestBrian2DeltaPscAndNoise:
     @pytest.mark.backend_brian2
     @pytest.mark.slow
     def test_facilitation_holds_after_loading(self, net):
-        # Loading population A elevates its presynaptic utilisation u and keeps it above baseline
-        # into the delay (the activity-silent memory trace); B stays at baseline.
+        # Loading population A elevates its presynaptic utilisation u and keeps it above baseline into the delay (the activity-silent memory trace); B stays at baseline.
         import numpy as np
 
         res = net.run(format="brian2", seed=5)
@@ -529,11 +508,6 @@ class TestBrian2DeltaPscAndNoise:
         assert uA_delay > uB_delay + 0.03, f"facilitation not selective: {uA_delay=:.3f} {uB_delay=:.3f}"
 
 
-# A spiking run persists its raster to the result container so `tvbo run` reproduces from disk:
-# ExperimentResult.save writes per-population spike times + neuron indices as flat variables plus
-# the firing rates and sizes on a shared axis, with the run window in the Dataset attrs. Two E
-# populations (one driven by a pulse, one silent) exercise the per-population keying and the
-# save→load round-trip a spiking study's figures bind to.
 CONTAINER_YAML = """
 label: "Spiking result-container round-trip (Brian2)"
 network:
@@ -564,6 +538,7 @@ network:
     - {source: 5, target: 2, connectivity: all_to_all}
 integration: {method: euler, step_size: 0.05, duration: 500.0, time_scale: ms}
 """
+"""Recipe with two E populations, one driven by a pulse and one silent, exercising the per-population keying and the save→load round-trip a spiking study's figures bind to, so `tvbo run` reproduces the raster from disk."""
 
 
 @pytest.mark.backend_brian2
@@ -592,8 +567,7 @@ class TestBrian2ResultContainer:
 
         assert list(np.asarray(ds["population_size"])) == [15.0, 10.0]
         assert ds["firing_rate"].sizes["population"] == 2
-        # the population axis is KEYED (never positional): the coord labels equal attrs and the
-        # per-population raster tokens, so a rate is selectable by name and maps to its raster.
+        # the population axis is KEYED (never positional): the coord labels equal attrs and the per-population raster tokens, so a rate is selectable by name and maps to its raster.
         assert list(ds["firing_rate"].coords["population"].values) == pops
         assert float(ds["population_size"].sel(population="ExcitatoryCell_2")) == 15.0
         for p in pops:
@@ -606,10 +580,7 @@ class TestBrian2ResultContainer:
         ds.close()
 
 
-# A conductance-based cell (drive is a current; no membrane time constant) that declares membrane
-# noise: the sigma*xi/sqrt(tau_m) discretisation has no tau_m to normalise by, so the build must
-# reject it with a clear message instead of emitting an equation that references an undefined
-# tau_m and fails opaquely inside Brian2.
+# A conductance-based cell (drive is a current; no membrane time constant) that declares membrane noise: the sigma*xi/sqrt(tau_m) discretisation has no tau_m to normalise by, so the build must reject it with a clear message instead of emitting an equation that references an undefined tau_m and fails opaquely inside Brian2.
 CONDUCTANCE_NOISE_YAML = """
 label: "Conductance cell with membrane noise (unsupported)"
 network:
@@ -649,8 +620,7 @@ def test_conductance_cell_with_membrane_noise_is_rejected(tmp_path):
         exp.render("brian2")
 
 
-# Two pulse edges from the same generator onto the same population: their windows must SUM, each
-# keeping its own weight, not collapse to a single window carrying only the last edge's weight.
+# Two pulse edges from the same generator onto the same population: their windows must SUM, each keeping its own weight, not collapse to a single window carrying only the last edge's weight.
 TWO_PULSE_YAML = """
 label: "Two pulse edges onto one population sum (Brian2)"
 network:
@@ -694,8 +664,7 @@ def test_multiple_pulse_edges_onto_one_population_sum(tmp_path):
 
 
 def test_render_seeds_random_connectivity_from_execution_random_seed(tmp_path):
-    """render() with no explicit seed emits seed(execution.random_seed) so the codegen path
-    builds the SAME random connectivity as run() — the render≡run invariant for sparse nets."""
+    """render() with no explicit seed emits seed(execution.random_seed) so the codegen path builds the SAME random connectivity as run() — the render≡run invariant for sparse nets."""
     path = tmp_path / "seeded.yaml"
     path.write_text(SPARSE_STP_YAML + "execution: {random_seed: 4242}\n")
     exp = SimulationExperiment.from_file(str(path))
@@ -710,10 +679,7 @@ def test_render_is_unseeded_without_a_declared_seed(tmp_path):
     assert "seed(" not in exp.render("brian2")
 
 
-# A delta (instantaneous-PSC) synapse whose spike event scales the jump by a unit-valued parameter
-# (J in mV): the delivered `v_post += weight*(J*u*x)*mV` would be dimensionally inconsistent (mV^2),
-# so the build must reject it and steer the amplitude into the edge weight instead of failing deep
-# inside Brian2. STP_bad mirrors the faithful STP_E but moves the mV scale into a synapse parameter.
+# A delta (instantaneous-PSC) synapse whose spike event scales the jump by a unit-valued parameter (J in mV): the delivered `v_post += weight*(J*u*x)*mV` would be dimensionally inconsistent (mV^2), so the build must reject it and steer the amplitude into the edge weight instead of failing deep inside Brian2. STP_bad mirrors the faithful STP_E but moves the mV scale into a synapse parameter.
 DELTA_UNITFUL_YAML = """
 label: "Delta synapse with unit-valued jump (unsupported)"
 network:
@@ -773,12 +739,7 @@ def test_probe_sample_indices_are_evenly_spaced_and_never_divide_by_zero():
     assert len(s) == 200 and s[0] == 0 and s[-1] == 799 and s == sorted(set(s))
 
 
-# A delta STP synapse whose u/x carry `record: true`: the backend adds a clock-driven,
-# zero-delivery OBSERVATION PROBE (a sampled copy of the source population's synapses, driven by
-# the same presynaptic spikes) and StateMonitors its u/x. This measures the continuous synaptic
-# state — including the slow decay held through silent intervals — that an event-driven monitor
-# would freeze, without perturbing the network (the probe delivers nothing). A suprathreshold
-# mu_ext makes the cells fire a regular train deterministically, so u builds by facilitation.
+# A delta STP synapse whose u/x carry `record: true`: the backend adds a clock-driven, zero-delivery OBSERVATION PROBE (a sampled copy of the source population's synapses, driven by the same presynaptic spikes) and StateMonitors its u/x. This measures the continuous synaptic state — including the slow decay held through silent intervals — that an event-driven monitor would freeze, without perturbing the network (the probe delivers nothing). A suprathreshold mu_ext makes the cells fire a regular train deterministically, so u builds by facilitation.
 RECORDED_SYN_YAML = """
 label: "Delta STP synapse with recorded internal state (observation probe)"
 network:
@@ -848,6 +809,10 @@ class TestBrian2RecordedSynapseState:
     @pytest.mark.backend_brian2
     @pytest.mark.slow
     def test_probe_measures_ux_without_perturbing_the_network(self, net, tmp_path):
+        """The probe records genuine facilitation traces rather than an analytic reconstruction.
+
+        `u` rises above its baseline U=0.20 and varies (it is not a frozen value); `x` is depleted below 1.
+        """
         import numpy as np
         import xarray as xr
 
@@ -862,13 +827,10 @@ class TestBrian2RecordedSynapseState:
         u = np.asarray(ds["synapse__ExcitatoryCell__u"].values)
         x = np.asarray(ds["synapse__ExcitatoryCell__x"].values)
         assert u.size > 50 and u.shape == x.shape
-        # FACILITATION measured: u rises above its baseline U=0.20 and varies (not a frozen value);
-        # x is depleted below 1. These are the recorded traces, not an analytic reconstruction.
         assert u.max() > 0.20 + 1e-3 and u.std() > 1e-3
         assert x.min() < 1.0 - 1e-3
         ds.close()
-        # the observation probe delivers nothing: firing rate is identical to a run whose synapse
-        # is NOT recorded (no probe built at all).
+        # the observation probe delivers nothing: firing rate is identical to a run whose synapse is NOT recorded (no probe built at all).
         norec_path = tmp_path / "norec.yaml"
         norec_path.write_text(RECORDED_SYN_YAML.replace(", record: true}", "}"))
         r_rec = res._extras["rates"]["ExcitatoryCell"]
@@ -878,10 +840,6 @@ class TestBrian2RecordedSynapseState:
         assert r_rec == pytest.approx(r_plain, abs=1e-9), "the probe perturbed the network"
 
 
-# A `random` current-pulse edge drives only a random SUBSET of the target's neurons (a per-neuron
-# 0/1 mask, fraction = connection_probability), reusing the sparse-synapse convention — the paper's
-# "nonspecific input to 15% of the excitatory neurons". A subthreshold mu_ext keeps the unstimulated
-# neurons silent, so only the masked fraction fires, and only within the pulse window.
 RANDOM_PULSE_YAML = """
 label: "Random-subset current pulse (Brian2)"
 network:
@@ -911,6 +869,7 @@ network:
 integration: {method: euler, step_size: 0.05, duration: 400.0, time_scale: ms}
 execution: {random_seed: 0}
 """
+"""Recipe for the paper's "nonspecific input to 15% of the excitatory neurons": the 0/1 mask fraction is `connection_probability`, reusing the sparse-synapse convention, and a subthreshold `mu_ext` keeps the unstimulated neurons silent."""
 
 
 class TestBrian2RandomSubsetPulse:
@@ -930,9 +889,7 @@ class TestBrian2RandomSubsetPulse:
         compile(script, "<generated>", "exec")
 
     def test_emits_seeded_per_neuron_mask(self, script):
-        # a constant per-neuron mask, drawn from the seeded RNG (render≡run), gating the
-        # window. Keyed by edge index, so two random pulse edges onto one population are
-        # two independent subsets rather than one shared mask.
+        # a constant per-neuron mask, drawn from the seeded RNG (render≡run), gating the window. Keyed by edge index, so two random pulse edges onto one population are two independent subsets rather than one shared mask.
         assert "stim_mask_Noise_0 : 1 (constant)" in script
         assert 'stim_mask_Noise_0 = "rand() < 0.3"' in script
         assert "stim_mask_Noise_0 * 1.0 * amp_stim_Noise" in script

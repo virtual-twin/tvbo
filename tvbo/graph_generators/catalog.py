@@ -1,17 +1,14 @@
 """The curated GraphGenerator catalog: entry lookup, declared defaults, reference matrices.
 
-What is left here is the residue that no printer should ever emit. Graph construction itself lives in :mod:`tvbo.graph_generators.procedural`, which resolves a generator's
-typed DAG to SymPy and renders it through the printer tables in
-``tvbo/codegen/code.py`` — one primitive definition per backend. This module used to carry a second, numpy-only implementation of those same primitives (sampling,
-reductions, linear algebra) behind a restricted ``eval``; that table is gone, because two implementations of one vocabulary can only ever agree by coincidence, and the
-disagreement would show up as a network that differs between a local run and a swept one.
+What is left here is the residue that no printer should ever emit. Graph construction itself lives in :mod:`tvbo.graph_generators.procedural`, which resolves a generator's typed DAG to SymPy and renders it through the printer tables in ``tvbo/codegen/code.py`` — one primitive definition per backend. This module used to carry a second, numpy-only implementation of those same primitives (sampling, reductions, linear algebra) behind a restricted ``eval``; that table is gone, because two implementations of one vocabulary can only ever agree by coincidence, and the disagreement would show up as a network that differs between a local run and a swept one.
 
 See ``dev/GenericProcedureEngine.md`` for the full design.
 """
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any
 
 import numpy as np
 
@@ -30,24 +27,14 @@ def load_matrix(source: str) -> np.ndarray:
         net = Network.from_db(source)
     net._resolve()
 
-    for attr in ("weights_matrix", "weights", "weight"):
-        m = getattr(net, attr, None)
-        if m is None:
-            continue
-        if callable(m):
-            try:
-                m = m()
-            except TypeError:
-                continue
+    m = net.matrix("weight", format="dense")
+    if m is not None:
         arr = np.asarray(m)
         if arr.ndim == 2:
             return arr
     raise RuntimeError(f"Could not extract a 2-D weights matrix from source {source!r}")
 
 
-# --------------------------------------------------------------------------- #
-# Public convenience: materialise a named curated generator directly.          #
-# --------------------------------------------------------------------------- #
 def _load_generator_entry(name: str) -> dict:
     import yaml
 
@@ -60,9 +47,7 @@ def _load_generator_entry(name: str) -> dict:
 def declared_defaults(entry: Mapping[str, Any]) -> dict:
     """Default values from a curated entry's ``parameters:`` interface block.
 
-    A curated entry declares each parameter (``datatype``, ``description``,
-    ``default``) while a concrete Network supplies its ``value``. Only the defaults cross over into evaluation — the declaration itself is an interface, not a value,
-    and binding it as one would hand a step a ``{'datatype': ...}`` dict where it expects a number.
+    A curated entry declares each parameter (``datatype``, ``description``, ``default``) while a concrete Network supplies its ``value``. Only the defaults cross over into evaluation — the declaration itself is an interface, not a value, and binding it as one would hand a step a ``{'datatype': ...}`` dict where it expects a number.
     """
     defaults = {}
     for name, spec in (entry.get("parameters") or {}).items():
@@ -75,11 +60,10 @@ def declared_defaults(entry: Mapping[str, Any]) -> dict:
     return defaults
 
 
-def run_generator(name: str, params: dict, seed: Optional[int] = None) -> dict:
+def run_generator(name: str, params: dict, seed: int | None = None) -> dict:
     """Materialise a curated generator by name from its typed ``procedure:`` DAG.
 
-    Convenience entry point for scripts and notebooks. ``Network._resolve`` goes through the same resolver, so a generator built here matches the one a recipe
-    builds value for value.
+    Convenience entry point for scripts and notebooks. ``Network._resolve`` goes through the same resolver, so a generator built here matches the one a recipe builds value for value.
     """
     from tvbo.graph_generators.procedural import materialize
 

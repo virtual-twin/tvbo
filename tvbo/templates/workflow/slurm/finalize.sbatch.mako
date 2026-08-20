@@ -38,7 +38,6 @@ module load ${mod}
 source ${sb["venv"]}/bin/activate
 % endif
 
-## TVBO_SHARD_DIR is exported by `tvbo workflow run` and points at this run's
-## shard tree (results/<array-job-id>); fall back to scanning results/.
-exec ${prefix}tvbo workflow finalize "${'${TVBO_SHARD_DIR:-results}'}" -o results \
+## TVBO_SHARD_DIR is exported by `tvbo workflow run`; fall back to the kit's own shards/.
+exec ${prefix}tvbo workflow finalize "${'${TVBO_SHARD_DIR:-shards}'}" -o ${plan.out_dir} \
     --stem ${result_stem} --spec spec/${plan.experiment_key}.yaml

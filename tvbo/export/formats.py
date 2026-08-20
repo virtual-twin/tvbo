@@ -1,20 +1,15 @@
 """Built-in export-format registrations.
 
-Importing this module populates :mod:`tvbo.export.registry` with every backend that ships with TVBO. Third-party packages can register their own
-formats the same way (preferably in their own module's import-time code).
+Importing this module populates :mod:`tvbo.export.registry` with every backend that ships with TVBO. Third-party packages can register their own formats the same way (preferably in their own module's import-time code).
 
-Each renderer is a thin closure ``(experiment, **kwargs) -> str``. Heavy adapter imports happen *inside* the closure so that simply listing
-formats does not pull in optional dependencies (Mako templates, NeuroML, …).
+Each renderer is a thin closure ``(experiment, **kwargs) -> str``. Heavy adapter imports happen *inside* the closure so that simply listing formats does not pull in optional dependencies (Mako templates, NeuroML, …).
 """
 
 from __future__ import annotations
 
 from .registry import ExportFormat, register
 
-
-# ---------------------------------------------------------------------------
 # Serialisation (LinkML YAML / openMINDS JSON-LD)
-# ---------------------------------------------------------------------------
 
 
 def _render_yaml(exp, **kw) -> str:
@@ -27,15 +22,14 @@ def _render_pyrates_yaml(exp, **kw) -> str:
 
 def _render_openminds(exp, **kw) -> str:
     import json
+
     from tvbo.adapters.openminds import experiment_to_openminds
 
     indent = kw.pop("indent", 2)
     return json.dumps(experiment_to_openminds(exp, **kw), indent=indent, default=str)
 
 
-# ---------------------------------------------------------------------------
 # Reports (markdown / pdf)
-# ---------------------------------------------------------------------------
 
 
 def _render_markdown(exp, **kw) -> str:
@@ -47,9 +41,7 @@ def _render_pdf(exp, **kw) -> str:
     return exp.report(format="pdf", **kw) or ""
 
 
-# ---------------------------------------------------------------------------
 # Code generation (delegates to existing render_code branches via templates)
-# ---------------------------------------------------------------------------
 
 
 def _render_tvb(exp, **kw):
@@ -60,12 +52,11 @@ def _render_tvb(exp, **kw):
 
 
 def _render_jax(exp, **kw):
-    from tvbo.classes.experiment import templates
     from tvbo.adapters.observation_sampling import resolve_observation_sampling
+    from tvbo.classes.experiment import templates
 
     template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
-    # Resolve observation sampling step counts once, in Python, and hand the
-    # {obs_name: ObservationSampling} mapping to the template (which only emits the resolved integers). This is the same backend-shared resolver the tvboptim runtime uses, so all Python backends emit identical sample counts.
+    # The same shared resolver the tvboptim runtime uses, so every Python backend agrees.
     observations = getattr(exp, "observations", None) or {}
     dt = exp.integration.step_size
     kw.setdefault(
@@ -172,9 +163,7 @@ def _render_rateml_driver(exp, **kw):
     return template.render(model=exp.dynamics, experiment=exp, **kw)
 
 
-# ---------------------------------------------------------------------------
 # Registration
-# ---------------------------------------------------------------------------
 
 _BUILTINS = [
     # serialisation
