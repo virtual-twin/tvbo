@@ -463,7 +463,7 @@ def reassemble_experiment_results(
     # ``axis_points__*`` vars are one sweep-wide axis table, not per-cell data: concatenating them along ``point`` would tile the sidecar once per shard. Lift them out, require every shard to carry the same table, and re-attach after the pivot.
     sidecar_names = sorted({str(k) for ds in datasets for k in ds.data_vars if "axis_points__" in str(k)})
     sidecars = {k: datasets[0][k] for k in sidecar_names if k in datasets[0]}
-    for p, ds in zip(paths, datasets):
+    for p, ds in zip(paths, datasets, strict=True):
         for k in sidecar_names:
             if k not in ds.data_vars or (k in sidecars and not ds[k].equals(sidecars[k])):
                 raise ValueError(

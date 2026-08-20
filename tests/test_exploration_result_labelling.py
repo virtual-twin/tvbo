@@ -343,10 +343,9 @@ def test_a_non_numeric_axis_still_labels_rather_than_raising():
 
 
 def test_axis_points_ride_along_keyed_by_point_index():
-    """An array-valued axis's materialised points are kept, keyed by the same point
-    index its grid coordinate uses — the index alone dies with the builder that made
-    it. Scalar axes carry nothing extra, so the producer may hand over its whole
-    axis table.
+    """An array-valued axis's materialised points ride along, keyed by point index.
+
+    The grid coordinate is that same index, and alone it dies with the builder that made it. Scalar axes carry nothing extra, so the producer may hand over its whole axis table.
     """
     mats = np.stack([np.full((2, 2), 10.0), np.full((2, 2), 20.0)])
     r = ExplorationResult(
@@ -403,10 +402,9 @@ def test_save_writes_the_labelled_axis_points_sidecar(tmp_path):
 
 
 def test_shards_carry_the_sidecar_through_the_gather_pass(tmp_path):
-    """Each shard writes the sweep-wide axis table; reassembly lifts it past the
-    point-concat (tiling it per shard would be nonsense) and re-attaches it to the
-    grid, so the gathered artifact recovers WHICH matrix a cell used exactly like a
-    local run's.
+    """Each shard writes the sweep-wide axis table, and reassembly carries it to the grid.
+
+    The gather pass lifts the table past its point-concat (tiling it per shard would be nonsense) and re-attaches it to the pivoted grid, so the gathered artifact recovers WHICH matrix a cell used exactly like a local run's.
     """
     from tvbo.data.types import reassemble_experiment_results
 
