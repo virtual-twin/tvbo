@@ -20,6 +20,7 @@ from tvbo.utils import report
 
 families = report.model_families(experiments)
 in_part = lambda e: part == 'all' or str(report.slot(e, 'part', 'main')) == part
+part_experiments = [e for e in experiments if in_part(e)]
 heading = '#' * max(1, int(level))
 %>\
 <%def name="equations(model, keys=None)">\
@@ -94,9 +95,12 @@ ${report.coupling_prose(family.experiments, eqs)}
 ${report.captioned(report.experiment_table(family.experiments, family.shared_parameters, orient),
                    f"Experiments using the {family.label}. Quantities identical across them are stated above and omitted here.",
                    f"experiments-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
-% for exp in members:
+% endif
+% endfor
+## Each experiment's paragraph prints once, after all family cards — a heterogeneous experiment belongs to several families, and printing per family duplicated it per component card. Sibling depth of the family cards, not one below: an experiment is no longer filed under a single model.
+% for exp in part_experiments:
 
-${heading}# Experiment ${report.slot(exp, 'id', '')}: ${report.experiment_title(exp)} {#${eqs.unique_anchor('sec-experiment-' + report.section_slug(report.slot(exp, 'id', '')))}}
+${heading} Experiment ${report.slot(exp, 'id', '')}: ${report.experiment_title(exp)} {#${eqs.unique_anchor('sec-experiment-' + report.section_slug(report.slot(exp, 'id', '')))}}
 
 ${report.settings_sentence(exp)}
 % if report.slot(exp, 'description', None):
@@ -104,9 +108,7 @@ ${report.settings_sentence(exp)}
 ${report.slot(exp, 'description').strip()}
 % endif
 % endfor
-% endif
-% endfor
-<% obs = report.observation_table([e for e in experiments if in_part(e)]) %>\
+<% obs = report.observation_table(part_experiments) %>\
 % if obs.table:
 
 ${heading} Recorded output
