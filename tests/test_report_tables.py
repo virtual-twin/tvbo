@@ -396,6 +396,28 @@ def test_the_divergence_register_reads_a_register_that_bolds_its_ids():
     assert reg["scored"] == 3
 
 
+def test_a_class_continued_into_a_second_table_keeps_its_material_rows():
+    """A register that continues one class into a second table must not drop that table's verdicts.
+
+    Materiality used to be tracked per class but decided per table, so rows under a second header spelling the column `Changes a number?` were counted in the total and skipped in the tally. Kadak2025 printed 25 of 53 where the file says 37, and Koller2024 — whose only table uses that spelling — scored 0 of 8.
+    """
+    from tvbo.utils.report import divergence_register
+
+    reg = divergence_register(
+        "| id | class | Methods says | Code does | Established | Material |\n"
+        "|--|--|--|--|--|--|\n"
+        "| A1 | A | prints 1.0 | runs 2.0 | verified | yes |\n"
+        "\n## Entries added by the published-data audit\n\n"
+        "| id | class | Methods says | Code does | Established | Changes a number? |\n"
+        "|--|--|--|--|--|--|\n"
+        "| A2 | A | one value | two values | verified | yes |\n"
+        "| B1 | B | an integral | a least-squares solve | verified | no |\n"
+    )
+    assert reg["total"] == 3 and reg["scored"] == 3
+    assert reg["material"] == 2
+    assert reg["classes"]["A"]["material"] == 2
+
+
 def test_a_register_without_a_materiality_column_reports_none_not_zero():
     """`material=None` lets a caption say it counted nothing, rather than counting zero."""
     from tvbo.utils.report import divergence_register
