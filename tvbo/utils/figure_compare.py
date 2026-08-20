@@ -289,6 +289,8 @@ def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
     Equal heights with aspect-proportional widths is what makes an A/B honest: neither side is stretched to match the other, and the row fills *width* inches exactly, so the pair lands on a report's text block without letterboxing. Returns ``(fig, axes)`` so a caller can annotate before saving.
 
     Built on `matplotlib.figure.Figure` rather than `pyplot`, so calling this from a notebook (a Quarto report is one) neither switches the global backend nor leaks a figure into pyplot's registry.
+
+    ``fontsize=0`` drops the labels rather than drawing them at zero size, which FreeType rejects outright; it is how a caller measures the row's pure image geometry.
     """
     from matplotlib.figure import Figure
 
@@ -297,11 +299,12 @@ def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
     fig = Figure(figsize=(width, width / sum(ratios)))
     axes = fig.subplots(1, len(panes), squeeze=False, gridspec_kw={"width_ratios": ratios})[0]
     for ax, array, pane in zip(axes, arrays, panes, strict=True):
-        if array is None:
-            ax.text(0.5, 0.5, pane.fallback, ha="center", va="center", fontsize=fontsize)
-        else:
+        if array is not None:
             ax.imshow(array)
-        ax.set_title(pane.title, fontsize=fontsize)
+        elif fontsize:
+            ax.text(0.5, 0.5, pane.fallback, ha="center", va="center", fontsize=fontsize)
+        if fontsize:
+            ax.set_title(pane.title, fontsize=fontsize)
         ax.set_axis_off()
     fig.subplots_adjust(left=0, right=1, bottom=0, top=0.93, wspace=0.02)
     return fig, axes

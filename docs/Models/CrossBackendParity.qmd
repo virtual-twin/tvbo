@@ -40,7 +40,7 @@ def strip_stochastics(exp):
         exp.integration.state_wise_sigma = []
     exp.integration.transient_time = 0.0
 
-study = SimulationStudy.from_file("docs/Replication/Jansen1995/Jansen1995_extracted.yaml")
+study = SimulationStudy.from_file("docs/Replication/Jansen1995/Jansen1995.yaml")
 
 results = {}
 for backend in ("tvboptim", "jax", "tvb"):

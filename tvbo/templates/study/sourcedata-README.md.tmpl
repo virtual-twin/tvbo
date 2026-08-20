@@ -4,7 +4,7 @@ Replication of <Author> et al., *<Paper title>*, **<venue>** (<Year>)
 ([preprint <arXiv id / DOI>]).
 
 The **one tracked pointer** to every input — **none of the data itself is in git.** The
-paper's own material (its source-data + your extraction of it) lives in `../original_study/`;
+paper's own material (its source-data + your extraction of it) lives in `original_study/`;
 third-party raw inputs live in `sourcedata/`; both are git-ignored. State exactly where every
 input comes from, name the **true upstream source** (never a derived intermediate), give the
 exact fetch + regenerate steps, and mark which quantities are **sourced** vs **synthesised**.
@@ -12,15 +12,15 @@ exact fetch + regenerate steps, and mark which quantities are **sourced** vs **s
 ## Obtaining the data (nothing here is in git)
 
 1. **<paper source-data / dataset>** — download from `<url / DOI>` and save to
-   `../original_study/<file>` (verify `md5 = <hash>`, `<bytes>`).
+   `original_study/<file>` (verify `md5 = <hash>`, `<bytes>`).
 2. **Regenerate** the tvbo-ready inputs from it:
    ```bash
-   python code/prepare_<study>.py --all      # -> <git-ignored dest, e.g. original_study/source_data/>
+   python code/prepare_<study>.py --all      # -> <git-ignored dest, e.g. sourcedata/original_study/source_data/>
    ```
 3. **<third-party connectomes / atlases>** (if any) — fetch into `sourcedata/` per the
    table below.
 
-## <Dataset name> (paper's published data — in `../original_study/`, git-ignored)
+## <Dataset name> (paper's published data — in `original_study/`, git-ignored)
 
 | item | value |
 |------|-------|

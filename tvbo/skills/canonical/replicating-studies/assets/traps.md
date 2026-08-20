@@ -225,7 +225,7 @@ in full.
 - **Redundant scripts.** One prep script (emits the tvbo Network directly); figures are
   the declarative `figures:` block, not scripts. Don't hand-write per-figure `plot_*.py`
   or an A/B compose driver — the renderer emits the plot scripts, and bespoke panel code
-  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in `figures/scripts/`
+  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in the render target's `scripts/`
   is *generated*; never author or commit it.)
 - **Moving a module changes what `Path(__file__).parents[N]` means — grep for the climb
   BEFORE you flatten.** Study code routinely locates the study root by climbing from its own
@@ -235,23 +235,24 @@ in full.
   silently read another study's tree. After any move, `grep -rn "parents\[" code/`, fix each N,
   and re-run one figure end-to-end to confirm the containers still resolve.
 - **No dead vendored cruft — but a *live* dependency is not cruft.** Keep ONE pristine copy
-  of the paper's own code under `original_study/`; don't duplicate it into `code/`. If the
+  of the paper's own code under `sourcedata/original_study/`; don't duplicate it into `code/`. If the
   paper's algorithm is reused at runtime (e.g. a Helmholtz–Hodge flow-potential), *reference*
   that one copy (put its dir on `sys.path`), don't re-vendor. **Before deleting vendored code
   as "unused", confirm it against the actual RUN paths — run a representative experiment
   END-TO-END, not just `from_file` load.** Loading a study does not import a
   flow-potential/observation callable, so a load-only check will wrongly call a live
   dependency dead (this cost us a broken flow-potential path).
-- **Generated files never land in git at the study root.** KPI/targets tables, extracted
-  arrays, the report PDF/logs → write them into `output/` (gitignored). A generated file
-  tracked at the root reads as a hand-curated deliverable and silently drifts stale.
+- **Generated files never land in git at the study root.** Each one goes where the layout record
+  puts it and is ignored there: containers to `derivatives/tvbo/`, figures to `docs/figures/`,
+  the PDFs to `docs/`, run logs to `logs/`. A generated file tracked at the root reads as a
+  hand-curated deliverable and silently drifts stale.
 - **Cross-references.** The report must stand alone — no "as in the sibling X study".
 - **A lineage of related papers → sibling studies sharing a curated model; pin every
   original-figure lookup.** When one model spans several papers (a foundation and its
   successor, e.g. a synapse used first at the single-synapse level then in a network), make
   each paper its own self-contained study and share the model by a curated `iri:` — don't
   cram both into one recipe (the scales and reports differ). Keep only the paper being
-  replicated under that study's `original_study/`; when it also holds a precursor/successor's
+  replicated under that study's `sourcedata/original_study/`; when it also holds a precursor/successor's
   figures, an unpinned `original_study.rglob("fig_03.png")` in the report's `ab()` silently
   grabs the WRONG paper's `fig_03.png`. Pin the lookup to the specific paper dir
   (`glob("Author1997*")/"img"`), and eyeball the internal A/B once to confirm the original is
@@ -262,12 +263,12 @@ in full.
   figure/report reads STALE data — you then reason about the new recipe from the previous run's
   output. This is the costliest silent trap here: it produced a whole wrong "the backend can't
   reproduce this" diagnosis before the container turned out to be days old. Always pass
-  `-o output/nc`, and before trusting a figure confirm its container is FRESH — the file timestamp
+  and before trusting a figure confirm its container is FRESH — the file timestamp
   is from this run and its dims/coords match the current recipe (the exploration axis you just
   changed is the dim you now see), not a leftover. (The CLI now warns on a no-`-o` run, but the
   discipline is: persist, then verify freshness.) (2) A pure forward run that only records a raw
   trajectory (no exploration, no declared observation) — e.g. a NeuroML EPSP-train run — must
-  still write `output/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
+  still write `derivatives/tvbo/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
   `iri: tvbo:result/<Study>/exp-N` can't resolve an unwritten container). Run END-TO-END, not
   `from_file`.
 - **Re-running an experiment does NOT invalidate the analyses computed from it.** An analysis
@@ -336,7 +337,7 @@ in full.
   whatever the report uses to read it. Recovery, if it happens: the original bytes are all still
   there, so `corrupt.replace(new, "")` returns the file exactly — confirm with
   `len(corrupt) == len(recovered) + (len(recovered) + 1) * len(new)`.
-- **Track `report/analysis/` from the first commit — it is the only copy.** The register, the
+- **Track `docs/analysis/` from the first commit — it is the only copy.** The register, the
   targets table and the figure map are authored deliverables with no upstream and no regenerating
   script. A study left untracked "until it is ready" has no recovery path for exactly the files
   that cannot be recomputed, and one bad `str.replace` (above) is then unrecoverable except by

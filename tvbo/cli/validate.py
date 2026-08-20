@@ -168,3 +168,118 @@ def all_(
             typer.echo(f"  - {fp}", err=True)
         raise typer.Exit(code=1)
     typer.echo(f"\nOK — all {len(files)} files validated.")
+
+
+def _entity_problems(name: str) -> list[str]:
+    """BIDS entity values in ``name`` that are not alphanumeric.
+
+    BIDS requires an entity value to be alphanumeric, so a hyphen or underscore inside one silently changes where the key/value boundary falls and makes the file unqueryable.
+    """
+    stem = name.split(".")[0]
+    bad = []
+    for part in stem.split("_")[:-1]:
+        if "-" not in part:
+            bad.append(f"{part!r} is not a `key-value` entity")
+            continue
+        key, _, value = part.partition("-")
+        if not value.isalnum():
+            bad.append(f"entity {key}- has the non-alphanumeric value {value!r}")
+    return bad
+
+
+def _suffix_problems(path: Path) -> list[str]:
+    """Whether ``path``'s BIDS suffix agrees with the class its own envelope declares.
+
+    A file named ``*_dynamics.yaml`` whose envelope says ``tvbo:Network`` is a rename that went wrong, and nothing else notices: both halves are individually valid.
+    """
+    import yaml
+
+    from tvbo.adapters.bids import SPEC_SUFFIXES
+
+    suffix = path.name.split(".")[0].rsplit("_", 1)[-1]
+    expected = SPEC_SUFFIXES.get(suffix)
+    if expected is None:
+        return [f"suffix {suffix!r} is not in the tvbo suffix vocabulary ({', '.join(sorted(SPEC_SUFFIXES))})"]
+    declared = _declared_class(yaml.safe_load(path.read_text(encoding="utf-8")))
+    if declared is None:
+        return [f"named `_{suffix}` but carries no `tvbo_class` envelope to check it against"]
+    if declared != expected:
+        return [f"named `_{suffix}` (which means {expected}) but its envelope declares {declared}"]
+    return []
+
+
+def _templates_of(root: Path, name: str, record) -> tuple[str, ...]:
+    """Which layout variant this study was built with, read from its own generated `.gitignore`.
+
+    A replication ignores entries a plain study does not have, so checking one against the other reports a difference that is not a fault. `tvbo study init` stamps the variant into the file's header, which makes the study say what it is instead of the caller having to remember.
+    """
+    from tvbo.utils import study_layout as layout_rules
+
+    gate = root / layout_rules.file_relpath("gitignore", name, record)
+    return layout_rules.templates_of(gate.read_text(encoding="utf-8")) if gate.is_file() else ()
+
+
+@app.command("study", help="Validate a study dataset against the layout record.")
+def study(
+    path: Path = typer.Argument(
+        Path(), exists=True, file_okay=False, dir_okay=True, readable=True, help="Study dataset root."
+    ),
+    template: list[str] = typer.Option([], "--template", "-t", help="Layout variant the study was built with."),
+) -> None:
+    """Check a study dataset against the one layout record.
+
+    Three things, none of which any other check catches: the tree matches the record (:mod:`tvbo.utils.study_layout`), each spec fragment's BIDS suffix agrees with the class its envelope declares, and its entity values are legal BIDS. The generated ignore files are compared against what the record produces now, so a hand-edited copy is reported rather than trusted.
+    """
+    import json
+
+    from tvbo.utils import study_layout as layout_rules
+
+    record = layout_rules.load_layout()
+    root = path.resolve()
+    name = root.name
+    problems: list[str] = []
+    templates = tuple(template) or _templates_of(root, name, record)
+
+    for rel, directory in layout_rules.walk(record, templates):
+        if str(directory.level) == "required" and not (root / rel).is_dir():
+            problems.append(f"{rel}/: required by the layout but missing")
+    for rel, entry in layout_rules.iter_files(record, templates):
+        rel = layout_rules.interpolate(rel, name)
+        if str(entry.level) == "required" and not (root / rel).is_file():
+            problems.append(f"{rel}: required by the layout but missing")
+
+    description = root / "dataset_description.json"
+    if description.is_file():
+        declared_type = (json.loads(description.read_text(encoding="utf-8")) or {}).get("DatasetType")
+        if declared_type != str(record.dataset_type):
+            problems.append(f"dataset_description.json declares DatasetType {declared_type!r}, not {record.dataset_type!r}")
+
+    for role, lines in (
+        ("gitignore", layout_rules.gitignore_lines(record, templates, name)),
+        ("bidsignore", layout_rules.bidsignore_lines(record, templates, name)),
+    ):
+        generated = root / layout_rules.file_relpath(role, name, record)
+        if generated.is_file() and generated.read_text(encoding="utf-8").splitlines() != lines:
+            problems.append(
+                f"{generated.name}: no longer matches the layout record — regenerate with `tvbo study init --force`"
+            )
+
+    spec_dir = root / layout_rules.relpath("spec", record)
+    n_spec = 0
+    if spec_dir.is_dir():
+        for fp in sorted(spec_dir.rglob("*.yaml")):
+            n_spec += 1
+            problems.extend(f"{fp.relative_to(root)}: {p}" for p in _suffix_problems(fp) + _entity_problems(fp.name))
+
+    results_dir = root / layout_rules.relpath("results", record)
+    n_results = 0
+    if results_dir.is_dir():
+        for fp in sorted(results_dir.glob("*_result.*")):
+            n_results += 1
+            problems.extend(f"{fp.relative_to(root)}: {p}" for p in _entity_problems(fp.name))
+
+    if problems:
+        for p in problems:
+            typer.echo(f"  {p}", err=True)
+        _common.die(f"{len(problems)} problem(s) in {root}.")
+    typer.echo(f"OK — {root} conforms to the layout ({n_spec} spec fragment(s), {n_results} result file(s)).")

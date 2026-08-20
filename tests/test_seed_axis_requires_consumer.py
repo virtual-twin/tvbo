@@ -150,14 +150,13 @@ def test_a_seed_builder_needing_runtime_data_is_refused(tmp_path, monkeypatch):
         SimulationExperiment(**spec).render_code("tvboptim")
 
 
-def test_two_axis_seed_sweep_maps_the_noise_seed_leaf_to_its_label():
-    """A (parameter x seed) product keys results by value, and the seed axis's grid column is the ``dynamics._noise_seed`` state leaf — codegen must map that bare name onto the declared ``execution.random_seed`` label, or cell placement cannot find the axis and the container assembly refuses rather than scrambling."""
+def test_two_axis_seed_sweep_binds_the_noise_seed_leaf_under_its_label():
+    """A (parameter x seed) product keys results by value, and the seed axis's grid column is the ``dynamics._noise_seed`` state leaf — the binding must carry the declared ``execution.random_seed`` label, or cell placement cannot find the axis and the container assembly refuses rather than scrambling."""
     spec = _with_noise(copy.deepcopy(MINI_EXP))
     spec["explorations"]["seed_sweep"]["space"].insert(0, {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}})
     code = SimulationExperiment(**spec).render_code("tvboptim")
     squeezed = "".join(code.split()).replace('"', "'")
-    assert "_register('_noise_seed')" in squeezed
-    assert "if_name=='execution.random_seed':" in squeezed
+    assert "grid_state.dynamics._noise_seed=_ax('execution.random_seed'," in squeezed
 
 
 _ZIP_STREAM_SPEC = """

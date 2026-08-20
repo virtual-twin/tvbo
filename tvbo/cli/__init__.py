@@ -46,6 +46,9 @@ from . import (
     skills as _skills_cmd,
 )
 from . import (
+    study as _study_cmd,
+)
+from . import (
     validate as _validate_cmd,
 )
 from . import (
@@ -90,7 +93,7 @@ app.command("save", help="Like export, with bundled data when supported.")(_save
 app.command("import", help="Load a foreign file (auto-dispatch by extension).")(_import_cmd.import_)
 app.command("info", help="Inspect a SPEC (tasks, outputs, declared backends).")(_info_cmd.info)
 app.command("formats", help="List all registered I/O formats.")(_formats_cmd.formats)
-app.command("verify", help="Check a StudyCollection is buildable (completeness / staleness / manifest coverage).")(
+app.command("verify", help="Check a study-of-studies is buildable (completeness / staleness / manifest coverage).")(
     _verify_cmd.verify
 )
 app.command("version", help="Print the tvbo version.")(_version_cmd.version)
@@ -107,6 +110,7 @@ app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeli
 app.add_typer(
     _skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally."
 )
+app.add_typer(_study_cmd.app, name="study", help="Scaffold and inspect a BIDS study dataset from the layout record.")
 app.add_typer(_install_cmd.app, name="install", help="Provision optional native components pip cannot place (e.g. AUTO-07p).")
 
 

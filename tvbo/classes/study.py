@@ -18,8 +18,27 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     Aggregates the experiments behind a published paper or analysis (model, DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
     Load with `from_db(name)` for curated studies, `from_file(path)` for local YAML, or `from_openminds(...)` for JSON-LD provenance graphs.
 
+    A study that declares `members` is a study-of-studies: it aggregates other studies' recipes and owns whatever experiments, analyses and figures belong to no member. Recursion runs through the pointer, so a member's own recipe may declare members of its own.
+
     The most-used entry points are [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment) to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite) for the formatted citation, and [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for JSON-LD export.
     """
+
+    def member_recipes(self, base=None, *, include_optional: bool = True) -> list[tuple[str, "Path"]]:
+        """The member study recipes as ``(label, resolved_path)`` pairs.
+
+        A study with ``members`` is a study-of-studies. Each ``recipe`` is resolved relative to *base* (this study's own directory) when it is not an IRI or an absolute path, so a member keeps its own directory and therefore its own results root. ``optional`` members are dropped when *include_optional* is False (a ``--skip``-style light run).
+        """
+        base = Path(base) if base is not None else Path(getattr(self, "_source_file", ".")).resolve().parent
+        out: list[tuple[str, Path]] = []
+        for m in getattr(self, "members", None) or []:
+            if getattr(m, "optional", None) and not include_optional:
+                continue
+            recipe = str(getattr(m, "recipe", ""))
+            label = getattr(m, "label", None) or Path(recipe).stem
+            path = Path(recipe)
+            resolved = path if path.is_absolute() or "://" in recipe else (base / recipe)
+            out.append((str(label), resolved))
+        return out
 
     def __repr__(self) -> str:
         key = self.key or "?"
@@ -29,12 +48,14 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         exps = getattr(self, "experiments", {}) or {}
         n_exp = len(exps)
         model_name = str(self.model) if self.model else "n/a"
+        n_members = len(getattr(self, "members", None) or [])
+        members = f", members={n_members}" if n_members else ""
         return (
             f"SimulationStudy(\n"
             f"  key={key!r},\n"
             f"  title={title!r},\n"
             f"  year={year}, doi={doi!r},\n"
-            f"  model={model_name!r}, experiments={n_exp}\n"
+            f"  model={model_name!r}, experiments={n_exp}{members}\n"
             f")"
         )
 
@@ -270,34 +291,3 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             raise TypeError(f"Expected str or dict, got {type(source)}")
 
         return cls(**data)
-
-
-class StudyCollection(SimulationStudy, tvbo_datamodel.StudyCollection):
-    """A whole manuscript as one runnable specification.
-
-    Aggregates the member studies a paper reports (`members`) and owns the paper's own demonstration experiments, analyses and figures (inherited from `SimulationStudy`). `tvbo run` walks the members and the owned content, emits every reported number to a results manifest (`results`) and every figure with its composed caption, then packages the run as a COMBINE/OMEX archive (`archive`) — so the paper becomes an instance of the reproducibility it argues for. Load with `from_file(path)` (inherited).
-    """
-
-    def __repr__(self) -> str:
-        title = self.title or "Untitled StudyCollection"
-        n_members = len(getattr(self, "members", None) or [])
-        n_results = len(getattr(self, "results", None) or [])
-        n_figures = len(getattr(self, "figures", None) or [])
-        return f"StudyCollection(\n  title={title!r},\n  members={n_members}, results={n_results}, figures={n_figures}\n)"
-
-    def member_recipes(self, base=None, *, include_optional: bool = True) -> list[tuple[str, "Path"]]:
-        """The member study recipes as ``(label, resolved_path)`` pairs.
-
-        Each ``recipe`` is resolved relative to *base* (the StudyCollection file's directory) when it is not an IRI or an absolute path. ``optional`` members are dropped when *include_optional* is False (a ``--skip``-style light run).
-        """
-        base = Path(base) if base is not None else Path(getattr(self, "_source_file", ".")).resolve().parent
-        out: list[tuple[str, Path]] = []
-        for m in getattr(self, "members", None) or []:
-            if getattr(m, "optional", None) and not include_optional:
-                continue
-            recipe = str(getattr(m, "recipe", ""))
-            label = getattr(m, "label", None) or Path(recipe).stem
-            p = Path(recipe)
-            resolved = p if p.is_absolute() or "://" in recipe else (base / recipe)
-            out.append((str(label), resolved))
-        return out
