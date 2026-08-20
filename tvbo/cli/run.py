@@ -5,8 +5,7 @@ Implements the cardinal HPC contract from §5.1 of ``dev/tvbo-cli.md``:
 * ``--engine slurm`` re-emits via :mod:`tvbo.cli.workflow` and submits
   through ``sbatch`` rather than running locally.
 * ``--container IMAGE`` re-execs the run inside the named OCI image
-  (Singularity if ``SINGULARITY_BIND`` is set in the environment, else
-  Docker).
+  (Singularity if ``SINGULARITY_BIND`` is set in the environment, else Docker).
 * ``--shard i/N`` runs one shard of the sweep in-process (no scheduler):
   cell index ``j`` runs iff ``j %% N == i``. This is what the generated sbatch script invokes for every array index.
 """
@@ -252,8 +251,7 @@ def run(
         return
 
     if analysis is not None:
-        # --analysis runs no experiments; ignoring one would exit 0 having simulated
-        # nothing — on a cluster, a "success".
+        # Ignoring one would exit 0 having simulated nothing, which a cluster reads as success.
         given = _sim_flags
         if given:
             _common.die(
@@ -288,12 +286,7 @@ def run(
     if shard:
         chunk_i, chunk_n = _parse_chunk(shard)
         _common.info(f"sharding: cell j runs iff j%{chunk_n}=={chunk_i}")
-    # --limit is a cell budget; it becomes a per-experiment shard in _run_one,
-    # which knows each experiment's grid size (a study's experiments can differ).
-
     if kind == "study":
-        # Register the study's figure code_modules up front: a builder/parameter ``used:`` edge may name a transform (e.g. selecting an operating point out of a branch container) that a figure module registers, and that resolution happens during the
-        # EXPERIMENT run — before any figure renders. Import failures are non-fatal here (a genuinely broken module surfaces at figure-render time with full context).
         _import_figure_code_modules(obj)
         analyses_before, analyses_after = _study_analysis_stages(obj)
         if analysis is not None:
@@ -362,18 +355,13 @@ def run(
     _common.die(f"`tvbo run` does not yet support kind={kind!r}.")
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 
 def _import_figure_code_modules(study) -> None:
     """Import a study's figure ``code_modules`` so their registered transforms/panels are available before its experiments run.
 
-    A figure ``Layer.transform`` and a builder/parameter ``used:`` transform name the same
-    ``bsplot.register_transform`` registry, but the latter is resolved during the experiment run, before any figure renders. Importing the declared modules up front (the study loader
-    has already put ``code/`` on the path) fires their ``register_*`` decorators once, study- wide. Import errors are swallowed here — a genuinely broken module is reported with full
-    context when a figure that needs it renders; this pass only pre-populates the registry.
+    A figure ``Layer.transform`` and a builder/parameter ``used:`` transform name the same ``bsplot.register_transform`` registry, but the latter is resolved during the experiment run, before any figure renders. Importing the declared modules up front (the study loader has already put ``code/`` on the path) fires their ``register_*`` decorators once, study- wide. Import errors are swallowed here — a genuinely broken module is reported with full context when a figure that needs it renders; this pass only pre-populates the registry.
     """
     import importlib
 
@@ -393,8 +381,7 @@ def _import_figure_code_modules(study) -> None:
 def _study_analysis_stages(study) -> tuple[list, list]:
     """A study's ``analyses:`` split into the stages that run before / after its experiments.
 
-    Returns two empty lists when the study declares none, so callers need no guard. A malformed schedule (duplicate name, unknown or circular ``used:``) raises here, before
-    any experiment runs, rather than half way through a long study.
+    Returns two empty lists when the study declares none, so callers need no guard. A malformed schedule (duplicate name, unknown or circular ``used:``) raises here, before any experiment runs, rather than half way through a long study.
     """
     from tvbo.data.analysis_io import schedule, study_analyses
 
@@ -405,8 +392,7 @@ def _study_analysis_stages(study) -> tuple[list, list]:
 def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experiments=(), recomputed=()) -> None:
     """Name the containers a partial run just invalidated but did not recompute.
 
-    Both partial modes need this and they need it identically. ``--experiment`` re-runs a simulation, ``--analysis`` re-derives a container, and in each case everything
-    downstream keeps the PREVIOUS numbers while the thing it reads is fresh. Nothing raises, so a figure or report built next mixes the two.
+    Both partial modes need this and they need it identically. ``--experiment`` re-runs a simulation, ``--analysis`` re-derives a container, and in each case everything downstream keeps the PREVIOUS numbers while the thing it reads is fresh. Nothing raises, so a figure or report built next mixes the two.
 
     ``recomputed`` names what this run actually produced, which both seeds the walk and drops out of its result. It is the CLOSURE, not what was asked for on the command line:
     a named analysis pulls a never-produced upstream in with it, and seeding on the request would miss every dependent of that upstream.
@@ -436,8 +422,7 @@ def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experimen
 def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) -> None:
     """Run only the named ``analyses:``, plus whatever they read, in dependency order.
 
-    The counterpart to ``--experiment`` on the derivation side. It exists because an analysis container is content-addressed on its INPUTS: editing the callable that produces it
-    changes nothing a cache can see, so the only way to refresh one is to ask for it by name.
+    The counterpart to ``--experiment`` on the derivation side. It exists because an analysis container is content-addressed on its INPUTS: editing the callable that produces it changes nothing a cache can see, so the only way to refresh one is to ask for it by name.
     Its own upstream analyses are pulled in — a container that has never been produced cannot be read — while the experiments are left alone, which is the point.
     """
     from tvbo.data.analysis_io import analysis_closure, analysis_name, container_path
@@ -445,8 +430,7 @@ def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) 
     names = [s.strip() for s in str(wanted).split(",") if s.strip()]
     if not names:
         _common.die("--analysis was given no names. Pass one or more declared analysis names, comma-separated.")
-    # Through `analysis_name`, not `getattr`: the loader may hand these over as Mappings, which
-    # `analysis_closure` below already reads that way.
+    # Through `analysis_name`, not `getattr`: the loader may hand these over as Mappings.
     by_name = {analysis_name(a): a for a in analyses}
     missing = [n for n in names if n not in by_name]
     if missing:
@@ -473,10 +457,8 @@ def _spec_base(spec: str) -> Path:
 def _container_root(spec: str, out_dir: Path | None) -> Path:
     """The directory holding THIS run's result containers.
 
-    ``<root>/results/<name>/result.h5`` for an analysis, ``<root>/exp-N_*.h5`` for an experiment; figures resolve them under ``<root's parent>/output/…``, so the root is
-    always a directory named ``output``. The single place ``--out-dir`` is mapped onto that layout, because the analysis WRITER and the figure READER disagreeing is invisible:
-    with the documented ``-o output/nc`` the analyses landed in ``output/nc/results/`` while the figures looked in ``output/results/``, so one command rendered this run's
-    experiments against a previous run's analyses.
+    ``<root>/results/<name>/result.h5`` for an analysis, ``<root>/exp-N_*.h5`` for an experiment; figures resolve them under ``<root's parent>/output/…``, so the root is always a directory named ``output``. The single place ``--out-dir`` is mapped onto that layout, because the analysis WRITER and the figure READER disagreeing is invisible:
+    with the documented ``-o output/nc`` the analyses landed in ``output/nc/results/`` while the figures looked in ``output/results/``, so one command rendered this run's experiments against a previous run's analyses.
     """
     base = _spec_base(spec)
     if out_dir is None:
@@ -492,13 +474,9 @@ def _container_root(spec: str, out_dir: Path | None) -> Path:
 def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str) -> bool:
     """Execute one stage of a study's declarative ``analyses:``; True when the stage held.
 
-    Each writes ``<root>/results/<name>/result.h5`` — the container a figure layer or a later analysis binds with ``used: {analysis: <name>}``, at the root
-    :func:`_container_root` resolves for this run.
+    Each writes ``<root>/results/<name>/result.h5`` — the container a figure layer or a later analysis binds with ``used: {analysis: <name>}``, at the root :func:`_container_root` resolves for this run.
 
-    A failure is only ever SWALLOWED when there are completed experiments to protect. The
-    ``before`` stage raises — nothing has run yet, and an experiment may source the missing analysis. A ``named`` stage (``--analysis``) raises too: it ran no experiments, the
-    analysis is the whole of what was asked for, and a warning there would exit zero on a job that produced nothing. Only the ``after`` stage reports and returns False, because
-    the experiments already succeeded and must not be lost to a reduction; the figures that would read the missing container are then skipped rather than drawn from absent data.
+    A failure is only ever SWALLOWED when there are completed experiments to protect. The ``before`` stage raises — nothing has run yet, and an experiment may source the missing analysis. A ``named`` stage (``--analysis``) raises too: it ran no experiments, the analysis is the whole of what was asked for, and a warning there would exit zero on a job that produced nothing. Only the ``after`` stage reports and returns False, because the experiments already succeeded and must not be lost to a reduction; the figures that would read the missing container are then skipped rather than drawn from absent data.
     """
     from tvbo.data.analysis_io import run_analyses
 
@@ -528,13 +506,10 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
 def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
     """Render a study's declarative ``figures:`` after its experiments have run.
 
-    Reuses the exact ``tvbo figure render`` path (``figures.render_figures``), so the images and render scripts a one-command ``tvbo run`` produces
-    are byte-identical to a follow-up ``tvbo figure render`` — the study run just fuses the two steps. ``base_dir`` is the study file's directory (the root each
-    layer's ``used`` IRI resolves against, ``<base>/output/…``); figures land in
-    ``<base>/figures`` to match the render command's default. A study with no
-    ``figures:`` is a silent no-op. A render failure is reported but does not fail the run — the experiments already succeeded and their results are on disk.
+    Reuses the exact ``tvbo figure render`` path (``figures.render_figures``), so the images and render scripts a one-command ``tvbo run`` produces are byte-identical to a follow-up ``tvbo figure render`` — the study run just fuses the two steps. ``base_dir`` is the study file's directory (the root each layer's ``used`` IRI resolves against, ``<base>/output/…``); figures land in ``<base>/figures`` to match the render command's default. A study with no ``figures:`` is a silent no-op. A render failure is reported but does not fail the run — the experiments already succeeded and their results are on disk.
     """
     from tvbo.utils import as_list
+
     from .figures import render_figures
 
     figs = as_list(getattr(study, "figures", None))
@@ -616,8 +591,7 @@ def _run_study_collection(
 ) -> None:
     """Run a StudyCollection: every member study, the collection's own demo content, then emit the results manifest the manuscript reads.
 
-    Optional members are skipped unless ``all_members``; ``skip`` drops named members (by label or recipe stem); ``dry_run`` lists what would run and emits nothing. The manifest lands at
-    ``<collection-dir>/manuscript_results.yml`` — a committed derived artifact (the seam Quarto reads as ``{{< meta results.* >}}``), so the build never needs the generated run containers;
+    Optional members are skipped unless ``all_members``; ``skip`` drops named members (by label or recipe stem); ``dry_run`` lists what would run and emits nothing. The manifest lands at ``<collection-dir>/manuscript_results.yml`` — a committed derived artifact (the seam Quarto reads as ``{{< meta results.* >}}``), so the build never needs the generated run containers;
     an unresolved result key hard-fails the run.
     """
     from tvbo.data.analysis_io import analysis_name, study_analyses
@@ -684,8 +658,7 @@ def _run_study_collection(
 def _effective_backend(experiment, cli_backend: str | None) -> str:
     """Resolve which backend runs *experiment*.
 
-    An explicit ``--backend`` wins for the whole run; otherwise each experiment self-selects via its declared ``execution.backend`` (e.g. a spiking network
-    sets ``brian2``), falling back to ``tvboptim``. This lets one study mix a mean-field sweep and a spiking column and run each on the right engine.
+    An explicit ``--backend`` wins for the whole run; otherwise each experiment self-selects via its declared ``execution.backend`` (e.g. a spiking network sets ``brian2``), falling back to ``tvboptim``. This lets one study mix a mean-field sweep and a spiking column and run each on the right engine.
     """
     if cli_backend:
         return cli_backend
@@ -725,12 +698,9 @@ def _coerce_scalar(v: str):
 def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
     """Apply ``--set dotted.path=value`` overrides to a resolved experiment in place.
 
-    Traverses attributes and keyed collections (LinkML keyed dicts) so one recipe can stay the single source of truth while a run uses test settings. Mutates the loaded
-    object only — the recipe file is untouched.
+    Traverses attributes and keyed collections (LinkML keyed dicts) so one recipe can stay the single source of truth while a run uses test settings. Mutates the loaded object only — the recipe file is untouched.
 
-    Anything on the path that has already MATERIALISED from its declaration is invalidated, so it rebuilds from the new value. Without this an override of, say, a graph generator's
-    connectome is reported and then ignored — the network resolved at load time and keeps the matrix it built — and the run completes, looks right, and is not the run that was
-    asked for.
+    Anything on the path that has already MATERIALISED from its declaration is invalidated, so it rebuilds from the new value. Without this an override of, say, a graph generator's connectome is reported and then ignored — the network resolved at load time and keeps the matrix it built — and the run completes, looks right, and is not the run that was asked for.
     """
 
     def _step(cur, seg):
@@ -781,12 +751,9 @@ def _invalidate_on_path(chain: list):
 
 
 def _apply_max_iterations(experiment, n: int) -> None:
-    """Cap every algorithm's and stage's ``n_iterations`` (and any optimization's
-    ``max_iterations``) to *n* for THIS run — a smoke override, the recipe untouched.
+    """Cap every algorithm's and stage's ``n_iterations`` (and any optimization's ``max_iterations``) to *n* for THIS run — a smoke override, the recipe untouched.
 
-    The post-tuning evaluation of a fit — the memory- and time-critical part of a long-horizon run — is independent of how many tuning iterations preceded it, so a
-    handful of iterations is enough to verify the fit executes and its long-horizon post-tuning observables stream within memory. Mirrors ``--set``: it mutates only the
-    loaded object, so one recipe stays the single source of truth.
+    The post-tuning evaluation of a fit — the memory- and time-critical part of a long-horizon run — is independent of how many tuning iterations preceded it, so a handful of iterations is enough to verify the fit executes and its long-horizon post-tuning observables stream within memory. Mirrors ``--set``: it mutates only the loaded object, so one recipe stays the single source of truth.
     """
     if n is None:
         return
@@ -802,7 +769,7 @@ def _apply_max_iterations(experiment, n: int) -> None:
         else:
             cur = getattr(holder, "n_iterations", None)
             if isinstance(cur, int) and cur > n:
-                setattr(holder, "n_iterations", n)
+                holder.n_iterations = n
                 _capped += 1
 
     algos = getattr(experiment, "algorithms", None) or {}
@@ -815,7 +782,7 @@ def _apply_max_iterations(experiment, n: int) -> None:
     for opt in opts.values() if hasattr(opts, "values") else opts:
         cur = getattr(opt, "max_iterations", None)
         if isinstance(cur, int) and cur > n:
-            setattr(opt, "max_iterations", n)
+            opt.max_iterations = n
             _capped += 1
 
     _common.info(f"--max-iterations {n}: capped {_capped} iteration count(s)")
@@ -824,9 +791,7 @@ def _apply_max_iterations(experiment, n: int) -> None:
 def _apply_axis_pins(experiment, pins: list[str]) -> None:
     """Pin fanned exploration axes to single values for THIS run — the workflow fan-out's per-cell restriction (the model-scope sibling of ``--subject``).
 
-    For each ``parameter=value``: set the axis's parameter on the experiment so the base (representative) run uses it — every DECLARED observation, host or not, is computed on
-    that run, so this is what makes a fanned cell's host observation land at the cell's coordinates — AND drop that axis from every exploration so the sweep does not re-expand
-    it. An exploration left with no axes is removed, collapsing the run to a single point.
+    For each ``parameter=value``: set the axis's parameter on the experiment so the base (representative) run uses it — every DECLARED observation, host or not, is computed on that run, so this is what makes a fanned cell's host observation land at the cell's coordinates — AND drop that axis from every exploration so the sweep does not re-expand it. An exploration left with no axes is removed, collapsing the run to a single point.
     """
     for raw in pins:
         s = raw.lstrip("-")
@@ -842,9 +807,7 @@ def _apply_axis_pins(experiment, pins: list[str]) -> None:
 def _set_axis_parameter(experiment, parameter: str, value) -> None:
     """Write an exploration axis's value onto its parameter target on the experiment.
 
-    Mirrors the codegen axis classifier (tvbo-tvboptim-experiment.py.mako): ``network.<p>`` is a network scalar; ``<coupling-name>.<p>`` is a coupling parameter; anything else
-    ``<x>.<p>`` (or a bare ``<p>``) is a dynamics parameter; and an experiment-scoped path (``execution.random_seed``, ``integration.<p>``) falls back to the ``--set`` attribute
-    walk, which resolves those correctly. Kept in step with that classifier so a pinned run and the swept grid write the same target.
+    Mirrors the codegen axis classifier (tvbo-tvboptim-experiment.py.mako): ``network.<p>`` is a network scalar; ``<coupling-name>.<p>`` is a coupling parameter; anything else ``<x>.<p>`` (or a bare ``<p>``) is a dynamics parameter; and an experiment-scoped path (``execution.random_seed``, ``integration.<p>``) falls back to the ``--set`` attribute walk, which resolves those correctly. Kept in step with that classifier so a pinned run and the swept grid write the same target.
     """
 
     def _set_in(coll, name) -> bool:
@@ -856,7 +819,7 @@ def _set_axis_parameter(experiment, parameter: str, value) -> None:
             entry = getattr(coll, name, None)
         if entry is None:
             return False
-        setattr(entry, "value", value)
+        entry.value = value
         return True
 
     if parameter.startswith("network."):
@@ -878,8 +841,7 @@ def _set_axis_parameter(experiment, parameter: str, value) -> None:
         dyn = getattr(experiment, "dynamics", None)
         if dyn is not None and _set_in(getattr(dyn, "parameters", None), name):
             return
-        # Experiment-scoped axis (execution.random_seed, integration.<p>, initial_conditions):
-        # its parameter path IS an attribute path, so the --set walk resolves it.
+        # An experiment-scoped axis has an attribute path, so the --set walk resolves it.
         _apply_metadata_overrides(experiment, [f"{parameter}={value}"])
         return
     dyn = getattr(experiment, "dynamics", None)
@@ -924,8 +886,6 @@ def _run_one(
     chunk_n: int | None,
     limit: int | None = None,
 ) -> None:
-    # --limit N is a cell budget: turn it into a stride over this experiment's own
-    # grid so ``Space[0::stride]`` yields ~N spread cells — no need to know the size.
     if limit is not None and chunk_n is None:
         import math
 
@@ -947,9 +907,7 @@ def _run_one(
             _common.info("no sweep axes on experiment; running once")
             _exec_one(experiment, backend, out_dir, kwargs)
             return
-        # A sweep is shardable in-process only where the backend vectorises every swept axis — the same ontology capability the planner uses to decide vectorised-vs-fanned (``BackendSpec.can_vectorize``). Slicing the shard then just indexes that vectorised batch (tvboptim: ``Space[i::N]``).
-        # Axes the backend cannot vectorise have no in-process batch to slice;
-        # they are fanned into per-cell tasks at the workflow layer instead.
+        # Shardable in-process only where the backend vectorises every swept axis (BackendSpec.can_vectorize).
         try:
             spec = resolve_backend(backend)
         except KeyError:
@@ -989,16 +947,11 @@ def _run_one(
 def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> None:
     compress = kwargs.pop("compress", True)  # save options, not backend-run kwargs
     record_only = kwargs.pop("record_only", True)
-    # initial_state.from_experiment seeds from a sibling experiment's saved result;
-    # search the output dir's parent (covers results/<key> and output/nc/exp<id> alike).
-    # Explicit --results-root (in kwargs) wins; else default to the output dir's parent.
+    # The output dir's parent covers results/<key> and output/nc/exp<id> alike; --results-root wins.
     results_root = kwargs.pop("results_root", None) or (out_dir.parent if out_dir is not None else None)
     result = experiment.run(format=backend, results_root=results_root, **kwargs)
     _common.info(f"done: {type(result).__name__}")
     if out_dir is None:
-        # A run with no --out-dir computes the result and DISCARDS it. This is a footgun: the command still prints "done", but nothing is persisted, and a subsequent
-        # `tvbo figure render` / report then silently reads STALE results from a previous run.
-        # Warn loudly and say exactly how to persist.
         _common.warn(
             f"result NOT saved: no --out-dir, so this run computed {type(result).__name__} "
             f"and discarded it. Any figures/report built afterwards will read STALE results "
@@ -1019,8 +972,7 @@ def _dispatch_to_engine(
 ) -> None:
     """Emit a workflow kit for *engine* and submit/execute it, all in-process.
 
-    Shares the emit + execute path with ``tvbo workflow <engine>`` rather than re-shelling ``tvbo`` (which needs it on ``$PATH`` — fragile under venv /
-    module / container setups on HPC) and rather than building the plan twice.
+    Shares the emit + execute path with ``tvbo workflow <engine>`` rather than re-shelling ``tvbo`` (which needs it on ``$PATH`` — fragile under venv / module / container setups on HPC) and rather than building the plan twice.
     """
     from . import workflow as _workflow_cmd
 

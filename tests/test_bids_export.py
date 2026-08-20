@@ -32,8 +32,7 @@ def test_integer_space_labels_export_as_strings(tmp_path, unlabelled_series):
     """NodeLabels is typed list[str], so integer node indices must be coerced.
 
     A Network built without region names labels its nodes with numpy integers.
-    Passing those straight through made NetworkSidecar raise a pydantic
-    string_type ValidationError, which broke every export of an unnamed network.
+    Passing those straight through made NetworkSidecar raise a pydantic string_type ValidationError, which broke every export of an unnamed network.
     """
     unlabelled_series.to_bids(output_dir=str(tmp_path), subject="01")
 

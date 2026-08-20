@@ -1,8 +1,6 @@
 """Regression tests for ``tvbo.utils.yaml_loader``.
 
-Covers the two YAML extensions the wrapper adds on top of LinkML's
-``DupCheckYamlLoader``: standard merge keys (``<<: *anchor``) and
-``!include`` directives, with file-local anchor scope.
+Covers the two YAML extensions the wrapper adds on top of LinkML's ``DupCheckYamlLoader``: standard merge keys (``<<: *anchor``) and ``!include`` directives, with file-local anchor scope.
 """
 
 from __future__ import annotations
@@ -11,6 +9,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+import yaml
 
 from tvbo.utils import yaml_loader
 
@@ -100,9 +99,8 @@ def test_anchor_scope_is_file_local_across_include(tmp_path: Path) -> None:
         included: !include frag.yaml
     """,
     )
-    with pytest.raises(Exception):
-        # Anchor &defaults is defined in main; *defaults inside frag.yaml
-        # must NOT resolve. Expect a YAML composer error.
+    with pytest.raises(yaml.YAMLError):
+        # Anchor &defaults is defined in main; *defaults inside frag.yaml must NOT resolve. Expect a YAML composer error.
         yaml_loader.load_as_dict(main)
 
 
@@ -127,8 +125,7 @@ def test_loads_accepts_yaml_string(tmp_path: Path) -> None:
 
 
 def test_long_yaml_string_is_not_mistaken_for_path() -> None:
-    # Some callers pass full YAML content as a string (e.g. yaml.safe_dump
-    # of an in-memory dict). Must not trigger Path.exists() / OSError.
+    # Some callers pass full YAML content as a string (e.g. yaml.safe_dump of an in-memory dict). Must not trigger Path.exists() / OSError.
     long_text = "data:\n" + "\n".join(f"  key_{i}: {i}" for i in range(500))
     result = yaml_loader.load_as_dict(long_text)
     assert result["data"]["key_0"] == 0
@@ -144,11 +141,7 @@ def test_missing_include_raises_filenotfound(tmp_path: Path) -> None:
 def test_study_from_file_materialises_an_included_experiment(tmp_path: Path) -> None:
     """A modular (`!include`-split) study loads and materialises like a monolithic one.
 
-    ``SimulationStudy.from_file`` keeps the raw experiment dicts (``_raw_experiments``) so
-    ``get_experiment`` can re-materialise through the iri-aware ``from_string`` path. Both
-    the datamodel load AND that raw extraction must go through ``yaml_loader`` — a plain
-    ``yaml.safe_load`` chokes on the ``!include`` tag, silently emptying ``_raw_experiments``
-    and dropping every experiment to the iri-unaware fallback. This guards that harmonisation.
+    ``SimulationStudy.from_file`` keeps the raw experiment dicts (``_raw_experiments``) so ``get_experiment`` can re-materialise through the iri-aware ``from_string`` path. Both the datamodel load AND that raw extraction must go through ``yaml_loader`` — a plain ``yaml.safe_load`` chokes on the ``!include`` tag, silently emptying ``_raw_experiments`` and dropping every experiment to the iri-unaware fallback. This guards that harmonisation.
     """
     import tvbo
 
@@ -186,10 +179,7 @@ def test_study_from_file_materialises_an_included_experiment(tmp_path: Path) -> 
 def test_include_merges_into_a_mapping(tmp_path: Path) -> None:
     """An `!include`d fragment merges alongside a mapping's own keys and other anchors.
 
-    Without this the two idioms do not compose — a fragment can only *replace* a whole
-    slot — so every consumer of a partial fragment (a haemodynamic cascade shared by two
-    models) has to copy it. Explicit keys must still win over merged ones, and an earlier
-    merge over a later one, exactly as with plain anchors.
+    Without this the two idioms do not compose — a fragment can only *replace* a whole slot — so every consumer of a partial fragment (a haemodynamic cascade shared by two models) has to copy it. Explicit keys must still win over merged ones, and an earlier merge over a later one, exactly as with plain anchors.
     """
     _write(
         tmp_path / "frag.yaml",
@@ -252,11 +242,8 @@ def test_merged_include_must_hold_a_mapping(tmp_path: Path) -> None:
 def test_included_file_envelope_is_dropped_on_both_include_forms(tmp_path: Path) -> None:
     """`tvbo_class` / `schema_version` annotate the fragment's FILE, not the parent object.
 
-    Every serialized TVBO artifact carries them, so splicing one into a parent slot — a
-    Network sidecar into a study's `network:`, a Dynamics into `dynamics:` — would otherwise
-    hand the parent class two keys that are slots of nothing. Both include forms strip them.
-    Reading the file for its own sake keeps them, because that is how a caller learns which
-    class to construct.
+    Every serialized TVBO artifact carries them, so splicing one into a parent slot — a Network sidecar into a study's `network:`, a Dynamics into `dynamics:` — would otherwise hand the parent class two keys that are slots of nothing. Both include forms strip them.
+    Reading the file for its own sake keeps them, because that is how a caller learns which class to construct.
     """
     frag = _write(
         tmp_path / "frag.yaml",
@@ -283,8 +270,7 @@ def test_included_file_envelope_is_dropped_on_both_include_forms(tmp_path: Path)
 def test_document_root_envelope_never_reaches_the_target_class(tmp_path: Path) -> None:
     """A file may name its own class; that declaration is not a slot of it.
 
-    `tvbo validate schema` and friends dispatch on the root `tvbo_class`, so a study or
-    dynamics file that carries one must still construct. `load` strips the envelope;
+    `tvbo validate schema` and friends dispatch on the root `tvbo_class`, so a study or dynamics file that carries one must still construct. `load` strips the envelope;
     `load_as_dict` keeps it for the dispatch itself.
     """
     from tvbo.classes.study import SimulationStudy

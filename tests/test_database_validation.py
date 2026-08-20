@@ -1,16 +1,9 @@
 """Validate every YAML in tvbo/database/ against the shipped JSON Schema.
 
-Each YAML file in a known subdirectory is loaded and validated against the
-corresponding target LinkML class. The test parametrizes over every file so
-that failures point directly at the offending file.
+Each YAML file in a known subdirectory is loaded and validated against the corresponding target LinkML class. The test parametrizes over every file so that failures point directly at the offending file.
 
-Validation goes through the *shipped* ``tvbo/datamodel/tvbo_datamodel.schema.json``
-(generated from the LinkML source by ``hatch_build.py``) and the lightweight
-``jsonschema`` library — exactly the path the ``tvbo validate schema`` CLI takes.
-Using the shipped artifact rather than re-running LinkML's runtime validator keeps
-one validation source of truth (the test can no longer pass while the CLI fails, or
-vice-versa) and avoids importing ``linkml`` here, whose enums are mutated to an
-unhashable form once ``tvbo`` is imported elsewhere in a combined test run.
+Validation goes through the *shipped* ``tvbo/datamodel/tvbo_datamodel.schema.json`` (generated from the LinkML source by ``hatch_build.py``) and the lightweight ``jsonschema`` library — exactly the path the ``tvbo validate schema`` CLI takes.
+Using the shipped artifact rather than re-running LinkML's runtime validator keeps one validation source of truth (the test can no longer pass while the CLI fails, or vice-versa) and avoids importing ``linkml`` here, whose enums are mutated to an unhashable form once ``tvbo`` is imported elsewhere in a combined test run.
 """
 
 import json
@@ -31,8 +24,7 @@ IDS = [str(p.relative_to(REPO)) for p, _ in CASES]
 def validators():
     """One ``jsonschema`` validator per target class, ``$ref``-ing into ``$defs``.
 
-    Mirrors ``tvbo validate schema``: each document is validated as an instance of
-    its target class via a ``$ref`` into the schema's ``$defs``.
+    Mirrors ``tvbo validate schema``: each document is validated as an instance of its target class via a ``$ref`` into the schema's ``$defs``.
     """
     if not SCHEMA_JSON.exists():
         pytest.skip(f"Generated JSON Schema missing at {SCHEMA_JSON}; run `make gen-linkml`.")

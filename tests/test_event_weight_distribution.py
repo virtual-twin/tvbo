@@ -1,11 +1,6 @@
 """A stimulus Event's `weight_distribution` is sampled, not silently dropped.
 
-`_resolve_events` lowers a declared distribution into the per-node `weights` array the
-codegen reads. It used to do that through `graph_generators.builtins`, a module deleted
-when the per-generator materialisers went — behind a bare `except`, so the failure was
-invisible: every stimulus that declared a distribution got no weighting at all, and the
-simulation ran on happily with the wrong drive. It now goes through the same
-printer-backed sampler a generator's `sample` step uses.
+`_resolve_events` lowers a declared distribution into the per-node `weights` array the codegen reads. It used to do that through `graph_generators.builtins`, a module deleted when the per-generator materialisers went — behind a bare `except`, so the failure was invisible: every stimulus that declared a distribution got no weighting at all, and the simulation ran on happily with the wrong drive. It now goes through the same printer-backed sampler a generator's `sample` step uses.
 """
 
 import numpy as np
@@ -43,8 +38,7 @@ EXP = {
 def _weights(spec=EXP):
     """Resolve the experiment, then read the event's lowered weighting.
 
-    `configure` is the boundary that lowers declarative Event fields into the ones
-    codegen reads; plain construction leaves them declarative.
+    `configure` is the boundary that lowers declarative Event fields into the ones codegen reads; plain construction leaves them declarative.
     """
     import copy
 
@@ -96,11 +90,9 @@ def test_an_omitted_parameter_uses_the_families_standard_form():
 
 
 def test_a_misspelled_parameter_names_the_event_rather_than_a_generator_step():
-    """A typo must fail — the value it carried would be dropped and the parameter it meant
-    would silently take its standard form, drawing from a different distribution.
+    """A typo must fail — the value it carried would be dropped and the parameter it meant would silently take its standard form, drawing from a different distribution.
 
-    The sampler's own message talks about generator steps, which says nothing about which
-    stimulus is at fault, so `_resolve_events` re-raises with the event named.
+    The sampler's own message talks about generator steps, which says nothing about which stimulus is at fault, so `_resolve_events` re-raises with the event named.
     """
     import copy
 

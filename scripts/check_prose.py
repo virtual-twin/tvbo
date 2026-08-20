@@ -3,16 +3,12 @@
 
 `ruff format` and `black` leave comment and docstring *prose* byte-identical, so the house rules about it cannot be delegated to the formatter. This checker is where they live. Three rules, each one a defect the tree has accumulated:
 
-- **A standalone `#` run is at most one line.** Anything longer belongs in the docstring of the thing it describes, where quartodoc renders it. Stacked blocks also accrete: the second explanation gets appended and the first is never deleted. A copyright and licence header is exempt: it documents the file, not a statement, and has nowhere else to live.
+- **A standalone `#` run is at most one line.** Anything longer belongs in the docstring of the thing it describes, where quartodoc renders it. Stacked blocks also accrete: the second explanation gets appended and the first is never deleted. A copyright and licence notice at the head of a file is exempt: it is metadata addressed to a licence scanner, not prose addressed to a reader, and it has nowhere else to live.
 - **Docstring prose is not hand-wrapped.** A line broken mid-sentence serves the source file's column ruler and nobody else; it reflows badly in the rendered site and makes every later edit a multi-line diff. `E501` is already off, so a paragraph may be one long line.
 - **No commented-out code.** Git holds the history.
 
-Two modes, because the two surfaces are at different stages. Python is clear, so it is
-checked whole-file and all three rules apply. Templates and configuration still carry a
-backlog of stacked blocks, so there the comment rule is checked against the diff only:
-new code cannot add one, and the existing ones do not have to be cleared first. The rule
-is defined once either way — the convention covers `.mako`, `.yaml` and `.toml` as much
-as `.py`, so it must not depend on which file it lands in.
+Two modes, because the two surfaces are at different stages. Python is clear, so it is checked whole-file and all three rules apply. Templates and configuration still carry a backlog of stacked blocks, so there the comment rule is checked against the diff only:
+new code cannot add one, and the existing ones do not have to be cleared first. The rule is defined once either way — the convention covers `.mako`, `.yaml` and `.toml` as much as `.py`, so it must not depend on which file it lands in.
 
 Exit 1 on any violation.
 
@@ -30,7 +26,7 @@ import re
 import sys
 from pathlib import Path
 
-DEFAULT_ROOTS = ("tvbo", "tests", "scripts", "benchmarks")
+DEFAULT_ROOTS = ("tvbo", "tests", "scripts", "benchmarks", "docs/scripts", "schema", "hatch_build.py")
 SKIP_PARTS = ("__pycache__", ".venv", "_archive", "site-packages")
 GENERATED = ("tvbo/datamodel/schema.py", "tvbo/datamodel/pydantic.py", "tvbo/datamodel/dialect_tables.py")
 GENERATED_DIRS = ("tvbo/datamodel/", "docs/datamodel/", "tests/reference_data/", "tvbo/templates/modules/", ".claude/skills/")
@@ -46,7 +42,10 @@ MAX_COMMENT_RUN = 1
 WRAP_LIMIT = 100
 
 _SENTENCE_END = re.compile(r"[.!?:;]$")
+_SECTION = re.compile(r"^[A-Z][\w /-]{0,24}:(\s|$)")
+_ORDERED = re.compile(r"^\d+[.)]\s")
 _DIRECTIVE = re.compile(r"^\s*#\s*(type:|noqa|pragma|ruff:|mypy:|fmt:|isort:|pylint:|!|:)")
+_LICENCE = re.compile(r"copyright|licen[cs]e|SPDX|\(c\)\s*\d{4}|©", re.IGNORECASE)
 _CODEISH = re.compile(
     r"^\s*(def |class |return\b|import |from \S+ import|if .+:|for .+ in .+:|while .+:|"
     r"try:|except\b|elif .+:|else:|with .+:|print\(|assert |raise |@\w+|"
@@ -64,6 +63,43 @@ def _is_code(text: str) -> bool:
         return True
     except SyntaxError:
         return bool(re.match(r"^\s*(def |class |if |for |while |try:|except|else:|elif |with )", body))
+
+
+def continues_sentence(a: str, b: str) -> bool:
+    """Whether stripped line *b* is the continuation of a sentence begun on stripped line *a*.
+
+    The one place this judgement lives, so `check_prose` and `scripts/unwrap_prose.py` cannot disagree about what counts as hand-wrapped. The test is on *a*: a line that ends without terminal punctuation has not finished its sentence, so whatever follows continues it. Neither side may open a new block — a bullet, a numbered item, a fence, a doctest, a table row or a `Label:` header.
+
+    Judging by *b*'s first character instead is what let two earlier sweeps pass: restricting continuations to a lowercase word missed a break before a backtick, and widening that to brackets and digits still missed every break before a deliberately capitalised word (`ALL its cells`, `TVB-O`, a proper noun).
+    """
+    if not a or not b:
+        return False
+    block = (">>>", "...", "|", "-", "*", "=", "~", "^", "+", "```")
+    if a.startswith((*block, "#", "$$")) or b.startswith((*block, '"""', "'''")):
+        return False
+    if _ORDERED.match(a) or _ORDERED.match(b):
+        return False
+    if _SENTENCE_END.search(a) or _SECTION.match(b):
+        return False
+    return True
+
+
+def is_block_row(raw: str, base: int) -> bool:
+    """Whether *raw* opens a row of a laid-out block rather than a line of flowing prose.
+
+    Flowing prose starts at exactly *base*; a line indented past it was put there on purpose — an `Args:` entry, a NumPy parameter description, an endpoint listing, a table — and its line breaks carry meaning. Both sides of a candidate pair are tested: an indented first line means a laid-out row, an indented second line means a hanging description.
+
+    The one place this judgement lives, so the checker and `scripts/unwrap_prose.py` cannot disagree. When they did, the codemod flattened an endpoint listing the checker had skipped.
+    """
+    return bool(raw.strip()) and len(raw) - len(raw.lstrip()) > base
+
+
+def is_licence_run(start: int, run: list[tuple[int, str]]) -> bool:
+    """Whether a `#` run is the file's copyright and licence header.
+
+    Metadata addressed to a licence scanner, not prose addressed to a reader, and it has nowhere else to live — so it is exempt from the one-line rule, and its line breaks must survive the codemod. Shared for the same reason as `is_block_row`: when only the checker knew, the codemod folded `# Author:` into `# Copyright ©` across two dozen files.
+    """
+    return start == 1 and any(_LICENCE.search(body) for _, body in run)
 
 
 def _comment_runs(lines: list[str]):
@@ -98,13 +134,9 @@ def _wrapped(text: str) -> list[int]:
             fenced = not fenced
         if fenced or not a or not b:
             continue
-        if len(raw_a) - len(raw_a.lstrip()) >= base + 4 or len(raw_b) - len(raw_b.lstrip()) >= base + 4:
+        if is_block_row(raw_a, base) or is_block_row(raw_b, base):
             continue
-        if a.startswith((">>>", "...", "|", "-", "*", "#", "$$")) or b.startswith((">>>", "...", "|", "-", "*")):
-            continue
-        if _SENTENCE_END.search(a) or len(a) >= WRAP_LIMIT:
-            continue
-        if b[0].islower() or b[0] in "([":
+        if continues_sentence(a, b):
             out.append(i)
     return out
 
@@ -117,6 +149,8 @@ def check(path: Path) -> list[str]:
     bad: list[str] = []
 
     for start, run in _comment_runs(lines):
+        if is_licence_run(start, run):
+            continue
         for lineno, body in run:
             if _is_code(body):
                 bad.append(f"{rel}:{lineno}: commented-out code — delete it, git has the history")
@@ -160,9 +194,7 @@ def iter_files(targets: list[str]):
 def _added_comment_runs(diff: str):
     """Yield `(path, run)` for each over-long run of comment lines the diff adds.
 
-    A run starting at line 1 is a file header — the copyright and licence block — and is
-    exempt, as it is whole-file. Only added lines are read, so an existing block is
-    untouched until someone edits it.
+    A run starting at line 1 is a file header — the copyright and licence block — and is exempt, as it is whole-file. Only added lines are read, so an existing block is untouched until someone edits it.
     """
     path, lineno, run = None, 0, []
 

@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
 """PyRates/PyCoBi bifurcation analysis backend adapter for SimulationExperiment.
 
-Uses PyRates to generate Fortran code for AUTO-07p, and PyCoBi as the
-Python interface to run parameter continuations and detect bifurcations.
+Uses PyRates to generate Fortran code for AUTO-07p, and PyCoBi as the Python interface to run parameter continuations and detect bifurcations.
 
-Reuses the same ``Continuation`` schema as the BifurcationKit.jl backend, so ``exp.run("pyrates-bifurcation")`` and ``exp.run("bifurcationkit.jl")``
-accept the same YAML specification.
+Reuses the same ``Continuation`` schema as the BifurcationKit.jl backend, so ``exp.run("pyrates-bifurcation")`` and ``exp.run("bifurcationkit.jl")`` accept the same YAML specification.
 """
 
 from __future__ import annotations
@@ -49,15 +46,15 @@ class PyRatesBifurcationAdapter:
     Like ``BifurcationKitAdapter``, this does not inherit from ``BaseAdapter`` — bifurcation analysis operates on individual (Dynamics, Continuation) pairs.
     """
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
 
     # ── Public API ───────────────────────────────────────────────────────
 
-    def run(self, **kwargs) -> "BifurcationResult | dict[str, BifurcationResult]":
+    def run(self, **kwargs) -> BifurcationResult | dict[str, BifurcationResult]:
         """Run bifurcation analysis for each continuation in the experiment.
 
-        Returns
+        Returns:
         -------
         BifurcationResult or dict[str, BifurcationResult]
             Single result if one continuation, dict if multiple.
@@ -88,7 +85,7 @@ class PyRatesBifurcationAdapter:
         continuation : Continuation, optional
             The continuation spec. Defaults to first in experiment.
 
-        Returns
+        Returns:
         -------
         str
             Executable Python code string.
@@ -232,9 +229,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             state_var_names = list(model.state_variables.keys())
             param_idx = self._populate_var_map(ode, eq_file, state_var_names)
 
-            # Guard: PyCoBi's _create_summary() crashes on NDIM=1 systems (KeyError: 'U(1)'). PyRates + AUTO-07p both handle 1-D scalar
-            # ODEs correctly; the bug is in PyCoBi's summary builder.
-            # See https://github.com/pyrates-neuroscience/PyCoBi
+            # PyCoBi's _create_summary() crashes on NDIM=1 (KeyError: 'U(1)'); PyRates and AUTO are fine.
             if len(state_var_names) < 2:
                 raise NotImplementedError(
                     f"The 'pyrates-bifurcation' backend cannot continue the "
@@ -249,8 +244,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             # Numeric PAR index for the free parameter (for DataFrame extraction).
             icp = param_idx.get(pyrates_fp_name, pyrates_fp_name)
 
-            # Step 1: Time continuation to find equilibrium
-            # PAR(14) = time in model units (AUTO has no unit system)
+            # Time continuation to find the equilibrium; PAR(14) is time in model units.
             iss_duration = float(getattr(cont.initial_state, "duration", None) or 10000.0) if cont.initial_state else 10000.0
             t_sols, t_cont = ode.run(
                 c="ivp",
@@ -266,8 +260,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
                 STOP={"UZ1"},
             )
 
-            # Step 2: Parameter continuation from equilibrium
-            # Pass the parameter name — PyCoBi maps it via _var_map
+            # Parameter continuation from the equilibrium; PyCoBi maps the name via _var_map.
             auto_kwargs = self._cont_to_auto_kwargs(cont, pyrates_fp_name, p_min, p_max)
             p_sols, p_cont = ode.run(
                 origin=t_cont,
@@ -581,11 +574,8 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
     def _populate_var_map(ode, eq_file, state_var_names):
         """Recover the parameter name→PAR-index map from the generated .f90.
 
-        Our systems are PyRates-generated, so AUTO-07p's c.* file carries
-        ``parnames``/``unames`` and PyCoBi keys solutions by the variable *name* (``V``, ``I_``, …), not by ``U(i)``/``PAR(i)``. Populating the forward
-        ``_var_map`` (name → ``("U", i)`` / ``("P", i)``) is therefore harmful:
-        ``ODESystem.run`` maps every solution key through ``_map_var(…, "plot")`` and would rewrite those names to ``U(i)``/``PAR(i)``, which then miss in
-        the name-keyed solution (``KeyError: 'U(1)'``). We only populate the
+        Our systems are PyRates-generated, so AUTO-07p's c.* file carries ``parnames``/``unames`` and PyCoBi keys solutions by the variable *name* (``V``, ``I_``, …), not by ``U(i)``/``PAR(i)``. Populating the forward ``_var_map`` (name → ``("U", i)`` / ``("P", i)``) is therefore harmful:
+        ``ODESystem.run`` maps every solution key through ``_map_var(…, "plot")`` and would rewrite those names to ``U(i)``/``PAR(i)``, which then miss in the name-keyed solution (``KeyError: 'U(1)'``). We only populate the
         *inverse* map (used by the result extractor to translate a ``PAR(i)`` /
         ``U(i)`` reference back to a name) and return ``{param_name: PAR_index}`` for numeric ICP resolution.
 

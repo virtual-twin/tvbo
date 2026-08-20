@@ -1,13 +1,8 @@
 """Heterogeneous-network tvboptim adapter (``tvbo.adapters.tvboptim``).
 
-Covers the P1 interoperability path: a network with different dynamics per node
-is lowered to a tvboptim ``HeterogeneousNetwork`` (nodes partitioned into
-``DynamicsGroup``s, edges collapsed into a ``SignalRoute``) and run in process
-via ``exp.run("tvboptim")``.
+Covers the P1 interoperability path: a network with different dynamics per node is lowered to a tvboptim ``HeterogeneousNetwork`` (nodes partitioned into ``DynamicsGroup``s, edges collapsed into a ``SignalRoute``) and run in process via ``exp.run("tvboptim")``.
 
-That API is absent from the pinned tvboptim — it landed upstream recently and the names
-are still settling — so the module skips until the integration lands. See
-``tvbo.adapters.tvboptim.to_heterogeneous_network``.
+The whole module skips when the installed tvboptim does not expose that network-dynamics API (``DynamicsGroup`` / ``HeterogeneousNetwork`` / ``SignalRoute``): it landed upstream only recently and the names are still settling. See ``tvbo.adapters.tvboptim.to_heterogeneous_network``.
 """
 
 import numpy as np
@@ -38,11 +33,9 @@ from tvbo.adapters.tvboptim import (  # noqa: E402
 
 
 def test_single_group_equivalence():
-    """The heterogeneous engine reproduces the homogeneous engine exactly on a
-    degenerate one-group partition (same model on every node).
+    """The heterogeneous engine reproduces the homogeneous engine exactly on a degenerate one-group partition (same model on every node).
 
-    This is the strongest guard: if the segmented pack/route/scatter machinery
-    were subtly wrong it would show up as a nonzero difference here.
+    This is the strongest guard: if the segmented pack/route/scatter machinery were subtly wrong it would show up as a nonzero difference here.
     """
     from tvboptim.experimental.network_dynamics import prepare, solve
     from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
@@ -154,8 +147,7 @@ def test_adapter_partitions_and_routes():
 
 
 def test_heterogeneous_run_regions_and_union():
-    """exp.run('tvboptim') integrates the heterogeneous network; per-region /
-    per-variable indexing works and a node holds NaN for variables it lacks."""
+    """exp.run('tvboptim') integrates the heterogeneous network; per-region / per-variable indexing works and a node holds NaN for variables it lacks."""
     exp = _hetero_experiment()
     res = exp.run("tvboptim")
 

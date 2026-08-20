@@ -1,15 +1,10 @@
-#
-# Module: timeseries.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Time-series, EEG, and power-spectrum plotting for SimulationResult."""
 
 import matplotlib.pyplot as plt
 import numpy as np
-
 
 # ── helpers ──────────────────────────────────────────────────────────
 
@@ -19,7 +14,6 @@ def _prepare(data):
 
     Per-node traces are preserved. If a single aggregate (e.g. mean) is desired it must be specified explicitly in the YAML as an observation.
     """
-
     time = data.coords["time"].values if "time" in data.coords else np.arange(data.shape[0])
     if "variable" in data.coords:
         var_names = list(np.atleast_1d(data.coords["variable"].values))
@@ -56,7 +50,7 @@ def plot_timeseries(result, ax=None, **kwargs):
     **kwargs
         Forwarded to ``ax.plot()``.
 
-    Returns
+    Returns:
     -------
     matplotlib.figure.Figure or None
     """
@@ -110,7 +104,7 @@ def plot_timeseries(result, ax=None, **kwargs):
     fig, axes = plt.subplots(n_panels, 1, sharex=True, figsize=(8, 2.5 * n_panels))
     if n_panels == 1:
         axes = [axes]
-    for ax_i, (unit_str, vnames) in zip(axes, unit_groups.items()):
+    for ax_i, (unit_str, vnames) in zip(axes, unit_groups.items(), strict=True):
         for vname in vnames:
             ax_i.plot(time, _vals(arr, vname, len(time)), label=vname, **kwargs)
         ax_i.set_ylabel(unit_str if unit_str else ", ".join(vnames))
@@ -215,8 +209,8 @@ def plot_power_spectrum(result, VOI=None, ROI="mean", mode=0, bands=None, ax=Non
         'mean' or region index.
     mode : int bands : dict, optional ax : matplotlib.axes.Axes, optional
     """
-    from scipy.fft import fft, fftfreq
     from matplotlib import colormaps
+    from scipy.fft import fft, fftfreq
 
     data = result.data
     var_names = list(np.atleast_1d(data.coords["variable"].values)) if "variable" in data.coords else []

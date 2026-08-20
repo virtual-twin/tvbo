@@ -1,24 +1,15 @@
 # Build and publish the TVB-O documentation.
 #
-# Trigger: called by the container pipeline (.github/workflows/docker.yml) after
-# the release image is built+pushed (so the pull can't race the build), or run
-# manually via workflow_dispatch against any tag.
+# Called by docker.yml once the release image is pushed, so the pull cannot race the build; or dispatched manually against any tag.
 #
-# Renders the Quarto site inside the *exact* tvbo container that ships with
-# the release, so every backend (Julia, AUTO-07p, JAX, NeuroML, PyRates,
-# tvboptim, ...) is available with the locked dependency set, then publishes
-# with `quarto publish gh-pages` (Quarto's native, idempotent deploy path).
+# Renders inside the *exact* released container, so every backend is present with the locked dependency set, then publishes via `quarto publish gh-pages`.
 #
-# Forces a cold build (no _freeze, no .quarto cache, no GH Actions cache) so
-# the published site is a faithful re-execution of every code cell at the
-# release version.
+# Cold build — no _freeze, no .quarto cache, no Actions cache — so the site is a faithful re-execution at the release version.
 
 name: Deploy Docs
 
 on:
-    # Called by the container pipeline (.github/workflows/docker.yml) once the
-    # release image is built and pushed, so we render against that *exact* fresh
-    # image via a true job dependency — no pull race, no retry loop.
+    # A true job dependency on docker.yml, so the render targets that exact fresh image with no pull race.
     workflow_call:
         inputs:
             tag:
@@ -49,19 +40,13 @@ jobs:
         timeout-minutes: 180
 
         steps:
-            # ── Resolve container tag ────────────────────────────────────
-            # Release tag is e.g. "v1.2.3"; docker/metadata-action publishes
-            # the image as "1.2.3" via type=semver,pattern={{version}}.
-            # For workflow_dispatch the user supplies the exact image tag.
+            # A release ref "v1.2.3" maps to the image tag "1.2.3"; a manual dispatch supplies the tag directly.
             - name: Resolve container tag
               id: tag
               env:
                   INPUT_TAG: ${{ inputs.tag }}
               run: |
-                  # Strip a leading 'v' so a release ref like 'v1.2.3' maps to the
-                  # image's semver tag '1.2.3' (docker/metadata-action publishes
-                  # type=semver,pattern={{version}}). Empty input → 'latest' (manual
-                  # dispatch without a tag).
+                  # Strip the leading 'v' to reach the image's semver tag; empty input falls back to 'latest'.
                   raw="${INPUT_TAG:-}"
                   tag="${raw#v}"
                   tag="${tag:-latest}"
@@ -84,10 +69,7 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
-            # ── Cold render inside the release container ─────────────────
-            # We use `docker run` (not `jobs.<id>.container:`) so the resolved
-            # tag from step `tag` is honoured at runtime instead of needing to
-            # be known at workflow-parse time.
+            # `docker run`, not `jobs.<id>.container:`, so the tag resolved at runtime is honoured rather than needing to be known at parse time.
             - name: Render docs inside tvbo container (cold)
               env:
                   TAG: ${{ steps.tag.outputs.tag }}
@@ -95,11 +77,7 @@ jobs:
               run: |
                   set -euo pipefail
                   docker pull "ghcr.io/virtual-twin/tvbo:${TAG}"
-                  # Override the image ENTRYPOINT with bash so the render script runs
-                  # regardless of what entrypoint the pulled tag ships. `latest` is only
-                  # rebuilt on pushes to main (see docker.yml), so a release can pull an
-                  # image whose entrypoint predates the `exec "$@"` fix; not depending on
-                  # it here makes this job immune to that staleness/ordering.
+                  # Override ENTRYPOINT with bash, so the render runs whatever entrypoint the pulled tag happens to ship.
                   docker run --rm \
                       --entrypoint bash \
                       -v "${PWD}:/work" \
@@ -127,11 +105,7 @@ jobs:
                               exit 1
                           fi
                           "${UV_BIN}" pip install --system -e . --no-deps
-                          # Fail loudly if the editable install did not regenerate the
-                          # (git-untracked) datamodel. tvbo/datamodel/schema.py is produced
-                          # by the hatch build hook (hatch_build.py) during the install above;
-                          # without it every downstream `import tvbo` dies with an opaque
-                          # ModuleNotFoundError deep in a traceback (see the v0.5.0 docs build).
+                          # Fail loudly if the install did not regenerate the untracked datamodel; without it every `import tvbo` dies opaquely.
                           if ! python -c "import tvbo.datamodel.schema"; then
                               echo "FATAL: tvbo.datamodel.schema did not import after the editable install."
                               echo "The hatch build hook (hatch_build.py) should have regenerated it under /work/tvbo/datamodel/. Contents:"
@@ -148,8 +122,7 @@ jobs:
                               dpkg -i /tmp/quarto.deb && rm /tmp/quarto.deb
                           fi
                           quarto --version
-                          # Regenerate ontology artefacts (struct + abox + merged).
-                          # ROBOT is preinstalled in the tvbo image; if not, fall back to apt.
+                          # Regenerate the ontology artefacts; ROBOT ships in the image, with apt as the fallback.
                           if ! command -v robot >/dev/null 2>&1; then
                               apt-get update
                               apt-get install -y --no-install-recommends default-jre-headless
@@ -157,13 +130,7 @@ jobs:
                               curl -sSL -o /usr/local/bin/robot.jar https://github.com/ontodev/robot/releases/latest/download/robot.jar
                               chmod +x /usr/local/bin/robot
                           fi
-                          # The release image ships tvbo's *runtime* deps only, so the
-                          # LinkML *generator* toolkit (build-time only) is absent and
-                          # `make gen-merged` → gen-owl failed with "gen-owl: not found"
-                          # (make Error 127). Generate the ontology in an isolated venv
-                          # so the schema-gen toolchain cannot perturb the tvbo runtime
-                          # the Quarto cells import — the gen scripts don't import tvbo,
-                          # so isolation is clean. Pin linkml to the build version.
+                          # An isolated venv, because the image ships runtime deps only and the schema-gen toolchain must not perturb the runtime the Quarto cells import.
                           "${UV_BIN}" venv /tmp/genenv
                           "${UV_BIN}" pip install --python /tmp/genenv/bin/python \
                               "linkml==1.11.1" pyyaml rdflib bibtexparser
@@ -177,11 +144,7 @@ jobs:
                           chown -R "${HOST_UID}:${HOST_GID}" /work/ontology /work/docs/ontology 2>/dev/null || true
                       '
 
-            # ── Run Widoco on the host (Docker-in-Docker would be needed
-            #    inside the tvbo container, so we keep it on the host) and
-            #    drop its output into docs/_site/ontology/spec/ as static
-            #    resources. Quarto already published _site above, so we
-            #    overlay the spec/ folder before the gh-pages publish step.
+            # Widoco runs on the host — inside the container it would need Docker-in-Docker — and overlays spec/ onto the already-built _site.
             - name: Generate Widoco specification (W3C-style HTML + WebVOWL)
               env:
                   WIDOCO_IMAGE: ghcr.io/dgarijo/widoco:v1.4.25
@@ -207,10 +170,7 @@ jobs:
                   cp ontology/tvb-o-axioms.ttl    docs/_site/ontology/spec/tvb-o-axioms.ttl
                   cp ontology/tvb-o.shacl.ttl    docs/_site/ontology/spec/tvb-o.shacl.ttl
 
-            # ── Publish via Quarto's native gh-pages flow ────────────────
-            # `quarto publish gh-pages` manages the gh-pages branch (orphan,
-            # force-push, .nojekyll). `--no-render` reuses the cold-built _site
-            # we just produced inside the container.
+            # `quarto publish gh-pages` owns the branch (orphan, force-push, .nojekyll); `--no-render` reuses the _site just built in the container.
             - uses: quarto-dev/quarto-actions/setup@v2
 
             - name: Publish to gh-pages

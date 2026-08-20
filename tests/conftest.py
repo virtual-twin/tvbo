@@ -1,11 +1,8 @@
 """Early environment setup for the test suite, plus helpers shared across test modules.
 
-The environment part must run before any JAX import: it forces the CPU backend (jax-metal
-raises XLA errors on Apple Silicon) and sets up the virtual XLA devices the pmap tests need.
+The environment part must run before any JAX import: it forces the CPU backend (jax-metal raises XLA errors on Apple Silicon) and sets up the virtual XLA devices the pmap tests need.
 
-It also gives each xdist worker its own ``TVB_USER_HOME``. TVB derives its storage from
-that variable — including a log folder it ``os.makedirs`` without ``exist_ok`` on import —
-so parallel workers importing tvb race on that mkdir and the loser raises FileExistsError.
+It also hands each xdist worker its own ``TVB_USER_HOME``. TVB derives its storage from that variable — including the log folder it ``os.makedirs`` without ``exist_ok`` on import — so parallel workers otherwise race on that mkdir and the loser raises ``FileExistsError``.
 """
 
 import os
@@ -60,14 +57,9 @@ def regenerate(pytestconfig) -> bool:
 def pytest_sessionfinish(session, exitstatus):
     """Never let a re-baselining run report success.
 
-    Regeneration asserts nothing — it overwrites every reference with whatever the current
-    code produces. A green run would be indistinguishable from a suite that passed, which
-    is exactly how an unreviewed re-baseline reaches main.
+    Regeneration asserts nothing — it overwrites every reference with whatever the current code produces. A green run would be indistinguishable from a suite that passed, which is exactly how an unreviewed re-baseline reaches main.
 
-    A run that actually failed keeps its own status. Overriding that too would hide the
-    case that matters most: if a model raised while regenerating, its reference was never
-    written, and reporting that identically to a clean regeneration is how a corpus with a
-    hole in it gets committed.
+    A run that actually failed keeps its own status. Overriding that too would hide the case that matters most: if a model raised while regenerating, its reference was never written, and reporting that identically to a clean regeneration is how a corpus with a hole in it gets committed.
     """
     if not session.config.getoption("--regenerate-golden", default=False):
         return
@@ -88,16 +80,9 @@ def pytest_sessionfinish(session, exitstatus):
 def _isolate_tvbo_logging():
     """Restore the ``tvbo`` logger after each test.
 
-    ``tvbo.log.configure_logging`` installs a stream handler and sets
-    ``propagate = False`` so the CLI owns its output and does not double-print through a
-    host application's root logger. That is right for a CLI and wrong to leave behind in a
-    test process: it is global and sticky, so once any test invokes the CLI, every later
-    ``caplog`` assertion reads empty — caplog's handler sits on the root logger, which the
-    records no longer reach — and the captured stream it kept is closed by then, so the
-    handler raises ``I/O operation on closed file`` on the way past.
+    ``tvbo.log.configure_logging`` installs a stream handler and sets ``propagate = False`` so the CLI owns its output and does not double-print through a host application's root logger. That is right for a CLI and wrong to leave behind in a test process: it is global and sticky, so once any test invokes the CLI, every later ``caplog`` assertion reads empty — caplog's handler sits on the root logger, which the records no longer reach — and the captured stream it kept is closed by then, so the handler raises ``I/O operation on closed file`` on the way past.
 
-    Autouse because the pollution is invisible at the point it bites: the failing test is
-    never the one that configured logging.
+    Autouse because the pollution is invisible at the point it bites: the failing test is never the one that configured logging.
     """
     import logging
 
@@ -115,10 +100,7 @@ def _isolate_tvbo_logging():
 def icosphere():
     """``fn(subdivisions, radius)`` -> a closed triangulated sphere ``(vertices, faces)``.
 
-    The reference geometry for surface work: closed, so it has no boundary at all, and the
-    only curved surface whose Laplace-Beltrami spectrum is known in closed form
-    (``l(l+1)/R**2`` with multiplicity ``2l+1``). A fixture rather than an importable
-    helper because ``tests/`` is not a package.
+    The reference geometry for surface work: closed, so it has no boundary at all, and the only curved surface whose Laplace-Beltrami spectrum is known in closed form (``l(l+1)/R**2`` with multiplicity ``2l+1``). A fixture rather than an importable helper because ``tests/`` is not a package.
     """
     import numpy as np
 
@@ -168,7 +150,7 @@ def icosphere():
         for _ in range(subdivisions):
             midpoints, split, points = {}, [], list(vertices)
 
-            def midpoint(a, b):
+            def midpoint(a, b, midpoints=midpoints, points=points):
                 key = (min(a, b), max(a, b))
                 if key not in midpoints:
                     midpoints[key] = len(points)
@@ -188,9 +170,6 @@ def icosphere():
 def unwrapped():
     """``fn(code)`` -> *code* with all whitespace removed, for substring checks on codegen.
 
-    Generated Python is black-formatted, so a long statement is split across lines at a
-    column black chooses. Asserting on the statement's text rather than on its layout keeps
-    a codegen test about what the emitter produces, not about how it was wrapped. A fixture
-    rather than an importable helper because ``tests/`` is not a package.
+    Generated Python is black-formatted, so a long statement is split across lines at a column black chooses. Asserting on the statement's text rather than on its layout keeps a codegen test about what the emitter produces, not about how it was wrapped. A fixture rather than an importable helper because ``tests/`` is not a package.
     """
     return lambda code: "".join(code.split())

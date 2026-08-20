@@ -1,8 +1,6 @@
 """User-facing helpers for :class:`Event`.
 
-Attached to the generated classes by name (``EventBehaviour`` -> ``Event``), so
-``event.plot()`` works on any Event — including the nested ones a loaded experiment
-holds, which previously only gained it if some call path remembered to retype them.
+Attached to the generated classes by name (``EventBehaviour`` -> ``Event``), so ``event.plot()`` works on any Event — including the nested ones a loaded experiment holds, which previously only gained it if some call path remembered to retype them.
 """
 
 from __future__ import annotations
@@ -16,8 +14,7 @@ class EventBehaviour:
     def _signal(self):
         """Return ``callable(t)`` for the event's signal.
 
-        Generic: works for any ``event.equation.rhs`` expressed in terms of ``t`` and the
-        event's own parameters.
+        Generic: works for any ``event.equation.rhs`` expressed in terms of ``t`` and the event's own parameters.
         """
         from sympy import Symbol, lambdify
 

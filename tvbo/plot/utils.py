@@ -1,17 +1,12 @@
-#
-# Module: utils.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Plotting helpers for TVB-O figures.
 
-Provides the shared matplotlib style, the TVB brand color palette derived from the
-TVB logo SVG, colormap and color-conversion utilities, and a multi-view brain surface renderer.
+Provides the shared matplotlib style, the TVB brand color palette derived from the TVB logo SVG, colormap and color-conversion utilities, and a multi-view brain surface renderer.
 """
 
-from os.path import join, abspath, dirname
+from os.path import abspath, dirname, join
 from xml.etree import ElementTree as ET
 
 import matplotlib.colors as mcolors
@@ -29,9 +24,7 @@ def use_tvbo_style():
 
 
 def extract_svg_colors(svg_path):
-    """
-    Extracts colors from an SVG file and returns them as a list of hex codes.
-    """
+    """Extracts colors from an SVG file and returns them as a list of hex codes."""
     # Parse the SVG file
     tree = ET.parse(svg_path)
     root = tree.getroot()
@@ -144,7 +137,7 @@ def get_cmap(colors=None):
     colors : list, optional
         List of colors.
 
-    Returns
+    Returns:
     -------
     ListedColormap
     """
@@ -163,7 +156,7 @@ def get_continuous_cmap(hex_list, float_list=None):
     float_list : list, optional
         List of floats between 0 and 1 of the same length as hex_list.
 
-    Returns
+    Returns:
     -------
     LinearSegmentedColormap
     """

@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-"""
-Auto-generate the 'API Documentation' section of _toc.yml from
-api/_quartodoc_sections.yml (the source of truth for quartodoc sections).
+"""Auto-generate the 'API Documentation' section of _toc.yml.
 
-Rewrites the block between the # BEGIN:api-autogen … # END:api-autogen
-markers in _toc.yml.
+Reads api/_quartodoc_sections.yml, the source of truth for quartodoc sections.
+
+Rewrites the block between the # BEGIN:api-autogen … # END:api-autogen markers in _toc.yml.
 
 Sub-packages are nested under their parent package section (e.g.
 Templates → RateML, tvboptim) rather than appearing as flat siblings.
@@ -15,6 +14,7 @@ Run automatically as a Quarto pre-render step (after quartodoc build).
 from __future__ import annotations
 
 from pathlib import Path
+
 import yaml
 
 DOCS_DIR = Path(__file__).parent.parent
@@ -33,10 +33,7 @@ SKIP_TITLES = {
     "Welcome to the TVB-O project!",
 }
 
-# Display-name overrides for individual module files. Anything not listed
-# here falls back to ``basename.replace("_", " ").title()`` (e.g. ``base``
-# → ``Base``). Use this map to preserve product casings that ``.title()``
-# would mangle (``Tvb`` → ``TVB``, ``Pyrates`` → ``PyRates`` …).
+# Display-name overrides for individual module files. Anything not listed here falls back to ``basename.replace("_", " ").title()`` (e.g. ``base`` → ``Base``). Use this map to preserve product casings that ``.title()`` would mangle (``Tvb`` → ``TVB``, ``Pyrates`` → ``PyRates`` …).
 MODULE_DISPLAY_NAMES: dict[str, str] = {
     "bids": "BIDS",
     "tvb": "TVB",
@@ -137,13 +134,9 @@ class _Node:
 def _build_tree(sections: list[dict]) -> list[_Node]:
     """Build a tree of _Nodes from the flat quartodoc sections list.
 
-    A section with package ``tvbo.templates.rateml`` becomes a child of
-    ``tvbo.templates`` (if present).  Sections whose parent is not in
-    the set become root nodes.
+    A section with package ``tvbo.templates.rateml`` becomes a child of ``tvbo.templates`` (if present).  Sections whose parent is not in the set become root nodes.
 
-    Parent packages that have no section of their own (e.g. no modules)
-    are synthesised as container nodes using SECTION_TITLES from
-    tvbo_package_struct.
+    Parent packages that have no section of their own (e.g. no modules) are synthesised as container nodes using SECTION_TITLES from tvbo_package_struct.
     """
     # Import SECTION_TITLES for synthesising missing parent nodes
     from tvbo_package_struct import SECTION_TITLES
@@ -163,9 +156,7 @@ def _build_tree(sections: list[dict]) -> list[_Node]:
 
         nodes[package] = _Node(package, label, index_href, pages)
 
-    # Synthesise missing parent nodes so children can be nested properly.
-    # E.g. if tvbo.templates.rateml exists but tvbo.templates does not,
-    # create an empty tvbo.templates container node.
+    # Synthesise missing parents so children nest: tvbo.templates.rateml without tvbo.templates gets an empty container.
     for pkg in list(nodes):
         parts = pkg.split(".")
         for i in range(2, len(parts)):
@@ -227,8 +218,7 @@ def build_block() -> str:
     lines.append(f"{i0}  contents:")
 
     for node in roots:
-        # The root `tvbo` section has no label of its own — inline its
-        # pages directly (they're top-level modules like tvbo.utils).
+        # The root `tvbo` section has no label of its own — inline its pages directly (they're top-level modules like tvbo.utils).
         if node.package == "tvbo":
             for display, href in node.pages:
                 lines.append(f'{i1}- text: "{display}"')

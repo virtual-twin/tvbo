@@ -1,6 +1,4 @@
-# Copyright Berlin Institute of Health / Charité University Medicine Berlin
-# Department of Neurology and Experimental Neurology
-# Brain Simulation Section
+# Copyright Berlin Institute of Health / Charité University Medicine Berlin Department of Neurology and Experimental Neurology Brain Simulation Section
 
 """Central logging configuration for TVBO.
 
@@ -11,9 +9,7 @@ Every part of TVBO logs through the ``tvbo`` logger hierarchy:
 * generated backend scripts (tvboptim, …) use ``logging.getLogger("tvbo.run")``
   so their progress output is controlled by the very same switch, regardless of which backend produced them or whether they run in-process or standalone.
 
-Importing tvbo as a library stays silent: the package installs only a
-:class:`~logging.NullHandler`. Entry points that are meant to surface progress —
-``tvbo run`` and :meth:`SimulationExperiment.run` — call :func:`configure_logging` (directly, or via :func:`ensure_configured`) to attach a stderr handler.
+Importing tvbo as a library stays silent: the package installs only a :class:`~logging.NullHandler`. Entry points that are meant to surface progress — ``tvbo run`` and :meth:`SimulationExperiment.run` — call :func:`configure_logging` (directly, or via :func:`ensure_configured`) to attach a stderr handler.
 
 One switch controls all of it, no matter the entry point:
 
@@ -32,8 +28,8 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, Optional, Union
 
 __all__ = [
     "logger",
@@ -47,33 +43,31 @@ __all__ = [
     "ENV_VAR",
 ]
 
-#: Root of the tvbo logger hierarchy; every package and generated-code logger is
-#: a child of this and inherits its level and handlers.
 LOGGER_NAME = "tvbo"
-#: Environment variable read as the central level switch when nothing is passed.
+"""Root of the tvbo logger hierarchy; every package and generated-code logger is a child of this and inherits its level and handlers."""
 ENV_VAR = "TVBO_LOG_LEVEL"
-#: Level used when neither an explicit argument nor the env var is set.
+"""Environment variable read as the central level switch when nothing is passed."""
 DEFAULT_LEVEL = logging.INFO
-#: Default stderr handler format for tvbo-managed output.
+"""Level used when neither an explicit argument nor the env var is set."""
 DEFAULT_FORMAT = "%(levelname)s [%(name)s] %(message)s"
+"""Default stderr handler format for tvbo-managed output."""
 
 # Effective "off": above CRITICAL, so no standard record is ever emitted.
 _OFF = logging.CRITICAL + 1
 # Marks the single handler this module owns, so configuration stays idempotent.
 _MANAGED = "_tvbo_managed_handler"
 
-LevelLike = Union[int, str, None]
+LevelLike = int | str | None
 
 logger = logging.getLogger(LOGGER_NAME)
 # Library default: silent unless an entry point or the embedding app configures a handler. This replaces the old package-wide ``logging.disable(CRITICAL)``, which muted every logger in the process (tvbo's own included).
 logger.addHandler(logging.NullHandler())
 
 
-def _coerce_level(level: LevelLike) -> Optional[int]:
+def _coerce_level(level: LevelLike) -> int | None:
     """Turn a user-supplied level into a numeric level (``None`` passes through).
 
-    Accepts ints, standard level names, and the aliases ``OFF``/``NONE``/
-    ``SILENT``/``QUIET`` for "no output".
+    Accepts ints, standard level names, and the aliases ``OFF``/``NONE``/ ``SILENT``/``QUIET`` for "no output".
     """
     if level is None:
         return None
@@ -90,7 +84,7 @@ def _coerce_level(level: LevelLike) -> Optional[int]:
     raise ValueError(f"Unknown log level {level!r}; use an int or one of DEBUG, INFO, WARNING, ERROR, CRITICAL, OFF.")
 
 
-def _env_level() -> Optional[int]:
+def _env_level() -> int | None:
     """Numeric level from ``TVBO_LOG_LEVEL``, or ``None`` if unset/invalid."""
     raw = os.environ.get(ENV_VAR)
     if not raw or not raw.strip():
@@ -124,7 +118,7 @@ def _managed_handler(stream=None, fmt=None, datefmt=None) -> logging.Handler:
     return handler
 
 
-def _existing_managed() -> Optional[logging.Handler]:
+def _existing_managed() -> logging.Handler | None:
     return next((h for h in logger.handlers if getattr(h, _MANAGED, False)), None)
 
 
@@ -148,15 +142,14 @@ def configure_logging(
     level: LevelLike = None,
     *,
     stream=None,
-    fmt: Optional[str] = None,
-    datefmt: Optional[str] = None,
+    fmt: str | None = None,
+    datefmt: str | None = None,
     force: bool = False,
 ) -> logging.Logger:
     """Attach a stderr handler to the ``tvbo`` logger and set its level.
 
     Idempotent: the tvbo logger keeps at most one handler owned by this module.
-    When *level* is ``None`` the level falls back to ``TVBO_LOG_LEVEL`` and then to :data:`DEFAULT_LEVEL`. Because the tvbo logger then owns its own output,
-    its records stop propagating to the root logger (so an embedding application that also configured root logging does not print every line twice).
+    When *level* is ``None`` the level falls back to ``TVBO_LOG_LEVEL`` and then to :data:`DEFAULT_LEVEL`. Because the tvbo logger then owns its own output, its records stop propagating to the root logger (so an embedding application that also configured root logging does not print every line twice).
 
     Args:
         level: Desired level (int, name, or ``"OFF"``); ``None`` → env → default.
@@ -182,9 +175,7 @@ def ensure_configured(level: LevelLike = None) -> logging.Logger:
       notebook, or a prior :func:`configure_logging` set things up), only the level is applied and the existing handlers keep emitting;
     * otherwise a default stderr handler is installed via :func:`configure_logging`.
 
-    A level explicitly set earlier (``set_log_level`` / ``silence`` / a prior
-    ``configure_logging``) is preserved: with no explicit *level* this only installs a default level the first time (while the logger is still at
-    ``NOTSET``), so the central switch stays put across repeated ``.run()`` calls.
+    A level explicitly set earlier (``set_log_level`` / ``silence`` / a prior ``configure_logging``) is preserved: with no explicit *level* this only installs a default level the first time (while the logger is still at ``NOTSET``), so the central switch stays put across repeated ``.run()`` calls.
 
     Args:
         level: Level to apply; ``None`` keeps any level already set, else falls

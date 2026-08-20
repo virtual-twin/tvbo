@@ -1,10 +1,6 @@
 """`tvbo run` writes analyses where its figures read them.
 
-A study run is one command that produces results AND the figures that bind them. The two
-stages resolve the container layout independently, and when they disagreed the failure was
-silent: with the documented `-o output/nc`, analyses landed in `output/nc/results/` while
-figures looked in `output/results/`, so a run rendered this run's experiments against a
-PREVIOUS run's analyses. These pin the two to one mapping.
+A study run is one command that produces results AND the figures that bind them. The two stages resolve the container layout independently, and when they disagreed the failure was silent: with the documented `-o output/nc`, analyses landed in `output/nc/results/` while figures looked in `output/results/`, so a run rendered this run's experiments against a PREVIOUS run's analyses. These pin the two to one mapping.
 """
 
 from pathlib import Path

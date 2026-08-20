@@ -1,13 +1,8 @@
 """``network.nodes.<attr>`` — a named per-node array, the node-side twin of ``network.edges.<label>``.
 
-A network can carry measured per-region vectors: a region size, a per-node current range fitted
-elsewhere. Before this, only two hardcoded measures (``positions``, ``instrength``) were
-referenceable, so a study with such a vector had no way to reach it from a spec and pasted the
-array into code instead — which is how a 379-element table ends up living in a Python file.
+A network can carry measured per-region vectors: a region size, a per-node current range fitted elsewhere. Before this, only two hardcoded measures (``positions``, ``instrength``) were referenceable, so a study with such a vector had no way to reach it from a spec and pasted the array into code instead — which is how a 379-element table ends up living in a Python file.
 
-Resolution order is what the tests pin: node ``parameters`` win over the companion file (a spec
-can override what the file carries), an explicit ``nodes.<attr>`` is never shadowed by an edge
-label of the same name, and an unknown attribute raises instead of resolving to something else.
+Resolution order is what the tests pin: node ``parameters`` win over the companion file (a spec can override what the file carries), an explicit ``nodes.<attr>`` is never shadowed by an edge label of the same name, and an unknown attribute raises instead of resolving to something else.
 """
 
 import numpy as np

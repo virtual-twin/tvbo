@@ -1,12 +1,10 @@
 """StudyCollection-level helpers: the results manifest and the ``tvbo verify`` checks.
 
-An :class:`~tvbo.classes.study.StudyCollection` is a study-of-studies — it aggregates the member studies a paper reports and owns the paper's own demonstration content — plus two
-things a plain ``SimulationStudy`` has no need for:
+An :class:`~tvbo.classes.study.StudyCollection` is a study-of-studies — it aggregates the member studies a paper reports and owns the paper's own demonstration content — plus two things a plain ``SimulationStudy`` has no need for:
 
 * a **results manifest** (``results:``): the named numbers the prose cites, each bound to a
   computed value (``used:`` a DataRef) or an authored constant (``value:`` + ``source:``).
-  :func:`emit_manifest` resolves them into ``manuscript_results.yml`` — the file the document reads through Quarto ``metadata-files`` as ``{{< meta results.<key> >}}`` — so no reported
-  figure is transcribed by hand.
+  :func:`emit_manifest` resolves them into ``manuscript_results.yml`` — the file the document reads through Quarto ``metadata-files`` as ``{{< meta results.<key> >}}`` — so no reported figure is transcribed by hand.
 * the **completeness / staleness / coverage** checks :func:`verify` runs, so an edited-but-not-
   rerun spec, an orphan figure, or a dead manifest key fails the build rather than silently printing a wrong number.
 
@@ -15,8 +13,9 @@ The number resolution is shared: a manifest emit and a ``verify`` coverage pass 
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any
 
 from tvbo.data.dataref import resolve_dataref
 from tvbo.utils import as_list
@@ -35,12 +34,12 @@ def _scalar(da: Any) -> Any:
     return arr
 
 
-def _format(value: Any, fmt: Optional[str]) -> str:
+def _format(value: Any, fmt: str | None) -> str:
     """Apply a binding's ``format`` string to a computed value, else stringify it."""
     return fmt.format(value) if fmt else str(value)
 
 
-def _count_target(inv: Any, member_label: Optional[str]) -> Any:
+def _count_target(inv: Any, member_label: str | None) -> Any:
     """The object a ``count:`` binding tallies: the collection itself, or a loaded member."""
     if member_label is None:
         if inv is None:
@@ -61,8 +60,7 @@ def _count_target(inv: Any, member_label: Optional[str]) -> Any:
 def _count(spec: str, inv: Any) -> int:
     """Length of the collection a ``count:`` binding names.
 
-    ``<member>.<collection>`` counts the collection on that member study (loaded from its recipe); a bare ``<collection>`` counts one on the collection itself. An unknown
-    collection slot raises, so a typo fails the build rather than tallying to zero.
+    ``<member>.<collection>`` counts the collection on that member study (loaded from its recipe); a bare ``<collection>`` counts one on the collection itself. An unknown collection slot raises, so a typo fails the build rather than tallying to zero.
     """
     member_label, _, coll = str(spec).rpartition(".")
     target = _count_target(inv, member_label or None)
@@ -72,11 +70,10 @@ def _count(spec: str, inv: Any) -> int:
     return len(as_list(getattr(target, coll)))
 
 
-def container_roots(inv: Any, results_root: Optional[Path]) -> list[Path]:
+def container_roots(inv: Any, results_root: Path | None) -> list[Path]:
     """Every directory a StudyCollection's result containers can live under, in search order.
 
-    The collection's own root first, then one per member. A member study runs in its own directory and writes ``<member-dir>/output/results/<name>/result.h5``, so a ``used:``
-    binding into a member — which ``StudyCollection.results`` explicitly documents as supported — is not reachable from the collection's root alone.
+    The collection's own root first, then one per member. A member study runs in its own directory and writes ``<member-dir>/output/results/<name>/result.h5``, so a ``used:`` binding into a member — which ``StudyCollection.results`` explicitly documents as supported — is not reachable from the collection's root alone.
     """
     roots: list[Path] = [Path(results_root)] if results_root else []
     try:
@@ -90,13 +87,13 @@ def container_roots(inv: Any, results_root: Optional[Path]) -> list[Path]:
     return roots
 
 
-def _resolve_across_roots(used: Any, results_root: Optional[Path], inv: Any):
+def _resolve_across_roots(used: Any, results_root: Path | None, inv: Any):
     """Resolve *used* against the first container root that holds it.
 
     The first failure is re-raised when none do, so the reported problem names the collection's own root rather than whichever member happened to be searched last.
     """
     roots = container_roots(inv, results_root)
-    first_error: Optional[Exception] = None
+    first_error: Exception | None = None
     for root in roots or [None]:
         try:
             return resolve_dataref(used, results_root=str(root) if root else None)
@@ -105,13 +102,11 @@ def _resolve_across_roots(used: Any, results_root: Optional[Path], inv: Any):
     raise first_error  # type: ignore[misc]
 
 
-def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = None) -> tuple[str, dict]:
+def resolve_binding(binding: Any, results_root: Path | None, *, inv: Any = None) -> tuple[str, dict]:
     """Resolve one ``ResultBinding`` to ``(rendered_string, provenance)``.
 
     Three mutually exclusive forms: ``used:`` reads a scalar out of a result container and formats it; ``count:`` tallies a collection on a member or the collection itself (no run);
-    ``value:`` (+ ``source:``) passes an authored literal through untouched. Raises
-    ``ValueError`` for a malformed binding (zero or more than one form set), and lets a resolution failure (missing container, dead reference, non-scalar, unknown member)
-    propagate to the caller, which turns it into a build-failing problem keyed by ``binding.key``.
+    ``value:`` (+ ``source:``) passes an authored literal through untouched. Raises ``ValueError`` for a malformed binding (zero or more than one form set), and lets a resolution failure (missing container, dead reference, non-scalar, unknown member) propagate to the caller, which turns it into a build-failing problem keyed by ``binding.key``.
     """
     used = getattr(binding, "used", None)
     value = getattr(binding, "value", None)
@@ -158,11 +153,10 @@ def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = No
     return rendered, prov
 
 
-def resolve_results(inv: Any, results_root: Optional[Path]) -> tuple[dict[str, str], dict[str, dict], list[str]]:
+def resolve_results(inv: Any, results_root: Path | None) -> tuple[dict[str, str], dict[str, dict], list[str]]:
     """Resolve every ``ResultBinding`` on *inv*.
 
-    Returns ``(results, provenance, problems)``: ``results`` maps each key to its rendered string (what the prose reads), ``provenance`` records how each was obtained, and
-    ``problems`` names the keys that could not be resolved (missing container, dead ref, duplicate key) — the caller decides whether an unresolved key fails the build.
+    Returns ``(results, provenance, problems)``: ``results`` maps each key to its rendered string (what the prose reads), ``provenance`` records how each was obtained, and ``problems`` names the keys that could not be resolved (missing container, dead ref, duplicate key) — the caller decides whether an unresolved key fails the build.
     """
     results: dict[str, str] = {}
     provenance: dict[str, dict] = {}
@@ -185,11 +179,10 @@ def resolve_results(inv: Any, results_root: Optional[Path]) -> tuple[dict[str, s
     return results, provenance, problems
 
 
-def emit_manifest(inv: Any, results_root: Optional[Path], out_path: Path) -> tuple[Path, list[str]]:
+def emit_manifest(inv: Any, results_root: Path | None, out_path: Path) -> tuple[Path, list[str]]:
     """Write *inv*'s resolved results to ``manuscript_results.yml`` at *out_path*.
 
-    The file carries a flat ``results:`` mapping the document reads as ``{{< meta results.* >}}`` and a ``results_provenance:`` block recording, per key, whether the number was computed
-    (and from which container) or authored (and from which source). Returns the written path and the list of unresolved-key problems; the caller hard-fails on a non-empty list.
+    The file carries a flat ``results:`` mapping the document reads as ``{{< meta results.* >}}`` and a ``results_provenance:`` block recording, per key, whether the number was computed (and from which container) or authored (and from which source). Returns the written path and the list of unresolved-key problems; the caller hard-fails on a non-empty list.
     """
     import yaml
 
@@ -245,16 +238,14 @@ def _analysis_fingerprint(analysis: Any) -> str:
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
-def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Optional[Path]) -> list[str]:
+def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Path | None) -> list[str]:
     """Analyses whose container is missing, or written from a different declaration.
 
-    Staleness is per analysis, keyed on a digest of THAT analysis's own declaration, not on the spec file's mtime. Comparing against the file made every unrelated edit — a caption,
-    a new figure, a typo in a description — mark every analysis as needing a re-run, so a one-word change failed the build and demanded hours of recomputation it could not affect.
+    Staleness is per analysis, keyed on a digest of THAT analysis's own declaration, not on the spec file's mtime. Comparing against the file made every unrelated edit — a caption, a new figure, a typo in a description — mark every analysis as needing a re-run, so a one-word change failed the build and demanded hours of recomputation it could not affect.
 
-    The digest is recorded beside the container when it is written. A container from before this check existed carries none, and is accepted: the alternative is failing every build
-    once, which teaches people to bypass the gate.
+    The digest is recorded beside the container when it is written. A container from before this check existed carries none, and is accepted: the alternative is failing every build once, which teaches people to bypass the gate.
     """
-    from tvbo.data.analysis_io import study_analyses, analysis_name, container_path
+    from tvbo.data.analysis_io import analysis_name, container_path, study_analyses
 
     problems: list[str] = []
     for analysis in study_analyses(inv):
@@ -280,9 +271,7 @@ def _read_manifest_keys(path: Path) -> set[str]:
 def _stale_captions(inv: Any, captions_dir: Path) -> list[str]:
     """Committed caption partials whose text no longer matches what the spec composes.
 
-    Each figure's ``<name>.caption.qmd`` is generated by ``tvbo figure caption`` and included by the manuscript; a spec edit that moves a panel or rewrites a description without recomposing
-    leaves a committed caption the document still renders. That drift is silent — Quarto has no way to know the partial is stale — so this recomposes each caption from the spec and fails on
-    a mismatch. A figure with no committed partial is skipped (nothing to be stale).
+    Each figure's ``<name>.caption.qmd`` is generated by ``tvbo figure caption`` and included by the manuscript; a spec edit that moves a panel or rewrites a description without recomposing leaves a committed caption the document still renders. That drift is silent — Quarto has no way to know the partial is stale — so this recomposes each caption from the spec and fails on a mismatch. A figure with no committed partial is skipped (nothing to be stale).
     """
     captions_dir = Path(captions_dir)
     if not captions_dir.is_dir():
@@ -311,22 +300,20 @@ def verify(
     inv: Any,
     base: Path,
     *,
-    results_root: Optional[Path] = None,
-    manuscript_keys: Optional[Iterable[str]] = None,
-    manifest_path: Optional[Path] = None,
-    captions_dir: Optional[Path] = None,
+    results_root: Path | None = None,
+    manuscript_keys: Iterable[str] | None = None,
+    manifest_path: Path | None = None,
+    captions_dir: Path | None = None,
 ) -> list[str]:
     """Check a StudyCollection is buildable, returning a list of problems (empty = OK).
 
-    Structural checks run in both modes: every member recipe exists, every declared figure carries a cross-reference id, and every committed ``<figure>.caption.qmd`` still matches the
-    caption its spec composes (a stale caption fails here, not silently in the rendered PDF).
+    Structural checks run in both modes: every member recipe exists, every declared figure carries a cross-reference id, and every committed ``<figure>.caption.qmd`` still matches the caption its spec composes (a stale caption fails here, not silently in the rendered PDF).
     What differs is how the numbers are checked:
 
     * **offline** (``manifest_path`` is None) — resolve every ``results:`` binding against its
       run container and check analysis staleness. The full gate, run where the containers live.
     * **build** (``manifest_path`` given) — the run containers are generated artifacts that are
-      never committed, so instead of resolving them this reads the committed manifest: the declared bindings and the prose's cited keys must both match its keys exactly. A binding
-      added without regenerating the manifest, or a citation with no number, fails here without a single container present.
+      never committed, so instead of resolving them this reads the committed manifest: the declared bindings and the prose's cited keys must both match its keys exactly. A binding added without regenerating the manifest, or a citation with no number, fails here without a single container present.
     """
     base = Path(base)
     results_root = Path(results_root) if results_root else (base / "output")

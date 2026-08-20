@@ -2,19 +2,16 @@
 
 Renders the excitatory/inhibitory **population circuit** of a model: population nodes plus
 **typed, signed** connections — synapse type (NMDA / AMPA / GABA / …) sets the line colour,
-biophysical sign sets the terminal (excitatory ``▶``, inhibitory ``●``) — within a population, between populations, as recurrent self-loops, and across ``n_areas`` coupled areas. It is the
-standing "what is this model" diagram every recipe wants (Deco 2014 Fig. 1a/2a, Jansen-Rit, …).
+biophysical sign sets the terminal (excitatory ``▶``, inhibitory ``●``) — within a population, between populations, as recurrent self-loops, and across ``n_areas`` coupled areas. It is the standing "what is this model" diagram every recipe wants (Deco 2014 Fig. 1a/2a, Jansen-Rit, …).
 
 **Rendering backend = graphviz layout + matplotlib draw.** graphviz (the ``dot`` engine) solves
-node placement and edge-spline routing — its strength — and matplotlib draws the result with full styling control: crisp custom arrowheads, endpoints snapped to node edges, small compact
-self-loops, neuron-dot population glyphs, and publication typography. This beats either alone (graphviz styling is rigid; hand-placed matplotlib arrows don't route cleanly).
+node placement and edge-spline routing — its strength — and matplotlib draws the result with full styling control: crisp custom arrowheads, endpoints snapped to node edges, small compact self-loops, neuron-dot population glyphs, and publication typography. This beats either alone (graphviz styling is rigid; hand-placed matplotlib arrows don't route cleanly).
 
 Two entry points:
 
 * **Declarative** — build ``Population`` / ``Connection`` objects → ``PopulationSchematic``.
 * **Model-derived** — ``PopulationSchematic.from_dynamics(dynamics)`` reads a tvbo ``Dynamics``:
-  populations are its state variables (``S_E`` → ``E``); connections are recovered by expanding the derived variables into each state variable's dfun and classifying every cross-population
-  term by the **sign** of its coefficient and the **synapse** named in the multiplying parameter.
+  populations are its state variables (``S_E`` → ``E``); connections are recovered by expanding the derived variables into each state variable's dfun and classifying every cross-population term by the **sign** of its coefficient and the **synapse** named in the multiplying parameter.
 
 Flexible layout/style, all via ``plot(...)`` keywords:
 
@@ -28,7 +25,6 @@ Flexible layout/style, all via ``plot(...)`` keywords:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -38,12 +34,11 @@ SYNAPSE_COLORS = {"NMDA": "#141414", "GABA": "#141414", "AMPA": "#9a9a9a", "GLUT
 
 @dataclass
 class Population:
-    """One neural population (a node). ``sign`` = ``"excitatory"`` (open node) /
-    ``"inhibitory"`` (filled). ``label`` is the glyph inside the node (defaults to ``name``)."""
+    """One neural population (a node). ``sign`` = ``"excitatory"`` (open node) / ``"inhibitory"`` (filled). ``label`` is the glyph inside the node (defaults to ``name``)."""
 
     name: str
     sign: str = "excitatory"
-    label: Optional[str] = None
+    label: str | None = None
 
     def __post_init__(self):
         if self.label is None:
@@ -52,27 +47,26 @@ class Population:
 
 @dataclass
 class Connection:
-    """Directed connection ``source → target``. ``synapse`` (NMDA/AMPA/GABA) sets colour;
-    ``sign`` (``excitatory`` ▶ / ``inhibitory`` ●) sets the terminal; ``scope`` is ``"local"`` (within an area) or ``"long_range"`` (between adjacent areas). ``recurrent`` (self-loop) is
-    inferred from ``source == target`` when omitted."""
+    """Directed connection ``source → target``.
+
+    ``synapse`` (NMDA/AMPA/GABA) sets colour; ``sign`` (``excitatory`` ▶ / ``inhibitory`` ●) sets the terminal; ``scope`` is ``"local"`` (within an area) or ``"long_range"`` (between adjacent areas). ``recurrent`` (self-loop) is inferred from ``source == target`` when omitted.
+    """
 
     source: str
     target: str
-    synapse: Optional[str] = None
+    synapse: str | None = None
     sign: str = "excitatory"
     scope: str = "local"
-    label: Optional[str] = None
-    recurrent: Optional[bool] = None
+    label: str | None = None
+    recurrent: bool | None = None
 
     def __post_init__(self):
         if self.recurrent is None:
             self.recurrent = self.source == self.target
 
 
-# ---------------------------------------------------------------------------
 # Model-derived connection recovery (from a tvbo Dynamics)
-# ---------------------------------------------------------------------------
-def _synapse_from_symbol(name: str) -> Optional[str]:
+def _synapse_from_symbol(name: str) -> str | None:
     up = name.upper()
     for tag in ("NMDA", "AMPA", "GABA", "GLUT"):
         if tag in up:
@@ -112,8 +106,7 @@ def _edge_synapse(coeff, synapse_map, default_sign):
 
 
 def _derive_from_dynamics(dynamics, coupling_symbols, long_range_synapse, synapse_map):
-    """Recover (populations, connections) from a ``Dynamics`` by reading the **input-current** derived variables (affine in state vars + coupling), which capture the connections that the
-    nonlinear transfer function ``r = H(I)`` hides from a plain state-variable coefficient."""
+    """Recover (populations, connections) from a ``Dynamics`` by reading the **input-current** derived variables (affine in state vars + coupling), which capture the connections that the nonlinear transfer function ``r = H(I)`` hides from a plain state-variable coefficient."""
     import sympy as sp
 
     svs = list(dynamics.state_variables.keys())
@@ -182,9 +175,7 @@ def _derive_from_dynamics(dynamics, coupling_symbols, long_range_synapse, synaps
     return list(populations.values()), connections
 
 
-# ---------------------------------------------------------------------------
 # matplotlib drawing primitives (styling)
-# ---------------------------------------------------------------------------
 def _snap(p, center, r):
     v = np.asarray(p, float) - np.asarray(center[:2], float)
     L = np.hypot(*v) or 1.0
@@ -251,8 +242,7 @@ def _plain_node(ax, x, y, r, sign, label, fontsize):
 
 
 def _stretch_x(pos, splines, target):
-    """Scale x about the centre so the circuit's width:height ≥ ``target`` (nodes keep radius
-    ``r`` and stay round; only inter-node spacing + edge splines stretch). This makes a narrow stacked circuit span the same width as a wide mirror circuit, so panels align edge to edge."""
+    """Scale x about the centre so the circuit's width:height ≥ ``target`` (nodes keep radius ``r`` and stay round; only inter-node spacing + edge splines stretch). This makes a narrow stacked circuit span the same width as a wide mirror circuit, so panels align edge to edge."""
     if not target or not pos:
         return pos, splines
     xs = [p[0] for p in pos.values()]
@@ -269,9 +259,7 @@ def _stretch_x(pos, splines, target):
     return pos, splines
 
 
-# ---------------------------------------------------------------------------
 # Schematic
-# ---------------------------------------------------------------------------
 class PopulationSchematic:
     """A renderable population circuit: populations + typed/signed connections over N areas."""
 
@@ -286,10 +274,14 @@ class PopulationSchematic:
         cls,
         dynamics,
         n_areas: int = 1,
-        long_range_synapse: Optional[str] = "AMPA",
-        synapse_map: Optional[dict] = None,
+        long_range_synapse: str | None = "AMPA",
+        synapse_map: dict | None = None,
         coupling_symbols=("c_glob", "coupling", "gx", "local_coupling"),
     ):
+        """Derive the schematic from a :class:`Dynamics`, reading populations off its state variables and connections off its equations.
+
+        *coupling_symbols* names the symbols that mark a long-range input, which becomes a connection carrying *long_range_synapse*; *synapse_map* overrides the synapse inferred for a given connection.
+        """
         pops, conns = _derive_from_dynamics(dynamics, coupling_symbols, long_range_synapse, synapse_map)
         return cls(pops, conns, n_areas=n_areas)
 
@@ -336,10 +328,10 @@ class PopulationSchematic:
     def _layout(self, layout, node_size, ranksep, nodesep, hide=None, ellipsis=False):
         """Run graphviz (dot); return {node:(x,y,r)}, [(t,h,spline_pts)], meta, loops.
 
-        When ``ellipsis``, adds a left/right ``…`` placeholder to every rank as its OWN column (aligned across ranks), so the ellipsis reserves layout space instead of being painted
-        over the edges, and the real areas pack toward the centre.
+        When ``ellipsis``, adds a left/right ``…`` placeholder to every rank as its OWN column (aligned across ranks), so the ellipsis reserves layout space instead of being painted over the edges, and the real areas pack toward the centre.
         """
         import json
+
         from graphviz import Digraph
 
         nodes, edges, meta, loops, ranks = self._nodes_edges(layout, hide)
@@ -361,7 +353,7 @@ class PopulationSchematic:
                 for n in row:
                     s.node(n)
                 # heavy invisible chain fixes the left→right order inside the rank
-                for a, b in zip(row, row[1:]):
+                for a, b in zip(row, row[1:], strict=False):
                     s.edge(a, b, style="invis", weight="50")
         for ri in range(len(ranks) - 1):  # align the … columns vertically
             g.edge(f"dotL{ri}", f"dotL{ri + 1}", style="invis")
@@ -423,20 +415,16 @@ class PopulationSchematic:
     ):
         """Render the schematic onto ``ax`` (created if ``None``). Returns the axis.
 
-        ``layout`` ∈ {stacked, mirror, row}; ``glyph`` ∈ {circle, neurons} or a
-        ``callable(ax, x, y, r, sign, label)``; ``self_loop`` = ``(height, width)`` or ``None``;
+        ``layout`` ∈ {stacked, mirror, row}; ``glyph`` ∈ {circle, neurons} or a ``callable(ax, x, y, r, sign, label)``; ``self_loop`` = ``(height, width)`` or ``None``;
         ``coupling_blob`` shades a blob between the inner excitatory nodes (mirror layout);
         ``ellipsis`` draws ``…`` on both ends (defaults to True for stacked with N>1);
         ``legend_labels`` overrides the synapse legend text (e.g. ``{"AMPA": "AMPA, NMDA"}``).
 
         Hiding connections (declare in the figure caption when you do):
-        ``hide`` — a predicate ``callable(Connection) -> bool`` to drop any connection; and
-        ``long_range_targets`` — a convenience restricting long-range projections to those target populations (e.g. ``["E"]`` = E→E only, no FFI, for the spiking Fig 1a view).
+        ``hide`` — a predicate ``callable(Connection) -> bool`` to drop any connection; and ``long_range_targets`` — a convenience restricting long-range projections to those target populations (e.g. ``["E"]`` = E→E only, no FFI, for the spiking Fig 1a view).
 
         Width control (two independent knobs):
-        ``fill_width`` (float, default 2.6) stretches the circuit horizontally to at least this width:height aspect (how wide the circuit spreads; ``None``/0 disables); and
-        ``fit`` controls how the axes box maps to that circuit — ``"tight"`` shrinks the box to the circuit (minimal whitespace, panels may differ in width) · ``"width"`` keeps the
-        box's given width and pads the data limits (panels in a mosaic column stay the SAME width) · a ``float`` forces that exact width:height box aspect. Circles stay round in all.
+        ``fill_width`` (float, default 2.6) stretches the circuit horizontally to at least this width:height aspect (how wide the circuit spreads; ``None``/0 disables); and ``fit`` controls how the axes box maps to that circuit — ``"tight"`` shrinks the box to the circuit (minimal whitespace, panels may differ in width) · ``"width"`` keeps the box's given width and pads the data limits (panels in a mosaic column stay the SAME width) · a ``float`` forces that exact width:height box aspect. Circles stay round in all.
         """
         import matplotlib.pyplot as plt
         from matplotlib.patches import Ellipse
@@ -528,8 +516,7 @@ class PopulationSchematic:
             x0, x1, y0, y1 = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
         ax.set_xlim(x0, x1)
         ax.set_ylim(y0, y1)
-        # "tight": box shrinks to the content (no whitespace, panels may differ in width).
-        # "width": box keeps its given width, data limits pad (mosaic panels stay equal width).
+        # "tight" shrinks the box to its content; "width" keeps the width and pads the data limits.
         adjustable = "datalim" if fit == "width" else "box"
         ax.set_aspect("equal", adjustable=adjustable)
         ax.axis("off")

@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """Backfill node labels and positions in Schaefer SC YAML sidecars.
 
-Reads each `database/networks/tpl-FSLMNI152_*Schaefer2018*_relmat.yaml`,
-looks up the corresponding SANDS atlas YAML (from `tvbo/data/tvbo_data/atlas/`),
-and patches every node entry with:
+Reads each `database/networks/tpl-FSLMNI152_*Schaefer2018*_relmat.yaml`, looks up the corresponding SANDS atlas YAML (from `tvbo/data/tvbo_data/atlas/`), and patches every node entry with:
   - label: <actual region name, e.g. "17Networks_LH_Vis_1">
   - position: {x: ..., y: ..., z: ...}   (centroid in MNI RAS mm)
 
@@ -76,7 +74,7 @@ def backfill(path: Path, dry_run: bool) -> bool:
         return False
 
     changed = False
-    for node, entity in zip(nodes, atlas_entities):
+    for node, entity in zip(nodes, atlas_entities, strict=True):
         new_label = entity["name"]
         c = entity.get("center", {})
         new_pos = {"x": float(c["x"]), "y": float(c["y"]), "z": float(c["z"])} if c else None

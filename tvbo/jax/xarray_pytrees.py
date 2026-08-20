@@ -13,17 +13,13 @@ import jax
 import jax.tree_util
 import xarray
 
-
-# ---------------------------------------------------------------------------
 # _HashableCoords – makes coordinate dicts hashable so JAX can treat them as static auxiliary data in pytree flatten/unflatten.
-# ---------------------------------------------------------------------------
 
 
 class _HashableCoords(collections.abc.Mapping):
     """Hashable wrapper around a dict of xarray Variables (coordinates).
 
-    JAX requires auxiliary pytree data to be hashable.  Standard xarray coordinate dicts are not, so we wrap them here.  When coordinates
-    change between calls to a ``jax.jit``-ed function JAX will re-trace.
+    JAX requires auxiliary pytree data to be hashable.  Standard xarray coordinate dicts are not, so we wrap them here.  When coordinates change between calls to a ``jax.jit``-ed function JAX will re-trace.
     """
 
     __slots__ = ("_variables", "_hash")
@@ -70,9 +66,7 @@ def _maybe_hash_coords(coords):
     return _HashableCoords(coords)
 
 
-# ---------------------------------------------------------------------------
 # xarray.Variable
-# ---------------------------------------------------------------------------
 
 
 def _flatten_variable(v: xarray.Variable):
@@ -95,9 +89,7 @@ def _unflatten_variable(aux, children):
     return var
 
 
-# ---------------------------------------------------------------------------
 # xarray.DataArray
-# ---------------------------------------------------------------------------
 
 
 def _flatten_data_array(da: xarray.DataArray):
@@ -117,9 +109,7 @@ def _unflatten_data_array(aux, children):
     return da
 
 
-# ---------------------------------------------------------------------------
 # xarray.Dataset
-# ---------------------------------------------------------------------------
 
 
 def _flatten_dataset(ds: xarray.Dataset):
@@ -148,9 +138,7 @@ def _unflatten_dataset(aux, children):
     return ds
 
 
-# ---------------------------------------------------------------------------
 # Registration (runs on import)
-# ---------------------------------------------------------------------------
 
 jax.tree_util.register_pytree_node(xarray.Variable, _flatten_variable, _unflatten_variable)
 jax.tree_util.register_static(xarray.IndexVariable)

@@ -1,16 +1,9 @@
 """An ``element_domains`` exploration axis must be readable back by its declared name.
 
-A heterogeneous parameter swept per element is emitted as one dummy scalar grid leaf per
-element, ``dynamics._<param>_el<i>``, which is packed back into the array before the run.
-The declared axis, however, is named ``<ref>.<param>[<i>]``. The runtime keys its result grid
-by matching each grid column's bare name against the declared axis names, so those two
-spellings have to be bridged explicitly — exactly as the seed axis bridges ``_noise_seed`` to
-``execution.random_seed``.
+A heterogeneous parameter swept per element is emitted as one dummy scalar grid leaf per element, ``dynamics._<param>_el<i>``, which is packed back into the array before the run.
+The declared axis, however, is named ``<ref>.<param>[<i>]``. The runtime keys its result grid by matching each grid column's bare name against the declared axis names, so those two spellings have to be bridged explicitly — exactly as the seed axis bridges ``_noise_seed`` to ``execution.random_seed``.
 
-Without that bridge every observation of such an exploration fails to place, because keying by
-value refuses to fall back to a positional reshape (see
-``test_exploration_result_labelling.py``). It is a whole axis kind that silently stops working,
-so both spellings are pinned here.
+Without that bridge every observation of such an exploration fails to place, because keying by value refuses to fall back to a positional reshape (see ``test_exploration_result_labelling.py``). It is a whole axis kind that silently stops working, so both spellings are pinned here.
 """
 
 import pytest
@@ -76,9 +69,7 @@ def test_element_axes_sweep_the_dummy_scalar_leaves(code):
 def test_the_emitted_runtime_bridges_leaf_name_to_declared_axis(code):
     """The readback registers an alias for every element axis.
 
-    Asserted on the emitted source rather than a run because the failure it guards is a
-    missing dict entry, and a run would only report it as an unrelated-looking placement
-    error on whichever observation happens to be processed first.
+    Asserted on the emitted source rather than a run because the failure it guards is a missing dict entry, and a run would only report it as an unrelated-looking placement error on whichever observation happens to be processed first.
     """
     assert "element_idx" in code
     assert "_bare_to_label" in code

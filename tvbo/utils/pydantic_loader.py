@@ -6,13 +6,9 @@ TVBO authors write experiments in a human-friendly YAML dialect where collection
       a: {value: 0.27}        # name == "a"
       b: {value: 0.108}       # name == "b"
 
-The LinkML runtime loader injects that key into each member's identifier slot (``name``) automatically. The generated Pydantic datamodel
-(:mod:`tvbo.datamodel.pydantic`) does **not** — it expects ``name`` to be present inside every member — so validating raw TVBO YAML against the Pydantic
-models fails with a flood of ``name Field required`` errors that are purely an artefact of the keyed-dict convention, not real schema violations.
+The LinkML runtime loader injects that key into each member's identifier slot (``name``) automatically. The generated Pydantic datamodel (:mod:`tvbo.datamodel.pydantic`) does **not** — it expects ``name`` to be present inside every member — so validating raw TVBO YAML against the Pydantic models fails with a flood of ``name Field required`` errors that are purely an artefact of the keyed-dict convention, not real schema violations.
 
-This module performs exactly that key→identifier normalization and then validates with the strict (``extra="forbid"``) Pydantic models, giving callers
-a single, trustworthy "is this a valid TVBO object?" entry point. The YAML preprocessing for ``<<:`` merge keys and ``!include`` directives is delegated to
-:mod:`tvbo.utils.yaml_loader` so there is one implementation of those idioms.
+This module performs exactly that key→identifier normalization and then validates with the strict (``extra="forbid"``) Pydantic models, giving callers a single, trustworthy "is this a valid TVBO object?" entry point. The YAML preprocessing for ``<<:`` merge keys and ``!include`` directives is delegated to :mod:`tvbo.utils.yaml_loader` so there is one implementation of those idioms.
 
 Typical use::
 
@@ -30,8 +26,8 @@ from __future__ import annotations
 
 import copy
 import re
-from functools import lru_cache
-from typing import Any, Type, Union, get_args, get_origin
+from functools import cache
+from typing import Any, Union, get_args, get_origin
 
 import yaml
 from pydantic import BaseModel
@@ -50,10 +46,8 @@ DEFAULT_TARGET = "SimulationExperiment"
 _ENVELOPE_KEYS = yaml_loader.ENVELOPE_KEYS
 
 
-# --------------------------------------------------------------------------- #
 # Target-class resolution
-# --------------------------------------------------------------------------- #
-def _resolve_target(target_class: Union[str, Type[BaseModel], None]) -> Type[BaseModel]:
+def _resolve_target(target_class: str | type[BaseModel] | None) -> type[BaseModel]:
     """Resolve ``target_class`` (a class, a class name, or ``None``) to a model.
 
     Strings are looked up in :mod:`tvbo.datamodel.pydantic` so the platform can pass ``"SimulationExperiment"`` / ``"Dynamics"`` / ... straight through.
@@ -70,9 +64,7 @@ def _resolve_target(target_class: Union[str, Type[BaseModel], None]) -> Type[Bas
     return target_class
 
 
-# --------------------------------------------------------------------------- #
 # Annotation helpers
-# --------------------------------------------------------------------------- #
 def _candidates(annotation: Any):
     """Yield concrete type candidates, unwrapping ``Optional``/``Union`` nesting."""
     if get_origin(annotation) is Union:
@@ -83,7 +75,7 @@ def _candidates(annotation: Any):
         yield annotation
 
 
-def _first_model(annotation: Any) -> Type[BaseModel] | None:
+def _first_model(annotation: Any) -> type[BaseModel] | None:
     """Return the first Pydantic-model candidate within ``annotation``, if any."""
     for cand in _candidates(annotation):
         if isinstance(cand, type) and issubclass(cand, BaseModel):
@@ -91,13 +83,11 @@ def _first_model(annotation: Any) -> Type[BaseModel] | None:
     return None
 
 
-@lru_cache(maxsize=None)
-def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
+@cache
+def _identifier_field(model_cls: type[BaseModel]) -> str | None:
     """Name of the slot the inlined-dict key maps onto.
 
-    A non-``name``/``id`` key slot marks itself with a ``collection_key`` annotation, because LinkML consumes ``identifier``/``key`` into the field's
-    required-ness and drops them from the emitted metadata (so they can't be read back here). Otherwise falls back to the universal TVBO conventions ``name``
-    then ``id``. Returns ``None`` when no identifier slot can be determined (the member is then left untouched).
+    A non-``name``/``id`` key slot marks itself with a ``collection_key`` annotation, because LinkML consumes ``identifier``/``key`` into the field's required-ness and drops them from the emitted metadata (so they can't be read back here). Otherwise falls back to the universal TVBO conventions ``name`` then ``id``. Returns ``None`` when no identifier slot can be determined (the member is then left untouched).
     """
     fields = model_cls.model_fields
     for fname, info in fields.items():
@@ -111,16 +101,11 @@ def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
     return None
 
 
-# --------------------------------------------------------------------------- #
 # Key -> identifier injection
-# --------------------------------------------------------------------------- #
-def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
+def _inject(model_cls: type[BaseModel], data: Any) -> Any:
     """Recursively inject keyed-dict keys into each member's identifier slot.
 
-    The TVBO dialect — declared aliases and bare-scalar shortcuts — is folded through the one shared implementation the dataclasses and the model validator also
-    use, and it is folded before the field walk for two reasons: an aliased collection slot has to be seen under its canonical name to be recognised as a keyed
-    collection at all, and a member written bare (``omega: 0.0628``) has to become a mapping before there is anywhere to inject its key. Re-folding an
-    already-folded dict is a no-op, so the model validator repeating this is harmless.
+    The TVBO dialect — declared aliases and bare-scalar shortcuts — is folded through the one shared implementation the dataclasses and the model validator also use, and it is folded before the field walk for two reasons: an aliased collection slot has to be seen under its canonical name to be recognised as a keyed collection at all, and a member written bare (``omega: 0.0628``) has to become a mapping before there is anywhere to inject its key. Re-folding an already-folded dict is a no-op, so the model validator repeating this is harmless.
     """
     if not isinstance(data, dict) or not hasattr(model_cls, "model_fields"):
         return data
@@ -187,8 +172,7 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
                 _inject(cand, value)
                 break
 
-            # Scalar string slot that received an object (Odoo many2one for a by-name reference, e.g. FunctionCall.function or Continuation.dynamics)
-            # -> collapse to the referenced identifier.
+            # A scalar string slot handed an object (an Odoo many2one by-name reference, e.g. FunctionCall.function) collapses to the referenced identifier.
             elif cand is str and isinstance(value, dict):
                 data[key] = value.get("name") or value.get("id")
                 break
@@ -196,11 +180,10 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
     return data
 
 
-def normalize(data: dict, target_class: Union[str, Type[BaseModel], None] = None) -> dict:
+def normalize(data: dict, target_class: str | type[BaseModel] | None = None) -> dict:
     """Return a copy of ``data`` with keyed-dict keys injected as identifiers.
 
-    Pure data transformation — performs no validation. Useful when a caller wants the normalized dict (e.g. to merge with other state) without building
-    a model instance.
+    Pure data transformation — performs no validation. Useful when a caller wants the normalized dict (e.g. to merge with other state) without building a model instance.
     """
     target = _resolve_target(target_class)
     out = copy.deepcopy(data)
@@ -208,10 +191,8 @@ def normalize(data: dict, target_class: Union[str, Type[BaseModel], None] = None
     return out
 
 
-# --------------------------------------------------------------------------- #
 # Public validation / load API
-# --------------------------------------------------------------------------- #
-def _strip_unknown(model_cls: Type[BaseModel], data: Any) -> None:
+def _strip_unknown(model_cls: type[BaseModel], data: Any) -> None:
     """Recursively drop keys not declared by ``model_cls`` (by field name or alias). Assumes ``data`` is already normalized (collections as keyed dicts)."""
     if not isinstance(data, dict) or not hasattr(model_cls, "model_fields"):
         return
@@ -247,12 +228,10 @@ def _strip_unknown(model_cls: Type[BaseModel], data: Any) -> None:
                 break
 
 
-def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False) -> BaseModel:
+def validate(data: dict, target_class: str | type[BaseModel] | None = None, *, drop_unknown: bool = False) -> BaseModel:
     """Validate an already-parsed ``dict`` and return a model instance.
 
-    Raises :class:`pydantic.ValidationError` if ``data`` does not conform. With
-    ``drop_unknown=True``, keys not declared by the schema are discarded before validation instead of being rejected — used by the TVBO platform's database
-    export to ignore Odoo-only fields (e.g. portal ``visibility``/``owner``) while hand-authored input still rejects unknown keys.
+    Raises :class:`pydantic.ValidationError` if ``data`` does not conform. With ``drop_unknown=True``, keys not declared by the schema are discarded before validation instead of being rejected — used by the TVBO platform's database export to ignore Odoo-only fields (e.g. portal ``visibility``/``owner``) while hand-authored input still rejects unknown keys.
     """
     target = _resolve_target(target_class)
     data = normalize(data, target)
@@ -262,7 +241,7 @@ def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None,
 
 
 def loads(
-    source: str, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False, **kwargs: Any
+    source: str, target_class: str | type[BaseModel] | None = None, *, drop_unknown: bool = False, **kwargs: Any
 ) -> BaseModel:
     """Parse a YAML string (with ``<<:`` / ``!include`` support) and validate it.
 
@@ -274,19 +253,18 @@ def loads(
 
 
 def load(
-    source: Any, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False, **kwargs: Any
+    source: Any, target_class: str | type[BaseModel] | None = None, *, drop_unknown: bool = False, **kwargs: Any
 ) -> BaseModel:
     """Load YAML from a path / stream / string and validate it.
 
-    ``!include`` paths are resolved relative to ``source``'s directory when it is a path, matching :func:`tvbo.utils.yaml_loader.load`. ``drop_unknown`` is
-    forwarded to :func:`validate`; the remaining ``kwargs`` go to the YAML loader.
+    ``!include`` paths are resolved relative to ``source``'s directory when it is a path, matching :func:`tvbo.utils.yaml_loader.load`. ``drop_unknown`` is forwarded to :func:`validate`; the remaining ``kwargs`` go to the YAML loader.
     """
     target = _resolve_target(target_class)
     data = yaml_loader.load_as_dict(source, **kwargs) or {}
     return validate(data, target, drop_unknown=drop_unknown)
 
 
-def dump(obj: Union[BaseModel, dict], *, exclude_none: bool = True, sort_keys: bool = False) -> str:
+def dump(obj: BaseModel | dict, *, exclude_none: bool = True, sort_keys: bool = False) -> str:
     """Serialise a validated model (or plain dict) to canonical TVBO YAML."""
     if isinstance(obj, BaseModel):
         data = obj.model_dump(mode="json", by_alias=True, exclude_none=exclude_none)

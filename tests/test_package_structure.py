@@ -1,19 +1,15 @@
 """Package structure validation tests.
 
-Fast (<5s) tests that verify import paths, public API surface, backward
-compatibility shims, and class identity invariants. Run during restructuring
-to catch broken imports immediately:
+Fast (<5s) tests that verify import paths, public API surface, backward compatibility shims, and class identity invariants. Run during restructuring to catch broken imports immediately:
 
     pytest tests/test_package_structure.py -x -n0 -v
 
-These tests document the CURRENT (pre-v1.0) import contract. During migration,
-update expected paths here FIRST, then fix the code to match.
+These tests document the CURRENT (pre-v1.0) import contract. During migration, update expected paths here FIRST, then fix the code to match.
 """
 
 import importlib
 
 import pytest
-
 
 # ── Section 1: Top-level public API ──────────────────────────────────────────
 
@@ -26,7 +22,6 @@ class TestTopLevelAPI:
         "SimulationExperiment",
         "SimulationStudy",
         "Network",
-        "Connectome",  # deprecated alias, should == Network
         "Atlas",
         "Coupling",
         "Noise",
@@ -79,7 +74,6 @@ class TestCurrentImportPaths:
         ("tvbo.codegen.code", "parse_eq"),
         ("tvbo.codegen.templater", None),  # module import
         ("tvbo.classes.network", "Network"),
-        ("tvbo.classes.network", "Connectome"),
         ("tvbo.classes.atlas", "Atlas"),
         ("tvbo.data.types", "TimeSeries"),
         ("tvbo.datamodel", "tvbo_datamodel"),
@@ -103,11 +97,13 @@ class TestCurrentImportPaths:
 class TestClassIdentity:
     """Ensure aliased classes point to the same object."""
 
-    def test_connectome_is_subclass_of_network(self):
-        """Connectome should be a deprecated alias/subclass of Network."""
-        from tvbo.classes.network import Connectome, Network
+    def test_connectome_alias_is_gone(self):
+        """`Connectome` was removed at 1.0; `Network` is the one class."""
+        import tvbo
 
-        assert issubclass(Connectome, Network)
+        assert "Connectome" not in tvbo.__all__
+        with pytest.raises(AttributeError):
+            _ = tvbo.Connectome
 
     def test_top_level_dynamics_is_same_class(self):
         """tvbo.Dynamics is the same class as localdynamics.Dynamics."""
@@ -183,12 +179,7 @@ class TestDatamodel:
     def test_namespace_size_bounded(self):
         """Datamodel namespace shouldn't leak unbounded internals.
 
-        Bounded on the *non-schema* names, not the total. The generated module's classes
-        and enums are its entire purpose and grow whenever the schema does — 264 of them
-        today against the 253 total this bound was written for — so a cap on the total
-        fires on the next legitimate class and teaches the reader to raise the number
-        rather than look at what grew. What pollution would actually look like is
-        generator internals: leaked modules, typing aliases, stray constants.
+        Bounded on the *non-schema* names, not the total. The generated module's classes and enums are its entire purpose and grow whenever the schema does — 264 of them today against the 253 total this bound was written for — so a cap on the total fires on the next legitimate class and teaches the reader to raise the number rather than look at what grew. What pollution would actually look like is generator internals: leaked modules, typing aliases, stray constants.
         """
         import inspect
 
@@ -231,45 +222,3 @@ class TestSubpackages:
     @pytest.mark.parametrize("pkg", SUBPACKAGES)
     def test_subpackage_importable(self, pkg):
         importlib.import_module(pkg)
-
-
-# ── Section 6: Future paths (post-restructuring) ────────────────────────────
-# Uncomment these after each migration step to verify new paths work.
-
-# class TestNewImportPaths:
-#     """Verify new import paths after restructuring."""
-#
-#     NEW_IMPORT_SPECS = [
-#         ("tvbo.models", "Dynamics"),
-#         ("tvbo.models", "Coupling"),
-#         ("tvbo.classes.dynamics", "Dynamics"),
-#         ("tvbo.classes.coupling", "Coupling"),
-#         ("tvbo.classes.noise", "Noise"),
-#         ("tvbo.classes.continuation", "Continuation"),
-#         ("tvbo.classes.observation", "Function"),
-#         ("tvbo.classes.function", "Function"),
-#         ("tvbo.classes.function", "LossFunction"),
-#         ("tvbo.experiment", "SimulationExperiment"),
-#         ("tvbo.experiment", "SimulationStudy"),
-#         ("tvbo.ontology", None),
-#         ("tvbo.ontology.owl", "onto"),
-#         ("tvbo.codegen", None),
-#         ("tvbo.codegen.code", "parse_eq"),
-#         ("tvbo.codegen.templater", None),
-#         ("tvbo.data.network", "Network"),
-#         ("tvbo.data.atlas", "Atlas"),
-#         ("tvbo.bids", None),
-#         ("tvbo.bids.models", None),
-#         ("tvbo.bids.paths", None),
-#         ("tvbo.bids.export", None),
-#         ("tvbo.bids.ingest", None),
-#         ("tvbo.datamodel.schema", "Dynamics"),
-#         ("tvbo.datamodel.pydantic", "Dynamics"),
-#     ]
-#
-#     @pytest.mark.parametrize("module_path,attr", NEW_IMPORT_SPECS,
-#                              ids=[f"{m}.{a}" if a else m for m, a in NEW_IMPORT_SPECS])
-#     def test_new_import(self, module_path, attr):
-#         mod = importlib.import_module(module_path)
-#         if attr is not None:
-#             assert hasattr(mod, attr), f"{module_path} should have '{attr}'"

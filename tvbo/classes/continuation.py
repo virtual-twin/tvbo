@@ -1,24 +1,13 @@
-#
-# Module: continuation.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-Continuation
-============
+"""Continuation.
+
 The public import location for :class:`Continuation`.
 
-There is no wrapper class: the factory methods live in
-:mod:`tvbo.behaviour.continuation` and are attached to the generated class itself, so a
-continuation carries them however it was built — loaded from YAML, nested inside an
-experiment, or constructed directly.
+There is no wrapper class: the factory methods live in :mod:`tvbo.behaviour.continuation` and are attached to the generated class itself, so a continuation carries them however it was built — loaded from YAML, nested inside an experiment, or constructed directly.
 
-``Continuation()`` now requires a ``name``, as the schema always did. The wrapper used to
-supply ``"continuation"`` as a default, which only ever applied to a bare call: the one
-construction site in the package passes a name explicitly.
+``Continuation()`` requires a ``name``, as the schema does: the one construction site in the package passes it explicitly.
 
 Usage
 -----

@@ -1,16 +1,8 @@
 """A stored matrix keeps the precision it was computed at.
 
-Every writer in `matrix_io` used to cast to float32 unconditionally, so the store
-decided a numerical property of data it did not compute. For a measured connectome
-that is a fair trade — half the file, well inside the measurement's own error. For a
-matrix the spec *computes*, it is silently a different matrix: Pang2023's experiment 4
-declares `precision: float64` and integrated a cotangent Laplace-Beltrami operator that
-had been round-tripped through float32, with nothing anywhere reporting the narrowing.
+Every writer in `matrix_io` used to cast to float32 unconditionally, so the store decided a numerical property of data it did not compute. For a measured connectome that is a fair trade — half the file, well inside the measurement's own error. For a matrix the spec *computes*, it is silently a different matrix: Pang2023's experiment 4 declares `precision: float64` and integrated a cotangent Laplace-Beltrami operator that had been round-tripped through float32, with nothing anywhere reporting the narrowing.
 
-So the contract these pin is round-trip identity — what is written is what is read —
-with narrowing available as a declared choice on the edge rather than a default. The
-sparse index arrays are part of it: forcing int32 on `indptr`, a cumulative count of
-nonzeros, silently wraps on a matrix scipy had already widened to int64 for.
+So the contract these pin is round-trip identity — what is written is what is read — with narrowing available as a declared choice on the edge rather than a default. The sparse index arrays are part of it: forcing int32 on `indptr`, a cumulative count of nonzeros, silently wraps on a matrix scipy had already widened to int64 for.
 """
 
 from __future__ import annotations

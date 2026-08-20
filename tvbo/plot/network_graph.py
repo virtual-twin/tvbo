@@ -1,12 +1,7 @@
-#
-# Module: network_graph.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""
-Network graph plotting utilities.
+# SPDX-License-Identifier: EUPL-1.2
+
+"""Network graph plotting utilities.
 
 Three rendering backends:
 
@@ -18,7 +13,7 @@ Three rendering backends:
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
@@ -28,10 +23,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-
-# ---------------------------------------------------------------------------
 # Shared helpers
-# ---------------------------------------------------------------------------
 
 
 def _safe_norm(arr) -> np.ndarray:
@@ -126,29 +118,27 @@ def _make_mappable(vals, cmap):
     return cm.ScalarMappable(norm=norm, cmap=cmap)
 
 
-# ---------------------------------------------------------------------------
 # 1.  NetworkX native
-# ---------------------------------------------------------------------------
 
 
 def plot_graph_networkx(
     G: nx.MultiDiGraph,
     *,
-    ax: Optional[Axes] = None,
-    node_cmap: Union[str, Any] = "viridis",
-    edge_cmap: Union[str, Any] = "viridis",
+    ax: Axes | None = None,
+    node_cmap: str | Any = "viridis",
+    edge_cmap: str | Any = "viridis",
     node_color_by: str = "in-strength",
-    node_size_by: Union[str, float] = "in-strength",
+    node_size_by: str | float = "in-strength",
     node_size_scaling: float = 100,
     log_in_strength: bool = True,
     edge_color_by: str = "weight",
-    pos: Optional[dict] = None,
+    pos: dict | None = None,
     node_labels: bool = True,
     edge_labels: bool = True,
     fontsize: float = 8,
-    edge_kwargs: Optional[Dict[str, Any]] = None,
-    node_kwargs: Optional[Dict[str, Any]] = None,
-) -> Union[Figure, cm.ScalarMappable]:
+    edge_kwargs: dict[str, Any] | None = None,
+    node_kwargs: dict[str, Any] | None = None,
+) -> Figure | cm.ScalarMappable:
     """Render a network graph with standard NetworkX drawing.
 
     Parameters
@@ -179,7 +169,7 @@ def plot_graph_networkx(
         Extra kwargs forwarded to ``nx.draw_networkx_edges`` /
         ``nx.draw_networkx_nodes``.
 
-    Returns
+    Returns:
     -------
     Figure  (when *ax* is None) **or**  ScalarMappable  (when *ax* given).
     """
@@ -267,28 +257,26 @@ def plot_graph_networkx(
     return _make_mappable(edge_vals, edge_cmap)
 
 
-# ---------------------------------------------------------------------------
 # 2.  bsplot  (text-box nodes + curved edges)
-# ---------------------------------------------------------------------------
 
 
 def plot_graph_bsplot(
     G: nx.MultiDiGraph,
     *,
-    ax: Optional[Axes] = None,
-    node_cmap: Union[str, Any] = "viridis",
-    edge_cmap: Union[str, Any] = "viridis",
+    ax: Axes | None = None,
+    node_cmap: str | Any = "viridis",
+    edge_cmap: str | Any = "viridis",
     node_color_by: str = "in-strength",
     log_in_strength: bool = True,
     edge_color_by: str = "type",
-    pos: Optional[dict] = None,
+    pos: dict | None = None,
     node_labels: bool = True,
     edge_labels: bool = True,
     fontsize: float = 8,
     edge_radius: float = 0.1,
     linewidth: float = 1.5,
     alpha: float = 0.9,
-) -> Union[Figure, cm.ScalarMappable]:
+) -> Figure | cm.ScalarMappable:
     """Render a network graph with bsplot text-box nodes and curved edges.
 
     Requires ``bsplot`` to be installed.
@@ -320,7 +308,7 @@ def plot_graph_bsplot(
     alpha : float
         Node box transparency.
 
-    Returns
+    Returns:
     -------
     Figure  (when *ax* is None) **or**  ScalarMappable  (when *ax* given).
     """
@@ -364,7 +352,7 @@ def plot_graph_bsplot(
     node_colors_dict_str = {str(k): v for k, v in node_colors_dict.items()}
 
     # Ensure 'type' attr on edges
-    for u, v, k, d in G_str.edges(keys=True, data=True):
+    for _u, _v, _k, d in G_str.edges(keys=True, data=True):
         if "type" not in d:
             d["type"] = d.get("label", f"w={d.get('weight', 1.0):.2f}")
 
@@ -399,9 +387,7 @@ def plot_graph_bsplot(
     return _make_mappable(edge_vals, edge_cmap)
 
 
-# ---------------------------------------------------------------------------
 # 3.  Brain surface  (3-D spheres + tubes on cortex)
-# ---------------------------------------------------------------------------
 
 
 def _match_cortical_labels(region_labels, annot_dir, vertices_lh, vertices_rh):
@@ -416,12 +402,12 @@ def _match_cortical_labels(region_labels, annot_dir, vertices_lh, vertices_rh):
     vertices_lh, vertices_rh : ndarray (V, 3)
         Vertex coordinates for each hemisphere.
 
-    Returns
+    Returns:
     -------
     centers_matched : dict  {matrix_idx: ndarray(3,)} cortical_idx : list[int]
     """
-    from nibabel.freesurfer.io import read_annot
     from bsplot.graph import get_centers_from_surface_parc
+    from nibabel.freesurfer.io import read_annot
 
     labels_lh, _, names_lh = read_annot(f"{annot_dir}/lh.aparc.annot")
     labels_rh, _, names_rh = read_annot(f"{annot_dir}/rh.aparc.annot")
@@ -451,10 +437,10 @@ def _match_cortical_labels(region_labels, annot_dir, vertices_lh, vertices_rh):
 def plot_graph_brain(
     network,
     *,
-    ax: Optional[Axes] = None,
+    ax: Axes | None = None,
     template: str = "fsaverage",
     density: str = "164k",
-    hemi: Union[str, Tuple[str, str]] = ("lh", "rh"),
+    hemi: str | tuple[str, str] = ("lh", "rh"),
     view: str = "lateral",
     surface_alpha: float = 0.3,
     threshold_percentile: float = 90,
@@ -462,20 +448,19 @@ def plot_graph_brain(
     node_color: str = "auto",
     node_cmap: str = "YlOrRd",
     node_data_key: str = "strength",
-    node_scale: Optional[dict] = None,
+    node_scale: dict | None = None,
     edge_radius: float = 0.15,
     edge_color: str = "steelblue",
-    edge_cmap: Optional[str] = None,
+    edge_cmap: str | None = None,
     edge_data_key: str = "weight",
-    edge_scale: Optional[dict] = None,
+    edge_scale: dict | None = None,
     annot_dir: str = "/Applications/freesurfer/7.4.1/subjects/fsaverage/label",
-    figsize: Tuple[float, float] = (6, 5),
+    figsize: tuple[float, float] = (6, 5),
     **kwargs,
-) -> Tuple[Figure, Axes, dict]:
+) -> tuple[Figure, Axes, dict]:
     """Render a network on the cortical brain surface using ``bsplot``.
 
-    Nodes are rendered as coloured spheres at parcel centroids; edges as coloured tubes between them.  Only **cortical** parcels that can
-    be matched to the FreeSurfer ``aparc`` annotation are shown.
+    Nodes are rendered as coloured spheres at parcel centroids; edges as coloured tubes between them.  Only **cortical** parcels that can be matched to the FreeSurfer ``aparc`` annotation are shown.
 
     Parameters
     ----------
@@ -522,7 +507,7 @@ def plot_graph_brain(
     **kwargs
         Forwarded to ``bsplot.graph.plot_network_on_surface``.
 
-    Returns
+    Returns:
     -------
     fig : Figure ax : Axes mappables : dict
         ``ScalarMappable`` objects (keys ``"nodes"`` / ``"edges"``).

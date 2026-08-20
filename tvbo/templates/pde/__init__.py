@@ -1,8 +1,6 @@
 """PDE/FEM code-generation templates for TVBO field models.
 
-Renders a self-contained scikit-fem solver from a `SimulationExperiment`'s
-`field_dynamics`. `utils` resolves the declared equations into the assembly plan the
-template emits, so the operator that runs is the operator that was written down.
+Renders a self-contained scikit-fem solver from a `SimulationExperiment`'s `field_dynamics`. `utils` resolves the declared equations into the assembly plan the template emits, so the operator that runs is the operator that was written down.
 """
 
 from . import utils

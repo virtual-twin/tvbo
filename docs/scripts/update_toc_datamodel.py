@@ -1,10 +1,7 @@
 #!/usr/bin/env python
-"""
-Auto-generate the 'Data Model' section of _toc.yml from the datamodel/ directory.
+"""Auto-generate the 'Data Model' section of _toc.yml from the datamodel/ directory.
 
-Scans datamodel/{schemas,classes,slots,enums}/ for .qmd files and rewrites
-the block between the # BEGIN:datamodel-autogen … # END:datamodel-autogen
-markers in _toc.yml.
+Scans datamodel/{schemas,classes,slots,enums}/ for .qmd files and rewrites the block between the # BEGIN:datamodel-autogen … # END:datamodel-autogen markers in _toc.yml.
 
 Run automatically as a Quarto pre-render step (after generate_datamodel_docs.py).
 """
@@ -24,9 +21,6 @@ L3 = "                      "  # 22 sp  — inside a nested section
 
 import re
 
-# Camel-case tokens whose canonical product casing is acronym-style. The
-# splitter below first segments ``BidsEntities`` → ``["Bids","Entities"]``;
-# this map then upgrades the leading token to ``BIDS``.
 TOKEN_OVERRIDES: dict[str, str] = {
     "Bids": "BIDS",
     "Tvb": "TVB",
@@ -49,6 +43,7 @@ TOKEN_OVERRIDES: dict[str, str] = {
     "Dwi": "DWI",
     "Pet": "PET",
 }
+"""Camel-case tokens whose canonical product casing is acronym-style. The splitter segments ``BidsEntities`` into ``["Bids", "Entities"]``; this map then upgrades the leading token to ``BIDS``."""
 
 # Schema-file stem overrides (these are flat names, not camel-case).
 SCHEMA_LABELS: dict[str, str] = {
@@ -66,9 +61,7 @@ SCHEMA_LABELS: dict[str, str] = {
 def qmd_title(path: Path) -> str:
     """Return a human-readable title from a .qmd filename stem.
 
-    For schema files we look up an explicit label first. For class/slot/enum
-    files we split camel-case on the lower→upper boundary, then upgrade any
-    acronym-style tokens (``Bids`` → ``BIDS`` …).
+    For schema files we look up an explicit label first. For class/slot/enum files we split camel-case on the lower→upper boundary, then upgrade any acronym-style tokens (``Bids`` → ``BIDS`` …).
     """
     stem = path.stem
     if path.parent.name == "schemas":

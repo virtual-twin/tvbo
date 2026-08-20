@@ -1,7 +1,6 @@
 """Reference simulation of network dynamics on a computational graph.
 
-Provides SciPy-based helpers that build per-node state and history buffers, propagate delayed coupling between nodes of a `networkx` graph, integrate each
-node's dynamics with `odeint`, and collect the results into a [TimeSeries](../data/types.qmd).
+Provides SciPy-based helpers that build per-node state and history buffers, propagate delayed coupling between nodes of a `networkx` graph, integrate each node's dynamics with `odeint`, and collect the results into a [TimeSeries](../data/types.qmd).
 """
 
 import numpy as np
@@ -24,10 +23,7 @@ from tvbo.data.types import TimeSeries
 def initialize_graph_states_with_history(G, delay_buffer=1000):
     """Allocate the trace and delay-history buffers, keeping any state already set.
 
-    A node that already carries a ``"state"`` (``GraphRunner.setup_initial_conditions`` puts the
-    model's declared initial values there) keeps it — overwriting with zeros would start every
-    run from the origin whatever the model declares. The delay history is filled with that state
-    rather than zeros, so a delayed read before the trace exists sees the initial condition.
+    A node that already carries a ``"state"`` (``GraphRunner.setup_initial_conditions`` puts the model's declared initial values there) keeps it — overwriting with zeros would start every run from the origin whatever the model declares. The delay history is filled with that state rather than zeros, so a delayed read before the trace exists sees the initial condition.
     """
     for node in G.nodes:
         state_dim = len(G.nodes[node]["model"].state_variables)
@@ -41,12 +37,7 @@ def initialize_graph_states_with_history(G, delay_buffer=1000):
 def compute_delayed_input_signal(node, G, t, dt):
     """Aggregate a node's delayed afferent input.
 
-    Graph edges point in signal direction, so the afferents are the node's
-    in-edges: each one pre-transforms the source's delayed state and weights
-    it, and the shared post-transform is applied once to the sum (also while
-    the delay history is still filling, matching the matrix backends). Mixed
-    post-transforms across one node's in-edges raise, and a node without
-    afferents receives zero input.
+    Graph edges point in signal direction, so the afferents are the node's in-edges: each one pre-transforms the source's delayed state and weights it, and the shared post-transform is applied once to the sum (also while the delay history is still filling, matching the matrix backends). Mixed post-transforms across one node's in-edges raise, and a node without afferents receives zero input.
     """
     input_signal = np.zeros_like(G.nodes[node]["state"])
     post = None
@@ -91,7 +82,6 @@ def update_node_state_with_delay(G, node, t, dt, input_signal):
         current_state,
         t_span,
     )
-    # result = odeint(model, current_state, t_span, args=(input_signal,))
     new_state = result[-1]
 
     # Update state and history
@@ -117,8 +107,7 @@ def simulate_graph_dynamics_with_delay(G, T, dt):
 def collect_time_series(G, time_points):
     """Gather per-node simulation traces into a single `TimeSeries`.
 
-    Each node's recorded `"time-series"` is expanded to 4D and concatenated along the node axis, then wrapped in a [TimeSeries](../data/types.qmd)
-    labelled with the model's state-variable names.
+    Each node's recorded `"time-series"` is expanded to 4D and concatenated along the node axis, then wrapped in a [TimeSeries](../data/types.qmd) labelled with the model's state-variable names.
 
     Args:
         G: The graph whose nodes hold the simulated `"time-series"` arrays and

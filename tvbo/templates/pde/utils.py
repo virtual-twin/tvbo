@@ -1,23 +1,14 @@
 """Resolve ``field_dynamics`` into the assembly plan the FEM template emits.
 
-The PDE backend used to read only ``operators[].coefficient``, sum them into one scalar
-and assemble ``M + dt*D*K`` — so the ``equation.rhs`` an author wrote was decorative, and
-a reader could not tell which of the two descriptions ran. Everything here exists to make
-the declared equation *be* the executed operator.
+The PDE backend used to read only ``operators[].coefficient``, sum them into one scalar and assemble ``M + dt*D*K`` — so the ``equation.rhs`` an author wrote was decorative, and a reader could not tell which of the two descriptions ran. Everything here exists to make the declared equation *be* the executed operator.
 
 A field system is lowered to the block form
 
     M du/dt = A u + M f(u, t)
 
-with one block row per state variable. ``A`` collects every term that is LINEAR in the
-state variables (mass and stiffness blocks, assembled once); ``f`` collects whatever
-remains, evaluated at the current state each step. That split is what lets an implicit
-scheme run: the linear part is solved implicitly and is unconditionally stable, while a
-nonlinear reaction term stays explicit (IMEX). Callers get told which terms went where.
+with one block row per state variable. ``A`` collects every term that is LINEAR in the state variables (mass and stiffness blocks, assembled once); ``f`` collects whatever remains, evaluated at the current state each step. That split is what lets an implicit scheme run: the linear part is solved implicitly and is unconditionally stable, while a nonlinear reaction term stays explicit (IMEX). Callers get told which terms went where.
 
-Recognised operators inside an RHS: ``laplacian(v)``, ``div(c*grad(v))`` and bare state
-variables. A coefficient may be a scalar parameter or a per-vertex field, which is what
-makes a spatially varying propagation scale expressible.
+Recognised operators inside an RHS: ``laplacian(v)``, ``div(c*grad(v))`` and bare state variables. A coefficient may be a scalar parameter or a per-vertex field, which is what makes a spatially varying propagation scale expressible.
 """
 
 from __future__ import annotations
@@ -68,9 +59,7 @@ def _scalar(value):
 def _parameter_table(field_dynamics) -> dict:
     """``{name: scalar}`` for every declared parameter that has a usable value.
 
-    Non-scalar parameters (a per-vertex field) stay out of the table on purpose: they are
-    resolved at run time against the mesh, and baking one into generated source would
-    inline an array the size of the surface.
+    Non-scalar parameters (a per-vertex field) stay out of the table on purpose: they are resolved at run time against the mesh, and baking one into generated source would inline an array the size of the surface.
     """
     params = getattr(field_dynamics, "parameters", None) or {}
     items = params.values() if hasattr(params, "values") else params
@@ -103,10 +92,7 @@ def _mesh_path(mesh, experiment) -> str:
     """The mesh file, resolved against the declaring spec's directory when relative.
 
     Same rule as every other file a spec names (``Network.data_file``, a sourced parameter):
-    a recipe means the same mesh wherever it is loaded from, so the run does not depend on
-    the working directory it was launched in. A ``format:`` prefix is preserved for the
-    template to strip, and an unresolvable path is passed through so the failure names the
-    file rather than an empty string.
+    a recipe means the same mesh wherever it is loaded from, so the run does not depend on the working directory it was launched in. A ``format:`` prefix is preserved for the template to strip, and an unresolvable path is passed through so the failure names the file rather than an empty string.
     """
     from pathlib import Path
 
@@ -125,11 +111,7 @@ def _mesh_path(mesh, experiment) -> str:
 def _field_sources(field_dynamics, experiment) -> dict:
     """``{name: [path, key]}`` for every per-vertex coefficient that declares its own provenance.
 
-    A field parameter carrying ``source:`` or ``producer:`` is materialised here, at codegen
-    time, to the same content-addressed artifact every other backend reads. That is what lets
-    the generated module assemble itself: without it ``build()`` has no value for the
-    coefficient and the caller must hand one in, so a declared experiment could not run
-    unattended. The array is never inlined — a cortical surface's mask is 32,492 values.
+    A field parameter carrying ``source:`` or ``producer:`` is materialised here, at codegen time, to the same content-addressed artifact every other backend reads. That is what lets the generated module assemble itself: without it ``build()`` has no value for the coefficient and the caller must hand one in, so a declared experiment could not run unattended. The array is never inlined — a cortical surface's mask is 32,492 values.
     """
     from pathlib import Path
 
@@ -151,13 +133,9 @@ def _field_sources(field_dynamics, experiment) -> dict:
 
 
 def _event_table(experiment, parameters: dict) -> dict:
-    """Stimulus events as ``{name: expression}``, with their parameters merged into
-    ``parameters`` in place.
+    """Stimulus events as ``{name: expression}``, with their parameters merged into ``parameters`` in place.
 
-    A stimulus is a declared function of time, so it is substituted into the equation that
-    names it rather than carried through as an opaque symbol. What the solver evaluates each
-    step is then the RHS the recipe prints with the stimulus written out, and there is no
-    second description of the drive that could disagree with the first.
+    A stimulus is a declared function of time, so it is substituted into the equation that names it rather than carried through as an opaque symbol. What the solver evaluates each step is then the RHS the recipe prints with the stimulus written out, and there is no second description of the drive that could disagree with the first.
     """
     events = getattr(experiment, "events", None) or {}
     items = events.values() if hasattr(events, "values") else events
@@ -198,8 +176,7 @@ def _operator_names(expr) -> set:
 def _operand(expr, variables):
     """Classify one multiplicative term.
 
-    Returns ``(kind, variable, coefficient_field)`` where kind is ``mass``, ``stiffness``
-    or ``None`` when the term carries no state variable at all (a pure source).
+    Returns ``(kind, variable, coefficient_field)`` where kind is ``mass``, ``stiffness`` or ``None`` when the term carries no state variable at all (a pure source).
     """
     funcs = [a for a in expr.atoms(sp.Function) if getattr(a.func, "__name__", "") in _TOP_OPERATORS]
     if not funcs:
@@ -374,7 +351,7 @@ def field_assembly_plan(experiment) -> dict:
 
     return {
         "variables": names,
-        "labels": [str(getattr(v, "label", None) or n) for v, n in zip(svars, names)],
+        "labels": [str(getattr(v, "label", None) or n) for v, n in zip(svars, names, strict=True)],
         "initial_values": [float(getattr(v, "initial_value", 0.0) or 0.0) for v in svars],
         "blocks": blocks,
         "explicit": explicit_rows,
@@ -399,11 +376,7 @@ def field_assembly_plan(experiment) -> dict:
 def _boundary_plan(field_dynamics, svars, names) -> list:
     """Dirichlet constraints per state variable.
 
-    Only Dirichlet is lowered. A declared Neumann/Robin/Periodic condition raises rather
-    than being silently dropped: on a closed surface (the cortical case) there is no
-    boundary at all and the distinction never arises, but on a bounded domain quietly
-    ignoring it changes the solution. Every condition is checked before one is taken, so a
-    Neumann/Robin declared beside a Dirichlet raises instead of being skipped by an early exit.
+    Only Dirichlet is lowered. A declared Neumann/Robin/Periodic condition raises rather than being silently dropped: on a closed surface (the cortical case) there is no boundary at all and the distinction never arises, but on a bounded domain quietly ignoring it changes the solution. Every condition is checked before one is taken, so a Neumann/Robin declared beside a Dirichlet raises instead of being skipped by an early exit.
     """
     out = []
     for row, var in enumerate(svars):

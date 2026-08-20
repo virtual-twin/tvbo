@@ -1,14 +1,14 @@
 """Low-level matrix read/write for HDF5 groups and Zarr groups.
 
-Supports dense, CSR, and COO formats. Both HDF5 (h5py.Group) and
-Zarr (zarr.Group) implement the same array-store interface, so a single pair of read/write functions handles both backends.
+Supports dense, CSR, and COO formats. Both HDF5 (h5py.Group) and Zarr (zarr.Group) implement the same array-store interface, so a single pair of read/write functions handles both backends.
 
 See §12.1 of the tvbo HDF5 format proposal v0.7.
 """
 
-import numpy as np
 from pathlib import Path
-from scipy.sparse import csr_matrix, coo_matrix
+
+import numpy as np
+from scipy.sparse import coo_matrix, csr_matrix
 
 
 def _create_ds(grp, name, *, data, **kwargs):
@@ -40,7 +40,7 @@ def auto_format(matrix) -> str:
     matrix : array-like or scipy.sparse matrix
         Matrix to analyze.
 
-    Returns
+    Returns:
     -------
     str
         "dense" or "csr"
@@ -132,7 +132,7 @@ def read_matrix(grp) -> np.ndarray:
     grp : h5py.Group or zarr.Group
         Source group containing format/shape attrs and data datasets.
 
-    Returns
+    Returns:
     -------
     np.ndarray
         Dense numpy array.
@@ -231,8 +231,7 @@ class LazyArrayStore:
     def dataset_keys(self, prefix: str = "") -> list[str]:
         """Dataset paths under ``prefix`` (e.g. ``"nodes"``), empty when it holds none.
 
-        Lets a caller carry datasets across a re-save without modelling each one, which is
-        what keeps a companion's per-node arrays alive through ``save_network``.
+        Lets a caller carry datasets across a re-save without modelling each one, which is what keeps a companion's per-node arrays alive through ``save_network``.
         """
         out: list[str] = []
         if self._ext in (".h5", ".hdf5"):
@@ -276,8 +275,7 @@ class LazyArrayStore:
 def _read_edges_from_store(store, template_edges: list) -> tuple[dict, dict]:
     """Read all template-edge matrices + edge parameters from a store.
 
-    Works identically for h5py.File and zarr.Group — both support
-    `"path" in store` and `store["path"]` access.
+    Works identically for h5py.File and zarr.Group — both support `"path" in store` and `store["path"]` access.
     """
     arrays, params = {}, {}
 

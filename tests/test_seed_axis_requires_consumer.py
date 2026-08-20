@@ -1,10 +1,6 @@
 """An `execution.random_seed` axis must have something that consumes the seed.
 
-The axis reseeds the stochastic solver's PRNG key (``config.noise.key``). On a
-deterministic experiment there is no key to reseed, so the swept leaf is read by
-nothing and every grid cell returns an identical result — a silent no-op that still
-shows up in the result container as a genuine-looking ensemble dimension. Codegen
-rejects it instead, so a recipe cannot quietly produce a fake trial ensemble.
+The axis reseeds the stochastic solver's PRNG key (``config.noise.key``). On a deterministic experiment there is no key to reseed, so the swept leaf is read by nothing and every grid cell returns an identical result — a silent no-op that still shows up in the result container as a genuine-looking ensemble dimension. Codegen rejects it instead, so a recipe cannot quietly produce a fake trial ensemble.
 """
 
 import copy
@@ -106,9 +102,7 @@ def test_no_seed_axis_is_unaffected_without_noise():
 def test_seed_axis_is_rejected_under_a_strategy_that_bypasses_the_grid():
     """Noise alone is not enough: the seed must also reach the per-cell grid binding.
 
-    nsga2 / warm-start / branch-analysis bodies never execute the grid-binding block that
-    applies the swept seed, so the axis is inert there even on a stochastic experiment —
-    the same fake ensemble, just arrived at a different way.
+    nsga2 / warm-start / branch-analysis bodies never execute the grid-binding block that applies the swept seed, so the axis is inert there even on a stochastic experiment — the same fake ensemble, just arrived at a different way.
     """
     spec = _with_noise(copy.deepcopy(MINI_EXP))
     spec["explorations"]["seed_sweep"]["strategy"] = "nsga2"
@@ -119,11 +113,7 @@ def test_seed_axis_is_rejected_under_a_strategy_that_bypasses_the_grid():
 def test_a_builder_supplied_seed_axis_still_reseeds(tmp_path, monkeypatch):
     """A seed axis whose values come from a `builder:` must reach the PRNG key too.
 
-    The builder branch used to claim this axis first and route it through the generic
-    parameter path, where `execution` has no consumer — so every cell ran the identical
-    noise while the container still reported a seed dimension. That is precisely the fake
-    ensemble the checks above exist to refuse, arrived at by walking past them. Seed values
-    are baked into the grid at codegen, so a builder on this axis is resolved there.
+    The builder branch used to claim this axis first and route it through the generic parameter path, where `execution` has no consumer — so every cell ran the identical noise while the container still reported a seed dimension. That is precisely the fake ensemble the checks above exist to refuse, arrived at by walking past them. Seed values are baked into the grid at codegen, so a builder on this axis is resolved there.
     """
     import sys
 
@@ -145,8 +135,7 @@ def test_a_builder_supplied_seed_axis_still_reseeds(tmp_path, monkeypatch):
 
 
 def test_a_seed_builder_needing_runtime_data_is_refused(tmp_path, monkeypatch):
-    """Refuse rather than defer: the grid's seeds are fixed at codegen, so a builder that
-    cannot answer until run time has no way to supply them."""
+    """Refuse rather than defer: the grid's seeds are fixed at codegen, so a builder that cannot answer until run time has no way to supply them."""
     spec = _with_noise(copy.deepcopy(MINI_EXP))
     spec["explorations"]["seed_sweep"]["space"] = [
         {
@@ -162,11 +151,7 @@ def test_a_seed_builder_needing_runtime_data_is_refused(tmp_path, monkeypatch):
 
 
 def test_two_axis_seed_sweep_maps_the_noise_seed_leaf_to_its_label():
-    """A (parameter x seed) product keys results by value, and the seed axis's grid
-    column is the ``dynamics._noise_seed`` state leaf — codegen must map that bare name
-    onto the declared ``execution.random_seed`` label, or cell placement cannot find
-    the axis and the container assembly refuses rather than scrambling.
-    """
+    """A (parameter x seed) product keys results by value, and the seed axis's grid column is the ``dynamics._noise_seed`` state leaf — codegen must map that bare name onto the declared ``execution.random_seed`` label, or cell placement cannot find the axis and the container assembly refuses rather than scrambling."""
     spec = _with_noise(copy.deepcopy(MINI_EXP))
     spec["explorations"]["seed_sweep"]["space"].insert(0, {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}})
     code = SimulationExperiment(**spec).render_code("tvboptim")
