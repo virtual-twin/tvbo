@@ -1,20 +1,10 @@
 """A coupling parameter carrying ``source:`` + ``measure:`` is read from storage, not defaulted.
 
-`Parameter.source` promises that "a sourced value is never inlined into generated code: it is
-resolved lazily and the backend reads it from storage, so an array of any size costs nothing in
-the spec or the emitted module". That held for dynamics parameters only. `materialise_lazy_params`
-ran on `model.parameters` alone, while the coupling parameter dicts were built from
-`get_param_info`, which reports names, defaults and shapes and never looks at `source`. A
-parameter with no literal `value` is simply absent from the defaults, so the emission site's
-``.get(name, 1.0)`` fallback won and a sourced per-edge matrix became ``jnp.full(shape, 1.0)``.
+`Parameter.source` promises that "a sourced value is never inlined into generated code: it is resolved lazily and the backend reads it from storage, so an array of any size costs nothing in the spec or the emitted module". That held for dynamics parameters only. `materialise_lazy_params` ran on `model.parameters` alone, while the coupling parameter dicts were built from `get_param_info`, which reports names, defaults and shapes and never looks at `source`. A parameter with no literal `value` is simply absent from the defaults, so the emission site's ``.get(name, 1.0)`` fallback won and a sourced per-edge matrix became ``jnp.full(shape, 1.0)``.
 
-Nothing raised. Codegen succeeded, the module imported, the simulation ran to completion and
-reported a plausible number, having integrated an all-ones connectome-shaped array in place of
-the declared one. Coupling is where per-edge arrays live, so the failure landed precisely on the
-case the slot exists for.
+Nothing raised. Codegen succeeded, the module imported, the simulation ran to completion and reported a plausible number, having integrated an all-ones connectome-shaped array in place of the declared one. Coupling is where per-edge arrays live, so the failure landed precisely on the case the slot exists for.
 
-These assert on the emitted source rather than on a result, because a run cannot distinguish the
-two: that is the whole character of the defect.
+These assert on the emitted source rather than on a result, because a run cannot distinguish the two: that is the whole character of the defect.
 """
 
 import ast
@@ -96,8 +86,7 @@ LITERAL = "      value: 1.0\n"
 def _binding(code, name="w"):
     """The emitted right-hand side bound to coupling parameter *name*.
 
-    The generated source is formatted after rendering, so a long call is wrapped across lines
-    and the binding cannot be read off one line.
+    The generated source is formatted after rendering, so a long call is wrapped across lines and the binding cannot be read off one line.
     """
     m = re.search(rf'["\']{name}["\']:\s*(.+?),?\n\s*["\'#}}]', code, re.S)
     assert m, f"no binding for {name} in the emitted module"
@@ -114,9 +103,7 @@ def test_a_sourced_coupling_parameter_is_loaded_from_its_store(tmp_path):
 def test_the_loader_is_defined_when_only_a_coupling_needs_it(tmp_path):
     """`_load_param` is emitted from the dynamics scope and was gated on dynamics alone.
 
-    With no sourced dynamics parameter and no covariance, a coupling-only spec emitted calls to
-    a helper that was never defined — a NameError rather than a silent wrong answer, but only
-    reachable once the binding above stopped being defaulted away.
+    With no sourced dynamics parameter and no covariance, a coupling-only spec emitted calls to a helper that was never defined — a NameError rather than a silent wrong answer, but only reachable once the binding above stopped being defaulted away.
     """
     code = _render(tmp_path, SOURCED)
     assert "def _load_param(" in code

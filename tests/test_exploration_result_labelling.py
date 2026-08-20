@@ -217,8 +217,7 @@ def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
 def test_full_grid_coords_follow_the_declared_order_not_sorted():
     """A descending sweep keeps its DECLARED coordinate order.
 
-    The unstack pivot sorts its index ascending, so the grid is reindexed back onto the
-    declared values — an annealing-style descending axis must not come back sorted.
+    The unstack pivot sorts its index ascending, so the grid is reindexed back onto the declared values — an annealing-style descending axis must not come back sorted.
     """
     from tvbo.data.types import _stacked_to_dataarray
 
@@ -452,10 +451,7 @@ def test_array_valued_points_are_refused_and_name_the_upstream_conversion(cells,
 def test_a_value_far_from_every_grid_point_refuses_to_snap():
     """Nearest-match is a round-trip canonicalization, not a fallback.
 
-    A value no storage round-trip could produce means the column is mispaired with its
-    axis (or the grid changed under the cells); snapping it would relabel the surface
-    silently. A genuine float32 round-trip of a declared float64 value stays inside the
-    tolerance and places normally.
+    A value no storage round-trip could produce means the column is mispaired with its axis (or the grid changed under the cells); snapping it would relabel the surface silently. A genuine float32 round-trip of a declared float64 value stays inside the tolerance and places normally.
     """
     from tvbo.data.types import _axis_positions
 
