@@ -1,14 +1,8 @@
 """`noise.sigma` exploration axis: sweeping the noise AMPLITUDE.
 
-Noise amplitude is declared per state variable (`state_variables.<sv>.noise.parameters.sigma`)
-or once for the integration, and every backend holds it as an ordinary parameter leaf beside
-the dynamics parameters, so an axis that can NAME it sweeps it like any other parameter. The
-scope is what makes a noise-strength sweep declarable at all: without it the sweep is a Python
-driver mutating the spec in a loop.
+Noise amplitude is declared per state variable (`state_variables.<sv>.noise.parameters.sigma`) or once for the integration, and every backend holds it as an ordinary parameter leaf beside the dynamics parameters, so an axis that can NAME it sweeps it like any other parameter. The scope is what makes a noise-strength sweep declarable at all: without it the sweep is a Python driver mutating the spec in a loop.
 
-Resolution is a pure string parser (`noise_axis_param`, mirroring `network_axis_leaf` and
-`initial_conditions_axis_sv`); codegen binds the grid directly to the backend's amplitude leaf,
-needing neither a dummy slot nor a wrapper because the amplitude is already numeric.
+Resolution is a pure string parser (`noise_axis_param`, mirroring `network_axis_leaf` and `initial_conditions_axis_sv`); codegen binds the grid directly to the backend's amplitude leaf, needing neither a dummy slot nor a wrapper because the amplitude is already numeric.
 """
 
 import pytest
@@ -44,8 +38,7 @@ def test_out_of_scope_returns_none(ref):
 def test_unsweepable_noise_attribute_raises(ref):
     """In-scope but not a sweepable amplitude fails at codegen.
 
-    `nsig`/`intensity` are alternate SPELLINGS of the amplitude the reader normalises, not
-    separate leaves; silently accepting one would sweep a slot the backend never reads.
+    `nsig`/`intensity` are alternate SPELLINGS of the amplitude the reader normalises, not separate leaves; silently accepting one would sweep a slot the backend never reads.
     """
     with pytest.raises(ValueError, match="unknown noise parameter"):
         noise_axis_param(ref)
@@ -56,8 +49,7 @@ pytest.importorskip("tvboptim")
 
 from tvbo import SimulationExperiment  # noqa: E402
 
-# Minimal 2-node Kuramoto with additive noise on theta and a sweep of its amplitude.
-# The exploration `# AXIS` and the `# NOISE` block are substituted per test.
+# A 2-node Kuramoto with noise on theta, whose `# AXIS` and `# NOISE` markers each test substitutes.
 _SPEC = """
 id: 8
 dynamics:
@@ -154,10 +146,7 @@ def test_sweeping_amplitude_without_noise_is_rejected(tmp_path):
 def test_a_builder_supplied_amplitude_axis_binds_the_noise_leaf(tmp_path, monkeypatch):
     """A `builder:` on this axis must reach the noise scope, not the dynamics scope.
 
-    The builder branch is resolved before the scope is known, so it claimed the axis first
-    and emitted `grid_state.dynamics.sigma` — an AttributeError on a model with no such
-    parameter, or (worse) a silent sweep of the model's own `sigma` while the noise
-    amplitude stayed constant in every cell.
+    The builder branch is resolved before the scope is known, so it claimed the axis first and emitted `grid_state.dynamics.sigma` — an AttributeError on a model with no such parameter, or (worse) a silent sweep of the model's own `sigma` while the noise amplitude stayed constant in every cell.
     """
     import sys
 
@@ -190,9 +179,7 @@ def test_a_heterogeneous_per_state_amplitude_is_rejected(tmp_path):
     """One swept scalar cannot stand in for a per-state amplitude PROFILE.
 
     An experiment declaring different sigmas per state variable renders a sigma VECTOR.
-    Overwriting it with one scalar per cell drives every targeted state at the same
-    amplitude and loses the declared ratio between them — the sweep then answers a different
-    question than the one written down, with nothing in the result saying so.
+    Overwriting it with one scalar per cell drives every targeted state at the same amplitude and loses the declared ratio between them — the sweep then answers a different question than the one written down, with nothing in the result saying so.
     """
     with pytest.raises(ValueError, match="HETEROGENEOUS"):
         _render(tmp_path, "        explored_values: [0.01, 0.02]\n", noise=_HETERO_SV)
@@ -201,10 +188,7 @@ def test_a_heterogeneous_per_state_amplitude_is_rejected(tmp_path):
 def test_the_amplitude_coexists_with_a_model_parameter_of_the_same_name(tmp_path):
     """`noise.sigma` and a model's own `sigma` are two axes, and both must be placeable.
 
-    These two share a bare leaf name, so an axis keyed on that alone lets one win and drops the
-    other's grid column back to its raw keypath — a coordinate matching no declared axis, which
-    fails the container's per-cell placement check and takes the whole sweep down after the
-    compute. Each axis is therefore keyed by its declared scope, not its leaf.
+    These two share a bare leaf name, so an axis keyed on that alone lets one win and drops the other's grid column back to its raw keypath — a coordinate matching no declared axis, which fails the container's per-cell placement check and takes the whole sweep down after the compute. Each axis is therefore keyed by its declared scope, not its leaf.
     Generic2dOscillator, Zerlaut and Larter-Breakspear all carry a `sigma`.
     """
     import numpy as np
@@ -236,10 +220,7 @@ def test_the_amplitude_coexists_with_a_model_parameter_of_the_same_name(tmp_path
 def test_sweep_yields_monotonically_noisier_trajectories(tmp_path):
     """Each swept amplitude drives a trajectory whose spread grows with sigma.
 
-    The result is a keyed xarray with a first-class `noise.sigma` dimension. All cells share
-    one noise seed, so the cells differ only through the amplitude — and for additive noise
-    the deviation from the sigma=0 drift scales linearly in sigma, which is a far sharper
-    check than "the cells differ".
+    The result is a keyed xarray with a first-class `noise.sigma` dimension. All cells share one noise seed, so the cells differ only through the amplitude — and for additive noise the deviation from the sigma=0 drift scales linearly in sigma, which is a far sharper check than "the cells differ".
     """
     import numpy as np
 
@@ -284,10 +265,7 @@ def test_sweep_yields_monotonically_noisier_trajectories(tmp_path):
 def test_axis_keypath_routes_each_scope_to_its_sub_object(ax, expected):
     """One resolver answers WHERE an axis binds, for every scope.
 
-    The grid binding, the warm-started/adiabatic sweep and the branch-analysis restart all need
-    this string, and a scope missing from any one of them is silent: routing `noise.sigma` to
-    `dynamics.sigma` sweeps a same-named model parameter (Generic2dOscillator and Zerlaut both
-    have one) or nothing at all, and the run still completes with a plausible surface.
+    The grid binding, the warm-started/adiabatic sweep and the branch-analysis restart all need this string, and a scope missing from any one of them is silent: routing `noise.sigma` to `dynamics.sigma` sweeps a same-named model parameter (Generic2dOscillator and Zerlaut both have one) or nothing at all, and the run still completes with a plausible surface.
     """
     from tvbo.templates.tvboptim.utils import axis_keypath
 
@@ -297,8 +275,7 @@ def test_axis_keypath_routes_each_scope_to_its_sub_object(ax, expected):
 def test_the_sweep_partials_do_not_respell_the_keypath():
     """The warm-start and branch-restart partials must READ the resolver, not re-derive it.
 
-    They have no rendering test of their own, so a second spelling here would drift unnoticed —
-    which is how both partials came to route every non-coupling axis to `dynamics.<name>`.
+    They have no rendering test of their own, so a second spelling here would drift unnoticed — which is how both partials came to route every non-coupling axis to `dynamics.<name>`.
     """
     from pathlib import Path
 
@@ -313,9 +290,7 @@ def test_the_sweep_partials_do_not_respell_the_keypath():
 def test_a_misspelled_scope_is_rejected_rather_than_swept_as_a_model_parameter(tmp_path):
     """An unrecognised dotted scope must fail at codegen, not fall through to the dynamics.
 
-    The dynamics branch DISCARDS the prefix and keeps the leaf, so `nosie.sigma` on a model
-    carrying its own `sigma` binds `grid_state.dynamics.sigma` and sweeps the wrong quantity
-    with nothing in the result saying so. The same hole hides a real-but-unimplemented scope.
+    The dynamics branch DISCARDS the prefix and keeps the leaf, so `nosie.sigma` on a model carrying its own `sigma` binds `grid_state.dynamics.sigma` and sweeps the wrong quantity with nothing in the result saying so. The same hole hides a real-but-unimplemented scope.
     """
     spec = _SPEC.replace("      # NOISE\n", _NOISE).replace(
         "      - parameter: noise.sigma\n        # AXIS\n",

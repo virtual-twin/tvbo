@@ -362,14 +362,9 @@ def legend_panel(fig, ax, ctx):
 def heatmap_orientation(da, C, x, y, nx, ny):
     """A heatmap's array as ``(y, x)``, the order ``pcolormesh`` reads (public API).
 
-    Decided by DIM NAME whenever the encoding names dims of the array. A SQUARE grid makes
-    the two orientations indistinguishable by shape, so a shape test transposes half of them
-    at random — silently swapping which axis the field varies along, which is a wrong figure
-    rather than an ugly one. Falls back to the shape test only when the encoded channels are
-    not dims of the array (a matrix addressed by index), where names cannot decide it.
+    Decided by DIM NAME whenever the encoding names dims of the array. A SQUARE grid makes the two orientations indistinguishable by shape, so a shape test transposes half of them at random — silently swapping which axis the field varies along, which is a wrong figure rather than an ugly one. Falls back to the shape test only when the encoded channels are not dims of the array (a matrix addressed by index), where names cannot decide it.
 
-    Shared with the emitted plot.py, which imports it: the orientation is a keying decision,
-    so it lives beside the other reference resolvers rather than being inlined per script.
+    Shared with the emitted plot.py, which imports it: the orientation is a keying decision, so it lives beside the other reference resolvers rather than being inlined per script.
 
     Args:
         da: The layer's DataArray, consulted for its dim ORDER only.

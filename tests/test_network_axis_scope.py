@@ -161,8 +161,7 @@ def _render_delay_sweep(tmp_path, parameter, axis):
 def test_a_swept_speed_rebuilds_the_base_graph(tmp_path):
     """The slowest swept speed sizes the history buffer, so the base graph is rebuilt.
 
-    `_v_build` marks the rebuild: `DenseLengthGraph(` and `max_delay_bound` are emitted for
-    the base network whether or not anything is swept, so neither distinguishes it.
+    `_v_build` marks the rebuild: `DenseLengthGraph(` and `max_delay_bound` are emitted for the base network whether or not anything is swept, so neither distinguishes it.
     """
     code = _render_delay_sweep(tmp_path, "network.conduction_speed", "        explored_values: [1.0, 3.0]\n")
     assert "_v_build" in code
@@ -172,9 +171,7 @@ def test_a_swept_speed_rebuilds_the_base_graph(tmp_path):
 def test_a_swept_tract_length_also_rebuilds_the_base_graph(tmp_path, monkeypatch):
     """`delay = length / speed`, so a swept LENGTH sizes the buffer exactly as a speed does.
 
-    prepare() sizes the history buffer once from the base graph and never re-reads it, so a
-    length axis whose matrices exceed the base network's leaves every over-long cell
-    integrating against a truncated history — a silently wrong trajectory, not an error.
+    prepare() sizes the history buffer once from the base graph and never re-reads it, so a length axis whose matrices exceed the base network's leaves every over-long cell integrating against a truncated history — a silently wrong trajectory, not an error.
     """
     import sys
 
@@ -199,9 +196,7 @@ def test_a_swept_tract_length_also_rebuilds_the_base_graph(tmp_path, monkeypatch
 def test_a_domain_declared_length_axis_bounds_the_buffer_at_its_hi(tmp_path):
     """A length axis may be declared `domain:` rather than by explicit points or a builder.
 
-    Reading `values` unconditionally is a bare KeyError at RENDER time for that spelling —
-    the sweep never runs at all. The longest tract a `domain:` axis reaches is its `hi`, so
-    that is what the buffer must cover.
+    Reading `values` unconditionally is a bare KeyError at RENDER time for that spelling — the sweep never runs at all. The longest tract a `domain:` axis reaches is its `hi`, so that is what the buffer must cover.
     """
     code = _render_delay_sweep(tmp_path, "network.edges.length", "        domain: {lo: 5.0, hi: 40.0, n: 4}\n")
     assert "max(float(jnp.max(_lengths)), 40.0)" in code
@@ -239,10 +234,7 @@ def _run_two_network_axes(tmp_path, monkeypatch):
 def test_two_network_axes_are_each_keyed_by_their_own_declared_name(tmp_path, monkeypatch):
     """Two `network.` axes in one exploration must both reach the container.
 
-    Graph-leaf columns are POSITIONAL (`graph.1`, `graph.2`) because the graph pytree carries no
-    field names, so resolving them through a single network label lets the last axis win and the
-    other's coordinate arrive under a name matching no declared axis. The container then refuses
-    to place the observation — after the whole compute has finished.
+    Graph-leaf columns are POSITIONAL (`graph.1`, `graph.2`) because the graph pytree carries no field names, so resolving them through a single network label lets the last axis win and the other's coordinate arrive under a name matching no declared axis. The container then refuses to place the observation — after the whole compute has finished.
     """
     r = _run_two_network_axes(tmp_path, monkeypatch)
     expl = r.explorations.delay_sweep
@@ -259,9 +251,7 @@ def test_two_network_axes_are_each_keyed_by_their_own_declared_name(tmp_path, mo
 def test_a_matrix_valued_axis_is_keyed_by_point_index(tmp_path, monkeypatch):
     """A builder axis of whole matrices rounds trips: its coordinate is the point index.
 
-    A matrix cannot be an xarray coordinate, so codegen declares `arange(n)` while the per-cell
-    column carries the matrices. Converting the cells where the materialised points still exist
-    is what lets the container place them at all.
+    A matrix cannot be an xarray coordinate, so codegen declares `arange(n)` while the per-cell column carries the matrices. Converting the cells where the materialised points still exist is what lets the container place them at all.
     """
     import numpy as np
 

@@ -1135,10 +1135,7 @@ def test_a_heatmap_whose_channels_are_not_dims_keeps_the_shape_fallback():
 def test_the_heatmaps_coordinate_arrays_follow_the_dim_names_too():
     """The index fallback must index each channel by ITS dim, not by axis position.
 
-    Orientation is decided by dim name, so `_x`/`_y` have to agree: on a NON-square array
-    whose dims run (y, x) and which carries no coordinate on either, indexing x by axis 0
-    hands pcolormesh an x of the y axis's length and it raises — while a square array
-    silently transposes the field instead.
+    Orientation is decided by dim name, so `_x`/`_y` have to agree: on a NON-square array whose dims run (y, x) and which carries no coordinate on either, indexing x by axis 0 hands pcolormesh an x of the y axis's length and it raises — while a square array silently transposes the field instead.
     """
     import re
 

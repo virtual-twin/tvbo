@@ -260,10 +260,7 @@ def _folded_stat_observation(name, source="H_e"):
 def test_algorithm_observations_land_on_the_node_axis_their_reduction_declares(tmp_path):
     """A per-node fit observation is keyed by ``node``, like the ``estimate__`` beside it.
 
-    A folded statistic keeps one value per node, so the axis is known from the declared
-    reduction. Left unnamed the writer emits a placeholder ``<name>_d0`` dimension, and the
-    fit outcome is then selectable only by position — while an identically-shaped
-    ``estimate__J_i`` in the same container carries labels. One container, two conventions.
+    A folded statistic keeps one value per node, so the axis is known from the declared reduction. Left unnamed the writer emits a placeholder ``<name>_d0`` dimension, and the fit outcome is then selectable only by position — while an identically-shaped ``estimate__J_i`` in the same container carries labels. One container, two conventions.
     """
     xr = pytest.importorskip("xarray")
     n = 4

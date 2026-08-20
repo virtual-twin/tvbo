@@ -76,10 +76,7 @@ def _is_length_name(name) -> bool:
 def _alias_group(name) -> tuple:
     """Every spelling of the edge property *name* names, canonical spellings first.
 
-    The ONE place spellings are grouped. `Network.matrix` resolves a matrix through it and
-    `Network.transforms_for` selects transforms through it, so a lookup and its transform
-    cannot disagree about whether two names mean the same property — the failure that let
-    `matrix("sc")` return the weight array with its declared transforms silently skipped.
+    The ONE place spellings are grouped. `Network.matrix` resolves a matrix through it and `Network.transforms_for` selects transforms through it, so a lookup and its transform cannot disagree about whether two names mean the same property — the failure that let `matrix("sc")` return the weight array with its declared transforms silently skipped.
     Names are lowercase; callers match source keys case-insensitively.
     """
     if _is_weight_name(name):
@@ -743,11 +740,7 @@ class Network(tvbo_datamodel.Network):
         Each route yields a `Network`, a dict with at least a `weights` key, or a tuple `(weights, lengths)` / `(weights, lengths, node_params)`.
         `source_dir` is forwarded so Python builders can load companion artefacts.
 
-        A generated node keeps a positional label (`node_<i>`) unless the builder names it
-        through a `node_labels` key. A motif whose nodes ARE particular regions (a PPC-PFC
-        pair) has to be able to say so: every keyed selection downstream — an observation's
-        node coord, a figure's `sel: {node: ...}` — resolves against these labels, and
-        `node_0` forces the reader back to binding by index.
+        A generated node keeps a positional label (`node_<i>`) unless the builder names it through a `node_labels` key. A motif whose nodes ARE particular regions (a PPC-PFC pair) has to be able to say so: every keyed selection downstream — an observation's node coord, a figure's `sel: {node: ...}` — resolves against these labels, and `node_0` forces the reader back to binding by index.
         """
         from tvbo.graph_generators.catalog import declared_defaults
 
@@ -4187,9 +4180,7 @@ class Network(tvbo_datamodel.Network):
     def _matrix_names(self, name: str) -> tuple:
         """Spellings to try for a named edge matrix, most specific first.
 
-        A declared ``primary_weight`` wins for every weight spelling, so one sidecar can carry several connectivity variants (band-specific reweightings, shuffled
-        controls) and still present one of them as the active weight. Beyond that the order is
-        :func:`_alias_group`'s, which also drives transform selection.
+        A declared ``primary_weight`` wins for every weight spelling, so one sidecar can carry several connectivity variants (band-specific reweightings, shuffled controls) and still present one of them as the active weight. Beyond that the order is :func:`_alias_group`'s, which also drives transform selection.
         """
         primary = getattr(self, "primary_weight", None) if _is_weight_name(name) else None
         head = (str(primary).lower(),) if primary else ()
@@ -4244,8 +4235,7 @@ class Network(tvbo_datamodel.Network):
         def _pick(source):
             """First candidate spelling held by one source, exact match before case-folded.
 
-            The exact pass keeps a lazy store lazy; only a miss enumerates its keys, which is
-            what makes a sidecar spelling lengths ``tractLength`` resolvable at all.
+            The exact pass keeps a lazy store lazy; only a miss enumerates its keys, which is what makes a sidecar spelling lengths ``tractLength`` resolvable at all.
             """
             if source is None:
                 return None
