@@ -361,7 +361,7 @@ website:
                   - text: "Custom figure panels"
                     href: Replication/custom-panels.qmd
                   - text: "Jansen & Rit (1995)"
-                    href: Replication/Jansen1995/Run_Jansen1995.qmd
+                    href: Replication/Jansen1995/docs/report.qmd
 # END:replication-autogen
 
               - text: "REFERENCE"
