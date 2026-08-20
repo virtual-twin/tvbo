@@ -1,21 +1,10 @@
 """Where a declared parameter binds, for consumers holding it as a raw dotted string.
 
-Several codegen consumers hold a parameter reference as TEXT rather than as an exploration axis
-the classifier has already split into scope flags: the `initial_state.from_working_point` ramp,
-the NSGA-II decision axes, an `Optimization`'s free parameters and the marked optimizer
-parameters, an analysis `wrt`, and an inference prior. Each had grown its own prefix ladder and
-they disagreed — the ramp knew no scope at all and hard-prefixed `dynamics.`, two knew `noise.`
-but not `network.`, and the `wrt`/prior grammar knew an `external.` scope none of the others did.
+Several codegen consumers hold a parameter reference as TEXT rather than as an exploration axis the classifier has already split into scope flags: the `initial_state.from_working_point` ramp, the NSGA-II decision axes, an `Optimization`'s free parameters and the marked optimizer parameters, an analysis `wrt`, and an inference prior. Each had grown its own prefix ladder and they disagreed — the ramp knew no scope at all and hard-prefixed `dynamics.`, two knew `noise.` but not `network.`, and the `wrt`/prior grammar knew an `external.` scope none of the others did.
 
-Every disagreement is silent. A `noise.sigma` ramp routed to `dynamics.sigma` ramps a
-same-named model parameter (Generic2dOscillator and Zerlaut both have one) or writes a slot
-nothing reads, and the run completes with a plausible working point. A `network.` free
-parameter marked on `dynamics.conduction_speed` gives the optimiser a leaf outside the
-gradient path, so the fit converges having moved nothing.
+Every disagreement is silent. A `noise.sigma` ramp routed to `dynamics.sigma` ramps a same-named model parameter (Generic2dOscillator and Zerlaut both have one) or writes a slot nothing reads, and the run completes with a plausible working point. A `network.` free parameter marked on `dynamics.conduction_speed` gives the optimiser a leaf outside the gradient path, so the fit converges having moved nothing.
 
-`parameter_keypath` is the one resolution of that question. Its counterpart `axis_keypath`
-answers it for an axis whose flags are already resolved; the two must agree, which
-`test_keypath_resolvers_agree.py` pins.
+`parameter_keypath` is the one resolution of that question. Its counterpart `axis_keypath` answers it for an axis whose flags are already resolved; the two must agree, which `test_keypath_resolvers_agree.py` pins.
 """
 
 import pytest
@@ -72,9 +61,7 @@ def test_a_declared_event_prefix_routes_to_that_external_input():
 def test_the_config_access_grammar_delegates_to_the_one_resolver():
     """Analysis `wrt` and inference priors address a knob the way a fit or a sweep does.
 
-    This grammar knew `coupling.` and `external.` and nothing else, so a `noise.sigma` prior
-    sampled a posterior and wrote it into `dynamics.sigma` — a slot the integrator never reads
-    for the amplitude. The chain converges and reports a distribution for the wrong parameter.
+    This grammar knew `coupling.` and `external.` and nothing else, so a `noise.sigma` prior sampled a posterior and wrote it into `dynamics.sigma` — a slot the integrator never reads for the amplitude. The chain converges and reports a distribution for the wrong parameter.
     """
     from tvbo.templates.tvboptim.utils import resolve_config_access
 
@@ -106,8 +93,7 @@ def test_an_empty_reference_has_no_config_path(empty):
 def test_a_reserved_scope_naming_nothing_bindable_raises(ref, match):
     """In-scope but unbindable fails at codegen, not by falling through to `dynamics.<leaf>`.
 
-    Falling through is the silent case: the reference resolves to a same-named model parameter
-    or creates a dead slot, and nothing in the result says the declared thing never moved.
+    Falling through is the silent case: the reference resolves to a same-named model parameter or creates a dead slot, and nothing in the result says the declared thing never moved.
     """
     with pytest.raises(ValueError, match=match):
         parameter_keypath(ref)
@@ -186,9 +172,7 @@ def _render(tmp_path, ramp_param):
 def test_a_noise_scoped_ramp_reaches_the_noise_amplitude(tmp_path):
     """The ramp accessor must point at the amplitude, not at the model's own `sigma`.
 
-    This model declares both, which is the case that makes the wrong route invisible: the run
-    ramps a dynamics parameter to its target, settles, and seeds a working point that was
-    never the declared one.
+    This model declares both, which is the case that makes the wrong route invisible: the run ramps a dynamics parameter to its target, settles, and seeds a working point that was never the declared one.
     """
     code = _render(tmp_path, "noise.sigma")
     assert "accessor=lambda _c: _c.noise.sigma," in code
@@ -222,8 +206,7 @@ def test_an_unbindable_ramp_scope_fails_at_codegen(tmp_path):
 def test_no_codegen_site_hardcodes_the_scope_prefixes():
     """Four sites once carried this ladder with three different behaviours.
 
-    They have no shared rendering test, so a fifth copy would drift unnoticed — which is how
-    the ramp came to know no scope at all while the free-parameter path knew two of four.
+    They have no shared rendering test, so a fifth copy would drift unnoticed — which is how the ramp came to know no scope at all while the free-parameter path knew two of four.
     """
     from pathlib import Path
 
