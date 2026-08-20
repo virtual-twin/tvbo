@@ -128,6 +128,14 @@ published data*, or *the published study* when you genuinely mean all three.
    `report/analysis/` (targets, figures, backend-fit, adherence). Rendered figures and their
    generated `plot_<name>.py` scripts land in the gitignored `figures/` — images at its
    root, scripts in `figures/scripts/`.
+   **The target layout for every study is the BIDS study dataset** (`dataset_description.json`
+   with `DatasetType: "study"`, recipe fragments in `spec/`, inputs and `original_study/` under
+   `sourcedata/`, the report and its `analysis/` under `docs/`, result containers as a
+   derivative dataset under `derivatives/tvbo/`) — generated and checked by
+   `tvbo study layout --sync` / `tvbo validate study` against tvbo's `schema/study_layout.yaml`.
+   The tree above is the legacy layout that pre-BIDS studies keep **until their transform**;
+   `REGISTERS.md` at the portfolio root records which path each artifact lives on in either
+   layout, and the aggregators look in both. Do not mix the two inside one study.
 6. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
    Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report source
    (`report.qmd` + its `report_internal.qmd` wrapper + `_quarto.yml` + `references.bib` +

@@ -230,6 +230,16 @@ are cuttable:
   sentence saying so is right.
 - **Meta-commentary on the writing.** "This is the kind of entry a register has to be willing
   to close." The preceding sentence already made the point.
+- **Self-references to prior builds.** "An earlier build of this report had this inverted,
+  which traced to …" is unauditable: the reader holds one build, cannot see the earlier one,
+  and cannot follow the trace — the sentence documents a mistake in an artifact that no longer
+  exists instead of stating the result that does. This trap is strongest right after FIXING
+  something, when the flip feels like the news; in the report the news is the correct value.
+  The same discipline applies to the word "regression" for an upstream defect: it asserts a
+  history ("this worked before") the reader cannot verify — name the *current* defect and its
+  consequence ("a stimulus-targeting defect in the current backend means X is computed
+  host-side"). The flip itself, with dates and evidence, goes in `report/analysis/` beside
+  the corrections list, where it is auditable and where the next session needs it.
 
 **Guard the rendered Methods by its presence, not only by its purity.** `unrendered_equations`
 catches an equation typed into prose and says nothing about a report carrying no equations at
@@ -640,6 +650,19 @@ Two settings earn their place in `include-in-header`:
 
 `\small` buys a wide scorecard the width it needs; `\RaggedRight` stops LaTeX stretching
 inter-word space in a narrow column until the row looks broken.
+
+## Section references — Quarto crossrefs, never typed numbers
+
+A reference like "(Sec. 2.8)" typed into prose is a number the build does not own: any change
+that renumbers the sections — a new Methods subsection, a model card the generator starts
+emitting, a supplementary family — silently retargets every typed reference in the document.
+Deco2014's report pointed "(Sec. 2.8)" at its Backend section until the equation render gained
+the spiking synapse families, after which the same string pointed mid-way into the Methods; a
+second reference ("Sec. 3.1") was stale on arrival, written for a numbering that had already
+moved. Give the heading an explicit id (`## Backend {#sec-backend}`) and reference it as
+`@sec-backend` — Quarto renders "Section 2.8" and re-resolves it on every build
+(`number-sections: true` required). Headings the model render emits already carry
+`{#sec-model-…}` / `{#sec-experiment-…}` anchors for exactly this use.
 
 ## References — Quarto's bibliography, never a hand-written list
 
