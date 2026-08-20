@@ -15,7 +15,7 @@ from tvbo.templates.tvboptim.utils import (
     normalize_coupling_aliases, resolve_coupling_input_map,
     get_node_state_overrides, render_jax_default, get_mode_layout,
     get_all_observations_from_algo, network_axis_leaf, initial_conditions_axis_sv, noise_axis_param,
-    graph_selection, observation_dims, axis_keypath,
+    graph_selection, observation_dims, axis_keypath, parameter_keypath,
 )
 import numpy as np
 import re
@@ -294,6 +294,9 @@ from tvbo.utils import initial_value as _initial_value
 # Dynamics parameter info (shared utility)
 dyn_param_names, dyn_param_defaults, dyn_param_shapes = get_param_info(model.parameters)
 dyn_param_lazy = materialise_lazy_params(model.parameters, experiment)
+# Couplings resolve their sourced/produced parameters the same way, hoisted here because the `_load_param` helper is emitted from this scope and a coupling-only lazy parameter must still get it.
+coupling_param_lazy = {k: materialise_lazy_params(getattr(c, 'parameters', None), experiment) for k, c in all_couplings.items()}
+any_coupling_lazy = any(coupling_param_lazy.values())
 
 # Per-node parameter overrides from network.nodes[].parameters
 # If nodes define e.g. B=17.6 on node 1, auto-promote B to heterogeneous array
@@ -328,7 +331,7 @@ if _ini is not None and str(getattr(_ini, 'method', '') or '') == 'from_working_
     _rnpts = int(_rn) if _rn else int(round((_rhi - _rlo) / float(_rdom.step))) + 1
     _rtr = float(getattr(integration, 'transient_time', 0.0) or 0.0)
     from_working_point = {
-        'path': 'dynamics.%s' % str(_rax.parameter).rsplit('.', 1)[-1],
+        'path': parameter_keypath(_rax.parameter, couplings=all_couplings, coupling_key=_to_ci_key),
         'lo': _rlo, 'hi': _rhi, 'n': _rnpts,
         'settle': _rtr if _rtr > 0 else float(integration.duration),
     }
@@ -1164,18 +1167,10 @@ for expl in exploration_list:
         # Resolve each decision axis to a tvboptim state path (+ optional log10 decode).
         _nsga_axes = []
         for _axis in axes_list:
-            _apn = str(_axis.parameter); _apref = None
-            if '.' in _apn:
-                _apref, _apn = _apn.rsplit('.', 1)
             _adom = _axis.domain
             assert _adom is not None and _adom.lo is not None and _adom.hi is not None, \
                 f"nsga2 axis '{_axis.parameter}' requires domain lo/hi"
-            if _apref and _apref in all_couplings:
-                _apath = f"coupling.{_to_ci_key(_apref)}.{_apn}"
-            elif _apref in ('noise', 'AdditiveNoise', 'Noise'):
-                _apath = f"noise.{_apn}"
-            else:
-                _apath = f"dynamics.{_apn}"
+            _apath = parameter_keypath(_axis.parameter, couplings=all_couplings, coupling_key=_to_ci_key)
             _nsga_axes.append({
                 'path': _apath, 'lo': float(_adom.lo), 'hi': float(_adom.hi),
                 'transform': str(getattr(_axis, 'transform', None) or 'none'),
@@ -1296,15 +1291,8 @@ for _opt in optim_list:
     _seed_paths = set(ax['path'] for ax in _seed_axes)
     _fps = []
     for _fp in (_opt.free_parameters or []):
-        _fpn = str(_fp.parameter); _fpref = None
-        if '.' in _fpn:
-            _fpref, _fpn = _fpn.rsplit('.', 1)
-        if _fpref and _fpref in all_couplings:
-            _fpath = f"coupling.{_to_ci_key(_fpref)}.{_fpn}"
-        elif _fpref in ('noise', 'AdditiveNoise', 'Noise'):
-            _fpath = f"noise.{_fpn}"
-        else:
-            _fpath = f"dynamics.{_fpn}"
+        _fpn = str(_fp.parameter).rsplit('.', 1)[-1]
+        _fpath = parameter_keypath(_fp.parameter, couplings=all_couplings, coupling_key=_to_ci_key)
         _dom = getattr(_fp, 'domain', None)
         def _bnd(v):
             if v is None:
@@ -1542,7 +1530,7 @@ def _freeze_step_time(solver):
 
 % endif
 
-% if dyn_param_lazy or (noise_cov and noise_cov['lazy']):
+% if dyn_param_lazy or any_coupling_lazy or (noise_cov and noise_cov['lazy']):
 def _load_param(path, key, device=True):
     """Read a sourced or produced array from its content-addressed artifact.
 
@@ -1709,10 +1697,14 @@ def create_network(
     # Class name = coupling key (cleaned), same as in cfun template
     c_class_name = coupling_key.replace(' ', '').replace('-', '')
     c_param_names, c_param_defaults, c_param_shapes = get_param_info(coupling_obj.parameters if hasattr(coupling_obj, 'parameters') else None)
+    # A sourced/produced coupling parameter resolves from storage like a dynamics one; without this the `.get(name, 1.0)` fallback below would silently emit a per-edge matrix as jnp.full(shape, 1.0).
+    c_param_lazy = coupling_param_lazy.get(coupling_key, {})
 %>
     _${coupling_key}_params = {
         % for name in c_param_names:
-        % if name in c_param_shapes:
+        % if name in c_param_lazy:
+        '${name}': _load_param(${repr(c_param_lazy[name][0])}, ${repr(c_param_lazy[name][1])}),
+        % elif name in c_param_shapes:
         '${name}': jnp.full(${c_param_shapes[name]}, ${c_param_defaults.get(name, 1.0)}),
         % else:
         '${name}': ${render_jax_default(c_param_defaults.get(name, 1.0))},
@@ -2600,57 +2592,36 @@ fp_shape = fp.get('shape', None)
 fp_lo = fp.get('lower_bound', None)
 fp_hi = fp.get('upper_bound', None)
 has_bounds = fp_lo is not None or fp_hi is not None
-# Optimizer start value (FreeParameter.initial_value): if given, the marked Parameter
-# wraps this value instead of the base config's, so the descent begins from the declared
-# point (e.g. G_START) while the base/warm-up config keeps its own value.
+# FreeParameter.initial_value: the marked Parameter wraps this instead of the base config's value, so the descent starts from the declared point while the base/warm-up config keeps its own.
 fp_init = fp.get('initial_value', None)
-# Coupling key is explicitly set via dotted notation (e.g., FastLinearCoupling.G)
-# Translate function name to ci name for tvboptim state access
-coupling_key_for_param = fp.get('coupling_key', None)
-if coupling_key_for_param:
-    coupling_key_for_param = _to_ci_key(coupling_key_for_param)
-is_coupling = coupling_key_for_param is not None
+# State keypath the parameter is marked on, resolved from its declared scope (the parser split the reference on its last dot, so scope + name recovers it losslessly).
+_fp_scope = fp.get('coupling_key', None) or fp.get('dynamics_key', None)
+fp_path = parameter_keypath(f"{_fp_scope}.{fp_name}" if _fp_scope else fp_name,
+                            couplings=all_couplings, coupling_key=_to_ci_key)
+fp_scope_name = fp_path.rsplit('.', 1)[0]
 # Format bounds for code generation (None -> jnp.inf)
 lo_str = f'{fp_lo}' if fp_lo is not None else '-jnp.inf'
 hi_str = f'{fp_hi}' if fp_hi is not None else 'jnp.inf'
-# Convert shape string to Python tuple (e.g., "(n_nodes, n_nodes)" -> (n_nodes, n_nodes))
-# If shape is None, default to (n_nodes,) for heterogeneous params
+# Declared shape as a Python tuple ("(n_nodes, n_nodes)" -> (n_nodes, n_nodes)); a heterogeneous parameter with none declared is per-node.
 if fp_shape:
     shape_str = fp_shape.strip('()').replace(' ', '')
     shape_code = '(' + shape_str + (',' if ',' not in shape_str else '') + ')'
 else:
     shape_code = '(n_nodes,)'
-c_wrap = f"jnp.asarray({fp_init})" if fp_init is not None else f"init_state.coupling.{coupling_key_for_param}.{fp_name}"
-d_wrap = f"jnp.asarray({fp_init})" if fp_init is not None else f"init_state.dynamics.{fp_name}"
+fp_wrap = f"jnp.asarray({fp_init})" if fp_init is not None else f"init_state.{fp_path}"
 %>
-% if is_coupling:
-    # ${fp_name} - coupling parameter (${coupling_key_for_param})${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
+    # ${fp_name} - ${fp_scope_name} parameter${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
 % if has_bounds:
-    init_state.coupling.${coupling_key_for_param}.${fp_name} = BoundedParameter(
-        ${c_wrap},
+    init_state.${fp_path} = BoundedParameter(
+        ${fp_wrap},
         low=${lo_str},
         high=${hi_str},
     )
 % else:
-    init_state.coupling.${coupling_key_for_param}.${fp_name} = Parameter(${c_wrap})
+    init_state.${fp_path} = Parameter(${fp_wrap})
 % endif
 % if fp_hetero:
-    init_state.coupling.${coupling_key_for_param}.${fp_name}.shape = ${shape_code}
-% endif
-% else:
-    # ${fp_name} - dynamics parameter${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}
-% if has_bounds:
-    init_state.dynamics.${fp_name} = BoundedParameter(
-        ${d_wrap},
-        low=${lo_str},
-        high=${hi_str},
-    )
-% else:
-    init_state.dynamics.${fp_name} = Parameter(${d_wrap})
-% endif
-% if fp_hetero:
-    init_state.dynamics.${fp_name}.shape = ${shape_code}
-% endif
+    init_state.${fp_path}.shape = ${shape_code}
 % endif
 % endfor
 
