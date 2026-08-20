@@ -1457,7 +1457,7 @@ from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis, AbstractAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
-from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, resolve_exploration_n_vmap   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width
+from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, resolve_exploration_n_pmap, resolve_exploration_n_vmap   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width and replica count
 % endif
 % if _dataset_on_device:
 from tvbo.templates.tvboptim.callbacks import resolve_cohort_batch_size   # dataset.batch_size → subjects per on-device batch
@@ -3583,9 +3583,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endif
 % else:
 % if has_axes:
-    import jax as _jax
-    _n_pmap = _jax.device_count()
     _n_vmap = resolve_exploration_n_vmap(${repr(expl['n_parallel'])}, grid.N, observable_fn, _expl_state)
+    _n_pmap = resolve_exploration_n_pmap(grid.N, _n_vmap)
     # Batch count for the i/N progress line: n_pmap devices × ceil(cells/n_vmap) chunks.
     _n_map = max(1, -(-grid.N // _n_pmap))
     _n_batches = max(1, _n_pmap * -(-_n_map // _n_vmap))
