@@ -1,7 +1,7 @@
 <!-- report.qmd — the WHOLE replication report, and the ONLY file you edit. It carries NO YAML
-     front matter: all format/title/bibliography settings live in report/_quarto.yml (copied from
+     front matter: all format/title/bibliography settings live in docs/_quarto.yml (copied from
      _quarto.yml.tmpl), so that report_internal.qmd can `{{< include report.qmd >}}` without the
-     included front matter overriding the wrapper's output name. `quarto render` (run in report/,
+     included front matter overriding the wrapper's output name. `quarto render` (run in docs/,
      no file arg) builds BOTH report.pdf (public) and report_internal.pdf (internal A/B) in one
      pass — see the header of _quarto.yml.tmpl. Do NOT add a front-matter block here. -->
 
@@ -10,11 +10,13 @@
 #| echo: false
 import sys, numpy as np, xarray as xr, yaml, matplotlib.pyplot as plt
 from pathlib import Path
-sys.path.insert(0, str(Path("../code").resolve()))   # builder + analysis callables
-ROOT = Path("..").resolve()
-OUT = ROOT / "output"; INPUT = ROOT / "input"
-FIGS = ROOT / "figures"                               # our reproduction figures (git-ignored)
-STAGE = Path("_figures")                              # staged for the render (git-ignored)
+from tvbo.utils.study_layout import study_path, study_root
+# Every path comes from the layout record, so moving a directory there moves it here too.
+ROOT = study_root(Path.cwd())
+sys.path.insert(0, str(study_path("code", root=ROOT)))
+SOURCEDATA = study_path("sourcedata", root=ROOT)
+RESULTS = study_path("results", root=ROOT)
+FIGS = study_path("figures", root=ROOT)
 
 # --- INTERNAL vs PUBLIC build (copyright-safe, chosen by WHICH entry file is rendering) --------
 # Showing the paper's own published figures is copyright-restricted, so ONE report.qmd renders
@@ -30,7 +32,7 @@ STAGE = Path("_figures")                              # staged for the render (g
 # scorecard. This file should end up holding ONLY what is specific to this study -- its metrics.
 from tvbo.cli.figures import reference_image_for
 from tvbo.utils.report import (
-    Scorecard, analysis_scalar, crossref_div, figure_caption, figure_title,
+    Scorecard, analysis_scalar, crossref_div, embed_path, figure_caption, figure_title,
     figures_in_paper_order, fmt, is_internal, md_table, open_result, recipe_param,
     report_figure, result_sidecar, sci, sidecar_value,
 )
@@ -64,9 +66,14 @@ def param(exp_id, name):
     return recipe_param(STUDY.get_experiment(exp_id), name)
 
 # --- Study-specific metric functions: read a container, return a number. Examples: ---
+def peak_rate(exp_id):
+    """The quantity the paper reports, straight out of the run that produced it."""
+    ds = open_result(RESULTS, str(exp_id))
+    return None if ds is None else float(ds["r_E"].max())
+
 def grid_counts():
     """Topology counts from the processed connectome, so the exact-match claims compute."""
-    p = INPUT / "<study>_grid.npz"
+    p = SOURCEDATA / "<study>_grid.npz"
     if not p.exists():
         return {}
     d = np.load(str(p), allow_pickle=True)
@@ -199,13 +206,13 @@ def status_callout(fig):
 for n, fig in enumerate(figures_in_paper_order(STUDY.figures), 1):
     print(f"### {figure_title(fig)}\n")
     theirs, credit = original(fig)
-    staged = report_figure(FIGS / f"{fig.name}.png", theirs, STAGE,
+    staged = report_figure(FIGS / f"{fig.name}.png", theirs,
                            credit=credit, cleared=CLEARED)
     if staged is None:
         print(f"::: {{.callout-warning}}\n`{fig.name}.png` is not rendered — "
               f"run `tvbo run <Study>.yaml`.\n:::\n")
         continue
-    print(f"![**Fig {n}.** {figure_caption(fig)}](_figures/{staged.name})"
+    print(f"![**Fig {n}.** {figure_caption(fig)}]({embed_path(staged)})"
           f"{{#fig-{fig.name.replace('_', '-')} width=100%}}\n")
     print(status_callout(fig))
 ```
@@ -227,7 +234,7 @@ unavailable inputs and stated as limitations, never claimed as matches.
 
 ## Replication scorecard {#sec-scorecard}
 
-<!-- The whole scorecard is READ from report/analysis/targets.md, where every criterion was
+<!-- The whole scorecard is READ from docs/analysis/targets.md, where every criterion was
      written before the first run: the tally, the per-target table, the shortfall prose and each
      figure's status callout all come from that one reading. Nothing here is typed.
      `Scorecard` owns the vocabulary: TIER (core | extended -- how central the target is) is
@@ -238,14 +245,14 @@ unavailable inputs and stated as limitations, never claimed as matches.
 ```{python}
 #| label: scorecard
 #| output: asis
-SC = Scorecard(ROOT / "report/analysis/targets.md")
+SC = Scorecard(study_path("analysis", root=ROOT) / "targets.md")
 
 print(crossref_div("tbl-tally", SC.tally_table(),
     "Replication targets by **tier** and **outcome**, each counted once. *Tier*: **core** "
     "carries one of the paper's headline claims, **extended** a supporting one. The three ways "
     "of falling short are not interchangeable -- **short of criterion** is attempted and missed "
     "(the only failure of this replication), **out of scope** is declared unattempted, **input "
-    "unobtainable** is a data gap. From `report/analysis/targets.md`."))
+    "unobtainable** is a data gap. From `docs/analysis/targets.md`."))
 
 print(crossref_div("tbl-targets", SC.target_table(),
     f"All {len(SC.rows)} declared targets with the figure each supports, its tier, its fidelity "
@@ -253,14 +260,22 @@ print(crossref_div("tbl-targets", SC.target_table(),
     f"claim) and its outcome."))
 ```
 
-### Where the replication falls short {#sec-shortfall}
+### Where the replication stands against its criteria {#sec-outcomes}
 
+<!-- The heading is the SUBJECT, never a count. `## Why {N} targets fall short` reads correctly
+     at fifteen, awkwardly at five and absurdly at zero -- and zero is what you are working
+     toward, so a count-titled section is guaranteed to end up false. Counts belong in the
+     sentences, where falling to zero still reads. Render this block mentally at N = 0 and at
+     N = all before shipping: any sentence that presupposes a non-empty set needs a branch. -->
 ```{python}
-#| label: shortfall
+#| label: outcomes
 #| output: asis
-print(f"Of {len(SC.rows)} declared targets, **{SC.count('met')} are met**. The remaining "
-      f"{len(SC.rows) - SC.count('met')} fall short in different senses, and the distinction "
-      f"matters: only the first group is a failure of this replication.\n")
+unmet = len(SC.rows) - SC.count("met")
+print(f"Of {len(SC.rows)} declared targets, **{SC.count('met')} are met**"
+      + (f" and **{unmet}** do not reach their criterion, in senses the next paragraphs keep "
+         f"apart: only the first is a failure of this replication.\n" if unmet else
+         ", each with the measurement that decided it. Where our numbers still differ from the "
+         "published ones without breaching a criterion is taken apart below.\n"))
 print(SC.shortfall_prose())
 ```
 
@@ -287,8 +302,8 @@ explains what is not.>
 `tvbo run <Study>.yaml` runs every experiment in dependency order (each `from_experiment`
 source before its dependents) and then renders the `figures:` block to figures/
 (`tvbo figure render <Study>.yaml` re-renders figures only).
-Report SOURCE is report.qmd; ONE command builds BOTH PDFs (report/_quarto.yml `render:` list):
-    quarto render                 # in report/ -> report.pdf (public) AND report_internal.pdf (A/B, local-only)
+Report SOURCE is report.qmd; ONE command builds BOTH PDFs (docs/_quarto.yml `render:` list):
+    quarto render                 # in docs/ -> report.pdf (public) AND report_internal.pdf (A/B, local-only)
 Rendered via LaTeX (xelatex): longtable is what breaks a wide scorecard across a page with its
 header repeated. Keep rendered tables OUT of callouts -- LaTeX cannot page-break a longtable
 inside one, and ships each to a page of its own. -->

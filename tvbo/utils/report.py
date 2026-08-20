@@ -242,6 +242,27 @@ def sci(x, digits: int = 2, missing: str = _MISSING) -> str:
     return f"{x:.{digits}e}"
 
 
+def p_text(p, floor: float = 1e-3) -> str:
+    """A p value as its own clause, so a tiny one reads as a bound rather than as `p = 0.000`.
+
+    Written the way a results sentence wants it, operator included, because `p = < .001` is what happens when the operator is fixed in the sentence and the bound arrives from the number.
+    """
+    p = float(p)
+    return f"p < {floor:g}".replace("0.", ".") if p < floor else f"p = {p:.3f}".replace("= 0.", "= .")
+
+
+_NUMBER_WORDS = ("no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve")
+
+
+def spelled(n: int) -> str:
+    """A small computed count as a word, so a sentence can open with it.
+
+    Reports compute their own counts, and a computed count often lands where prose wants a word rather than a numeral. Anything past twelve stays a numeral, which is where the convention itself gives up.
+    """
+    n = int(n)
+    return _NUMBER_WORDS[n] if 0 <= n < len(_NUMBER_WORDS) else str(n)
+
+
 def value_of(obj):
     """The `.value` of a recipe object, or the object itself when it is already a scalar."""
     return getattr(obj, "value", obj)
@@ -261,16 +282,23 @@ def recipe_param(experiment, name, group: str = "dynamics"):
     return next((value_of(p) for n, p in items if n == name), None)
 
 
-def open_result(out_dir, experiment: str | None = None):
-    """The result container of an experiment, or None when it has not been run.
+def _result_files(out_dir, experiment: str | None, suffix: str) -> list[Path]:
+    """Result files of ``experiment`` in the flat results directory ``out_dir``.
 
-    Network sidecars share the directory and are excluded by name — opening one instead of the result is the failure this exists to prevent.
+    ``exp-<id>[_<entities>]_result.<suffix>``, with the ``_`` boundary so ``exp-1`` never matches ``exp-10``, and the network companion excluded by name — opening one instead of the result is the failure this exists to prevent. With no ``experiment`` every result in the directory is a candidate.
     """
+    root = Path(out_dir)
+    if not root.is_dir():
+        return []
+    pattern = f"exp-{experiment}_*result{suffix}" if experiment else f"*result{suffix}"
+    return [f for f in sorted(root.glob(pattern)) if "network" not in f.name]
+
+
+def open_result(out_dir, experiment: str | None = None):
+    """The result container of an experiment, or None when it has not been run."""
     import xarray as xr
 
-    out_dir = Path(out_dir)
-    root = out_dir / "nc" / experiment if experiment else out_dir
-    files = [f for f in sorted(root.rglob("*.h5")) if "network" not in f.name]
+    files = _result_files(out_dir, experiment, ".h5")
     return xr.open_dataset(files[0], engine="h5netcdf") if files else None
 
 
@@ -278,8 +306,7 @@ def result_sidecar(out_dir, experiment: str) -> dict:
     """The YAML sidecar `tvbo run` wrote beside a result, or an empty dict."""
     import yaml
 
-    root = Path(out_dir) / "nc" / experiment
-    files = [f for f in sorted(root.glob("*.yaml")) if "network" not in f.name] if root.is_dir() else []
+    files = _result_files(out_dir, experiment, ".yaml")
     return yaml.safe_load(files[0].read_text()) if files else {}
 
 
@@ -430,13 +457,17 @@ def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list
 
 
 DIVERGENCE_CLASSES = {
-    "A": "Value drift — same symbol, different number",
-    "B": "Algorithm substitution — code computes a different operation",
-    "C": "Undocumented configuration — never stated at all",
-    "D": "Underdetermined prose — several readings, one correct",
-    "E": "Convention traps — same name, different meaning",
-    "F": "Unreleased — no code to compare against",
+    "A": "Value drift: same symbol, different number",
+    "B": "Algorithm substitution: code computes a different operation",
+    "C": "Undocumented configuration: never stated at all",
+    "D": "Underdetermined prose: several readings, one correct",
+    "E": "Convention traps: same name, different meaning",
+    "F": "Unreleased: no code to compare against",
 }
+
+
+# The two spellings the corpus uses for a register's materiality column; anything else leaves its rows unscored.
+_MATERIALITY_RE = re.compile(r"[*_]*(material|changes a number)", re.IGNORECASE)
 
 
 def divergence_register(source) -> dict:
@@ -444,7 +475,7 @@ def divergence_register(source) -> dict:
 
     The register is a skill-mandated artifact of any replication whose study ships code, and its counts are quoted in the report's prose. Parsing it here means the report can never disagree with the register it cites — the drift the register itself documents.
 
-    Rows are recognised by an id cell that STARTS with ``<class><n>``, ignoring emphasis markers and any annotation after it — ``| **A4** *(cross-impl)* |`` is one row of class A. ``material`` counts rows whose final cell opens with "yes" in any case or emphasis, the convention of the classes that carry a materiality column; a register whose header has no such column reports ``material`` as ``None`` rather than zero, so a caption can say what it actually counted.
+    Rows are recognised by an id cell that STARTS with ``<class><n>``, ignoring emphasis markers and any annotation after it — ``| **A4** *(cross-impl)* |`` is one row of class A. A row is *scored* when the table it sits in ends in a materiality column — headed ``Material`` or ``Changes a number?``, the two spellings the corpus uses — and it counts as material when that final cell opens with "yes" in any case or emphasis. Scoring is tracked per ROW rather than per class, because a register that continues one class into a second table would otherwise count those rows in the total and drop them from the material tally, understating its own headline; ``scored`` says how many rows were eligible, so a caption can state what it actually counted. A class with no scored row at all reports ``material`` as ``None`` rather than zero.
 
     The tolerance is load-bearing. A pattern that demands a bare id matches nothing on a register that bolds its ids, and the zeros it returns read as "no divergences found".
     """
@@ -454,32 +485,32 @@ def divergence_register(source) -> dict:
     for line in text.splitlines():
         cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
         if cells and cells[0].lower() in ("#", "id"):
-            scores = any(c.lower().startswith("material") for c in cells)
+            scores = bool(cells) and _MATERIALITY_RE.match(cells[-1]) is not None
             continue
         m = re.match(r"^\|\s*[*_`]*([A-Z])(\d+)[*_`]*[^|]*\|", line)
         if not m:
             continue
-        entry = classes.setdefault(m.group(1), {"ids": [], "material": None, "rows": []})
+        entry = classes.setdefault(m.group(1), {"ids": [], "material": None, "scored": 0, "rows": []})
         entry["ids"].append(f"{m.group(1)}{m.group(2)}")
         entry["rows"].append(cells)
         if scores:
+            entry["scored"] += 1
             entry["material"] = (entry["material"] or 0) + bool(re.match(r"[*_]*yes", cells[-1], re.IGNORECASE))
     for key, entry in classes.items():
         entry["count"] = len(entry["ids"])
         entry["title"] = DIVERGENCE_CLASSES.get(key, "")
-    scored = [e for e in classes.values() if e["material"] is not None]
     return {
         "classes": dict(sorted(classes.items())),
         "total": sum(e["count"] for e in classes.values()),
-        "material": sum(e["material"] for e in scored),
-        "scored": sum(e["count"] for e in scored),
+        "material": sum(e["material"] or 0 for e in classes.values()),
+        "scored": sum(e["scored"] for e in classes.values()),
     }
 
 
 def report_figure(
     ours,
     theirs=None,
-    stage=Path("_figures"),
+    stage=None,
     credit: str = "the authors",
     label: str = "",
     missing: str = "",
@@ -487,15 +518,19 @@ def report_figure(
     dpi: int = 300,
     cleared: bool = False,
 ) -> Path | None:
-    """The image a report embeds for one figure, staged inside the render project.
+    """The image a report embeds for one figure.
 
-    This is the A/B helper every replication report used to carry its own copy of. Pass ``theirs=None`` — what the PUBLIC build does — and the copyrighted original is never opened, let alone embedded. Pass it in the INTERNAL build and the two are composed left-right at a common height. Staging keeps the render reading only from its own project directory, and makes the composite a gitignored artifact rather than a committed file.
+    This is the A/B helper every replication report used to carry its own copy of. Pass ``theirs=None`` — what the PUBLIC build does — and the copyrighted original is never opened, let alone embedded, and our figure is embedded where the run rendered it. Pass it in the INTERNAL build and the two are composed left-right at a common height, into ``stage``.
+
+    Only the composite is staged, and that is the whole point of the directory: it is the one artifact that embeds someone else's figure, so it lives apart from the study's own and is never published. Our figure needs no copy — the layout already renders it inside the report's own project directory.
 
     Args:
         ours: Our rendered figure. A missing file returns None rather than a blank slot.
         theirs: The published original — one path, or several stacked vertically when the
             paper splits one quantity across scans. None embeds ours alone.
-        stage: Directory beside the report to stage into (created if absent).
+        stage: Where to compose the A/B. Defaults to the layout's own place for it, which
+            sits under the deposit whose figure it embeds, so a composite is covered by the
+            rule that keeps the original out of the repository.
         credit: Attribution over the original, e.g. ``"Pang et al. 2023 (c)"``.
         label: Qualifier after "TVBO replication", e.g. the parcellation or backend.
         missing: Drawn in the original's pane when it cannot be found, so the A/B still shows
@@ -509,9 +544,7 @@ def report_figure(
     Returns:
         The staged path to embed, or None when our figure has not been rendered.
     """
-    import shutil
-
-    ours, stage = Path(ours), Path(stage)
+    ours = Path(ours)
     if theirs is not None and not may_show_original(cleared):
         raise RuntimeError(
             "refusing to compose a published original into the PUBLIC build. `report.pdf` is "
@@ -522,9 +555,12 @@ def report_figure(
         )
     if not ours.is_file():
         return None
-    stage.mkdir(parents=True, exist_ok=True)
     if theirs is None:
-        return Path(shutil.copyfile(ours, stage / ours.name))
+        return ours
+    from tvbo.utils.study_layout import study_path, study_root
+
+    stage = Path(stage) if stage is not None else study_path("figures_restricted", root=study_root(ours))
+    stage.mkdir(parents=True, exist_ok=True)
 
     from tvbo.utils.figure_compare import Pane, side_by_side
 
@@ -708,6 +744,16 @@ class Scorecard:
             if rows:
                 blocks.append(f"**{title} ({len(rows)}).** {lead} {sentences(rows)}\n")
         return "\n".join(blocks)
+
+
+def embed_path(path) -> str:
+    """``path`` as a markdown image target, relative to where the render is running.
+
+    LaTeX resolves an image reference against its own working directory and prefixes a bare path with ``./``, so an absolute path arrives as ``./Users/…`` and the build fails on an image that is plainly there. Relative is the only form that works, and the render's own directory is what it can be relative to — which is why this is a separate step from :func:`report_figure`, whose answer has to be a real path a caller can open.
+    """
+    import os
+
+    return Path(os.path.relpath(Path(path))).as_posix()
 
 
 def show_report_figure(ours, theirs=None, **kwargs) -> None:
@@ -1571,10 +1617,20 @@ def _safe_latex(expression):
 
 
 def _axis_range(axis):
-    """An exploration axis's extent, whether it lists values or bounds a domain."""
+    """An exploration axis's extent, whether it lists values, bounds a domain, or builds them.
+
+    An axis whose values come from a ``builder`` has no list to print and no domain to bound; naming the builder is the only honest extent, and saying nothing left the sentence reading "sweeping $ppb$ over , $f_ibf$ over ,".
+    """
     if present(slot(axis, "explored_values")):
         return range_text(axis)
-    return range_text(slot(axis, "domain")) or ""
+    text = range_text(slot(axis, "domain"))
+    if text:
+        return text
+    builder = slot(axis, "builder", None)
+    if present(builder):
+        name = slot(builder, "name", None) or slot(slot(builder, "callable", None), "name", None)
+        return f"values built by `{name}`" if name else "built values"
+    return ""
 
 
 def sweep_axes(experiment):
@@ -1635,6 +1691,28 @@ def _reference_text(experiment):
     return ", ".join(r for r in out if r)
 
 
+def _edge_delay_text(net, unit=None):
+    """The delays an explicit network declares on its own edges.
+
+    A connectome states one conduction speed and derives delays from distance; a small circuit states the delay on the edge itself, and there the delay is what the backend integrates. Reading only the speed left the comparison table blank for exactly the studies whose experiments differ in nothing else -- eleven corticothalamic sweeps separated solely by their edge delay came out as eleven identical rows.
+
+    Tract lengths win over edge delays, which is the rule :func:`tvbo.templates.tvboptim.utils.graph_selection` lowers by: a network that measures lengths derives its delays from the conduction speed, so a delay it also happens to declare is not what runs and is not what the table reports.
+
+    Read through :func:`tvbo.utils.edge_param`, the one reader every backend goes through, so the recipe may spell the delay as an ``Edge`` slot or as a ``parameters:`` entry and the table says the same thing either way.
+    """
+    from tvbo.utils import edge_param
+
+    edges = slot(net, "edges", None) or []
+    if any(edge_param(e, "distance") for e in edges):
+        return ""
+    delays = sorted({float(d) for d in (edge_param(e, "delay") for e in edges) if d is not None})
+    if not delays:
+        return ""
+    if len(delays) == 1:
+        return time_text(delays[0], unit)
+    return f"{time_text(delays[0], unit)}-{time_text(delays[-1], unit)}"
+
+
 def experiment_facts(experiment, shared_parameters=()):
     """Ordered ``{column: cell}`` of everything an experiment can differ from its siblings in.
 
@@ -1651,7 +1729,7 @@ def experiment_facts(experiment, shared_parameters=()):
     if nodes is None and present(slot(net, "nodes", None)):
         nodes = len(slot(net, "nodes"))
     facts["Nodes"] = "" if nodes is None else str(nodes)
-    facts["Delays"] = _speed_text(slot(net, "conduction_speed"))
+    facts["Delays"] = _edge_delay_text(net, unit) or _speed_text(slot(net, "conduction_speed"))
     facts["Method"] = str(slot(integ, "method", "") or "")
     facts["$\\Delta t$"] = time_text(slot(integ, "step_size", None), unit)
     facts["Duration"] = time_text(slot(integ, "duration", None), unit)
@@ -1723,7 +1801,10 @@ def settings_sentence(experiment):
         clauses.append(f"the first {time_text(slot(integ, 'transient_time'), unit)} discarded")
     swept = sweep_axes(experiment)
     if swept:
-        clauses.append("sweeping " + ", ".join(f"${_symbol_latex(a.split('.')[-1])}$ over {r}" for a, r in swept.items()))
+        clauses.append(
+            "sweeping "
+            + ", ".join(f"${_symbol_latex(a.split('.')[-1])}$" + (f" over {r}" if r else "") for a, r in swept.items())
+        )
     if not clauses:
         return ""
     sentence = ", ".join(clauses) + "."

@@ -167,6 +167,7 @@ artifacts = [
     "tvbo/datamodel/schema.py",
     "tvbo/datamodel/pydantic.py",
     "tvbo/datamodel/tvbo_datamodel.schema.json",
+    "tvbo/rules/study_layout.yaml",
 ]
 exclude = [
     "tvbo/database/networks/*.h5",

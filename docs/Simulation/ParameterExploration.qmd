@@ -190,6 +190,13 @@ explorations:
 cell, so the sweep genuinely re-derives $\tau_{ij} = L_{ij}/v$ rather than reusing one set
 of delays.
 
+A network whose edges carry an explicit `delay` instead of a tract length sweeps that delay
+directly, with `network.edges.delay`. The two are alternatives, not a choice of style: a
+connectome that measures tract lengths derives its delays from the conduction speed, so it is
+the speed that is sweepable there, and TVBO says so rather than sweeping nothing. Either way
+the history buffer is sized once, before compilation, for the longest delay the sweep can
+reach.
+
 ## Parallelization
 
 Grid cells are independent simulations, so TVBO evaluates them **vectorized** — one

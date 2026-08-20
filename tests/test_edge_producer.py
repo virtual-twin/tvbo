@@ -101,9 +101,12 @@ def test_output_picks_one_array_out_of_a_producer_returning_several(producer_mod
 
 
 def test_the_edge_label_names_the_matrix_it_produces(producer_module):
-    """A producer on `length` must not answer a request for `weight`."""
+    """A producer on `length` must not answer a request for `weight`.
+
+    The weight target falls back to the unconnected zeros every consumer expects, NOT to the ring the length producer built — a produced matrix answering under the wrong name is a run that completes against the wrong connectome.
+    """
     net = _network(_call("ring", n=4), label="length")
-    assert net.matrix("weight") is None
+    np.testing.assert_array_equal(np.asarray(net.matrix("weight")), np.zeros((4, 4)))
     assert net.matrix("length") is not None
 
 
@@ -123,10 +126,17 @@ def test_a_failed_producer_is_retried_rather_than_latched(producer_module):
 
 
 def test_an_edge_without_a_producer_costs_nothing(producer_module):
+    """A declared edge carrying no producer resolves nothing — no module import, no call.
+
+    The weight target still yields the unconnected zeros, which is the resolution's floor rather than anything this edge contributed.
+    """
+    import edge_producers
+
     from tvbo.datamodel.schema import Edge
 
     net = Network(number_of_nodes=2, nodes=[], edges=[Edge(label="weight", weighted=True)])
-    assert net.matrix("weight") is None
+    np.testing.assert_array_equal(np.asarray(net.matrix("weight")), np.zeros((2, 2)))
+    assert edge_producers.CALLS == []
 
 
 def test_producer_and_a_literal_are_mutually_exclusive(producer_module):

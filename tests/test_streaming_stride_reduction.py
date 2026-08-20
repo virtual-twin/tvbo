@@ -20,6 +20,7 @@ jax.config.update("jax_enable_x64", True)
 
 from tvbo.datamodel.schema import Argument, FunctionCall, Integrator, Observation
 from tvbo.templates.tvboptim.utils import (
+    observation_dims,
     reduction_dims,
     resolve_reduction,
     streaming_post_eval_plan,
@@ -123,17 +124,22 @@ def test_an_undeclared_reduction_yields_no_axis_names(red):
     assert reduction_dims(red) == ()
 
 
-def test_the_plan_carries_the_declared_dims_for_each_streamed_observation():
+def test_the_declared_dims_are_asked_of_the_experiment_not_of_the_streaming_plan():
+    """Axis names describe every observation, so they are not the streaming plan's to carry.
+
+    A streamed stride and a materialised one label the same array identically; hanging the names off the ``reduce: streaming`` plan would make the labels a property of HOW the observation was computed rather than of WHAT it is, and leave the materialised path unlabelled.
+    """
     obs, exp = _stride_observation(period=0.72)
     exp.observations = {"bold_frames": obs}
-    assert streaming_post_eval_plan(exp)["dims"] == {"bold_frames": ("time", "node")}
+    assert observation_dims(exp) == {"bold_frames": ("time", "node")}
+    assert "dims" not in streaming_post_eval_plan(exp)
 
 
-def test_a_plan_with_nothing_streaming_still_carries_a_dims_mapping():
-    # The experiment template reads plan['dims'] unconditionally, so the key must always exist — a missing key would be a codegen-time AttributeError, not a quiet default.
+def test_an_experiment_declaring_no_observations_has_no_dims():
+    """An empty mapping, not a missing one — the template indexes it per observation name."""
     _, exp = _stride_observation(reduce=None)
     exp.observations = {}
-    assert streaming_post_eval_plan(exp)["dims"] == {}
+    assert observation_dims(exp) == {}
 
 
 # ── Emitted reducer: identity vs a from-scratch stride ──────────────────────────────────

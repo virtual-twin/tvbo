@@ -1,0 +1,160 @@
+"""``tvbo study`` — scaffold and inspect a study dataset.
+
+Two subcommands, both reading the one layout record (``schema/study_layout.yaml``, see :mod:`tvbo.utils.study_layout`):
+
+* ``tvbo study init <Name>`` creates a BIDS study dataset: the directories, the two ignore
+  files derived from the record, ``dataset_description.json`` for the study and its derivative,
+  and a seed for every file the record gives a template.
+* ``tvbo study layout`` prints the tree or either ignore file, and ``--sync`` rewrites the
+  layout region of a document in place so no document retypes the tree.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import typer
+
+import tvbo
+from tvbo.utils import study_layout as layout_rules
+
+app = typer.Typer(name="study", no_args_is_help=True)
+
+TEMPLATE_DIR = Path(tvbo.__file__).resolve().parent / "templates" / "study"
+"""Seeds for the files the record gives a ``template``."""
+
+_KEEP = ".gitkeep"
+
+
+def _dataset_description(name: str, dataset_type: str, bids_version: str, sources: list[dict] | None = None) -> dict:
+    """The ``dataset_description.json`` body for a dataset of ``dataset_type``."""
+    body: dict = {"Name": name, "BIDSVersion": bids_version, "DatasetType": dataset_type}
+    if dataset_type == "derivative":
+        body["GeneratedBy"] = [{"Name": "tvbo", "Version": tvbo.__version__}]
+    if sources:
+        body["SourceDatasets"] = sources
+    return body
+
+
+def _seed(dest: Path, template: str, study: str) -> None:
+    """Write ``dest`` from its template, substituting the study's own name.
+
+    Three spellings, because the templates predate the scaffolder and use the angle-bracket placeholders an author filled in by hand: ``{study}`` and ``<Study>`` take the name as given, ``<study>`` its lowercase form (the one that appears inside identifiers and filenames).
+    """
+    source = TEMPLATE_DIR / template
+    if not source.is_file():
+        raise typer.BadParameter(f"The layout names template {template!r} for {dest.name}, but {source} does not exist.")
+    text = source.read_text(encoding="utf-8")
+    for placeholder, value in (("{study}", study), ("<Study>", study), ("<study>", study.lower())):
+        text = text.replace(placeholder, value)
+    dest.write_text(text, encoding="utf-8")
+
+
+@app.command("init")
+def init(
+    name: str = typer.Argument(..., help="Study name; also the dataset name and the entry recipe's stem."),
+    parent: Path = typer.Option(Path(), "--in", "-C", help="Directory to create the study in."),
+    template: list[str] = typer.Option(
+        [],
+        "--template",
+        "-t",
+        help="Layout variant to include, e.g. `replication`. Repeatable; omit for the general layout.",
+    ),
+    force: bool = typer.Option(False, "--force", help="Overwrite files that already exist."),
+) -> None:
+    """Scaffold a BIDS study dataset from the layout record.
+
+    Every directory, both ignore files and every ``dataset_description.json`` are derived from the record, so a study's shape is never typed out a second time. An empty directory gets a ``.gitkeep`` only when it is tracked; an untracked one is left for the run to create.
+    """
+    record = layout_rules.load_layout()
+    templates = tuple(template)
+    root = (parent / name).resolve()
+    root.mkdir(parents=True, exist_ok=True)
+
+    def write(rel: str, text: str) -> None:
+        target = root / rel
+        if target.exists() and not force:
+            typer.echo(f"  skip     {rel} (exists; --force to overwrite)")
+            return
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")
+        typer.echo(f"  write    {rel}")
+
+    typer.echo(f"{root}")
+    for rel, _ in layout_rules.walk(record, templates):
+        (root / rel).mkdir(parents=True, exist_ok=True)
+        typer.echo(f"  mkdir    {rel}/")
+
+    bids_version = str(record.bids_version)
+    for rel, entry in layout_rules.iter_files(record, templates):
+        rel = layout_rules.interpolate(rel, name)
+        role = str(entry.role)
+        if role == "gitignore":
+            write(rel, "\n".join(layout_rules.gitignore_lines(record, templates, name)))
+        elif role == "bidsignore":
+            write(rel, "\n".join(layout_rules.bidsignore_lines(record, templates, name)))
+        elif role == "dataset_description":
+            nested = "/" in rel
+            body = _dataset_description(
+                name,
+                "derivative" if nested else str(record.dataset_type),
+                bids_version,
+                [{"URL": "../.."}] if nested else None,
+            )
+            write(rel, json.dumps(body, indent=2))
+        elif entry.template:
+            target = root / rel
+            if target.exists() and not force:
+                typer.echo(f"  skip     {rel} (exists; --force to overwrite)")
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                _seed(target, str(entry.template), name)
+                typer.echo(f"  write    {rel}")
+
+    # Last, so a directory that a seed has just filled is not given a placeholder it does not need.
+    for rel, _ in layout_rules.walk(record, templates):
+        target = root / rel
+        if layout_rules.is_tracked(rel, record, templates) and not any(target.iterdir()):
+            (target / _KEEP).touch()
+            typer.echo(f"  keep     {rel}/{_KEEP}")
+
+    readme = root / layout_rules.file_relpath("readme", name, record)
+    if readme.is_file():
+        layout_rules.sync_layout(readme, record, name, templates)
+        typer.echo(f"  layout   {readme.name}")
+    typer.echo(f"\nNext: fill in {name}.yaml, then `tvbo run {name}.yaml`.")
+
+
+@app.command("layout")
+def show_layout(
+    what: str = typer.Argument("tree", help="tree | gitignore | bidsignore"),
+    study: str = typer.Option("<Study>", "--study", "-s", help="Study name to interpolate into the layout."),
+    template: list[str] = typer.Option([], "--template", "-t", help="Layout variant to include. Repeatable."),
+    sync: list[Path] = typer.Option(
+        [],
+        "--sync",
+        help="Rewrite each file's marker-delimited layout region in place instead of printing.",
+    ),
+) -> None:
+    """Print part of the layout record, or splice the tree into a document.
+
+    ``--sync`` is how documentation stops restating the layout: a file carrying the layout markers gets the current tree written into them, so a tree in prose can no longer fall behind the record.
+    """
+    record = layout_rules.load_layout()
+    templates = tuple(template)
+    if sync:
+        for dest in sync:
+            if not dest.is_file():
+                raise typer.BadParameter(f"{dest} does not exist.")
+            changed = layout_rules.sync_layout(dest, record, study, templates)
+            typer.echo(f"{'updated' if changed else 'unchanged'}  {dest}")
+        return
+    if what == "tree":
+        typer.echo(layout_rules.tree(record, study, templates))
+    elif what == "gitignore":
+        typer.echo("\n".join(layout_rules.gitignore_lines(record, templates, study)))
+    elif what == "bidsignore":
+        typer.echo("\n".join(layout_rules.bidsignore_lines(record, templates, study)))
+    else:
+        raise typer.BadParameter(f"Unknown view {what!r}. Choose tree, gitignore or bidsignore.")

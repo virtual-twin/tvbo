@@ -240,6 +240,29 @@ def surface_panel(fig, ax, ctx):
         ax.set_title(str(opts["title"]))
 
 
+def scale_colormap(name, lo=None, hi=None, center=None):
+    """A declared colormap name as the map a field is drawn with, pinned to *center* where one is asked for.
+
+    ``center`` fixes the map's neutral colour at a value — zero for a signed change, where the sign is the reading. The limits stay the data's own and the map is truncated to the half-range the data actually reaches, so a unit of change is the same colour distance either side of the centre and the scale carries no colour the field never takes.
+
+    The mesh and the bar that keys it both resolve here. A bar built from the untruncated map would put the neutral colour at the middle of a scale whose field crosses the centre anywhere else, and every value the reader looks up would be wrong.
+    """
+    import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
+    import numpy as _np
+
+    from tvbo.adapters.colormaps import resolve as _resolve_cmap
+
+    cmap = _resolve_cmap(name)
+    if center is None:
+        return cmap
+    base = plt.get_cmap(cmap)
+    lo, hi, center = float(lo), float(hi), float(center)
+    span = max(hi - center, center - lo) or 1.0
+    frac = _np.linspace((lo - center + span) / (2 * span), (hi - center + span) / (2 * span), 256)
+    return mcolors.ListedColormap(base(frac))
+
+
 @register_panel("colorbar")
 def colorbar_panel(fig, ax, ctx):
     """A colour scale occupying its own mosaic slot — the built-in ``kind: colorbar``.
@@ -249,17 +272,19 @@ def colorbar_panel(fig, ax, ctx):
     opts:
         cmap / vmin / vmax: the scale. With a layer bound and no explicit limits, the
             limits are read from the data, so the bar cannot drift from what it describes.
+        center: the value the map's neutral colour sits at, resolved exactly as the mesh
+            resolves its own, so a bar keying centred heatmaps is the scale they were drawn on.
         orientation: 'vertical' (default) or 'horizontal'.
         width: fraction of the slot the bar itself occupies across its short axis.
         ticks / ticklabels: the marks. A quantity in arbitrary units is labelled at its
             ends (Minimum..Maximum) rather than with numbers that mean nothing.
         label: the axis label beside the bar.
+
+    Returns the bar's own axes, so a declared frame (ticks, formats, label padding) lands on the scale rather than on the blanked slot behind it.
     """
     import matplotlib as mpl
     import matplotlib.pyplot as plt
     import numpy as _np
-
-    from tvbo.adapters.colormaps import resolve as _resolve_cmap
 
     opts = ctx.get("opts", {})
     vmin, vmax = opts.get("vmin"), opts.get("vmax")
@@ -275,8 +300,9 @@ def colorbar_panel(fig, ax, ctx):
     frac = float(opts.get("width", 0.22))
     ax.axis("off")
     box = [0.0, 0.18, frac, 0.64] if vertical else [0.18, 0.0, 0.64, frac]
-    norm = mpl.colors.Normalize(vmin=float(vmin if vmin is not None else 0.0), vmax=float(vmax if vmax is not None else 1.0))
-    mappable = mpl.cm.ScalarMappable(norm=norm, cmap=_resolve_cmap(opts.get("cmap", "viridis")))
+    lo, hi = float(vmin if vmin is not None else 0.0), float(vmax if vmax is not None else 1.0)
+    norm = mpl.colors.Normalize(vmin=lo, vmax=hi)
+    mappable = mpl.cm.ScalarMappable(norm=norm, cmap=scale_colormap(opts.get("cmap", "viridis"), lo, hi, opts.get("center")))
     cb = fig.colorbar(mappable, cax=ax.inset_axes(box), orientation="vertical" if vertical else "horizontal")
     cb.outline.set_linewidth(0.6)
     cb.ax.tick_params(direction="in", labelsize=plt.rcParams["ytick.labelsize"])
@@ -286,6 +312,7 @@ def colorbar_panel(fig, ax, ctx):
         cb.set_ticklabels([str(t) for t in opts["ticklabels"]])
     if opts.get("label"):
         cb.set_label(str(opts["label"]))
+    return cb.ax
 
 
 @register_panel("legend")
@@ -332,6 +359,27 @@ def legend_panel(fig, ax, ctx):
     )
 
 
+def heatmap_orientation(da, C, x, y, nx, ny):
+    """A heatmap's array as ``(y, x)``, the order ``pcolormesh`` reads (public API).
+
+    Decided by DIM NAME whenever the encoding names dims of the array. A SQUARE grid makes the two orientations indistinguishable by shape, so a shape test transposes half of them at random — silently swapping which axis the field varies along, which is a wrong figure rather than an ugly one. Falls back to the shape test only when the encoded channels are not dims of the array (a matrix addressed by index), where names cannot decide it.
+
+    Shared with the emitted plot.py, which imports it: the orientation is a keying decision, so it lives beside the other reference resolvers rather than being inlined per script.
+
+    Args:
+        da: The layer's DataArray, consulted for its dim ORDER only.
+        C: Its values.
+        x: Name encoded on the x channel.
+        y: Name encoded on the y channel.
+        nx: Length of the x coordinate, for the fallback.
+        ny: Length of the y coordinate, for the fallback.
+    """
+    dims = [str(d) for d in getattr(da, "dims", ())]
+    if str(x) in dims and str(y) in dims:
+        return C.T if dims.index(str(x)) < dims.index(str(y)) else C
+    return C.T if C.shape == (nx, ny) else C
+
+
 def registered(registry, name, kind):
     """Look a spec-declared name up in a registry, or raise an actionable error (public API).
 
@@ -374,12 +422,28 @@ def _style_entries(figure, base_dir) -> list:
     return out
 
 
+def _plain(value):
+    """*value* as plain Python, whatever LinkML flavor wrapped it.
+
+    A structured opt — a colour key, a group spec — arrives as a JsonObj whose ``repr`` is ``JsonObj(...)``. The emitted script embeds opts by ``repr``, so anything that is not already a builtin becomes a NameError at render time rather than a value. One conversion at the boundary, so no consumer has to unwrap the datamodel's representation itself.
+    """
+    if isinstance(value, (str, bytes)) or value is None:
+        return value
+    if isinstance(value, dict):
+        return {k: _plain(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_plain(v) for v in value]
+    if hasattr(value, "__dict__") and not isinstance(value, (int, float, bool)):
+        return {k: _plain(v) for k, v in vars(value).items() if not k.startswith("_")}
+    return value
+
+
 def _arg_dict(coll) -> dict:
     """Resolve an Argument collection (dict or list-of-Argument) into ``{name: value}``."""
     if not coll:
         return {}
     items = coll.items() if isinstance(coll, dict) else [(a.name, a) for a in coll]
-    return {key: getattr(arg, "value", arg) for key, arg in items}
+    return {key: _plain(getattr(arg, "value", arg)) for key, arg in items}
 
 
 def _style_kwargs(style) -> dict:
@@ -399,6 +463,8 @@ def _heatmap_kwargs(style) -> dict:
     """Resolve a Style into pcolormesh kwargs: the colormap, opacity and raw opts.
 
     A field's colour scale is part of what it shows (a diverging map centred on zero for a correlation matrix), so ``Style.colormap`` and explicit ``vmin``/``vmax`` opts route here. ``Style.color`` — a line colour — is not a mesh property and is dropped.
+
+    ``center`` pins the map's neutral colour to a value and truncates the map to the half-range the data reaches, keeping the limits the data's own: a unit of change is the same colour distance either side of the centre, and the bar shows no colour the field never takes.
     """
     if style is None:
         return {}
@@ -424,16 +490,34 @@ _AXIS_OPTS = {
     "hide_yticklabels",
     "axhline",
     "axvline",
+    "axhline_color",
+    "axvline_color",
+    "xtick_side",
+    "ytick_side",
+    "xlabel_side",  # the axis label alone crosses to the far side, leaving the tick numbers where they are
+    "ylabel_side",
+    "region",  # [x0, x1, y0, y1] outline: the window a paper rings on a field
+    "region_color",
     "legend",
     "xscale",
     "yscale",  # axis scale (log/symlog/linear): part of the claim, not cosmetic
     "nbins",  # tick budget: a small multi-panel slot cannot hold the automatic count
+    "tick_size",  # tick-label type size, when the figure's own would crowd the cell out
+    "tick_length",  # tick mark length, the same concern as tick_size on the other axis of the gap
+    "xtick_rotation",  # slant the tick labels of a dense row of panels so neighbours stop running together
+    "ytick_rotation",
+    "xtick_format",  # 'sci' moves a shared exponent to the axis corner; 'plain' writes every tick in full
+    "ytick_format",
+    "tick_prune",  # drop the first/last tick ('lower'|'upper'|'both') where a neighbouring panel starts
+    "xlabel_pad",  # gap in points between an axis label and its tick numbers, when the default lets them touch
+    "ylabel_pad",
     "aspect",
     "box_aspect",
     "invert_x",
     "invert_y",
     "frame",  # frame geometry/direction/visibility
     "zlabel",
+    "zlabel_pad",  # 3-D axis labels land where matplotlib puts them, which on a narrow slot is over the neighbour
     "zlim",
     "elev",
     "azim",
@@ -444,6 +528,10 @@ _AXIS_OPTS = {
 
 # Axis directives the format pass can overwrite, so they are re-applied after it.
 _POST_FORMAT_OPTS = {
+    "xtick_side",
+    "ytick_side",
+    "xlabel_side",  # re-applied beside the tick side, which also moves the label and would win alone
+    "ylabel_side",
     "xticks",
     "yticks",
     "xlim",
@@ -456,6 +544,13 @@ _POST_FORMAT_OPTS = {
     "box_aspect",
     "frame",
     "nbins",
+    "tick_size",
+    "tick_length",
+    "xtick_rotation",
+    "ytick_rotation",
+    "xtick_format",
+    "ytick_format",
+    "tick_prune",
 }
 
 
@@ -507,14 +602,7 @@ def _group_axis(opts, axis: str) -> dict | None:
     spec = opts.get(f"{axis}groups")
     if not spec:
         return None
-    # A nested opt value arrives as a LinkML JsonObj, whose plain-dict() carries internals.
-    spec = (
-        {k: v for k, v in vars(spec).items() if not k.startswith("_")}
-        if hasattr(spec, "__dict__") and not isinstance(spec, dict)
-        else dict(spec)
-        if isinstance(spec, dict)
-        else {"bounds": spec}
-    )
+    spec = dict(spec) if isinstance(spec, dict) else {"bounds": spec}
     bounds = [float(b) for b in (spec.get("bounds") or [])]
     labels = [str(t) for t in (spec.get("labels") or [])]
     if not bounds:
@@ -586,38 +674,26 @@ class _UsedOnly:
 
 @functools.cache
 def _container_path(iri, base_dir: Path) -> str:
-    """Resolve an experiment IRI/key to its result container (skips ``*_network.h5``).
+    """Resolve a ``used`` edge's IRI/key to its result container under ``base_dir``.
 
-    The PROV ``used`` edge points at a result; its container lives under either ``<base_dir>/output/nc/<exp>/`` (a per-experiment ``tvbo run``), flat BIDS-style files directly inside ``<base_dir>/output/nc/`` (``<exp>[_desc-...]_result.h5`` — the layout a whole-study ``tvbo run`` writes into ``nc/``), the flat ``<base_dir>/output/<exp>[_desc-...]_result.h5`` at the output root, or ``<base_dir>/output/results/<name>/result.h5`` (a derived-figure container a replication study writes with ``ExperimentResult.save``, the ``results_io`` convention). All are tried so a figure layer can bind any of them. Returns ``""`` when unresolved.
+    One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. The ``_`` boundary keeps ``exp-1`` from matching ``exp-10`` and the network companion is skipped by name.
+
+    Returns ``""`` when the container is not there, which a panel declaring a ``placeholder`` relies on: the generated script draws the honest label instead of a plot, so a partially-run study still renders. A panel without a placeholder gets a named error from ``_open`` at render time. What is gone is the guessing — four candidate layouts tried in turn, which is how a figure came to read one run's experiments against another run's analyses.
     """
     if not iri:
         return ""
-    key = re.split(r"[:/#]", str(iri))[-1]  # last IRI segment (e.g. "exp-3" or "fig3")
-    # Only an experiment reference (exp-N / expN / bare N) yields exp-<id> candidates. A digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
     from tvbo.data.dataref import experiment_id as _experiment_id
+    from tvbo.utils.study_layout import study_path
 
+    key = re.split(r"[:/#]", str(iri))[-1]  # last IRI segment (e.g. "exp-3" or "fig3")
+    # Only an experiment reference (exp-N / expN / bare N) yields an exp-<id> stem. A digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
     eid = _experiment_id(iri)
-    cands = [key, *([f"exp-{eid}", f"exp{eid}"] if eid else [])]
-    nc = base_dir / "output" / "nc"
-    for cand in cands:
-        d = nc / cand
-        if d.is_dir():
-            files = [f for f in sorted(d.glob("*.h5")) if "network" not in f.name]
-            if files:
-                return str(files[0].resolve())
-        if nc.is_dir():  # flat BIDS files directly inside output/nc/
-            files = [f for f in sorted(nc.glob(f"{cand}_*result.h5")) if "network" not in f.name]
-            if files:
-                return str(files[0].resolve())
-        result = base_dir / "output" / "results" / cand / "result.h5"
-        if result.is_file():
-            return str(result.resolve())
-    out = base_dir / "output"  # flat whole-study layout: output/<exp>_*result.h5
-    if out.is_dir():
-        for cand in cands:  # `_` boundary so exp-1 never matches exp-10
-            files = [f for f in sorted(out.glob(f"{cand}_*result.h5")) if "network" not in f.name]
-            if files:
-                return str(files[0].resolve())
+    stems = [f"exp-{eid}"] if eid else [f"ana-{key}", key]
+    results = study_path("results", root=base_dir)
+    for stem in stems:
+        files = [f for f in sorted(results.glob(f"{stem}_*result.h5")) if "network" not in f.name]
+        if files:
+            return str(files[0].resolve())
     return ""
 
 
@@ -672,7 +748,7 @@ def _sel_dict(used):
 def _used_ref(used):
     """The container key for a figure layer's ``used`` DataRef.
 
-    An explicit ``iri`` pointer wins; otherwise an in-study ``experiment`` id resolves to its ``exp-<id>`` key and an in-study ``analysis`` to its own name (whose container ``_container_path`` finds under ``output/results/<name>/``). The short forms are preferred for same-study bindings — they need no hardcoded study key in an IRI string and (via the ``used`` edge) register the dependency, so the source runs first.
+    An explicit ``iri`` pointer wins; otherwise an in-study ``experiment`` id resolves to its ``exp-<id>`` stem and an in-study ``analysis`` to its ``ana-<name>`` one, both of which ``_container_path`` finds in the study's results directory. The short forms are preferred for same-study bindings — they need no hardcoded study key in an IRI string and (via the ``used`` edge) register the dependency, so the source runs first.
     """
     iri = getattr(used, "iri", None)
     if iri:
@@ -695,12 +771,13 @@ def _resolve_layer(layer, panel_kind, base_dir):
     color = getattr(enc, "color", None)
     kwargs = _heatmap_kwargs(style) if mark == "heatmap" else _style_kwargs(style)
     label = getattr(layer, "label", None)
-    # A `color` ENCODING fans one artist per entry and labels each with its own coordinate value, so a layer-wide colour or label would collide with the per-entry ones. Every mark with its own branch ABOVE the colour fan-out (heatmap/scatter/bar/area/band/rule) draws a single artist that must keep its own colour and label; only a bare line fans by colour.
+    # A `color` ENCODING means one of two things, and the mark decides which. On a `scatter` it is a THIRD QUANTITY per point — the paper's convention of shading a cloud by the variable it is not plotted against — drawn as one artist with `c=`. On a line it fans one artist per entry along the named dim, each labelled with its own coordinate value. Every other mark draws a single artist that keeps its own colour and label.
+    _shades_points = bool(color) and mark == "scatter"
     _fans_by_color = bool(color) and mark not in ("scatter", "bar", "area", "heatmap", "band", "rule")
     if label and mark != "heatmap" and not _fans_by_color:
         kwargs["label"] = str(label)  # matplotlib reads the legend entry off the artist
-    if _fans_by_color:
-        kwargs.pop("color", None)
+    if _fans_by_color or _shades_points:
+        kwargs.pop("color", None)  # a per-entry/per-point colour and a layer-wide one collide
     return {
         "container": _container_path(_used_ref(used), base_dir),
         "output": used.output,
@@ -751,7 +828,11 @@ def _grid_geometry(opts, n_cells):
     A column header sits just above the cells rather than at the panel's own top: parked at a fixed fraction it would leave a dead band whenever ``top`` is opened up for something else, and stop reading as belonging to its column. ``between`` writes text in the gap BEFORE each cell, which is what turns a row of maps into a paper's decomposition equation ``y = a1 x psi_1 + a2 x psi_2 + ...``.
 
     An unset ``nrows`` holds every cell, so declaring only ``ncols`` wraps rather than drops. An explicit ``nrows`` still caps the grid — cropping the extras deliberately.
-    ``bottom`` is ``top``'s counterpart: cells that carry tick labels or a shared axis label need that strip reserved, or the labels are drawn outside the panel's own box.
+    ``bottom`` is ``top``'s counterpart and ``right`` is ``left``'s: cells that carry tick labels or a shared axis label need that strip reserved, or the labels are drawn outside the panel's own box — and on the right that is the panel next door.
+
+    ``xlabel``/``ylabel`` name the quantity the cells SHARE, once, in the reserved strip — the same argument that makes row and column labels grid-level rather than per-cell, applied to the axes. They are what a paper prints under and beside such a block instead of repeating one axis title ten times, and they are inert as per-cell opts because a grid's own axes is turned off. ``ylabel_side: right`` puts the label opposite ``left``, which is where it belongs when the cells carry their ticks on the right. Both sit at the strip's OUTER edge, because the strip also holds the tick labels of the cells nearest it and an axis title anchored just outside the cells is drawn straight over them.
+
+    Every fraction is of the HOST PANEL, cells included: a cell is ``cw - wspace`` wide, so a ``wspace`` approaching ``cw`` collapses the cells rather than merely separating them.
     """
     rows = list(opts.get("row_labels") or [])
     cols = list(opts.get("col_labels") or [])
@@ -759,9 +840,10 @@ def _grid_geometry(opts, n_cells):
     nrows = int(opts.get("nrows") or -(-n_cells // ncols))
     wspace, hspace = float(opts.get("wspace", 0.02)), float(opts.get("hspace", 0.02))
     left = float(opts.get("left", 0.16 if rows else 0.0))
+    right = float(opts.get("right", 0.0))
     top = float(opts.get("top", 0.10 if cols else 0.0))
     bottom = float(opts.get("bottom", 0.0))
-    cw, ch = (1.0 - left) / ncols, (1.0 - top - bottom) / nrows
+    cw, ch = (1.0 - left - right) / ncols, (1.0 - top - bottom) / nrows
 
     boxes = []
     for n in range(n_cells):
@@ -798,6 +880,12 @@ def _grid_geometry(opts, n_cells):
     if opts.get("trailing"):
         r, c = divmod(n_cells - 1, ncols)
         labels.append(_text(opts["trailing"], min(left + (c + 1) * cw + wspace / 4, 0.99), 1.0 - top - (r + 0.5) * ch))
+    if opts.get("xlabel"):
+        labels.append(_text(opts["xlabel"], left + ncols * cw / 2, float(opts.get("xlabel_pad", 0.01)), va="bottom"))
+    if opts.get("ylabel"):
+        pad = float(opts.get("ylabel_pad", 0.01))
+        on_right = str(opts.get("ylabel_side", "left")) == "right"
+        labels.append(_text(opts["ylabel"], 1.0 - pad if on_right else pad, 1.0 - top - nrows * ch / 2, rotation=90))
     return boxes, labels
 
 
@@ -877,9 +965,17 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
         if kind == "custom" or kind in _BUILTIN_PANELS
         else None
     )
-    # One colourbar per panel (not per layer — a split matrix is two layers, one scale), suppressed with `colorbar: false` where the paper prints none. It is slim by default: matplotlib's own default steals ~20% of a small panel's width.
-    colorbar = any(layer["mark"] == "heatmap" for layer in layers) and opts.get("colorbar", True) is not False
+    # One colourbar per panel (not per layer — a split matrix is two layers, one scale), suppressed with `colorbar: false` where the paper prints none. It is slim by default: matplotlib's own default steals ~20% of a small panel's width. A heatmap is unreadable without its scale, so it carries one by default; a scatter shaded by a third quantity still reads as a scatter, and a row of them conventionally shares ONE bar, so that case opts in with `colorbar: true`.
+    _mappable = any(layer["mark"] == "heatmap" or (layer["mark"] == "scatter" and layer["color"]) for layer in layers)
+    _default_on = any(layer["mark"] == "heatmap" for layer in layers)
+    colorbar = _mappable and bool(opts.get("colorbar", _default_on))
     colorbar_kwargs = {"fraction": opts.get("colorbar_fraction", 0.046), "pad": opts.get("colorbar_pad", 0.04)}
+    # A scale drawn under its own x-axis, the way a scatter's third quantity is conventionally keyed.
+    for name, kw in (("colorbar_orientation", "orientation"), ("colorbar_location", "location")):
+        if opts.get(name):
+            colorbar_kwargs[kw] = str(opts[name])
+    if opts.get("colorbar_aspect"):
+        colorbar_kwargs["aspect"] = float(opts["colorbar_aspect"])
     # Default the axis labels to the first layer's x-dim / output; opts override them.
     axopts = _axopts(panel)
     # bsplot's format pass re-derives ticks and can re-normalise limits, so a DECLARED frame (the paper's own tick marks and ranges) is re-applied after it. Intent written in the spec must not be silently replaced by the tidy-up.
@@ -907,6 +1003,10 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
         "colorbar": colorbar,
         "colorbar_kwargs": colorbar_kwargs,
         "colorbar_label": opts.get("colorbar_label"),
+        # Ticks written out to this many decimals instead of a shared multiplier. A slim bar has nowhere to put an exponent, so a range like 1e-4 otherwise reads as "3, 0, -1" — the axis is then silently wrong by four orders of magnitude.
+        "colorbar_decimals": opts.get("colorbar_decimals"),
+        # A paper's colourbar tick set is declared intent exactly as `xticks` is, and often carries meaning of its own — the two end values of a deliberately narrow range.
+        "colorbar_ticks": opts.get("colorbar_ticks"),
         # Cells of blank band between two triangle layers, so the halves read as two quantities rather than one field (the paper's own `extra_diagonal`).
         "triangle_gap": int(opts.get("triangle_gap", 0) or 0),
         "axopts": axopts,
@@ -986,11 +1086,17 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         # matplotlib reads `bbox_inches=None` as "use rcParams['savefig.bbox']", which the stylesheet sets to "tight" — so the declared `trim_margins: false` only takes effect if the rcParam itself is cleared.
         spine_rcparams = {**spine_rcparams, "savefig.bbox": None}
 
-    offset = getattr(figure, "spine_offset", None)
+    offset = getattr(figure, "spine_offset", None)  # undeclared defers to bsplot's own offset, as the slot documents
     format_kwargs = {} if offset is None else {"shift_left_spine": -float(offset), "shift_bottom_spine": -float(offset)}
+
+    shared = {
+        axis: [[k.strip() for k in str(g).split(",") if k.strip()] for g in (getattr(figure, f"share_{axis}", None) or [])]
+        for axis in ("x", "y")
+    }
 
     return {
         "name": figure.name or "figure",
+        "shared_scales": shared,
         "style": _style_entries(figure, base_dir),
         "outfile": outfile,
         "panels": panels,

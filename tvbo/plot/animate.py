@@ -30,7 +30,7 @@ def _graph_from_experiment(result):
     node_ids = sorted(G.nodes)
     positions = np.array([pos_dict[n][:2] for n in node_ids])
 
-    W = getattr(network, "weights_matrix", None)
+    W = network.matrix("weight") if hasattr(network, "matrix") else None
     if W is None:
         W = np.zeros((len(node_ids), len(node_ids)))
 

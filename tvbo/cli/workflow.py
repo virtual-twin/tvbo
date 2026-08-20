@@ -249,7 +249,7 @@ def _network_has_matrices(net) -> bool:
     try:
         import numpy as _np
 
-        return _np.asarray(net.weights).size > 1
+        return _np.asarray(net.matrix("weight")).size > 1
     except Exception:
         return False
 
@@ -702,7 +702,7 @@ def _figure_code_modules(figs) -> set[str]:
 def _figure_base_dir(study, out_dir: Path) -> str:
     """Root the figures' ``used`` containers resolve against.
 
-    Prefers the study's source-file directory (where ``output/nc/`` lives at author time); falls back to the kit dir. ``bsplot`` resolves each layer's IRI to ``<base>/output/nc/<exp>/*.h5``.
+    Prefers the study's source-file directory, which is the root its layout resolves against at author time; falls back to the kit dir. ``bsplot`` asks the layout for the ``results`` role under that base and reads ``exp-<id>_*_result.h5`` from it.
     """
     src = getattr(study, "_source_file", None)
     return str(Path(src).parent) if src else str(out_dir)
@@ -782,7 +782,7 @@ def _emit_snakemake_study(
     Fan-out note: an experiment that fans a ``parameters`` axis over the workflow (one ``--pin`` per cell, e.g. a per-cell host observation) is emitted spec-mode ONLY, with NO frozen script. A frozen script bakes the model/coupling/network parameters at a single point and hardcodes the whole grid, so the per-cell ``--pin`` can never reach them — pins collapse the exploration on the experiment OBJECT, which only a spec-mode re-render reads. Skipping the (invalid) frozen script also means a run forcing ``--code-source frozen`` still falls back to spec for these rules. Subject / seed / IC fans keep their frozen script: their per-cell value reaches the frozen run at call time (``--subject``, seed / initial-condition kwargs).
     """
     study, experiments, study_key = _study_experiments(spec, experiment)
-    out_dir = output or Path("output").joinpath(str(study_key), "snakemake")
+    out_dir = output or _kits_root(spec) / str(study_key) / "snakemake"
     if not stdout:
         out_dir.mkdir(parents=True, exist_ok=True)
     parsed = _parse_overrides(override)
@@ -982,11 +982,13 @@ def _write_snakemake_profile(out_dir: Path, block: dict, plan=None) -> None:
     """Ship a SLURM profile so the kit runs from a login node with one command.
 
     Snakemake 8+/9 submits to the scheduler via an executor plugin: the lightweight ``snakemake`` process runs on the login node and dispatches each rule as its own SLURM job (with the per-rule ``resources:`` in the Snakefile). The profile carries the compute-environment settings — ``executor: slurm``, the concurrent-jobs cap, and the cluster-identity default-resources (partition/account) that don't belong in the workflow definition. Run: ``snakemake --profile profile`` from the kit dir.
+
+    The concurrent-jobs cap comes from the workflow block's ``jobs`` (100 when unset), beside the partition and account it belongs with: a site's queue limit is a property of the run, and a 1000-subject fan-out throttled to a baked-in 100 is a silent slowdown with nothing in the recipe to change.
     """
     _container_args = getattr(plan, "container_exec_flags", "") or ""
     text = _render_template(
         "snakemake/profile.yaml.mako",
-        jobs=100,
+        jobs=int(block.get("jobs") or 100),
         container=getattr(plan, "container", None),
         container_args=_container_args,
         # YAML 1.2 is a JSON superset, so a JSON string literal is always a valid — and correctly escaped — YAML scalar. container_args is free-form, so it may contain the quote that would otherwise terminate the scalar early.
@@ -1049,7 +1051,7 @@ def _warn_machine_specific_bids_root(out_dir: Path) -> None:
 def _warn_unsatisfiable_figure_inputs(out_dir: Path) -> None:
     """Name the containers a travelling kit will not find, and where they are needed.
 
-    A figure's PROV ``used`` edges become its rule's ``input:``, and those resolve against the author's tree — right at author time, wrong the moment the kit travels. Analysis containers are the common case: the kit runs experiments, so ``output/results/<a>/…`` has no rule to make it and is an absolute path that does not exist on the target host.
+    A figure's PROV ``used`` edges become its rule's ``input:``, and those resolve against the author's tree — right at author time, wrong the moment the kit travels. Analysis containers are the common case: the kit runs experiments, so ``derivatives/tvbo/ana-<name>_result.h5`` has no rule to make it and is an absolute path that does not exist on the target host.
     Such figures are kept out of ``rule all`` and ``all_figures`` (so no advertised target is unsatisfiable), which turns a confusing failure into a listable one — this is the list, and staging these paths is what makes those rules runnable.
     """
     smk = out_dir / "figures.smk"
@@ -1125,6 +1127,16 @@ def _write_external_inputs_manifest(out_dir: Path, source_dir: Path | None) -> i
     return len(seen)
 
 
+def _kits_root(spec: str) -> Path:
+    """Where kits packaged from *spec* are written by default.
+
+    The study's own build root (:mod:`tvbo.utils.study_layout`, role ``kits``), so a kit lands beside the study it was packaged from rather than in a ``output/`` directory relative to wherever the CLI happened to run. ``--output`` overrides the location and nothing else.
+    """
+    from tvbo.utils.study_layout import study_path
+
+    return study_path("kits", root=_spec_source_dir(spec) or Path.cwd())
+
+
 def _spec_source_dir(spec: str) -> Path | None:
     """Directory a spec's relative paths mean, or ``None`` when the spec is not a file.
 
@@ -1184,9 +1196,9 @@ def _emit(
     if output:
         out_dir = output
     else:
-        # A standalone experiment has study_key == experiment_key (same fallback), so collapse the redundant level: out/<experiment>/<engine> not …/x/x/….
+        # A standalone experiment has study_key == experiment_key (same fallback), so collapse the redundant level: <kits>/<experiment>/<engine> not …/x/x/….
         parts = [plan.experiment_key] if plan.study_key == plan.experiment_key else [plan.study_key, plan.experiment_key]
-        out_dir = Path("output").joinpath(*parts, engine)
+        out_dir = _kits_root(spec).joinpath(*parts, engine)
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir, bundle_select=bundle_select)
     return _finalize_kit(out_dir, pack=pack, source_dir=_spec_source_dir(spec))
 
@@ -1331,7 +1343,7 @@ def _execute_emitted(
 def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None, code_source: str | None = None) -> None:
     """Submit ``run.sbatch`` (array), then ``finalize.sbatch`` with a dependency.
 
-    ``sbatch --parsable`` returns the array job id; the gather job is submitted ``--dependency=afterok`` on it and told where the shards landed via ``TVBO_SHARD_DIR``, so it reassembles them into one result once every task succeeds. When *code_source* is set it is exported into the submit environment as ``TVBO_CODE_SOURCE`` (``sbatch`` forwards it to the job via its default ``--export=ALL``), selecting the frozen-vs-spec code source per submission.
+    ``sbatch --parsable`` returns the array job id; the gather job is submitted ``--dependency=afterok`` on it and told where the shards landed via ``TVBO_SHARD_DIR``, so it reassembles them into one result once every task succeeds. Each task's slice is named by its own ``split-`` entity, so they share one flat ``shards/`` directory. When *code_source* is set it is exported into the submit environment as ``TVBO_CODE_SOURCE`` (``sbatch`` forwards it to the job via its default ``--export=ALL``), selecting the frozen-vs-spec code source per submission.
     """
     env = None
     cmd = ["sbatch", "--parsable"]
@@ -1350,7 +1362,7 @@ def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None, code_s
     finalize = out_dir / "finalize.sbatch"
     if finalize.exists() and job_id:
         base = job_id.split("_")[0]
-        fcmd = ["sbatch", f"--dependency=afterok:{base}", f"--export=ALL,TVBO_SHARD_DIR=results/{base}", finalize.name]
+        fcmd = ["sbatch", f"--dependency=afterok:{base}", "--export=ALL,TVBO_SHARD_DIR=shards", finalize.name]
         _common.info("$ " + " ".join(shlex.quote(c) for c in fcmd))
         subprocess.run(fcmd, check=True, cwd=out_dir)
         _common.info(f"submitted gather job (afterok:{base}) — one result when the array finishes")
@@ -1636,7 +1648,7 @@ def run_workflow(
     _exp_ids = [e.strip() for e in str(experiment).split(",") if e.strip()] if experiment else []
     if len(_exp_ids) > 1:
         for _eid in _exp_ids:
-            _out_i = (output / f"exp{_eid}") if output else Path("output") / f"exp{_eid}"
+            _out_i = (output / f"exp{_eid}") if output else _kits_root(spec) / f"exp{_eid}"
             _common.info(f"── experiment {_eid} → {_out_i}")
             run_workflow(engine, spec, backend, _eid, _out_i, override, array, array_throttle, profile, cores, code_source)
         return

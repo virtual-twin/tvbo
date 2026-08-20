@@ -112,7 +112,6 @@ _LAZY_IMPORTS = {
     "SimulationExperiment": ".classes",
     "SimulationStudy": ".classes",
     "SimulationTool": ".classes.software",
-    "StudyCollection": ".classes",
     "Dynamics": ".classes.dynamics",
     "DynamicalSystem": ".classes.dynamics",
     "Continuation": ".classes.continuation",

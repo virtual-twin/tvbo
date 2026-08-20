@@ -489,3 +489,37 @@ def test_a_value_written_two_ways_is_one_setting():
     model = SimpleNamespace(state_variables={}, derived_parameters={}, parameters={"v0": _param(6)})
     coupling = SimpleNamespace(parameters={"v0": _param(6.0)})
     assert symbol_table(model, couplings=[coupling]).count("$v_{0}$") == 1
+
+
+def _edge(**kw):
+    """An explicit edge stub: the attributes the readers ask for, absent ones as None."""
+    return SimpleNamespace(parameters=None, weight=0.5, **{"delay": None, "distance": None, **kw})
+
+
+def _delay_experiment(net):
+    return SimpleNamespace(
+        id=1,
+        references=[],
+        network=net,
+        connectivity=None,
+        part="main",
+        integration=SimpleNamespace(unit="ms", method="Heun", step_size=None, duration=None, transient_time=None),
+        dynamics=SimpleNamespace(parameters={}),
+        explorations=None,
+    )
+
+
+def test_a_network_that_measures_tract_lengths_is_reported_by_its_speed():
+    """The comparison table says what the backend integrates, and lengths win over edge delays.
+
+    `graph_selection` lowers a network carrying both onto a length graph, whose delays are lengths / conduction_speed; reporting the edge delay there prints a number no cell ever runs with.
+    """
+    from tvbo.utils.report import experiment_facts
+
+    speed = SimpleNamespace(value=3.0, unit="mm_per_ms")
+    on_edges = _delay_experiment(SimpleNamespace(number_of_nodes=2, edges=[_edge(delay=2.0)], conduction_speed=speed))
+    on_lengths = _delay_experiment(
+        SimpleNamespace(number_of_nodes=2, edges=[_edge(delay=2.0, distance=30.0)], conduction_speed=speed)
+    )
+    assert experiment_facts(on_edges)["Delays"] == "2 ms"
+    assert experiment_facts(on_lengths)["Delays"] == "3 mm/ms"

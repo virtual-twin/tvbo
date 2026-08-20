@@ -107,3 +107,28 @@ def test_tvboptim_observations_match_native_tvb():
     for tvboptim_data, tvb_data in comparisons:
         tvboptim_data, tvb_data = _aligned_observation_data(tvboptim_data, tvb_data)
         np.testing.assert_allclose(tvboptim_data, tvb_data, rtol=2e-3, atol=1e-4)
+
+
+def test_derived_observation_arguments_bind_by_name():
+    """A derived observation's `arguments:` is keyed by the callable's parameter, so the emitted call must name them.
+
+    Emitted positionally, the binding was decided by whatever order the datamodel yielded the arguments mapping: a regenerated datamodel reversed it, and a two-spectrum reducer silently began computing `(post - pre)/post` where the recipe declares `(pre - post)/pre`. Every container written after that stored the wrong column, and nothing raised.
+    """
+    from tvbo.export.formats import _render_tvboptim
+
+    experiment = _two_node_bold_experiment(duration=200.0)
+    experiment.observations["ratio"] = SchemaObservation(
+        name="ratio",
+        source=["TemporalAverage", "Bold_TVB"],
+        pipeline=[
+            {
+                "name": "ratio",
+                "callable": {"name": "divide", "module": "numpy"},
+                "arguments": {"x1": {"name": "x1", "value": "TemporalAverage"}, "x2": {"name": "x2", "value": "Bold_TVB"}},
+            }
+        ],
+    )
+    call = next(line for line in _render_tvboptim(experiment).split("\n") if "numpy.divide(" in line)
+    assert "x1=_obs_data(obs.TemporalAverage)" in call, call
+    assert "x2=" in call, call
+    assert "divide(_obs_data(" not in call, call  # nothing rides on the arguments mapping's order
