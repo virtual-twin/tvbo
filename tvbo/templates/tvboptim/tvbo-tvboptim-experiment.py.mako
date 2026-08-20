@@ -1554,11 +1554,12 @@ def _load_param(path, key, device=True):
     source. Read once when the network is built, not per step. ``device=False`` keeps the
     array in NumPy at its stored precision — what a host-side consumer needs, since
     ``jnp.asarray`` silently truncates float64 to float32 whenever x64 is off.
-    """
-    from pathlib import Path
 
-    from tvbo.data.matrix_io import LazyArrayStore
-    _arr = LazyArrayStore(Path(path), {}).read_dataset(key)
+    A packed kit stages these artifacts by basename, so an absent author path is resolved
+    against ``$TVBO_CONSTANTS_DIR`` or the run directory's ``constants/``.
+    """
+    from tvbo.data.matrix_io import LazyArrayStore, resolve_staged_path
+    _arr = LazyArrayStore(resolve_staged_path(path), {}).read_dataset(key)
     return jnp.asarray(_arr) if device else _arr
 
 

@@ -1,0 +1,70 @@
+---
+title: "tvbo brain"
+description: "The ASCII spec-to-cortex portrait: a model spec coming apart and reassembling as a cortical surface drawn from its own characters."
+---
+
+`tvbo brain` draws a model spec dissolving into a cortical surface built out of the spec's own characters — the terminal form of bsplot's [Spec to cortex](https://virtual-twin.github.io/bsplot/Usage/AsciiSpecPortrait/AsciiSpecPortrait.html) portrait.
+
+A bare `tvbo` shows the same surface at banner scale — the TVB-O logo pinned to the left edge, a cortex pinned to the right, the two columns the same height, and the command list underneath. Three details make that banner work:
+
+- the **logo** is the real mark, rendered from `docs/_static/tvbo_python_square.svg`. Each target pixel takes the *dominant* brand colour of its source block rather than a blend, so the mark stays two flat colours instead of smearing into intermediate tones, and it is painted two pixels per character cell — `▀` in the upper pixel's colour with the lower pixel as its backdrop. On a dark terminal it is lifted toward white, since the artwork is drawn for paper.
+- the **cortex** is shaded through the coarse `" .:-=+*#%@"` ramp, not a letters ramp: at a dozen rows tonal contrast is what makes it read as a brain, and letterforms only add noise. The lighting is re-stretched after resampling, because box-averaging a 156×60 grid down to 30 columns otherwise flattens every cell toward the mean.
+- both marks keep their own proportions, so the **shared row count** sets each width; the tallest pair that still fits between the two edges wins. Below the width where both fit, the cortex gives way and the logo stands alone.
+
+## Synopsis
+
+```text
+tvbo brain [SPEC] [--animate] [--bg dark|light] [--width N] [--plain] [--no-flow]
+                  [--hemi lh|rh|both] [--view lateral|medial|top|...]
+                  [--render] [--save-asset PATH]
+```
+
+`SPEC` is any path, CURIE, or database name whose text supplies the glyphs — `tvbo brain dynamics:Generic2dOscillator`, `tvbo brain ./my_study.yaml`. It defaults to the curated `Jansen1995` model.
+
+## What you are looking at
+
+Three things happen left to right:
+
+- **the spec** — the YAML as written, every glyph a source with a real position;
+- **the flow** — a sample of those letters caught mid-flight, on an arc toward the cortex;
+- **the cortex** — one `fsaverage` pial surface. Each cell's glyph comes from an ink ramp built out of *the spec's own character set*, so the 3-D form reads through glyph density even with colour off, and the colour is the surface's binarised curvature (gyri light, sulci dark) shaded by the lighting. A `C` lands from a `C` in the text.
+
+`--animate` plays the dissolve: every glyph rests on its spec position until its departure beat, then flies to its cell, departures sweeping the spec in reading order.
+
+## Options
+
+| Option | Meaning |
+|--------|---------|
+| `--animate`, `-a` | Play the dissolve in place instead of printing the still frame. |
+| `--bg dark\|light` | Theme the output for the background it is viewed on. On a light background the ink ramp flips, so the sulci carry the heaviest ink. |
+| `--width`, `-w` | Portrait width in characters. Defaults to the terminal; the cortex keeps its own aspect and the spec column is dropped when the terminal is too narrow. |
+| `--plain` | Plain characters, no ANSI escapes — for a README, a log, or a pipe. Colour is dropped automatically when stdout is not a terminal or `NO_COLOR` is set. |
+| `--no-flow` | Drop the letters caught mid-flight. |
+| `--hemi`, `--view` | Hemisphere and view to render live; only meaningful with `--render`. |
+| `--render` | Re-render the surface geometry with bsplot instead of using the shipped one. |
+| `--save-asset PATH` | Write that render as a reusable asset (implies `--render`). |
+| `--save-logo PATH` | Re-render the TVB-O logo from the project artwork into an asset and exit. |
+
+## Why it is instant
+
+The logo ships as `tvbo/data/media/logo_ascii.txt` (an alpha block, a palette-indexed colour block, and the palette) — rebuilding it needs an SVG rasteriser (`rsvg-convert` or `inkscape`), which is exactly why it ships. The surface geometry ships precomputed as `tvbo/data/media/cortex_ascii.txt`: a text grid holding, per character cell, the shading intensity and the binarised curvature, cropped to the cortex bounding box, plus the measured ink ordering of printable ASCII. Printing the portrait is a file read and some arithmetic — no bsplot import, no template download, no network.
+
+`--render` is the escape hatch when you want another view, and `--save-asset` regenerates the shipped grid:
+
+```bash
+tvbo brain --render --view medial              # a live render, this once
+tvbo brain --render --hemi rh --view lateral \
+           --save-asset tvbo/data/media/cortex_ascii.txt
+```
+
+That path needs `bsplot` plus the `fsaverage` template data (fetched through templateflow), which is exactly why the result is shipped rather than recomputed on every invocation.
+
+## Examples
+
+```bash
+tvbo                                   # the hero banner + the command list
+tvbo brain                             # the portrait, sized to your terminal
+tvbo brain --animate                   # watch the spec come apart
+tvbo brain dynamics:JansenRit --bg light
+tvbo brain ./study.yaml --plain -w 100 > portrait.txt
+```

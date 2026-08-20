@@ -133,6 +133,8 @@ website:
                         href: CLI/info.qmd
                       - text: "tvbo formats"
                         href: CLI/formats.qmd
+                      - text: "tvbo brain"
+                        href: CLI/brain.qmd
                       - text: "tvbo validate"
                         href: CLI/validate.qmd
                       - text: "tvbo config"

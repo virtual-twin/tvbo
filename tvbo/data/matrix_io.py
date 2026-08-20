@@ -5,10 +5,32 @@ Supports dense, CSR, and COO formats. Both HDF5 (h5py.Group) and Zarr (zarr.Grou
 See §12.1 of the tvbo HDF5 format proposal v0.7.
 """
 
+import os
 from pathlib import Path
 
 import numpy as np
 from scipy.sparse import coo_matrix, csr_matrix
+
+
+def resolve_staged_path(path) -> Path:
+    """Resolve an artifact path against a packed kit's staging directory.
+
+    A frozen backend script carries the absolute path its author read. A packed kit copies
+    every artifact that script loads — sourced/produced observer constants and sourced model
+    or coupling parameters alike — into its own ``constants/`` directory, keyed by basename.
+    When the author's path is absent, as it is on any other machine, the file is looked up
+    under ``$TVBO_CONSTANTS_DIR`` and then the run directory's ``constants/``.
+
+    An existing path is returned untouched, so a run on the authoring machine never consults
+    the staging directory and cannot pick up a same-named file by accident.
+    """
+    p = Path(path)
+    if p.exists():
+        return p
+    for base in (os.environ.get("TVBO_CONSTANTS_DIR"), "constants"):
+        if base and (Path(base) / p.name).is_file():
+            return Path(base) / p.name
+    return p
 
 
 def _create_ds(grp, name, *, data, **kwargs):

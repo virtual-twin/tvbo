@@ -1892,30 +1892,30 @@ def test_two_constants_sharing_a_basename_is_an_error(tmp_path):
     """
     import typer
 
-    from tvbo.cli.workflow import _bundle_script_constants
+    from tvbo.cli.workflow import _bundle_script_artifacts
 
     for sub in ("fc", "other"):
         (tmp_path / sub).mkdir()
         (tmp_path / sub / "target.h5").write_text(sub)
     code = f'_load_constant("{tmp_path / "fc" / "target.h5"}")\n_load_constant("{tmp_path / "other" / "target.h5"}")\n'
     with pytest.raises((SystemExit, typer.Exit, typer.BadParameter)):
-        _bundle_script_constants(code, tmp_path / "kit")
+        _bundle_script_artifacts(code, tmp_path / "kit")
 
 
 def test_the_same_constant_referenced_twice_is_staged_once(tmp_path):
-    from tvbo.cli.workflow import _bundle_script_constants
+    from tvbo.cli.workflow import _bundle_script_artifacts
 
     (tmp_path / "target.h5").write_text("x")
     code = f'_load_constant("{tmp_path / "target.h5"}")\n_load_constant("{tmp_path / "target.h5"}")\n'
-    assert _bundle_script_constants(code, tmp_path / "kit") == 1
+    assert _bundle_script_artifacts(code, tmp_path / "kit") == 1
 
 
 def test_a_constant_missing_on_this_machine_is_reported_not_dropped(tmp_path, caplog):
     """It cannot be staged, so the kit ships without it — that must be said out loud."""
-    from tvbo.cli.workflow import _bundle_script_constants
+    from tvbo.cli.workflow import _bundle_script_artifacts
 
     with caplog.at_level("WARNING", logger="tvbo.cli"):
-        n = _bundle_script_constants('_load_constant("/nowhere/target.h5")\n', tmp_path / "kit")
+        n = _bundle_script_artifacts('_load_constant("/nowhere/target.h5")\n', tmp_path / "kit")
     assert n == 0
     assert "target.h5" in caplog.text
 
