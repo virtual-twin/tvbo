@@ -2058,24 +2058,13 @@ def resolve_optimizer_mode(integration: Any) -> str:
 
 
 def resolve_config_access(dotted: str, coupling_keys: set[str], external_keys: set[str] = frozenset()) -> str | None:
-    """Dotted state-config path for a `<scope>.<param>` parameter reference.
+    """State-config path for a `<scope>.<param>` reference, or None for an empty one.
 
-    One addressing grammar, shared by optimization ``free_parameters``, analysis ``wrt``, and inference ``priors`` — so "which knob" reads the same everywhere:
-
-    - ``<coupling_key>.<param>``  -> ``coupling.<key>.<param>``  (prefix ∈ coupling_keys)
-    - ``<event_name>.<param>``    -> ``external.<name>.<param>`` (prefix ∈ external_keys)
-    - ``<Dynamics>.<param>`` or bare ``<param>`` -> ``dynamics.<param>`` (default scope)
-
-    ``external_keys`` are stimulus/external-input event names (the keys of the network's ``external_input`` dict, e.g. ``stimulus``).
+    The addressing grammar shared by analysis ``wrt`` and inference ``priors``; :func:`parameter_keypath` owns the grammar itself, so a reference means the same thing whether it is fitted, swept, ramped or given a prior. ``external_keys`` are stimulus/external-input event names (the keys of the network's ``external_input`` dict, e.g. ``stimulus``).
     """
-    wp = dotted.split(".") if dotted else []
-    if len(wp) == 2 and wp[0] in coupling_keys:
-        return f"coupling.{wp[0]}.{wp[1]}"
-    if len(wp) == 2 and wp[0] in external_keys:
-        return f"external.{wp[0]}.{wp[1]}"
-    if wp:
-        return f"dynamics.{wp[-1]}"
-    return None
+    if not dotted:
+        return None
+    return parameter_keypath(dotted, couplings=coupling_keys, external=external_keys)
 
 
 def _analysis_wrt_access(wrt: list[str], coupling_keys: set[str]) -> str | None:
@@ -3354,6 +3343,8 @@ def edge_const(label: str) -> str:
 # `network.`-scoped exploration axes sweep a live leaf of the backend graph, so every cell sees its own value without a Network or graph rebuild. Each entry below names the graph leaf carrying an attribute; adding a sweepable edge attribute is one entry here plus a graph leaf that holds it.
 _NETWORK_EDGE_GRAPH_LEAVES = {"weight": "weights", "length": "lengths", "delay": "delays"}
 _NETWORK_SCALAR_GRAPH_LEAVES = {"conduction_speed": "speed"}
+_NETWORK_SCOPE = "network."
+_RANDOM_SEED_SCOPE = "execution.random_seed"
 # Leaves holding one value per edge. tvboptim rejects a graph shape change after prepare(), so a scalar swept onto one of these is written across the existing edges rather than replacing the matrix.
 _NETWORK_MATRIX_GRAPH_LEAVES = frozenset({"weights", "lengths", "delays"})
 
@@ -3376,9 +3367,9 @@ def network_axis_leaf(ref: Any) -> str | None:
             with no live graph leaf to sweep — failing at codegen rather than
             silently writing the axis into the wrong scope.
     """
-    if not isinstance(ref, str) or not ref.startswith("network."):
+    if not isinstance(ref, str) or not ref.startswith(_NETWORK_SCOPE):
         return None
-    attr = ref[len("network.") :]
+    attr = ref[len(_NETWORK_SCOPE) :]
     label = edge_label(ref)
     if label is not None:
         leaf = _NETWORK_EDGE_GRAPH_LEAVES.get(label)
@@ -3432,7 +3423,9 @@ def noise_axis_param(ref: Any) -> str | None:
 def axis_keypath(ax: Any) -> str:
     """Grid keypath an exploration axis binds on — ``<sub-object>.<leaf>``.
 
-    ONE definition of WHERE an axis writes, so the grid binding, the warm-start / adiabatic sweep and the branch-analysis restart cannot disagree. A coupling axis lands on its coupling instance, a ``network.`` axis on the delay graph, a ``noise.`` axis on the noise parameters, an ``<event>.`` axis on that external input, and everything else on the dynamics. Disagreement here is silent rather than loud: routing ``noise.sigma`` to ``dynamics.sigma`` sweeps a same-named model parameter, or nothing at all, and the run still completes.
+    ONE definition of WHERE an axis writes, so the grid binding, the warm-start / adiabatic sweep and the branch-analysis restart cannot disagree. A coupling axis lands on its coupling instance, a ``network.`` axis on the delay graph, a ``noise.`` axis on the noise parameters, an ``initial_conditions.`` or seed axis on the dummy dynamics slot its wrapper reads per cell, an ``<event>.`` axis on that external input, and everything else on the dynamics. Disagreement here is silent rather than loud: routing ``noise.sigma`` to ``dynamics.sigma`` sweeps a same-named model parameter, or nothing at all, and the run still completes.
+
+    Reads the scope FLAGS the axis classifier already resolved, never the declared text — :func:`parameter_keypath` is the counterpart that classifies a reference still held as a raw dotted string. The two must answer alike for the same axis.
     """
     name = str(ax.get("name"))
     if ax.get("is_coupling"):
@@ -3441,6 +3434,10 @@ def axis_keypath(ax: Any) -> str:
         return f"graph.{ax.get('graph_leaf')}"
     if ax.get("is_noise"):
         return f"noise.{name}"
+    if ax.get("is_ic"):
+        return f"dynamics._ic_{name}"
+    if ax.get("is_seed"):
+        return "dynamics._noise_seed"
     if ax.get("is_external"):
         return f"external.{ax.get('external_key')}.{name}"
     return f"dynamics.{name}"
@@ -3468,6 +3465,51 @@ def initial_conditions_axis_sv(ref: Any) -> str | None:
             f"state-variable name (e.g. 'initial_conditions.E')."
         )
     return sv
+
+
+_NOISE_SCOPE_ALIASES = ("noise", "AdditiveNoise", "Noise")
+"""Prefixes naming the experiment's noise. ``noise`` is the declared spelling; the class-named ones are accepted because curated free-parameter lists were written with them."""
+
+
+def parameter_keypath(ref: Any, *, couplings: Any = (), coupling_key: Any = None, external: Any = ()) -> str:
+    """State keypath a raw dotted parameter reference binds on — ``<sub-object>.<leaf>``.
+
+    ONE resolution of WHERE a declared parameter lives, for every consumer holding the reference as a STRING rather than as a classified axis: the NSGA-II search axes, the fitted free parameters, the marked optimizer parameters, the ``initial_state`` working-point ramp, an analysis ``wrt`` and an inference prior. Each grew its own prefix ladder and they disagreed — the ramp knew no scope at all and hard-prefixed ``dynamics.``, two knew ``noise.`` but not ``network.``, and the ``wrt``/prior grammar knew ``external.`` that none of the others did. Every disagreement is silent: the reference resolves to a same-named model parameter, or to nothing, and the run still completes with a plausible answer. The ``initial_conditions.`` and ``execution.random_seed`` scopes resolve to the dummy ``dynamics`` slots a wrapper reads per cell, which is where codegen binds them. :func:`axis_keypath` is the counterpart for an exploration axis, whose reference the classifier has already split into scope flags; it must answer alike for the same reference, and a test pins that.
+
+    Args:
+        ref: Dotted reference as declared, e.g. ``noise.sigma``, ``network.conduction_speed``,
+            ``ReducedWongWang.w``, or a bare parameter name.
+        couplings: Coupling keys this experiment declares; a matching prefix routes to that
+            coupling instance.
+        coupling_key: Optional callable mapping a coupling name to its state key (the
+            coupling-input spelling). Identity when omitted.
+        external: External-input event names (the keys of the network's ``external_input``);
+            a matching prefix routes to that event's parameters.
+
+    Returns:
+        The keypath, e.g. ``noise.sigma``, ``graph.speed``, ``coupling.<key>.a``, ``dynamics.w``.
+
+    Raises:
+        ValueError: the reference is in a reserved scope but names nothing bindable there,
+            raised by that scope's own resolver.
+    """
+    text = str(ref)
+    if "." not in text:
+        return f"dynamics.{text}"
+    prefix, leaf = text.rsplit(".", 1)
+    if prefix in (couplings or ()):
+        return f"coupling.{(coupling_key or str)(prefix)}.{leaf}"
+    if prefix in (external or ()):
+        return f"external.{prefix}.{leaf}"
+    if prefix in _NOISE_SCOPE_ALIASES:
+        return f"noise.{noise_axis_param(f'{_NOISE_SCOPE}{leaf}')}"
+    if text.startswith(_NETWORK_SCOPE):
+        return f"graph.{network_axis_leaf(text)}"
+    if text.startswith(_INITIAL_CONDITIONS_SCOPE):
+        return f"dynamics._ic_{initial_conditions_axis_sv(text)}"
+    if text == _RANDOM_SEED_SCOPE:
+        return "dynamics._noise_seed"
+    return f"dynamics.{leaf}"
 
 
 def collect_network_edge_arrays(experiment: Any) -> dict[str, list]:
