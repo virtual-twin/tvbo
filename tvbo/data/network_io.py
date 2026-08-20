@@ -684,6 +684,10 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
             if cl is not None:
                 arrays["length"] = cl
 
+    # Observational matrices (from_bids keeps them in `_bids_observations`) travel with the companion too: a frozen network must keep serving `observations` from its store, gated by `observational_measures`.
+    for name, mat in (getattr(network, "_bids_observations", None) or {}).items():
+        arrays.setdefault(name, mat)
+
     # Network._items() hides _cached_* attrs, so yaml_dumper works directly
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
 
