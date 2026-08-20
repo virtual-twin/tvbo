@@ -323,10 +323,7 @@ def _object_array(values):
 def test_array_valued_points_are_refused_and_name_the_upstream_conversion(cells, grid):
     """A grid coordinate holds scalars, so array-valued points cannot be placed here at all.
 
-    An axis of whole matrices coordinates on the point INDEX, and only the generated script holds
-    the materialised points to convert against — so the container refuses and names that
-    conversion. Matching the matrices here instead would place the cells against a coordinate they
-    do not share, and the surface would come out keyed on something no reader can select by.
+    An axis of whole matrices coordinates on the point INDEX, and only the generated script holds the materialised points to convert against — so the container refuses and names that conversion. Matching the matrices here instead would place the cells against a coordinate they do not share, and the surface would come out keyed on something no reader can select by.
     """
     from tvbo.data.types import _axis_positions
 
@@ -337,8 +334,7 @@ def test_array_valued_points_are_refused_and_name_the_upstream_conversion(cells,
 def test_point_indices_are_placed_through_the_ordinary_numeric_path():
     """Converted upstream, a matrix axis is just an integer axis, placed by value like any other.
 
-    Fed a scrambled cell order, the placement recovers the declared order rather than the arrival
-    order — the property the whole by-value rule exists for.
+    Fed a scrambled cell order, the placement recovers the declared order rather than the arrival order — the property the whole by-value rule exists for.
     """
     from tvbo.data.types import _axis_positions
 

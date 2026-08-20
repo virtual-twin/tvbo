@@ -1,12 +1,6 @@
 """`Network.matrix` is the one connectivity lookup, and every other accessor defers to it.
 
-The regression these freeze: `_weights_matrix` used to consult the legacy `_cached_weights`
-BEFORE the lazy companion store, while `matrix` consulted the store first. A resolution step
-that populates the cache from somewhere other than the companion — declaring `parcellation:`
-alongside `data_file` caches a normative atlas connectome — then made the two accessors return
-different matrices for the same network. `matrix("weight")` reported the companion's SC while
-the codegen path silently integrated the atlas's raw streamline counts, so every consistency
-check passed and the simulation was still wrong.
+The regression these freeze: `_weights_matrix` used to consult the legacy `_cached_weights` BEFORE the lazy companion store, while `matrix` consulted the store first. A resolution step that populates the cache from somewhere other than the companion — declaring `parcellation:` alongside `data_file` caches a normative atlas connectome — then made the two accessors return different matrices for the same network. `matrix("weight")` reported the companion's SC while the codegen path silently integrated the atlas's raw streamline counts, so every consistency check passed and the simulation was still wrong.
 """
 
 import numpy as np
@@ -69,9 +63,7 @@ def test_alias_spellings_resolve_to_the_same_matrix():
 def test_a_user_set_matrix_wins_over_the_companion_under_any_spelling():
     """Precedence is between SOURCES; a spelling is not a precedence.
 
-    Checking `_arrays[name]` then `_store[name]` one spelling at a time lets the companion
-    file's `weight` beat a user-set `weights` — the same silent shadowing this module exists
-    to remove, arrived at along the alias axis instead of the cache axis.
+    Checking `_arrays[name]` then `_store[name]` one spelling at a time lets the companion file's `weight` beat a user-set `weights` — the same silent shadowing this module exists to remove, arrived at along the alias axis instead of the cache axis.
     """
     user = COMPANION * 7.0
     net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION))
@@ -93,11 +85,7 @@ def test_primary_weight_selects_the_active_variant():
 def test_an_unconnected_node_set_has_zero_weights_not_absent_ones(net):
     """No edges is zero weights, and `matrix` must say so rather than returning None.
 
-    Every backend run reaches `ns.run_experiment(weights=network.matrix("weight", ...))`, which
-    hands the result to `jnp.array` — so `None` here is `ValueError: None is not a valid value
-    for jnp.array` for any single-node model or uncoupled ensemble, both of which are ordinary
-    declarations (a bifurcation study is exactly one). The canonical accessor has to subsume what
-    the deprecated properties returned, not a subset of it.
+    Every backend run reaches `ns.run_experiment(weights=network.matrix("weight", ...))`, which hands the result to `jnp.array` — so `None` here is `ValueError: None is not a valid value for jnp.array` for any single-node model or uncoupled ensemble, both of which are ordinary declarations (a bifurcation study is exactly one). The canonical accessor has to subsume what the deprecated properties returned, not a subset of it.
     """
     n = net.number_of_nodes
     W = net.matrix("weight")
@@ -131,8 +119,7 @@ def test_absent_tract_lengths_stay_absent():
 def test_the_pytree_payload_wins_under_a_jax_transformation():
     """The live matrices under a JAX transform are the payload, not the pre-trace attributes.
 
-    `_weights_matrix` and `lengths_matrix` both read `_pytree_data` first. An accessor that
-    reads around it returns the pre-trace weights and the run completes on stale connectivity.
+    `_weights_matrix` and `lengths_matrix` both read `_pytree_data` first. An accessor that reads around it returns the pre-trace weights and the run completes on stale connectivity.
     """
     traced_w = COMPANION * 5.0
     traced_l = np.full_like(COMPANION, 42.0)

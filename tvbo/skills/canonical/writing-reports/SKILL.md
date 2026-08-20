@@ -256,8 +256,12 @@ across four files that were entirely correct. The reviewable act is classifying 
 whose numbers it holds; the mechanical part is refusing to transcribe one nobody has classified:
 
 ```python
-NUMBER_OWNERS = {"published-values.md": "paper", "targets.md": "paper",
-                 "methods-vs-code.md": "both", "verification.md": "reference-run"}
+NUMBER_OWNERS = {
+    "published-values.md": "paper",
+    "targets.md": "paper",
+    "methods-vs-code.md": "both",
+    "verification.md": "reference-run",
+}
 notes = {p.name for p in (ROOT / "report/analysis").glob("*.md")}
 assert not notes - set(NUMBER_OWNERS), f"unclassified analysis note: {sorted(notes - set(NUMBER_OWNERS))}"
 assert "ours" not in NUMBER_OWNERS.values(), "a result of ours belongs in a computed cell, not a note"

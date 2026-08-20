@@ -67,7 +67,7 @@ import jax.numpy as jnp
 
 from tvboptim.types import Space, GridAxis
 from tvboptim.execution import ParallelExecution
-from tvbo.templates.tvboptim.callbacks import resolve_exploration_n_vmap   # n_parallel → vmap width
+from tvbo.templates.tvboptim.callbacks import resolve_exploration_n_pmap, resolve_exploration_n_vmap   # n_parallel → vmap width and replica count
 
 % for expl in explorations:
 <%
@@ -91,9 +91,8 @@ def setup_${expl['name']}_grid(state):
 def run_${expl['name']}_exploration(state, observable_fn):
     """Run ${expl['name']} parameter exploration."""
     grid = setup_${expl['name']}_grid(state)
-    import jax as _jax
     _n_vmap = resolve_exploration_n_vmap(${repr(expl['n_parallel'])}, grid.N, observable_fn, state)
-    exec = ParallelExecution(observable_fn, grid, n_pmap=_jax.device_count(), n_vmap=_n_vmap)
+    exec = ParallelExecution(observable_fn, grid, n_pmap=resolve_exploration_n_pmap(grid.N, _n_vmap), n_vmap=_n_vmap)
     results = exec.run()
     return grid, jnp.stack(results)
 
