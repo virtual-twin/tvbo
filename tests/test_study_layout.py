@@ -334,9 +334,15 @@ NOT_A_STUDY_PATH = ("docs/Interoperability/", "docs/CLI/", "docs/Replication/")
 
 
 def _skill_prose() -> list[tuple[str, int, str]]:
-    """Every line of every skill, with its generated regions removed."""
+    """Every line of every authored skill, with its generated regions removed.
+
+    ``.claude/`` mirrors are skipped: they are gitignored output of ``tvbo skills sync``, so a
+    stale one fails this gate on prose that CI, which sees only tracked files, never reads.
+    """
     lines = []
     for path in sorted(SKILLS.rglob("*.md")):
+        if ".claude" in path.parts:
+            continue
         text = path.read_text(encoding="utf-8")
         for name in ("STUDY LAYOUT", "BIDS EXCEPTIONS", "IGNORE FILES", "RESULT NAMES", "SPEC SUFFIXES"):
             begin, end = layout_rules.markers(name)

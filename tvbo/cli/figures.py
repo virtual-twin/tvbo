@@ -84,7 +84,7 @@ def render(
         None,
         "-o",
         "--out",
-        help="Directory for the rendered figures + plot scripts (default: <base-dir>/figures).",
+        help="Directory for the rendered figures + plot scripts (default: the study's figures directory from the layout record).",
     ),
     base_dir: Path = typer.Option(
         None,
@@ -108,8 +108,11 @@ def render(
     if not spec_path.is_file():
         _common.die(f"No such spec file: {spec_path}")
 
+    from tvbo.utils.study_layout import study_path
+
     base = base_dir.expanduser().resolve() if base_dir else spec_path.resolve().parent
-    out_dir = out.expanduser().resolve() if out else base / "figures"
+    # The record's figures directory, so this command and `tvbo run` write where the report reads.
+    out_dir = out.expanduser().resolve() if out else study_path("figures", root=base)
 
     figures, kind = _load_figures(spec_path)
     if not figures:
@@ -140,7 +143,7 @@ def caption(
         None,
         "-o",
         "--out",
-        help="Directory for the .caption.qmd partials (default: <base-dir>/figures).",
+        help="Directory for the .caption.qmd partials (default: the study's figures directory from the layout record).",
     ),
     name: str = typer.Option(
         None,
@@ -162,8 +165,10 @@ def caption(
     if not figures:
         _common.info(f"{spec_path.name}: no figures to caption.")
         return
+    from tvbo.utils.study_layout import study_path
+
     figures = _select(figures, name, spec_path)
-    out_dir = out.expanduser().resolve() if out else spec_path.resolve().parent / "figures"
+    out_dir = out.expanduser().resolve() if out else study_path("figures", root=spec_path.resolve().parent)
     for figure in figures:
         fig_name = getattr(figure, "name", None) or "figure"
         if not bsplot.compose_caption(figure):
@@ -186,13 +191,13 @@ def compare(
         None,
         "-f",
         "--figures",
-        help="Directory holding the rendered figures (default: <base-dir>/figures).",
+        help="Directory holding the rendered figures (default: the study's figures directory from the layout record).",
     ),
     out: Path = typer.Option(
         None,
         "-o",
         "--out",
-        help="Directory for the side-by-side overlays and the markdown summary (default: <base-dir>/output/figure-compare).",
+        help="Directory for the side-by-side overlays and the markdown summary (default: figure-compare/ under the study's notes directory).",
     ),
     base_dir: Path = typer.Option(None, "--base-dir", help="Study root. Defaults to the spec file's directory."),
     name: str = typer.Option(None, "-n", "--name", help="Compare only the figure(s) with this name (comma-separated)."),
@@ -202,13 +207,15 @@ def compare(
     Replication asks a figure to land on the original's layout — same aspect, same panel grid, panels the same relative size in the same places. This decomposes both images into panel boxes and reports the offsets, so "not well aligned" becomes a number per panel rather than an impression. Writes one overlay PNG per figure plus a markdown summary; the summary is what a report reads.
     """
     from tvbo.utils import figure_compare as fc
+    from tvbo.utils.study_layout import study_path
 
     spec_path = Path(spec).expanduser()
     if not spec_path.is_file():
         _common.die(f"No such spec file: {spec_path}")
     base = base_dir.expanduser().resolve() if base_dir else spec_path.resolve().parent
-    fig_dir = figures_dir.expanduser().resolve() if figures_dir else base / "figures"
-    out_dir = out.expanduser().resolve() if out else base / "output/figure-compare"
+    fig_dir = figures_dir.expanduser().resolve() if figures_dir else study_path("figures", root=base)
+    # The audit lands in the study's local notes, which nothing tracks or publishes.
+    out_dir = out.expanduser().resolve() if out else study_path("notes", root=base) / "figure-compare"
     ref = reference.expanduser().resolve() if reference else None
 
     figures = _select(_load_figures(spec_path)[0], name, spec_path)
