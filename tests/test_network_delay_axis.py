@@ -101,9 +101,13 @@ def _experiment(tmp_path):
 
 
 def test_delay_axis_emits_the_delays_leaf(tmp_path):
-    """The axis is classified network-scope and writes the graph's own leaf."""
+    """The axis is classified network-scope, writes the graph's own leaf, and carries its label.
+
+    A graph leaf's dataframe column is positional, so the declared path has to travel with the bound axis or the cell coordinates cannot be keyed on it.
+    """
     code = _experiment(tmp_path).render_code("tvboptim")
-    assert "grid_state.graph.delays = DataAxis(" in code
+    squeezed = "".join(code.split()).replace('"', "'")
+    assert "grid_state.graph.delays=_ax('network.edges.delay',DataAxis(" in squeezed
 
 
 def test_delay_axis_sizes_the_history_buffer_for_the_longest_delay(tmp_path):

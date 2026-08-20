@@ -91,7 +91,7 @@ published data*, or *the published study* when you genuinely mean all three.
    command produces results **and** figures; add
    `--experiment 2,3` to run a subset (`--no-figures` to skip rendering).
 2. **Nothing hardcoded in the report.** Every reported value is computed inline from
-   a result container (`output/nc/exp*/…h5`) or the recipe metadata — counts, ⟨Δω⟩,
+   a result container (`open_result(study_path("results", root=ROOT), …)`) or the recipe metadata — counts, ⟨Δω⟩,
    decay times, bifurcation thresholds, scaling exponents, spectral peaks, fitted params,
    correlations, whatever the paper reports. If you typed a number into prose, it is a
    bug. (Papers are not ground truth; your own asserted numbers are not either.) The rule
@@ -113,46 +113,61 @@ published data*, or *the published study* when you genuinely mean all three.
 4. **Backend-independent metadata, backend chosen by fit.** The YAML states *intent*,
    never one backend's mechanism. The execution backend is picked in Phase 1.5 from the
    targets' feature needs, not defaulted.
-5. **FAIR layout — spec (metadata) at the root, code in `code/`** (copy `assets/skeleton/`):
-   the recipe `<Study>.yaml` sits at the **study root**, never inside `code/` — the spec is
-   backend-independent metadata, kept separate from code (that split is the point). Its
+5. **A study IS a BIDS study dataset — scaffold it, never hand-build it.**
+   `tvbo study init <Study> --template replication` creates the tree, both ignore files and
+   both `dataset_description.json` files from the one layout record
+   (`schema/study_layout.yaml`). The layout is written down in exactly one place, so nothing
+   below restates it: see **Layout** at the end of this file, and `tvbo study layout` to print
+   it. `tvbo validate study .` checks a tree against the record and is run by `tvbo run` on
+   load.
+
+   The one thing worth repeating here is the split the layout exists to enforce: the recipe
+   `<Study>.yaml` sits at the **study root**, never inside `code/` — the spec is
+   backend-independent metadata, kept separate from code, and that separation is the point. Its
    callables — model builders, analysis callables, **and the bespoke figure panels/transforms** —
    live **flat in `code/`**, made importable by the zero-config `code/` convention: loading the
    study puts `code/` on the path, so every `module:` / `callable:` / `code_modules:` resolves by
    bare name — no driver, no `PYTHONPATH`, no `code_source`. (Set `code_source` **only** to point
    the importable code *elsewhere* — a git repo or a shared directory — never at a local `code/`
    subfolder; a `code/recipe/` split buys nothing and breaks imports if the line is forgotten.)
-   `code/` also holds the prep script and one reference integration; `original_study/` holds the
-   **paper's own material ONLY** (fully git-ignored); `input/` the data provenance; `report/` the
-   report source **and everything we author or generate** — including our replication analysis under
-   `report/analysis/` (targets, figures, backend-fit, adherence). Rendered figures and their
-   generated `plot_<name>.py` scripts land in the gitignored `figures/` — images at its
-   root, scripts in `figures/scripts/`.
-   **The target layout for every study is the BIDS study dataset** (`dataset_description.json`
-   with `DatasetType: "study"`, recipe fragments in `spec/`, inputs and `original_study/` under
-   `sourcedata/`, the report and its `analysis/` under `docs/`, result containers as a
-   derivative dataset under `derivatives/tvbo/`) — generated and checked by
-   `tvbo study layout --sync` / `tvbo validate study` against tvbo's `schema/study_layout.yaml`.
-   The tree above is the legacy layout that pre-BIDS studies keep **until their transform**;
-   `REGISTERS.md` at the portfolio root records which path each artifact lives on in either
-   layout, and the aggregators look in both. Do not mix the two inside one study.
-6. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
-   Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report source
-   (`report.qmd` + its `report_internal.qmd` wrapper + `_quarto.yml` + `references.bib` +
-   `report/analysis/`). **Everything else is gitignored:** `output/` and all generated artifacts
-   (figures, `report.pdf`/logs, KPI/targets tables — write them to `output/`, never commit them at
-   the study root), **all of `original_study/`** (the paper's own material — fully ignored; nothing
-   of ours lives there), and raw third-party inputs under `input/sourcedata/`. Planning/working docs
-   go to a gitignored `_dev/`. A fresh clone is small and reproducible; `DATA.md` says how to obtain
-   every ignored input. (**`.gitignore` has no inline/trailing comments** — a `#` after a pattern
-   becomes part of the pattern and silently breaks it, e.g. an un-ignored `figures/` or a dropped
-   `original_study/` exclusion; keep every comment on its own line.) **And a negation cannot
-   rescue a file under a directory an ANCESTOR `.gitignore` excluded** — git does not descend into
-   an excluded directory, so `!original_study/analysis/**` in the study's own file is dead the
-   moment a parent ignores bare `original_study`. Three of our studies wrote exactly that pair and
-   silently kept their targets table, figure map and adherence notes untracked for weeks. Do not
-   try to carve an exception: authored work goes in `report/analysis/`, which nothing ignores.
-   Verify rather than assume — `git check-ignore -v <path>` names the file and line that won.
+   Fragments the recipe `!include`s go in `spec/`, each BIDS-named for what it specifies (the
+   suffix table under **Layout** is generated from the record, so read it there rather than from
+   memory), with its entities present from
+   the start so adding a second one renames nothing. **One fragment specifies one entity**: the
+   suffix names the class the file contains, so a `figures.yaml` holding twelve figures becomes
+   twelve `fig-<id>_desc-<slug>_figure.yaml` files. A file whose name cannot say what is inside
+   it is a file no reader can find by name and no validator can check.
+
+   And **the study's own code asks the record for a path, never spells one**. `study_path(role)`,
+   `study_root(any_path_inside)` and `file_relpath(role)` from `tvbo.utils.study_layout` resolve
+   directories; `analysis_container_path(root, name)` and `locate_exp_container(root, exp_id)`
+   from `tvbo.data.dataref` resolve containers, entity naming included. A verification script or
+   report that hardcodes `output/results/` keeps working until the layout moves, then fails in a
+   way that reads like a missing result rather than a stale path — and the fix has to be found in
+   every study separately.
+6. **Nothing large or upstream is vendored, and `.gitignore` is generated, never edited.**
+   Git tracks only what you author: the recipe, `spec/`, `code/`, `sourcedata/README.md`, and the
+   report source under `docs/`. Everything a run reproduces is ignored, and so is the reproduced
+   paper's own material. `tvbo study init` writes the rules from the layout record's `tracked`
+   fields and `tvbo validate study` fails if the file has drifted from them, so the gate cannot
+   be weakened by an edit nobody reviews. A fresh clone is small and reproducible;
+   `sourcedata/README.md` says how to obtain every ignored input.
+
+   Two properties of the generated rules are worth understanding, because both were learned the
+   hard way. **A negation cannot rescue a file under a directory an ancestor `.gitignore`
+   excluded** — git does not descend into an excluded directory. That is why the gate ignores the whole
+   of `sourcedata/` and re-includes only its README (the rules themselves are generated — read
+   them under **Layout**, never retype one), rather than ignoring the deposit directory and
+   trying to carve exceptions under it; three studies wrote the
+   latter and silently kept their targets table, figure map and adherence notes untracked for
+   weeks. And **a derived copy of copyrighted material is only as protected as where it is put**:
+   ignoring the paper's figures where they were downloaded does nothing about an A/B composite
+   made from them somewhere else. That is why the composites are staged *inside* the deposit, at
+   `sourcedata/original_study/fig_comparisons/` — one directory holds everything the publisher
+   owns, so the one rule that keeps the deposit unpublished covers every composite too, and
+   `report_figure` puts them there without any `.qmd` naming a directory. Verify rather than
+   assume — `git check-ignore -v <path>` names the file and line that won, and a `!` rule means
+   the path is kept, not ignored.
 7. **Replication, stated honestly.** Frame it as *replication* (independent code +
    independently-sourced data → same conclusions), not bit-exact *reproduction*. Ship a
    **scorecard** (met / short / out / blocked -- see below) with a **fidelity tier per target**
@@ -191,8 +206,8 @@ published data*, or *the published study* when you genuinely mean all three.
 
 ## Phase 1 — Analyze the paper → `targets.md` + `figures.md`
 
-Read the version of record (put it in `original_study/`, figures as `img/fig*.png` — the paper's
-own material, fully git-ignored). Produce two artifacts of **your own** under `report/analysis/`
+Read the version of record (put it in `sourcedata/original_study/`, figures as `img/fig*.png` — the
+paper's own material, fully git-ignored). Produce two artifacts of **your own** under `docs/analysis/`
 (tracked — our work, not the paper's):
 
 - **`targets.md`** — a numbered table of replication targets `T1..Tn`. Each row:
@@ -296,7 +311,7 @@ the claim.
 (`{T1,T2,T7}`). Only selected targets become experiments in Phase 3. If the scope is
 contested, settle it with the user before continuing — do not guess.
 
-**Backend-fit + gaps** (`report/analysis/backend-fit.md`). For the selected
+**Backend-fit + gaps** (`docs/analysis/backend-fit.md`). For the selected
 targets, build a feature matrix (delays? Lyapunov/Benettin? adiabatic sweep? noise?
 multi-mode? time-gated events? sparse coupling?) and pick the execution backend that
 supports them — **with rationale**. tvboptim (JAX) is common because delays, Lyapunov
@@ -400,14 +415,14 @@ numbers as though it were one. (Ours reproduced their descending limb almost exa
 one-grid-step shift while the ascending limb was far shallower — enough to state as a lead, not
 enough to claim a mechanism.)
 
-## Phase 2 — Source the data → `DATA.md` (tracked) + gitignored data dirs
+## Phase 2 — Source the data → `sourcedata/README.md` (tracked) + gitignored data dirs
 
 **Skip this phase if your study is self-contained** — a bifurcation / phase-portrait /
 normal-form study whose every parameter comes from the paper's equations and tables needs no
-external data; then `DATA.md` is one line ("no external inputs; all parameters from <paper>
+external data; then `sourcedata/README.md` is one line ("no external inputs; all parameters from <paper>
 §X / Table N"). Otherwise, for studies with a network, empirical target, or stimulus input:
 
-Write `input/DATA.md` (from `assets/DATA.md.tmpl`) as the **one tracked pointer** to every
+`tvbo study init` seeds `sourcedata/README.md` as the **one tracked pointer** to every
 input: exact upstream source (author, year, DOI, licence), the sheet/column → paper-quantity
 map, checksums, **exact download + regenerate steps**, and which quantities are synthesised
 vs sourced. Name the true upstream source, never a derived intermediate.
@@ -419,7 +434,7 @@ in spatial smoothness. Pang2023's Methods say connectopic mapping was applied to
 voxel-wise resting-state fMRI data"*; using the CIFTI subcortical grayordinates instead covered
 88 % of the ROI's voxels rather than 100 %, and produced a similarity field whose spatial
 autocorrelation was several times shorter, which was the whole of a target's shortfall for two
-sessions. **Record the modality in `DATA.md` as a decision, with the Methods sentence quoted**,
+sessions. **Record the modality in `sourcedata/README.md` as a decision, with the Methods sentence quoted**,
 and treat a coverage mismatch against the authors' own published arrays (their matrix is N × N over the
 full mask, yours is over a subset) as the first evidence that you took a different file.
 
@@ -427,10 +442,10 @@ full mask, yours is over a subset) as the first evidence that you took a differe
 Place data by provenance:
 
 - the **paper's own published data** (its source-data workbook/arrays, and your extraction
-  of them into `.nc`/etc.) → `original_study/`, with the rest of the paper's material
-  (gitignored — it is the paper's content, regenerable from the raw per `DATA.md`), *not*
-  `input/derivatives/`;
-- **third-party raw inputs** you feed the model (connectomes, atlases) → `input/sourcedata/`
+  of them into `.nc`/etc.) → `sourcedata/original_study/`, with the rest of the paper's material
+  (gitignored — it is the paper's content, regenerable from the raw per `sourcedata/README.md`), *not*
+  `derivatives/`;
+- **third-party raw inputs** you feed the model (connectomes, atlases) → `sourcedata/`
   (gitignored);
 - only genuinely small, freely-redistributable open inputs may be carried in git.
 
@@ -494,6 +509,23 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
   drive differs per experiment. This both compacts the recipe (a 4-regime spiking study collapses
   from 4× the network to ~1×) and is the more faithful encoding (an external drive is an input, not
   a cell property).
+- **A package the study needs is declared in the recipe, not in a `requirements.txt`.** Matching
+  a paper's method sometimes means using the paper's tool — a spectral parameterisation, a
+  particular solver — and `requires:` states it, keyed by package name, carrying the version the
+  study was reproduced against and why that tool rather than another:
+  ```yaml
+  requires:
+      fooof:
+          version: "1.1.1"
+          doi: "10.1038/s41593-020-00744-x"
+          description: >-
+              The paper reads the aperiodic exponent and the in-band peak from a FOOOF fit; a
+              different peak-finder estimates a different quantity.
+  ```
+  A loose file beside the recipe is metadata the datamodel cannot see, cannot validate and cannot
+  put in the report; a study whose report imports something nothing declares runs only on the
+  machine that happens to have it. `requires:` says what is needed, `prov-<label>_soft` records
+  what actually ran, so the two can be compared rather than assumed equal.
 - Non-obvious params get a one-line comment tying them to the paper (equation/figure).
 - Overriding a param replaces it wholesale (YAML merge is shallow) — restate `unit`/
   `description`, or don't override when the anchor default already matches.
@@ -614,7 +646,7 @@ analyses:
     callable: {name: mask_vertices, module: pang2023_analysis}
     arguments:
       data: {used: {analysis: fig1_basis_solve, output: emodes}}
-      mask: {value: "input/sourcedata/templates/surfaces/fsLR_32k_cortex-lh_mask.txt"}
+      mask: {value: "sourcedata/templates/surfaces/fsLR_32k_cortex-lh_mask.txt"}
 ```
 
 Declaring it buys four things a script cannot: it runs in dependency order alongside the
@@ -677,24 +709,23 @@ that alone NaN'd the entire task column.
 Figures are **metadata**, rendered by codegen — not a hand-written plotting script. Each
 paper figure is a `Figure` in `<Study>.yaml`'s `figures:` list (schema `schema/figure.yaml`;
 design `dev/figure-spec-design.md`). `tvbo figure render <Study>.yaml` — run automatically by
-`tvbo run <Study>.yaml` — emits a self-contained, editable `figures/scripts/plot_<name>.py`
+`tvbo run <Study>.yaml` — emits a self-contained, editable `docs/figures/scripts/plot_<name>.py`
 **and** runs it,
-producing `<name>.png` in `figures/`. Iterate one figure fast with `tvbo figure render` (the
+producing `<name>.png` beside it. Iterate one figure fast with `tvbo figure render` (the
 results stay put; only the plot re-runs). Copy `assets/figures.snippet.yaml` for the block and
 `assets/figures.py.tmpl` for the panel module.
 
-**`<study>/figures/` is THE render target — one place, gitignored.** The rendered
-`<name>.png` sits at its root and its generated `plot_<name>.py` in
-`figures/scripts/`, so the directory the report and reviewers browse holds IMAGES,
-not twice as many files. That subdirectory is **not** called `code/`: in a study
-that name means the authored, tracked, importable code the recipe references by bare
-module name, and a generated artifact must not borrow it. Not `output/figures/`
-(that is the results tree) and not `code/figures/`. Everything downstream reads from there: the
-report's `FIGS = Path("../figures")`, and any script that still writes a supplement image writes
-there too, so a figure and the report that embeds it can never point at different copies. Add
-`figures/` to the study `.gitignore` — the `<name>.png` **and** the generated
-`scripts/plot_<name>.py`
-are both regenerable artifacts.
+**`docs/figures/` is THE render target — one place, gitignored.** The rendered `<name>.png` sits
+at its root and its generated `plot_<name>.py` in `docs/figures/scripts/`, so the directory the
+report and reviewers browse holds IMAGES, not twice as many files. That subdirectory is **not**
+called `code/`: in a study that name means the authored, tracked, importable code the recipe
+references by bare module name, and a generated artifact must not borrow it. It sits inside the
+report's own Quarto project, so a report embeds a figure where it was rendered instead of staging
+a second copy. Everything downstream resolves it the same way — the report's
+`FIGS = study_path("figures", root=ROOT)`, and any script that still writes a supplement image —
+so a figure and the report that embeds it can never point at different copies. Both the
+`<name>.png` and the generated `scripts/plot_<name>.py` are regenerable, and the record already
+ignores them; never hand-edit the gate to say so.
 
 **A `Figure` is layout + binding + style; keep compute and plotting code out of it.** The
 mechanics are in **`assets/figures.md`** — every `layout` key, the size/aspect/type-size
@@ -724,9 +755,10 @@ look and can misalign, so derive the coordinates from the paper's surface and ve
 mapping **by label** (a `custom` surface/heatmap panel's job).
 
 **A/B compose stays a report concern**, not a `Figure`: the study renders only *our*
-reproduction; the side-by-side against the paper original is drawn in the **report** (the
-`ab()` helper / `assets/compose_ab.py`), gated for copyright by the Phase-6 internal/public
-profile — do **not** bake the © original into any committed/shared image or into a `Figure`.
+reproduction; the side-by-side against the paper original is composed in the **report** by
+`tvbo.utils.report.report_figure` — one implementation, never a per-study `ab()` — gated for
+copyright by the Phase-6 internal/public split and staged inside the deposit. Do **not** bake the
+© original into any committed or shared image, or into a `Figure`.
 
 **Every figure carries an original caption — `Figure.description` is it.** Write each figure a
 `description:` in the `figures:` block: an original sentence or two describing what OUR
@@ -750,14 +782,14 @@ paper's style, not a `①` glyph. Use matplotlib **mathtext** for symbols (`$\si
 `$\Gamma$`, `$t/T$`), and a hyphen, not an em-dash, in titles. This is the figure-side of the same
 LaTeX-not-Unicode rule the report captions follow.
 
-## Phase 6 — Report: `report/report.qmd` (every number computed)
+## Phase 6 — Report: `docs/report.qmd` (every number computed)
 
 **The report MUST carry a "Where the Methods and the code diverge" section** whenever the study
 ships code — a summary table by class (A–E) with counts, the two or three entries that would
 silently produce a wrong figure spelled out, and a short paragraph on why one declarative
 description removes the whole class. This is a headline result, so give it a numbered
 section of its own rather than burying it in Limitations; the full evidence lives in
-`report/analysis/methods-vs-code.md`. State plainly that the divergences are *visible* only
+`docs/analysis/methods-vs-code.md`. State plainly that the divergences are *visible* only
 because the code is published — otherwise the section reads as a criticism of the most transparent
 papers.
 
@@ -809,7 +841,7 @@ uses raw `*` or `_` is eaten by the markdown pass (write those slots in LaTeX ma
 
 **Write the FINAL report, not the log of how you got there.** The reader wants the state of the
 work, not its history: no "corrections to earlier claims", no "we first assumed", no callout
-saying an experiment has not been run in this build. Those belong to `report/analysis/`, where
+saying an experiment has not been run in this build. Those belong to `docs/analysis/`, where
 the superseded-claims list genuinely earns its place (see the divergence-register rule) and the
 next session will read it. Concretely, in the report:
 
@@ -874,32 +906,36 @@ rendered in one call by `STUDY.report("qmd", level=3)` — deduplicated across e
 share a model, every table captioned, `part: supplementary` demoting an experiment's paragraph
 without hiding it — the three-colour status callouts, the copyright-safe internal/public split, references as Quarto's
 auto-appended bibliography, the LaTeX rules, and the anti-slop prose standard. The templates
-it copies ship in this skill's `assets/`: `report.qmd.tmpl`, `report_internal.qmd.tmpl`, and
-`_quarto.yml.tmpl`. Copy all three into `report/` (as `report.qmd`, `report_internal.qmd`,
-`_quarto.yml`). One Quarto project renders BOTH PDFs from a single `quarto render` (in `report/`,
-no file arg): `report.qmd` holds the whole report and carries NO front matter, `report_internal.qmd`
-is a thin `{{< include report.qmd >}}` wrapper that draws the paper's © figures for A/B checking,
-and `_quarto.yml` lists both and holds the shared `format: pdf` (xelatex) + `bibliography:`. The build
-branches on `QUARTO_DOCUMENT_FILE`; no `--profile`, no post-render hook (see the header comment in
-`_quarto.yml.tmpl`).
+it uses are seeded by `tvbo study init --template replication`, with the study's name already
+substituted: `docs/report.qmd`, `docs/report_internal.qmd`, `docs/_quarto.yml`, and the three
+`docs/analysis/` files. One Quarto project renders BOTH PDFs from a single `quarto render` (in
+`docs/`, no file arg): `report.qmd` holds the whole report and carries NO front matter,
+`report_internal.qmd` is a thin `{{< include report.qmd >}}` wrapper that draws the paper's ©
+figures for A/B checking, and `_quarto.yml` lists both and holds the shared `format: pdf`
+(xelatex) + `bibliography:`. The build branches on `QUARTO_DOCUMENT_FILE`; no `--profile`, no
+post-render hook (see the header comment in `_quarto.yml`).
 
-**Stage every figure into `report/_figures/` and embed it from there, never through a link up
-into `../figures/`.** `tvbo.utils.report.report_figure` does the staging, decides per build
-whether the © original is opened at all, and composes the A/B pair — one implementation for every
-study, so no report grows its own `ab()` again.
+**Never name a figure directory in a report.** `tvbo.utils.report.report_figure` asks the record
+where a composite is staged, decides per build whether the © original is opened at all, and
+composes the A/B pair; `embed_path` makes the reference relative to the render. One implementation
+for every study, so no report grows its own `ab()` again — and with no original to compose against
+there is nothing to stage, so our own figure is embedded where the run rendered it rather than
+copied somewhere second.
 
-**`report/_figures/` MUST be git-ignored, and this is the one copyright rule the layout does not
-enforce for you.** The staging dir holds two kinds of file: our own reproductions, and
-`<name>_ab.png` composites that embed the publisher's figure beside them. Ignoring
-`original_study/` protects the originals **where they were downloaded** and does nothing about a
-COPY of them made under `report/`, which is a tracked tree — so the composites sit there as
-untracked-but-not-ignored and the next `git add -A` commits the paper's figures to your history.
-Every replication we have shipped had this hole (eleven studies, `?? report/_figures/` in all of
-them) because the entry was simply missing from the skeleton. Verify rather than assume:
-`git check-ignore -v report/_figures/<fig>_ab.png` must NAME the rule that ignores it; an empty
-answer means it is exposed. The internal A/B build is a **local check**, not a deliverable:
-`report_internal.pdf`, the composites, and `original_study/` are all local-only, and the one
-shareable artifact is `report.pdf`, which opens no © original at all. Loop the recipe's own `figures:` block
+**A composite is staged inside the deposit whose figure it embeds, and that is now enforced rather
+than remembered.** A composite is a COPY of the publisher's figure, and a copy is only as protected
+as where it is put: ignoring the deposit **where it was downloaded** does nothing about one made
+under an otherwise-tracked tree. A missing rule left the composites untracked-but-not-ignored, and
+the next `git add -A` committed the paper's figures to history — every replication shipped before
+the record existed had that hole, in all eleven studies, because the entry was simply missing from
+a hand-written skeleton. Putting the stage under the deposit means the one rule that keeps the
+deposit unpublished covers every composite made from it. It is a `tracked: none` directory in the
+record, `tvbo study init` writes the rule from it, `tvbo validate study` fails if the file drifts,
+and a test scaffolds a study and asks git itself. Verify rather than assume all the same:
+`git check-ignore -v` on the composite must NAME the rule that ignores it. The internal A/B build
+is a **local check**, not a deliverable:
+`report_internal.pdf`, the composites, and `sourcedata/original_study/` are all local-only, and
+the one shareable artifact is `report.pdf`, which opens no © original at all. Loop the recipe's own `figures:` block
 (`figures_in_paper_order`, `figure_title`, `figure_caption`) rather than a hand-written list of
 stems and captions, and derive each figure's status callout from `figure_targets(fig,
 TARGET_ROWS)` so it cannot disagree with the scorecard.
@@ -1086,10 +1122,10 @@ harness check that walks the loaded study's `figures:` and asserts, with counts 
 prints:
 
 - every layer's `used:` names an experiment or an analysis, and every one of those **resolves to
-  a file under `output/`** — so no panel is drawn from the authors' own data;
+  a container under `derivatives/tvbo/`** — so no panel is drawn from the authors' own data;
 - no panel carries a `placeholder:` (or, if some do, they are named — a placeholder is a
   deliverable, and a report that silently contains one is the failure);
-- no generated `figures/scripts/plot_*.py` contains the string `original_study`;
+- no generated `docs/figures/scripts/plot_*.py` contains the string `original_study`;
 - panels with **no layers at all** are listed with the callable that draws them. Those are the
   schematics — a pulse train, a set of equations — and naming them is what makes the sentence
   above exact rather than nearly true.
@@ -1134,7 +1170,7 @@ it: a big *graph* → `graph_representation: sparse` + vectorized coupling; a bi
 grid* → a streaming reduced observable (Phase 4). Both routinely turn a "needs HPC" run into
 minutes on one GPU, numerically identical (~1e-16). Assess this before packaging anything.
 
-REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site facts).
+REQUIRED output: a packed kit + a `docs/analysis/cluster-run.md` (the run route + site facts).
 
 **The kit is the same recipe, one command — no drivers, no bash.** `tvbo workflow snakemake
 <Study>.yaml -o <out> --pack` emits the whole study as ONE Snakemake DAG (one rule per
@@ -1235,8 +1271,128 @@ first, then workflow pitfalls).
 - The register's headline material count is lower than the file's own rows → the register is two tables and the parse decides materiality per table.
 
 **Also in `assets/traps.md`**: keep generated files out of git at the study root; track
-`report/analysis/` from the first commit (it is the only copy of the register, the targets
+`docs/analysis/` from the first commit (it is the only copy of the register, the targets
 table and the figure map); the report must stand alone with no cross-references to a sibling
 study; hand-written `plot_*.py` and A/B compose drivers are redundant; a *live* vendored
 dependency is not cruft, so confirm against the actual run paths END-TO-END before deleting
 it; and framework gaps surface late if you skip Phase 1.5 — find them before the YAML.
+
+## Layout
+
+Everything in this section is generated from `schema/study_layout.yaml` and from the code that
+builds the filenames — the single ground truth. Regenerate with
+`tvbo study layout --sync <file> --template replication`; never edit a block by hand, and never
+restate a path, an ignore rule or a filename grammar anywhere else, here or in a study. A rule
+that is written down twice is a rule that will be right in one place.
+
+<!-- BEGIN STUDY LAYOUT (generated by `tvbo study layout --sync`; do not edit) -->
+
+```
+<Study>/
+  dataset_description.json      declares the dataset type, its name, and the BIDS version it was written against
+  README.md                     what the study does, and how to run it
+  CITATION.cff
+  <Study>.yaml                  the entry recipe: the one specification a run is given
+  .gitignore
+  .bidsignore
+  spec/                         recipe fragments the entry recipe includes, each named for what it specifies: `model-<name>_dynamics.yaml`, `atlas-<name>_network.yaml`, `exp-<id>_experiment.yaml`, `ana-<name>_analysis.yaml`, `fig-<id>_figure.yaml`
+  code/                         callables the recipe references by bare `module:` name: builders, transforms, observation and analysis functions
+  sourcedata/                   inputs the study did not compute
+    README.md                   where each input comes from and how to obtain it
+    original_study/             material deposited by the work being reproduced: its PDF, figures, published data and code
+      fig_comparisons/          A/B composites placing one of the paper's figures beside ours
+  docs/                         the report and everything it reads
+    report.qmd                  the report, every number computed from the run
+    _quarto.yml
+    references.bib
+    report_internal.qmd         the A/B wrapper that places our figure beside the original
+    report.pdf                  rendered from `report.qmd`, so it is a product like any other
+    report_internal.pdf         rendered from `report_internal.qmd`, which draws the paper's own figures beside ours
+    .quarto/                    quarto's own cache for this project, rewritten on every render
+    figures/                    render target for the declarative figures, named as the study names them
+      scripts/                  the plotting script each figure generates, kept beside what it renders
+    analysis/                   what the reproduction claims and how it is checked: the target values, the figure inventory, the backend comparison, the adherence scorecard
+      targets.md                every quantity the reproduction commits to, with the published value beside it and a fidelity tier
+      figures.md                the paper's figure inventory, and which of them this study reproduces
+      backend-fit.md            why this backend was chosen, from the targets' feature needs rather than by default, and what the alternatives could not do
+    notes/                      the gap register and open threads, kept local so a note can be blunt
+  derivatives/                  nested derivative datasets
+    tvbo/                       one flat derivative dataset holding every container this study computes: `exp-<id>_model-<name>_result.h5` for a run, `ana-<name>_result.h5` for an analysis, each beside one `.yaml` sidecar: the frozen, re-runnable spec that produced it
+      dataset_description.json  declares the derivative type, the generating tool, and the source dataset, which is the study root two levels up
+  prov/                         what was run, when, in what environment, by what software, over what inputs
+  logs/                         run logs
+  .tvbo/                        build root
+    kits/                       self-contained runnable kits packaged from the spec, each with its own shards under `<kit>/shards/`, named `split-<index>`
+    cache/                      cached intermediate results, keyed on their inputs
+```
+
+<!-- END STUDY LAYOUT -->
+
+### Naming a spec fragment
+
+<!-- BEGIN SPEC SUFFIXES (generated by `tvbo study layout --sync`; do not edit) -->
+
+| suffix | declares |
+|--------|----------|
+| `_dynamics` | one `Dynamics` |
+| `_network` | one `Network` |
+| `_experiment` | one `SimulationExperiment` |
+| `_analysis` | one `Analysis` |
+| `_figure` | one `Figure` |
+| `_study` | one `SimulationStudy` |
+
+<!-- END SPEC SUFFIXES -->
+
+### Naming a result
+
+<!-- BEGIN RESULT NAMES (generated by `tvbo study layout --sync`; do not edit) -->
+
+```
+[sub-{subject}_]exp-{experiment}[_model-{model}][_desc-{description}][_split-{split}]_{suffix<result>}{extension<.h5|.yaml>}
+ana-{analysis}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml>}
+```
+
+| entity | identifies |
+|--------|------------|
+| `sub-` | The subject a per-subject shard ran, when a dataset fans out over a cohort. Absent for a single-network run. |
+| `exp-` | The experiment id the run came from — the `name` of one entry under the study's `experiments:`. |
+| `ana-` | The name of a declared analysis, in place of `exp-`. A file carries one or the other, never both. |
+| `model-` | The dynamics the run integrated, so the one fact a reader most wants to filter on is queryable rather than buried in `desc-`. |
+| `desc-` | BIDS's free-text discriminator, for two results of the same experiment that differ in nothing a named entity captures. |
+| `split-` | The array-task index of one shard of a sweep, zero-padded. Present only until the shards are gathered. |
+
+<!-- END RESULT NAMES -->
+
+### What is tracked
+
+<!-- BEGIN IGNORE FILES (generated by `tvbo study layout --sync`; do not edit) -->
+
+`.gitignore`
+
+```gitignore
+# Generated by `tvbo study init` from schema/study_layout.yaml (template: replication). Edit the record, not this file.
+sourcedata/*
+!sourcedata/README.md
+docs/.quarto/
+docs/figures/
+docs/notes/
+derivatives/*
+!derivatives/tvbo/
+derivatives/tvbo/*
+!derivatives/tvbo/dataset_description.json
+logs/
+.tvbo/
+docs/report.pdf
+docs/report_internal.pdf
+```
+
+`.bidsignore`
+
+```gitignore
+# Generated by `tvbo study init` from schema/study_layout.yaml (template: replication). Edit the record, not this file.
+spec/
+prov/
+/<Study>.yaml
+```
+
+<!-- END IGNORE FILES -->

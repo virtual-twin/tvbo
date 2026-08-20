@@ -282,16 +282,23 @@ def recipe_param(experiment, name, group: str = "dynamics"):
     return next((value_of(p) for n, p in items if n == name), None)
 
 
-def open_result(out_dir, experiment: str | None = None):
-    """The result container of an experiment, or None when it has not been run.
+def _result_files(out_dir, experiment: str | None, suffix: str) -> list[Path]:
+    """Result files of ``experiment`` in the flat results directory ``out_dir``.
 
-    Network sidecars share the directory and are excluded by name — opening one instead of the result is the failure this exists to prevent.
+    ``exp-<id>[_<entities>]_result.<suffix>``, with the ``_`` boundary so ``exp-1`` never matches ``exp-10``, and the network companion excluded by name — opening one instead of the result is the failure this exists to prevent. With no ``experiment`` every result in the directory is a candidate.
     """
+    root = Path(out_dir)
+    if not root.is_dir():
+        return []
+    pattern = f"exp-{experiment}_*result{suffix}" if experiment else f"*result{suffix}"
+    return [f for f in sorted(root.glob(pattern)) if "network" not in f.name]
+
+
+def open_result(out_dir, experiment: str | None = None):
+    """The result container of an experiment, or None when it has not been run."""
     import xarray as xr
 
-    out_dir = Path(out_dir)
-    root = out_dir / "nc" / experiment if experiment else out_dir
-    files = [f for f in sorted(root.rglob("*.h5")) if "network" not in f.name]
+    files = _result_files(out_dir, experiment, ".h5")
     return xr.open_dataset(files[0], engine="h5netcdf") if files else None
 
 
@@ -299,8 +306,7 @@ def result_sidecar(out_dir, experiment: str) -> dict:
     """The YAML sidecar `tvbo run` wrote beside a result, or an empty dict."""
     import yaml
 
-    root = Path(out_dir) / "nc" / experiment
-    files = [f for f in sorted(root.glob("*.yaml")) if "network" not in f.name] if root.is_dir() else []
+    files = _result_files(out_dir, experiment, ".yaml")
     return yaml.safe_load(files[0].read_text()) if files else {}
 
 
@@ -504,7 +510,7 @@ def divergence_register(source) -> dict:
 def report_figure(
     ours,
     theirs=None,
-    stage=Path("_figures"),
+    stage=None,
     credit: str = "the authors",
     label: str = "",
     missing: str = "",
@@ -512,15 +518,19 @@ def report_figure(
     dpi: int = 300,
     cleared: bool = False,
 ) -> Path | None:
-    """The image a report embeds for one figure, staged inside the render project.
+    """The image a report embeds for one figure.
 
-    This is the A/B helper every replication report used to carry its own copy of. Pass ``theirs=None`` — what the PUBLIC build does — and the copyrighted original is never opened, let alone embedded. Pass it in the INTERNAL build and the two are composed left-right at a common height. Staging keeps the render reading only from its own project directory, and makes the composite a gitignored artifact rather than a committed file.
+    This is the A/B helper every replication report used to carry its own copy of. Pass ``theirs=None`` — what the PUBLIC build does — and the copyrighted original is never opened, let alone embedded, and our figure is embedded where the run rendered it. Pass it in the INTERNAL build and the two are composed left-right at a common height, into ``stage``.
+
+    Only the composite is staged, and that is the whole point of the directory: it is the one artifact that embeds someone else's figure, so it lives apart from the study's own and is never published. Our figure needs no copy — the layout already renders it inside the report's own project directory.
 
     Args:
         ours: Our rendered figure. A missing file returns None rather than a blank slot.
         theirs: The published original — one path, or several stacked vertically when the
             paper splits one quantity across scans. None embeds ours alone.
-        stage: Directory beside the report to stage into (created if absent).
+        stage: Where to compose the A/B. Defaults to the layout's own place for it, which
+            sits under the deposit whose figure it embeds, so a composite is covered by the
+            rule that keeps the original out of the repository.
         credit: Attribution over the original, e.g. ``"Pang et al. 2023 (c)"``.
         label: Qualifier after "TVBO replication", e.g. the parcellation or backend.
         missing: Drawn in the original's pane when it cannot be found, so the A/B still shows
@@ -534,9 +544,7 @@ def report_figure(
     Returns:
         The staged path to embed, or None when our figure has not been rendered.
     """
-    import shutil
-
-    ours, stage = Path(ours), Path(stage)
+    ours = Path(ours)
     if theirs is not None and not may_show_original(cleared):
         raise RuntimeError(
             "refusing to compose a published original into the PUBLIC build. `report.pdf` is "
@@ -547,9 +555,12 @@ def report_figure(
         )
     if not ours.is_file():
         return None
-    stage.mkdir(parents=True, exist_ok=True)
     if theirs is None:
-        return Path(shutil.copyfile(ours, stage / ours.name))
+        return ours
+    from tvbo.utils.study_layout import study_path, study_root
+
+    stage = Path(stage) if stage is not None else study_path("figures_restricted", root=study_root(ours))
+    stage.mkdir(parents=True, exist_ok=True)
 
     from tvbo.utils.figure_compare import Pane, side_by_side
 
@@ -733,6 +744,16 @@ class Scorecard:
             if rows:
                 blocks.append(f"**{title} ({len(rows)}).** {lead} {sentences(rows)}\n")
         return "\n".join(blocks)
+
+
+def embed_path(path) -> str:
+    """``path`` as a markdown image target, relative to where the render is running.
+
+    LaTeX resolves an image reference against its own working directory and prefixes a bare path with ``./``, so an absolute path arrives as ``./Users/…`` and the build fails on an image that is plainly there. Relative is the only form that works, and the render's own directory is what it can be relative to — which is why this is a separate step from :func:`report_figure`, whose answer has to be a real path a caller can open.
+    """
+    import os
+
+    return Path(os.path.relpath(Path(path))).as_posix()
 
 
 def show_report_figure(ours, theirs=None, **kwargs) -> None:

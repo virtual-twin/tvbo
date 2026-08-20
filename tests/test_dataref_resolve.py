@@ -38,8 +38,7 @@ def sweep_h5(tmp_path):
         {"observation__lyapunov_xi": (("branch_point", "node"), xi)},
         coords={"KuramotoInertia.K": ("branch_point", K), "node": ["A", "B", "C"]},
     )
-    p = tmp_path / "sub" / "study_exp-32_result.h5"
-    p.parent.mkdir(parents=True)
+    p = tmp_path / "exp-32_model-KuramotoInertia_result.h5"
     ds.to_netcdf(p, engine="h5netcdf")
     return tmp_path, p
 
@@ -48,8 +47,7 @@ def sweep_h5(tmp_path):
 def vec_h5(tmp_path):
     """A per-node vector with string node labels, for reconcile tests."""
     ds = xr.Dataset({"g": (("node",), np.array([10.0, 20.0, 30.0]))}, coords={"node": ["A", "B", "C"]})
-    p = tmp_path / "out" / "nc" / "exp5" / "study_exp-5_result.h5"
-    p.parent.mkdir(parents=True)
+    p = tmp_path / "exp-5_model-M_result.h5"
     ds.to_netcdf(p, engine="h5netcdf")
     return tmp_path, p
 
@@ -120,12 +118,13 @@ def test_is_local_ref():
 
 
 def test_skip_network_sidecar(tmp_path):
-    (tmp_path / "study_exp-7_network.h5").write_bytes(b"")
+    """The frozen connectome companion shares the directory and must never be opened as the result."""
+    (tmp_path / "exp-7_model-M_network.h5").write_bytes(b"")
     xr.Dataset({"g": (("node",), [1.0])}, coords={"node": ["A"]}).to_netcdf(
-        tmp_path / "study_exp-7_result.h5", engine="h5netcdf"
+        tmp_path / "exp-7_model-M_result.h5", engine="h5netcdf"
     )
     got = dr.locate_container(_ref(experiment="7"), results_root=tmp_path)
-    assert got.name == "study_exp-7_result.h5"
+    assert got.name == "exp-7_model-M_result.h5"
 
 
 # --------------------------------------------------------------------------- WHICH

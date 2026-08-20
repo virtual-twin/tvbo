@@ -121,18 +121,15 @@ def _load_from_file(path: Path) -> tuple[str, Any]:
         obj = _load(fmt.key, path)
         return _classify(obj), obj
 
-    # YAML — try StudyCollection (study-of-studies), then Study (it can contain Experiments), falling back to Experiment. A StudyCollection is a Study, so its more specific interpretation is tried first, keyed on the `members:` slot only it declares.
+    # YAML — try Study (it can contain Experiments, and a study-of-studies is just one with `members:`), falling back to Experiment.
     text = path.read_text(encoding="utf-8")
-    looks_like_study_collection = "members:" in text and ("recipe:" in text or "results:" in text)
-    looks_like_study = "simulation_experiments" in text or ("experiments:" in text and "title:" in text)
+    looks_like_study = (
+        "simulation_experiments" in text
+        or ("experiments:" in text and "title:" in text)
+        or ("members:" in text and ("recipe:" in text or "results:" in text))
+    )
     # Each fallback's error is kept: when they all fail, the last one (Dynamics) is about the least likely interpretation, so reporting only that sends the reader chasing a "bad Dynamics" that was never what the file is. A spec the running tvbo is too old to parse looked exactly like a malformed Dynamics until the earlier errors were surfaced.
     attempts: list[tuple[str, Exception]] = []
-    if looks_like_study_collection:
-        try:
-            obj = tvbo.StudyCollection.from_file(str(path))
-            return "study_collection", obj
-        except Exception as e:
-            attempts.append(("study_collection", e))
     if looks_like_study:
         try:
             obj = tvbo.SimulationStudy.from_file(str(path))
@@ -172,7 +169,6 @@ def _load_from_db(cls_name: str, name: str) -> tuple[str, Any]:
 def _classify(obj: Any) -> str:
     cls_name = type(obj).__name__
     return {
-        "StudyCollection": "study_collection",
         "SimulationStudy": "study",
         "SimulationExperiment": "experiment",
         "Dynamics": "dynamics",

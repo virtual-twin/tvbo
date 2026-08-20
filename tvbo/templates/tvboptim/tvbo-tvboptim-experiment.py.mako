@@ -16,7 +16,7 @@ from tvbo.templates.tvboptim.utils import (
     get_node_state_overrides, render_jax_default, get_mode_layout,
     get_all_observations_from_algo, network_axis_leaf, network_leaf_is_matrix,
     initial_conditions_axis_sv, noise_axis_param,
-    graph_selection, observation_dims, axis_keypath,
+    graph_selection, observation_dims,
 )
 import numpy as np
 import re
@@ -1455,7 +1455,7 @@ from tvboptim.optim.callbacks import MultiCallback, SavingLossCallback, SavingPa
 from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % endif
 % if has_explorations:
-from tvboptim.types import Space, GridAxis, DataAxis
+from tvboptim.types import Space, GridAxis, DataAxis, AbstractAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
 from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, resolve_exploration_n_pmap, resolve_exploration_n_vmap   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width and replica count
 % endif
@@ -3022,8 +3022,18 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 % else:
 % if has_axes:
     grid_state = copy.deepcopy(_expl_state)
-    # A graph leaf's dataframe column is POSITIONAL (`graph.2` for `speed`, since the graph pytree carries no field names), so each network axis keeps a reference to the axis object it bound and is recovered from the graph by identity below.
-    _graph_axis_objs = {}
+    _axis_label_by_id = {}
+
+    def _ax(label, axis):
+        """Bind an axis, remembering the path the recipe declared it as.
+
+        `Space` names its dataframe columns after each swept leaf's pytree keypath, from which the
+        declared path cannot be recovered (`network.conduction_speed` comes back as `graph.2`), so
+        the label travels with the object instead of being guessed back from the column name.
+        """
+        _axis_label_by_id[id(axis)] = label
+        return axis
+
     # Points of an axis that may be ARRAY-valued. Its grid coordinate is the point index (an xarray coord holds scalars), while its per-cell column holds whole arrays, so the cells are converted with the points that only exist here.
     _array_axis_points = {}
 <%
@@ -3036,6 +3046,7 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     _across_edges = lambda _v: jnp.where(_edge_pattern, _v, 0.0)
     % endif
     % for ax in expl['axes']:
+<% _lbl = ax.get('label', ax['name']) + (f"[{ax['element_idx']}]" if ax.get('element_idx') is not None else '') %>\
     % if ax.get('builder_expr'):
     ## Builder axis: materialize the sweep values from a callable, then sweep as a DataAxis.
     ## Values may be whole per-node vectors (array-valued axis). Product mode meshgrids the
@@ -3047,54 +3058,53 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     _axisvals_${ax['name']} = jnp.asarray(${ax['builder_expr']})
     % endif
     _grp_${ax['name']} = "${ax['name']}" if _axisvals_${ax['name']}.ndim > 1 else None
-    _array_axis_points["${ax.get('label', ax['name'])}"] = _axisvals_${ax['name']}
+    _array_axis_points["${_lbl}"] = _axisvals_${ax['name']}
     % if ax.get('is_external'):
-    grid_state.external.${ax['external_key']}.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}${event_clock_wrap(ax)})
+    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}${event_clock_wrap(ax)}))
     % elif ax.get('is_coupling'):
-    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % elif ax.get('is_network'):
     % if network_leaf_is_matrix(ax.get('graph_leaf')):
     # A builder may hand over one scalar per point or whole per-edge matrices; only the former is written across the edges.
-    grid_state.graph.${ax['graph_leaf']} = DataAxis(
+    grid_state.graph.${ax['graph_leaf']} = _ax('${_lbl}', DataAxis(
         _axisvals_${ax['name']}, group=_grp_${ax['name']},
-        wrap=_across_edges if _axisvals_${ax['name']}.ndim == 1 else None)
+        wrap=_across_edges if _axisvals_${ax['name']}.ndim == 1 else None))
     % else:
-    grid_state.graph.${ax['graph_leaf']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    grid_state.graph.${ax['graph_leaf']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % endif
-    _graph_axis_objs["${ax.get('label', ax['name'])}"] = grid_state.graph.${ax['graph_leaf']}
     % elif ax.get('is_noise'):
-    grid_state.noise.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    grid_state.noise.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % else:
-    grid_state.dynamics.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    grid_state.dynamics.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % endif
     % elif ax.get('is_seed'):
     ## Noise-seed axis: a dummy scalar slot Space sweeps; the wrapper below turns
     ## each cell's integer seed into config.noise.key, so every cell/trial draws an
     ## independent noise realization (a real per-trial ensemble, not a no-op).
-    grid_state.dynamics._noise_seed = DataAxis(jnp.asarray(${ax['values']}, dtype=jnp.uint32))
+    grid_state.dynamics._noise_seed = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']}, dtype=jnp.uint32)))
     % elif ax.get('is_ic'):
     ## Initial-condition axis: a dummy scalar slot Space sweeps; the wrapper below
     ## writes each cell's value into the swept state variable's row of the initial
     ## state, so every cell integrates from its own IC (a deterministic IC ensemble).
     % if 'values' in ax:
-    grid_state.dynamics._ic_${ax['name']} = DataAxis(jnp.asarray(${ax['values']}))
+    grid_state.dynamics._ic_${ax['name']} = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']})))
     % else:
-    grid_state.dynamics._ic_${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.dynamics._ic_${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % elif ax.get('is_noise'):
     ## Noise-amplitude axis: a parameter leaf on the noise params, bound directly — no dummy slot, no wrapper.
     % if 'values' in ax:
-    grid_state.noise.${ax['name']} = DataAxis(jnp.asarray(${ax['values']}))
+    grid_state.noise.${ax['name']} = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']})))
     % else:
-    grid_state.noise.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.noise.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % elif ax.get('element_idx') is not None:
     ## Element-indexed parameter: create dummy scalar slot for Space discovery
     ## e.g., K[0] → grid_state.dynamics._K_el0 = GridAxis(...)
     % if 'values' in ax:
-    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = DataAxis(${ax['values']})
+    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = _ax('${_lbl}', DataAxis(${ax['values']}))
     % else:
-    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}_${ax['element_idx']}', ${ax['n']}))
+    grid_state.dynamics._${ax['name']}_el${ax['element_idx']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}_${ax['element_idx']}', ${ax['n']})))
     % endif
     % elif ax.get('is_external'):
     ## External-input axis: a parameter leaf on the event's own ExternalInput. A `t0` is
@@ -3102,15 +3112,15 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     ## onset is shifted onto — as a `wrap`, which the axis's own points do not see, so the
     ## coordinate stays the time the recipe wrote.
     % if 'values' in ax:
-    grid_state.external.${ax['external_key']}.${ax['name']} = DataAxis(jnp.asarray(${ax['values']}, dtype=float)${event_clock_wrap(ax)})
+    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']}, dtype=float)${event_clock_wrap(ax)}))
     % else:
-    grid_state.external.${ax['external_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})${event_clock_wrap(ax)})
+    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})${event_clock_wrap(ax)}))
     % endif
     % elif ax.get('is_coupling'):
     % if 'values' in ax:
-    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(${ax['values']})
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(${ax['values']}))
     % else:
-    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.coupling.${ax['coupling_key']}.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % elif ax.get('is_network'):
     ## Network-scope axis: sweep the graph's live `${ax['graph_leaf']}` leaf
@@ -3123,21 +3133,20 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     ## it like any other, and the coordinate stays the scalar the recipe declared.
     % if network_leaf_is_matrix(ax.get('graph_leaf')):
     % if 'values' in ax:
-    grid_state.graph.${ax['graph_leaf']} = DataAxis(jnp.asarray(${ax['values']}, dtype=float), wrap=_across_edges)
+    grid_state.graph.${ax['graph_leaf']} = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']}, dtype=float), wrap=_across_edges))
     % else:
-    grid_state.graph.${ax['graph_leaf']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}), wrap=_across_edges)
+    grid_state.graph.${ax['graph_leaf']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}), wrap=_across_edges))
     % endif
     % elif 'values' in ax:
-    grid_state.graph.${ax['graph_leaf']} = DataAxis(${ax['values']})
+    grid_state.graph.${ax['graph_leaf']} = _ax('${_lbl}', DataAxis(${ax['values']}))
     % else:
-    grid_state.graph.${ax['graph_leaf']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.graph.${ax['graph_leaf']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
-    _graph_axis_objs["${ax.get('label', ax['name'])}"] = grid_state.graph.${ax['graph_leaf']}
     % else:
     % if 'values' in ax:
-    grid_state.dynamics.${ax['name']} = DataAxis(${ax['values']})
+    grid_state.dynamics.${ax['name']} = _ax('${_lbl}', DataAxis(${ax['values']}))
     % else:
-    grid_state.dynamics.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.dynamics.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % endif
     % endfor
@@ -3639,77 +3648,15 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endfor
     ]
 
-    # Read each cell's actual parameter values back from the grid so coordinates track the
-    # grid's OWN cell order, never a positional reshape that assumes axes_info order: Space
-    # emits cells in pytree-leaf order, which differs from the declared axis order whenever
-    # axes live on different state sub-objects (dynamics/coupling/graph). Both the sharded
-    # subset (flat `point` dim) and the whole grid (keyed by value into the rectangular grid)
-    # consume these coords downstream.
+    # Each cell's actual parameter values, so coordinates follow the grid's OWN cell order rather than a positional reshape that assumes the declared axis order: a Space emits cells in pytree-leaf order, which differs whenever the swept axes live on different state sub-objects.
     _cell_coords = None
-<%
-    def _scope_of(ax):
-        """Grid sub-object an axis's leaf is bound on — the first segment of its keypath."""
-        return axis_keypath(ax).split('.', 1)[0]
-
-    _axis_scopes = {}
-    for _ax in expl['axes']:
-        _lbl = str(_ax.get('label', _ax['name']))
-        if _ax.get('element_idx') is not None:
-            _lbl = f"{_lbl}[{_ax['element_idx']}]"
-        _axis_scopes[_lbl] = _scope_of(_ax)
-%>\
 % if has_axes:
     _df = grid.to_dataframe()
-    # Each axis's grid SCOPE — the first segment of its dataframe column keypath. `noise.sigma` and a model's own `sigma` share a bare leaf name, so only the scope tells the two columns apart.
-    _axis_scope = ${repr(_axis_scopes)}
-    _bare_to_label, _scoped_to_label = {}, {}
-    # Each network axis is located by IDENTITY among the graph's axis leaves: a positional `graph.N` column has no bare name to key on, and two of them would collide on one label.
-    _graph_leaves = jax.tree_util.tree_leaves(
-        grid_state.graph, is_leaf=lambda _x: isinstance(_x, (DataAxis, GridAxis))
-    )
-    _graph_pos_to_label = {
-        str(_i): _lbl
-        for _lbl, _obj in _graph_axis_objs.items()
-        for _i, _leaf in enumerate(_graph_leaves)
-        if _leaf is _obj
-    }
-    if len(_graph_pos_to_label) != len(_graph_axis_objs):
-        _lost = sorted(set(_graph_axis_objs) - set(_graph_pos_to_label.values()))
-        raise RuntimeError(
-            f"network axis/axes {_lost} were bound onto the graph but could not be located among "
-            f"its {len(_graph_leaves)} axis leaves, so their per-cell coordinates cannot be keyed. "
-            f"Labelling them by position would key the surface on the wrong parameter."
-        )
-    for _a in _axes_info:
-        _name = str(_a.name)
-        _scope = _axis_scope.get(_name, 'dynamics')
-
-        def _register(_key, _label=_name, _sc=_scope):
-            _bare_to_label.setdefault(_key, _label)
-            _scoped_to_label.setdefault((_sc, _key), _label)
-
-        _register(_name.rsplit('.', 1)[-1])
-        if _name == 'execution.random_seed':
-            _register('_noise_seed')  # the seed axis sweeps the dynamics._noise_seed leaf
-        if _name.startswith('initial_conditions.'):
-            _register(f"_ic_{_name.rsplit('.', 1)[-1]}")  # an IC axis sweeps the dummy dynamics._ic_<sv> leaf
-        if getattr(_a, 'element_idx', None) is not None:
-            _bare = _name.rsplit('.', 1)[-1].split('[')[0]   # axis "ref.p[i]" sweeps the leaf dynamics._p_el<i>
-            _register(f'_{_bare}_el{_a.element_idx}')
-    _cell_coords, _used = {}, set()
-    for _col in _df.columns:
-        _parts = str(_col).split('.')
-        _label = _scoped_to_label.get((_parts[0], _parts[-1]), None)
-        if _label is None:
-            _label = _bare_to_label.get(_parts[-1], None)
-        # A graph leaf's column is `graph.<leaf index>`; recover the axis that bound that leaf.
-        if _label is None and str(_col).startswith('graph.'):
-            _label = _graph_pos_to_label.get(_parts[-1])
-        if _label is None:
-            _label = str(_col)
-        if _label in _used:
-            _label = str(_col)  # disambiguate a bare-name collision with the keypath
-        _used.add(_label)
+    # Both sequences come from one flatten of one tree, so rank pairs each column with the axis that bound it and any mismatch raises.
+    _bound = [_l for _l in jax.tree.leaves(grid_state, is_leaf=lambda _x: isinstance(_x, AbstractAxis)) if isinstance(_l, AbstractAxis)]
+    _cell_coords = {}
+    for _leaf, _col in zip(_bound, _df.columns, strict=True):
+        _label = _axis_label_by_id[id(_leaf)]
         _vals = np.asarray(_df[_col].to_numpy())
         # An array-valued axis coordinates on the point INDEX, so the cells are converted here, where the materialised points are still in scope.
         _pts = _array_axis_points.get(_label)

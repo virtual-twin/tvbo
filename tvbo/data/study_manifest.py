@@ -1,6 +1,6 @@
-"""StudyCollection-level helpers: the results manifest and the ``tvbo verify`` checks.
+"""The results manifest and the ``tvbo verify`` checks.
 
-An :class:`~tvbo.classes.study.StudyCollection` is a study-of-studies — it aggregates the member studies a paper reports and owns the paper's own demonstration content — plus two things a plain ``SimulationStudy`` has no need for:
+A study that declares ``members`` is a study-of-studies: it aggregates the member studies a paper reports and owns the paper's own demonstration content. Two capabilities belong to that shape, though any :class:`~tvbo.classes.study.SimulationStudy` may use them:
 
 * a **results manifest** (``results:``): the named numbers the prose cites, each bound to a
   computed value (``used:`` a DataRef) or an authored constant (``value:`` + ``source:``).
@@ -40,13 +40,13 @@ def _format(value: Any, fmt: str | None) -> str:
 
 
 def _count_target(inv: Any, member_label: str | None) -> Any:
-    """The object a ``count:`` binding tallies: the collection itself, or a loaded member."""
+    """The object a ``count:`` binding tallies: the study itself, or a loaded member."""
     if member_label is None:
         if inv is None:
-            raise ValueError("a bare `count:` collection needs a StudyCollection context")
+            raise ValueError("a bare `count:` collection needs a study-of-studies context")
         return inv
     if inv is None:
-        raise ValueError(f"count references member {member_label!r} but no StudyCollection context was given")
+        raise ValueError(f"count references member {member_label!r} but no study-of-studies context was given")
     from tvbo.classes.study import SimulationStudy
 
     for label, path in inv.member_recipes():
@@ -70,36 +70,25 @@ def _count(spec: str, inv: Any) -> int:
     return len(as_list(getattr(target, coll)))
 
 
-def container_roots(inv: Any, results_root: Path | None) -> list[Path]:
-    """Every directory a StudyCollection's result containers can live under, in search order.
+def _owning_results_root(used: Any, results_root: Path | None, inv: Any) -> Path | None:
+    """The results directory of the study that produced *used*, by identity.
 
-    The collection's own root first, then one per member. A member study runs in its own directory and writes ``<member-dir>/output/results/<name>/result.h5``, so a ``used:`` binding into a member — which ``StudyCollection.results`` explicitly documents as supported — is not reachable from the collection's root alone.
+    A ``used:`` IRI carries its own scope (``tvbo:exp/<study>/exp-<id>``, ``tvbo:ana/<study>/<name>``), so it names the study that produced it. That name is matched against the member labels and recipe stems, and the match's own directory is asked for its results role — a member keeps its results in its own layout, never in the aggregating study's. A reference with no study segment belongs to the study holding the binding; one naming a study that is not a member raises, because searching elsewhere for it is how a binding silently resolves against the wrong run.
     """
-    roots: list[Path] = [Path(results_root)] if results_root else []
-    try:
-        members = list(inv.member_recipes()) if inv is not None else []
-    except Exception:  # noqa: BLE001 — a malformed member list is reported elsewhere
-        members = []
-    for _label, path in members:
-        root = Path(path).resolve().parent / "output"
-        if root not in roots:
-            roots.append(root)
-    return roots
+    from tvbo.data.dataref import iri_scope
+    from tvbo.utils.study_layout import study_path
 
-
-def _resolve_across_roots(used: Any, results_root: Path | None, inv: Any):
-    """Resolve *used* against the first container root that holds it.
-
-    The first failure is re-raised when none do, so the reported problem names the collection's own root rather than whichever member happened to be searched last.
-    """
-    roots = container_roots(inv, results_root)
-    first_error: Exception | None = None
-    for root in roots or [None]:
+    _kind, owner, _name = iri_scope(getattr(used, "iri", None))
+    if owner:
         try:
-            return resolve_dataref(used, results_root=str(root) if root else None)
-        except Exception as e:  # noqa: BLE001 — try the next root, report the first
-            first_error = first_error or e
-    raise first_error  # type: ignore[misc]
+            members = list(inv.member_recipes()) if inv is not None else []
+        except Exception:  # noqa: BLE001 — a malformed member list is reported by _missing_members
+            members = []
+        for label, path in members:
+            if owner in (label, Path(path).stem):
+                return study_path("results", root=Path(path).resolve().parent)
+        raise ValueError(f"binding names study {owner!r}, which is not a member of this study")
+    return Path(results_root) if results_root else None
 
 
 def resolve_binding(binding: Any, results_root: Path | None, *, inv: Any = None) -> tuple[str, dict]:
@@ -136,7 +125,8 @@ def resolve_binding(binding: Any, results_root: Path | None, *, inv: Any = None)
             prov["description"] = str(desc)
         return rendered, prov
 
-    da = _resolve_across_roots(used, results_root, inv)
+    root = _owning_results_root(used, results_root, inv)
+    da = resolve_dataref(used, results_root=str(root) if root else None)
     rendered = _format(_scalar(da), fmt)
     ref = "/".join(
         p
@@ -243,8 +233,11 @@ def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Path |
 
     Staleness is per analysis, keyed on a digest of THAT analysis's own declaration, not on the spec file's mtime. Comparing against the file made every unrelated edit — a caption, a new figure, a typo in a description — mark every analysis as needing a re-run, so a one-word change failed the build and demanded hours of recomputation it could not affect.
 
-    The digest is recorded beside the container when it is written. A container from before this check existed carries none, and is accepted: the alternative is failing every build once, which teaches people to bypass the gate.
+    The digest is recorded in the container's sidecar when it is written. A container whose sidecar carries none is accepted rather than failed, so a hand-placed container is usable.
     """
+    import yaml
+
+    from tvbo.data import dataref as _dataref
     from tvbo.data.analysis_io import analysis_name, container_path, study_analyses
 
     problems: list[str] = []
@@ -254,8 +247,9 @@ def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Path |
         if not path.exists():
             problems.append(f"{name}: analysis container missing (never run): {path}")
             continue
-        stamp = path.parent / ".fingerprint"
-        if stamp.exists() and stamp.read_text().strip() != _analysis_fingerprint(analysis):
+        sidecar = _dataref.sidecar_path(path)
+        recorded = (yaml.safe_load(sidecar.read_text()) or {}).get("declaration_digest") if sidecar.is_file() else None
+        if recorded and recorded != _analysis_fingerprint(analysis):
             problems.append(f"{name}: analysis declaration changed since its container was written (edited but not re-run)")
     return problems
 
@@ -305,7 +299,7 @@ def verify(
     manifest_path: Path | None = None,
     captions_dir: Path | None = None,
 ) -> list[str]:
-    """Check a StudyCollection is buildable, returning a list of problems (empty = OK).
+    """Check a study-of-studies is buildable, returning a list of problems (empty = OK).
 
     Structural checks run in both modes: every member recipe exists, every declared figure carries a cross-reference id, and every committed ``<figure>.caption.qmd`` still matches the caption its spec composes (a stale caption fails here, not silently in the rendered PDF).
     What differs is how the numbers are checked:
@@ -315,8 +309,10 @@ def verify(
     * **build** (``manifest_path`` given) — the run containers are generated artifacts that are
       never committed, so instead of resolving them this reads the committed manifest: the declared bindings and the prose's cited keys must both match its keys exactly. A binding added without regenerating the manifest, or a citation with no number, fails here without a single container present.
     """
+    from tvbo.utils.study_layout import study_path
+
     base = Path(base)
-    results_root = Path(results_root) if results_root else (base / "output")
+    results_root = Path(results_root) if results_root else study_path("results", root=base)
     source_file = Path(getattr(inv, "_source_file", "")) if getattr(inv, "_source_file", None) else None
     problems: list[str] = []
 

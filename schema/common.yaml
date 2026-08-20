@@ -107,7 +107,7 @@ classes:
                 range: string
                 description: >-
                     WHERE (short form): an in-study analysis name whose saved result
-                    holds the array (``output/results/<name>/result.h5``). Mutually
+                    holds the array (``derivatives/tvbo/ana-<name>_result.h5``). Mutually
                     exclusive with ``experiment`` and ``iri``, and — like
                     ``experiment`` — it registers the run-order dependency, so the
                     analysis runs before whatever consumes it.

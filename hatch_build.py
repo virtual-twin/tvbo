@@ -1,6 +1,8 @@
-"""Generate the LinkML datamodel — build hook *and* standalone script.
+"""Generate the LinkML datamodel and materialize the authored records — build hook *and* standalone script.
 
 ``tvbo/datamodel/schema.py`` and ``tvbo/datamodel/pydantic.py`` are pure artifacts generated from ``schema/tvbo_datamodel.yaml`` (and its imports). They are **not** tracked in git (see ``.gitignore``): every wheel / sdist / editable build regenerates them here, so they can neither conflict during merges nor drift out of sync with the schema. Consequently ``linkml`` (the heavy generator toolkit) is a *build-time* only dependency (``[build-system].requires``); importing the generated classes needs just the lightweight ``linkml-runtime``.
+
+It also copies the instance documents authored beside the schema (``schema/study_layout.yaml``, the ground truth for the study directory layout) into the package tree, so the runtime resolves them at one import-relative path whether tvbo was installed from a wheel or editable.
 
 This single file is used two ways so from-source and build-time codegen are byte-identical:
   * as a **hatchling build hook** (wheel / sdist / editable builds), and
@@ -42,6 +44,7 @@ def generate_datamodel(root: str | Path) -> None:
         )
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
+    _copy_records(root)
     _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize() + _alias_support(schema))
     _write(out_dir / "pydantic.py", PydanticGenerator(str(schema)).serialize())
 
@@ -211,6 +214,30 @@ def _drop_redundant_anyof_type(node) -> None:
     elif isinstance(node, list):
         for value in node:
             _drop_redundant_anyof_type(value)
+
+
+# Instance documents authored beside the schema that types them, materialized under `tvbo/` so a wheel and an editable install both find them at one import-relative path.
+_RECORDS = {"study_layout.yaml": Path("tvbo") / "rules" / "study_layout.yaml"}
+
+
+def _copy_records(root: Path) -> None:
+    """Materialize the authored records from ``schema/`` into the package tree.
+
+    A record is a LinkML *instance* (``tvbo_class: tvbo:StudyLayout``), so it is authored beside the schema that types it and never duplicated. The runtime reads the copy, which is gitignored and force-included in the wheel exactly as the generated datamodel is, so the single ground truth stays in ``schema/`` while a wheel-installed tvbo can still resolve it.
+    """
+    for source_name, rel_target in _RECORDS.items():
+        source = root / "schema" / source_name
+        if not source.is_file():
+            raise FileNotFoundError(
+                f"Cannot materialize the {source_name} record: {source} is missing. Ensure `schema/**` ships in the sdist."
+            )
+        target = root / rel_target
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            f"# Generated from schema/{source_name} by hatch_build.py. Edit the source, not this copy.\n"
+            + source.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
 
 
 def _write(target: Path, code: str) -> None:

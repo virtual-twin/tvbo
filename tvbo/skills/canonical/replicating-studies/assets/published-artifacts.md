@@ -13,7 +13,7 @@ assume either answer.
 ## Inventory the published material by CONTENT, not by filename — a mislabelled file can be the oracle
 
 Read every published array's **shape and range** before you read its name. Pang2023 ships
-`results/hcp_striatum-lh_gradient_20_variance.txt`, whose two siblings are 200-element variance
+`sourcedata/original_study/results/hcp_striatum-lh_gradient_20_variance.txt`, whose two siblings are 200-element variance
 spectra; the striatum's is a **1,896 × 1,896 affinity matrix** — the *input* to the one step of
 the chain the published material contains no code for, for the one structure of three that was failing.
 `numpy.loadtxt` returns it without complaint and its first row reads as a plausible decreasing

@@ -79,13 +79,22 @@ def publish_state(qmd_path: Path) -> bool | None:
 
 
 def study_pages() -> list[Path]:
-    """Every .qmd inside a Replication/<Study>/ subdirectory."""
+    """Every .qmd a study offers as a page: at its root, or under the layout's docs role.
+
+    A study is a BIDS study dataset, which keeps its report in ``docs/`` (see :mod:`tvbo.utils.study_layout`). A study embedded in this site may instead keep its page at its root, because the site owns the Quarto project and a nested one would split the build.
+    Both are listed, so where a study puts its report is the study's choice rather than a rule the sidebar imposes.
+    """
     if not REPL_DIR.is_dir():
         return []
+    from tvbo.utils.study_layout import relpath
+
+    docs_role = relpath("docs")
     pages: list[Path] = []
     for study_dir in sorted(REPL_DIR.iterdir()):
-        if study_dir.is_dir():
-            pages.extend(sorted(study_dir.glob("*.qmd")))
+        if not study_dir.is_dir():
+            continue
+        pages.extend(sorted(study_dir.glob("*.qmd")))
+        pages.extend(sorted((study_dir / docs_role).glob("*.qmd")))
     return pages
 
 

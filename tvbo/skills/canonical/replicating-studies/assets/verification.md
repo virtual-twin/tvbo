@@ -26,7 +26,7 @@ correlation would hide. Four traps it caught in one study (Pang2023), each of wh
 have produced plausible, wrong figures:
 
 - **The published data ships several versions of "the same" array.** The basis under
-  `results/basis_geometric_*` differed from `template_eigenmodes/*_emode_200.txt` by 4.2e-2.
+  `sourcedata/original_study/results/basis_geometric_*` differed from `template_eigenmodes/*_emode_200.txt` by 4.2e-2.
   Both look right; only one gives identity (5.6e-16 vs 2.6e-6). **Try every candidate and let
   identity pick** — never assume the obviously-named file is the one the figures used.
 - **Order of a nonlinear step.** A normalised power spectrum averaged over subjects is NOT
@@ -304,7 +304,7 @@ RNG; then check your own generator separately (every row a true permutation).
 ## Verify the figure, not only the number
 
 **Measure the layout, then eyeball the shape.** Declare each figure's published counterpart
-with `reference_image: original_study/img/fig_0N.png` and run `tvbo figure compare
+with `reference_image: sourcedata/original_study/img/fig_0N.png` and run `tvbo figure compare
 <Study>.yaml`: it decomposes both images into panel boxes (recursive XY-cut), matches them by
 overlap, and writes a per-panel offset table plus a side-by-side overlay. Page **aspect** is
 the number to read first — it is exactly reproducible and it catches the whole class of "the

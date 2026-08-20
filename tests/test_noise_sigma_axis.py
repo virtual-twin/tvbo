@@ -117,18 +117,22 @@ def _render(tmp_path, axis, noise=_NOISE):
     return exp.render_code("tvboptim")
 
 
+def _squeeze(code):
+    """The emitted code with whitespace and quoting normalised, since the formatter wraps long calls."""
+    return "".join(code.split()).replace('"', "'")
+
+
 def test_domain_axis_binds_the_amplitude_leaf(tmp_path):
     """A domain lo/hi/n amplitude axis binds the noise params leaf as a GridAxis."""
     code = _render(tmp_path, "        domain: {lo: 0.005, hi: 0.05, n: 4}\n")
-    assert "grid_state.noise.sigma = GridAxis(" in code
-    # The result dimension keeps the declared dotted name.
-    assert "noise.sigma" in code
+    # The binding carries the declared dotted name, which is what keys the result dimension.
+    assert "grid_state.noise.sigma=_ax('noise.sigma',GridAxis(" in _squeeze(code)
 
 
 def test_explored_values_axis_binds_a_data_axis(tmp_path):
     """Explicit explored_values bind the same leaf as a DataAxis."""
     code = _render(tmp_path, "        explored_values: [0.01, 0.02, 0.04]\n")
-    assert "grid_state.noise.sigma = DataAxis(" in code
+    assert "grid_state.noise.sigma=_ax('noise.sigma',DataAxis(" in _squeeze(code)
 
 
 def test_sweeping_amplitude_without_noise_is_rejected(tmp_path):
@@ -157,7 +161,7 @@ def test_a_builder_supplied_amplitude_axis_binds_the_noise_leaf(tmp_path, monkey
         "          arguments: {n: {value: 3}}\n"
     )
     code = _render(tmp_path, axis)
-    assert "grid_state.noise.sigma = DataAxis(" in code
+    assert "grid_state.noise.sigma=_ax('noise.sigma',DataAxis(" in _squeeze(code)
     assert "grid_state.dynamics.sigma" not in code
 
 

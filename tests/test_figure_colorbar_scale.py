@@ -20,11 +20,17 @@ FIELD = np.linspace(-0.5, 0.3, 36).reshape(6, 6)
 
 @pytest.fixture
 def study(tmp_path):
-    """A study directory holding one container with a single 2-D output."""
+    """A study directory holding one container with a single 2-D output.
+
+    The container is written where the layout record says an analysis result lives, so the layer's ``iri`` resolves through the same path the run itself writes.
+    """
+    from tvbo.data.dataref import analysis_container_path
+    from tvbo.utils.study_layout import study_path
+
     ds = xr.Dataset({"corr": (("node", "node2"), FIELD)}, coords={"node": np.arange(6), "node2": np.arange(6)})
-    path = tmp_path / "output" / "results" / "synth" / "result.h5"
-    path.parent.mkdir(parents=True)
-    ds.to_netcdf(path, engine="h5netcdf")
+    results = study_path("results", root=tmp_path)
+    results.mkdir(parents=True)
+    ds.to_netcdf(analysis_container_path(results, "synth"), engine="h5netcdf")
     return tmp_path
 
 

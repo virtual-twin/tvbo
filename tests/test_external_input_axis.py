@@ -78,17 +78,26 @@ def _experiment(tmp_path):
     return exp
 
 
+def _squeeze(code):
+    """The emitted code with whitespace and quoting normalised, since the formatter wraps long calls."""
+    return "".join(code.split()).replace('"', "'")
+
+
+BINDING = "grid_state.external.stimulus.t0=_ax('stimulus.t0',DataAxis("
+"""The emitted binding: the external slot, carrying the path the recipe declared it as."""
+
+
 def test_the_axis_writes_the_external_input_slot(tmp_path):
     """A swept event parameter reaches `state.external`, not `state.dynamics`."""
     code = _experiment(tmp_path).render_code("tvboptim")
-    assert "grid_state.external.stimulus.t0 = DataAxis(" in code
+    assert BINDING in _squeeze(code)
 
 
 def test_a_swept_onset_carries_the_transient_shift(tmp_path):
     """The axis is written on the padded clock, exactly as a fixed onset is."""
-    code = _experiment(tmp_path).render_code("tvboptim")
-    axis = code.split("grid_state.external.stimulus.t0 = DataAxis(")[1].split("\n\n")[0]
-    assert "+ 50.0" in axis, axis
+    squeezed = _squeeze(_experiment(tmp_path).render_code("tvboptim"))
+    axis = squeezed.split(BINDING)[1].split("grid=Space(")[0]
+    assert "+50.0" in axis, axis
 
 
 def test_every_cell_fires_at_the_onset_it_declares(tmp_path):

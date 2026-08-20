@@ -1,4 +1,4 @@
-"""``tvbo verify`` — check a StudyCollection is buildable, and hard-fail if not.
+"""``tvbo verify`` — check a study-of-studies is buildable, and hard-fail if not.
 
 The build gate, in two modes. Offline (where the run containers live) it resolves every ``results:`` binding and checks analysis staleness. In a build/CI checkout the containers are generated artifacts that are never committed, so ``--manifest manuscript_results.yml`` runs it
 CONTAINER-FREE: the declared bindings and, with ``--manuscript``, the prose's ``{{< meta results.* >}}`` keys are checked against the committed manifest instead of being resolved. Either way a citation with no number, a number no one cites, a binding added without regenerating the manifest, or a committed ``<figure>.caption.qmd`` that no longer matches the caption its spec composes is caught. A non-empty problem list exits non-zero, so a Quarto pre-render step fails loudly instead of rendering a stale or wrong figure.
@@ -40,7 +40,7 @@ def _scan_meta_keys(target: Path) -> set[str]:
 
 
 def verify(
-    spec: str = typer.Argument(..., help="Path to a StudyCollection YAML."),
+    spec: str = typer.Argument(..., help="Path to a study YAML that declares `members:`."),
     results_root: Path = typer.Option(
         None,
         "--results-root",
@@ -69,15 +69,16 @@ def verify(
         "mismatch (a stale caption the manuscript would still render) is a failure.",
     ),
 ) -> None:
-    """Verify a StudyCollection's completeness, staleness and manifest coverage."""
+    """Verify a study-of-studies' completeness, staleness and manifest coverage."""
     kind, obj = _common.resolve_spec(spec)
-    if kind != "study_collection":
+    if kind != "study" or not (getattr(obj, "members", None) or []):
+        detail = "declares no `members:`" if kind == "study" else f"resolves to a {kind}"
         _common.die(
-            f"`tvbo verify` needs a StudyCollection; {spec} resolves to a {kind}. "
-            f"Point it at the tvbo_manuscript.yaml (the study-of-studies with `members:`)."
+            f"`tvbo verify` needs a study-of-studies; {spec} {detail}. "
+            f"Point it at the tvbo_manuscript.yaml (the study that declares `members:`)."
         )
 
-    from tvbo.data.study_collection import verify as _verify
+    from tvbo.data.study_manifest import verify as _verify
 
     base = Path(getattr(obj, "_source_file", spec)).resolve().parent
     keys = _scan_meta_keys(manuscript) if manuscript is not None else None

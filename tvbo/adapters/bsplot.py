@@ -674,38 +674,26 @@ class _UsedOnly:
 
 @functools.cache
 def _container_path(iri, base_dir: Path) -> str:
-    """Resolve an experiment IRI/key to its result container (skips ``*_network.h5``).
+    """Resolve a ``used`` edge's IRI/key to its result container under ``base_dir``.
 
-    The PROV ``used`` edge points at a result; its container lives under either ``<base_dir>/output/nc/<exp>/`` (a per-experiment ``tvbo run``), flat BIDS-style files directly inside ``<base_dir>/output/nc/`` (``<exp>[_desc-...]_result.h5`` — the layout a whole-study ``tvbo run`` writes into ``nc/``), the flat ``<base_dir>/output/<exp>[_desc-...]_result.h5`` at the output root, or ``<base_dir>/output/results/<name>/result.h5`` (a derived-figure container a replication study writes with ``ExperimentResult.save``, the ``results_io`` convention). All are tried so a figure layer can bind any of them. Returns ``""`` when unresolved.
+    One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. The ``_`` boundary keeps ``exp-1`` from matching ``exp-10`` and the network companion is skipped by name.
+
+    Returns ``""`` when the container is not there, which a panel declaring a ``placeholder`` relies on: the generated script draws the honest label instead of a plot, so a partially-run study still renders. A panel without a placeholder gets a named error from ``_open`` at render time. What is gone is the guessing — four candidate layouts tried in turn, which is how a figure came to read one run's experiments against another run's analyses.
     """
     if not iri:
         return ""
-    key = re.split(r"[:/#]", str(iri))[-1]  # last IRI segment (e.g. "exp-3" or "fig3")
-    # Only an experiment reference (exp-N / expN / bare N) yields exp-<id> candidates. A digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
     from tvbo.data.dataref import experiment_id as _experiment_id
+    from tvbo.utils.study_layout import study_path
 
+    key = re.split(r"[:/#]", str(iri))[-1]  # last IRI segment (e.g. "exp-3" or "fig3")
+    # Only an experiment reference (exp-N / expN / bare N) yields an exp-<id> stem. A digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
     eid = _experiment_id(iri)
-    cands = [key, *([f"exp-{eid}", f"exp{eid}"] if eid else [])]
-    nc = base_dir / "output" / "nc"
-    for cand in cands:
-        d = nc / cand
-        if d.is_dir():
-            files = [f for f in sorted(d.glob("*.h5")) if "network" not in f.name]
-            if files:
-                return str(files[0].resolve())
-        if nc.is_dir():  # flat BIDS files directly inside output/nc/
-            files = [f for f in sorted(nc.glob(f"{cand}_*result.h5")) if "network" not in f.name]
-            if files:
-                return str(files[0].resolve())
-        result = base_dir / "output" / "results" / cand / "result.h5"
-        if result.is_file():
-            return str(result.resolve())
-    out = base_dir / "output"  # flat whole-study layout: output/<exp>_*result.h5
-    if out.is_dir():
-        for cand in cands:  # `_` boundary so exp-1 never matches exp-10
-            files = [f for f in sorted(out.glob(f"{cand}_*result.h5")) if "network" not in f.name]
-            if files:
-                return str(files[0].resolve())
+    stems = [f"exp-{eid}"] if eid else [f"ana-{key}", key]
+    results = study_path("results", root=base_dir)
+    for stem in stems:
+        files = [f for f in sorted(results.glob(f"{stem}_*result.h5")) if "network" not in f.name]
+        if files:
+            return str(files[0].resolve())
     return ""
 
 
@@ -760,7 +748,7 @@ def _sel_dict(used):
 def _used_ref(used):
     """The container key for a figure layer's ``used`` DataRef.
 
-    An explicit ``iri`` pointer wins; otherwise an in-study ``experiment`` id resolves to its ``exp-<id>`` key and an in-study ``analysis`` to its own name (whose container ``_container_path`` finds under ``output/results/<name>/``). The short forms are preferred for same-study bindings — they need no hardcoded study key in an IRI string and (via the ``used`` edge) register the dependency, so the source runs first.
+    An explicit ``iri`` pointer wins; otherwise an in-study ``experiment`` id resolves to its ``exp-<id>`` stem and an in-study ``analysis`` to its ``ana-<name>`` one, both of which ``_container_path`` finds in the study's results directory. The short forms are preferred for same-study bindings — they need no hardcoded study key in an IRI string and (via the ``used`` edge) register the dependency, so the source runs first.
     """
     iri = getattr(used, "iri", None)
     if iri:
