@@ -7,6 +7,8 @@ The sharding tests read the device count from ``conftest`` rather than requestin
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import pytest
 import xarray as xr
@@ -401,6 +403,73 @@ def test_auto_width_is_bounded_by_the_per_lane_memory_budget(monkeypatch):
     analysis = _Analysis(apply_on_dimension="subject", execution=_Execution(n_workers=1))
     _, n_vmap = analysis_io._device_plan(analysis, 64, 512)
     assert n_vmap == max(1, 1024 // (512 * callbacks.shared_ram_device_count()))
+
+
+class _FakeDevice:
+    """Stand-in for a JAX device, carrying only the platform the resolvers read."""
+
+    def __init__(self, platform):
+        self.platform = platform
+
+
+def _patch_devices(monkeypatch, platform, count):
+    from tvbo.templates.tvboptim import callbacks
+
+    monkeypatch.setattr(callbacks, "_devices", lambda: tuple(_FakeDevice(platform) for _ in range(count)))
+
+
+def test_cpu_replicas_stop_at_the_cores_the_process_may_use(monkeypatch):
+    """`xla_force_host_platform_device_count` slices one machine, so replicas past its cores contend rather than compute."""
+    from tvbo.templates.tvboptim import callbacks
+
+    _patch_devices(monkeypatch, "cpu", 8)
+    monkeypatch.setattr(callbacks, "usable_cpu_count", lambda: 2)
+    assert callbacks.resolve_exploration_n_pmap(1024, 1) == 2
+    assert callbacks.shared_ram_device_count() == 8
+
+
+def test_cpu_slices_within_the_core_budget_still_fan_out(monkeypatch):
+    """One cell's integration rarely saturates a large node, so the slices below the core bound are real parallelism."""
+    from tvbo.templates.tvboptim import callbacks
+
+    _patch_devices(monkeypatch, "cpu", 64)
+    monkeypatch.setattr(callbacks, "usable_cpu_count", lambda: 64)
+    assert callbacks.resolve_exploration_n_pmap(1024, 1) == 64
+
+
+def test_accelerators_keep_their_count(monkeypatch):
+    """Each GPU is its own hardware, so a grid wide enough to use them all fans out across them."""
+    from tvbo.templates.tvboptim import callbacks
+
+    _patch_devices(monkeypatch, "gpu", 4)
+    assert callbacks.resolve_exploration_n_pmap(1024, 1) == 4
+    assert callbacks.shared_ram_device_count() == 1
+
+
+@pytest.mark.parametrize("grid_n,n_vmap,expected", [(4, 1, 4), (4, 2, 2), (4, 4, 1), (1, 1, 1)])
+def test_no_more_replicas_than_the_grid_has_chunks(monkeypatch, grid_n, n_vmap, expected):
+    """Replicas past `ceil(grid_n / n_vmap)` would only pad the batch with cells nobody asked for."""
+    from tvbo.templates.tvboptim import callbacks
+
+    _patch_devices(monkeypatch, "gpu", 8)
+    assert callbacks.resolve_exploration_n_pmap(grid_n, n_vmap) == expected
+
+
+def test_a_cpuset_narrower_than_the_machine_bounds_the_fan_out(monkeypatch):
+    """A container or Slurm allocation gives the process a subset of the host's CPUs; sizing by the host would oversubscribe it."""
+    from tvbo.templates.tvboptim import callbacks
+
+    monkeypatch.setattr(os, "sched_getaffinity", lambda _pid: {0, 1, 2}, raising=False)
+    monkeypatch.delattr(os, "process_cpu_count", raising=False)
+    assert callbacks.usable_cpu_count() == 3
+
+
+def test_a_missing_device_list_still_resolves(monkeypatch):
+    """JAX absent or refusing to enumerate leaves one replica, not a crash mid-run."""
+    from tvbo.templates.tvboptim import callbacks
+
+    monkeypatch.setattr(callbacks, "_devices", lambda: ())
+    assert callbacks.resolve_exploration_n_pmap(1024, 1) == 1
 
 
 # ------------------------------------------------------- accelerator is declared too
