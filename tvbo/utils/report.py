@@ -460,12 +460,16 @@ DIVERGENCE_CLASSES = {
 }
 
 
+# The two spellings the corpus uses for a register's materiality column; anything else leaves its rows unscored.
+_MATERIALITY_RE = re.compile(r"[*_]*(material|changes a number)", re.IGNORECASE)
+
+
 def divergence_register(source) -> dict:
     """Parse a study's ``methods-vs-code.md`` into per-class counts and rows.
 
     The register is a skill-mandated artifact of any replication whose study ships code, and its counts are quoted in the report's prose. Parsing it here means the report can never disagree with the register it cites — the drift the register itself documents.
 
-    Rows are recognised by an id cell that STARTS with ``<class><n>``, ignoring emphasis markers and any annotation after it — ``| **A4** *(cross-impl)* |`` is one row of class A. ``material`` counts rows whose final cell opens with "yes" in any case or emphasis, the convention of the classes that carry a materiality column; a register whose header has no such column reports ``material`` as ``None`` rather than zero, so a caption can say what it actually counted.
+    Rows are recognised by an id cell that STARTS with ``<class><n>``, ignoring emphasis markers and any annotation after it — ``| **A4** *(cross-impl)* |`` is one row of class A. A row is *scored* when the table it sits in ends in a materiality column — headed ``Material`` or ``Changes a number?``, the two spellings the corpus uses — and it counts as material when that final cell opens with "yes" in any case or emphasis. Scoring is tracked per ROW rather than per class, because a register that continues one class into a second table would otherwise count those rows in the total and drop them from the material tally, understating its own headline; ``scored`` says how many rows were eligible, so a caption can state what it actually counted. A class with no scored row at all reports ``material`` as ``None`` rather than zero.
 
     The tolerance is load-bearing. A pattern that demands a bare id matches nothing on a register that bolds its ids, and the zeros it returns read as "no divergences found".
     """
@@ -475,25 +479,25 @@ def divergence_register(source) -> dict:
     for line in text.splitlines():
         cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
         if cells and cells[0].lower() in ("#", "id"):
-            scores = any(c.lower().startswith("material") for c in cells)
+            scores = bool(cells) and _MATERIALITY_RE.match(cells[-1]) is not None
             continue
         m = re.match(r"^\|\s*[*_`]*([A-Z])(\d+)[*_`]*[^|]*\|", line)
         if not m:
             continue
-        entry = classes.setdefault(m.group(1), {"ids": [], "material": None, "rows": []})
+        entry = classes.setdefault(m.group(1), {"ids": [], "material": None, "scored": 0, "rows": []})
         entry["ids"].append(f"{m.group(1)}{m.group(2)}")
         entry["rows"].append(cells)
         if scores:
+            entry["scored"] += 1
             entry["material"] = (entry["material"] or 0) + bool(re.match(r"[*_]*yes", cells[-1], re.IGNORECASE))
     for key, entry in classes.items():
         entry["count"] = len(entry["ids"])
         entry["title"] = DIVERGENCE_CLASSES.get(key, "")
-    scored = [e for e in classes.values() if e["material"] is not None]
     return {
         "classes": dict(sorted(classes.items())),
         "total": sum(e["count"] for e in classes.values()),
-        "material": sum(e["material"] for e in scored),
-        "scored": sum(e["count"] for e in scored),
+        "material": sum(e["material"] or 0 for e in classes.values()),
+        "scored": sum(e["scored"] for e in classes.values()),
     }
 
 

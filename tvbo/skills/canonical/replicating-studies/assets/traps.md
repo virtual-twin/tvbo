@@ -8,7 +8,26 @@ in full.
 
 ## Dynamical & numerical traps (these cost us the most time)
 
-- **Size `step_size` from the STIFFEST thing the experiment actually integrates — not from the
+- **A published "unstable branch" your continuation cannot find may be the paper's ROOT SOLVER
+  terminating off-root — replay the paper's own procedure and classify every returned point by
+  its residual.** MATLAB's `fsolve` (and any dogleg/trust-region equation solver) terminates at
+  stationary points of the least-squares merit ½‖f‖² — points with `J^T f = 0` but `f ≠ 0` — and
+  a model sitting just below a saddle-node threshold has a whole valley of them: the fold's
+  ghost. Because `J^T f = 0` with `f ≠ 0` forces a SINGULAR Jacobian, an eigenvalue check labels
+  every such terminus "not stable", so unfiltered fsolve output plots as a coexisting *unstable
+  fixed-point branch* that no root of the equations backs. Deco2014's Fig-2c E-E branch is
+  exactly this: the E-E fixed point is provably unique (order-preserving lfp/gfp bracket,
+  gap ≤ 2e-14), yet random-seed fsolve reproduces the published open circles as merit termini —
+  onset G = 1.44 vs the paper's 1.47, ‖f‖∞ ≈ 1e-3 on an equation scale of 2e-3, |Re λ| ≤ 7e-8/s
+  vs 3/s for genuine saddles. The discipline: (1) classify solver output by ‖f‖∞ against the
+  equation scale, never by the solver's own success flag in either direction; (2) polish stalls
+  with `least_squares` and check `|J^T f|` — a converged nonzero-residual stationary point is a
+  well-defined mathematical object you can trace in the parameter, compare to the published
+  branch, and draw (labelled as a solver terminus, never as a state); (3) run BOTH controls
+  before claiming the artifact — a positive one where genuine coexisting roots exist and must be
+  found as true roots, and a variant test showing no plausible mis-transcription of the
+  equations makes the terminus an exact root; (4) state the conclusion as an inference about
+  unpublished code unless the paper's solver script is released.
   paper's fitted parameter, and not from the sibling experiment whose `integration:` block you
   inherited.** A step chosen for the optimum is wrong for the sweep that visits the rest of the
   grid, and wrong again for the same equation solved in a different space. Both failures are
