@@ -49,6 +49,7 @@ pytest.importorskip("tvboptim")
 
 from tvbo import SimulationExperiment  # noqa: E402
 
+# A 2-node Kuramoto with noise on theta, whose `# AXIS` and `# NOISE` markers each test substitutes.
 _SPEC = """
 id: 8
 dynamics:
