@@ -327,8 +327,6 @@ website:
                   - section: "BIDS"
                     href: Interoperability/BIDS/index.qmd
                     contents:
-                      - text: "BIDS Export"
-                        href: Interoperability/BIDS/BIDS_Export.qmd
                       - text: "Computational Modelling"
                         href: Interoperability/BIDS/BIDS_comp_modelling.md
                   - section: "OpenMINDS"
