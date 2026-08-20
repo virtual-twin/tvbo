@@ -1098,6 +1098,8 @@ def event_table(events, derivative_notation="dot"):
     """Markdown table of a model's events (spike conditions, stimuli, resets).
 
     An event is part of the model's definition — a stimulus protocol is not decoration — so it belongs in the report beside the state equations. Its condition and effect are rendered symbolically like every other equation.
+
+    A continuous event may declare ``affect_negative``, a separate effect for the downcrossing; it gets its own column, which drops out for the usual case where one effect serves both crossings.
     """
     from sympy import sympify
 
@@ -1126,11 +1128,14 @@ def event_table(events, derivative_notation="dot"):
                 str(slot(ev, "event_type", "") or ""),
                 _expr(ev, "condition"),
                 _expr(ev, "equation", "effect", "affect"),
+                _expr(ev, "affect_negative"),
                 ", ".join(f"{p} = {format_number(slot(v, 'value', ''))}" for p, v in name_items(params)) if params else "",
                 slot(ev, "description", "") or slot(ev, "label", "") or "",
             ]
         )
-    return table_or_prose(["Event", "Type", "Condition", "Effect", "Parameters", "Description"], rows)
+    return table_or_prose(
+        ["Event", "Type", "Condition", "Effect", "Effect on downcrossing", "Parameters", "Description"], rows
+    )
 
 
 def state_variable_table(svars):
