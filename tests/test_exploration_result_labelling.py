@@ -214,6 +214,43 @@ def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
     assert mism > 0
 
 
+def test_full_grid_coords_follow_the_declared_order_not_sorted():
+    """A descending sweep keeps its DECLARED coordinate order.
+
+    The unstack pivot sorts its index ascending, so the grid is reindexed back onto the declared values — an annealing-style descending axis must not come back sorted.
+    """
+    from tvbo.data.types import _stacked_to_dataarray
+
+    C, W = [0.3, 0.1, 0.2], [2.0, 1.0]
+    cells = [(c, w) for w in W for c in C]  # arrival order differs from the declared axis order
+    stacked = np.array([10 * c + w for (c, w) in cells])
+    da = _stacked_to_dataarray(
+        stacked,
+        [_axis("model.c", C), _axis("model.w", W)],
+        name="obs",
+        cell_coords={"model.c": [c for c, _ in cells], "model.w": [w for _, w in cells]},
+    )
+    assert list(da.dims) == ["model.c", "model.w"]
+    assert list(da.coords["model.c"].values) == C
+    assert list(da.coords["model.w"].values) == W
+    assert float(da.sel({"model.c": 0.1, "model.w": 2.0}).values) == pytest.approx(3.0)
+
+
+def test_single_axis_full_grid_places_scrambled_cells_by_value():
+    """One swept axis pivots without a MultiIndex (unstack needs one); placement is still by value."""
+    from tvbo.data.types import _stacked_to_dataarray
+
+    C = [0.3, 0.1, 0.2]
+    da = _stacked_to_dataarray(
+        np.array([1.0, 2.0, 3.0]),
+        [_axis("model.c", C)],
+        name="obs",
+        cell_coords={"model.c": [0.1, 0.2, 0.3]},
+    )
+    assert list(da.coords["model.c"].values) == C
+    assert float(da.sel({"model.c": 0.1}).values) == 1.0
+
+
 def test_full_grid_with_incomplete_cell_coords_raises():
     """Placement by value needs every declared axis in ``cell_coords`` — a missing one means the caller's coordinate readback failed (e.g. a seed axis whose grid column is the ``dynamics._noise_seed`` state leaf, not the declared label). Falling back to a positional reshape here is what once wrote a seed-major (seed, r_s) fan into an (r_s, seed)-labelled container, so the mismatch raises instead."""
     from tvbo.data.types import _stacked_to_dataarray
@@ -304,6 +341,86 @@ def test_a_non_numeric_axis_still_labels_rather_than_raising():
     assert da is not None and da.dims[0] == "integration.method"
 
 
+def test_axis_points_ride_along_keyed_by_point_index():
+    """An array-valued axis's materialised points ride along, keyed by point index.
+
+    The grid coordinate is that same index, and alone it dies with the builder that made it. Scalar axes carry nothing extra, so the producer may hand over its whole axis table.
+    """
+    mats = np.stack([np.full((2, 2), 10.0), np.full((2, 2), 20.0)])
+    r = ExplorationResult(
+        name="sweep",
+        axes=[_axis("net.length", [0, 1])],
+        axis_points={"net.length": mats, "model.c": np.array([0.1, 0.2])},
+    )
+    assert set(r.axis_points) == {"net.length"}
+    pts = r.axis_points["net.length"]
+    assert pts.dims == ("net.length", "node_i", "node_j")
+    assert list(pts.coords["net.length"].values) == [0, 1]
+    np.testing.assert_allclose(pts.sel({"net.length": 1}).values, np.full((2, 2), 20.0))
+
+    vec = ExplorationResult(name="s", axis_points={"ctrl": np.zeros((3, 5))})
+    assert vec.axis_points["ctrl"].dims == ("ctrl", "node")
+
+
+MATS = np.stack([np.full((2, 2), 10.0), np.full((2, 2), 20.0)])
+
+
+def _matrix_sweep_result(cells, is_shard):
+    """An ExperimentResult holding *cells* of a 2-point matrix-valued sweep."""
+    from types import SimpleNamespace
+
+    from tvbo.data.types import ExperimentResult
+
+    expl = ExplorationResult(
+        name="sweep",
+        results=np.zeros((len(cells), 5)),
+        axes=[_axis("net.length", [0, 1])],
+        dt=0.1,
+        cell_coords={"net.length": np.asarray(cells)},
+        axis_points={"net.length": MATS},
+        is_shard=is_shard,
+    )
+    src = SimpleNamespace(network=SimpleNamespace(node_labels=["r0", "r1"]))
+    return ExperimentResult(explorations={"sweep": expl}, source=src)
+
+
+def test_save_writes_the_labelled_axis_points_sidecar(tmp_path):
+    """The sidecar lands beside the grid, aligned with its dim and labelled by region."""
+    written = _matrix_sweep_result([0, 1], is_shard=False).save(str(tmp_path), compress=False, record_only=False)
+    h5 = [p for p in written if p.endswith(".h5")]
+    assert h5, f"expected an .h5 result, got {written}"
+    ds = xr.open_dataset(h5[0], engine="h5netcdf")
+    try:
+        pts = ds["axis_points__net.length"]
+        assert pts.dims == ("net.length", "node_i", "node_j")
+        np.testing.assert_allclose(pts.values, MATS)
+        assert list(pts.coords["node_i"].values) == ["r0", "r1"]
+        assert list(pts.coords["node_j"].values) == ["r0", "r1"]
+    finally:
+        ds.close()
+
+
+def test_shards_carry_the_sidecar_through_the_gather_pass(tmp_path):
+    """Each shard writes the sweep-wide axis table, and reassembly carries it to the grid.
+
+    The gather pass lifts the table past its point-concat (tiling it per shard would be nonsense) and re-attaches it to the pivoted grid, so the gathered artifact recovers WHICH matrix a cell used exactly like a local run's.
+    """
+    from tvbo.data.types import reassemble_experiment_results
+
+    for i, cell in enumerate([0, 1]):
+        _matrix_sweep_result([cell], is_shard=True).save(str(tmp_path / f"shard{i}"), compress=False, record_only=False)
+
+    written = reassemble_experiment_results(str(tmp_path), str(tmp_path / "gathered"), pattern="**/result.h5", compress=False)
+    ds = xr.open_dataset(written[0], engine="h5netcdf")
+    try:
+        pts = ds["axis_points__net.length"]
+        assert pts.dims == ("net.length", "node_i", "node_j")
+        np.testing.assert_allclose(pts.values, MATS)
+        assert "net.length" in ds["results"].dims
+    finally:
+        ds.close()
+
+
 def _object_array(values):
     """An object-dtype array holding *values* — how a matrix-valued axis's points arrive."""
     out = np.empty(len(values), dtype=object)
@@ -329,6 +446,20 @@ def test_array_valued_points_are_refused_and_name_the_upstream_conversion(cells,
 
     with pytest.raises(ValueError, match="different currencies"):
         _axis_positions(cells, grid, "network.edges.length", "theta")
+
+
+def test_a_value_far_from_every_grid_point_refuses_to_snap():
+    """Nearest-match is a round-trip canonicalization, not a fallback.
+
+    A value no storage round-trip could produce means the column is mispaired with its axis (or the grid changed under the cells); snapping it would relabel the surface silently. A genuine float32 round-trip of a declared float64 value stays inside the tolerance and places normally.
+    """
+    from tvbo.data.types import _axis_positions
+
+    with pytest.raises(ValueError, match="round-trip"):
+        _axis_positions(np.array([0.1, 0.25]), np.array([0.1, 0.2]), "model.c", "obs")
+
+    roundtripped = np.array([0.1, 0.2], dtype=np.float32).astype(float)
+    assert list(_axis_positions(roundtripped, np.array([0.1, 0.2]), "model.c", "obs")) == [0, 1]
 
 
 def test_point_indices_are_placed_through_the_ordinary_numeric_path():
