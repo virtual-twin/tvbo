@@ -103,6 +103,7 @@ explorations:
       - parameter: noise.sigma
         # AXIS
 """
+"""A minimal 2-node Kuramoto with additive noise on theta and a sweep of its amplitude, where each test substitutes its own `# AXIS` line and `# NOISE` block."""
 
 _NOISE = "      noise: {additive: true, gaussian: true, parameters: {sigma: {value: 0.01}}}\n"
 

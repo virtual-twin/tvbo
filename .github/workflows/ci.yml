@@ -59,8 +59,9 @@ jobs:
             - name: Prose — comments and docstrings
               run: python scripts/check_prose.py
 
-            # Blocking: templates and config keep their backlog, but no PR may add to it.
+            # Blocking on dev-targeted PRs only: elsewhere the merge-base is main's, which measures the standing backlog rather than what the PR adds.
             - name: Prose — no stacked '#' blocks added
+              if: github.event_name == 'pull_request' && github.base_ref != 'main'
               run: python scripts/check_prose.py --diff "origin/${{ github.base_ref || 'dev' }}"
 
             # mypy: type-check the source tree, non-blocking.

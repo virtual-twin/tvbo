@@ -273,9 +273,25 @@ the *figures* actually show, with the discrepancy noted.
 **The register is hand-maintained, so guard it like data.** It has no upstream and no
 regenerating script, which means a structural failure in it is silent: a `divergence_register`
 parse once returned 183 rows all of one class and the report printed that as its headline. Add
-it to the identity harness — ids unique, more than one class, `material ≤ scored` — and let a
-duplicate id fail the build rather than the reader. (Two different rows both numbered `C10` sat
-there through several sessions of both being cited.)
+it to the identity harness — ids unique, more than one class, **every row scored**,
+`material ≤ scored` — and let a duplicate id fail the build rather than the reader. (Two
+different rows both numbered `C10` sat there through several sessions of both being cited.)
+
+**Keep the register ONE table, and never split it by how an entry was found.** Kadak2025's grew
+a second table under "Entries added by the published-data audit" whose materiality column was
+headed `Changes a number?` rather than `Material`. The parser decides materiality per table and
+was tracking it per class, so the sixteen rows under the second heading counted in the total and
+vanished from the tally: the report's headline read 25 of 53 where the file says 37. Nothing
+raised, because the two numbers are individually plausible. How an entry was found belongs in
+its *Established* cell, which is where the reader looks for it anyway. `every row scored` above
+is the guard that catches this, and it is the one worth adding first.
+
+**A row about YOUR code is not a divergence between their prose and their code — mark it.** A
+register naturally accumulates entries recording what this replication got wrong and fixed, or
+still carries against the published arrays. They are worth keeping (the recipe and the analyses
+cite them by id), and they must not be counted into "the paper's Methods and its code disagree
+in N places". Tag the id — `| A13 (ours) |` parses as A13 and reads as ours — and have the
+report print the paper's count and the tagged count separately.
 
 **When a row is superseded, REWRITE it and say what it replaced.** A register entry is a dated
 measurement, not a permanent fact, and its worst failure mode is hardening into a documented
@@ -839,6 +855,28 @@ next session will read it. Concretely, in the report:
   close", "which is a better outcome than it sounds" — the sentence before them already made the
   point, and the aside puts the author in a report that should be about the circuit.
 
+**A fixed sentence around a computed slot is a hardcoded claim, and it ages into nonsense.**
+This is the form non-negotiable #2 takes once a report is mature: the numbers all recompute,
+and the sentences holding them assert something the numbers no longer say. Two shapes, both of
+which shipped in a Kadak2025 PDF after a re-simulation moved the underlying values:
+
+- **A computed LIST has an empty case.** `"...and exceed it for {', '.join(over)}."` printed
+  *"and exceed it for ."* once `over` went empty, in a paragraph that went on to explain at
+  length why the two offenders could not be replicated. The same build printed *"The exceptions
+  are , and they are..."*. Write the sentence so the empty case is a legitimate reading, or
+  branch on `if not over:` and say what the emptiness means — it is usually the best result in
+  the section.
+- **A fixed narrative outlives the fault it narrates.** The same report's Limitations said "the
+  two synapses onto the reticular nucleus are not replicated ... their LTD calcium runs
+  {r:.1f}x above the axis" and rendered *"runs 0.9x and 0.9x above the axis (`ee`, `ei`)"* —
+  the slot was measuring `max(ratio)` over all ten connections and dutifully reported the top
+  two, which were now inside the bound. It also said "It is why T1, T6 and T7 are `short`" in a
+  build where nothing was short.
+
+The guard is cheap and belongs in the harness: after a render, grep the output for `for .`,
+`are ,`, `is ,`, `()` and `[]`, and re-read every paragraph whose subject is a *count* against
+the count it now holds. A slot that can reach zero needs its sentence checked at zero.
+
 **A number computed in a scratchpad is not a computed number.** Diagnostics done outside the
 recipe — a sensitivity sweep, a cross-tabulation against the published data — produce exactly the kind
 of striking figure that ends up typed into prose, where nothing recomputes it and nothing catches
@@ -945,7 +983,12 @@ Replication-specific rules on top of that mechanics:
   it, you are testing the authors' noise draw against yours. **Read each scorer against the
   criterion it cites, and each criterion against the published arrays** — and when you change
   one, say so in the register with the measurement that forced it, so the correction is evidence
-  rather than convenience.
+  rather than convenience. **Round YOUR value to the precision the paper prints before applying
+  any rule to both.** A published `p = .001` is a rounded cell standing for anything in
+  [.0005, .0015), so testing our exact `.000861` against a strict `p < .001` scored two
+  disagreements on rows whose *t* statistics match to four decimals (−3.38 against −3.380037).
+  The same asymmetry hides in every "within X of the published value" criterion whose X is
+  smaller than the paper's own last digit.
 
 - **The scorecard maps 1:1 to `targets.md`.** Every criterion `T1..Tn` from Phase 1 is one
   row, tagged with its Phase-1.5 **fidelity tier**: *mechanism-level*
@@ -1052,6 +1095,26 @@ failure is OUR bug**), `convergent` (solver-tolerance-limited — agreement stat
 floor), `stochastic` (depends on an unpublished seed — distributional only, since matching an
 exact number would mean we tuned to it).
 
+**Compare the column the report's own analyses use, and show the raw one beside it.** A
+per-quantity comparison table is built from a name-to-name map, and a study that corrects a
+column keeps the raw one in the same frame under a neighbouring name. Kadak2025's map pointed
+at `auc_delta` while every correlation, the inclusion rule and every scorecard row ran on
+`auc_delta_ctrl`: the headline verification table reported the study's primary quantity at a
+median relative difference of 0.53 and a magnitude ratio of 0.69, where the column actually in
+use gives 0.10 and 1.01 with a slope of 1.02 and an intercept of 0.0002. The prose above it
+even claimed the corrected column was what the table compared. List **both** rows and say in
+the caption which is which — the difference between them is the correction, and hiding it is
+as dishonest as hiding the correction itself.
+
+**Report the SCALE beside the rank, and define it so it cannot be read two ways.** Rank
+agreement is the honest headline for two independent simulators, and it says nothing about
+magnitude: a quantity can rank at ρ = 1.000 while ours is a fifth of theirs. Carry a ratio
+column, and make it a *total* of magnitudes rather than a ratio of medians — half of these
+columns are zero for half their protocols, where two medians land on the 0-to-small boundary
+and their ratio is set by which side each falls on. One connection's potentiation volume read
+1.11 as a ratio of medians and 0.80 on every protocol where the published count is not zero,
+and the report stated both in adjacent paragraphs.
+
 **Prove the figures' provenance mechanically — non-negotiable #3 deserves a check, not a
 promise.** "Nothing is faked" is a claim about eighty-odd panels and three hundred layers, which
 is not a claim a reader can audit and not one you can hold in your head across a rebuild. Add a
@@ -1148,6 +1211,9 @@ first, then workflow pitfalls).
 - The operating point sits decades away from the paper's K → a weight-normalisation convention, not a bug.
 - The paper's exact control value gives the wrong regime → a near-bifurcation operating point is discretisation-specific; re-tune to the phenomenon and cite the precedent.
 - An FC/PLV/order-parameter number well below the paper's → duration, trial count and operating regime, before "structure-limited".
+- A published unstable branch that exhaustive continuation and root searches cannot find → replay the paper's own fsolve from random seeds and classify residuals; a near-threshold model leaves merit-function ghosts (singular Jacobian → "not stable") that unfiltered solver output plots as fixed points.
+- A bistability onset that moves when the scan is refined, or "the node folds at X yet the network never folds above X" reads as a contradiction → don't scan for fold windows: invert the fixed-point condition into the closed-form drive locus and read the window off its interior extrema; Newton-solve (and residual-check) any inner elimination; and say which AXIS each threshold lives on.
+- A native analysis observation inverts a cross-variant ordering the paper claims → recompute it host-side at the same operating point before believing it, and check agreement PER VARIANT — two of three matching does not validate the third when it exercises a different code path.
 
 **It ran out of memory, or took absurdly long**
 
@@ -1196,6 +1262,13 @@ first, then workflow pitfalls).
 - A published panel is internally inconsistent with the paper's own workbook → a source-data defect; scope it `out` and say why.
 - A confident reading of a published cell turns out to be the opposite of what it computes → the read was truncated mid-assignment; match the assignment with a regex across every cell instead.
 - A generated source file will not compile → a large derived array was inlined instead of declared by `source:`/`producer:`.
+- A sentence in the rendered report ends "and exceed it for ." → a computed list went empty and the fixed prose around it still asserts the failure the emptiness just removed.
+- A paragraph names the wrong items, or says "0.9x above" → the slot is a `max`/`sorted[:2]` over everything, and its two worst are now inside the bound.
+- The report says a target is `short` where the scorecard says `met` → a fixed narrative outlived the verdict; only the scorecard's own rows may name verdicts.
+- A verification table shows the study's primary quantity far off while every correlation on it reproduces → the name-to-name map points at the RAW column and the analyses run on the corrected one.
+- A quantity ranks at ρ = 1.000 with a "median relative difference" of 0.000 and is nowhere near theirs → the ratio of two medians on a zero-inflated column; use a total of magnitudes.
+- Two statistics that agree to four decimals score as a significance disagreement → an exact p compared against the paper's printed, rounded one.
+- The register's headline material count is lower than the file's own rows → the register is two tables and the parse decides materiality per table.
 
 **Also in `assets/traps.md`**: keep generated files out of git at the study root; track
 `docs/analysis/` from the first commit (it is the only copy of the register, the targets

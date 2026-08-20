@@ -661,13 +661,11 @@ observations:
       - fc
       - fc_target
     pipeline:
-      - callable:
-          name: fc_corr
-          module: tvboptim.observations.observation
+      - function: fc_corr
         arguments:
-          fc1:
+          A:
             value: fc
-          fc2:
+          B:
             value: fc_target
 
   fc_rmse:
@@ -677,13 +675,11 @@ observations:
       - fc
       - fc_target
     pipeline:
-      - callable:
-          name: rmse
-          module: tvboptim.observations.observation
+      - function: fc_rmse
         arguments:
-          matrix1:
+          A:
             value: fc
-          matrix2:
+          B:
             value: fc_target
 
 # =============================================================================
