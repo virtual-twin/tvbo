@@ -54,6 +54,14 @@ def test_edges_weight_is_not_misparsed_as_dynamics():
     assert network_axis_leaf("network.edges.weight") == "weights"
 
 
+def test_edge_delay_sweeps_the_delay_graph_leaf():
+    """`network.edges.delay` sweeps a delay graph's own `delays` leaf.
+
+    A network that carries explicit per-edge delays lowers onto a DenseDelayGraph, whose delays are a live leaf; without this entry the axis raised "no graph leaf to sweep" and the only way to vary a conduction delay was to write one experiment per value.
+    """
+    assert network_axis_leaf("network.edges.delay") == "delays"
+
+
 def test_unsweepable_edge_attribute_raises():
     """An edge attribute with no graph leaf fails at codegen, not silently.
 
@@ -75,6 +83,7 @@ def test_error_names_the_sweepable_set():
     msg = str(e.value)
     assert "network.conduction_speed" in msg
     assert "network.edges.weight" in msg
+    assert "network.edges.delay" in msg
 
 
 # --- codegen: the delay history buffer ---------------------------------------
@@ -135,7 +144,9 @@ explorations:
         AXIS
 """
 
-_LENGTH_BUILDER = "import numpy as np\n\n\ndef longer_tracts(n):\n    return [np.full((2, 2), 10.0 * (i + 1)) for i in range(int(n))]\n"
+_LENGTH_BUILDER = (
+    "import numpy as np\n\n\ndef longer_tracts(n):\n    return [np.full((2, 2), 10.0 * (i + 1)) for i in range(int(n))]\n"
+)
 
 
 def _render_delay_sweep(tmp_path, parameter, axis):
@@ -150,8 +161,7 @@ def _render_delay_sweep(tmp_path, parameter, axis):
 def test_a_swept_speed_rebuilds_the_base_graph(tmp_path):
     """The slowest swept speed sizes the history buffer, so the base graph is rebuilt.
 
-    `_v_build` marks the rebuild: `DenseLengthGraph(` and `max_delay_bound` are emitted for
-    the base network whether or not anything is swept, so neither distinguishes it.
+    `_v_build` marks the rebuild: `DenseLengthGraph(` and `max_delay_bound` are emitted for the base network whether or not anything is swept, so neither distinguishes it.
     """
     code = _render_delay_sweep(tmp_path, "network.conduction_speed", "        explored_values: [1.0, 3.0]\n")
     assert "_v_build" in code
@@ -161,9 +171,7 @@ def test_a_swept_speed_rebuilds_the_base_graph(tmp_path):
 def test_a_swept_tract_length_also_rebuilds_the_base_graph(tmp_path, monkeypatch):
     """`delay = length / speed`, so a swept LENGTH sizes the buffer exactly as a speed does.
 
-    prepare() sizes the history buffer once from the base graph and never re-reads it, so a
-    length axis whose matrices exceed the base network's leaves every over-long cell
-    integrating against a truncated history — a silently wrong trajectory, not an error.
+    prepare() sizes the history buffer once from the base graph and never re-reads it, so a length axis whose matrices exceed the base network's leaves every over-long cell integrating against a truncated history — a silently wrong trajectory, not an error.
     """
     import sys
 
@@ -178,7 +186,7 @@ def test_a_swept_tract_length_also_rebuilds_the_base_graph(tmp_path, monkeypatch
     )
     code = _render_delay_sweep(tmp_path, "network.edges.length", axis)
     assert "_v_build" in code, "a swept length must rebuild the base graph"
-    assert "_bound_lengths" in code, "the buffer must be sized from the LONGEST swept tracts"
+    assert "float(jnp.max(_axisvals_edges_length))" in code, "the buffer must be sized from the LONGEST swept tracts"
     assert code.count("longer_tracts(") == 1, (
         "the builder must be called ONCE — it may read base observations or cross-experiment "
         "data, and two calls could disagree about the values the grid then sweeps"
@@ -188,19 +196,15 @@ def test_a_swept_tract_length_also_rebuilds_the_base_graph(tmp_path, monkeypatch
 def test_a_domain_declared_length_axis_bounds_the_buffer_at_its_hi(tmp_path):
     """A length axis may be declared `domain:` rather than by explicit points or a builder.
 
-    Reading `values` unconditionally is a bare KeyError at RENDER time for that spelling —
-    the sweep never runs at all. The longest tract a `domain:` axis reaches is its `hi`, so
-    that is what the buffer must cover.
+    Reading `values` unconditionally is a bare KeyError at RENDER time for that spelling — the sweep never runs at all. The longest tract a `domain:` axis reaches is its `hi`, so that is what the buffer must cover.
     """
     code = _render_delay_sweep(tmp_path, "network.edges.length", "        domain: {lo: 5.0, hi: 40.0, n: 4}\n")
-    assert "jnp.full_like(_lengths, 40.0)" in code
-    assert "_bound_lengths" in code
+    assert "max(float(jnp.max(_lengths)), 40.0)" in code
 
 
 def test_a_swept_weight_leaves_the_buffer_alone(tmp_path):
     """No delay depends on the weights, so sweeping them needs no rebuild."""
     code = _render_delay_sweep(tmp_path, "network.edges.weight", "        explored_values: [0.1, 0.5]\n")
-    assert "_bound_lengths" not in code
     assert "_v_build" not in code
 
 
@@ -219,9 +223,7 @@ def _run_two_network_axes(tmp_path, monkeypatch):
     (tmp_path / "tract_builder.py").write_text(_LENGTH_BUILDER)
     monkeypatch.syspath_prepend(str(tmp_path))
     sys.modules.pop("tract_builder", None)
-    spec = _DELAY_SPEC.replace(
-        "      - parameter: PARAMETER\n        AXIS\n", _TWO_AXIS_SPACE
-    )
+    spec = _DELAY_SPEC.replace("      - parameter: PARAMETER\n        AXIS\n", _TWO_AXIS_SPACE)
     p = tmp_path / "two_axes.yaml"
     p.write_text(spec)
     exp = SimulationExperiment.from_file(str(p))
@@ -232,10 +234,7 @@ def _run_two_network_axes(tmp_path, monkeypatch):
 def test_two_network_axes_are_each_keyed_by_their_own_declared_name(tmp_path, monkeypatch):
     """Two `network.` axes in one exploration must both reach the container.
 
-    Graph-leaf columns are POSITIONAL (`graph.1`, `graph.2`) because the graph pytree carries no
-    field names, so resolving them through a single network label lets the last axis win and the
-    other's coordinate arrive under a name matching no declared axis. The container then refuses
-    to place the observation — after the whole compute has finished.
+    Graph-leaf columns are POSITIONAL (`graph.1`, `graph.2`) because the graph pytree carries no field names, so resolving them through a single network label lets the last axis win and the other's coordinate arrive under a name matching no declared axis. The container then refuses to place the observation — after the whole compute has finished.
     """
     r = _run_two_network_axes(tmp_path, monkeypatch)
     expl = r.explorations.delay_sweep
@@ -252,9 +251,7 @@ def test_two_network_axes_are_each_keyed_by_their_own_declared_name(tmp_path, mo
 def test_a_matrix_valued_axis_is_keyed_by_point_index(tmp_path, monkeypatch):
     """A builder axis of whole matrices rounds trips: its coordinate is the point index.
 
-    A matrix cannot be an xarray coordinate, so codegen declares `arange(n)` while the per-cell
-    column carries the matrices. Converting the cells where the materialised points still exist
-    is what lets the container place them at all.
+    A matrix cannot be an xarray coordinate, so codegen declares `arange(n)` while the per-cell column carries the matrices. Converting the cells where the materialised points still exist is what lets the container place them at all.
     """
     import numpy as np
 

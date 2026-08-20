@@ -100,13 +100,10 @@ def _observation_dataarray(raw_data, dims=None, nodes=None):
 def _declared_observation_dims(source) -> dict:
     """Axis names each of *source*'s observations declares, keyed by observation name.
 
-    The reduction an observation declares fixes its axes, so the container can name them
-    instead of writing an unnamed placeholder dim that no reader can select on.
+    The reduction an observation declares fixes its axes, so the container can name them instead of writing an unnamed placeholder dim that no reader can select on.
 
     Labelling is a convenience over an already-finished compute, so it never costs a run:
-    any failure to resolve the declared reductions — the helper unavailable, an observation
-    whose reduction the resolver rejects — yields no names and the caller falls back to its
-    positional template, rather than throwing out of ``save()`` and discarding the result.
+    any failure to resolve the declared reductions — the helper unavailable, an observation whose reduction the resolver rejects — yields no names and the caller falls back to its positional template, rather than throwing out of ``save()`` and discarding the result.
     Logged rather than swallowed, so a spec that cannot be resolved is still visible.
     """
     try:
@@ -201,8 +198,7 @@ def _is_partial_shard(expl) -> bool:
 def _axis_points_are_arrays(a) -> bool:
     """Whether an axis's POINTS are arrays rather than scalars.
 
-    Keyed on an element, not on the container's dtype: a string axis is object-dtype too, and treating its points as arrays would try to read floats out of "heun". Asks about the
-    point's EXTENT rather than its type, which is why :func:`tvbo.utils.is_array_valued` does not answer this one: a 0-d array is a container but not an axis of matrices.
+    Keyed on an element, not on the container's dtype: a string axis is object-dtype too, and treating its points as arrays would try to read floats out of "heun". Asks about the point's EXTENT rather than its type, which is why :func:`tvbo.utils.is_array_valued` does not answer this one: a 0-d array is a container but not an axis of matrices.
     """
     if a.ndim > 1:
         return True
@@ -237,17 +233,16 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
     return np.asarray([index[v] for v in cell.tolist()])
 
 
-def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None):
+def _stacked_to_dataarray(
+    stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None
+):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
 
     Outer dims correspond to exploration axes (parameter names with their explored values as coords). When ``n_trials > 1`` and the leading inner axis matches, a ``trial`` dim is inserted after the grid dims. Remaining inner dims follow the simulation convention ``(time, variable, node, mode)``; the leading ``time`` dim is included only when ``intrinsic_ts`` carries a multi-step time vector matching the leading remaining shape, so time-aggregated observations don't get a spurious ``time`` axis.
 
     ``cell_coords`` (``{axis_name: per_cell_values}``) is each cell's actual parameter values read back from the grid, in the grid's OWN emission order. It keys results by value rather than by position, because a ``Space`` emits cells in pytree-leaf order, which is NOT the ``axes_info`` order whenever the swept axes live on different state sub-objects (dynamics/coupling/graph) — a plain positional reshape would then scramble the surface. For the full Cartesian product each cell is placed into the rectangular grid at the index its values map to (order-independent). For a flat subset (one HPC array task's shard) the result instead gets a single ``point`` dim with each axis's value hung on it as a coordinate, so the shard is self-describing and reassembles by parameter value across tasks.
 
-    ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`). ``nodes`` are the network's node labels, hung on
-    whichever declared dim is the node axis — a swept observation is selected by label the
-    same way an unswept one is, and without them a sweep's node axis is addressable only by
-    index.
+    ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`). ``nodes`` are the network's node labels, hung on whichever declared dim is the node axis — a swept observation is selected by label the same way an unswept one is, and without them a sweep's node axis is addressable only by index.
     """
     if stacked_arr is None:
         return None
@@ -414,7 +409,7 @@ def reassemble_experiment_results(
     This concatenates them along ``point`` and pivots by parameter value into the full rectangular grid, giving one standard xarray ``Dataset`` that opens with a plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader.
 
     Args:
-        shards_root: directory scanned recursively for the shard ``.h5`` files.
+        shards_root: directory holding the shard ``.h5`` files (scanned recursively).
         out_dir: where the ``<stem>.h5`` (+ ``<stem>.yaml``) is written.
         pattern: glob for shard files.
         point_dim: the flat cell dimension the shards wrote.
@@ -2413,70 +2408,47 @@ class ExperimentResult:
 
         if not is_shard and written and self.source is not None and hasattr(self.source, "freeze_yaml"):
             try:
-                # Self-contained provenance: spec + connectome companion (<stem>_network.h5), reproducible on reload without data sources.
-                yaml_text = self.source.freeze_yaml(out_dir, network_stem=f"{stem}_network")
+                # Self-contained provenance: the spec plus its frozen connectome companion, reproducible on reload with no data sources present.
+                network_stem = (
+                    self.source.get_network_stem()
+                    if hasattr(self.source, "get_network_stem")
+                    else f"{stem.rsplit('_', 1)[0]}_network"
+                )
+                yaml_text = self.source.freeze_yaml(out_dir, network_stem=network_stem)
                 yaml_path = os.path.join(out_dir, f"{stem}.yaml")
                 with open(yaml_path, "w", encoding="utf-8") as fh:
                     fh.write(yaml_text)
                 written.append(yaml_path)
             except Exception:
                 logger.warning("provenance sidecar %s.yaml not written", stem, exc_info=True)
-            # BEP034 alignment: a JSON metadata sidecar (BIDS tooling reads JSON) beside the richer YAML re-run recipe, and a dataset_description.json marking out_dir as a BIDS-derivatives dataset.
+            # The YAML above IS the sidecar: the whole re-runnable recipe, so nothing here writes a second curated copy of a few of its fields in JSON. What this adds is the dataset_description.json that marks out_dir as a BIDS derivative dataset when a run writes outside a scaffolded study.
             try:
-                written += self._write_bep034_sidecars(out_dir, stem)
+                written += self._write_dataset_description(out_dir)
             except Exception:
-                logger.warning("BEP034 sidecars for %s not written", stem, exc_info=True)
+                logger.warning("dataset_description.json for %s not written", out_dir, exc_info=True)
         return written
 
-    def _write_bep034_sidecars(self, out_dir, stem) -> list:
-        """Write a BEP034 JSON metadata sidecar + a derivatives dataset_description.json.
+    def _write_dataset_description(self, out_dir) -> list:
+        """Mark ``out_dir`` as a BIDS derivative dataset, if nothing has already.
 
-        Complements the YAML re-run recipe with BIDS-standard JSON so the result is discoverable by pybids/BIDS tooling. The gridded HDF5 itself supersedes emitting one BEP034 ``ts/`` file per sweep cell (a 15,600-cell grid would be 15,600 files); the sidecar records the model, integrator, and swept space so the mapping back to per-cell simulations is explicit.
+        ``tvbo study init`` writes this for a scaffolded study; a run given ``-o`` somewhere else still needs its results directory to declare what it is, so a reader of the bare directory knows what they have.
         """
-        import datetime as _dt
-        import json as _json
         import os
 
-        from tvbo.adapters.bids import DatasetDescription, SimulationProvenance
+        from tvbo.adapters.bids import DatasetDescription
 
-        exp = self.source
-        integ = getattr(exp, "integration", None)
-        dyn = getattr(exp, "dynamics", None)
-        now = _dt.datetime.now().isoformat(timespec="seconds")
-        prov = SimulationProvenance(
-            Model=getattr(dyn, "name", None) or getattr(dyn, "label", None),
-            Integrator=getattr(integ, "method", None),
-            Duration=getattr(integ, "duration", None),
-            StepSize=getattr(integ, "step_size", None),
-            GeneratedAt=now,
-            Software="tvbo",
-        )
-        # Swept parameter space (the grid axes) — the metadata a per-cell BEP034 ``ts/`` file would carry, aggregated for the whole grid.
-        space = {}
-        for expl in (getattr(exp, "explorations", None) or {}).values():
-            for ax in getattr(expl, "space", None) or []:
-                pname = getattr(ax, "parameter", None)
-                if pname:
-                    space[str(pname)] = getattr(ax, "explored_values", None) or None
-        sidecar = {**prov.to_dict(), "ModelingRecipe": f"{stem}.yaml"}
-        if space:
-            sidecar["SweptParameters"] = space
-        json_path = os.path.join(out_dir, f"{stem}.json")
-        with open(json_path, "w", encoding="utf-8") as fh:
-            _json.dump(sidecar, fh, indent=2, default=str)
-
-        written = [json_path]
         dd = os.path.join(out_dir, "dataset_description.json")
-        if not os.path.exists(dd):
-            desc = DatasetDescription(
-                Name=str(getattr(exp, "label", None) or getattr(exp, "id", None) or "tvbo results"),
-                DatasetType="derivative",
-                GeneratedBy=[{"Name": "tvbo", "Description": "TVB-Ontology simulation result"}],
-            )
-            with open(dd, "w", encoding="utf-8") as fh:
-                fh.write(desc.to_json())
-            written.append(dd)
-        return written
+        if os.path.exists(dd):
+            return []
+        exp = self.source
+        desc = DatasetDescription(
+            Name=str(getattr(exp, "label", None) or getattr(exp, "id", None) or "tvbo results"),
+            DatasetType="derivative",
+            GeneratedBy=[{"Name": "tvbo", "Description": "TVB-Ontology simulation result"}],
+        )
+        with open(dd, "w", encoding="utf-8") as fh:
+            fh.write(desc.to_json())
+        return [dd]
 
     def plot(self, **kwargs):
         """Dispatch plot to the most relevant sub-result."""

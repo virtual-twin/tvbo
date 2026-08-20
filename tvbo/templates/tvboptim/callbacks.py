@@ -66,20 +66,70 @@ def nvmap_hard_cap() -> int | None:
     return cap if cap > 0 else None
 
 
+def _devices():
+    """JAX's device list, or ``()`` when JAX or the list is unavailable."""
+    try:
+        import jax
+
+        return tuple(jax.devices())
+    except Exception:
+        return ()
+
+
+def usable_cpu_count() -> int:
+    """Cores this process may actually run on, which is not always the machine's core count.
+
+    A container or Slurm cpuset gives the process a subset of the host's CPUs, and sizing work by the host count there oversubscribes the allocation. Prefers the affinity-aware counts and degrades to :func:`os.cpu_count`, then 1.
+    """
+    for probe in (getattr(os, "process_cpu_count", None), lambda: len(os.sched_getaffinity(0)), os.cpu_count):
+        try:
+            n = probe() if probe is not None else None
+        except (AttributeError, OSError, NotImplementedError):
+            n = None
+        if n:
+            return int(n)
+    return 1
+
+
+def _all_cpu(devices) -> bool:
+    """True when every device is a CPU device, i.e. logical slices of one host rather than independent hardware."""
+    return bool(devices) and all(getattr(d, "platform", None) == "cpu" for d in devices)
+
+
 def shared_ram_device_count() -> int:
     """Number of devices whose per-cell batches share one physical RAM pool.
 
     CPU host-replication (``xla_force_host_platform_device_count``) fans one host's RAM across N logical devices, so a pmapped batch holds ``N × n_vmap`` cells in the *same* RAM. Real GPU/TPU devices each have independent memory (only ``n_vmap`` cells apiece), so returns 1 there. Scales the ``n_parallel: auto`` memory budget (see :func:`resolve_exploration_n_vmap`). Returns 1 if JAX or the device list is unavailable.
     """
-    try:
-        import jax
+    devices = _devices()
+    return len(devices) if _all_cpu(devices) else 1
 
-        devices = jax.devices()
-        if devices and all(getattr(d, "platform", None) == "cpu" for d in devices):
-            return len(devices)
-    except Exception:
-        pass
-    return 1
+
+def resolve_exploration_n_pmap(grid_n, n_vmap) -> int:
+    """Number of pmap replicas to fan an exploration grid across.
+
+    CPU replicas are bounded by the host's usable cores: ``xla_force_host_platform_device_count`` slices one machine into logical devices, so replicas beyond its cores contend for the same silicon instead of adding compute — eight replicas each running their own scan loop across two cores are far slower than two. Below that bound the slices do buy parallelism, since one cell's integration rarely saturates a large node. Real accelerators keep their full count, each having its own hardware — the mirror of :func:`shared_ram_device_count`, which reads the same slicing for memory.
+
+    Bounded again by the work itself: at *n_vmap* cells per chunk a grid of *grid_n* needs ``ceil(grid_n / n_vmap)`` chunks, and replicas past that only pad the batch with cells nobody asked for.
+
+    Clamping only ever lowers the replica count, so the ``n_parallel: auto`` memory budget (resolved against :func:`shared_ram_device_count`) stays an upper bound on the live batch.
+    """
+    devices = _devices()
+    chunks = max(1, -(-int(grid_n) // max(1, int(n_vmap))))
+    n_pmap = max(1, len(devices))
+    if _all_cpu(devices):
+        n_pmap = min(n_pmap, usable_cpu_count())
+    n_pmap = max(1, min(n_pmap, chunks))
+    logger.debug(
+        "exploration n_pmap -> %d (devices=%d, cpu_host=%s, cores=%d, chunks=%d, n_vmap=%s)",
+        n_pmap,
+        len(devices),
+        _all_cpu(devices),
+        usable_cpu_count(),
+        chunks,
+        n_vmap,
+    )
+    return n_pmap
 
 
 def estimate_per_cell_bytes(observable_fn, state) -> int | None:
@@ -267,18 +317,11 @@ def progress_ticker(total: int, *, every: int | None = None, label: str = "batch
 def point_indices(cell_values, points):
     """Index of each cell's ARRAY-VALUED axis point among *points*, matched by value.
 
-    An exploration axis whose points are whole arrays (a swept connectome, a per-node control
-    vector) cannot carry those arrays as a coordinate: an xarray coordinate is a 1-D index of
-    scalars, so codegen declares ``arange(n)`` and the axis's grid dimension is the point index.
-    The per-cell dataframe column, though, carries the whole array — so the two are in different
-    currencies and the container cannot pair them. Only the generated script holds the
-    materialised points, which is why the conversion belongs here.
+    An exploration axis whose points are whole arrays (a swept connectome, a per-node control vector) cannot carry those arrays as a coordinate: an xarray coordinate is a 1-D index of scalars, so codegen declares ``arange(n)`` and the axis's grid dimension is the point index.
+    The per-cell dataframe column, though, carries the whole array — so the two are in different currencies and the container cannot pair them. Only the generated script holds the materialised points, which is why the conversion belongs here.
 
-    Matched by nearest flattened L1 distance rather than by equality, because a point that has
-    round-tripped through a device or a file need not compare equal to the one the axis declared.
-    The distance is accumulated one point at a time: a 379-node connectome carries 143k elements
-    per point, and differencing every cell against every point at once is hundreds of megabytes
-    of temporary for an argmin.
+    Matched by nearest flattened L1 distance rather than by equality, because a point that has round-tripped through a device or a file need not compare equal to the one the axis declared.
+    The distance is accumulated one point at a time: a 379-node connectome carries 143k elements per point, and differencing every cell against every point at once is hundreds of megabytes of temporary for an argmin.
 
     Args:
         cell_values: One entry per grid cell, each an array of the axis's point shape.

@@ -8,6 +8,58 @@ in full.
 
 ## Dynamical & numerical traps (these cost us the most time)
 
+- **A published "unstable branch" your continuation cannot find may be the paper's ROOT SOLVER
+  terminating off-root — replay the paper's own procedure and classify every returned point by
+  its residual.** MATLAB's `fsolve` (and any dogleg/trust-region equation solver) terminates at
+  stationary points of the least-squares merit ½‖f‖² — points with `J^T f = 0` but `f ≠ 0` — and
+  a model sitting just below a saddle-node threshold has a whole valley of them: the fold's
+  ghost. Because `J^T f = 0` with `f ≠ 0` forces a SINGULAR Jacobian, an eigenvalue check labels
+  every such terminus "not stable", so unfiltered fsolve output plots as a coexisting *unstable
+  fixed-point branch* that no root of the equations backs. Deco2014's Fig-2c E-E branch is
+  exactly this: the E-E fixed point is provably unique (order-preserving lfp/gfp bracket,
+  gap ≤ 2e-14), yet random-seed fsolve reproduces the published open circles as merit termini —
+  onset G = 1.44 vs the paper's 1.47, ‖f‖∞ ≈ 1e-3 on an equation scale of 2e-3, |Re λ| ≤ 7e-8/s
+  vs 3/s for genuine saddles. The discipline: (1) classify solver output by ‖f‖∞ against the
+  equation scale, never by the solver's own success flag in either direction; (2) polish stalls
+  with `least_squares` and check `|J^T f|` — a converged nonzero-residual stationary point is a
+  well-defined mathematical object you can trace in the parameter, compare to the published
+  branch, and draw (labelled as a solver terminus, never as a state); (3) run BOTH controls
+  before claiming the artifact — a positive one where genuine coexisting roots exist and must be
+  found as true roots, and a variant test showing no plausible mis-transcription of the
+  equations makes the terminus an exact root; (4) state the conclusion as an inference about
+  unpublished code unless the paper's solver script is released.
+
+- **Never locate a fold window by scanning the drive axis, and never trust an inner
+  elimination you did not residual-check — both misplace the bistability threshold, and a
+  misplaced threshold reads as a self-contradiction.** Two measured failure modes from one
+  Deco2014 question ("at which J_NMDA does the node fold?"): a *damped* fixed-point iteration
+  for the slaved variable stopped converging exactly where the recurrence gets interesting
+  (residual up to 0.1 in S_I) and its error wiggles counted as extra nullcline crossings,
+  moving the onset from the true 0.28 to 0.20; and an honest scan with a Newton-solved inner
+  variable still stepped over windows narrower than its grid (8e-6 nA at the cusp against a
+  5e-4 step). The discipline: invert the fixed-point condition into the closed-form drive
+  locus `x*(S) = H⁻¹(r(S)) − c(S)` and read the window edges off its interior extrema — exact,
+  catches windows of any width, no scan — and Newton-solve every inner elimination. Then say
+  which AXIS each threshold lives on: a node that folds in *drive*, inside a window of
+  deficits that the network's additive coupling can never deliver, does not make the network
+  fold in *G* — "the node folds from 0.28" and "the network never folds up to 0.70" are
+  simultaneously true, and prose that omits the axis reads as 0.70-versus-0.28 nonsense.
+
+- **Before a native analysis observation is allowed to overturn a cross-variant ordering,
+  reproduce it host-side at the same operating point — a mistargeted stimulus lowering
+  produces smooth, plausible, wrong curves.** Deco2014's Fig-6f Fisher information came out
+  inverted (FIC lowest where the paper has it highest) from the recipe-native path, while a
+  host recomputation at the identical operating point — one that reproduced the native E-E
+  and FFI curves EXACTLY — put FIC highest, matching the paper. The inversion traced to
+  stimulus-targeting regressions in the backend (the event's `target_regions` dropped, so
+  external inputs broadcast to every node; the fisher observation's node mask resolved
+  empty), not to the model — and the broken value was unfalsifiable from its own output:
+  smooth, decreasing, right units, right order of magnitude. The discipline: any analysis
+  observation that carries a conclusion gets an independent host-side recomputation (same
+  Jacobian convention, same noise, same operating point), checked PER VARIANT — matching for
+  two variants of three validates nothing about the third when the third exercises a
+  different code path (here: the FIC constraint solve).
+
 - **Size `step_size` from the STIFFEST thing the experiment actually integrates — not from the
   paper's fitted parameter, and not from the sibling experiment whose `integration:` block you
   inherited.** A step chosen for the optimum is wrong for the sweep that visits the rest of the
@@ -173,7 +225,7 @@ in full.
 - **Redundant scripts.** One prep script (emits the tvbo Network directly); figures are
   the declarative `figures:` block, not scripts. Don't hand-write per-figure `plot_*.py`
   or an A/B compose driver — the renderer emits the plot scripts, and bespoke panel code
-  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in `figures/scripts/`
+  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in the render target's `scripts/`
   is *generated*; never author or commit it.)
 - **Moving a module changes what `Path(__file__).parents[N]` means — grep for the climb
   BEFORE you flatten.** Study code routinely locates the study root by climbing from its own
@@ -183,23 +235,24 @@ in full.
   silently read another study's tree. After any move, `grep -rn "parents\[" code/`, fix each N,
   and re-run one figure end-to-end to confirm the containers still resolve.
 - **No dead vendored cruft — but a *live* dependency is not cruft.** Keep ONE pristine copy
-  of the paper's own code under `original_study/`; don't duplicate it into `code/`. If the
+  of the paper's own code under `sourcedata/original_study/`; don't duplicate it into `code/`. If the
   paper's algorithm is reused at runtime (e.g. a Helmholtz–Hodge flow-potential), *reference*
   that one copy (put its dir on `sys.path`), don't re-vendor. **Before deleting vendored code
   as "unused", confirm it against the actual RUN paths — run a representative experiment
   END-TO-END, not just `from_file` load.** Loading a study does not import a
   flow-potential/observation callable, so a load-only check will wrongly call a live
   dependency dead (this cost us a broken flow-potential path).
-- **Generated files never land in git at the study root.** KPI/targets tables, extracted
-  arrays, the report PDF/logs → write them into `output/` (gitignored). A generated file
-  tracked at the root reads as a hand-curated deliverable and silently drifts stale.
+- **Generated files never land in git at the study root.** Each one goes where the layout record
+  puts it and is ignored there: containers to `derivatives/tvbo/`, figures to `docs/figures/`,
+  the PDFs to `docs/`, run logs to `logs/`. A generated file tracked at the root reads as a
+  hand-curated deliverable and silently drifts stale.
 - **Cross-references.** The report must stand alone — no "as in the sibling X study".
 - **A lineage of related papers → sibling studies sharing a curated model; pin every
   original-figure lookup.** When one model spans several papers (a foundation and its
   successor, e.g. a synapse used first at the single-synapse level then in a network), make
   each paper its own self-contained study and share the model by a curated `iri:` — don't
   cram both into one recipe (the scales and reports differ). Keep only the paper being
-  replicated under that study's `original_study/`; when it also holds a precursor/successor's
+  replicated under that study's `sourcedata/original_study/`; when it also holds a precursor/successor's
   figures, an unpinned `original_study.rglob("fig_03.png")` in the report's `ab()` silently
   grabs the WRONG paper's `fig_03.png`. Pin the lookup to the specific paper dir
   (`glob("Author1997*")/"img"`), and eyeball the internal A/B once to confirm the original is
@@ -210,12 +263,12 @@ in full.
   figure/report reads STALE data — you then reason about the new recipe from the previous run's
   output. This is the costliest silent trap here: it produced a whole wrong "the backend can't
   reproduce this" diagnosis before the container turned out to be days old. Always pass
-  `-o output/nc`, and before trusting a figure confirm its container is FRESH — the file timestamp
+  and before trusting a figure confirm its container is FRESH — the file timestamp
   is from this run and its dims/coords match the current recipe (the exploration axis you just
   changed is the dim you now see), not a leftover. (The CLI now warns on a no-`-o` run, but the
   discipline is: persist, then verify freshness.) (2) A pure forward run that only records a raw
   trajectory (no exploration, no declared observation) — e.g. a NeuroML EPSP-train run — must
-  still write `output/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
+  still write `derivatives/tvbo/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
   `iri: tvbo:result/<Study>/exp-N` can't resolve an unwritten container). Run END-TO-END, not
   `from_file`.
 - **Re-running an experiment does NOT invalidate the analyses computed from it.** An analysis
@@ -284,7 +337,7 @@ in full.
   whatever the report uses to read it. Recovery, if it happens: the original bytes are all still
   there, so `corrupt.replace(new, "")` returns the file exactly — confirm with
   `len(corrupt) == len(recovered) + (len(recovered) + 1) * len(new)`.
-- **Track `report/analysis/` from the first commit — it is the only copy.** The register, the
+- **Track `docs/analysis/` from the first commit — it is the only copy.** The register, the
   targets table and the figure map are authored deliverables with no upstream and no regenerating
   script. A study left untracked "until it is ready" has no recovery path for exactly the files
   that cannot be recomputed, and one bad `str.replace` (above) is then unrecoverable except by
@@ -342,3 +395,145 @@ in full.
   it holds. Beware that *running* the detector can create the staleness it reports: recomputing
   one analysis to test it invalidates everything downstream.
 - **Framework gaps surface late** if you skip Phase 1.5. Find them before the YAML.
+
+- **A quantity can match the published material at r = 1.000 and still be in the wrong unit.** Symptom:
+  every correlation, p-value and scorecard verdict is right, and one axis stops well short of the
+  paper's — ours reached 38 where theirs reached 80. A monotone rescaling leaves Pearson and
+  Spearman untouched, so nothing statistical can see it; only a *range* comparison can. Check a
+  landmark the paper prints in that unit (canonical iTBS is "30 pulses / train"; we read 15) and
+  put the derived quantity in the published-data oracle table so a match is confirmed by range as well
+  as by rank.
+
+- **A panel's title names a column; its axis range names the quantity — and the two disagree
+  more often than you would expect.** Symptom: your rendered field looks right in shape and is
+  off by orders of magnitude in scale. Kadak's per-connection panels are titled
+  `coupling.xx.nu_post` in three figures and plot the absolute weight, the signed change and the
+  unsigned relative magnitude respectively; the published material's plotting cells read a *differenced*
+  frame whose columns kept the original names. Identify the quantity by putting each candidate
+  through and comparing against the published tick labels on all ten panels at once, then
+  register the mismatch as a convention trap.
+
+- **A colourbar that factored out a shared multiplier is a silently wrong axis.** Symptom: a
+  slim bar reads "3, 1, 0" for a field spanning 3e4, or "3, 0, -1" for one spanning 1e-4, with
+  the exponent nowhere on the figure. Always read a bar's printed numbers against its layer's
+  own min/max before believing the panel.
+
+- **Geometry read inside a panel callable is pre-layout geometry.** Symptom: hand-placed labels
+  land inside the plot, or a "square" panel is an ellipse. `ax.get_position()` at draw time
+  returns the box before the layout pass has run. Use `set_aspect`/`box_aspect` and let the
+  engine solve it; anything that genuinely must run after the tidy-up belongs in the renderer's
+  post-format pass, not in the panel.
+
+- **A tick formatter asked for a string before the first draw answers the same for every axis.**
+  Symptom: a pass meant to fix two ticks that print one number instead re-rounds axes that were
+  already correct — 0.00135 becomes 0.0014 everywhere. A `ScalarFormatter` carries state the
+  draw establishes, so a check that consults it early sees every axis as degenerate. Judge the
+  DRAWN labels in a pass over the finished figure, and reach the cells through `child_axes` —
+  `fig.axes` does not contain a grid's insets.
+
+- **Your panel's axis limits are the paper's frame, not your data's extent.** Symptom: the
+  reference marks in your panel sit at different fractions of the width than the same marks in
+  the original, and the clouds "look shifted". Calibrate: two marks whose data values you know
+  give a pixel→data map for the published panel, and the frame falls out of it. Ours auto-scaled
+  to the responsive subset (1–15.5 Hz) where the paper framed the whole protocol space (0–20).
+
+- **Editing importable framework code while a run is in flight kills the run, and the failure
+  names a symbol you just created.** Symptom: `ImportError: cannot import name '<the function
+  you added ten seconds ago>'` from experiments that had not started yet, while the ones already
+  running finish fine. Codegen re-reads its **template per experiment**, but the template's
+  helper module was imported **once** at process start, so a long run ends up executing a new
+  template against an old module. Nothing about the edit is wrong; its timing is. Treat a
+  launched sweep as a freeze on everything importable that it touches — the study's `code/`, the
+  templates, the framework — and hold the edit until it lands. The cost is measured in whole
+  conditions: ours lost a sweep and five baselines and then wiped a results tree on top.
+
+- **A waiter that watches PIDs reports "done" for a run that crashed.** Symptom: the chained
+  step deletes the derived results and re-derives them from a container that is missing half its
+  experiments, so every downstream number is quietly computed on a subset. `wait` returning is
+  evidence that the processes ENDED, not that they SUCCEEDED. Gate the chain on a completeness
+  check of the artifacts themselves — every expected experiment group present, with the expected
+  cell count — and make that gate the thing that decides whether the destructive step runs.
+
+- **A truncated read is not evidence, however plausible the fragment.** Symptom: a confident
+  conclusion about what a published cell computes, drawn from a slice that ended mid-line at
+  `x = df` where the file continues `_full.apply(...)`. Sizing a file before reading it whole is
+  right (a 459-line file can be 95 % data); founding a claim on the part you happened to read is
+  not. When the claim is about one assignment, match that assignment with a regex over every
+  cell and read the whole match.
+
+- **A multi-file edit script that asserts before it writes leaves the earlier files unwritten.**
+  Symptom: the report references a column that the analysis module never gained, because the
+  heredoc's third replacement failed its assertion and aborted the whole script after the first
+  two had only been computed in memory. Either write each file as you finish it, or verify every
+  match before writing any. Confirm with a grep for the new symbol, never with the exit code.
+
+- **A panel that blanks its slot gets the slot back from the format pass.** Symptom: a colour
+  bar sits inside a ghost frame carrying its own 0–1 ticks, and the tick options declared on that
+  panel shape the ghost instead of the bar. A scale/legend/grid drawer calls `ax.axis("off")` on
+  its host axes and then a figure-wide tidy-up re-derives ticks for **every** axes in the figure,
+  including the one just blanked. Re-apply the blanking after the format pass, and let a scale
+  panel hand back the axes its bar actually lives on so a declared frame lands there. One caveat
+  that will bite: `Axes3D` reports `axison == False` by construction (it draws its own frame), so
+  a blanket "re-blank everything that was off" erases every 3-D panel — exclude them explicitly.
+
+- **Hiding a panel's tick labels asserts a shared scale the axes do not have.** Symptom: three
+  panels of the same quantity, only the leftmost labelled, and their limits differ by a third —
+  the reader compares heights that are not comparable. Hiding labels is a *display* change;
+  sharing a scale is a *limits* change, and only the second makes the first honest. Declare the
+  group (`share_y: ["c,g,h"]`) so every panel in it ends on the union of the group's limits.
+  Never paper over it with a literal `ylim`: the run that follows moves the data and the literal
+  silently clips it.
+
+- **An out-of-view tick label still has a window extent.** Symptom: an overlap detector reports
+  collisions between labels that are nowhere in the rendered PNG, and you chase them for an hour.
+  A locator emits ticks past the view limits; matplotlib does not draw those, but they remain
+  `Text` artists with `get_visible() == True` and a real bbox. Filter tick labels by the axis's
+  view interval, and skip the artists of any axes that is switched off, before measuring anything.
+
+- **A size solver that reads a stale PNG walks the declared size off a cliff.** Symptom: a
+  figure's `height:` is negative in the spec and matplotlib refuses the figsize. The solver
+  corrects `declared += (target - measured)`; when the render fails it leaves the previous PNG in
+  place, the solver measures that, and every iteration corrects against a size it never produced.
+  Gate on the output's mtime: no fresh file, no correction — restore what was declared and stop.
+
+- **A stored column can contradict the columns it was computed from, and nothing raises.**
+  Symptom: one condition of a sweep is a dramatic outlier — the response inverts, the responsive
+  count halves, a correlation goes non-significant — and it reads as a resonance crossing or a
+  genuine null. Before believing it, recompute the derived column from its own container's
+  inputs. Ours reproduced the stored `power_modulation` to 1e-15 in eleven containers and failed
+  on the twelfth for all 432 cells, matching `(post - pre)/post` exactly where the recipe declares
+  `(pre - post)/pre`. The cause was codegen emitting a NAMED argument positionally, so which array
+  landed where was decided by the order the datamodel yielded the arguments mapping — and
+  regenerating the datamodel mid-sweep reversed it. Three lessons, in order of durability:
+  **(a)** put the self-consistency check in the gate that stands before the destructive re-derive,
+  not in your head — the old gate gave the corrupt container a clean bill because it was complete
+  and carried every trace; **(b)** enumerate the exposure rather than guess it — only a callable
+  taking TWO OR MORE observation-valued arguments can be scrambled this way, which in a whole
+  study was one observation; **(c)** prove a codegen fix at RUNTIME on a short experiment written
+  into a scratch container, and compare it against a container written before the regression —
+  ours came back bit-identical, which is the only evidence that actually settles it.
+
+- **`--experiment 15,14` does not run 15 first.** Symptom: you reorder the argument to get one
+  experiment early and nothing changes. The list is a FILTER; the run follows the study's own
+  declaration order. When one experiment gates something you want hours early — the last two
+  unscored targets, a figure that has never rendered — give it its own invocation and chain the
+  rest after it. Two sequential calls cost nothing and moved a container from 03:30 to 01:30.
+
+- **One `tvbo run` cannot fill the machine, and a serial sweep leaves most of it idle.** Symptom:
+  a six-experiment job is projected to finish in eleven hours while `top` shows four of twelve
+  cores busy. A single run draws roughly four cores whatever you give it, so N experiments in one
+  invocation is N sequential four-core jobs. Split them across parallel invocations — three jobs
+  of two took the same work from ~13:00 to ~04:00 — and size the split by cores, not by taste:
+  jobs x cores-per-job should land at or just under the core count. Check free memory BEFORE
+  committing (52 % free, peak footprints of 4.8/1.2/1.4/1.3 GB, each job under its own guard),
+  because the failure mode of over-splitting is a swap death, not a slow run.
+
+- **Never regenerate the datamodel, or touch importable framework code, while a run is in
+  flight.** Symptom: experiments written before some moment are right and the ones after are
+  wrong, with no code change to blame. Templates are re-read per experiment and the generated
+  datamodel is imported once per process, so a regeneration mid-sweep changes what later
+  experiments emit while the sweep looks untouched. This is how an argument-ordering latency
+  became a data corruption: the bug existed all along and was harmless until a regeneration
+  reversed a mapping's order at 20:29, splitting one sweep into a correct half and a wrong half.
+  If you must fix the framework during a run, finish the run first, or accept that everything
+  after the edit needs re-running and gate on it.

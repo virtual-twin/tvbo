@@ -1,6 +1,6 @@
 """Run a study's declarative ``analyses:`` and persist each as its own container.
 
-A study reports quantities that no simulation produced — a basis decomposition of empirical maps, a spectrum, a permutation test — and reductions that span several experiments. ``SimulationStudy.analyses`` declares each as the same ``FunctionCall`` a ``Parameter.producer`` uses, and this module is what executes one: resolve its arguments (a literal ``value``, or a ``used:`` DataRef reading an experiment, another analysis, or a dataset), call it, and write the result to ``<results_root>/results/<name>/result.h5`` beside a ``result.yaml`` provenance sidecar.
+A study reports quantities that no simulation produced — a basis decomposition of empirical maps, a spectrum, a permutation test — and reductions that span several experiments. ``SimulationStudy.analyses`` declares each as the same ``FunctionCall`` a ``Parameter.producer`` uses, and this module is what executes one: resolve its arguments (a literal ``value``, or a ``used:`` DataRef reading an experiment, another analysis, or a dataset), call it, and write the result to ``<results_root>/ana-<name>_result.h5`` beside its one YAML provenance sidecar.
 
 That path is the container convention every consumer already resolves, so a figure layer binds an analysis exactly as it binds a run. Arrays are written through xarray untouched: an invocation that returns labelled ``DataArray``s keeps its dims and coordinates, which is what lets a grammar panel name them in an ``encoding``.
 
@@ -605,13 +605,24 @@ def _kwargs_of(analysis, results_root) -> dict:
 def _as_dataset(name: str, produced):
     """The callable's return as an xarray ``Dataset`` of ``observation__<key>`` variables.
 
-    A mapping contributes one variable per key; a ``Dataset`` keeps its own variable names; anything else is a single array keyed by the analysis name. A labelled ``DataArray`` passes through with its dims and coordinates intact — that fidelity is the point, since a figure's ``encoding`` names them.
+    A mapping contributes one variable per key; a ``Dataset`` keeps its own variable names; a ``DataFrame`` contributes one variable per COLUMN, all sharing a single row dimension, so a table survives the round trip as a table rather than as an unlabelled block; anything else is a single array keyed by the analysis name. A labelled ``DataArray`` passes through with its dims and coordinates intact — that fidelity is the point, since a figure's ``encoding`` names them.
     """
     import numpy as np
     import xarray as xr
 
+    row_dim, row_index = None, None
     if isinstance(produced, xr.Dataset):
         items = list(produced.data_vars.items())
+    elif _is_dataframe(produced):
+        row_dim, row_index = f"{name}_row", _row_labels(produced)
+        columns = [str(c) for c in produced.columns]
+        if len(set(columns)) != len(columns):
+            raise ValueError(
+                f"analysis {name!r}: the returned table has repeated column names "
+                f"({sorted({c for c in columns if columns.count(c) > 1})}) — one column is "
+                "one stored array, so a repeat would silently keep only the last."
+            )
+        items = [(str(c), produced[c].to_numpy()) for c in produced.columns]
     elif isinstance(produced, Mapping):
         items = list(produced.items())
     else:
@@ -625,16 +636,48 @@ def _as_dataset(name: str, produced):
         else:
             arr = np.asarray(value)
             if arr.dtype == object:
-                raise TypeError(
-                    f"analysis {name!r}: output {key!r} is not numeric (dtype=object). "
-                    "Return arrays, DataArrays, or scalars — a result container holds "
-                    "labelled numeric arrays."
-                )
-            da = xr.DataArray(arr) if arr.ndim == 0 else xr.DataArray(arr, dims=[f"{key}_d{i}" for i in range(arr.ndim)])
+                arr = _strings_or_raise(name, key, arr)
+            if arr.ndim == 0:
+                da = xr.DataArray(arr)
+            elif row_dim is not None and arr.ndim == 1:
+                da = xr.DataArray(arr, dims=[row_dim])
+            else:
+                da = xr.DataArray(arr, dims=[f"{key}_d{i}" for i in range(arr.ndim)])
         data_vars[f"observation__{key}"] = da.rename(f"observation__{key}")
     if not data_vars:
         raise ValueError(f"analysis {name!r}: the callable returned nothing to persist.")
-    return xr.Dataset(data_vars)
+    coords = {row_dim: row_index} if row_index is not None else None
+    return xr.Dataset(data_vars, coords=coords)
+
+
+def _is_dataframe(obj) -> bool:
+    """True for a pandas DataFrame, without importing pandas to ask."""
+    return type(obj).__name__ == "DataFrame" and hasattr(obj, "columns") and hasattr(obj, "to_numpy")
+
+
+def _row_labels(frame):
+    """A table's index as a coordinate, or ``None`` where it is the plain 0..n-1 counter.
+
+    A table keyed by region, parameter or condition carries its keys in the index; dropping it stores the columns without the names that say which row is which.
+    """
+    import numpy as np
+
+    idx = np.asarray(frame.index.to_numpy())
+    if idx.dtype.kind in "iu" and np.array_equal(idx, np.arange(len(idx))):
+        return None
+    return idx.astype(str) if idx.dtype == object else idx
+
+
+def _strings_or_raise(name: str, key: str, arr):
+    """An object array of strings becomes a string array; anything else is not storable."""
+    flat = arr.ravel()
+    if all(isinstance(v, str) for v in flat):  # vacuously true for an empty column, which is storable
+        return arr.astype(str)
+    raise TypeError(
+        f"analysis {name!r}: output {key!r} is not numeric (dtype=object). "
+        "Return arrays, DataArrays, strings, or scalars — a result container holds "
+        "labelled numeric arrays."
+    )
 
 
 def _provenance(analysis, produced_keys: Iterable[str]) -> dict:
@@ -678,11 +721,11 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
     encoding = {v: {"zlib": True, "complevel": 4} for v in ds.data_vars} if compress else None
     ds.to_netcdf(path, engine="h5netcdf", encoding=encoding)
     record = _provenance(analysis, (str(v)[len("observation__") :] for v in ds.data_vars))
-    (path.parent / "result.yaml").write_text(yaml.safe_dump(record, sort_keys=False))
-    # Digest of the declaration this container came from, so staleness is per analysis rather than "the spec file was touched" (see study_collection._stale_or_missing_analyses).
-    from tvbo.data.study_collection import _analysis_fingerprint
+    # The declaration's own digest travels in the sidecar, so staleness is per analysis rather than "the spec file was touched" (see study_manifest._stale_or_missing_analyses) and the container has one companion rather than three.
+    from tvbo.data.study_manifest import _analysis_fingerprint
 
-    (path.parent / ".fingerprint").write_text(_analysis_fingerprint(analysis))
+    record["declaration_digest"] = _analysis_fingerprint(analysis)
+    _dref.sidecar_path(path).write_text(yaml.safe_dump(record, sort_keys=False))
     return path
 
 
@@ -690,9 +733,13 @@ def run_analyses(analyses, results_root=None, *, compress: bool = True, on_start
     """Execute ``analyses`` in the given order, returning the containers written.
 
     ``on_start(name)`` / ``on_done(name, path)`` report progress to a caller's logger without this module choosing an output style.
+
+    Names are checked against each other first: a BIDS entity value keeps only the alphanumeric characters, so ``calcium_c10`` and ``calciumC10`` would write the same container and the second would silently replace the first.
     """
+    listed = as_list(analyses)
+    _reject_colliding_names([analysis_name(a) for a in listed])
     written: list[Path] = []
-    for analysis in as_list(analyses):
+    for analysis in listed:
         name = analysis_name(analysis)
         if on_start:
             on_start(name)
@@ -701,6 +748,26 @@ def run_analyses(analyses, results_root=None, *, compress: bool = True, on_start
         if on_done:
             on_done(name, path)
     return written
+
+
+def _reject_colliding_names(names) -> None:
+    """Raise when two analysis names reach the same container filename."""
+    from collections import defaultdict
+
+    from tvbo.adapters.bids import entity_value
+
+    by_value = defaultdict(list)
+    for name in names:
+        by_value[entity_value(name)].append(str(name))
+    clashes = {value: found for value, found in by_value.items() if len(set(found)) > 1}
+    if clashes:
+        detail = "; ".join(
+            f"{', '.join(sorted(set(found)))} -> ana-{value}_result.h5" for value, found in sorted(clashes.items())
+        )
+        raise ValueError(
+            f"analyses whose names reach the same container: {detail}. A BIDS entity value keeps only the "
+            f"alphanumeric characters, so rename one of them."
+        )
 
 
 def study_analyses(study) -> list:

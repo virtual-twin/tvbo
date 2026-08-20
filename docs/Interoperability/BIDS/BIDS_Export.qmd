@@ -1,6 +1,6 @@
 ---
 title: "BIDS Export for TVB Simulations"
-subtitle: "Brain Imaging Data Structure (BEP034 v1.0.0) Integration"
+subtitle: "Exporting a simulation through the legacy to_bids() path"
 author: "TVB-O Team"
 date: last-modified
 format:
@@ -17,40 +17,22 @@ execute:
 
 # Introduction
 
-This notebook demonstrates how to export simulation results from The Virtual Brain (TVB) to the
-**Brain Imaging Data Structure (BIDS)** format, specifically following the
-**BEP034 Computational Modeling Extension v1.0.0**.
+This notebook runs a small simulation and exports it through `to_bids()`, TVBO's export path for [BIDS](https://bids.neuroimaging.io/) datasets.
 
-## What is BIDS?
+## What BIDS gives you here
 
-The Brain Imaging Data Structure (BIDS) is a standard for organizing and describing
-neuroimaging data. It provides:
+BIDS fixes how files are named, where they sit, and how metadata travels beside them in JSON sidecars. For a simulation that means a result another tool can find and a record of the parameters that produced it, without a bespoke reader.
 
-- **Standardized file naming** conventions
-- **JSON sidecar files** for metadata
-- **Interoperability** across neuroimaging tools
-- **Reproducibility** of analyses
+## A note on BEP034
 
-## BEP034: Computational Modeling Extension
+BEP034 is the draft BIDS extension for computational modelling. As compiled from its pull request it defines one datatype, `model`, with `eq` and `param` suffixes in LEMS XML, and nothing else.
 
-BEP034 extends BIDS to support computational modeling data with a specific
-directory structure:
+The layout produced below is different: `net/`, `ts/`, `eq/`, `coord/` and `map/` directories with `id-<hash>` filenames. It follows an early BEP034 draft rather than the current proposal, and TVBO's own `adapters/bep034.json` declares those names as filename entities rather than directories. Treat this export path as legacy, and see [Computational Modelling](BIDS_comp_modelling.md) for what TVBO writes from `tvbo run` instead.
 
-- **`net/`**: Network connectivity files (weights, distances)
-- **`ts/`**: Simulated time series data
-- **`eq/`**: Model equations (tvbo format)
-- **`coord/`**: Region coordinates
-- **`map/`**: Mapping files
-- **`code/`**: Analysis code
+Reference:
 
-Key features:
-- File naming with `id-<hash>` suffix based on JSON sidecar hash
-- Proper entity-value pairs in filenames
-- Full provenance tracking
-
-For more information, see:
 - [BIDS Specification](https://bids-specification.readthedocs.io/)
-- [BEP034 Computational Modeling](https://bids.neuroimaging.io/get_involved.html)
+- [BEP034](https://bids.neuroimaging.io/bep034)
 
 ---
 
@@ -70,8 +52,7 @@ from tvbo import Network,SimulationExperiment,Dynamics
 
 # Create a Simulation Experiment
 
-First, let's set up a simulation experiment using the Wilson-Cowan model with
-a sample connectome.
+A three-node connectome and a Generic2dOscillator, linearly coupled.
 
 ```{python}
 from tvbo.datamodel.schema import CouplingInput, Parameter
@@ -129,14 +110,13 @@ plt.show()
 
 ---
 
-# Export to BIDS Format (BEP034)
+# Export to BIDS Format
 
-Now we'll export the simulation results to BIDS format. The `to_bids()` method
-creates a complete BIDS-compliant dataset structure following BEP034 v1.0.0.
+`to_bids()` writes the simulation results as a dataset in the legacy layout described above.
 
 ## Output Formats
 
-Three formats are supported for time series data:
+Time series export in one of three formats:
 
 | Format | Extension | Splits by State | Use Case |
 |--------|-----------|-----------------|----------|
@@ -208,10 +188,9 @@ print(f"BIDS dataset created at: {output_path2}")
 
 ---
 
-# Inspect the BEP034 Structure
+# Inspect the Exported Structure
 
-Let's examine the created BIDS dataset structure. BEP034 organizes data into
-specific directories:
+The export splits its output across directories by content type:
 
 ```{python}
 #| label: inspect-structure

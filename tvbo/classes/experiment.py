@@ -1612,7 +1612,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _resolve_from_experiment_seed(self, results_root=None):
         """Load the operating point for ``initial_state.method == from_experiment``.
 
-        The source experiment exposes its settled per-node state as observations named ``<state_variable>_final`` (e.g. ``theta_final``). This locates that experiment's saved result under ``results_root`` — matched by the ``exp-<id>_`` file stem, so the output-directory layout (``results/2``, ``output/nc/exp2``, …) does not matter — and reads one ``<sv>_final`` per state variable of *this* experiment. Everything is keyed by name/dim, never positional: the result is a ``{state_variable_name: (n_nodes,)}`` dict that the generated code places into its own canonical rows. For a swept source (an adiabatic ramp) the operating point is the last recorded point (``source_point``; default ``'endpoint'``).
+        The source experiment exposes its settled per-node state as observations named ``<state_variable>_final`` (e.g. ``theta_final``). This locates that experiment's saved result in ``results_root``, matched by the ``exp-<id>_`` file stem, and reads one ``<sv>_final`` per state variable of *this* experiment. Everything is keyed by name/dim, never positional: the result is a ``{state_variable_name: (n_nodes,)}`` dict that the generated code places into its own canonical rows. For a swept source (an adiabatic ramp) the operating point is the last recorded point (``source_point``; default ``'endpoint'``).
 
         Returns the name-keyed IC dict, or ``None`` when this experiment does not use ``from_experiment``.
         For ``source_point == 'branch'`` this returns ``None`` — the whole recorded branch is a per-cell seed, resolved by :meth:`_resolve_from_experiment_branch`.
@@ -2564,12 +2564,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def get_result_stem(self):
         """BIDS result basename (no extension), generated with pybids ``build_path``.
 
-        Returns e.g. ``exp-<id>_desc-<label>_result`` — the shared stem for this experiment's ``<stem>.h5`` data file and ``<stem>.yaml`` provenance sidecar, identical whether written by a local run or the HPC gather pass. The naming is driven by ``tvbo.adapters.bids.RESULT_PATTERNS`` (a pybids rule string), so it stays BIDS-compliant and customizable in one place.
+        Returns e.g. ``exp-<id>_model-<name>_result`` — the shared stem for this experiment's ``<stem>.h5`` data file and ``<stem>.yaml`` provenance sidecar, identical whether written by a local run or the HPC gather pass. The naming is driven by ``tvbo.adapters.bids.RESULT_PATTERNS`` (a pybids rule string), so it stays BIDS-compliant and customizable in one place.
         """
         from tvbo.adapters.bids import build_result_path
 
         path = build_result_path(self, extension=".h5")
         return os.path.splitext(path)[0] if path else "result"
+
+    def get_network_stem(self):
+        """BIDS basename for the frozen connectome companion beside a result.
+
+        The result's own stem with ``_network`` in place of ``_result``: one suffix, which is all BIDS allows. The companion was previously ``<stem>_result_network``, two suffixes and no legal reading.
+        """
+        return f"{self.get_result_stem().rsplit('_', 1)[0]}_network"
 
     @property
     def max_delay(self) -> float:

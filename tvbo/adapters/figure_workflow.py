@@ -181,7 +181,7 @@ def _activation_lines(block: dict) -> list[str]:
 
 
 def figure_contexts(figures, base_dir=".", workflow=None, exp_plans=None, bundled_code=False) -> list[dict]:
-    """Per-figure template contexts (fan-aware inputs). ``exp_plans`` are the emitter's per-experiment dicts; without them (author-time render) inputs fall back to ``output/nc`` containers. Public so the study emitter can read the figure outputs it must add to the default target before it renders the Snakefile."""
+    """Per-figure template contexts (fan-aware inputs). ``exp_plans`` are the emitter's per-experiment dicts; without them (author-time render) inputs fall back to the author's own result containers. Public so the study emitter can read the figure outputs it must add to the default target before it renders the Snakefile."""
     keys = {ep["key"]: ep for ep in (exp_plans or [])}
     return [_figure_context(f, base_dir, workflow, keys, bundled_code) for f in figures]
 
@@ -197,7 +197,7 @@ def emit_figure_rules(
     Args:
         figures: An iterable of ``Figure`` objects (e.g. ``study.figures``).
         base_dir: Root the experiment result containers live under; each figure's
-            ``used`` IRIs resolve to ``<base_dir>/output/nc/<exp>/*.h5``.
+            ``used`` IRIs resolve against the ``results`` role under ``base_dir``.
         workflow: The study-level ``WorkflowConfig`` (or ``None``); each figure's
             ``workflow_overrides`` merges over it for that figure's resources.
         kit_dir: Directory the companion :func:`write_figure_kit` writes to (kept for
@@ -207,7 +207,7 @@ def emit_figure_rules(
         exp_plans: The emitter's per-experiment dicts; a figure ``used`` edge to one of
             them becomes an ``expand()`` over that experiment's fanned cells (the whole
             grid), so the render waits for the sweep. Without them, inputs fall back to
-            author-time ``output/nc`` containers.
+            the author's own result containers.
         bundled_code: Whether the kit carries a ``code/`` dir the figure's custom-panel
             modules were bundled into (put on the rule's ``PYTHONPATH``).
 
@@ -224,7 +224,7 @@ def emit_figure_rules(
 def _rebase_containers_to_kit(code: str, figure, base_dir, exp_plans_by_key: dict, out_dir: str) -> str:
     """Rewrite each layer's author-time container path to the KIT path the render rule uses.
 
-    ``bsplot.render_code`` bakes each ``used`` edge as its author-time resolved container (``<base_dir>/output/nc/<file>``), but the kit stores that experiment's result at ``<out_dir>/<key>/<stem>`` — the SAME path ``_figure_inputs`` puts in the rule's ``input:``.
+    ``bsplot.render_code`` bakes each ``used`` edge as its author-time resolved container (``<base_dir>/derivatives/tvbo/<file>``), but the kit stores that experiment's result at ``<out_dir>/<key>/<stem>`` — the SAME path ``_figure_inputs`` puts in the rule's ``input:``.
     Left unrewritten, the frozen ``plot.py`` reads an absolute laptop path that does not exist on the compute node. Only a single-file (group / on-device-vectorized grid) experiment is rebased; a workflow-FANNED experiment and an on-device COHORT both resolve to several cell files with no single container a plot could point at, so they are left alone, as is an edge whose author-time container does not resolve (an empty path would splice the kit path between every character of the script).
     """
     for panel in as_list(getattr(figure, "panels", None)):

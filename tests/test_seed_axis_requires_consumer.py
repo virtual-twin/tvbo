@@ -150,14 +150,13 @@ def test_a_seed_builder_needing_runtime_data_is_refused(tmp_path, monkeypatch):
         SimulationExperiment(**spec).render_code("tvboptim")
 
 
-def test_two_axis_seed_sweep_maps_the_noise_seed_leaf_to_its_label():
-    """A (parameter x seed) product keys results by value, and the seed axis's grid column is the ``dynamics._noise_seed`` state leaf — codegen must map that bare name onto the declared ``execution.random_seed`` label, or cell placement cannot find the axis and the container assembly refuses rather than scrambling."""
+def test_two_axis_seed_sweep_binds_the_noise_seed_leaf_under_its_label():
+    """A (parameter x seed) product keys results by value, and the seed axis's grid column is the ``dynamics._noise_seed`` state leaf — the binding must carry the declared ``execution.random_seed`` label, or cell placement cannot find the axis and the container assembly refuses rather than scrambling."""
     spec = _with_noise(copy.deepcopy(MINI_EXP))
     spec["explorations"]["seed_sweep"]["space"].insert(0, {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}})
     code = SimulationExperiment(**spec).render_code("tvboptim")
     squeezed = "".join(code.split()).replace('"', "'")
-    assert "_register('_noise_seed')" in squeezed
-    assert "if_name=='execution.random_seed':" in squeezed
+    assert "grid_state.dynamics._noise_seed=_ax('execution.random_seed'," in squeezed
 
 
 _ZIP_STREAM_SPEC = """
@@ -239,11 +238,7 @@ def _streamed_cells(tmp_path, mode, seeds, tag):
 def test_a_seed_axis_reseeds_a_streamed_observation(tmp_path, mode):
     """The seed must reach `noise.key` on the STREAMING path, and under either grid mode.
 
-    A bundled streaming observation folds into the integrator carry through
-    `prepare(reduce=...)` rather than reading a materialised trajectory, and the per-cell
-    reseeding wrapper composes on top of it. If it did not, every cell of the sweep would
-    integrate the same noise and the container would still report a seed dimension — the
-    fake ensemble the checks above refuse at codegen, arrived at after it.
+    A bundled streaming observation folds into the integrator carry through `prepare(reduce=...)` rather than reading a materialised trajectory, and the per-cell reseeding wrapper composes on top of it. If it did not, every cell of the sweep would integrate the same noise and the container would still report a seed dimension — the fake ensemble the checks above refuse at codegen, arrived at after it.
     """
     import numpy as np
 
@@ -251,4 +246,5 @@ def test_a_seed_axis_reseeds_a_streamed_observation(tmp_path, mode):
     b = _streamed_cells(tmp_path, mode, [5, 6], f"{mode}_b")
     assert not np.allclose(a, b), (
         f"{mode} + streaming: the cells are identical under two different seed sets, so the "
-        "seed axis never reached the solver's PRNG key")
+        "seed axis never reached the solver's PRNG key"
+    )

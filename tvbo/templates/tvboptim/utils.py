@@ -1835,8 +1835,7 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
     - ``period_in_steps``: the block-size unit — a multiple of every reducer's
       ``ds_steps * tr_stride`` — so BOLD TR boundaries align to integrator block boundaries (a partial-TR block would misalign the reducer's slot writing).
 
-    Observation AXIS NAMES are not part of this plan: they describe every observation an experiment declares, streamed or materialised, so :func:`observation_dims` answers that
-    independently and the caller asks it directly.
+    Observation AXIS NAMES are not part of this plan: they describe every observation an experiment declares, streamed or materialised, so :func:`observation_dims` answers that independently and the caller asks it directly.
 
     Both the experiment template (which builds the streaming ``post_model_fn``) and the algorithm template (which consumes it) call this, so the two sides cannot drift.
     """
@@ -3342,10 +3341,20 @@ def edge_const(label: str) -> str:
 
 
 # `network.`-scoped exploration axes sweep a live leaf of the backend graph, so every cell sees its own value without a Network or graph rebuild. Each entry below names the graph leaf carrying an attribute; adding a sweepable edge attribute is one entry here plus a graph leaf that holds it.
-_NETWORK_EDGE_GRAPH_LEAVES = {"weight": "weights", "length": "lengths"}
+_NETWORK_EDGE_GRAPH_LEAVES = {"weight": "weights", "length": "lengths", "delay": "delays"}
 _NETWORK_SCALAR_GRAPH_LEAVES = {"conduction_speed": "speed"}
 _NETWORK_SCOPE = "network."
 _RANDOM_SEED_SCOPE = "execution.random_seed"
+# Leaves holding one value per edge. tvboptim rejects a graph shape change after prepare(), so a scalar swept onto one of these is written across the existing edges rather than replacing the matrix.
+_NETWORK_MATRIX_GRAPH_LEAVES = frozenset({"weights", "lengths", "delays"})
+
+
+def network_leaf_is_matrix(leaf: Any) -> bool:
+    """Whether a ``network.``-scoped graph leaf holds a per-edge matrix rather than a scalar.
+
+    A scalar leaf (``speed``) takes the swept value as it stands. A matrix leaf (``weights``, ``lengths``, ``delays``) must keep the graph's topology: the swept value is broadcast onto every edge that exists and the rest of the matrix stays zero, so the sweep varies the attribute without moving an edge.
+    """
+    return leaf in _NETWORK_MATRIX_GRAPH_LEAVES
 
 
 def network_axis_leaf(ref: Any) -> str | None:
@@ -3391,15 +3400,9 @@ _NOISE_PARAM_LEAVES = ("sigma",)
 def noise_axis_param(ref: Any) -> str | None:
     """Noise parameter swept by a ``noise.``-scoped exploration axis, else None.
 
-    ``noise.sigma`` sweeps the noise AMPLITUDE across grid cells. The amplitude is declared
-    per state variable (``state_variables.<sv>.noise.parameters.sigma``) or once for the
-    integration, and a backend holds it as an ordinary parameter leaf beside the dynamics
-    parameters — so it is swept like any other parameter once the axis can name it. The
-    scope is the experiment's noise as a whole, matching how an amplitude is applied: one
-    diffusion coefficient, scaled per targeted state.
+    ``noise.sigma`` sweeps the noise AMPLITUDE across grid cells. The amplitude is declared per state variable (``state_variables.<sv>.noise.parameters.sigma``) or once for the integration, and a backend holds it as an ordinary parameter leaf beside the dynamics parameters — so it is swept like any other parameter once the axis can name it. The scope is the experiment's noise as a whole, matching how an amplitude is applied: one diffusion coefficient, scaled per targeted state.
 
-    Returns the bare parameter name; None for a reference outside the ``noise.`` scope,
-    which callers route through the dynamics/coupling path.
+    Returns the bare parameter name; None for a reference outside the ``noise.`` scope, which callers route through the dynamics/coupling path.
 
     Raises:
         ValueError: the reference is ``noise.``-scoped but names no sweepable noise
@@ -3420,13 +3423,9 @@ def noise_axis_param(ref: Any) -> str | None:
 def axis_keypath(ax: Any) -> str:
     """Grid keypath an exploration axis binds on — ``<sub-object>.<leaf>``.
 
-    ONE definition of WHERE an axis writes, so the grid binding, the warm-start / adiabatic sweep and the branch-analysis restart cannot disagree. A coupling axis lands on its
-    coupling instance, a ``network.`` axis on the delay graph, a ``noise.`` axis on the noise parameters, an ``initial_conditions.`` or seed axis on the dummy dynamics slot its
-    wrapper reads per cell, and everything else on the dynamics. Disagreement here is silent rather than loud: routing ``noise.sigma`` to ``dynamics.sigma`` sweeps a same-named
-    model parameter, or nothing at all, and the run still completes.
+    ONE definition of WHERE an axis writes, so the grid binding, the warm-start / adiabatic sweep and the branch-analysis restart cannot disagree. A coupling axis lands on its coupling instance, a ``network.`` axis on the delay graph, a ``noise.`` axis on the noise parameters, an ``initial_conditions.`` or seed axis on the dummy dynamics slot its wrapper reads per cell, an ``<event>.`` axis on that external input, and everything else on the dynamics. Disagreement here is silent rather than loud: routing ``noise.sigma`` to ``dynamics.sigma`` sweeps a same-named model parameter, or nothing at all, and the run still completes.
 
-    Reads the scope FLAGS the axis classifier already resolved, never the declared text — :func:`parameter_keypath` is the counterpart that classifies a reference still held as a
-    raw dotted string. The two must answer alike for the same axis.
+    Reads the scope FLAGS the axis classifier already resolved, never the declared text — :func:`parameter_keypath` is the counterpart that classifies a reference still held as a raw dotted string. The two must answer alike for the same axis.
     """
     name = str(ax.get("name"))
     if ax.get("is_coupling"):
@@ -3439,6 +3438,8 @@ def axis_keypath(ax: Any) -> str:
         return f"dynamics._ic_{name}"
     if ax.get("is_seed"):
         return "dynamics._noise_seed"
+    if ax.get("is_external"):
+        return f"external.{ax.get('external_key')}.{name}"
     return f"dynamics.{name}"
 
 
