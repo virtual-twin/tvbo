@@ -6,6 +6,8 @@ A `<event>.<param>` axis writes to ``state.external.<event>.<param>``, where the
 import numpy as np
 import pytest
 
+from .tvboptim_capabilities import needs_axis_wrap
+
 pytest.importorskip("tvboptim")
 
 from tvbo import SimulationExperiment
@@ -100,6 +102,7 @@ def test_a_swept_onset_carries_the_transient_shift(tmp_path):
     assert "+50.0" in axis, axis
 
 
+@needs_axis_wrap
 def test_every_cell_fires_at_the_onset_it_declares(tmp_path):
     """The pulse lands where the recipe puts it, and the coordinate is that same declared time."""
     sweep = _experiment(tmp_path).run("tvboptim").explorations["onset_sweep"]

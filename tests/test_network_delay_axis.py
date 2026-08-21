@@ -8,6 +8,8 @@ The history buffer is the trap: it is static, sized once outside jit, and a cell
 import numpy as np
 import pytest
 
+from .tvboptim_capabilities import needs_axis_wrap
+
 pytest.importorskip("tvboptim")
 
 from tvbo import SimulationExperiment
@@ -118,6 +120,7 @@ def test_delay_axis_sizes_the_history_buffer_for_the_longest_delay(tmp_path):
     assert "40.0" in rebuild[0], rebuild[0]
 
 
+@needs_axis_wrap
 def test_delay_axis_actually_changes_the_trajectory(tmp_path):
     """Two delays, two trajectories: the sweep must not be silently inert."""
     sweep = _experiment(tmp_path).run("tvboptim").explorations["sweep"]
@@ -127,6 +130,7 @@ def test_delay_axis_actually_changes_the_trajectory(tmp_path):
     assert not np.allclose(theta[0], theta[1]), "the swept delay left the trajectory unchanged"
 
 
+@needs_axis_wrap
 def test_delay_axis_coordinate_is_the_swept_delay(tmp_path):
     """The grid coordinate is the scalar that was swept, not the matrix it was written across.
 

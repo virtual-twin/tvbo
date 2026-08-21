@@ -9,6 +9,8 @@ import pytest
 
 from tvbo.templates.tvboptim.utils import network_axis_leaf
 
+from .tvboptim_capabilities import needs_axis_wrap
+
 
 @pytest.mark.parametrize(
     "ref, leaf",
@@ -231,6 +233,7 @@ def _run_two_network_axes(tmp_path, monkeypatch):
     return exp.run("tvboptim", mode="exploration")
 
 
+@needs_axis_wrap
 def test_two_network_axes_are_each_keyed_by_their_own_declared_name(tmp_path, monkeypatch):
     """Two `network.` axes in one exploration must both reach the container.
 
@@ -248,6 +251,7 @@ def test_two_network_axes_are_each_keyed_by_their_own_declared_name(tmp_path, mo
     assert grid.sizes["network.edges.length"] == 2
 
 
+@needs_axis_wrap
 def test_a_matrix_valued_axis_is_keyed_by_point_index(tmp_path, monkeypatch):
     """A builder axis of whole matrices rounds trips: its coordinate is the point index.
 
@@ -260,6 +264,7 @@ def test_a_matrix_valued_axis_is_keyed_by_point_index(tmp_path, monkeypatch):
     np.testing.assert_array_equal(np.asarray(grid.coords["network.edges.length"]), [0, 1])
 
 
+@needs_axis_wrap
 def test_a_matrix_valued_axis_carries_its_points_as_sidecar_data(tmp_path, monkeypatch):
     """The swept matrices ride on the result keyed by point index.
 
