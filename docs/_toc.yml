@@ -433,8 +433,6 @@ website:
                         href: datamodel/classes/BranchSwitch.qmd
                       - text: "Callable"
                         href: datamodel/classes/Callable.qmd
-                      - text: "Case"
-                        href: datamodel/classes/Case.qmd
                       - text: "Class Reference"
                         href: datamodel/classes/ClassReference.qmd
                       - text: "Clinical Improvement"
@@ -769,8 +767,6 @@ website:
                         href: datamodel/slots/call_args.qmd
                       - text: "callable"
                         href: datamodel/slots/callable.qmd
-                      - text: "cases"
-                        href: datamodel/slots/cases.qmd
                       - text: "category"
                         href: datamodel/slots/category.qmd
                       - text: "center"
@@ -817,8 +813,6 @@ website:
                         href: datamodel/slots/condition_parameters.qmd
                       - text: "condition_states"
                         href: datamodel/slots/condition_states.qmd
-                      - text: "conditional"
-                        href: datamodel/slots/conditional.qmd
                       - text: "conditionals"
                         href: datamodel/slots/conditionals.qmd
                       - text: "conditions"
@@ -869,8 +863,6 @@ website:
                         href: datamodel/slots/coupling_function.qmd
                       - text: "coupling_inputs"
                         href: datamodel/slots/coupling_inputs.qmd
-                      - text: "coupling_terms"
-                        href: datamodel/slots/coupling_terms.qmd
                       - text: "coupling_variable"
                         href: datamodel/slots/coupling_variable.qmd
                       - text: "covariance"

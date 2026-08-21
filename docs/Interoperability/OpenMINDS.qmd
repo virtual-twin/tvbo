@@ -82,7 +82,7 @@ dynamics:
       label: Coupling strength
       value: 0.05
 
-  coupling_terms:
+  coupling_inputs:
     c_in:
 
 # 3-node network with connectivity
@@ -120,6 +120,10 @@ network:
       target: 0
       parameters:
         weight: {value: 0.2}
+  # The coupling acts along these edges, so it is declared on the network
+  coupling:
+    Linear:
+      label: Linear Diffusive Coupling
 
 # Integration settings
 integration:
@@ -127,11 +131,6 @@ integration:
   step_size: 0.1
   duration: 100.0
   time_scale: s
-
-# Coupling function
-coupling:
-  name: Linear
-  label: Linear Diffusive Coupling
 """
 
 # Step 1: Create experiment from YAML string

@@ -74,7 +74,7 @@ First, let's set up a simulation experiment using the Wilson-Cowan model with
 a sample connectome.
 
 ```{python}
-from tvbo.datamodel.schema import CouplingInput, Parameter
+from tvbo.datamodel.schema import CouplingInput
 # | label: create-experiment
 # Load a sample connectome
 connectome = Network(number_of_nodes=3)
@@ -82,17 +82,16 @@ connectome = Network(number_of_nodes=3)
 # Define the dynamics model
 dynamics = Dynamics.from_ontology("Generic2dOscillator")
 dynamics.coupling_inputs['c_glob'] = CouplingInput(name='c_glob')
-dynamics.coupling_terms['c_glob'] = Parameter(name='c_glob')
 
-# Define coupling function
+# Define the coupling function, on the network whose edges it acts along
 coupling = Coupling.from_ontology('Linear')
+connectome.coupling[str(coupling.name)] = coupling
 
 # Create the simulation experiment
 experiment = SimulationExperiment(
     label="BIDS Demo Simulation",
     description="Example simulation for BIDS export demonstration",
     dynamics=dynamics,
-    coupling=coupling,
     network=connectome,
     integration=Integrator(
         method="Euler",
@@ -437,7 +436,7 @@ os.makedirs(multi_bids, exist_ok=True)
 for i, coupling_strength in enumerate([0.01, 0.02, 0.03]):
     # Modify experiment parameters
     modified_exp = experiment.copy()
-    modified_exp.coupling.parameters['a'].value = coupling_strength
+    modified_exp.network.coupling['Linear'].parameters['a'].value = coupling_strength
 
     # Run simulation
     ts_i = modified_exp.run(format="jax")

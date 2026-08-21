@@ -32,7 +32,7 @@ dynamics:
         S:
             equation: {rhs: "-S/tau_s + (1 - S) * gamma * d * (a*J_N*w*S + I_o + c_in) / (1 + exp(-1*(a*(J_N*w*S + I_o + c_in) - b)/d))"}
             initial_value: 0.5
-    coupling_terms:
+    coupling_inputs:
         c_in: {}
 integration:
     step_size: 0.1

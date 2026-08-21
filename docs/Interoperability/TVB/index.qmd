@@ -100,7 +100,7 @@ print(f"TVB Simulator: {sim.model.__class__.__name__}, "
 exp = SimulationExperiment.from_tvb_simulator(sim)
 
 print(f"Model:      {exp.model}")
-print(f"Coupling:   {exp.coupling.name}")
+print(f"Coupling:   {', '.join(exp.network.coupling)}")
 print(f"Integrator: {exp.integration.method}")
 print(f"Duration:   {exp.integration.duration} ms")
 print(f"dt:         {exp.integration.step_size}")
@@ -154,13 +154,14 @@ label: Quick JansenRit demo
 model:
   name: JansenRit
 
-coupling:
-  name: SigmoidalJansenRit
-  parameters:
-    a: {value: 1.0}
-    cmax: {value: 0.005}
-    midpoint: {value: 6.0}
-    r: {value: 0.56}
+network:
+  coupling:
+    SigmoidalJansenRit:
+      parameters:
+        a: {value: 1.0}
+        cmax: {value: 0.005}
+        midpoint: {value: 6.0}
+        r: {value: 0.56}
 
 integration:
   method: HeunStochastic
@@ -175,7 +176,11 @@ observations:
   Raw:
     name: Raw
 """)
-exp2.network = Network.from_tvb(conn)
+# The connectome comes from TVB; the declared coupling rides along on it
+tvb_network = Network.from_tvb(conn)
+for name in exp2.network.coupling:
+    tvb_network.coupling[name] = exp2.network.coupling[name]
+exp2.network = tvb_network
 
 print(f"Model:    {exp2.model}")
 print(f"Method:   {exp2.integration.method}")
