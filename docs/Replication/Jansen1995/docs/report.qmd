@@ -10,29 +10,31 @@ publish: true
 
 Replication of the simulation experiments from @Jansen1995.
 
-This directory is a BIDS study dataset (`DatasetType: "study"`): the entry recipe is `Jansen1995.yaml`, its plotting callables live in `code/`, and the figures render into `docs/figures/`. See [BIDS Integration](../../Interoperability/BIDS/index.qmd) for the layout every study shares.
+This study is a BIDS study dataset (`DatasetType: "study"`): the entry recipe is `Jansen1995.yaml` at its root, the plotting callables live in `code/`, and the figures render into `docs/figures/` beside this report. See [BIDS Integration](../../../Interoperability/BIDS/index.qmd) for the layout every study shares.
 
 ```{python}
 import importlib
 import sys
+from pathlib import Path
 
 from tvbo import SimulationStudy
-from tvbo.utils.study_layout import study_path
+from tvbo.utils.study_layout import file_relpath, study_path, study_root
 import bsplot
 
 bsplot.style.use("tvbo")
 
-# This directory IS the study dataset, so every path below is asked of the layout record.
+# The report renders from inside the study, so every path below is asked of the layout record.
 STUDY = "Jansen1995"
-sys.path.insert(0, str(study_path("code")))
+ROOT = study_root(Path.cwd())
+sys.path.insert(0, str(study_path("code", root=ROOT)))
 import Jansen1995_plot as jr_plot
 
-odir = study_path("figures")
+odir = study_path("figures", root=ROOT)
 odir.mkdir(parents=True, exist_ok=True)
 ```
 
 ```{python}
-s = SimulationStudy.from_file(f"{STUDY}.yaml")
+s = SimulationStudy.from_file(ROOT / file_relpath("recipe", study=STUDY))
 ```
 
 ```{python}

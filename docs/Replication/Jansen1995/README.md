@@ -4,7 +4,7 @@ Replication of the simulation experiments in Jansen & Rit (1995), *Electroenceph
 
 This is a BIDS study dataset (`DatasetType: "study"`), and it is the layout's worked example inside this repository — `tvbo validate study .` passes on it. `Jansen1995.yaml` is the whole specification; `code/` holds the plotting callables it references by bare module name; `docs/figures/` is where the figures render.
 
-**One deviation, deliberate.** The report is `Run_Jansen1995.qmd` at the study root rather than `docs/report.qmd`, because this study lives inside the tvbo documentation site, which owns the page and renders it from its own Quarto project. A standalone study puts its report in `docs/` and gets a `_quarto.yml` of its own; nesting a second Quarto project here would break the parent build.
+**One difference from a standalone study.** The report is `docs/report.qmd` as the record prescribes, but there is no `_quarto.yml` beside it: this study lives inside the tvbo documentation site, which owns the page and renders it from its own Quarto project. Nesting a second Quarto project here would split the build.
 
 ## Layout
 
@@ -49,7 +49,7 @@ Entries above that this study has no use for are simply absent: it declares no s
 
 ```bash
 tvbo validate study .          # the tree and the filenames conform to the layout
-quarto render Run_Jansen1995.qmd
+quarto render docs/report.qmd
 ```
 
 Rendering executes the experiments and writes each figure into `docs/figures/`, which is why that directory is not tracked.

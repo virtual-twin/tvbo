@@ -329,8 +329,6 @@ website:
                   - section: "BIDS"
                     href: Interoperability/BIDS/index.qmd
                     contents:
-                      - text: "BIDS Export"
-                        href: Interoperability/BIDS/BIDS_Export.qmd
                       - text: "Computational Modelling"
                         href: Interoperability/BIDS/BIDS_comp_modelling.md
                   - section: "OpenMINDS"
@@ -363,7 +361,7 @@ website:
                   - text: "Custom figure panels"
                     href: Replication/custom-panels.qmd
                   - text: "Jansen & Rit (1995)"
-                    href: Replication/Jansen1995/Run_Jansen1995.qmd
+                    href: Replication/Jansen1995/docs/report.qmd
 # END:replication-autogen
 
               - text: "REFERENCE"

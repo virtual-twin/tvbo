@@ -13,7 +13,6 @@ All three are still drafts. Everything below is generated from the layout record
 
 | Tutorial | Description |
 |----------|-------------|
-| [BIDS Export](BIDS_Export.qmd) | Running a simulation and exporting it |
 | [Computational Modelling](BIDS_comp_modelling.md) | What BEP034 specifies, and where TVBO differs |
 
 ## A study is a BIDS study dataset
@@ -103,7 +102,7 @@ prov/
 
 <!-- END IGNORE FILES -->
 
-Under `--template replication` the same `sourcedata/` rule also covers the A/B composites that embed the original paper's figures, because they are staged inside the deposit they come from, at `sourcedata/original_study/fig_comparisons/`. Neither file is meant to be edited: `tvbo validate study` fails a study whose ignore files have drifted from the record.
+Under `--template replication` the same `sourcedata/` rule also covers the A/B composites that embed the original paper's figures, because they are staged inside the original-study directory they come from, at `sourcedata/original_study/fig_comparisons/`. Neither file is meant to be edited: `tvbo validate study` fails a study whose ignore files have drifted from the record.
 
 ## Where TVBO leaves the standard
 
@@ -229,19 +228,14 @@ The command reports, as build-failing problems rather than warnings:
 ## Reading BIDS data
 
 ```python
-from tvbo import Network, SimulationExperiment
+from tvbo import Network
 
 net = Network.from_bids("sub-01/connectome")
-exp = SimulationExperiment.from_bids("derivatives/tvbo", subject="01")
 ```
 
-`Network.to_bep017` writes a connectome out as BEP017 per-measure files, one TSV plus JSON sidecar per edge measure.
+`Network.to_bep017` writes a connectome back out as BEP017 per-measure files, one `meas-<name>_relmat.dense.tsv` plus JSON sidecar per edge measure, so a connectome tvbo read or built round-trips into the form other tooling reads.
 
-## Status of the export layout
-
-`SimulationExperiment.to_bids` writes a tree of `net/`, `ts/`, `eq/`, `coord/` and `map/` directories. This follows an early BEP034 draft, **not** the schema compiled from the current BEP034 pull request, which defines a single `model` datatype with `eq` and `param` suffixes and no such directories. TVBO's own `adapters/bep034.json` declares those same names as filename entities rather than directories, so the three do not agree.
-
-`to_bids` and `from_bids` are a matched pair over that tree, so an export written today reads back today. What they are not is the layout a run writes: `derivatives/tvbo/` above is produced by `tvbo run` and is what the rest of TVBO resolves against. Two layouts therefore coexist, and which one BEP034 ends up describing is open.
+There is one export layout. A run writes `derivatives/tvbo/` as described above, and that is what the rest of TVBO resolves against. An earlier exporter wrote a parallel tree of `net/`, `ts/`, `eq/`, `coord/` and `map/` directories taken from a draft no current BEP034 artifact defines; it has been removed rather than left to imply a second answer.
 
 ## See Also
 

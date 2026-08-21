@@ -430,7 +430,7 @@ enums:
         description: "Inputs the study did not compute: connectomes, atlases, empirical data."
       original_study:
         description: >-
-          Material deposited by the work being reproduced, kept apart from the study's own
+          Material published by the work being reproduced, kept apart from the study's own
           inputs so it is never mistaken for an output.
       raw_bids:
         description: "An input that is itself a BIDS raw dataset, mounted rather than copied."

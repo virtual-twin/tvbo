@@ -15,14 +15,10 @@ from scipy.sparse import coo_matrix, csr_matrix
 def resolve_staged_path(path) -> Path:
     """Resolve an artifact path against a packed kit's staging directory.
 
-    A frozen backend script carries the absolute path its author read. A packed kit copies
-    every artifact that script loads — sourced/produced observer constants and sourced model
-    or coupling parameters alike — into its own ``constants/`` directory, keyed by basename.
-    When the author's path is absent, as it is on any other machine, the file is looked up
-    under ``$TVBO_CONSTANTS_DIR`` and then the run directory's ``constants/``.
+    A frozen backend script carries the absolute path its author read. A packed kit copies every artifact that script loads — sourced/produced observer constants and sourced model or coupling parameters alike — into its own ``constants/`` directory, keyed by basename.
+    When the author's path is absent, as it is on any other machine, the file is looked up under ``$TVBO_CONSTANTS_DIR`` and then the run directory's ``constants/``.
 
-    An existing path is returned untouched, so a run on the authoring machine never consults
-    the staging directory and cannot pick up a same-named file by accident.
+    An existing path is returned untouched, so a run on the authoring machine never consults the staging directory and cannot pick up a same-named file by accident.
     """
     p = Path(path)
     if p.exists():

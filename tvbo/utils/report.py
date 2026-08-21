@@ -486,7 +486,7 @@ def divergence_register(source) -> dict:
     classes: dict[str, dict] = {}
     scores = False
     for line in text.splitlines():
-        cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
+        cells = _cells(line) if line.startswith("|") else []
         if cells and cells[0].lower() in ("#", "id"):
             scores = bool(cells) and _MATERIALITY_RE.match(cells[-1]) is not None
             continue
@@ -532,7 +532,7 @@ def report_figure(
         theirs: The published original — one path, or several stacked vertically when the
             paper splits one quantity across scans. None embeds ours alone.
         stage: Where to compose the A/B. Defaults to the layout's own place for it, which
-            sits under the deposit whose figure it embeds, so a composite is covered by the
+            sits under the original-study directory whose figure it embeds, so a composite is covered by the
             rule that keeps the original out of the repository.
         credit: Attribution over the original, e.g. ``"Pang et al. 2023 (c)"``.
         label: Qualifier after "TVBO replication", e.g. the parcellation or backend.
@@ -1101,6 +1101,8 @@ def event_table(events, derivative_notation="dot"):
     """Markdown table of a model's events (spike conditions, stimuli, resets).
 
     An event is part of the model's definition — a stimulus protocol is not decoration — so it belongs in the report beside the state equations. Its condition and effect are rendered symbolically like every other equation.
+
+    A continuous event may declare ``affect_negative``, a separate effect for the downcrossing; it gets its own column, which drops out for the usual case where one effect serves both crossings.
     """
     from sympy import sympify
 
@@ -1129,11 +1131,14 @@ def event_table(events, derivative_notation="dot"):
                 str(slot(ev, "event_type", "") or ""),
                 _expr(ev, "condition"),
                 _expr(ev, "equation", "effect", "affect"),
+                _expr(ev, "affect_negative"),
                 ", ".join(f"{p} = {format_number(slot(v, 'value', ''))}" for p, v in name_items(params)) if params else "",
                 slot(ev, "description", "") or slot(ev, "label", "") or "",
             ]
         )
-    return table_or_prose(["Event", "Type", "Condition", "Effect", "Parameters", "Description"], rows)
+    return table_or_prose(
+        ["Event", "Type", "Condition", "Effect", "Effect on downcrossing", "Parameters", "Description"], rows
+    )
 
 
 def state_variable_table(svars):
@@ -1280,6 +1285,32 @@ def experiment_models(experiment):
     catalogue = dict(name_items(slot(net, "dynamics", None)))
     out, seen = [], set()
 
+    def _resolve_standard_type(model):
+        """A component whose equations live behind a standard `neuroml:` iri, made symbolic.
+
+        Such a component (an ``expOneSynapse`` AMPA/GABA receptor) declares parameters only;
+        rendered as-is its model card shows a symbol table with no mathematics. When the canonical LEMS dynamics of its type are indexed, return an enriched copy carrying them — state, current, spike affect — under the component's own name and parameters.
+        """
+        iri = str(slot(model, "iri", "") or "")
+        if not iri.startswith("neuroml:"):
+            return model
+        if dict(name_items(slot(model, "state_variables", {}) or {})):
+            return model
+        from tvbo import datamodel as dm
+        from tvbo.adapters.neuroml import standard_type_dynamics
+
+        spec = standard_type_dynamics(iri.split(":", 1)[1])
+        if spec is None:
+            return model
+        return dm.Dynamics(
+            name=slot(model, "name", None),
+            label=slot(model, "label", None),
+            description=slot(model, "description", None),
+            iri=iri,
+            parameters={str(k): p for k, p in name_items(slot(model, "parameters", {}) or {})},
+            **spec,
+        )
+
     def _add(model):
         if isinstance(model, str):
             model = catalogue.get(model)
@@ -1289,7 +1320,7 @@ def experiment_models(experiment):
         if key in seen:
             return
         seen.add(key)
-        out.append(model)
+        out.append(_resolve_standard_type(model))
         for _, p in name_items(slot(model, "parameters", {}) or {}):
             ref = slot(p, "value", None)
             if isinstance(ref, str) and catalogue:
@@ -1335,7 +1366,7 @@ def model_families(experiments):
     A **family** is one system: its first model is written out in full, and every later model in it contributes only its :func:`model_delta`, the way Jansen1995 §3.3 adds a flash stimulus by printing Eq. 18 alone instead of reprinting the six-equation column.
     Two models share a family when they span the same state variables, which also settles the case a delta cannot: a model that introduces the *entire* state is not a variant but a second system — Pang2023's mass model against its wave field, Koller2024's Jansen–Rit against its Kuramoto — and starts a family of its own, printed in full.
 
-    Membership is tested by **subset-or-superset** of the family's first model, not by equality and not by mere overlap. Equality splits Jansen1995's delayed column off from the column it extends (it only adds ``z0``/``z1``); bare overlap goes wrong the other way and merges genuinely unrelated systems that happen to share auxiliary state — Pang2023's wave field and its BEI mass model both carry the four Balloon–Windkessel haemodynamic variables, and overlap presented the mass model, which the paper never even deposited, as a *variant* of the wave field.
+    Membership is tested by **subset-or-superset** of the family's first model, not by equality and not by mere overlap. Equality splits Jansen1995's delayed column off from the column it extends (it only adds ``z0``/``z1``); bare overlap goes wrong the other way and merges genuinely unrelated systems that happen to share auxiliary state — Pang2023's wave field and its BEI mass model both carry the four Balloon–Windkessel haemodynamic variables, and overlap presented the mass model, which the paper never even published, as a *variant* of the wave field.
 
     Returns one namespace per family, in the order the experiments declare them, with ``label``, ``base`` and ``variants`` (each a namespace of ``model``, ``experiments`` and, for a variant, its ``delta`` against the base), plus the family's own ``experiments`` and ``shared_parameters`` — the parameter names every member defines, which are the only ones an experiment table can compare without leaving holes.
     """

@@ -1,20 +1,10 @@
 """The ASCII spec-to-cortex portrait a bare ``tvbo`` invocation prints.
 
-A model spec on the left comes apart and reassembles on the right as a cortical
-surface drawn out of the spec's own characters — the terminal form of bsplot's
-``AsciiSpecPortrait`` showcase.
+A model spec on the left comes apart and reassembles on the right as a cortical surface drawn out of the spec's own characters — the terminal form of bsplot's ``AsciiSpecPortrait`` showcase.
 
-The cortex *geometry* is shipped precomputed: :data:`ASSET` is a luminance grid
-(binarised curvature, shaded by the lighting) rendered once by
-:func:`build_asset` from ``bsplot.render_surf_ascii``. Printing the portrait
-therefore costs one file read and no scientific imports — the spec supplies only
-the glyphs, and the grid is box-resampled to whatever the terminal is wide
-enough for.
+The cortex *geometry* is shipped precomputed: :data:`ASSET` is a luminance grid (binarised curvature, shaded by the lighting) rendered once by :func:`build_asset` from ``bsplot.render_surf_ascii``. Printing the portrait therefore costs one file read and no scientific imports — the spec supplies only the glyphs, and the grid is box-resampled to whatever the terminal is wide enough for.
 
-Each cell's glyph is picked from an ink ramp built out of the spec's own
-character set, so the 3-D form reads through glyph density (as it does in
-``plot_surf_ascii``) as well as through the shaded colour, and every landed
-glyph can fly in from a real occurrence of that same character in the text.
+Each cell's glyph is picked from an ink ramp built out of the spec's own character set, so the 3-D form reads through glyph density (as it does in ``plot_surf_ascii``) as well as through the shaded colour, and every landed glyph can fly in from a real occurrence of that same character in the text.
 """
 
 from __future__ import annotations
@@ -37,15 +27,10 @@ LOGO_ASSET = Path(files("tvbo")) / "data" / "media" / "logo_ascii.txt"
 LOGO_SVG = Path(files("tvbo")) / "data" / "tvb_logo.svg"
 DEFAULT_SPEC = Path(files("tvbo")) / "database" / "models" / "Jansen1995.yaml"
 
-# Fallback character order, light -> heavy by ink coverage; mirrors the "ascii"
-# entry of ``bsplot.GLYPH_RAMPS``. The shipped asset carries a measured order
-# covering all of printable ASCII, so no spec character is left off the ramp.
+# Fallback character order, light -> heavy by ink coverage; mirrors the "ascii" entry of ``bsplot.GLYPH_RAMPS``. The shipped asset carries a measured order covering all of printable ASCII, so no spec character is left off the ramp.
 INK_ORDER = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"
 
-# ``ink`` draws the intact spec; a cell's tone (0 shadowed sulcus .. 1 lit
-# crest) maps between ``lo`` and ``hi`` grey. On paper that runs the other way
-# — a lit crown is pale and it is the sulci that carry the ink — which is also
-# why the glyph ramp flips with the background (see :func:`spec_ramp`).
+# ``ink`` draws the intact spec; a cell's tone (0 shadowed sulcus .. 1 lit crest) maps between ``lo`` and ``hi`` grey. On paper that runs the other way — a lit crown is pale and it is the sulci that carry the ink — which is also why the glyph ramp flips with the background (see :func:`spec_ramp`).
 THEMES = {
     "dark": {"ink": (112, 120, 134), "lo": 38, "hi": 252, "accent": (115, 172, 205), "page": (13, 17, 23), "lift": 0.22},
     "light": {"ink": (112, 109, 104), "lo": 26, "hi": 202, "accent": (45, 92, 122), "page": (255, 255, 255), "lift": 0.0},
@@ -53,9 +38,7 @@ THEMES = {
 
 # Coverage ramp for the logo when the output cannot carry ``▀``/``▄``.
 SHADES_ASCII = " .:*#"
-# The wordmark, drawn in the brand blue. The real artwork is a raster mark; at
-# a dozen character cells it turns to mush, so the banner spells the name out
-# instead — ``hero(mark="logo")`` draws the artwork for anyone re-testing it.
+# The wordmark, drawn in the brand blue. The real artwork is a raster mark; at a dozen character cells it turns to mush, so the banner spells the name out instead — ``hero(mark="logo")`` draws the artwork for anyone re-testing it.
 LOGO = (
     "█████ █   █ ████   ███ ",
     "  █   █   █ █   █ █   █",
@@ -66,14 +49,10 @@ LOGO = (
 TAGLINE = "The Virtual Brain Ontology"
 TAGLINE_SHORT = "Virtual Brain Ontology"
 
-# Letters ordered light -> heavy: bsplot's "letters" ramp without its one
-# non-ASCII glyph. Hand-tuned, so a small cortex reads far cleaner out of it
-# than out of whatever characters a given spec happens to contain.
+# Letters ordered light -> heavy: bsplot's "letters" ramp without its one non-ASCII glyph. Hand-tuned, so a small cortex reads far cleaner out of it than out of whatever characters a given spec happens to contain.
 GLYPH_RAMP = " .:-ilcvzsoaeutnxwmqpdbkhAOQHXNBM@"
 
-# The banner's cortex is small, so it is drawn from the coarser shading ramp
-# (bsplot's "blocks"): at a dozen rows the tonal contrast is what makes it read
-# as a brain, where letterforms only add noise.
+# The banner's cortex is small, so it is drawn from the coarser shading ramp (bsplot's "blocks"): at a dozen rows the tonal contrast is what makes it read as a brain, where letterforms only add noise.
 SURFACE_RAMP = " .:-=+*#%@"
 
 GAMMA = 1.25
@@ -154,8 +133,7 @@ def _ease(t: float) -> float:
 class Canvas:
     """A character grid whose cells carry a glyph, a colour, and maybe a backdrop.
 
-    The backdrop is what lets a half-block glyph hold two pixels: the glyph's
-    colour paints the top half, the backdrop the bottom.
+    The backdrop is what lets a half-block glyph hold two pixels: the glyph's colour paints the top half, the backdrop the bottom.
     """
 
     def __init__(self, width: int, height: int):
@@ -236,8 +214,7 @@ def load_logo(path: Path | str = LOGO_ASSET) -> Logo:
 def resample_logo(logo: Logo, cols: int, rows: int | None = None) -> Logo:
     """Box-average the logo to *cols* pixels wide, keeping its aspect by default.
 
-    The pixel height stays even, so every character cell keeps a top and a
-    bottom half to paint.
+    The pixel height stays even, so every character cell keeps a top and a bottom half to paint.
     """
     rows = rows if rows is not None else max(2, 2 * round(logo.height * cols / logo.width / 2))
     if cols == logo.width and rows == logo.height:
@@ -260,8 +237,7 @@ def resample_logo(logo: Logo, cols: int, rows: int | None = None) -> Logo:
 def _over(theme: dict, rgb: tuple[int, int, int], alpha: float) -> tuple[float, float, float]:
     """Composite a logo pixel over the page it is printed on.
 
-    ``lift`` brightens the mark toward white first: the logo's teal is drawn
-    for paper and sinks into a dark terminal untouched.
+    ``lift`` brightens the mark toward white first: the logo's teal is drawn for paper and sinks into a dark terminal untouched.
     """
     page, lift = theme["page"], theme["lift"]
     ink = [v + (255 - v) * lift for v in rgb]
@@ -271,10 +247,8 @@ def _over(theme: dict, rgb: tuple[int, int, int], alpha: float) -> tuple[float, 
 def _draw_logo(canvas: Canvas, logo: Logo, theme: dict, *, top: int = 0, blocks: bool = True) -> None:
     """Paint the logo, two pixel rows per character cell.
 
-    ``▀`` carries the upper pixel in the glyph colour and the lower one as its
-    backdrop; a cell with only one lit half uses ``▀``/``▄`` and no backdrop.
-    Where the output cannot carry those glyphs, one averaged pixel per cell is
-    drawn with an ASCII shade instead.
+    ``▀`` carries the upper pixel in the glyph colour and the lower one as its backdrop; a cell with only one lit half uses ``▀``/``▄`` and no backdrop.
+    Where the output cannot carry those glyphs, one averaged pixel per cell is drawn with an ASCII shade instead.
     """
     for y in range(0, logo.height - 1, 2):
         for x in range(logo.width):
@@ -310,9 +284,7 @@ def _blocks_printable() -> bool:
 class Cortex(NamedTuple):
     """The shipped surface: per-cell lighting and curvature (None = off-surface).
 
-    ``light`` (0 shadow .. 1 lit) carries the 3-D form and picks each cell's
-    glyph off the ink ramp; ``curv`` (0 sulcus .. 1 gyrus) tints it, the way
-    curvature colours a cortical surface plot.
+    ``light`` (0 shadow .. 1 lit) carries the 3-D form and picks each cell's glyph off the ink ramp; ``curv`` (0 sulcus .. 1 gyrus) tints it, the way curvature colours a cortical surface plot.
     """
 
     light: list[list[float | None]]
@@ -351,8 +323,7 @@ def load_cortex(path: Path | str = ASSET) -> Cortex:
 def resample(rows: list[list[float | None]], width: int, height: int) -> list[list[float | None]]:
     """Box-resample the grid to *width* x *height*, keeping a clean silhouette.
 
-    A target cell survives only when :data:`COVERAGE` of its source box is on
-    the surface, so downsampling thins the rim instead of fattening it.
+    A target cell survives only when :data:`COVERAGE` of its source box is on the surface, so downsampling thins the rim instead of fattening it.
     """
     src_h, src_w = len(rows), len(rows[0])
     out = []
@@ -373,9 +344,7 @@ def resample(rows: list[list[float | None]], width: int, height: int) -> list[li
 def spec_ramp(text: str, ink_order: str = INK_ORDER, *, dark: bool = True) -> str:
     """The spec's own characters, ordered lightest-ink to heaviest.
 
-    The cortex is built from exactly these glyphs, so its shading is legible
-    with no colour at all. On a light background the order is flipped, so the
-    shadowed faces are the ones carrying the heaviest ink.
+    The cortex is built from exactly these glyphs, so its shading is legible with no colour at all. On a light background the order is flipped, so the shadowed faces are the ones carrying the heaviest ink.
     """
     present = set(text)
     ramp = "".join(ch for ch in ink_order if ch in present)
@@ -426,9 +395,7 @@ def compose(
 ) -> Canvas:
     """Draw the portrait: spec (left), letters in flight, cortex (right).
 
-    With *phase* given the letters are mid-dissolve — every glyph rests on its
-    spec position until its departure beat, then flies to its cortex cell — so
-    stepping *phase* from 0 to 1 animates the spec becoming the brain.
+    With *phase* given the letters are mid-dissolve — every glyph rests on its spec position until its departure beat, then flies to its cortex cell — so stepping *phase* from 0 to 1 animates the spec becoming the brain.
     """
     th = THEMES[theme]
     term = shutil.get_terminal_size((100, 30))
@@ -485,8 +452,7 @@ def _unclaimed(sources: dict, landed: list) -> list[tuple[str, int, int]]:
     """Spec glyphs no cortex cell asked for — they lift off and merge in anyway.
 
     The cortex needs more glyphs than the spec has, so most letters multiply;
-    a few characters sit at a lighting the surface never reaches. Flying them
-    into the stream is what lets the spec come apart completely.
+    a few characters sit at a lighting the surface never reaches. Flying them into the stream is what lets the spec come apart completely.
     """
     claimed = {(sx, sy) for *_, sx, sy, _ in landed}
     return [(ch, x, y) for ch, spots in sources.items() for x, y in spots if (x, y) not in claimed]
@@ -495,10 +461,7 @@ def _unclaimed(sources: dict, landed: list) -> list[tuple[str, int, int]]:
 def _landed(cortex: Cortex, ramp: str, sources, brain_w, brain_h, x_off, theme):
     """One entry per on-surface cell: ``(char, x, y, tone, sx, sy, index)``.
 
-    The glyph comes from *ramp* at that cell's lighting, so the 3-D form reads
-    with no colour at all; *tone* folds the curvature tint into that lighting
-    for the colour. ``sx, sy`` is then where a *matching* character sits in the
-    spec block, so a 'C' lands from a 'C' in the text.
+    The glyph comes from *ramp* at that cell's lighting, so the 3-D form reads with no colour at all; *tone* folds the curvature tint into that lighting for the colour. ``sx, sy`` is then where a *matching* character sits in the spec block, so a 'C' lands from a 'C' in the text.
     """
     light = _restretch(resample(cortex.light, brain_w, brain_h))
     curv = resample(cortex.curv, brain_w, brain_h)
@@ -531,8 +494,7 @@ def _landed(cortex: Cortex, ramp: str, sources, brain_w, brain_h, x_off, theme):
 def _restretch(cells: list[list[float | None]]) -> list[list[float | None]]:
     """Rescale the lighting back to a full 0..1 range after resampling.
 
-    Averaging over a source box pulls every cell toward the mean, so a small
-    cortex would otherwise come out flat and uniformly heavy.
+    Averaging over a source box pulls every cell toward the mean, so a small cortex would otherwise come out flat and uniformly heavy.
     """
     vals = [v for row in cells for v in row if v is not None]
     if not vals:
@@ -545,8 +507,7 @@ def _restretch(cells: list[list[float | None]]) -> list[list[float | None]]:
 def _arc(sx: int, sy: int, tx: int, ty: int, f: float) -> tuple[int, int]:
     """A glyph's cell at flight fraction *f*, bowed upward off the direct line.
 
-    Character cells are twice as tall as wide, so the curve is computed in
-    square units and mapped back.
+    Character cells are twice as tall as wide, so the curve is computed in square units and mapped back.
     """
     sy2, ty2 = sy * SIZE["char_aspect"], ty * SIZE["char_aspect"]
     dx, dy = tx - sx, ty2 - sy2
@@ -564,8 +525,7 @@ def _arc(sx: int, sy: int, tx: int, ty: int, f: float) -> tuple[int, int]:
 def _draw_flow(canvas: Canvas, th: dict, landed: list, x_min: int, x_max: int) -> None:
     """Scatter a sample of the stream mid-flight, in the gutter between the two.
 
-    Confining the sample to that band keeps the spec block readable and leaves
-    the cortex silhouette standing clear of its own letters.
+    Confining the sample to that band keeps the spec block readable and leaves the cortex silhouette standing clear of its own letters.
     """
     for ch, x, y, tone, sx, sy, k in landed:
         if _hash01(k * 2654435761) >= FLOW_FRACTION:
@@ -588,12 +548,7 @@ def hero(
 ) -> str:
     """The bare-``tvbo`` banner: the name on the left, a cortex on the right.
 
-    The two columns share a height and the pair spans the full width — the mark
-    at the left edge, the cortex at the right. The cortex is the shipped
-    surface shaded through :data:`SURFACE_RAMP`, which reads as a brain at this
-    size where a spec's own characters would not; ``tvbo brain`` is the
-    full-size, spec-drawn portrait. Pass ``mark="logo"`` to draw the raster
-    artwork instead of the wordmark.
+    The two columns share a height and the pair spans the full width — the mark at the left edge, the cortex at the right. The cortex is the shipped surface shaded through :data:`SURFACE_RAMP`, which reads as a brain at this size where a spec's own characters would not; ``tvbo brain`` is the full-size, spec-drawn portrait. Pass ``mark="logo"`` to draw the raster artwork instead of the wordmark.
     """
     th = THEMES[theme]
     mode = _color_mode(color_mode)
@@ -631,9 +586,7 @@ def hero(
 def _hero_layout(cols: int, left_w: int, left_rows: int, cortex_ratio: float) -> tuple[int, int]:
     """Pick ``(rows, cortex_width)`` — the tallest banner that fits both columns.
 
-    The cortex keeps its own proportions, so the shared row count sets its
-    width; the left column is centred in whatever band that gives. Below the
-    width where both fit, the cortex gives way and the name stands alone.
+    The cortex keeps its own proportions, so the shared row count sets its width; the left column is centred in whatever band that gives. Below the width where both fit, the cortex gives way and the name stands alone.
     """
     floor = max(HERO["min_rows"], left_rows)
     for rows in range(HERO["max_rows"], floor - 1, -1):
@@ -713,10 +666,7 @@ def build_asset(
 ) -> Cortex:
     """Re-render the cortex geometry with bsplot and return (or write) the grid.
 
-    Two ``render_surf_ascii`` calls do all the anatomy: one shades the plain
-    surface — that lighting is the 3-D form — and one paints the binarised
-    curvature unshaded, giving the gyrus/sulcus tint. Both need bsplot and the
-    template data, which is why the result is shipped rather than recomputed.
+    Two ``render_surf_ascii`` calls do all the anatomy: one shades the plain surface — that lighting is the 3-D form — and one paints the binarised curvature unshaded, giving the gyrus/sulcus tint. Both need bsplot and the template data, which is why the result is shipped rather than recomputed.
     """
     from bsplot import render_surf_ascii
 
@@ -745,9 +695,7 @@ def _crop(cortex: Cortex) -> Cortex:
 def _measure_ink_order() -> str:
     """Printable ASCII ordered by how much ink each glyph puts on a cell.
 
-    Measured once, at asset-build time, by rasterising the characters in a
-    monospace face — so every character a spec can contain has a place on the
-    ramp, instead of only those in the hand-written :data:`INK_ORDER`.
+    Measured once, at asset-build time, by rasterising the characters in a monospace face — so every character a spec can contain has a place on the ramp, instead of only those in the hand-written :data:`INK_ORDER`.
     """
     import matplotlib.font_manager as fm
     from PIL import Image, ImageDraw, ImageFont
@@ -777,12 +725,7 @@ def _normalised(grid) -> list[list[float | None]]:
 def build_logo_asset(*, source: Path | str | None = None, cols: int = 28, out: Path | str | None = None) -> Logo:
     """Rasterise the TVB-O logo into a pixel grid and return (or write) it.
 
-    Two pixel rows per character cell, which is what the half-block glyphs the
-    banner draws with can carry. The mark is supersampled: each target pixel
-    averages its source block for coverage but takes the *dominant* brand
-    colour rather than a blend, so edges stay crisp instead of smearing into
-    intermediate tones. The artwork lives with the docs rather than in the
-    package, so the *asset* is what ships.
+    Two pixel rows per character cell, which is what the half-block glyphs the banner draws with can carry. The mark is supersampled: each target pixel averages its source block for coverage but takes the *dominant* brand colour rather than a blend, so edges stay crisp instead of smearing into intermediate tones. The artwork lives with the docs rather than in the package, so the *asset* is what ships.
     """
     from PIL import Image
 

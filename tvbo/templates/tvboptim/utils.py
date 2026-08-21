@@ -28,6 +28,59 @@ from tvbo.utils import _NETWORK_EDGE_ALIASES, as_list, edge_label  # noqa: F401 
 
 # Basic Helpers
 
+# Import roots whose callables are JAX-traceable, so a pipeline stage calling one still fits inside a jitted/vmapped observable; anything else is host code (numpy/scipy/sklearn/...).
+_JAX_TRACEABLE_MODULE_ROOTS = ("jax", "jnp", "jaxlib", "tvboptim", "tvbo", "equinox", "optax", "diffrax")
+
+
+def pipeline_stage_is_host(stage: Any) -> bool:
+    """True when an observation pipeline stage calls code that cannot trace under ``jit``.
+
+    A stage's ``callable`` is emitted as ``<module>.<name>(...)`` inside the observation monitor, so whether the whole observable can be jitted/vmapped is decided by the module it names: a JAX-native one (``jax.scipy.signal.fftconvolve``, ``tvboptim.observations.observation.compute_fc``) traces, a host one (``scipy.signal``, ``numpy``) does not. A stage with no ``callable`` is a rendered equation and always traces.
+    """
+    call = getattr(stage, "callable", None)
+    module = str(getattr(call, "module", "") or "") if call is not None else ""
+    if not module:
+        return False
+    return module.split(".", 1)[0] not in _JAX_TRACEABLE_MODULE_ROOTS
+
+
+def has_host_pipeline(observations: Any) -> bool:
+    """True when any of *observations* reaches a host callable in its pipeline."""
+    values = observations.values() if hasattr(observations, "values") else observations
+    return any(pipeline_stage_is_host(stage) for obs in values for stage in (getattr(obs, "pipeline", None) or []))
+
+
+def active_stimulus_events(experiment: Any) -> list:
+    """Return the events this experiment integrates as time-domain external inputs.
+
+    Selects stimulus/continuous/discrete events from ``experiment.events``, excluding any event that a ``fisher`` analysis observation names as its ``target``: that event is metadata for the linear-response computation (stimulated variable, node mask, swept amplitude) and is never integrated in time, so it must not emit an ExternalInput class.
+    Raises ``ValueError`` when an active event's name cannot spell the ``<name>Input`` class the stimulus template emits for it, which would otherwise land as a syntax error in the generated module rather than as a message about the recipe.
+    """
+    items = list(experiment.events.items()) if getattr(experiment, "events", None) else []
+
+    def _is_input(ev):
+        et = str(getattr(ev, "event_type", "stimulus"))
+        return ("stimul" in et) or (et in ("continuous", "discrete"))
+
+    targets = set()
+    for obs in (getattr(experiment, "observations", None) or {}).values():
+        an = getattr(obs, "analysis", None)
+        if an is not None and str(getattr(an, "type", "") or "") == "fisher":
+            t = getattr(an, "target", None)
+            if t:
+                targets.add(str(t))
+
+    active = [ev for k, ev in items if _is_input(ev) and str(k) not in targets]
+
+    for ev in active:
+        cn = str(ev.name) + "Input"
+        if not cn.isidentifier():
+            raise ValueError(
+                f"stimulus event {str(ev.name)!r} emits input class {cn!r}, which is not a "
+                f"Python identifier. Name the event so that '<name>Input' is one."
+            )
+    return active
+
 
 def safe_name(name: str) -> str:
     """Convert name to valid Python identifier (preserves case).
@@ -2114,6 +2167,9 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
                     "n_freq": int(p.get("n_freq", 128)),
                 }
             )
+        elif atype == "stability":
+            # Leading real part of the operating-point Jacobian's spectrum (branch stability).
+            obs_specs.append({"type": "stability", "name": name})
         elif atype == "fisher":
             _target = str(getattr(an, "target", "") or "")
             ev = (events or {}).get(_target)
@@ -2125,6 +2181,13 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
                     f"target_regions)."
                 )
             stim_var = str(getattr(ev, "name", None) or getattr(ev, "target_variable", None))
+            # Optional `profile: <variable>` parameter: the settled value of that variable per node at each ΔI (the evoked-response profile) is returned alongside the FI curve.
+            _prof = str(p.get("profile", "") or "")
+            _prof_expr = None
+            if _prof:
+                import sympy as _sp
+
+                _prof_expr = _sp.Symbol(_prof) if _prof in (ctx.get("svs") or []) else constraint_expr(model, _prof)
             obs_specs.append(
                 {
                     "type": "fisher",
@@ -2136,6 +2199,8 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
                     "dI_lo": float(p.get("dI_lo", 0.02)),
                     "dI_hi": float(p.get("dI_hi", 0.1)),
                     "dI_step": float(p.get("dI_step", 0.006)),
+                    "profile": _prof,
+                    "profile_expr": _prof_expr,
                 }
             )
     cexpr = constraint_expr(model, str(op_constraint["constraint_variable"])) if op_constraint else None
@@ -2172,7 +2237,7 @@ def render_analysis_observations(
     lines: list[str] = []
 
     # Linear-response analysis (covariance / psd / fisher): all share ONE deterministic operating point, so the whole block — vector field, Jacobian, operating point (a noise-off settle, or a constraint solve for a Deco-FIC-style tuned parameter), and each observable's linear algebra — is emitted by ONE Mako orchestrator (``lr_analysis_block``): the template owns the structure AND its orchestration (partial choice, ordering, per-observable loop). Python only RESOLVES the spec (``_lr_analysis_spec``) — no Python string-emit of code bodies.
-    _LR_TYPES = {"covariance", "psd", "fisher"}
+    _LR_TYPES = {"covariance", "psd", "fisher", "stability"}
     _lr_obs = {n: a for n, a in analysis_obs.items() if str(getattr(a.analysis, "type", "") or "") in _LR_TYPES}
     if _lr_obs and model is None:
         lines += [f"# {n}: {str(a.analysis.type)} analysis needs the model threaded — skipped." for n, a in _lr_obs.items()]
@@ -2649,7 +2714,7 @@ def derived_equation_sample_period(dobs: Any, all_observations: Any, step_size: 
 def is_network_observation(obs: Any) -> bool:
     """Check if observation is bound from data rather than the simulation state.
 
-    True when the source starts with ``network.observations``, ``network.edges`` (data carried by the model network), or ``dataset.subject`` (a per-subject empirical target resolved from the dataset). All three are materialized into a module-level constant and bound at ``run_experiment`` time via ``_bind_network_observations``, not recorded from the solver. The slot is multivalued; accept both scalar and list forms.
+    True when the source starts with ``network.observations`` or ``dataset.subject`` (data targets), or when a PIPELINE-LESS observation sources a connectome matrix (``network.weight`` / ``network.edges.<label>``, resolved through ``edge_label`` — matching the observation template's network-edge branch). These are materialized into a module-level constant and bound at ``run_experiment`` time, not recorded from the solver. A matrix source WITH a pipeline stays a simulation-side monitor class whose callable receives the matrix as an argument, so it is NOT classified here. The slot is multivalued; accept both scalar and list forms.
     """
     if not obs:
         return False
@@ -2660,10 +2725,13 @@ def is_network_observation(obs: Any) -> bool:
         items = source
     else:
         items = [source]
+    has_pipeline = bool(getattr(obs, "pipeline", None))
     for item in items:
         name = item.name if hasattr(item, "name") else item
         s = str(name)
-        if s.startswith("network.observations") or s.startswith("network.edges") or s.startswith("dataset.subject"):
+        if s.startswith("network.observations") or s.startswith("dataset.subject"):
+            return True
+        if not has_pipeline and s.startswith("network.") and edge_label(s) is not None:
             return True
     return False
 
@@ -3550,8 +3618,8 @@ def collect_network_edge_arrays(experiment: Any) -> dict[str, list]:
     return arrays
 
 
-# Network node references (network.positions/instrength → per-node vectors) Node-level analogue of the edge-matrix refs above: a callable argument or an observer (Observation.dynamics) parameter may reference a per-node vector derived from the network — its region centroids (for mesh building) or its in-strength (weighted in-degree). Both embed once as a module constant, exactly like a connectome matrix, so any backend consumes them without a live Network object.
-_NETWORK_NODE_MEASURES = ("positions", "instrength")
+# Network node references (network.positions/instrength/labels → per-node vectors) Node-level analogue of the edge-matrix refs above: a callable argument or an observer (Observation.dynamics) parameter may reference a per-node vector derived from the network — its region centroids (for mesh building), its in-strength (weighted in-degree), or its region labels. Each embeds once as a module constant, exactly like a connectome matrix, so any backend consumes them without a live Network object.
+_NETWORK_NODE_MEASURES = ("positions", "instrength", "labels")
 
 
 def node_label(ref: Any) -> str | None:

@@ -17,6 +17,7 @@ from tvbo.templates.tvboptim.utils import (
     get_all_observations_from_algo, network_axis_leaf, network_leaf_is_matrix,
     initial_conditions_axis_sv, noise_axis_param,
     graph_selection, observation_dims, parameter_keypath,
+    has_host_pipeline, pipeline_stage_is_host,
 )
 import numpy as np
 import re
@@ -287,9 +288,10 @@ jax_platform = _jax_platform_of(accelerator)
 enable_x64 = precision == 'float64'
 random_seed = int(exec_config.random_seed) if exec_config and exec_config.random_seed else 0
 
-# Build observations dict from experiment.observations (analysis observations are
-# handled by their own path, not the raw/network monitor categorisation).
-observations_dict = {n: o for n, o in experiment.observations.items() if getattr(o, 'analysis', None) is None} if experiment.observations else {}
+# experiment.observations minus the ones with their own path: `analysis` diagnostics and cross-trial `reduce: trials` reductions are not raw/network monitors.
+observations_dict = {n: o for n, o in experiment.observations.items()
+                     if getattr(o, 'analysis', None) is None
+                     and str(getattr(o, 'reduce', '') or '') != 'trials'} if experiment.observations else {}
 
 # Categorize observations using utils
 network_observation_names, observation_names = get_observation_refs(observations_dict)
@@ -425,17 +427,9 @@ for sv_name, sv in model.state_variables.items():
         }
 
 # === Events metadata (stimuli and other time-dependent inputs) ===
-# Schema: experiment.events is multivalued dict of Event objects
-# Each stimulus-type event becomes an AbstractExternalInput, available as a variable in dfun
-events_list = list(experiment.events.values()) if experiment.events else []
-# Events that become an AbstractExternalInput (a variable available in the dfun):
-# open-loop 'stimulus'/'stimulation' time functions AND closed-loop 'continuous'
-# events, whose onset is triggered by a state condition crossing zero (a stateful
-# ExternalInput that arms on the crossing and then emits its affect waveform).
-def _is_external_input_event(ev):
-    et = str(getattr(ev, 'event_type', 'stimulus'))
-    return ('stimul' in et) or (et in ('continuous', 'discrete'))
-stimulus_events = [ev for ev in events_list if _is_external_input_event(ev)]
+# Each active stimulus/continuous event becomes an AbstractExternalInput in the dfun; the shared resolver drops fisher-analysis target events, which are linear-response metadata and never integrated.
+from tvbo.templates.tvboptim.utils import active_stimulus_events
+stimulus_events = active_stimulus_events(experiment)
 has_stimulus_events = len(stimulus_events) > 0
 
 # A stimulus event whose signal is an iid per-step draw (an event parameter with
@@ -450,6 +444,11 @@ def _event_is_stochastic(ev):
             return True
     return False
 has_stochastic_stimulus = any(_event_is_stochastic(ev) for ev in stimulus_events)
+
+# A `subset` weight_distribution pre-samples one random-region mask per trial; the trial ensemble selects a row by writing state.external.<name>.trial.
+subset_mask_events = [ev for ev in stimulus_events
+                      if getattr(ev, 'weight_distribution', None) is not None
+                      and str(getattr(ev.weight_distribution, 'name', '') or '').lower() == 'subset']
 
 # External-input scope keys for the shared dotted-ref resolver AND for exploration/free-parameter axes: a swept `<event>.<param>` writes to `state.external.<event>.<param>`, where the emitted ExternalInput reads it, not to `state.dynamics`.
 external_input_keys = {str(ev.name) for ev in stimulus_events}
@@ -645,11 +644,33 @@ def _lyap_meta(_rn, _ctx):
             'segment_time': float(_ap.get('segment_time', 1.0)),
             'n_steps': int(_ap.get('n_steps', _ap.get('n', 10))),
             'n_exponents': int(_ap.get('n_exponents', _ap.get('k', 1)))}
-observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment) and n not in analysis_observation_names}
-derived_observations_dict = {n: o for n, o in _all_observations.items() if _is_derived(o, experiment) and n not in analysis_observation_names}
+# `reduce: trials` consumes another observation's TRIAL-STACKED output (n_trials, ...) host-side after the ensemble map, so it is excluded from the per-solve observers.
+trial_reduced_dict = {n: o for n, o in _all_observations.items()
+                      if str(getattr(o, 'reduce', '') or '') == 'trials'}
+trial_reduced_names = set(trial_reduced_dict.keys())
+for _trn, _tro in trial_reduced_dict.items():
+    # as_list: `source` tolerates the scalar form, and iterating a bare string yields one "source" per character.
+    _tr_sources = [str(getattr(_s, 'name', None) or _s) for _s in as_list(getattr(_tro, 'source', None) or [])]
+    if not _tr_sources or any(_s not in _all_observations for _s in _tr_sources):
+        raise ValueError(
+            f"observation {_trn!r} declares reduce: trials, so every `source` must name another "
+            f"observation (its per-trial values are what gets stacked); got {_tr_sources!r}. "
+            f"Sourcing a raw state variable would stack full trajectories across all trials."
+        )
+    if len(_tr_sources) != 1 or len(list(getattr(_tro, 'pipeline', None) or [])) != 1:
+        raise ValueError(
+            f"observation {_trn!r} (reduce: trials) supports exactly one source observation and "
+            f"one pipeline stage."
+        )
+
+observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment) and n not in analysis_observation_names and n not in trial_reduced_names}
+derived_observations_dict = {n: o for n, o in _all_observations.items() if _is_derived(o, experiment) and n not in analysis_observation_names and n not in trial_reduced_names}
 derived_observation_names = set(derived_observations_dict.keys())
 # `record: false` marks an observation the recipe computes but does not keep: evaluated per grid point for its dependents, dropped before the sweep stacks the bundle.
 unrecorded_observation_names = {n for n, o in _all_observations.items() if getattr(o, 'record', None) is False}
+
+# True when an observation reaches HOST (non-JAX) pipeline code, which the exploration observable can only run outside jit; a jax-native callable traces and must not cost the sweep its vmap (see utils.pipeline_stage_is_host).
+has_host_pipeline_obs = has_host_pipeline(list(observations.values()) + list(derived_observations_dict.values()))
 
 def get_obs(name):
     """Look up observation by name from observations dict."""
@@ -1162,12 +1183,16 @@ for expl in exploration_list:
             if _s and (str(_s).startswith('network.observations.')
                        or str(_s).startswith('dataset.subject')):
                 _alg_netobs.append(_on)
+        _sp = getattr(_alg, 'simulation_period', None)
+        if _sp is None:
+            raise ValueError(f"Algorithm '{_alg_name}' requires 'simulation_period' in YAML")
         exp_info['algorithms'].append({
             'name': safe_name(_alg_name),
             'n_iterations': int(_nit),
             'hyperparams': _hp,
             'input_names': _alg_inp,
             'network_obs_inputs': _alg_netobs,
+            'simulation_period': float(_sp),
         })
 
     # Search strategy: 'grid' (default, exhaustive) or 'nsga2' (pymoo multi-objective).
@@ -1373,7 +1398,7 @@ for obs_name, obs in observations.items():
 # its import the generated script raises NameError at the first swept cell — the module is
 # never referenced anywhere else, and nothing else in the emit would pull it in.
 derived_obs_modules = set()
-for dobs_name, dobs in derived_observations_dict.items():
+for dobs_name, dobs in list(derived_observations_dict.items()) + list(trial_reduced_dict.items()):
     if dobs.pipeline:
         for stage in dobs.pipeline:
             c = getattr(stage, 'callable', None)
@@ -1792,6 +1817,26 @@ def _sample_initial_conditions(state, key=None):
 % endif
 
 % if network_observation_names:
+<%
+    # Measure-bound observations (network.observations.* / dataset.subject.*) are materialized at run time; a connectome-matrix source is embedded by the observation template and only needs an alias, and every emit site reads both as module-level globals.
+    _measure_bound_obs = sorted(n for n in network_observation_names if n in network_obs_measures)
+
+    def _obs_edge_label(_n):
+        _o = _all_observations.get(_n)
+        for _s in as_list(getattr(_o, 'source', None) or []):
+            _lab = edge_label(str(getattr(_s, 'name', None) or _s))
+            if _lab:
+                return _lab
+        return None
+    _edge_bound_obs = sorted((n, _obs_edge_label(n)) for n in network_observation_names if n not in network_obs_measures)
+    _unbound_obs = [n for n, lab in _edge_bound_obs if lab is None]
+    if _unbound_obs:
+        raise ValueError(
+            f"network observations {_unbound_obs!r} are neither measure-bound "
+            f"(network.observations.* / dataset.subject.*) nor a connectome matrix "
+            f"(network.weight / network.edges.<label>), so nothing would define them."
+        )
+%>
 # ── Network observations (empirical targets carried by the Network) ──────────
 # Declared in YAML via `source: [network.observations.<measure>]`. The name->
 # measure mapping is resolved in Python (SimulationExperiment.
@@ -1799,7 +1844,7 @@ def _sample_initial_conditions(state, key=None):
 # values are materialized at run_experiment() time from the network (or a
 # `network_observations` override).
 _NETWORK_OBS_MEASURES = {${', '.join("'%s': '%s'" % (k, v) for k, v in network_obs_measures.items())}}
-% for _on in sorted(network_observation_names):
+% for _on in _measure_bound_obs:
 ${_on} = None  # network observation <- ${network_obs_measures[_on]}
 % endfor
 
@@ -1808,7 +1853,7 @@ def _bind_network_observations(network_observations=None):
     dict (keyed by observation name). Mirrors how `weights`/`distances` flow
     into the experiment; raises a clear error if a declared one is missing."""
     network_observations = network_observations or {}
-% for _on in sorted(network_observation_names):
+% for _on in _measure_bound_obs:
     global ${_on}
     if '${_on}' in network_observations and network_observations['${_on}'] is not None:
         ${_on} = jnp.asarray(network_observations['${_on}'])
@@ -2171,6 +2216,13 @@ def run_simulation(
 
 <%include file="tvbo-tvboptim-observation.py.mako" />
 
+% if network_observation_names and _edge_bound_obs:
+# A connectome-matrix network observation aliases the constant the observation module just embedded, under its own name — emitted after the include, where that constant comes into existence.
+% for _on, _lab in _edge_bound_obs:
+${_on} = ${edge_const(_lab)}
+% endfor
+% endif
+
 <%
 from tvbo.codegen import render_expression
 
@@ -2376,7 +2428,7 @@ def keep_recorded(obs):
     return Bunch(**kept) if kept else obs
 
 
-def compute_all_observations(result, state, result_transient=None, only=None, network_obs=None, precomputed=None):
+def compute_all_observations(result, state, result_transient=None, only=None, network_obs=None, precomputed=None, analysis_names=None, network=None):
     # ``only`` (a set of observation names) restricts computation to those observations
     # plus, by the caller's closure, whatever they derive from. Default None computes
     # every declared observation (unchanged behaviour). The jitted per-grid-point
@@ -2575,6 +2627,17 @@ def compute_all_observations(result, state, result_transient=None, only=None, ne
         obs.${dobs_name} = ${jaxcode(pipeline_equation, pipeline_equation_params)}
 % endif
 % endfor
+% if analysis_observations_dict:
+
+    # Analysis observations requested by name (a sweep's `record:` list): evaluated at THIS
+    # call's state, so a per-cell observable records the diagnostic at each swept operating
+    # point. Opt-in via `analysis_names` — the base run computes them once on its own path.
+    # `network` is a parameter: this function is module level, so a global read would raise NameError.
+    if analysis_names:
+        for _an_name, _an_val in compute_analysis_observations(state, network, result_transient).items():
+            if _an_name in analysis_names:
+                obs[_an_name] = _an_val
+% endif
 
     return obs
 
@@ -2898,6 +2961,8 @@ def run_optimization(
 
     _v_min = min([v for ax in _speed_axes for v in (ax['values'] if 'values' in ax else [ax['lo']])], default=None)
     _v_bound = f"min(_v_build, {_v_min})" if _v_min is not None else "_v_build"
+    # Reset per exploration; the `record:` branch narrows it to that sweep's recorded closure. Every jit/vmap decision here reads `_rec_host or has_host_pipeline_obs`, so an un-jitted observable can never reach ParallelExecution.
+    _rec_host = False
 %>
 def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
     """${expl['label']} - ${grid_desc}."""
@@ -3214,11 +3279,22 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
                 if _sn not in _need:
                     _stack.append(_sn)
     _only_list = sorted(_need)
+    # Jit the whole observable only when no recorded observation reaches a host callable.
+    _rec_host = any(
+        pipeline_stage_is_host(_st)
+        for _n in _only_list
+        for _st in (getattr(_all_observations.get(_n), 'pipeline', None) or [])
+    )
 %>
     # Record a declared list of observations per grid point (derived via
     # compute_all_observations, `analysis` diagnostics via compute_analysis_observations),
     # stacked over the sweep into one array per name.
+% if _rec_host:
+    # Host pipeline callables cannot trace under jit: jit only the solve.
+    _expl_model_fn = jax.jit(_expl_model_fn)
+% else:
     @jax.jit
+% endif
     def observable_fn(s):
 ${render_recorded_observable(expl['record'], derived_observation_names, network_observation_names, list(analysis_observations_dict.keys()), only_obs=_only_list, recorded_var_names=_recorded_var_names)}
 % elif obs_type == 'function_call':
@@ -3281,6 +3357,10 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
 % if not obs_name:
+<%
+    # A sweep naming its outputs takes the `record:` branch above, where render_recorded_observable already evaluates the `analysis` diagnostics per cell; reaching here means `record:` is empty, so no analysis list is threaded.
+    _an_arg = ""
+%>
 % if bundles_observations and _bundle_fully_stream:
     # Every bundled observation is trajectory-free (a reduce: streaming reducer, a derived
     # deliverable, or a static network obs), so fold the streamable ones into the integrator
@@ -3301,22 +3381,38 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         def observable_fn(s):
             _vals = _bundle_model_fn(s)
             _pre = {_n: _v for _n, _v in zip(${repr(_bundle_stream_names)}, _vals)}
-            return keep_recorded(compute_all_observations(None, s, result_transient, precomputed=_pre))
+            return keep_recorded(compute_all_observations(None, s, result_transient, precomputed=_pre${_an_arg}))
     else:
+% if has_host_pipeline_obs or _rec_host:
+        # Host pipeline callables cannot trace under jit: jit only the solve.
+        _expl_model_fn_jit = jax.jit(_expl_model_fn)
+        def observable_fn(s):
+            result = _expl_model_fn_jit(s)
+            return keep_recorded(compute_all_observations(result, s, result_transient${_an_arg}))
+% else:
         @jax.jit
         def observable_fn(s):
             result = _expl_model_fn(s)
-            return keep_recorded(compute_all_observations(result, s, result_transient))
+            return keep_recorded(compute_all_observations(result, s, result_transient${_an_arg}))
+% endif
 % elif bundles_observations:
     # Observations declared: observable_fn returns only the reduced
     # observation values per grid point (no trajectory). Output size is
     # the sum of declared observation shapes — typically per-node or
     # per-pair statistics — rather than (T, n_states, n_nodes), so trial
     # vmaps and grid axes stay tractable.
+% if has_host_pipeline_obs or _rec_host:
+    # Host pipeline callables cannot trace under jit: jit only the solve.
+    _expl_model_fn_jit = jax.jit(_expl_model_fn)
+    def observable_fn(s):
+        result = _expl_model_fn_jit(s)
+        return keep_recorded(compute_all_observations(result, s, result_transient${_an_arg}))
+% else:
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
-        return keep_recorded(compute_all_observations(result, s, result_transient))
+        return keep_recorded(compute_all_observations(result, s, result_transient${_an_arg}))
+% endif
 % elif has_model_output and model_output_indices:
     # Model outputs — ``model_output_channel_index`` is a scalar for a single
     # output (dropping the variable dim) or a slice/list for several (keeping it).
@@ -3452,6 +3548,18 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _pmode_s = str(expl.get('parallel_mode') or 'auto').lower()
     _pbatch_s = expl.get('parallel_batch_size')
 %>\
+% if has_host_pipeline_obs or _rec_host:
+    # Host pipeline callables cannot trace under jit/vmap: trials run in a HOST loop
+    # (each trial's solve is still jitted internally).
+    def observable_fn(s):
+        def _run_trial(${', '.join(f'_tn_{sp}' for sp in _sp_names)}):
+    % for _sp_name in _sp_names:
+            s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
+    % endfor
+            return _base_trial_observable(s)
+        _trial_outs = [_run_trial(${', '.join(f'_trial_noises_{sp}[_ti]' for sp in _sp_names)}) for _ti in range(_n_trials)]
+        trial_results = jax.tree.map(lambda *_xs: jnp.stack([jnp.asarray(_x) for _x in _xs]), *_trial_outs)
+% else:
     @jax.jit
     def observable_fn(s):
         def _run_trial(${', '.join(f'_tn_{sp}' for sp in _sp_names)}):
@@ -3468,6 +3576,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         trial_results = jax.lax.map(_run_trial, _trial_noises_${_sp_names[0]}, batch_size=${_pbatch_s if _pbatch_s else 1})
 % else:
         trial_results = jax.lax.map(lambda args: _run_trial(*args), (${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)}), batch_size=${_pbatch_s if _pbatch_s else 1})
+% endif
 % endif
     % if expl.get('average') == 'trials':
         return jax.tree.map(lambda _l: jnp.mean(_l, axis=0), trial_results)  # per-leaf so a Bunch of streamed observables averages over trials (jnp.mean fails on a Bunch)
@@ -3507,6 +3616,16 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _pmode = str(expl.get('parallel_mode') or 'auto').lower()
     _pbatch = expl.get('parallel_batch_size')
 %>\
+% if has_host_pipeline_obs or _rec_host:
+    # Host pipeline callables cannot trace under jit/vmap: trials run in a HOST loop
+    # (each trial's solve is still jitted internally).
+    def observable_fn(s):
+        def _run_trial(ic):
+            s.initial_state.dynamics = ic
+            return _base_ic_observable(s)
+        _trial_outs = [_run_trial(_trial_ics[_ti]) for _ti in range(_n_trials)]
+        trial_results = jax.tree.map(lambda *_xs: jnp.stack([jnp.asarray(_x) for _x in _xs]), *_trial_outs)
+% else:
     @jax.jit
     def observable_fn(s):
         def _run_trial(ic):
@@ -3524,6 +3643,55 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % else:
         trial_results = jax.lax.map(_run_trial, _trial_ics, batch_size=${_pbatch if _pbatch else 1})
 % endif
+% endif
+    % if expl.get('average') == 'trials':
+        return jax.tree.map(lambda _l: jnp.mean(_l, axis=0), trial_results)  # per-leaf so a Bunch of streamed observables averages over trials (jnp.mean fails on a Bunch)
+    % else:
+        return trial_results
+    % endif
+% endif
+
+<%
+    # Only the host trial loop below writes a subset event's trial index; the stochastic-parameter and IC-distribution branches map over arrays, so every trial would silently reuse mask row 0.
+    if subset_mask_events and expl.get('n_trials', 1) > 1 and (stochastic_param_info or sv_distribution_info):
+        raise ValueError(
+            f"exploration {expl['name']!r} draws its trials from a stochastic parameter / "
+            f"initial-condition distribution, which cannot also advance the per-trial mask of "
+            f"subset events {[str(e.name) for e in subset_mask_events]!r}. Declare the ensemble "
+            f"as a trial-only exploration (n_trials over solver noise) instead."
+        )
+%>\
+% if expl.get('n_trials', 1) > 1 and not stochastic_param_info and not sv_distribution_info and (has_noise or subset_mask_events):
+    # === Trial ensemble: ${expl['n_trials']} trials (solver noise / subset masks) ===
+    # Trials differ through live state leaves: the SDE noise key (fold_in of the state's own key, so a runtime random_seed still reseeds the ensemble) and each subset event's trial index. The loop is host-side because the per-trial observable may end in numpy pipelines; each trial's solve is still jitted.
+    _n_trials = ${expl['n_trials']}
+
+    _base_trial_observable = observable_fn
+
+    def observable_fn(s):
+        % if has_noise:
+        _base_key = s.noise.key
+        % endif
+        def _run_trial(_ti):
+            % if has_noise:
+            s.noise.key = jax.random.fold_in(_base_key, _ti)
+            % endif
+            % for _sev in subset_mask_events:
+            s.external.${_sev.name}.trial = float(_ti)
+            % endfor
+            return _base_trial_observable(s)
+        # Runs OUTSIDE jit, so it writes the caller's live state: restore the leaves or the next cell's ensemble folds on top of trial n-1's key.
+        try:
+            _trial_outs = [_run_trial(_ti) for _ti in range(_n_trials)]
+        finally:
+            % if has_noise:
+            s.noise.key = _base_key
+            % endif
+            % for _sev in subset_mask_events:
+            s.external.${_sev.name}.trial = 0.0
+            % endfor
+            pass
+        trial_results = jax.tree.map(lambda *_xs: jnp.stack([jnp.asarray(_x) for _x in _xs]), *_trial_outs)
     % if expl.get('average') == 'trials':
         return jax.tree.map(lambda _l: jnp.mean(_l, axis=0), trial_results)  # per-leaf so a Bunch of streamed observables averages over trials (jnp.mean fails on a Bunch)
     % else:
@@ -3535,14 +3703,35 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # ── Algorithm-wired exploration (Exploration.algorithms) ─────────────────
     # The wired algorithm chain runs AT EACH sweep point before the observable.
     # Algorithms are iterative/stateful (Python loops, e.g. FIC) — NOT vmappable
-    # — so points execute SEQUENTIALLY. Each grid point's state arrives with its
-    # swept params already applied; we run the chain to tune it, then observe.
+    # — so points execute SEQUENTIALLY. Tuning integrates each algorithm's own
+    # simulation_period window (not the full experiment duration); the tuned
+    # parameters are copied onto the point's state and the full-duration
+    # observable then runs from the point's declared initial conditions.
+    # `_network`, not kwargs['network']: a speed / tract-length / delay axis rebuilds the graph
+    # above, and the tuning model must size its delay buffer from the SAME graph the sweep runs.
+    if _network is None:
+        raise ValueError(
+            "algorithm-wired exploration needs a rebuildable network (run_experiment passes "
+            "network=...); a passed-in model_fn carries no graph to build the tuning model from."
+        )
+% for _algo in expl['algorithms']:
+    _tune_model_fn_${_algo['name']}, _tune_state_${_algo['name']} = prepare(_network, get_solver(), t1=${float(_algo['simulation_period'])}, dt=${dt})
+% endfor
     def _algo_point_fn(_pt_state):
         import copy as _copy
         _ps = _copy.deepcopy(_pt_state)
 % for _algo in expl['algorithms']:
+        _ts = _copy.deepcopy(_tune_state_${_algo['name']})
+        for _k in _ps.dynamics.keys():
+            if not _k.startswith('_'):
+                _ts.dynamics[_k] = _ps.dynamics[_k]
+        for _cn in _ps.coupling.keys():
+            for _k in _ps.coupling[_cn].keys():
+                if not _k.startswith('_'):
+                    _ts.coupling[_cn][_k] = _ps.coupling[_cn][_k]
+        _ts.initial_state.dynamics = _ps.initial_state.dynamics
         _algo_res_${_algo['name']} = run_${_algo['name']}(
-            _ps, _expl_model_fn, jax.random.key(${random_seed}),
+            _ts, _tune_model_fn_${_algo['name']}, jax.random.key(${random_seed}),
             n_iterations=${_algo['n_iterations']},
 % for _hp_name, _hp_val in _algo['hyperparams'].items():
             ${_hp_name}=${_hp_val},
@@ -3556,8 +3745,16 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             ${_net_obs_name}=${_net_obs_name},
 % endfor
             history=result_transient, verbose=False,
+            run_post_tuning=False,
         )
-        _ps = _algo_res_${_algo['name']}.state
+        _rs = _algo_res_${_algo['name']}.state
+        for _k in _rs.dynamics.keys():
+            if not _k.startswith('_'):
+                _ps.dynamics[_k] = _rs.dynamics[_k]
+        for _cn in _rs.coupling.keys():
+            for _k in _rs.coupling[_cn].keys():
+                if not _k.startswith('_'):
+                    _ps.coupling[_cn][_k] = _rs.coupling[_cn][_k]
 % endfor
         return observable_fn(_ps)
 
@@ -3569,6 +3766,12 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endif
 % else:
 % if has_axes:
+% if has_host_pipeline_obs or _rec_host:
+    # Host pipeline callables cannot trace under jit/vmap: grid cells run SEQUENTIALLY
+    # (each cell's solve is still jitted internally).
+    exec_runner = SequentialExecution(progress_ticker(grid.N, label="grid cell")(observable_fn), grid)
+    _grid_outputs = list(exec_runner.run())
+% else:
     _n_vmap = resolve_exploration_n_vmap(${repr(expl['n_parallel'])}, grid.N, observable_fn, _expl_state)
     _n_pmap = resolve_exploration_n_pmap(grid.N, _n_vmap)
     # Batch count for the i/N progress line: n_pmap devices × ceil(cells/n_vmap) chunks.
@@ -3579,6 +3782,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         grid, n_pmap=_n_pmap, n_vmap=_n_vmap,
     )
     _grid_outputs = list(exec_runner.run())
+% endif
 % else:
     # Trial-only exploration — no parameter grid
     _grid_outputs = [observable_fn(_expl_state)]
@@ -3671,7 +3875,69 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             dims=_OBSERVATION_DIMS.get(str(_obs_key)),
             nodes=_node_labels,
         )
+% if trial_reduced_dict:
+<%
+    if has_axes:
+        raise ValueError(
+            "reduce: trials is not supported together with a parameter grid yet — "
+            "declare the ensemble as a trial-only exploration (n_trials without axes)."
+        )
+    if expl.get('n_trials', 1) < 2:
+        raise ValueError(
+            f"observations {sorted(trial_reduced_dict)!r} declare reduce: trials, but "
+            f"exploration {expl['name']!r} has no trial ensemble to reduce over (n_trials="
+            f"{expl.get('n_trials', 1)})."
+        )
+%>\
+    # Cross-trial observations (reduce: trials): the pipeline runs host-side on the
+    # trial-stacked source; wrapping lives in tvbo.data.types (pytree-registered xarray).
+    from tvbo.data.types import _host_reduced_to_observations
+% for _trn, _tro in trial_reduced_dict.items():
+<%
+    _tr_src_obj = as_list(_tro.source)[0]
+    _tr_src = str(getattr(_tr_src_obj, 'name', None) or _tr_src_obj)
+    _tr_stage = list(_tro.pipeline)[0]
+    _tr_c = getattr(_tr_stage, 'callable', None)
+    _tr_mod = getattr(_tr_c, 'module', None)
+    _tr_name = getattr(_tr_c, 'name', None) or getattr(_tr_c, 'qualname', None)
+    if not _tr_mod or not _tr_name:
+        raise ValueError(
+            f"observation {_trn!r} (reduce: trials) needs its single pipeline stage to name a "
+            f"`callable` with both `module` and `name`; the stage runs host-side by dotted name."
+        )
+    _tr_args = getattr(_tr_stage, 'arguments', None) or {}
+    _tr_items = list(_tr_args.items()) if hasattr(_tr_args, 'items') else []
+    _tr_src_arg = None
+    _tr_extra = []
+    for _an, _ag in _tr_items:
+        _av = getattr(_ag, 'value', _ag)
+        if str(_av) == _tr_src:
+            _tr_src_arg = str(_an)
+        elif _av is not None:
+            _tr_extra.append((str(_an), _av))
+    _tr_kw = ''.join(f", {an}={av!r}" for an, av in _tr_extra)
+%>\
+    # Drop only the axis-less exploration's single leading cell, never every size-1 axis: a
+    # one-node or one-sample source keeps its shape so the stage's (n_trials, ...) contract holds.
+    _tr_src_arr = np.asarray(_observations_xr['${_tr_src}'].data)
+    if _tr_src_arr.ndim > 1 and _tr_src_arr.shape[0] == 1:
+        _tr_src_arr = _tr_src_arr[0]
+    _tr_out = ${_tr_mod}.${_tr_name}(${(_tr_src_arg + '=') if _tr_src_arg else ''}_tr_src_arr${_tr_kw})
+    _observations_xr.update(_host_reduced_to_observations('${_trn}', _tr_out))
+% endfor
+% endif
 % else:
+<%
+    # The cross-trial stage reads its source out of _observations_xr, which only the
+    # returns_bunch path fills; emitting nothing here would drop the observation silently.
+    if trial_reduced_dict:
+        raise ValueError(
+            f"observations {sorted(trial_reduced_dict)!r} declare reduce: trials, but "
+            f"exploration {expl['name']!r} returns a raw trajectory rather than a bundle of "
+            f"observations, so there is no per-trial source to stack. Give the exploration an "
+            f"observation bundle (declare `record:` or observations without an `observable`)."
+        )
+%>\
     _stacked_results = _stacked
     _stacked_ts = None
     _observations_xr = {}
@@ -4569,12 +4835,18 @@ def run_experiment(
 
         # Re-evaluate the operating-point analysis observations at the TUNED state. A tuning
         # algorithm (e.g. FIC) moves the operating point, so the base-run diagnostics — computed
-        # at the pre-tuning state — are stale. Write onto main_result.observations (the Bunch that
-        # result.observations exposes; SimulationResult may hold its own copy) so it reflects the
-        # operating point the experiment actually settled to. The exploration path already observes
-        # the tuned state.
-        if main_result is not None and getattr(main_result, 'observations', None) is not None \
-                and algo_result is not None and getattr(algo_result, 'state', None) is not None:
+        # at the pre-tuning state — are stale; when the untuned main run was skipped entirely
+        # (run_main=False) there are no base observations at all, so the Bunch is seeded here.
+        # Written onto main_result.observations so the persisted result reflects the operating
+        # point the experiment actually settled to. The exploration path already observes it.
+        if algo_result is not None and getattr(algo_result, 'state', None) is not None:
+            if main_result is None:
+                # run_main=False leaves no base result at all; a result shell carries the
+                # tuned diagnostics so they persist like any other integration observation.
+                main_result = SimulationResult(result=None, state_names=${result_var_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, transient=None)
+                results.integration = main_result
+            if getattr(main_result, 'observations', None) is None:
+                main_result.observations = Bunch()
             for _an_name, _an_val in compute_analysis_observations(algo_result.state, network, transient).items():
                 main_result.observations[_an_name] = _an_val
 % endif
