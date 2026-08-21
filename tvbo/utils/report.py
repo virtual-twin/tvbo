@@ -327,10 +327,13 @@ def analysis_dataset(out_dir, name):
     """
     import xarray as xr
 
-    from tvbo.data.dataref import analysis_container_path
+    from tvbo.data.dataref import locate_analysis_container
 
-    path = analysis_container_path(Path(out_dir), name)
-    return xr.open_dataset(path, engine="h5netcdf") if path.exists() else None
+    try:  # the resolver that also sees a container left by the pre-record layout
+        path = locate_analysis_container(Path(out_dir), name)
+    except FileNotFoundError:
+        return None
+    return xr.open_dataset(path, engine="h5netcdf")
 
 
 def analysis_output(out_dir, name, variable):

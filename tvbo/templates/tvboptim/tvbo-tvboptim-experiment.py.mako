@@ -1990,6 +1990,20 @@ def _realign_state_auxiliaries(sol, network):
 _OBSERVATION_DIMS = ${repr(_obs_dims)}
 
 
+def _run_compiled(fn, state):
+    """Execute a prepared solve under ``jax.jit``.
+
+    ``prepare()`` hands back an UN-jitted callable that dispatches op by op for every step of
+    the solve instead of running compiled — about 4.5x the wall time of the same call under
+    ``jax.jit``. Every host-side evaluation of a prepared callable belongs here.
+
+    *fn* itself is never rebound, because the same callables reach places that must keep the raw
+    identity: a tuning core takes one as a STATIC argument to key its own jit cache on, and a
+    loss function is traced by the optimizer.
+    """
+    return jax.jit(fn)(state)
+
+
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
@@ -2029,7 +2043,7 @@ def run_simulation(
         if getattr(state_init, 'noise', None) is not None:
             state_init.noise.key = _noise_key
         % endif
-        result_transient = model_fn_init(state_init)
+        result_transient = _run_compiled(model_fn_init, state_init)
         # tvboptim >= 0.2.7: NativeSolution carries variable_names; update_history
         # slices state columns by name, so we can hand the solution over directly.
         network.update_history(result_transient)
@@ -2100,7 +2114,7 @@ def run_simulation(
                 for _n in ${repr(_base_stream_names)}
             ]),
         )
-        _stream_vals = dict(zip(${repr(_base_stream_names)}, _stream_fn(state)))
+        _stream_vals = dict(zip(${repr(_base_stream_names)}, _run_compiled(_stream_fn, state)))
         observations = Bunch(**_stream_vals)
         _all_obs = compute_all_observations(
             None, state, result_transient,
@@ -2114,7 +2128,7 @@ def run_simulation(
 % endif
 % endfor
 % else:
-        result = model_fn(state)
+        result = _run_compiled(model_fn, state)
         % if _state_only_aux:
         result = _realign_state_auxiliaries(result, network)
         % endif
@@ -3832,12 +3846,12 @@ def run_experiment(
         # Re-fold through the SAME streaming reducers rather than `model_fn(use_state)`:
         # materialising here would both defeat the reduction and pair a custom-state
         # trajectory with the default state's observations.
-        _custom_stream = sim_result.stream_fn(use_state) if run_main else None
+        _custom_stream = _run_compiled(sim_result.stream_fn, use_state) if run_main else None
         result = None
 % else:
         _custom_stream = None
         if run_main:
-            result = model_fn(use_state)
+            result = _run_compiled(model_fn, use_state)
         else:
             result = None
 % endif
@@ -4271,6 +4285,9 @@ def run_experiment(
             _sd[_hp_name] = _over.get(_hp_name, _hp_val)
         stage_defs.append(_sd)
     any_stage_resets = any(sd.get('reset_state') for sd in stage_defs)
+    # Algorithm.evaluate: False keeps only the tuned state, skipping a full-duration post-fold.
+    _ev = getattr(algo, 'evaluate', None)
+    algo_evaluate = True if _ev is None else bool(_ev)
 
     # Own rules plus combined includes (a nested inner tunes inside the outer call, not across stages); each entry is (param_name, coupling_key or None), where None lives on state.dynamics.
     reset_targets = []
@@ -4443,7 +4460,7 @@ def run_experiment(
 % endif
 % endif
                         monitors=_stage_monitors,
-                        run_post_tuning=(_si == len(_stage_defs) - 1),   # post-fold only after the LAST stage (5x fewer giant post-folds; intermediate r-trajectory not computed)
+                        run_post_tuning=${algo_evaluate} and (_si == len(_stage_defs) - 1),   # Algorithm.evaluate, folded once after the last stage rather than per stage
 % if observation_ref:
                         observation_monitor=observations.${observation_ref},
 % endif
@@ -4512,6 +4529,7 @@ def run_experiment(
 % if observation_ref:
                     observation_monitor=observations.${observation_ref},
 % endif
+                    run_post_tuning=${algo_evaluate},   # Algorithm.evaluate
                     verbose=algo_verbose,
                 )
 % endif
@@ -4742,7 +4760,7 @@ stage_lr = stage['learning_rate']
             )
 
             # Run simulation with fitted parameters from this stage
-            _post_${stage_name} = model_fn(_fitted_${stage_name})
+            _post_${stage_name} = _run_compiled(model_fn, _fitted_${stage_name})
             _post_${stage_name}_obs = compute_all_observations(_post_${stage_name}, _fitted_${stage_name}, transient)
 
             # Use OptimizationResult for each stage
@@ -4754,7 +4772,7 @@ stage_lr = stage['learning_rate']
                 name='${stage_name}',
                 state=_fitted_${stage_name},
                 history=_history_${stage_name},
-                simulation=SimulationResult(result=_post_${stage_name}, observations=_post_${stage_name}_obs, state_names=${state_names}),
+                simulation=SimulationResult(result=_post_${stage_name}, observations=_post_${stage_name}_obs, state_names=${state_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS),
                 n_steps=kwargs.get('max_steps_${stage_name}', kwargs.get('max_steps', ${stage_max_iter})),
                 hyperparameters=_stage_hyperparams,
             )
@@ -4790,7 +4808,7 @@ stage_lr = stage['learning_rate']
             )
 
             # Run final simulation with fitted parameters
-            post_optimization = model_fn(fitted_params)
+            post_optimization = _run_compiled(model_fn, fitted_params)
 
             # Compute ALL observations from post-optimization simulation
             post_optimization_observations = compute_all_observations(post_optimization, fitted_params, transient)
@@ -4806,7 +4824,7 @@ stage_lr = stage['learning_rate']
                 name=_opt_name,
                 state=fitted_params,
                 history=fitting_data,
-                simulation=SimulationResult(result=post_optimization, observations=post_optimization_observations, state_names=${state_names}),
+                simulation=SimulationResult(result=post_optimization, observations=post_optimization_observations, state_names=${state_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS),
                 n_steps=kwargs.get('max_steps', ${max_steps}),
                 hyperparameters=_opt_hyperparams,
             )

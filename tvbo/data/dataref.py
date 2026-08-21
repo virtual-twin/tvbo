@@ -105,6 +105,8 @@ def analysis_container_path(results_root, name) -> Path:
     """``<results_root>/ana-<name>_result.h5`` — the analysis-container name, once.
 
     Flat and entity-prefixed, like an experiment's own container: ``ana-`` marks a derived result and ``exp-`` a run, so both live in one directory and a cross-reference between them resolves against a single base. The name is built by the same entity machinery the run's own containers use, so ``calcium_c10`` reaches ``ana-calciumc10_result.h5`` from the writer and the reader alike — spelling it as an f-string here is how the two came to disagree.
+
+    Always the flat name, whether or not anything is on disk: this is where an analysis is WRITTEN, and the figure adapter reads that one directory flat, so a write that landed anywhere else would be invisible to every panel. The pre-record layout is a read-side concern only — see :func:`legacy_analysis_container_path`.
     """
     from bids.layout.writing import build_path
 
@@ -112,6 +114,15 @@ def analysis_container_path(results_root, name) -> Path:
 
     root = Path(results_root) if results_root else Path.cwd()
     return root / build_path(analysis_entities(name), RESULT_PATTERNS)
+
+
+def legacy_analysis_container_path(results_root, name) -> Path:
+    """``<results_root>/results/<name>/result.h5`` — the pre-record analysis layout.
+
+    Read-only: a container produced before the flat layout still resolves, so a study keeps rendering mid-migration, while every new write goes to :func:`analysis_container_path` and shadows it.
+    """
+    root = Path(results_root) if results_root else Path.cwd()
+    return root / "results" / str(name) / "result.h5"
 
 
 def sidecar_path(container) -> Path:
@@ -125,10 +136,13 @@ def sidecar_path(container) -> Path:
 def locate_analysis_container(results_root, name) -> Path:
     """Path to the container a study analysis named ``name`` writes in ``results_root``.
 
-    :func:`analysis_container_path` is the one place the convention is spelled, so the writer (:mod:`tvbo.data.analysis_io`), the run-time resolver and the figure adapter cannot disagree about where an analysis result lives. Raises when it has not been produced yet, with the command that produces it.
+    :func:`analysis_container_path` is the one place the convention is spelled, so the writer (:mod:`tvbo.data.analysis_io`), the run-time resolver and the figure adapter cannot disagree about where an analysis result lives, and a container left by the pre-record layout still resolves until the analysis is next written. Raises when it has not been produced yet, with the command that produces it.
     """
     path = analysis_container_path(results_root, name)
     if not path.is_file():
+        legacy = legacy_analysis_container_path(results_root, name)
+        if legacy.is_file():
+            return legacy
         raise FileNotFoundError(
             f"analysis sourcing: no saved result for analysis {str(name)!r} (looked for "
             f"{path}). Run the study (`tvbo run <Study>.yaml`) so its analyses execute."
