@@ -495,9 +495,7 @@ observations:
     - fc_target
     reconcile: by_label
     pipeline:
-    - callable:
-        name: fc_corr
-        module: tvboptim.observations.observation
+    - function: fc_corr
       arguments:
         A:
           name: A
@@ -514,9 +512,7 @@ observations:
     - fc_target
     reconcile: by_label
     pipeline:
-    - callable:
-        name: rmse
-        module: tvboptim.observations.observation
+    - function: fc_rmse
       arguments:
         A:
           name: A
