@@ -257,10 +257,7 @@ def _axis_points_dataarray(name, points):
 def _host_reduced_to_observations(name, out):
     """Wrap a cross-trial (``reduce: trials``) pipeline result as named ``xr.DataArray``s.
 
-    ``out`` is what the host-side stage returned: an array-like, or a flat dict of
-    array-likes. A single-entry dict stores under the observation's own ``name``; a
-    multi-entry dict stores each entry under ``<name>_<key>``. Nested dicts are refused —
-    the stage contract is arrays.
+    ``out`` is what the host-side stage returned: an array-like, or a flat dict of array-likes. A single-entry dict stores under the observation's own ``name``; a multi-entry dict stores each entry under ``<name>_<key>``. Nested dicts are refused — the stage contract is arrays.
     """
     if isinstance(out, dict):
         if any(isinstance(v, dict) for v in out.values()):

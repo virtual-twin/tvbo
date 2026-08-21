@@ -250,11 +250,7 @@ class Brian2Adapter(BaseAdapter):
     def _run_ramp(self, net, meta, model):
         """Run the declared continuation ramp and return its per-step population rates.
 
-        The state is never re-initialised: each declared value is written into the namespace
-        constant that carries the labelled projection's weight, the transient settles the network
-        quasi-statically, and the spikes of the remaining window give that step's rate. Listing the
-        parameter up and back down therefore traces both branches of a hysteresis loop in one run,
-        which is what makes the loop evidence of bistability rather than of two different runs.
+        The state is never re-initialised: each declared value is written into the namespace constant that carries the labelled projection's weight, the transient settles the network quasi-statically, and the spikes of the remaining window give that step's rate. Listing the parameter up and back down therefore traces both branches of a hysteresis loop in one run, which is what makes the loop evidence of bistability rather than of two different runs.
         """
         import numpy as np
         from brian2 import ms
@@ -269,7 +265,7 @@ class Brian2Adapter(BaseAdapter):
                 f"rate is measured over would be empty."
             )
         groups = {o.name: o for o in net.objects if hasattr(o, "namespace")}
-        keep = {r[len("firing_rate_"):] for r in ramp["record"] if r.startswith("firing_rate_")}
+        keep = {r[len("firing_rate_") :] for r in ramp["record"] if r.startswith("firing_rate_")}
         mons = {n: m for n, m in meta["spike_monitors"].items() if not keep or n in keep}
         window_s, rates = (step - settle) / 1000.0, {n: [] for n in mons}
         for value in ramp["values"]:
@@ -294,8 +290,11 @@ class Brian2Adapter(BaseAdapter):
             name=getattr(self.experiment, "label", None),
             source=self.experiment,
         )
-        result._extras["ramp"] = {"parameter": ramp["parameter"], "values": np.asarray(ramp["values"]),
-                                  "rates": {n: np.asarray(v) for n, v in rates.items()}}
+        result._extras["ramp"] = {
+            "parameter": ramp["parameter"],
+            "values": np.asarray(ramp["values"]),
+            "rates": {n: np.asarray(v) for n, v in rates.items()},
+        }
         return result
 
     # ── Analysis: declarative network → Brian2 build description ────────
@@ -459,13 +458,7 @@ class Brian2Adapter(BaseAdapter):
     def _ramp_spec(self, weight_handles):
         """The declared quasi-static ramp, or None when the experiment declares no such protocol.
 
-        An `Exploration` with ``strategy: continuation`` is a protocol rather than a grid: its
-        single axis lists the values in the ORDER they are applied and the simulator state carries
-        from one point to the next, so a hysteresis loop is declared by listing the parameter up
-        and back down. Each point runs for the experiment's integration duration, of which the
-        declared ``transient_time`` settles the state and the remainder is measured. The axis
-        addresses one labelled projection's weight as ``network.edges.<label>.weight``, which is
-        what keeps the sweep off every other synapse of the same dynamics.
+        An `Exploration` with ``strategy: continuation`` is a protocol rather than a grid: its single axis lists the values in the ORDER they are applied and the simulator state carries from one point to the next, so a hysteresis loop is declared by listing the parameter up and back down. Each point runs for the experiment's integration duration, of which the declared ``transient_time`` settles the state and the remainder is measured. The axis addresses one labelled projection's weight as ``network.edges.<label>.weight``, which is what keeps the sweep off every other synapse of the same dynamics.
         """
         expls = getattr(self.experiment, "explorations", None) or {}
         items = list(expls.items()) if hasattr(expls, "items") else [(getattr(e, "name", None), e) for e in expls]

@@ -29,19 +29,14 @@ from tvbo.utils import _NETWORK_EDGE_ALIASES, as_list, edge_label  # noqa: F401 
 
 # Basic Helpers
 
-# Import roots whose callables are JAX-traceable, so a pipeline stage calling one still fits
-# inside a jitted/vmapped observable; anything else is host code (numpy/scipy/sklearn/...).
+# Import roots whose callables are JAX-traceable, so a pipeline stage calling one still fits inside a jitted/vmapped observable; anything else is host code (numpy/scipy/sklearn/...).
 _JAX_TRACEABLE_MODULE_ROOTS = ("jax", "jnp", "jaxlib", "tvboptim", "tvbo", "equinox", "optax", "diffrax")
 
 
 def pipeline_stage_is_host(stage: Any) -> bool:
     """True when an observation pipeline stage calls code that cannot trace under ``jit``.
 
-    A stage's ``callable`` is emitted as ``<module>.<name>(...)`` inside the observation
-    monitor, so whether the whole observable can be jitted/vmapped is decided by the module
-    it names: a JAX-native one (``jax.scipy.signal.fftconvolve``,
-    ``tvboptim.observations.observation.compute_fc``) traces, a host one (``scipy.signal``,
-    ``numpy``) does not. A stage with no ``callable`` is a rendered equation and always traces.
+    A stage's ``callable`` is emitted as ``<module>.<name>(...)`` inside the observation monitor, so whether the whole observable can be jitted/vmapped is decided by the module it names: a JAX-native one (``jax.scipy.signal.fftconvolve``, ``tvboptim.observations.observation.compute_fc``) traces, a host one (``scipy.signal``, ``numpy``) does not. A stage with no ``callable`` is a rendered equation and always traces.
     """
     call = getattr(stage, "callable", None)
     module = str(getattr(call, "module", "") or "") if call is not None else ""
@@ -59,13 +54,8 @@ def has_host_pipeline(observations: Any) -> bool:
 def active_stimulus_events(experiment: Any) -> list:
     """Return the events this experiment integrates as time-domain external inputs.
 
-    Selects stimulus/continuous/discrete events from ``experiment.events``, excluding any
-    event that a ``fisher`` analysis observation names as its ``target``: that event is
-    metadata for the linear-response computation (stimulated variable, node mask, swept
-    amplitude) and is never integrated in time, so it must not emit an ExternalInput class.
-    Raises ``ValueError`` when an active event's name cannot spell the ``<name>Input`` class
-    the stimulus template emits for it, which would otherwise land as a syntax error in the
-    generated module rather than as a message about the recipe.
+    Selects stimulus/continuous/discrete events from ``experiment.events``, excluding any event that a ``fisher`` analysis observation names as its ``target``: that event is metadata for the linear-response computation (stimulated variable, node mask, swept amplitude) and is never integrated in time, so it must not emit an ExternalInput class.
+    Raises ``ValueError`` when an active event's name cannot spell the ``<name>Input`` class the stimulus template emits for it, which would otherwise land as a syntax error in the generated module rather than as a message about the recipe.
     """
     items = list(experiment.events.items()) if getattr(experiment, "events", None) else []
 
@@ -2188,8 +2178,7 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
                     f"target_regions)."
                 )
             stim_var = str(getattr(ev, "name", None) or getattr(ev, "target_variable", None))
-            # Optional `profile: <variable>` parameter: the settled value of that variable per
-            # node at each ΔI (the evoked-response profile) is returned alongside the FI curve.
+            # Optional `profile: <variable>` parameter: the settled value of that variable per node at each ΔI (the evoked-response profile) is returned alongside the FI curve.
             _prof = str(p.get("profile", "") or "")
             _prof_expr = None
             if _prof:

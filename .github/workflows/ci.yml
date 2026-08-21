@@ -2,7 +2,7 @@ name: Lint & Test
 
 on:
     push:
-        branches: ["main"]
+        branches: ["main", "dev"]
     # No branch filter: a PR stacked on another PR's branch must be tested too.
     pull_request:
     workflow_dispatch:

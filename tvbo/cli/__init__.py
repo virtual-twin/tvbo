@@ -83,9 +83,7 @@ EXAMPLES = (
 def _epilog() -> str:
     """Examples plus the docs pointer, laid out for the terminal in front of us.
 
-    Typer folds single newlines out of an epilog, so every line is written as
-    its own paragraph. The gloss column is dropped rather than wrapped when the
-    terminal is too narrow to hold both.
+    Typer folds single newlines out of an epilog, so every line is written as its own paragraph. The gloss column is dropped rather than wrapped when the terminal is too narrow to hold both.
     """
     pad = max(len(cmd) for cmd, _ in EXAMPLES) + 3
     room = shutil.get_terminal_size((80, 24)).columns >= pad + max(len(what) for _, what in EXAMPLES) + 4

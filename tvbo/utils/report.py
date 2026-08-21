@@ -1424,9 +1424,7 @@ def experiment_models(experiment):
         """A component whose equations live behind a standard `neuroml:` iri, made symbolic.
 
         Such a component (an ``expOneSynapse`` AMPA/GABA receptor) declares parameters only;
-        rendered as-is its model card shows a symbol table with no mathematics. When the
-        canonical LEMS dynamics of its type are indexed, return an enriched copy carrying
-        them — state, current, spike affect — under the component's own name and parameters.
+        rendered as-is its model card shows a symbol table with no mathematics. When the canonical LEMS dynamics of its type are indexed, return an enriched copy carrying them — state, current, spike affect — under the component's own name and parameters.
         """
         iri = str(slot(model, "iri", "") or "")
         if not iri.startswith("neuroml:"):
