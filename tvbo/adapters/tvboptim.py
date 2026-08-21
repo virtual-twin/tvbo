@@ -14,7 +14,7 @@ import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.smallscale.lowering import node_dynamics_name
-from tvbo.utils import as_list, noise_sigma, normalize_params
+from tvbo.utils import network_couplings, noise_sigma, normalize_params
 
 if TYPE_CHECKING:
     from tvbo.classes.network import Network
@@ -217,12 +217,10 @@ def to_tvboptim(
     """
     # Auto-infer delays from coupling metadata if not specified
     if delays is None:
-        delays = False
-        if hasattr(network, "coupling") and network.coupling:
-            for coup_obj in network.coupling.values():
-                if getattr(coup_obj, "delayed", False):
-                    delays = True
-                    break
+        delays = any(
+            getattr(coup_obj, "delayed", False)
+            for coup_obj in network_couplings(network).values()
+        )
 
     graph = _build_graph(network, delays=delays, max_delay=max_delay)
 
@@ -240,8 +238,11 @@ def to_tvboptim(
     # Auto-extract coupling from network if not provided.
     # Resolution: use CouplingInput.source to remap function keys → CI keys,
     # then fall back to name matching, then positional order.
-    if coupling is None and hasattr(network, "coupling") and network.coupling:
-        coup_dict = {key: coup_obj.execute("tvboptim") for key, coup_obj in network.coupling.items()}
+    if coupling is None and network_couplings(network):
+        coup_dict = {
+            key: coup_obj.execute("tvboptim")
+            for key, coup_obj in network_couplings(network).items()
+        }
         if dynamics is not None and hasattr(dynamics, "COUPLING_INPUTS"):
             ci_keys = set(dynamics.COUPLING_INPUTS.keys())
             func_keys = list(coup_dict.keys())
@@ -375,7 +376,7 @@ def _resolve_coupling(network, edge):
     anywhere, i.e. the default linear route.
     """
     declared = {
-        getattr(c, "name", None): c for c in as_list(getattr(network, "coupling", None))
+        getattr(c, "name", None): c for c in network_couplings(network).values()
     }
     ref = getattr(edge, "coupling", None)
     if ref is None:
@@ -475,11 +476,9 @@ def to_heterogeneous_network(
         node_group.append(dname)
 
     if delays is None:
-        # Infer from network-level coupling AND edge-level coupling: `delayed` may be
-        # declared only on edges (Edge.coupling), and `coupling` can be a plain list
-        # rather than a keyed dict — `.values()` would raise AttributeError on it.
+        # `delayed` may be declared only on edges, so both places are asked.
         delays = any(
-            getattr(c, "delayed", False) for c in as_list(getattr(network, "coupling", None))
+            getattr(c, "delayed", False) for c in network_couplings(network).values()
         ) or any(
             getattr(getattr(e, "coupling", None), "delayed", False)
             for e in (getattr(network, "edges", None) or [])

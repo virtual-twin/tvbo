@@ -1183,6 +1183,31 @@ Reaching the ontology is `enrich()`, one verb across Dynamics, Coupling, Observa
 Function and Integrator.
 
 
+## Retire `DerivedVariable.cases`, `conditional` and `Dynamics.coupling_terms` — DONE (#95)
+Three deprecated spellings kept alive by runtime shims inside `update_metadata`, now gone
+from the schema.
+
+`cases` could not be aliased onto `conditionals`: they hang off different classes
+(`DerivedVariable` vs `Equation`) at different depths (`dv.cases` vs
+`dv.equation.conditionals`) with different member shapes (`{condition, equation: {rhs}}` vs
+`{condition, expression}`), and `fold_aliases` is a same-level key rename. The 19 blocks
+across 8 models were rewritten and the old spelling rejected. `conditional:` went with
+them — it was `true` exactly when `cases` was non-empty in every curated record, and its
+`ifabsent: false` had materialised 232 `conditional: false` lines across 42 files.
+
+`coupling_terms` had zero curated users; it survived only because
+`_migrate_coupling_terms` copied `coupling_inputs` *back* into it on every model to feed
+readers that could have asked `coupling_inputs` directly.
+
+The published record shrank by 421 lines; the codegen corpus did not move, because the 17
+blocks that also state the whole `Piecewise(...)` in `rhs` keep it, and that is what the
+emitters read.
+
+`calculate_derived_parameters` went too: 476 ms per `EpileptorCodim3SlowMod` construction
+writing values that nothing has ever read. `codegen/templater.py::derived_parameter_inputs`
+folded into `templates/base/utils.py::referenced_parameters` as a `within=` scope.
+
+
 ## Experimental / parked
 
 ### Composite / coupled Dynamics

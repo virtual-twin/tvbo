@@ -5,7 +5,7 @@ from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
 from tvb.simulator.models.base import Model
 
 
-class Dynamics(Model):
+class Spring(Model):
 
     k = NArray(
         label=r":math:`k`",

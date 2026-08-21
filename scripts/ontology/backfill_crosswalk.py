@@ -113,7 +113,7 @@ CONDITIONAL = {
 # isolation (not required for run; classed `no` in boundary matrix).
 NON_RUNTIME = {
     "Aggregation", "Algorithm", "AlgorithmInclude", "Argument", "BidsEntities",
-    "BrainRegionSeries", "Callable", "Case", "ClassReference",
+    "BrainRegionSeries", "Callable", "ClassReference",
     "ConditionalBlock", "DataSource", "DerivedObservation", "DerivedParameter",
     "DerivedVariable", "Edge", "Equation", "Event", "ExecutionConfig", "File",
     "FunctionCall", "GraphGenerator", "InitialState", "Matrix", "NDArray",

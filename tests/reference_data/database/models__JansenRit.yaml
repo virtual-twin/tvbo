@@ -242,7 +242,6 @@ derived_variables:
       rhs: 2.0*nu_max/(exp(r*(-J*a_1*y0 + v0)) + 1.0)
       latex: false
     record: false
-    conditional: false
   sigma_y0_3:
     name: sigma_y0_3
     description: Sigmoid function that transforms the average membrane potential of
@@ -253,7 +252,6 @@ derived_variables:
       rhs: 2.0*nu_max/(exp(r*(-J*a_3*y0 + v0)) + 1.0)
       latex: false
     record: false
-    conditional: false
   sigma_y1_y2:
     name: sigma_y1_y2
     description: 'Sigmoid function that transforms the average membrane potential
@@ -265,7 +263,6 @@ derived_variables:
       rhs: 2.0*nu_max/(exp(r*(v0 - y1 + y2)) + 1.0)
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

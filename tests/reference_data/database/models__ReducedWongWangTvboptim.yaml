@@ -129,7 +129,6 @@ derived_variables:
       rhs: w*J_N*S + I_o + J_N*instant + J_N*delayed
       latex: false
     record: false
-    conditional: false
   H_x:
     name: H_x
     description: Average population firing rate H evaluated at the total synaptic
@@ -139,7 +138,6 @@ derived_variables:
       rhs: H(x)
       latex: false
     record: true
-    conditional: false
 coupling_inputs:
   instant:
     name: instant

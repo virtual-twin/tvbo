@@ -16,6 +16,7 @@ Output:
 <%
 import textwrap
 from tvbo.codegen import render_expression
+from tvbo.codegen.templater import entry_point_name
 from tvbo.templates.base.utils import referenced_parameters
 from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout
 from tvbo.utils import initial_value as _initial_value
@@ -71,13 +72,13 @@ initial_state = [_init_value[v] for v in var_names for _ in range(n_modes)]
 #     observing an auxiliary does not require also adding it to model.output).
 # all_aux_names = every derived variable defined by the model (the AUXILIARY_NAMES tuple).
 # requested_aux = subset that the solver should record (extends VARIABLES_OF_INTEREST).
-all_aux_names = list(model.derived_variables.keys()) if model.derived_variables else []
+all_aux_names = list(model.in_dependency_order('derived_variables').keys()) if model.derived_variables else []
 _, requested_aux, recorded_var_names = get_recorded_variable_names(model, _experiment_ctx)
 aux_names = all_aux_names
 
 # Extract parameter info using shared utility
 param_names, param_defaults, param_shapes = get_param_info(model.parameters)
-derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
+derived_param_names = [p.name for p in model.in_dependency_order('derived_parameters').values()] if model.derived_parameters else []
 
 # Detect parameters with distribution.axis == 'time' — these are stochastic
 # time-varying inputs pre-generated as arrays and indexed per integration step.
@@ -132,12 +133,8 @@ if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
         keys = getattr(ci, 'keys', None)
         if keys:
             coupling_keys[ci_name] = list(keys)
-elif hasattr(model, 'coupling_terms') and model.coupling_terms:
-    # Deprecated fallback: use coupling_terms with dimension 1 each
-    for ct_name in model.coupling_terms.keys():
-        coupling_inputs_dict[ct_name] = 1
 
-class_name = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
+class_name = entry_point_name(model, 'tvboptim')
 
 # Build EXTERNAL_INPUTS from experiment.events (stimulus-type events)
 # Each stimulus event name → dimension 1 (scalar signal per node)
@@ -207,7 +204,7 @@ class ${class_name}(AbstractDynamics):
         % endfor
 
         % if derived_param_names:
-        % for dp in model.derived_parameters.values():
+        % for dp in model.in_dependency_order('derived_parameters').values():
         ${dp.name} = ${jaxcode_obj(dp)}
         % endfor
         % endif
@@ -262,7 +259,7 @@ ${_fdef}
         % endif
 
         % if model.derived_variables:
-        % for dv in model.derived_variables.values():
+        % for dv in model.in_dependency_order('derived_variables').values():
         ${dv.name} = ${jaxcode_obj(dv)}
         % endfor
         % endif

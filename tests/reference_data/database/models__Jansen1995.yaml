@@ -77,7 +77,6 @@ derived_variables:
       latex: false
     unit: mV
     record: true
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

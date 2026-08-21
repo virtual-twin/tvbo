@@ -1065,7 +1065,7 @@ def _model_vocabulary(model):
     """The symbol and function names a model's authored expressions may reference."""
     names = []
     for collection in ("parameters", "derived_parameters", "state_variables",
-                       "derived_variables", "coupling_terms", "coupling_inputs"):
+                       "derived_variables", "coupling_inputs"):
         names += [n for n, _ in name_items(slot(model, collection, None))]
     return names, [n for n, _ in name_items(slot(model, "functions", None))]
 

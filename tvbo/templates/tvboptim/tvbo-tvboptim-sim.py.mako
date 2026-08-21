@@ -40,9 +40,6 @@ if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
     for ci_name, ci in model.coupling_inputs.items():
         dim = getattr(ci, 'dimension', 1) or 1
         coupling_inputs_dict[ci_name] = dim
-elif hasattr(model, 'coupling_terms') and model.coupling_terms:
-    for ct_name in model.coupling_terms.keys():
-        coupling_inputs_dict[ct_name] = 1
 
 # Coupling metadata
 has_delay = hasattr(coupling, 'delayed') and coupling.delayed
@@ -79,8 +76,9 @@ conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs els
 # Simulation parameters
 t1_default = float(integration.duration) if hasattr(integration, 'duration') and integration.duration else 1000.0
 
-# Class names
-dynamics_class = model.name.replace(' ', '').replace('-', '') if hasattr(model, 'name') and model.name else 'GeneratedDynamics'
+## The class the dfun template emits, read from the one declaration so they cannot differ.
+from tvbo.codegen.templater import entry_point_name
+dynamics_class = entry_point_name(model, 'tvboptim')
 
 # Events metadata (stimuli and other time-dependent inputs)
 events_list = list(experiment.events.values()) if experiment.events else []

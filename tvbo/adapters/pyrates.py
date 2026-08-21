@@ -766,7 +766,7 @@ class PyRatesAdapter(BaseAdapter):
             src_var = f"{dyn_name}_op/x"
 
         # Target: coupling input
-        ci = getattr(first_dyn, "coupling_inputs", None) or getattr(first_dyn, "coupling_terms", None)
+        ci = getattr(first_dyn, "coupling_inputs", None)
         if ci:
             tgt_var = f"{dyn_name}_op/{list(ci.keys())[0]}"
         else:

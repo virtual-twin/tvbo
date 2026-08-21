@@ -122,8 +122,6 @@ for _en, _ev in (getattr(model, 'events', None) or {}).items():
         _parts.append("$" + ",\\; ".join(_updates) + "$")
     events_lines.append(f"- *{_en}*: " + ", ".join(_parts))
 
-# coupling_inputs is the supported surface; coupling_terms duplicated the same names
-# (each input IS a term) and is no longer rendered.
 coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
 if _delta is not None:
     coupling_inputs = {n: o for n, o in report.name_items(coupling_inputs) if n in _delta.coupling_inputs}

@@ -7,16 +7,13 @@ params = model.parameters.values()
 # Collect all symbol names so the parser recognizes them as Symbols
 sv_names = list(model.state_variables.keys())
 param_names = list(model.parameters.keys())
-ct_names = list(model.coupling_terms.keys()) if model.coupling_terms else []
-dv_names = list(model.derived_variables.keys()) if model.derived_variables else []
-dp_names = list(model.derived_parameters.keys()) if model.derived_parameters else []
+ct_names = list(model.coupling_inputs.keys()) if model.coupling_inputs else []
+dv_names = list(model.in_dependency_order('derived_variables').keys()) if model.derived_variables else []
+dp_names = list(model.in_dependency_order('derived_parameters').keys()) if model.derived_parameters else []
 all_symbols = sv_names + param_names + ct_names + dv_names + dp_names
 
-# For single-node bifurcation analysis, all coupling inputs must be zeroed
-# out (they are otherwise undeclared Fortran identifiers). Use coupling_inputs
-# (canonical) and fall back to coupling_terms (deprecated) for old models.
-ci_names = list(model.coupling_inputs.keys()) if model.coupling_inputs else []
-coupling_zero = list({*ci_names, *ct_names})
+# Single-node continuation zeroes every coupling input: otherwise undeclared in Fortran.
+coupling_zero = list(ct_names)
 
 replace = {
     p.name: (p.name + 'low' if p.name[0].islower() and p.name in [n.name.lower() for n in params if n.name != p.name] else p.name)
@@ -32,10 +29,10 @@ SUBROUTINE FUNC(NDIM, U, ICP, PAR, IJAC, F, DFDU, DFDP)
     DOUBLE PRECISION ${",".join([sv.name for sv in model.state_variables.values()])}
     DOUBLE PRECISION ${", ".join([f"{replace[p.name]}" for p in model.parameters.values()])}
 % if model.derived_parameters:
-    DOUBLE PRECISION ${", ".join([f"{dp.name}" for dp in model.derived_parameters.values()])}
+    DOUBLE PRECISION ${", ".join([f"{dp.name}" for dp in model.in_dependency_order('derived_parameters').values()])}
 % endif
 % if model.derived_variables:
-    DOUBLE PRECISION ${", ".join([f"{k}" for k in model.derived_variables.keys()])}
+    DOUBLE PRECISION ${", ".join([f"{k}" for k in model.in_dependency_order('derived_variables').keys()])}
 % endif
 
     % for i, p in enumerate(model.parameters.values()):
@@ -43,7 +40,7 @@ SUBROUTINE FUNC(NDIM, U, ICP, PAR, IJAC, F, DFDU, DFDP)
     % endfor
 
 % if model.derived_parameters:
-    % for dp in model.derived_parameters.values():
+    % for dp in model.in_dependency_order('derived_parameters').values():
     ${dp.name} = ${render_eq(dp.equation, format='fortran', replace=replace, parameters=all_symbols)}
     % endfor
 % endif
@@ -53,7 +50,7 @@ SUBROUTINE FUNC(NDIM, U, ICP, PAR, IJAC, F, DFDU, DFDP)
     % endfor
 
 % if model.derived_variables:
-    % for k,v in model.derived_variables.items():
+    % for k,v in model.in_dependency_order('derived_variables').items():
     ${k} = ${render_eq(v.equation, user_functions={f:f for f in model.functions.keys()}, format='fortran', replace=replace, parameters=all_symbols, remove=coupling_zero)}
     % endfor
 % endif

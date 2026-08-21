@@ -1,5 +1,5 @@
-name: ReducedWongWang
-iri: tvbo:ReducedWongWang
+name: ReducedWongWangFunc
+derived_from_model: ReducedWongWang
 model_type: mean_field
 parameters:
   I_o:
@@ -84,7 +84,6 @@ derived_variables:
       lhs: x
       rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_glob
       latex: false
-    conditional: false
 coupling_inputs:
   c_glob: {}
   local_coupling: {}

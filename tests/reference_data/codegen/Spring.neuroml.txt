@@ -48,10 +48,10 @@
 
 
   <!-- ════════════════════════════════════════════════════════════════
-       ComponentType: Dynamics
-       Generated from TVBO Dynamics: Dynamics
+       ComponentType: Spring
+       Generated from TVBO Dynamics: Spring
        ════════════════════════════════════════════════════════════════ -->
-  <ComponentType name="Dynamics">
+  <ComponentType name="Spring">
 
     <!-- Parameters -->
     <Parameter name="k" dimension="none"/>
@@ -104,7 +104,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="Dynamics_inst" type="Dynamics" k="0.0001" m="1.0" x_0="2.0" v_0="0.0"/>
+  <Component id="Spring_inst" type="Spring" k="0.0001" m="1.0" x_0="2.0" v_0="0.0"/>
 
 
 

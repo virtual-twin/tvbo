@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from tvbo.adapters.base import ContinuationAdapter
+
 if TYPE_CHECKING:
     from tvbo.analysis.bifurcation import BifurcationResult
-    from tvbo.classes.experiment import SimulationExperiment
 
 # Schema attr → Julia kwarg name mapping for ContinuationPar
 _CONT_FIELDS = [
@@ -102,16 +103,13 @@ def _newton_kwargs(c):
     return args
 
 
-class BifurcationKitAdapter:
+class BifurcationKitAdapter(ContinuationAdapter):
     """Adapter for running bifurcation analysis via BifurcationKit.jl.
 
-    Unlike NetworkDynamics/MTK adapters, this does not inherit from
-    BaseAdapter — bifurcation analysis operates on individual
-    (Dynamics, Continuation) pairs rather than a full network context.
+    A continuation backend: it renders one ``(Dynamics, Continuation)`` pair at a time
+    rather than a whole network context, so it takes its pair resolution from
+    [`ContinuationAdapter`](#tvbo.adapters.base.ContinuationAdapter).
     """
-
-    def __init__(self, experiment: "SimulationExperiment"):
-        self.experiment = experiment
 
     # ── Context preparation ──────────────────────────────────────────────
 
@@ -315,10 +313,7 @@ class BifurcationKitAdapter:
         from tvbo import templates
 
         model = model or self.experiment.dynamics
-        if continuation is None:
-            conts = getattr(self.experiment, "continuations", None) or {}
-            if conts:
-                continuation = next(iter(conts.values()))
+        continuation = self.resolve_continuation(continuation)
 
         # A multi-node network on the experiment ⇒ continue the coupled system.
         network = getattr(self.experiment, "network", None)
@@ -414,8 +409,7 @@ class BifurcationKitAdapter:
         from tvbo.analysis import BifurcationResult
         from tvbo.run.julia import extract_bifurcation_result, run_julia_code
 
-        exp = self.experiment
-        conts = getattr(exp, "continuations", None) or {}
+        conts = self.continuations()
         if not conts:
             raise ValueError(
                 "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
@@ -423,7 +417,7 @@ class BifurcationKitAdapter:
 
         results = {}
         for name, cont in conts.items():
-            model = self._resolve_dynamics(cont)
+            model = self.resolve_dynamics(cont)
             code = self.render_code(model=model, continuation=cont, **kwargs)
 
             run_julia_code(code)
@@ -443,23 +437,6 @@ class BifurcationKitAdapter:
         return results
 
     # ── Private helpers ──────────────────────────────────────────────────
-
-    def _resolve_dynamics(self, cont):
-        """Resolve the Dynamics model for a continuation spec."""
-        exp = self.experiment
-        dyn_ref = getattr(cont, "dynamics", None)
-        if dyn_ref:
-            dyn_name = str(dyn_ref)
-            # Check primary dynamics
-            if exp.dynamics and getattr(exp.dynamics, "name", None) == dyn_name:
-                return exp.dynamics
-            # Check network dynamics dict
-            net_dyn = getattr(exp.network, "dynamics", None) if exp.network else None
-            if isinstance(net_dyn, dict) and dyn_name in net_dyn:
-                return net_dyn[dyn_name]
-        if exp.dynamics is not None:
-            return exp.dynamics
-        raise ValueError(f"Cannot resolve dynamics for continuation. dynamics='{dyn_ref}' not found.")
 
     def _extract_periodic_orbits(self, model, **kwargs) -> list:
         """Extract periodic orbit branches from Julia Main after execution.

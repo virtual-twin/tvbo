@@ -36,9 +36,9 @@
 
     # Identify output derived variables that depend on dfun arguments (coupling, t, noise, stimulus)
     # These must be computed inside integrate and returned as part of scan output
-    dfun_args = set(model.coupling_terms.keys()) | {'t', 'noise', 'stimulus'}
-    derived_var_names = list(model.derived_variables.keys())
-    derived_param_names = list(model.derived_parameters.keys())
+    dfun_args = set(model.coupling_inputs.keys()) | {'t', 'noise', 'stimulus'}
+    derived_var_names = list(model.in_dependency_order('derived_variables').keys())
+    derived_param_names = list(model.in_dependency_order('derived_parameters').keys())
     param_names = [p.name for p in model.parameters.values()]
     output_vars = list(model.output) if model.output else svars
     has_output = len(output_vars) > 0
@@ -123,10 +123,12 @@ ${obs.create_all_observations(experiment, obs_sampling=context.get('obs_sampling
 
 ## Transformation for derived parameters
 <%
-    from tvbo.codegen.templater import derived_parameter_inputs
-    derived_params = list(experiment.dynamics.derived_parameters.values())
+    from tvbo.templates.base.utils import referenced_parameters
+    derived_params = list(experiment.dynamics.in_dependency_order('derived_parameters').values())
     ## Unpack only what the derived expressions read; the rest would be dead bindings.
-    unpacked_params = derived_parameter_inputs(experiment.dynamics)
+    unpacked_params = referenced_parameters(
+        experiment.dynamics, within=experiment.dynamics.derived_parameters or {}
+    )
 %>
 def transform_parameters(_p):
 % if unpacked_params:
@@ -241,8 +243,8 @@ def kernel(state):
     # output_derived_in_integrate and output_derived_from_trace also already computed
     %>
     % if has_output:
-    % if output_derived_from_trace or output_derived_in_integrate:
-    ## Need parameters for derived variable computations
+    % if (output_derived_from_trace or output_derived_in_integrate) and (param_names + derived_param_names):
+    ## Need parameters for derived variable computations; an empty unpack does not parse.
     ${", ".join(param_names + derived_param_names)} = p.${", p.".join(param_names + derived_param_names)}
     % endif
 

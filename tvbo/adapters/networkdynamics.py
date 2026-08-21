@@ -137,6 +137,8 @@ class NetworkDynamicsAdapter(BaseAdapter):
     method pre-computes all template variables so Mako templates stay clean.
     """
 
+    TEMPLATE = "tvbo-nd-experiment.jl.mako"
+
     # ── Spatial / heterogeneous metadata ─────────────────────────────────
 
     def get_initial_positions(self) -> np.ndarray:
@@ -268,15 +270,6 @@ class NetworkDynamicsAdapter(BaseAdapter):
         return positions
 
     # ── Code generation ──────────────────────────────────────────────────
-
-    def render_code(self, **kwargs) -> str:
-        """Render Julia code with pre-computed context from BaseAdapter."""
-        from tvbo import templates
-
-        ctx = self.prepare_context()
-        ctx.update(kwargs)
-        template = templates.lookup.get_template("tvbo-nd-experiment.jl.mako")
-        return template.render(**ctx)
 
     def run(self, **kwargs) -> "ExperimentResult":
         """Run simulation using NetworkDynamics.jl.

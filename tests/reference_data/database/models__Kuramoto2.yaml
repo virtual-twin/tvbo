@@ -27,7 +27,6 @@ derived_variables:
       rhs: sin(local_coupling*theta)
       latex: false
     record: false
-    conditional: false
   I:
     name: I
     description: '`I` is the input via local and long range connectivity, passing
@@ -37,7 +36,6 @@ derived_variables:
       rhs: c_glob+lc_0
       latex: false
     record: false
-    conditional: false
   phase:
     name: phase
     description: Normalized phase output
@@ -45,7 +43,6 @@ derived_variables:
       rhs: theta / (2*pi)
       latex: false
     record: true
-    conditional: false
   signal:
     name: signal
     description: Sinusoidal signal output
@@ -53,7 +50,6 @@ derived_variables:
       rhs: sin(theta)
       latex: false
     record: true
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

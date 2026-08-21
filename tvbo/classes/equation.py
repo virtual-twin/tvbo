@@ -17,7 +17,6 @@ from collections import deque
 import sympy as sp
 from sympy import (
     IndexedBase,
-    latex,
     sympify,
     parse_expr,
     Symbol,
@@ -758,75 +757,4 @@ def generate_global_coupling_function(pre_expr, post_expr, j_index_start=0):
 
     # Return the expression without additional simplification
     return post_with_gx
-
-
-def topological_sort_equations(variable_dict, dependency_tree):
-    """Sort equations topologically according to a dependency graph.
-
-    Verifies the dependency graph is acyclic (raising with the offending cycle
-    when it is not) and returns the equations reordered so each variable follows
-    the variables it depends on.
-
-    Args:
-        variable_dict: Mapping of variable names to their equations.
-        dependency_tree: A `networkx.DiGraph` of variable dependencies; must be a
-            directed acyclic graph.
-
-    Returns:
-        A new dictionary of equations in topological order.
-
-    Raises:
-        ValueError: If the dependency graph contains a cycle.
-    """
-    from networkx import (
-        topological_sort,
-        is_directed_acyclic_graph,
-        draw,
-        find_cycle,
-        kamada_kawai_layout,
-    )
-
-    """
-    Sorts equations topologically by dependency, breaking ties alphabetically.
-
-    Args:
-        variable_dict (dict): A dictionary of variables and their equations.
-        dependency_tree (networkx.DiGraph): A directed acyclic graph representing variable dependencies.
-
-    Returns:
-        dict: A sorted dictionary of equations.
-    """
-    # Verify the dependency tree is a DAG
-    if not is_directed_acyclic_graph(dependency_tree):
-        import matplotlib.pyplot as plt
-
-        fig, ax = plt.subplots(figsize=(16, 9))
-        draw(
-            dependency_tree,
-            pos=kamada_kawai_layout(dependency_tree),
-            with_labels=True,
-            labels={n: f"${latex(n)}$" for n in dependency_tree.nodes},
-            ax=ax,
-            node_color="lightblue",
-        )
-        cycles = find_cycle(dependency_tree, orientation="original")
-        if cycles:
-            cycle_str = " -> ".join(f"{edge[0]} -> {edge[1]}" for edge in cycles)
-            raise ValueError(f"Found cycles: {cycle_str}. Dependency tree must be a Directed Acyclic Graph (DAG).")
-        else:
-            raise ValueError("Dependency tree must be a Directed Acyclic Graph (DAG). Unable to identify cycles.")
-
-    # Perform topological sort and sort ties alphabetically
-    sorted_variables = list(topological_sort(dependency_tree))
-
-    # sorted(
-    #     sorted_variables,
-    #     key=lambda x: (dependency_tree.in_degree(x), str(x)),
-    # )
-
-    # Create a sorted dictionary
-    sorted_equations = {str(var): variable_dict[str(var)] for var in sorted_variables if str(var) in variable_dict}
-
-    return sorted_equations
-
 

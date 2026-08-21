@@ -60,43 +60,34 @@ derived_variables:
       over N(mu, sigma); computed offline at `update_derived_parameters`.
     grounding: [GO:0060079]
     equation: {lhs: Aik, rhs: '0.5', latex: false}
-    conditional: false
   Bik:
     description: Inhibitory-to-excitatory mode-coupling matrix.
     grounding: [GO:0060079]
     equation: {lhs: Bik, rhs: '0.5', latex: false}
-    conditional: false
   Cik:
     description: Excitatory-to-inhibitory mode-coupling matrix.
     grounding: [GO:0060080]
     equation: {lhs: Cik, rhs: '0.5', latex: false}
-    conditional: false
   e_i:
     description: Per-mode cubic-coefficient projection for the excitatory subnetwork.
     equation: {lhs: e_i, rhs: '1.0', latex: false}
-    conditional: false
   f_i:
     description: Per-mode cubic-coefficient projection for the inhibitory subnetwork.
     equation: {lhs: f_i, rhs: '1.0', latex: false}
-    conditional: false
   IE_i:
     description: Per-mode constant excitatory input from the heterogeneity distribution.
     grounding: [GO:0042391]
     equation: {lhs: IE_i, rhs: '0.0', latex: false}
-    conditional: false
   II_i:
     description: Per-mode constant inhibitory input from the heterogeneity distribution.
     grounding: [GO:0042391]
     equation: {lhs: II_i, rhs: '0.0', latex: false}
-    conditional: false
   m_i:
     description: Per-mode offset entering the eta dynamics.
     equation: {lhs: m_i, rhs: 'a', latex: false}
-    conditional: false
   n_i:
     description: Per-mode offset entering the beta dynamics.
     equation: {lhs: n_i, rhs: 'a', latex: false}
-    conditional: false
 coupling_inputs:
   c_glob: {}
   local_coupling: {local: true}

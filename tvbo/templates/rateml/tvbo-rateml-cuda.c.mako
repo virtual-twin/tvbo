@@ -17,13 +17,14 @@ Output:
 - CUDA kernel for parallel brain network simulation
 </%doc>
 <%
+from tvbo.templates.base.utils import get_coupling_terms, get_func_name
 from tvbo.templates.rateml.utils import (
     cuda_code, has_boundaries, get_initial_value,
     get_domain_str, get_boundary_str
 )
 
-# Model name
-model_name = model.name.replace(' ', '').replace('-', '')
+# Model name: the one sanitized identifier.
+model_name = get_func_name(model)
 
 # State variables
 state_vars = list(model.state_variables.items())
@@ -33,13 +34,15 @@ n_states = len(state_vars)
 params = list(model.parameters.items()) if model.parameters else []
 
 # Derived parameters (computed from other params)
-derived_params = list(model.derived_parameters.items()) if model.derived_parameters else []
+derived_params = list(model.in_dependency_order('derived_parameters').items()) if model.derived_parameters else []
 
 # Derived variables (intermediate calculations)
-derived_vars = list(model.derived_variables.items()) if model.derived_variables else []
+derived_vars = list(model.in_dependency_order('derived_variables').items()) if model.derived_variables else []
 
-# Coupling terms
-coupling_terms = list(model.coupling_terms.keys()) if model.coupling_terms else ['c_glob']
+# All inputs are declared and zeroed; only the global ones accumulate from the connectome.
+_all_ct, _global_ct, _local_ct = get_coupling_terms(model)
+coupling_terms = _all_ct or ['c_glob']
+global_coupling_terms = _global_ct or coupling_terms
 
 # Swept parameters (for parameter space exploration)
 if 'swept_params' not in context.keys():
@@ -209,7 +212,7 @@ extern "C" __global__ void ${model_name}(
                 % endfor
 
                 // Accumulate coupling (linear coupling: c_pop0 += wij * S_j)
-                % for ct in coupling_terms:
+                % for ct in global_coupling_terms:
                 ${ct} += wij * global_coupling * ${state_vars[0][0]}_j;
                 % endfor
             }
@@ -287,8 +290,8 @@ if 'experiment' in context.keys() and experiment:
 # Extract from dynamics metadata - use names exactly as defined
 bold_params = dict(bold_model.parameters.items()) if bold_model.parameters else {}
 bold_states = list(bold_model.state_variables.items()) if bold_model.state_variables else []
-bold_derived_params = dict(bold_model.derived_parameters.items()) if bold_model.derived_parameters else {}
-bold_derived_vars = list(bold_model.derived_variables.items()) if bold_model.derived_variables else []
+bold_derived_params = dict(bold_model.in_dependency_order('derived_parameters').items()) if bold_model.derived_parameters else {}
+bold_derived_vars = list(bold_model.in_dependency_order('derived_variables').items()) if bold_model.derived_variables else []
 
 def get_bold_param_val(name, default):
     p = bold_params.get(name)

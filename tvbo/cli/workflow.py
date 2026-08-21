@@ -132,6 +132,7 @@ def _build_plan(spec: str, *, engine: str, backend: str,
 
 
 from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (shared recursive merge)
+from tvbo.utils import keyed_items  # noqa: E402  (the one reader for a keyed collection)
 
 
 def _build_plans(spec: str, *, engine: str, backend: str,
@@ -311,14 +312,11 @@ def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None 
         # Compact network reference: data_file + inline coupling/transforms/parameters,
         # so the rendered spec loads the companion connectome rather than a stub.
         ref = dm.Network(data_file="network.h5")
-        if getattr(net, "coupling", None):
-            for k, v in dict(net.coupling).items():
-                ref.coupling[k] = v
+        for slot in ("coupling", "parameters"):
+            for key, member in keyed_items(getattr(net, slot, None), slot):
+                getattr(ref, slot)[key] = member
         if getattr(net, "transforms", None):
             ref.transforms = list(net.transforms)
-        if getattr(net, "parameters", None):
-            for k, v in dict(net.parameters).items():
-                ref.parameters[k] = v
         # Carry the scalar identity + measure declarations. The measure lists in
         # particular are not decoration: `Network.observations` (and the structural
         # resolution) gate on them, so a companion h5 that holds `BoldCorrelation`

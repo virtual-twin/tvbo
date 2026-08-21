@@ -64,8 +64,9 @@ def test_a_definition_is_not_expanded(model):
     """A record stating its own ``name`` is a definition; its ``iri`` only grounds it.
 
     Fifty curated files are written that way. Expanding them would re-derive a definition
-    from a name lookup — and ``ReducedWongWangFunc.yml`` declares ``name: ReducedWongWang``,
-    so it would be overwritten by the different, canonical ``ReducedWongWang.yaml``.
+    from a name lookup — and ``ReducedWongWangFunc.yaml`` grounds on ``tvbo:ReducedWongWang``
+    while stating its own name, so it would be overwritten by the different, canonical
+    ``ReducedWongWang.yaml``.
     """
     coupling = model.Coupling(iri="tvbo:FastLinearCoupling", name="MyOwnCoupling")
 
@@ -89,12 +90,8 @@ def test_an_iri_naming_nothing_is_left_alone(model):
 def test_the_curated_record_still_loads_as_itself():
     """The regression the definition guard exists for, on the file that exposed it."""
     from tvbo.classes.dynamics import Dynamics
-    from tvbo.data.registry import database_dir
 
-    path = next(
-        p for ext in ("yaml", "yml") for p in database_dir("Dynamics").rglob(f"ReducedWongWangFunc.{ext}")
-    )
-    dynamics = Dynamics.from_file(str(path))
+    dynamics = Dynamics.from_db("ReducedWongWangFunc")
 
     assert "H" in dynamics.functions
     assert list(dynamics.functions["H"].arguments) == ["x"]

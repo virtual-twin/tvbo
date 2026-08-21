@@ -30,6 +30,7 @@ from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, S
 __all__ = [
     "KEYED_COLLECTIONS",
     "SCALAR_SHORTCUTS",
+    "SEMANTIC_FOLDS",
     "SLOT_ALIASES",
     "curated_entry",
     "expand_iri",
@@ -39,9 +40,24 @@ __all__ = [
     "lift_scalar",
     "normalize",
     "install_on_dataclasses",
+    "peer_module",
 ]
 
 _SCALARS = (str, int, float, bool)
+
+
+def peer_module(instance):
+    """The generated module *instance*'s class comes from.
+
+    A record is filled with members — an ``Equation``, a ``Parameter`` — and those have to
+    be of the same generated form as the record itself: the strict Pydantic models validate
+    on assignment and reject a LinkML dataclass where they want their own peer. Behaviour
+    that builds members reads the peer off the instance rather than importing one form,
+    which is what lets one implementation serve both.
+    """
+    import importlib
+
+    return importlib.import_module(type(instance).__module__)
 
 
 def is_literal(value) -> bool:
@@ -152,9 +168,9 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     Only a *reference* expands. A record that also states its own ``name`` is a definition,
     and its ``iri`` is grounding — "this model is a ReducedWongWang in the ontology" — not
     an instruction to inherit. Fifty curated files are written that way, and expanding them
-    would re-derive a definition from a name lookup: ``ReducedWongWangFunc.yml`` declares
-    ``name: ReducedWongWang``, so it would be overwritten by the canonical
-    ``ReducedWongWang.yaml`` it merely relates to.
+    would re-derive a definition from a name lookup: ``ReducedWongWangFunc.yaml`` states its
+    own name and grounds on ``tvbo:ReducedWongWang``, so expanding it would replace a
+    distinct record with the canonical ``ReducedWongWang.yaml`` it merely relates to.
 
     An ``iri`` naming nothing is left alone: it may point at an entity that exists only in
     the ontology, and this pass cannot tell that from a typo. ``tvbo validate`` is where a
@@ -222,6 +238,80 @@ def _as_mapping(members: list, identifier: str) -> list | dict:
     return keyed
 
 
+def _fold_state_variable_domain(data: dict) -> None:
+    """``range``/``boundaries`` mean more than ``domain`` spelled differently.
+
+    ``boundaries`` is a hard clamp and ``range`` is descriptive, so folding either one by
+    a plain rename would silently promote a description into an enforced bound. The fold
+    that keeps them apart lives with the loader; this is where the Python construction
+    path reaches it.
+    """
+    from tvbo.utils.yaml_loader import _fold_one_state_variable_domain
+
+    _fold_one_state_variable_domain(data)
+
+
+def _reject_output_as_definitions(data: dict) -> None:
+    """``output`` lists names. Definitions there are accepted and quietly ruined.
+
+    The slot is a list of strings, so a mapping of variable definitions is coerced to
+    ``["JsonObj(x=JsonObj(equation=...))"]`` — a model that constructs, renders and runs
+    while naming an output that does not exist.
+    """
+    output = data.get("output")
+    if not isinstance(output, dict):
+        return
+    first = next(iter(output.values()), None)
+    if isinstance(first, dict) and ("equation" in first or "rhs" in first):
+        raise ValueError(
+            "'output' should be a list of variable names, not variable definitions. "
+            "Did you mean 'derived_variables'?\n\n"
+            "Change:\n"
+            "  output:\n"
+            "    x:\n"
+            "      equation: ...\n\n"
+            "To:\n"
+            "  derived_variables:\n"
+            "    x:\n"
+            "      equation: ...\n"
+            "  output: [x]  # optional: list of outputs to include"
+        )
+
+
+def _reject_unknown_output(data: dict) -> None:
+    """An ``output`` entry names a channel of this model, so a name it does not declare is a typo.
+
+    Checked here because it is the one place that is deterministic, local and cheap: two
+    key lookups against collections already in hand. Parsing every equation is what used to
+    answer it, from inside a constructor that no longer does any work — so between that
+    constructor emptying and this fold the check was simply absent, and a model naming a
+    channel that does not exist built without complaint.
+    """
+    declared = set(data.get("derived_variables") or ()) | set(data.get("state_variables") or ())
+    for name in data.get("output") or ():
+        if isinstance(name, str) and name not in declared:
+            raise ValueError(
+                f"Output variable '{name}' not found in derived_variables or state_variables"
+            )
+
+
+def _fold_dynamics(data: dict) -> None:
+    """The two things a `Dynamics` record cannot say for itself."""
+    _reject_output_as_definitions(data)
+    _reject_unknown_output(data)
+
+
+SEMANTIC_FOLDS = {
+    "StateVariable": _fold_state_variable_domain,
+    "Dynamics": _fold_dynamics,
+}
+"""Per-class dialect a table of renames cannot express, keyed like the other tables.
+
+Applied after the members are keyed, so a fold sees each collection under the names its
+own class will, whichever spelling the record was written in.
+"""
+
+
 def normalize(cls_name: str, data: dict) -> dict:
     """Fold *cls_name*'s dialect into *data*, in place: aliases, ``iri``, shortcuts, keys.
 
@@ -230,14 +320,33 @@ def normalize(cls_name: str, data: dict) -> dict:
     Lifting first left ``BoundaryCondition(value="0")`` — the older spelling of
     ``equation`` — a bare string where the generated ``__post_init__`` wanted a mapping,
     and it raised. Keying comes last, once every member is a mapping that can carry a name.
+
+    The semantic folds come last, after keying, so a fold reads each collection under the
+    names the class will — a record spelling one as a list is not a different case to it.
+    The terse ``distribution`` lift follows the domain fold, since a clamp folded out of
+    ``boundaries`` can leave one behind for it to complete.
+
+    The document envelope goes first. ``tvbo_class`` states which class a *file* holds,
+    which is a fact about the file and never a slot, so every constructor route drops it.
     """
+    from tvbo.utils.yaml_loader import ENVELOPE_KEYS, _lift_one_distribution
+
+    for envelope_key in ENVELOPE_KEYS:
+        data.pop(envelope_key, None)
+
     fold_aliases(cls_name, data)
     expand_iri(cls_name, data)
 
     for slot, (target, multivalued, keyed) in SCALAR_SHORTCUTS.get(cls_name, {}).items():
         if data.get(slot) is not None:
             data[slot] = lift_scalar(data[slot], target, multivalued, keyed)
-    return key_members(cls_name, data)
+    key_members(cls_name, data)
+
+    semantic = SEMANTIC_FOLDS.get(cls_name)
+    if semantic is not None:
+        semantic(data)
+    _lift_one_distribution(data)
+    return data
 
 
 def install_on_dataclasses(namespace: dict) -> None:
@@ -259,7 +368,7 @@ def install_on_dataclasses(namespace: dict) -> None:
 
         cls.__init__ = __init__
 
-    for name in set(SLOT_ALIASES) | set(SCALAR_SHORTCUTS):
+    for name in set(SLOT_ALIASES) | set(SCALAR_SHORTCUTS) | set(SEMANTIC_FOLDS):
         cls = namespace.get(name)
         if cls is not None:
             wrap(cls)

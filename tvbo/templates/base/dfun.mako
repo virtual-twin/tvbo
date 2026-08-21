@@ -39,23 +39,23 @@ pnames = referenced_parameters(model, [p.name for p in model.parameters.values()
 ${p} = ${source}.${p}
 % endfor
 % endif
-% for dp in (model.derived_parameters or {}).values():
+% for dp in model.in_dependency_order('derived_parameters').values():
 ${dp.name} = ${render(dp)}
 % endfor
 </%def>
 
 <%def name="coupling(model, var='cX')">
 <%
-_, global_terms, has_local = get_coupling_terms(model)
+_, global_terms, local_terms = get_coupling_terms(model)
 %>\
-% if global_terms or has_local:
+% if global_terms or local_terms:
 # Coupling
 % for i, ct in enumerate(global_terms):
 ${ct} = ${var}[${i}]
 % endfor
-% if has_local:
-local_coupling = 0
-% endif
+% for ct in local_terms:
+${ct} = 0
+% endfor
 % endif
 </%def>
 
@@ -87,7 +87,7 @@ render = lambda obj: model.render_equation(obj, format=fmt)
 % if model.derived_variables:
 
 # Derived variables
-% for dv in (model.derived_variables or {}).values():
+% for dv in model.in_dependency_order('derived_variables').values():
 ${dv.name} = ${render(dv)}
 % endfor
 % endif
@@ -97,7 +97,7 @@ ${dv.name} = ${render(dv)}
 <%
 render = lambda obj: model.render_equation(obj, format=fmt)
 svars = list(model.state_variables.values())
-dvars = list((model.derived_variables or {}).keys())
+dvars = list(model.in_dependency_order('derived_variables'))
 np = np_module(fmt)
 %>\
 # Derivatives
@@ -133,7 +133,7 @@ ${derivs(model, fmt, stim, return_aux)}\
 
 <%def name="full_dfun(model, fmt='jax', signature='standard', func_name=None, return_aux=False)">
 <%
-_, global_terms, has_local = get_coupling_terms(model)
+_, global_terms, local_terms = get_coupling_terms(model)
 name = get_func_name(model, func_name)
 %>\
 % if signature == 'standard':
@@ -152,9 +152,9 @@ def ${name}(
     stimulus=False,
 ):
     stim_t = stimulus(t) if stimulus else 0.0
-% if has_local:
-    local_coupling = 0.0
-% endif
+% for ct in local_terms:
+    ${ct} = 0.0
+% endfor
 
 ${textwrap.indent(capture(body, model, fmt, 'kwargs', False, 'stim_t', return_aux).strip(), '    ')}
 % endif

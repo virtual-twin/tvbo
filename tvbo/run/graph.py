@@ -52,7 +52,7 @@ class GraphRunner:
             model: A single `Model`/`Dynamics` instance applied to every node,
                 or a dict mapping node identifiers to per-node model instances.
         """
-        if isinstance(model, localdynamics.Model) or isinstance(model, localdynamics.Dynamics):
+        if isinstance(model, localdynamics.Dynamics):
             for node in self.graph.nodes:
                 self.graph.nodes[node]["model"] = model
 

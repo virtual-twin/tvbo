@@ -154,7 +154,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060079
-    conditional: false
   B_ik:
     name: B_ik
     description: Inhibitory-to-excitatory mode-coupling matrix.
@@ -165,7 +164,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060080
-    conditional: false
   C_ik:
     name: C_ik
     description: Excitatory-to-inhibitory mode-coupling matrix.
@@ -176,7 +174,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060079
-    conditional: false
   a_i:
     name: a_i
     description: Per-mode cubic coefficient for the excitatory xi dynamics (a * <V|V^3>).
@@ -185,7 +182,6 @@ derived_variables:
       rhs: a
       latex: false
     record: false
-    conditional: false
   b_i:
     name: b_i
     description: Per-mode quadratic coefficient for the excitatory xi dynamics.
@@ -194,7 +190,6 @@ derived_variables:
       rhs: b
       latex: false
     record: false
-    conditional: false
   c_i:
     name: c_i
     description: Per-mode constant for the excitatory eta dynamics.
@@ -203,7 +198,6 @@ derived_variables:
       rhs: c
       latex: false
     record: false
-    conditional: false
   d_i:
     name: d_i
     description: Per-mode quadratic coefficient for the excitatory eta dynamics.
@@ -214,7 +208,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060079
-    conditional: false
   e_i:
     name: e_i
     description: Per-mode cubic coefficient for the inhibitory alpha dynamics.
@@ -223,7 +216,6 @@ derived_variables:
       rhs: a
       latex: false
     record: false
-    conditional: false
   f_i:
     name: f_i
     description: Per-mode quadratic coefficient for the inhibitory alpha dynamics.
@@ -232,7 +224,6 @@ derived_variables:
       rhs: b
       latex: false
     record: false
-    conditional: false
   h_i:
     name: h_i
     description: Per-mode constant for the inhibitory beta dynamics.
@@ -241,7 +232,6 @@ derived_variables:
       rhs: c
       latex: false
     record: false
-    conditional: false
   p_i:
     name: p_i
     description: Per-mode quadratic coefficient for the inhibitory beta dynamics.
@@ -252,7 +242,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060080
-    conditional: false
   IE_i:
     name: IE_i
     description: Per-mode constant excitatory input.
@@ -263,7 +252,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060079
-    conditional: false
   II_i:
     name: II_i
     description: Per-mode constant inhibitory input.
@@ -274,7 +262,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060080
-    conditional: false
   m_i:
     name: m_i
     description: Per-mode adaptation offset entering the tau dynamics.
@@ -283,7 +270,6 @@ derived_variables:
       rhs: r*s*x_0
       latex: false
     record: false
-    conditional: false
   n_i:
     name: n_i
     description: Per-mode adaptation offset entering the gamma dynamics.
@@ -292,7 +278,6 @@ derived_variables:
       rhs: r*s*x_0
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

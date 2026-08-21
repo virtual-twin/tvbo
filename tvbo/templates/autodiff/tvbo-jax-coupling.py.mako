@@ -49,16 +49,6 @@ if _has_coupling:
     from tvbo.templates.tvboptim.utils import parse_list_elements
     n_pre = len(parse_list_elements(pre_rhs.strip())) if is_list_expr else 1
     gx_indices = list(range(n_pre)) if n_pre > 1 else []
-
-    # Check if we need to return multiple coupling outputs
-    num_coupling_terms = len(model.coupling_terms) if hasattr(model, 'coupling_terms') else 1
-    needs_stacked_output = num_coupling_terms > 1
-
-    # Per-term weight parameters, named w<TERM> (e.g. wLRE, wFFI).
-    coupling_term_names = list(model.coupling_terms.keys()) if hasattr(model, 'coupling_terms') else []
-    has_weight_params = any(par.name.startswith('w') and par.name[1:] in ['LRE', 'FFI', '_'] or
-                           par.name.lower() in ['wlre', 'wffi']
-                           for par in coupling.parameters.values())
 %>
 
 % if not _has_coupling:
@@ -123,38 +113,13 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     pre = pre.reshape(-1, n_node ,n_node)
     %endif
 
-% if has_weight_params and needs_stacked_output:
-    outputs = []
-    % for i, term_name in enumerate(coupling_term_names):
-<%
-    weight_param = 'weights'
-    for par in coupling.parameters.values():
-        if (par.name.lower() == f'w{term_name.lower().replace("cpop_", "")}' or
-            par.name.lower() == f'w_{i}' or
-            (term_name == 'cpop_0' and par.name.lower() == 'wlre') or
-            (term_name == 'cpop_1' and par.name.lower() == 'wffi')):
-            weight_param = par.name
-            break
-%>
-    % if not scalar_pre:
-    def op_${i}(x): return jnp.sum(${weight_param} * x, axis=-1)
-    gx_${i} = jax.vmap(op_${i}, in_axes=0)(pre)[0]
-    % else:
-    def op_${i}(x): return ${weight_param} @ x
-    gx_${i} = jax.vmap(op_${i}, in_axes=0)(pre)[0]
-    % endif
-    outputs.append(gx_${i})
-    % endfor
-    gx = jnp.stack(outputs, axis=0)
-    return ${jaxcode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)}
-% else:
-    % if not scalar_pre:
+% if not scalar_pre:
     def op(x):
         return jnp.sum(weights * x, axis=-1)
-    % else:
+% else:
     def op(x):
         return weights @ x
-    % endif
+% endif
     gx = jax.vmap(op, in_axes=0)(pre)
 % for k in gx_indices:
     gx_${k} = gx[${k}]
@@ -163,5 +128,4 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     ${alias} = current_state[${sv_idx}]
 % endfor
     return ${jaxcode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)}
-% endif
 % endif

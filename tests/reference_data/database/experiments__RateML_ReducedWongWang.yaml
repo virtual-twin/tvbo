@@ -75,28 +75,24 @@ dynamics:
         rhs: a_E * ((w_E * I_0) + (w_plus * J_NMDA) * V + c_glob - JI*W) - b_E
         latex: false
       record: false
-      conditional: false
     tmp_H_E:
       name: tmp_H_E
       equation:
         rhs: tmp_I_E / (1.0 - exp((-1.0 * d_E) * tmp_I_E))
         latex: false
       record: false
-      conditional: false
     tmp_I_I:
       name: tmp_I_I
       equation:
         rhs: (a_I * (((w_I * I_0) + (J_NMDA * V)) - W)) - b_I
         latex: false
       record: false
-      conditional: false
     tmp_H_I:
       name: tmp_H_I
       equation:
         rhs: tmp_I_I / (1.0 - exp((-1.0 * d_I) * tmp_I_I))
         latex: false
       record: false
-      conditional: false
   coupling_inputs:
     c_glob:
       name: c_glob
@@ -263,7 +259,6 @@ network:
             rhs: V0 * (k1 * (1.0 - q) + k2 * (1.0 - q / v) + k3 * (1.0 - v))
             latex: false
           record: false
-          conditional: false
       state_variables:
         s:
           name: s

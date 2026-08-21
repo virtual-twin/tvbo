@@ -13,6 +13,8 @@ each call site now lives here once. The namespace to parse against is supplied b
 caller, normally as a [`SymbolContext`](symbols.qmd#SymbolContext).
 """
 
+import re
+
 from sympy import parse_expr, Symbol, Function, IndexedBase, Piecewise, Sum, Product, sqrt, true
 from sympy.core.basic import Basic
 from sympy.parsing.sympy_parser import (
@@ -38,6 +40,28 @@ _implicit_mul_app_no_split = (
 from sympy.parsing.latex import parse_latex
 
 from tvbo.datamodel.schema import Equation
+
+
+_MATHEMATICAL_CONSTANTS = frozenset({"pi", "E", "I", "oo", "zoo", "nan", "true", "false"})
+"""The bare names that mean a number rather than a model quantity."""
+
+_BARE_NAME = re.compile(r"\b([a-zA-Z_]\w*)\s*(\(?)")
+
+
+def _quantity_names(expression: str):
+    """The names *expression* uses as quantities rather than as functions.
+
+    A quantity is whatever its author named it, so an undeclared `beta` is the model's
+    `beta` and not SymPy's Beta function — the star-imported namespace `parse_expr` falls
+    back to would otherwise decide that for every name the caller's scope leaves out.
+    Applied names keep resolving there: `exp(x)`, `Piecewise(...)` and the
+    `ARRAY_FUNCTIONS` are functions in the notation, not quantities.
+    """
+    return {
+        name
+        for name, applied in _BARE_NAME.findall(expression)
+        if not applied and name not in _MATHEMATICAL_CONSTANTS
+    }
 
 
 # =============================================================================
@@ -374,7 +398,8 @@ def parse_eq(
         # parse_latex doesn't accept local_dict; it returns a SymPy Expr directly
         return parse_latex(expression, backend="lark")
 
-    import re
+    for name in _quantity_names(expression):
+        local_dict.setdefault(name, Symbol(name))
 
     # Auto-detect indexed variables (e.g., x[i], y[j]) and create IndexedBase for them
     # This allows natural mathematical notation: Sum(x[i]*y[i], (i, 0, n-1))

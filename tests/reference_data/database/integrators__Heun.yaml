@@ -14,7 +14,6 @@ intermediate_expressions:
       rhs: X + dX0 * dt + noise + stimulus * dt
       latex: false
     record: false
-    conditional: false
 update_expression:
   name: dX
   equation:
@@ -22,6 +21,5 @@ update_expression:
     rhs: (dX0 + dX1) * (dt / 2)
     latex: false
   record: false
-  conditional: false
 delayed: true
 coupling_evaluation: per_step

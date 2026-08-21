@@ -842,8 +842,9 @@ def plan(
     if _dyn is not None:
         _record_used_param_deps(getattr(_dyn, "parameters", None))
     _record_used_param_deps(getattr(experiment, "parameters", None))
-    _net = getattr(experiment, "network", None)
-    for _cpl in (list((getattr(_net, "coupling", None) or {}).values()) if hasattr(getattr(_net, "coupling", None), "values") else _as_list(getattr(_net, "coupling", None) or [])):
+    from tvbo.utils import network_couplings
+
+    for _cpl in network_couplings(getattr(experiment, "network", None)).values():
         _record_used_param_deps(getattr(_cpl, "parameters", None))
     # Exploration-builder arguments (ExplorationAxis.builder → Argument.used).
     _expls = getattr(experiment, "explorations", None)

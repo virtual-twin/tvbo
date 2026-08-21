@@ -55,9 +55,9 @@ def symbol_names(model):
     """
     sv = list(model.state_variables.keys())
     params = list((model.parameters or {}).keys())
-    coupling = list((model.coupling_terms or {}).keys()) if model.coupling_terms else []
-    derived_vars = list((model.derived_variables).keys())
-    derived_params = list((model.derived_parameters).keys())
+    coupling = list((model.coupling_inputs or {}).keys())
+    derived_vars = list(model.in_dependency_order("derived_variables"))
+    derived_params = list(model.in_dependency_order("derived_parameters"))
     return sv, params, coupling, derived_vars, derived_params
 
 
@@ -192,9 +192,12 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
         functions.append((str(fname), [str(a) for a in fdef.arguments], jl(fdef.equation)))
     derived_params = [
         (dp.name, jl(dp.equation))
-        for dp in (model.derived_parameters).values()
+        for dp in model.in_dependency_order('derived_parameters').values()
     ]
-    derived_vars = [(dv.name, jl(dv.equation)) for dv in (model.derived_variables).values()]
+    derived_vars = [
+        (dv.name, jl(dv.equation))
+        for dv in model.in_dependency_order('derived_variables').values()
+    ]
 
     # Parameters. A heterogeneous per-node parameter (value is a length-n_nodes
     # array, e.g. the FIC-tuned J_i) is emitted as a Julia vector ``<name>_vec``
@@ -341,9 +344,12 @@ def build_model_context(model, network=None, constraints=None) -> dict:
     # Derived parameters and derived variables (conditional ones folded to ifelse).
     derived_params = [
         (dp.name, jl(dp.equation))
-        for dp in (model.derived_parameters).values()
+        for dp in model.in_dependency_order('derived_parameters').values()
     ]
-    derived_vars = [(dv.name, jl(dv.equation)) for dv in (model.derived_variables).values()]
+    derived_vars = [
+        (dv.name, jl(dv.equation))
+        for dv in model.in_dependency_order('derived_variables').values()
+    ]
 
     # `p = (...)` parameter tuple (coupling terms default to 0.0 for single-node).
     pval_parts = [f"{p.name} = {p.value}" for p in model.parameters.values()]

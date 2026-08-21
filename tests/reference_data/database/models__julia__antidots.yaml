@@ -33,7 +33,6 @@ derived_variables:
       rhs: (x % 1.0) - 0.5
       latex: false
     record: false
-    conditional: false
   yt:
     name: yt
     equation:
@@ -41,7 +40,6 @@ derived_variables:
       rhs: (y % 1.0) - 0.5
       latex: false
     record: false
-    conditional: false
   rho:
     name: rho
     equation:
@@ -49,43 +47,28 @@ derived_variables:
       rhs: sqrt(xt**2 + yt**2)
       latex: false
     record: false
-    conditional: false
   Ux:
     name: Ux
     equation:
       lhs: Ux
+      conditionals:
+      - condition: rho < (0.5*d0 + c)
+        expression: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*xt
+      - condition: 'True'
+        expression: '0'
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: rho < (0.5*d0 + c)
-      equation:
-        lhs: Ux
-        rhs: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*xt
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: Ux
-        rhs: '0'
-        latex: false
   Uy:
     name: Uy
     equation:
       lhs: Uy
+      conditionals:
+      - condition: rho < (0.5*d0 + c)
+        expression: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*yt
+      - condition: 'True'
+        expression: '0'
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: rho < (0.5*d0 + c)
-      equation:
-        lhs: Uy
-        rhs: -(4*(0.5*d0 + c - rho)**3)/(c**4*(rho + 1e-12))*yt
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: Uy
-        rhs: '0'
-        latex: false
 state_variables:
   x:
     name: x

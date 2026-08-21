@@ -80,7 +80,6 @@ derived_variables:
       rhs: J*u*x*E + E0
       latex: false
     record: false
-    conditional: false
   SS1:
     name: SS1
     description: Softplus transfer function output
@@ -89,7 +88,6 @@ derived_variables:
       rhs: alpha*log(1 + exp(SS0/alpha))
       latex: false
     record: false
-    conditional: false
 state_variables:
   E:
     name: E

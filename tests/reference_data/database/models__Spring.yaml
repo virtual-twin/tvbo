@@ -1,4 +1,4 @@
-name: Dynamics
+name: Spring
 parameters:
   k:
     name: k

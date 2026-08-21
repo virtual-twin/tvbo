@@ -618,7 +618,6 @@ derived_variables:
         True))
       latex: false
     record: false
-    conditional: false
   E_input_inhibitory:
     name: E_input_inhibitory
     description: External excitatory input onto the inhibitory population (clamped
@@ -630,7 +629,6 @@ derived_variables:
         + weight_noise*ou_drift, True))
       latex: false
     record: false
-    conditional: false
   I_input_excitatory:
     name: I_input_excitatory
     description: External inhibitory input onto the excitatory population.
@@ -639,7 +637,6 @@ derived_variables:
       rhs: local_coupling*I + external_input_ex_in
       latex: false
     record: false
-    conditional: false
   I_input_inhibitory:
     name: I_input_inhibitory
     description: External inhibitory input onto the inhibitory population.
@@ -648,7 +645,6 @@ derived_variables:
       rhs: local_coupling*I + external_input_in_in
       latex: false
     record: false
-    conditional: false
   TFe:
     name: TFe
     description: Excitatory transfer-function output evaluated at the current state.
@@ -657,7 +653,6 @@ derived_variables:
       rhs: TF_e(E, I, E_input_excitatory, I_input_excitatory, W_e)
       latex: false
     record: false
-    conditional: false
   TFi:
     name: TFi
     description: Inhibitory transfer-function output evaluated at the current state.
@@ -666,7 +661,6 @@ derived_variables:
       rhs: TF_i(E, I, E_input_inhibitory, I_input_inhibitory, W_i)
       latex: false
     record: false
-    conditional: false
   dfe_TFe:
     name: dfe_TFe
     description: Central finite-difference derivative of TF_e w.r.t. excitatory rate
@@ -677,7 +671,6 @@ derived_variables:
         - 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e))/(2*1.0e-7*1000.0)
       latex: false
     record: false
-    conditional: false
   dfi_TFe:
     name: dfi_TFe
     description: Central finite-difference derivative of TF_e w.r.t. inhibitory rate
@@ -688,7 +681,6 @@ derived_variables:
         I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e))/(2*1.0e-7*1000.0)
       latex: false
     record: false
-    conditional: false
   dfe_TFi:
     name: dfe_TFi
     description: Central finite-difference derivative of TF_i w.r.t. excitatory rate
@@ -699,7 +691,6 @@ derived_variables:
         - 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i))/(2*1.0e-7*1000.0)
       latex: false
     record: false
-    conditional: false
   dfi_TFi:
     name: dfi_TFi
     description: Central finite-difference derivative of TF_i w.r.t. inhibitory rate
@@ -710,7 +701,6 @@ derived_variables:
         I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i))/(2*1.0e-7*1000.0)
       latex: false
     record: false
-    conditional: false
   d2_fefe_e:
     name: d2_fefe_e
     description: Second central difference of TF_e w.r.t. excitatory rate.
@@ -720,7 +710,6 @@ derived_variables:
         + TF_e(E - 1.0e-7, I, E_input_excitatory, I_input_excitatory, W_e))/((1.0e-7*1000.0)**2)
       latex: false
     record: false
-    conditional: false
   d2_fifi_e:
     name: d2_fifi_e
     description: Second central difference of TF_e w.r.t. inhibitory rate.
@@ -730,7 +719,6 @@ derived_variables:
         + TF_e(E, I - 1.0e-7, E_input_excitatory, I_input_excitatory, W_e))/((1.0e-7*1000.0)**2)
       latex: false
     record: false
-    conditional: false
   d2_fefe_i:
     name: d2_fefe_i
     description: Second central difference of TF_i w.r.t. excitatory rate.
@@ -740,7 +728,6 @@ derived_variables:
         + TF_i(E - 1.0e-7, I, E_input_inhibitory, I_input_inhibitory, W_i))/((1.0e-7*1000.0)**2)
       latex: false
     record: false
-    conditional: false
   d2_fifi_i:
     name: d2_fifi_i
     description: Second central difference of TF_i w.r.t. inhibitory rate.
@@ -750,7 +737,6 @@ derived_variables:
         + TF_i(E, I - 1.0e-7, E_input_inhibitory, I_input_inhibitory, W_i))/((1.0e-7*1000.0)**2)
       latex: false
     record: false
-    conditional: false
   d2_fefi_e:
     name: d2_fefi_e
     description: Mixed second central difference of TF_e (d/dfi of d/dfe).
@@ -763,7 +749,6 @@ derived_variables:
         I_input_excitatory, W_e))/(2*1.0e-7*1000.0))/(2*1.0e-7*1000.0)
       latex: false
     record: false
-    conditional: false
   d2_fife_e:
     name: d2_fife_e
     description: Mixed second central difference of TF_e (d/dfe of d/dfi).
@@ -776,7 +761,6 @@ derived_variables:
         I_input_excitatory, W_e))/(2*1.0e-7*1000.0))/(2*1.0e-7*1000.0)
       latex: false
     record: false
-    conditional: false
   d2_fefi_i:
     name: d2_fefi_i
     description: Mixed second central difference of TF_i (d/dfi of d/dfe).
@@ -789,7 +773,6 @@ derived_variables:
         I_input_inhibitory, W_i))/(2*1.0e-7*1000.0))/(2*1.0e-7*1000.0)
       latex: false
     record: false
-    conditional: false
   d2_fife_i:
     name: d2_fife_i
     description: Mixed second central difference of TF_i (d/dfe of d/dfi).
@@ -802,7 +785,6 @@ derived_variables:
         I_input_inhibitory, W_i))/(2*1.0e-7*1000.0))/(2*1.0e-7*1000.0)
       latex: false
     record: false
-    conditional: false
   muV_e:
     name: muV_e
     description: Mean membrane potential of the excitatory population (used for adaptation).
@@ -811,7 +793,6 @@ derived_variables:
       rhs: muV(E, I, E_input_excitatory, I_input_excitatory, W_e, E_L_e)
       latex: false
     record: false
-    conditional: false
   muV_i:
     name: muV_i
     description: Mean membrane potential of the inhibitory population (used for adaptation).
@@ -820,7 +801,6 @@ derived_variables:
       rhs: muV(E, I, E_input_inhibitory, I_input_inhibitory, W_i, E_L_i)
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

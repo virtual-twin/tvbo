@@ -177,13 +177,12 @@ from tvbo.templates.tvboptim.utils import get_recorded_variable_names
 _, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if model else ([], [], [])
 
 # Build coupling parameter lookup: param_name -> coupling_key
+from tvbo.utils import network_couplings
 coupling_param_to_key = {}
-network = experiment.network
-if network and network.coupling:
-    for coupling_key, coupling_obj in network.coupling.items():
-        if coupling_obj.parameters:
-            for param_name in coupling_obj.parameters.keys():
-                coupling_param_to_key[param_name] = coupling_key
+for coupling_key, coupling_obj in network_couplings(experiment.network).items():
+    if coupling_obj.parameters:
+        for param_name in coupling_obj.parameters.keys():
+            coupling_param_to_key[param_name] = coupling_key
 %>
 % if has_algorithms:
 

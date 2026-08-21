@@ -333,7 +333,6 @@ derived_variables:
       lhs: Q_V
       rhs: 0.5*Q_Vmax*(tanh((V - V_T)/delta_V) + 1)
       latex: false
-    conditional: false
     grounding:
     - GO:0099605
   Q_Z:
@@ -342,7 +341,6 @@ derived_variables:
       lhs: Q_Z
       rhs: 0.5*Q_Zmax*(tanh((Z - Z_T)/delta_Z) + 1)
       latex: false
-    conditional: false
     grounding:
     - GO:0099605
   m_Ca:
@@ -351,7 +349,6 @@ derived_variables:
       lhs: m_Ca
       rhs: 0.5*tanh((-T_Ca + V)/delta_Ca) + 0.5
       latex: false
-    conditional: false
     grounding:
     - GO:0005262
   m_K:
@@ -360,7 +357,6 @@ derived_variables:
       lhs: m_K
       rhs: 0.5*tanh((-T_K + V)/delta_K) + 0.5
       latex: false
-    conditional: false
     grounding:
     - GO:0005267
   m_Na:
@@ -369,7 +365,6 @@ derived_variables:
       lhs: m_Na
       rhs: 0.5*tanh((-T_Na + V)/delta_Na) + 0.5
       latex: false
-    conditional: false
     grounding:
     - GO:0005272
   lc_0:
@@ -377,7 +372,6 @@ derived_variables:
       lhs: lc_0
       rhs: Q_V*local_coupling
       latex: false
-    conditional: false
 coupling_inputs:
   c_glob: {}
   local_coupling: {local: true}

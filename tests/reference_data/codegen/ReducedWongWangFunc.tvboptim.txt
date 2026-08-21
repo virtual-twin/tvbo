@@ -7,8 +7,8 @@ from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
 
 
-class ReducedWongWang(AbstractDynamics):
-    """ReducedWongWang neural mass model."""
+class ReducedWongWangFunc(AbstractDynamics):
+    """ReducedWongWangFunc neural mass model."""
 
     STATE_NAMES = ("S",)
     INITIAL_STATE = (0.1,)

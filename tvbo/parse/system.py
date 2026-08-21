@@ -26,6 +26,20 @@ from tvbo.parse.expression import parse_eq, states_an_expression
 from tvbo.parse.symbols import assumptions_of, symbol_in
 
 
+def _referenced_names(expression):
+    """Every model quantity *expression* names, however the notation spells it.
+
+    A reference to ``x`` is the symbol ``x`` in the codegen view and the applied function
+    ``x(t)`` in the analysis view, and an applied function's free symbols are its arguments
+    alone — so free symbols by themselves see no dependency at all in the second.
+    """
+    from sympy.core.function import AppliedUndef
+
+    return {str(s) for s in expression.free_symbols} | {
+        f.func.__name__ for f in expression.atoms(AppliedUndef)
+    }
+
+
 def _declared(element, collection: str):
     """*element*'s named collection, empty when it holds nothing.
 
@@ -60,7 +74,28 @@ class SymbolicSystem:
         "state-equations": "state_variables",
         "output-transformations": "output",
     }
-    """Which collection each equation group is built from, and takes its order from."""
+    """Which collection each equation group is built from."""
+
+    _COLLECTION_GROUPS = {v: k for k, v in _GROUP_COLLECTIONS.items()}
+    """The same correspondence read the other way, for `in_dependency_order`."""
+
+    _ORDERABLE = ("derived_parameters", "derived_variables")
+    """The collections `in_dependency_order` will re-key — the `_ORDERED_GROUPS` collections.
+
+    Naming them is a guard, not bookkeeping. Re-keying `state_variables` would permute a
+    vector every backend indexes positionally (``${sv} = current_state[${i}]``), and
+    re-keying `output` would permute the record's channels: both are layouts, not
+    compilation details, and neither failure would raise.
+    """
+
+    _ORDERED_GROUPS = ("derived-parameters", "derived-variables")
+    """The groups whose order is a compilation detail, so this layer decides it.
+
+    `output-transformations` is deliberately not among them: an ``output`` list is the
+    record's channel layout, and the order its author wrote is the order the signals come
+    out in. The other two are read by nothing but the emitters, which need each quantity
+    defined before it is used and are indifferent to how the author grouped them.
+    """
 
     def __init__(self, model):
         self.model = model
@@ -106,8 +141,8 @@ class SymbolicSystem:
         the function-body table the inliner consumes.
 
         The cache is discarded whole whenever [`_inputs`](#tvbo.parse.system.SymbolicSystem)
-        changes, which is what makes it safe on a mutable model. Rendering is a query —
-        `render_code` does not run `update_metadata` — so no consumer can invalidate it
+        changes, which is what makes it safe on a mutable model. Rendering is a query — no
+        path from `render_code` writes to the model — so no consumer can invalidate it
         mid-use.
 
         Args:
@@ -220,12 +255,49 @@ class SymbolicSystem:
         if cache is None or cache[0] != content:
             cache = (content, order, {"scopes": {}, "forms": {}})
         elif cache[1] != order:
-            reordered = {key: self._reordered(form) for key, form in cache[2]["forms"].items()}
+            reordered = {
+                key: self._in_dependency_order(self._reordered(form))
+                for key, form in cache[2]["forms"].items()
+            }
             cache = (content, order, {"scopes": {}, "forms": reordered})
         else:
             return cache[2]
         self._cache = cache
         return cache[2]
+
+    def in_dependency_order(self, collection: str):
+        """*collection*'s members in the order a straight-line backend must print them.
+
+        The model's own mapping, re-keyed into the order
+        [`form`](#tvbo.parse.system.SymbolicSystem.form) settled on — so a backend that
+        needs each quantity defined before it is used reads that order from the one place
+        that decides it, rather than from whatever order the collection happens to be in.
+
+        The order spans BOTH views, because a backend chooses which one it renders and the
+        two do not always agree about what an equation reads. `a: z - z + k` reads `z` as
+        written and only `k` once evaluated, so an order settled on the evaluated view alone
+        prints `a` before `z` — an unbound name in every backend that preserves the authored
+        form, tvboptim's dfun among them. Ranking against the union means no caller has to
+        declare which view it is about to print.
+
+        A member neither view holds — one declared with no equation — prints no statement,
+        and keeps its declared position at the front alongside the members nothing
+        constrains.
+
+        Raises:
+            ValueError: If *collection* is one whose order is a layout rather than a
+                compilation detail — see `_ORDERABLE`.
+        """
+        if collection not in self._ORDERABLE:
+            raise ValueError(
+                f"{collection!r} is not reordered: its order is a layout the emitters "
+                f"index into. Orderable collections are {', '.join(self._ORDERABLE)}."
+            )
+        members = _declared(self.model, collection)
+        ranked = self._dependency_rank((self.form(), self.form(evaluate=False)))
+        settled = [name for name in ranked if name in members]
+        lead = [name for name in members if name not in settled]
+        return {name: members[name] for name in lead + settled}
 
     def _inputs(self):
         """What `_build_form` reads, split into content and order.
@@ -235,10 +307,10 @@ class SymbolicSystem:
         slot the builder starts reading without being added here would serve a stale
         equation forever. Content is compared as dicts, which ignore key order.
 
-        *order* is tracked separately because `sort_equations` reorders collections into
-        dependency order without changing a single equation — five times over one load.
-        Treating that as a content change would re-parse everything to produce the same
-        expressions in a different sequence.
+        *order* is tracked separately because a caller may rearrange a collection without
+        changing a single equation, and the groups this layer does not settle an order for
+        follow the order they were declared in. Treating that as a content change would
+        re-parse everything to produce the same expressions in a different sequence.
         """
         def _equation(element):
             equation = getattr(element, "equation", None)
@@ -291,7 +363,12 @@ class SymbolicSystem:
         return content, order
 
     def _reordered(self, form):
-        """The same equations, re-keyed into their collections' current order."""
+        """The same equations, re-keyed into their collections' current order.
+
+        The starting point for a rearranged model, not the answer: the caller hands the
+        result to `_in_dependency_order`, which settles the two groups whose order it owns
+        and leaves the rest as the model now declares them.
+        """
         return {
             group: {
                 name: equations[name]
@@ -483,4 +560,67 @@ class SymbolicSystem:
                     f"Output variable '{name}' not found in derived_variables or state_variables"
                 )
 
+        return self._in_dependency_order(form)
+
+    def _in_dependency_order(self, form):
+        """*form* with the straight-line groups reordered so each equation follows what it reads.
+
+        JAX and NumPy emit these as consecutive assignments, so a derived variable printed
+        before the one it reads emits an unbound name. The order is settled here, on the
+        parsed equations, rather than by rewriting the model's collections: rendering is a
+        query, and a model that answers differently for having been rendered is exactly the
+        drift this layer exists to remove.
+
+        The graph spans derived parameters and derived variables together, since either can
+        read the other. Functions are not among them: a function is applied, never read as a
+        value, and it is emitted in its own block ahead of both — so it constrains nothing
+        here, while admitting it would let a formal argument shadowing a model name stand in
+        for a dependency that does not exist.
+
+        Quantities the graph does not mention keep their declared order and stay ahead of
+        the sorted ones. Their position is unconstrained, and moving them would be churn.
+
+        Each form is ordered against what it actually holds, since evaluation can leave the
+        views holding different equations — an Epileptor conditional collapses to a constant
+        under the analysis view's assumptions. The order a *backend* reads comes from
+        `in_dependency_order`, which spans both views for the reason given there.
+        """
+        ranked = self._dependency_rank((form,))
+        for group in self._ORDERED_GROUPS:
+            equations = form[group]
+            constrained = [name for name in ranked if name in equations]
+            free = [name for name in equations if name not in constrained]
+            form[group] = {name: equations[name] for name in free + constrained}
         return form
+
+    def _dependency_rank(self, forms):
+        """Every name in *forms*' straight-line groups, ranked after what it reads.
+
+        The graph spans derived parameters and derived variables together, since either can
+        read the other, and it is built over *names* rather than parsed objects so that a
+        reference is recognised in either notation: the analysis view spells a reference to
+        ``x`` as ``x(t)``, whose free symbols are ``{t}`` alone.
+
+        Functions are not spanned: a function is applied, never read as a value, and it is
+        emitted in its own block ahead of both — so it constrains nothing, while admitting it
+        would let a formal argument shadowing a model name stand in for a dependency that
+        does not exist.
+
+        Passing several forms ranks against the union of their edges. A constraint present in
+        any view is a real constraint, so taking every view can only add edges, never drop
+        one — and a name absent from the graph is simply unconstrained.
+        """
+        import networkx as nx
+
+        graph = nx.DiGraph()
+        for form in forms:
+            for group in self._ORDERED_GROUPS:
+                for name, equation in form[group].items():
+                    for source in _referenced_names(equation.rhs):
+                        if source != name:
+                            graph.add_edge(source, name)
+        return [
+            name
+            for generation in nx.dag.topological_generations(graph)
+            for name in sorted(generation)
+        ]

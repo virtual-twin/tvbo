@@ -107,14 +107,12 @@ dynamics:
         rhs: x**2 + y**2
         latex: false
       record: false
-      conditional: false
     amplitude_term:
       name: amplitude_term
       equation:
         rhs: a - r_squared
         latex: false
       record: false
-      conditional: false
   coupling_inputs:
     LinCoupling:
       name: LinCoupling

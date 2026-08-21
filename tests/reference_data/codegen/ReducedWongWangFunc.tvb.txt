@@ -5,7 +5,7 @@ from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
 from tvb.simulator.models.base import Model
 
 
-class ReducedWongWang(Model):
+class ReducedWongWangFunc(Model):
 
     I_o = NArray(
         label=r":math:`I_o`",

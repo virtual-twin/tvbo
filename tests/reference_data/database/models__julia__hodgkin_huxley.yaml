@@ -53,7 +53,6 @@ derived_variables:
       rhs: (0.1*(V + 40))/(1 - exp(-(V + 40)/10))
       latex: false
     record: false
-    conditional: false
   beta_m:
     name: beta_m
     equation:
@@ -61,7 +60,6 @@ derived_variables:
       rhs: 4*exp(-(V + 65)/18)
       latex: false
     record: false
-    conditional: false
   alpha_h:
     name: alpha_h
     equation:
@@ -69,7 +67,6 @@ derived_variables:
       rhs: 0.07*exp(-(V + 65)/20)
       latex: false
     record: false
-    conditional: false
   beta_h:
     name: beta_h
     equation:
@@ -77,7 +74,6 @@ derived_variables:
       rhs: 1/(1 + exp(-(V + 35)/10))
       latex: false
     record: false
-    conditional: false
   alpha_n:
     name: alpha_n
     equation:
@@ -85,7 +81,6 @@ derived_variables:
       rhs: (0.01*(V + 55))/(1 - exp(-(V + 55)/10))
       latex: false
     record: false
-    conditional: false
   beta_n:
     name: beta_n
     equation:
@@ -93,7 +88,6 @@ derived_variables:
       rhs: 0.125*exp(-(V + 65)/80)
       latex: false
     record: false
-    conditional: false
   INa:
     name: INa
     equation:
@@ -101,7 +95,6 @@ derived_variables:
       rhs: gNa*m**3*h*(V - ENa)
       latex: false
     record: false
-    conditional: false
   IK:
     name: IK
     equation:
@@ -109,7 +102,6 @@ derived_variables:
       rhs: gK*n**4*(V - EK)
       latex: false
     record: false
-    conditional: false
   IL:
     name: IL
     equation:
@@ -117,7 +109,6 @@ derived_variables:
       rhs: gL*(V - EL)
       latex: false
     record: false
-    conditional: false
 state_variables:
   V:
     name: V

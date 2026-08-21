@@ -159,40 +159,26 @@ derived_variables:
       lhs: x1cond
       rhs: Piecewise((a*x1**2 + x1*(-b + d), x1 < 0), (d*x1 - slope - 0.6*(z - 4.0)**2,
         True))
+      conditionals:
+      - condition: x1 < 0
+        expression: a*x1**2 + x1*(-b + d)
+      - condition: 'True'
+        expression: d*x1 - slope - 0.6*(z - 1*4.0)**2
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: x1 < 0
-      equation:
-        lhs: x1cond
-        rhs: a*x1**2 + x1*(-b + d)
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: x1cond
-        rhs: d*x1 - slope - 0.6*(z - 1*4.0)**2
-        latex: false
   zcond:
     name: zcond
     symbol: zcond
     equation:
       lhs: zcond
       rhs: Piecewise((-0.1*z**7, z < 0), (0, True))
+      conditionals:
+      - condition: z < 0
+        expression: -0.1*z**7
+      - condition: 'True'
+        expression: '0'
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: z < 0
-      equation:
-        lhs: zcond
-        rhs: -0.1*z**7
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: zcond
-        rhs: '0'
-        latex: false
   h:
     name: h
     symbol: h
@@ -200,20 +186,13 @@ derived_variables:
       lhs: h
       rhs: Piecewise((x0 + 3.0/(exp((-x1 - 1*0.5)/0.1) + 1.0), modification > 0),
         (zcond + 4*(-x0 + x1), True))
+      conditionals:
+      - condition: modification > 0
+        expression: x0 + 3.0/(exp((-x1 - 0.5)/0.1) + 1.0)
+      - condition: 'True'
+        expression: zcond + 4*(-x0 + x1)
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: modification > 0
-      equation:
-        lhs: h
-        rhs: x0 + 3.0/(exp((-x1 - 0.5)/0.1) + 1.0)
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: h
-        rhs: zcond + 4*(-x0 + x1)
-        latex: false
 coupling_inputs:
   c_glob:
     name: c_glob

@@ -33,17 +33,6 @@
         "type": "string"
       }
     },
-    "conditional": {
-      "type": "boolean"
-    },
-    "cases": {
-      "_embeddedTypes": [
-        "tvbo:Case"
-      ],
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true
-    },
     "surrogate": {
       "_embeddedTypes": [
         "tvbo:Surrogate"

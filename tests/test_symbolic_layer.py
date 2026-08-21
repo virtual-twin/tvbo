@@ -111,25 +111,24 @@ def test_changing_an_equation_invalidates_the_cache(model: Dynamics):
 
 
 @pytest.mark.backend_core
-def test_reordering_does_not_reparse_but_does_reorder(model: Dynamics, count_parses):
-    """Sorting into dependency order rearranges equations; it does not change any.
+def test_rearranging_a_collection_reparses_nothing_and_moves_nothing(model, count_parses):
+    """Rearranging a collection changes no equation, so it changes neither cache nor order.
 
-    `update_metadata` sorts three collections on every load, so treating a reorder as a
-    content change would re-parse the whole model several times over for no new result.
-
-    The collection is reordered in place, the way `sort_equations` does it: assigning to a
-    multivalued slot replaces it with a `JsonObj`, which is not how this is ever reordered.
+    The emitted order is a view over the parsed equations, so a model handed to a backend
+    upside down emits the same code as one handed over the right way up. Reversing the
+    collection is the sharpest form of that: the dependency order is unchanged, and asking
+    for it re-parses nothing, since not one right-hand side is different.
     """
-    model.get_equations()
+    before = list(model.get_equations(format="dict")["derived-variables"])
     count_parses.clear()
 
     reversed_items = dict(reversed(list(model.derived_variables.items())))
     model.derived_variables.clear()
     model.derived_variables.update(reversed_items)
-    reordered = model.get_equations(format="dict")["derived-variables"]
+    after = list(model.get_equations(format="dict")["derived-variables"])
 
-    assert count_parses == [], "a reorder re-parsed the equations"
-    assert [str(eq.lhs) for eq in reordered] == list(model.derived_variables)
+    assert count_parses == [], "a rearrangement re-parsed the equations"
+    assert [str(eq.lhs) for eq in after] == [str(eq.lhs) for eq in before]
 
 
 @pytest.mark.backend_core
@@ -150,16 +149,43 @@ def test_the_cache_never_reaches_the_serialised_record(model: Dynamics):
 @pytest.mark.backend_core
 @pytest.mark.parametrize("name", ["JansenRit", "Epileptor", "ZerlautAdaptationSecondOrder"])
 def test_every_group_is_keyed_by_the_name_it_defines(name: str):
-    """Consumers read names from the layer instead of recovering them from an `Eq`."""
+    """Consumers read names from the layer instead of recovering them from an `Eq`.
+
+    Keyed by, not ordered by: the two groups the layer settles an order for are compared
+    as sets, since which names they hold is this test's claim and where they sit is
+    `test_a_group_is_ordered_so_each_equation_follows_what_it_reads`'s.
+    """
     model = Dynamics.from_file(str(MODEL_ROOT / f"{name}.yaml"))
     form = model._symbolic_form()
 
     assert list(form["state-equations"]) == [
         key for key in model.state_variables if model.state_variables[key].equation
     ]
-    assert list(form["derived-variables"]) == list(model.derived_variables)
-    assert list(form["derived-parameters"]) == list(model.derived_parameters)
     assert list(form["functions"]) == list(model.functions)
+    assert set(form["derived-variables"]) == set(model.derived_variables)
+    assert set(form["derived-parameters"]) == set(model.derived_parameters)
+
+
+@pytest.mark.backend_core
+@pytest.mark.parametrize("name", ["JansenRit", "Epileptor", "ZerlautAdaptationSecondOrder"])
+def test_a_group_is_ordered_so_each_equation_follows_what_it_reads(name: str):
+    """The order the straight-line backends need, settled on the equations themselves.
+
+    JAX and NumPy emit these groups as consecutive assignments, so a name used before its
+    own line is an unbound name in the generated module. Nothing rewrites the model to
+    achieve it — this asserts the property the emitters actually depend on, rather than
+    that some collection was left in a particular state.
+    """
+    model = Dynamics.from_file(str(MODEL_ROOT / f"{name}.yaml"))
+    form = model._symbolic_form()
+
+    for group in ("derived-parameters", "derived-variables"):
+        defined = set()
+        for term, equation in form[group].items():
+            reads = {str(symbol) for symbol in equation.rhs.free_symbols}
+            early = reads & set(form[group]) - defined - {term}
+            assert not early, f"{group}: {term} reads {sorted(early)} before they are defined"
+            defined.add(term)
 
 
 @pytest.mark.backend_core
@@ -173,6 +199,27 @@ def test_the_analysis_view_carries_assumptions(model: Dynamics):
     symbols = {s for eq in equations for s in eq.rhs.free_symbols}
     assert symbols, "no free symbols to check"
     assert all(s.is_real for s in symbols), sorted(str(s) for s in symbols if not s.is_real)
+
+
+@pytest.mark.backend_core
+def test_a_name_the_model_never_declared_is_still_the_model_s():
+    """A quantity is whatever its author named, even one the record does not declare.
+
+    `parse_expr` falls back to the star-imported SymPy namespace for anything the scope
+    leaves out, which silently turns `beta` into the Beta function and `N` into the numeric
+    evaluator. A LEMS `ComponentType` names its parent's exposures without declaring them —
+    the model that first hit this reads `alpha` and `beta` — and the multiplication then
+    raises rather than parsing.
+    """
+    model = Dynamics(
+        name="Requires",
+        parameters={"TIME_SCALE": {"value": 1.0}},
+        derived_variables={"BETA": {"equation": {"rhs": "beta * TIME_SCALE"}}},
+        state_variables={"x": {"equation": {"rhs": "-x + BETA"}}},
+    )
+    for view in (model._symbolic_form(), model._symbolic_form(evaluate=False)):
+        rhs = view["derived-variables"]["BETA"].rhs
+        assert {str(s) for s in rhs.free_symbols} == {"beta", "TIME_SCALE"}, rhs
 
 
 @pytest.mark.backend_core
@@ -274,9 +321,7 @@ def test_a_function_formal_does_not_shadow_a_variable(name: str):
     """
     from sympy import Symbol
 
-    # `ReducedWongWangFunc` is one of the two curated models spelled `.yml`.
-    path = next(p for ext in ("yaml", "yml") for p in MODEL_ROOT.rglob(f"{name}.{ext}"))
-    model = Dynamics.from_file(str(path))
+    model = Dynamics.from_db(name)
     scope = model.get_symbolic_elements(time_dependent=True)
     form = model._symbolic_form(notation="function")
 

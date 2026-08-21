@@ -22,13 +22,11 @@ derived_variables:
     equation:
       lhs: lc_0
       rhs: sin(local_coupling*theta)
-    conditional: false
   I:
     description: "`I` is the input via local and long range connectivity, passing first through the Kuramoto coupling function"
     equation:
       lhs: I
       rhs: c_glob+lc_0
-    conditional: false
   phase:
     description: "Normalized phase output"
     equation:

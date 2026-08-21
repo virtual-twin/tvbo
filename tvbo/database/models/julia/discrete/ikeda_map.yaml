@@ -36,7 +36,6 @@ derived_variables:
       lhs: theta
       rhs: c - d/(1 + x**2 + y**2)
       latex: false
-    conditional: false
 description: |-
   Ikeda map modeling light propagation in a ring cavity with nonlinear phase; exhibits
   rich strange attractors.

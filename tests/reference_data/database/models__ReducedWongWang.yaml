@@ -151,7 +151,6 @@ derived_variables:
       rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_glob
       latex: false
     record: false
-    conditional: false
   H:
     name: H
     description: Sigmoid input-output function of the synaptic input current, x_RWW,
@@ -164,7 +163,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0099605
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

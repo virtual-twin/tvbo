@@ -12,11 +12,13 @@ coupling and integrator metadata from the ontology and render it into
 executable TVBO/TVB source using the templates in `tvbo.templates`.
 """
 import logging
+from dataclasses import dataclass
 from typing import Any
 
 import sympy as sp
 
 from tvbo import templates
+from tvbo.templates.base.utils import get_func_name
 
 logger = logging.getLogger(__name__)
 
@@ -78,31 +80,107 @@ def source_observations(obs: Any, experiment: Any) -> list:
     return out
 
 
-COMPONENT_LANGUAGES = {
-    "python": "python",
-    "numpy": "python",
-    "scipy": "python",
-    "autodiff": "python",
-    "pyrates": "yaml",
+@dataclass(frozen=True)
+class CodeFormat:
+    """How one component-level code format is rendered, formatted and re-entered.
+
+    A component format renders a single `Dynamics` rather than a whole experiment, so
+    it names no :class:`~tvbo.export.registry.ExportFormat` and declares itself here
+    instead. `template` is the Mako template that emits it, or empty for the formats an
+    adapter builds. `entry` is the module-level name the emitted code binds its callable
+    to; empty means the template names it after the model, falling back to `unnamed_entry`
+    for a model with no name of its own. `language` selects the normaliser in
+    :func:`format_code`, is empty for output returned verbatim, and is what says whether
+    the output can be executed at all.
+    """
+
+    template: str = ""
+    language: str = ""
+    entry: str = ""
+    unnamed_entry: str = "dfun"
+    render_kwargs: tuple = ()
+
+
+_PYTHON_MODEL = "tvbo-python-model.py.mako"
+_JAX_DFUNS = "tvbo-jax-dfuns.py.mako"
+_AUTO7P = "tvbo-auto7p.py.mako"
+_PDE_FEM = "tvbo-pde-fem.py.mako"
+
+CODE_FORMATS: dict[str, CodeFormat] = {
+    "tvb": CodeFormat("tvbo-tvb-model.py.mako", "python", unnamed_entry="GeneratedDynamics"),
+    "tvboptim": CodeFormat(
+        "tvbo-tvboptim-dynamics.py.mako", "python", unnamed_entry="GeneratedDynamics"
+    ),
+    "scipy": CodeFormat(_PYTHON_MODEL, "python"),
+    "python": CodeFormat(_PYTHON_MODEL, "python"),
+    "jax-python": CodeFormat(_PYTHON_MODEL, "python"),
+    "python-jax": CodeFormat(_PYTHON_MODEL, "python"),
+    "python-network": CodeFormat(
+        _PYTHON_MODEL, "python", render_kwargs=(("coupling_as_argument", True),)
+    ),
+    "jax": CodeFormat(_JAX_DFUNS, "python", entry="dfun"),
+    "numpy": CodeFormat(_JAX_DFUNS, "python", entry="dfun"),
+    "autodiff": CodeFormat(_JAX_DFUNS, "python", entry="dfun"),
+    "julia": CodeFormat("tvbo-julia-DifferentialEquations.jl.mako", "julia"),
+    "bifurcation-numcont": CodeFormat(_AUTO7P),
+    "bifurcation-auto7p": CodeFormat(_AUTO7P),
+    "pde-fem": CodeFormat(_PDE_FEM, "python"),
+    "pde-python": CodeFormat(_PDE_FEM, "python"),
+    "pde": CodeFormat(_PDE_FEM, "python"),
+    "pyrates": CodeFormat(language="yaml"),
 }
-"""Component-level ``format`` aliases, which name no export format, to their language."""
+"""Every component-level code format: template, output language and entry point."""
+
+
+def code_format(format: str) -> CodeFormat | None:
+    """The :class:`CodeFormat` declared for *format*, or ``None`` if it declares none."""
+    return CODE_FORMATS.get(str(format).lower())
 
 
 def source_language(format: str) -> str:
     """Return the output language of *format*, or ``""`` when it emits none.
 
-    Resolves through the export registry so a backend declares its language once,
-    on its :class:`~tvbo.export.registry.ExportFormat`. The component-level aliases
-    in :data:`COMPONENT_LANGUAGES` are not registered formats and are mapped here.
+    A backend declares its language once: component formats on their
+    :data:`CODE_FORMATS` entry, experiment-level export backends on their
+    :class:`~tvbo.export.registry.ExportFormat`.
     """
-    if format in COMPONENT_LANGUAGES:
-        return COMPONENT_LANGUAGES[format]
+    spec = code_format(format)
+    if spec is not None:
+        return spec.language
     from tvbo.export import registry
 
     try:
         return registry.resolve(format).language
     except ValueError:
         return ""
+
+
+def entry_point_name(model, format: str) -> str:
+    """The name generated code for *format* binds its callable to.
+
+    The template and [`Dynamics.execute`](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.execute)
+    read this one declaration — including the fallback for a model with no name of its
+    own — so handing a rendered dfun to a custom JAX or NumPy workflow never depends on
+    guessing which name the template chose.
+
+    Raises:
+        ValueError: If *format* is not declared, or emits something other than Python.
+            A Julia module or a YAML document has no Python callable to bind, and
+            `exec`-ing one raises `SyntaxError` from inside the generated text rather
+            than naming the format that could never have worked.
+    """
+    spec = code_format(format)
+    if spec is None:
+        raise ValueError(
+            f"Format '{format}' declares no entry point in CODE_FORMATS, "
+            "so its output cannot be executed."
+        )
+    if spec.language != "python":
+        raise ValueError(
+            f"Format '{format}' emits {spec.language or 'unformatted'} output, not Python, "
+            "so there is no callable to execute. Render it and hand it to that toolchain."
+        )
+    return spec.entry or get_func_name(model, fallback=spec.unnamed_entry)
 
 
 def format_code(code: str, format: str = "python", use_black: bool = True) -> str:
@@ -147,30 +225,6 @@ def time_dependent_equations(model) -> list[str]:
         name for name, eq in (model.get_equations() or {}).items()
         if name in scoped and t in eq.rhs.free_symbols
     )
-
-
-def derived_parameter_inputs(model) -> list[str]:
-    """Base parameter names the derived-parameter expressions read, in model order.
-
-    A backend that computes derived parameters must first unpack the base parameters
-    they depend on — ``ReducedSetHindmarshRose`` derives twelve of them from ``a``,
-    ``b``, ``sigma`` and friends, so dropping the unpack breaks the model. Unpacking
-    *every* parameter instead leaves the unread ones as dead bindings, so this returns
-    exactly the ones consumed.
-
-    Returns an empty list when the model derives no parameters, which is the case
-    where the whole unpack is dead.
-    """
-    derived = getattr(model, "derived_parameters", None) or {}
-    if not derived:
-        return []
-    equations = model.get_equations() or {}
-    consumed = set()
-    for name in derived:
-        eq = equations.get(name)
-        if eq is not None:
-            consumed |= {str(sym) for sym in eq.rhs.free_symbols}
-    return [name for name in model.parameters if name in consumed]
 
 
 ### Integrator ###

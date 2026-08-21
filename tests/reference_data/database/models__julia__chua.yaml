@@ -44,7 +44,6 @@ derived_variables:
       rhs: m1*x + 0.5*(m0 - m1)*(abs(x + 1) - abs(x - 1))
       latex: false
     record: false
-    conditional: false
 state_variables:
   x:
     name: x

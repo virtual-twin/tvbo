@@ -197,12 +197,11 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
 def _state_recomputable_derived(model: Any) -> Set[str]:
     """Names of derived variables recomputable from the recorded state alone.
 
-    Each derived variable's expression is fully expanded — via sympy substitution,
-    in declaration order (which is topological: a derived variable may only
-    reference earlier ones, as the dfun requires) — down to its primitive symbols.
-    A variable is state-recomputable iff every remaining symbol is one the
-    post-solve realignment binds from the recorded state: a state variable, a
-    non-stochastic parameter, a derived parameter, or ``t``.
+    Each derived variable's expression is fully expanded — via sympy substitution, in
+    dependency order, so a variable is substituted into only after it has itself been
+    expanded — down to its primitive symbols. A variable is state-recomputable iff every
+    remaining symbol is one the post-solve realignment binds from the recorded state: a
+    state variable, a non-stochastic parameter, a derived parameter, or ``t``.
 
     A whitelist, not a coupling-name blacklist: coupling inputs surface as their
     per-key symbols (an ``EIBLinearCoupling`` unpacks to ``c_lre`` / ``c_ffi``), not
@@ -219,7 +218,7 @@ def _state_recomputable_derived(model: Any) -> Set[str]:
 
     from tvbo.classes.equation import sympify as _sympify
 
-    dvars = model.derived_variables or {}
+    dvars = model.in_dependency_order("derived_variables")
     if not dvars:
         return set()
     dparams = model.derived_parameters
@@ -263,14 +262,13 @@ def _state_recomputable_derived(model: Any) -> Set[str]:
 def state_only_derived_var_names(model: Any) -> List[str]:
     """Derived-variable names that are provably functions of the state alone.
 
-    Returned in the model's declaration order (dependency order — a derived
-    variable may only reference earlier ones, as the dfun requires). The post-solve
-    realignment binds these as locals so a recorded auxiliary can reach the
-    *intermediate* derived variables it depends on (e.g. a firing rate that is a
-    function of a synaptic-current derived variable) without a ``NameError``.
+    Returned in dependency order, so each may only reference earlier ones — which is what
+    the post-solve realignment needs when it binds them as locals, so a recorded auxiliary
+    can reach the *intermediate* derived variables it depends on (e.g. a firing rate that
+    is a function of a synaptic-current derived variable) without a ``NameError``.
     """
     recomputable = _state_recomputable_derived(model)
-    return [name for name in (model.derived_variables or {}) if name in recomputable]
+    return [name for name in model.in_dependency_order("derived_variables") if name in recomputable]
 
 
 def state_only_recorded_aux(model: Any, experiment: Any = None) -> List[Tuple[str, int]]:

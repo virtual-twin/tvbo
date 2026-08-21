@@ -13,6 +13,5 @@ update_expression:
     rhs: dX0 * dt
     latex: false
   record: false
-  conditional: false
 delayed: true
 coupling_evaluation: per_step
