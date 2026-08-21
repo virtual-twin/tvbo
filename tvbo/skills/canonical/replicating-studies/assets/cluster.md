@@ -145,14 +145,49 @@ REQUIRED output: a packed kit + a `docs/analysis/cluster-run.md` (the run route 
   fixed. (Durable framework fix: make `experiment.run()` respect the declared precision so the two
   paths can't diverge.)
 - **Run the orchestrator on a COMPUTE node, not the login node.** Login nodes are
-  cgroup-capped (a per-user memory limit that OOM-kills a long `snakemake`); DAG
-  resolution that takes seconds on a compute node crawls or dies on a starved login
-  node. Wrap `tvbo workflow submit` in a long-partition job — it is resumable
-  (snakemake skips completed outputs, so a walltime cap just means resubmit). Never
-  install or build on the login node.
+  cgroup-capped (a per-PROCESS memory limit — 128 MB on BIH) that SIGKILLs a long
+  `snakemake` — the tell is the driver dying with **exit 137 at DAG build**, seconds
+  after launch, while the node's *system* RAM is plentiful (it is the per-process cap,
+  not the machine). A tmux-on-login driver is NOT reliable for this: it can squeak under
+  the cap one day and get killed the next as the DAG or `.snakemake/` metadata grows. Put
+  `tvbo workflow submit` inside a small **sbatch DRIVER job** (`--mem=4G --cpus-per-task=2
+  --time=1-00:00:00`, body = `source venv; snakemake --unlock; tvbo workflow submit .`);
+  the orchestrator then submits the array via **nested sbatch (a job submitting jobs —
+  verified to work on BIH)**, and the driver survives ssh drops AND login reboots (a tmux
+  session survives neither cleanly). It is resumable (snakemake skips completed outputs,
+  so a walltime cap or a crash just means resubmit). Never install or build on the login
+  node — `tar` included (extraction is compute; do it under `srun` or on a transfer node).
+- **`bundle: true` data extracted on the cluster gets REAPED mid-run unless you refresh
+  its mtime.** Symptom: the first wave of a fan-out succeeds, then every later subject
+  fails with `ValueError: No file for sub-… matching query` and the bundled `dataset/`
+  dirs are all empty. Scratch auto-cleanup deletes files whose **mtime > 14 days**, and
+  `tar`/`rsync` PRESERVE the archived mtime — a `functional_connectomes` sidecar created
+  months ago arrives already "expired", so the nightly reaper purges the whole bundle an
+  hour into the run, leaving the empty dirs behind (jobs that loaded their file before the
+  reaper ran are the only survivors). Extract with **`tar -m`** (or `find <kit> -exec
+  touch {} +` after) so every file gets a CURRENT mtime, and stage under
+  `~/scratch/<yourdir>/`, never `~/`. This bit a 1096-subject cohort: 100 subjects
+  finished, ~996 failed `No file matching query`, and the fix was re-extract-with-`-m`
+  (the source `.tar.gz` was still on scratch, so no re-transfer) — then snakemake resumed
+  and filled in the missing subjects. Verify before a long run: `find <kit>/…/dataset
+  -name '*<suffix>*' | wc -l` equals the subject count, not zero.
 - **Big, flaky transfers: chunk + checksum.** A multi-hundred-MB kit over an unreliable
   link won't survive one `scp`/`rsync` stream (macOS ships `openrsync`, which doesn't
   resume); split into ~32 MB chunks, size-verify each with retries, reassemble, then
   **sha256 the result against the source** — a stale-but-right-sized kit passes a
   byte-count glance (we shipped one twice before checking the hash). Iterate with small
   (spec-only) uploads, not the full kit.
+- **Pick the tier by measuring the per-step rate, not by assuming a GPU wins.** A 379-node
+  delayed whole-brain fit measured **72.6 us/step on an A40** against **229 us/step on one
+  CPU core** — a whole GPU for ~3x a single core, because per-edge delays force an (N, N)
+  gather that is dispatch-bound rather than arithmetic-bound. A cohort sized on the
+  assumption "GPU is the fast tier" came out at ~4800 GPU-hours; the same work on CPU is
+  ~30 000 core-hours, which is 10 days on 128 `medium` cores and costs no scarce hardware.
+  Measure one experiment's rate on both tiers before sizing anything.
+- **Declare `time:` on every GPU experiment, not just the partition.** A study-wide
+  `workflow.slurm.time` is inherited by an experiment whose block sets only
+  `partition: gpu`, so a kit can be emitted with `runtime=4320` (3 days) on a scarce card
+  while the fits themselves take four hours. The cap is the enforcement, not the estimate: a
+  mis-sized job should die at the cap rather than squat. Name the GPU type too when the
+  site's tiers are not interchangeable — one node type's plugin can fail to initialise the
+  CUDA backend while another works on the same driver.

@@ -54,7 +54,7 @@ subagent doing that phase alone.
 | `assets/verification.md` | building the oracle — identity harness, assumption labelling, free conventions, linear inversion (Phase 7) |
 | `assets/published-artifacts.md` | **you are about to implement a derived quantity the authors also compute (Phase 4)**, or a number of yours disagrees with a published one and the authors published their own arrays (Phase 7) |
 | `assets/cluster.md` | packing and submitting a cluster kit (Phase 8) |
-| `assets/traps.md` | something returns plausible-but-wrong numbers — indexed by symptom at the end of this file |
+| `assets/traps.md` | something returns plausible-but-wrong numbers, costs far more than it should, or a setting you declared did not take — indexed by symptom at the end of this file |
 
 ## What a published study gives you, named apart
 
@@ -190,7 +190,10 @@ published data*, or *the published study* when you genuinely mean all three.
     The pull is real, because an `Analysis` is the one place the recipe still permits arbitrary
     Python (`is_a: FunctionCall` → a `code/` callable), so the framework cannot parallelise it
     and it is tempting to do it yourself. Do not. When an analysis is too slow, in order:
-    **(a) profile it** — the bottleneck is usually I/O layout or redundant algebra, not cores
+    **(a) measure where the time actually goes** — read the cluster's job logs and check the
+    instrument before the code (a phase timer spanning a full-duration post-evaluation reads as a
+    per-iteration anomaly; see `assets/traps.md`), then profile — the bottleneck is usually I/O
+    layout, a step nothing consumes, or redundant algebra, not cores
     (in Pang2023 the per-subject cost was 52 % sparse ARPACK, 15 % an HDF5 chunking pathology
     and 24 % a nested sweep recomputing its own Gram; the algebra alone gave 10×);
     **(b) make it declarative** so the backend can run it, the way a symbolic `Observation`
@@ -1156,7 +1159,8 @@ than only its numbers.
 **When a number of ours disagrees with a published one, `assets/published-artifacts.md` is the
 playbook** — inventory the published files by content rather than by filename, find an order-invariant
 oracle before trusting any positional comparison, measure the statistic's own stability under
-a choice the paper never fixes before blaming your implementation, prove a step inert with
+a choice the paper never fixes before blaming your implementation, treat the SEED as one of those
+choices and measure it across independent ensembles rather than by resampling your own, prove a step inert with
 algebra rather than hunting it with sweeps, compare two derived matrices as a function of a
 covariate, and keep "their result" and "their printed p" as separate claims. It operates under
 the default this skill states everywhere: **a claimed discrepancy is our bug until a
@@ -1221,6 +1225,10 @@ first, then workflow pitfalls).
 - A dense N×N coupling matmul dominates every step → `graph_representation: sparse` before any thought of HPC.
 - A stage looks I/O-bound → profile it on a COLD cache; ours was one linear-algebra call at 16.6 s of a 19 s subject while a 438 MB read cost 0.2 s.
 - A comment explains why a slow path is necessary → that is a claim; measure the risk it names before accepting *or* removing it.
+- A performance "gap" changes by 2× when you re-run the same configuration → one timing includes codegen and XLA compile; take the SLOPE across two or three sizes, never a single point.
+- The generated model looks ~10× slower than "the same physics" you wrote by hand → your floor is probably not the same computation (no delays? a matvec instead of a per-edge reduction?); build a like-for-like floor before believing the gap.
+- A fit costs far more than the integration it wraps → check the emitted module actually calls its prepared solve under `jax.jit`; `prepare()` hands back an un-jitted callable and nothing warns.
+- A whole GPU is barely faster than one CPU core → per-edge delays force an (N, N) gather that is dispatch-bound; measure the per-step rate before sizing any fleet.
 - A long run dies with `ImportError` naming a symbol you added minutes ago → codegen re-reads the template per experiment but imported its helper module once; a launched sweep freezes everything importable that it touches.
 - A chained step re-derives on half a container → the waiter gated on PIDs exiting, which is evidence that the processes ENDED, not that they succeeded.
 
@@ -1252,10 +1260,16 @@ first, then workflow pitfalls).
 
 - One condition of a sweep inverts its response and reads as a resonance crossing → recompute the derived column from its own container's inputs before believing it; a named argument emitted positionally binds by whatever order the datamodel yields.
 
+**A run completes and then dies at the very end**
+
+- A multi-hour fit finishes tuning and raises `TypeError: … unexpected keyword argument` → the keys under a pipeline `callable:`'s `arguments:` are the CALLEE's parameter names; a mismatch is only discovered after the expensive part has run.
+
 **The claim is wrong even though the numbers are right**
 
 - A metric matches in shape but not magnitude → the definition and the empirical modality it is compared against are part of the claim; read them from the Methods.
 - An exact count differs from the paper's integer → realization dependence on an unpublished seed; state it, never tune the seed to hit it.
+- A bootstrap over your own ensemble's trials says the gap to their number is systematic (z = +3.7, 0 of 2,000 draws) → it is centred on YOUR draw; only independent ensembles with fresh seeds measure where a fresh run lands, and the honest sd was 50 % larger.
+- Neither your run nor the authors' own code reaches the authors' published value → the statistic may have no stable value at their protocol; rebuild their unreleased driver from their released functions and score the published number against the seed spread.
 - Wavelengths differ ~1.3× across mesh sources → match the *invariant* of a geometric decomposition, not the magnitudes.
 - The whole study ran at an exploration axis's value rather than the model's → a single-value axis still OVERRIDES the parameter it names; express an ensemble with `n_trials` or an `initial_conditions` sweep.
 - An 8 GB outer product instead of an elementwise difference → two runs naming the same axis differently; reconcile by NAME, align by COORDINATE.
@@ -1269,6 +1283,16 @@ first, then workflow pitfalls).
 - A quantity ranks at ρ = 1.000 with a "median relative difference" of 0.000 and is nowhere near theirs → the ratio of two medians on a zero-inflated column; use a total of magnitudes.
 - Two statistics that agree to four decimals score as a significance disagreement → an exact p compared against the paper's printed, rounded one.
 - The register's headline material count is lower than the file's own rows → the register is two tables and the parse decides materiality per table.
+
+**A run costs more than it should, or a setting did not take**
+
+- A fit is far slower than the same work elsewhere in the same run → suspect the TIMER before the code; find where its clock starts and what sits between it and the print.
+- An algorithm that another one `depends_on` takes hours → its post-tuning evaluation is a full-duration simulation of the whole experiment, and the algorithm after it supersedes the observations; grep `used:` to see whether anything reads them.
+- A phase reports an impossibly fast time after you split its timer → JAX dispatch is async; `block_until_ready` before the timestamp or the split is decorative.
+- More cores buy nothing → measure `AveCPU / Elapsed` (`sstat -j <id>.0`) for the effective core count before requesting more; the efficient point for a cohort and the point that fits a wall are different decisions.
+- A cohort resubmission walls again → read `sacct` and the previous run's job logs first; the recipe's own comment about duration is not evidence.
+- A control and a variant produce identical numbers → the variant did not happen; an env var, a dropped `--set`, or a stale cluster runtime overrode the declaration.
+- A staged fit will not fit the wall → splitting is free only where the deposit already restarts each stage; otherwise the delay history, monitors and FC ring restart and it is a register-worthy deviation.
 
 **Also in `assets/traps.md`**: keep generated files out of git at the study root; track
 `docs/analysis/` from the first commit (it is the only copy of the register, the targets
