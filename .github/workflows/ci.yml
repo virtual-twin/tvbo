@@ -377,12 +377,55 @@ jobs:
                           tests/functional/test_plot_layouts.py
                           tests/test_panel_group_axis.py
                           tests/test_exploration_result_labelling.py
-                    # Every file the shards above miss; Julia deselected — `-n auto` kills its worker.
+                    # The complement of the shards above: a file they name is ignored here, so it runs once, under its own shard's concurrency.
                     - shard: rest
                       paths: >-
                           tests/
                           --ignore=tests/test_docs.py
                           --ignore=tests/test_database_validation.py
+                          --ignore=tests/test_model_loading.py
+                          --ignore=tests/test_graph.py
+                          --ignore=tests/test_package_structure.py
+                          --ignore=tests/test_network_io.py
+                          --ignore=tests/functional/test_dynamics_basic.py
+                          --ignore=tests/functional/test_metadata_import.py
+                          --ignore=tests/functional/test_simulation_experiment_basic.py
+                          --ignore=tests/functional/test_timeseries_utils.py
+                          --ignore=tests/functional/test_simulation_backends_core.py
+                          --ignore=tests/test_citation_formatting.py
+                          --ignore=tests/test_numerical_golden_corpus.py
+                          --ignore=tests/test_codegen_golden_corpus.py
+                          --ignore=tests/test_symbol_context.py
+                          --ignore=tests/test_symbolic_layer.py
+                          --ignore=tests/test_piecewise_lowering.py
+                          --ignore=tests/test_branches_only_equations.py
+                          --ignore=tests/test_tvboptim_experiments.py
+                          --ignore=tests/functional/test_simulation_backends_tvboptim.py
+                          --ignore=tests/test_full_workflow_comparison.py
+                          --ignore=tests/test_tvboptim_byte_identity.py
+                          --ignore=tests/functional/test_observation_backend_consistency.py
+                          --ignore=tests/test_tvb_comparison.py
+                          --ignore=tests/test_tvb_interop.py
+                          --ignore=tests/test_stimulus_rendering.py
+                          --ignore=tests/functional/test_simulation_backends_tvb.py
+                          --ignore=tests/functional/test_pyrates_integration.py
+                          --ignore=tests/functional/test_simulation_backends_pyrates.py
+                          --ignore=tests/functional/test_simulation_backends_neuroml.py
+                          --ignore=tests/functional/test_brian2_backend.py
+                          --ignore=tests/test_units.py
+                          --ignore=tests/test_database_golden_dump.py
+                          --ignore=tests/test_yaml_loader.py
+                          --ignore=tests/test_pydantic_loader.py
+                          --ignore=tests/test_linkml_compatibility.py
+                          --ignore=tests/test_experiment_api.py
+                          --ignore=tests/test_cli.py
+                          --ignore=tests/test_cli_workflow.py
+                          --ignore=tests/test_run_models.py
+                          --ignore=tests/test_tvboptim_observation_codegen.py
+                          --ignore=tests/test_weight_transform_codegen.py
+                          --ignore=tests/test_exploration_result_labelling.py
+                          --ignore=tests/functional/test_plot_layouts.py
+                          --ignore=tests/test_panel_group_axis.py
                       pytest_args: -n auto -m "not julia"
                       timeout: 60
         steps:
