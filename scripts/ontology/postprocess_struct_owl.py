@@ -14,15 +14,20 @@ publication-readiness items in §2.3 of the ontology restructuring plan:
 
 We do this as a post-process rather than fighting LinkML's emitter so
 that future LinkML upgrades remain drop-in.
+
+The result is a pure function of the schema: every header date comes from the
+schema rather than the clock, and the graph is written through
+`canonical_ttl.write_canonical`, so regenerating from an unchanged schema
+reproduces the committed file byte for byte.
 """
 from __future__ import annotations
 
 import argparse
-import datetime
 import pathlib
 import sys
 
 import yaml
+from canonical_ttl import write_canonical
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import DCTERMS, OWL, RDF, RDFS, SKOS, XSD
 
@@ -81,11 +86,16 @@ def _augment(g: Graph, schema: dict) -> None:
     g.add((onto, OWL.versionInfo, Literal(version)))
     g.add((onto, PAV.version, Literal(version)))
 
-    today = datetime.date.today().isoformat()
     if schema.get("created_on"):
         g.add((onto, DCTERMS.created, Literal(
             str(schema["created_on"]), datatype=XSD.date)))
-    g.add((onto, DCTERMS.modified, Literal(today, datatype=XSD.date)))
+    modified = schema.get("last_updated_on") or schema.get("created_on")
+    if not modified:
+        raise SystemExit(
+            "Schema declares neither `last_updated_on` nor `created_on`, so the "
+            "ontology's dcterms:modified would be the build date and the artefact "
+            "would differ on every run. Declare one of them.")
+    g.add((onto, DCTERMS.modified, Literal(str(modified), datatype=XSD.date)))
 
     for slot, prop in (("created_by", DCTERMS.creator),
                        ("contributors", DCTERMS.contributor)):
@@ -255,7 +265,7 @@ def main() -> int:
     g.bind("owl", OWL)
     _retype_float_facets(g)
     _augment(g, schema)
-    g.serialize(destination=args.owl, format="turtle")
+    write_canonical(g, args.owl)
     print(f"\u2713 Augmented ontology header in {args.owl}")
     return 0
 

@@ -105,6 +105,8 @@ gen-shacl:
 	@echo "Generating SHACL shapes from LinkML schema..."
 	@mkdir -p ontology
 	@gen-shacl $(SCHEMA_PATH) > $(SHACL_OUT)
+	@# sh:ignoredProperties denotes a set, and LinkML emits it in Python set order.
+	@python scripts/ontology/canonical_ttl.py $(SHACL_OUT) --sort-list sh:ignoredProperties
 	@echo "✓ SHACL shapes written to $(SHACL_OUT)"
 
 gen-studies:
