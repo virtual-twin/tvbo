@@ -501,6 +501,50 @@ _CONCENTRATION_MODEL_TYPES = frozenset(
     }
 )
 
+# Indexed by NeuroML type name; see standard_type_dynamics for what this holds and why.
+_STANDARD_TYPE_DYNAMICS = {
+    "expOneSynapse": {
+        "state_variables": {
+            "g": {
+                "name": "g",
+                "label": "synaptic conductance",
+                "equation": {"rhs": "-g / tauDecay"},
+            },
+        },
+        "derived_variables": {
+            "i": {
+                "name": "i",
+                "label": "synaptic current",
+                "equation": {"rhs": "g * (erev - v)"},
+            },
+        },
+        "events": {
+            "spike": {
+                "name": "spike",
+                "label": "presynaptic spike",
+                "affect": {"rhs": "g = g + weight * gbase"},
+            },
+        },
+    },
+}
+
+
+def standard_type_dynamics(nml_type: str):
+    """The canonical LEMS dynamics of a standard NeuroML type, or ``None`` if not indexed.
+
+    Transcribed from the NeuroML2 core type definitions (``Synapses.xml``). A recipe that
+    references such a type by ``neuroml:`` iri carries no equations of its own, so a consumer
+    needing the symbolic system — the report's model cards — resolves it here. ``v`` is the
+    postsynaptic membrane potential, bound at the projection target.
+
+    Returns a datamodel-shaped dict (``state_variables`` / ``derived_variables`` / ``events``)
+    ready to merge onto such a component. It is a fresh copy, so a caller may hand it straight
+    to a constructor that normalises its argument in place.
+    """
+    spec = _STANDARD_TYPE_DYNAMICS.get(str(nml_type))
+    return copy.deepcopy(spec) if spec is not None else None
+
+
 # Standard NeuroML synapse types — rendered as standalone XML components with parameter attributes (no ComponentType definition needed).
 _SYNAPSE_TYPES = frozenset(
     {

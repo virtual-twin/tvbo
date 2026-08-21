@@ -233,6 +233,23 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
     return np.asarray([index[v] for v in cell.tolist()])
 
 
+def _host_reduced_to_observations(name, out):
+    """Wrap a cross-trial (``reduce: trials``) pipeline result as named ``xr.DataArray``s.
+
+    ``out`` is what the host-side stage returned: an array-like, or a flat dict of
+    array-likes. A single-entry dict stores under the observation's own ``name``; a
+    multi-entry dict stores each entry under ``<name>_<key>``. Nested dicts are refused —
+    the stage contract is arrays.
+    """
+    if isinstance(out, dict):
+        if any(isinstance(v, dict) for v in out.values()):
+            raise TypeError(f"reduce: trials stage {name!r} returned a nested dict; return array-likes")
+        if len(out) == 1:
+            return {name: xr.DataArray(np.asarray(next(iter(out.values()))), name=name)}
+        return {f"{name}_{k}": xr.DataArray(np.asarray(v), name=f"{name}_{k}") for k, v in out.items()}
+    return {name: xr.DataArray(np.asarray(out), name=name)}
+
+
 def _stacked_to_dataarray(
     stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None
 ):
@@ -2139,12 +2156,6 @@ class ExperimentResult:
                     by_output[(_san(expl_name), "results")] = g
         outputs = [o for _, o in by_output]
         data_vars = {(o if outputs.count(o) == 1 else f"{e}__{o}"): da for (e, o), da in by_output.items()}
-        integ_obs = getattr(self.integration, "observations", None) if self.integration is not None else None
-        if integ_obs and hasattr(integ_obs, "items"):
-            for obs_name, obs in integ_obs.items():
-                da = _unwrap_observation(obs)
-                if hasattr(da, "dims"):
-                    data_vars[f"integration__{_san(obs_name)}"] = da
 
         _labels_cache: list = []
 
@@ -2189,6 +2200,16 @@ class ExperimentResult:
                 nodes = _node_labels() if any(d in _NODE_AXES for d in dims) else None
                 return xr.DataArray(a, dims=dims, coords=_node_coords(dims, a.shape, nodes))
             return xr.DataArray(a, dims=[f"{name}_d{i}" for i in range(a.ndim)])
+
+        # An analysis observation (a Fisher curve, a gradient) is a bare array with no dims, so it goes through _numeric_da rather than being dropped by the labelled-only guard.
+        integ_obs = getattr(self.integration, "observations", None) if self.integration is not None else None
+        if integ_obs and hasattr(integ_obs, "items"):
+            for obs_name, obs in integ_obs.items():
+                da = _unwrap_observation(obs)
+                if da is not None and not hasattr(da, "dims"):
+                    da = _numeric_da(f"integration__{_san(obs_name)}", da)
+                if da is not None and hasattr(da, "dims"):
+                    data_vars[f"integration__{_san(obs_name)}"] = da
 
         def _numeric_leaves(prefix, obj, dims=None):
             """Yield (var_name, DataArray) for the numeric leaves of a nested pytree."""

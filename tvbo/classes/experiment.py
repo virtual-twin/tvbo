@@ -3151,9 +3151,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         "weighting is aligned with `nodes`, so the two must agree."
                     )
 
-            # weight_distribution -> weights array (canonical, seeded resolver)
+            # A `subset` distribution stays declarative: the stimulus codegen draws one region mask per trial, so no static weighting is resolved here.
             wd = getattr(ev, "weight_distribution", None)
-            if wd is not None and not weighting:
+            is_subset = wd is not None and str(getattr(wd, "name", "") or "").lower() == "subset"
+
+            # weight_distribution -> weights array (canonical, seeded resolver)
+            if wd is not None and not is_subset and not weighting:
                 n = len(regions) if regions else int(n_nodes)
                 try:
                     samples = draw(wd, (n,), seed=getattr(wd, "seed", None))

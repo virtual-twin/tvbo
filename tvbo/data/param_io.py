@@ -118,13 +118,13 @@ def _mesh_array(net: Any, field: str) -> np.ndarray:
         ) from None
 
 
-_NODE_MEASURES = ("positions", "instrength")
+_NODE_MEASURES = ("positions", "instrength", "labels")
 
 
 def resolve_network_node(net: Any, measure: str) -> np.ndarray | None:
     """Per-node vector for a ``network.<measure>`` reference.
 
-    The single definition shared by the producer-argument path (``_resolve_ref``) and the observation-embedding path (``utils.collect_network_node_arrays``), so both resolve ``network.positions`` / ``network.instrength`` identically. ``positions`` → region centroids ``(n_nodes, 3)``; ``instrength`` → weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention).
+    The single definition shared by the producer-argument path (``_resolve_ref``) and the observation-embedding path (``utils.collect_network_node_arrays``), so both resolve ``network.positions`` / ``network.instrength`` / ``network.labels`` identically. ``positions`` → region centroids ``(n_nodes, 3)``; ``instrength`` → weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention); ``labels`` → the region-label string array (``Network.node_labels``).
 
     Anything else is read as a **named per-node attribute**, the node-side twin of ``network.edges.<attr>``: first from the nodes' own ``parameters`` (in node order), then from a ``nodes/<attr>`` dataset in the companion store. That is what lets a study carry a measured per-region array — a per-node current range, a region size — in the network file and reference it from a spec instead of pasting it into code. Returns None when the measure is unknown or unbuildable.
     """
@@ -133,6 +133,10 @@ def resolve_network_node(net: Any, measure: str) -> np.ndarray | None:
     if measure == "instrength" and hasattr(net, "matrix"):
         w = net.matrix("weight")
         return np.asarray(w, dtype=float).sum(axis=1) if w is not None else None
+    if measure == "labels" and hasattr(net, "node_labels"):
+        labels = net.node_labels
+        labels = labels() if callable(labels) else labels
+        return np.asarray(list(labels)) if labels is not None else None
     return _resolve_node_attribute(net, measure)
 
 

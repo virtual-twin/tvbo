@@ -483,7 +483,7 @@ def divergence_register(source) -> dict:
     classes: dict[str, dict] = {}
     scores = False
     for line in text.splitlines():
-        cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
+        cells = _cells(line) if line.startswith("|") else []
         if cells and cells[0].lower() in ("#", "id"):
             scores = bool(cells) and _MATERIALITY_RE.match(cells[-1]) is not None
             continue
@@ -1282,6 +1282,34 @@ def experiment_models(experiment):
     catalogue = dict(name_items(slot(net, "dynamics", None)))
     out, seen = [], set()
 
+    def _resolve_standard_type(model):
+        """A component whose equations live behind a standard `neuroml:` iri, made symbolic.
+
+        Such a component (an ``expOneSynapse`` AMPA/GABA receptor) declares parameters only;
+        rendered as-is its model card shows a symbol table with no mathematics. When the
+        canonical LEMS dynamics of its type are indexed, return an enriched copy carrying
+        them — state, current, spike affect — under the component's own name and parameters.
+        """
+        iri = str(slot(model, "iri", "") or "")
+        if not iri.startswith("neuroml:"):
+            return model
+        if dict(name_items(slot(model, "state_variables", {}) or {})):
+            return model
+        from tvbo import datamodel as dm
+        from tvbo.adapters.neuroml import standard_type_dynamics
+
+        spec = standard_type_dynamics(iri.split(":", 1)[1])
+        if spec is None:
+            return model
+        return dm.Dynamics(
+            name=slot(model, "name", None),
+            label=slot(model, "label", None),
+            description=slot(model, "description", None),
+            iri=iri,
+            parameters={str(k): p for k, p in name_items(slot(model, "parameters", {}) or {})},
+            **spec,
+        )
+
     def _add(model):
         if isinstance(model, str):
             model = catalogue.get(model)
@@ -1291,7 +1319,7 @@ def experiment_models(experiment):
         if key in seen:
             return
         seen.add(key)
-        out.append(model)
+        out.append(_resolve_standard_type(model))
         for _, p in name_items(slot(model, "parameters", {}) or {}):
             ref = slot(p, "value", None)
             if isinstance(ref, str) and catalogue:
