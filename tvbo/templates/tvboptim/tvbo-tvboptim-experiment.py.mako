@@ -1579,11 +1579,12 @@ def _load_param(path, key, device=True):
     source. Read once when the network is built, not per step. ``device=False`` keeps the
     array in NumPy at its stored precision — what a host-side consumer needs, since
     ``jnp.asarray`` silently truncates float64 to float32 whenever x64 is off.
-    """
-    from pathlib import Path
 
-    from tvbo.data.matrix_io import LazyArrayStore
-    _arr = LazyArrayStore(Path(path), {}).read_dataset(key)
+    A packed kit stages these artifacts by basename, so an absent author path is resolved
+    against ``$TVBO_CONSTANTS_DIR`` or the run directory's ``constants/``.
+    """
+    from tvbo.data.matrix_io import LazyArrayStore, resolve_staged_path
+    _arr = LazyArrayStore(resolve_staged_path(path), {}).read_dataset(key)
     return jnp.asarray(_arr) if device else _arr
 
 
@@ -3937,6 +3938,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         axes=_axes_info,
 % if has_axes:
         cell_coords=_cell_coords,
+        # The whole axis table: the container keeps the ARRAY-valued entries as keyed sidecars and drops the scalar ones.
+        axis_points=_array_axis_points,
         # Inside the same guard as the slicing: an axis-less exploration is never sliced, so
         # declaring it sharded would suppress the provenance sidecar for every task.
         is_shard=kwargs.get('shard') is not None,

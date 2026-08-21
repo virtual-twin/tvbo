@@ -258,3 +258,18 @@ def test_a_matrix_valued_axis_is_keyed_by_point_index(tmp_path, monkeypatch):
     r = _run_two_network_axes(tmp_path, monkeypatch)
     grid = r.explorations.delay_sweep.as_grid()
     np.testing.assert_array_equal(np.asarray(grid.coords["network.edges.length"]), [0, 1])
+
+
+def test_a_matrix_valued_axis_carries_its_points_as_sidecar_data(tmp_path, monkeypatch):
+    """The swept matrices ride on the result keyed by point index.
+
+    A reader recovers WHICH matrix a cell used — the index alone is meaningless without the builder that produced it. The scalar speed axis carries nothing extra.
+    """
+    import numpy as np
+
+    r = _run_two_network_axes(tmp_path, monkeypatch)
+    expl = r.explorations.delay_sweep
+    assert set(expl.axis_points) == {"network.edges.length"}
+    pts = expl.axis_points["network.edges.length"]
+    assert pts.dims == ("network.edges.length", "node_i", "node_j")
+    np.testing.assert_allclose(np.asarray(pts), [np.full((2, 2), 10.0), np.full((2, 2), 20.0)])

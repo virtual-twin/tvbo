@@ -1187,16 +1187,8 @@ def _load_constant(path, key):
     A packed kit stages these constants into its own ``constants/`` dir, so when the author's
     absolute path is absent (a frozen kit run on another machine) the file is resolved by
     basename under ``$TVBO_CONSTANTS_DIR`` or the run dir's ``constants/``."""
-    import os
-    from pathlib import Path
-    from tvbo.data.matrix_io import LazyArrayStore
-    p = Path(path)
-    if not p.exists():
-        for _base in (os.environ.get("TVBO_CONSTANTS_DIR"), "constants"):
-            if _base and (Path(_base) / p.name).is_file():
-                p = Path(_base) / p.name
-                break
-    return jnp.asarray(LazyArrayStore(p, {}).read_dataset(key))
+    from tvbo.data.matrix_io import LazyArrayStore, resolve_staged_path
+    return jnp.asarray(LazyArrayStore(resolve_staged_path(path), {}).read_dataset(key))
 
 
 % if network_obs_keys and bids_dir:

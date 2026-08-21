@@ -60,10 +60,16 @@ def _resolve_path(source: str, source_dir: Path | None) -> Path | None:
     """A path source, resolved against the declaring spec's directory when relative.
 
     Mirrors how ``Network.bids_dir`` / ``Network.data_file`` resolve, so a spec means the same thing wherever it is loaded from and a kit that carries its companion alongside the spec keeps working after it is moved.
+
+    A path that resolves nowhere gets one more chance against a packed kit's staging directory, which carries the artifact under its basename — the same fallback the rendered readers use, so re-rendering from a kit's frozen spec finds exactly what running its frozen script finds.
     """
+    from tvbo.data.matrix_io import resolve_staged_path
+
     p = Path(str(source))
     if not p.is_absolute() and source_dir is not None:
         p = (Path(source_dir) / p).resolve()
+    if not p.exists():
+        p = resolve_staged_path(p)
     return p if p.exists() else None
 
 

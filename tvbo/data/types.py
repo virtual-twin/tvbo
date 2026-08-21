@@ -208,7 +208,7 @@ def _axis_points_are_arrays(a) -> bool:
 def _axis_positions(cell_vals, grid_vals, axis, name):
     """Index of each cell along one grid axis, matched by value.
 
-    A numeric axis matches by nearest value, because a swept float that has round-tripped through a file need not compare equal to the one the grid declares. Anything else matches exactly: a string axis (``integration.method`` over "heun"/"euler") cannot be subtracted at all, and placing it by position would be the scrambling this whole path exists to prevent.
+    A numeric axis matches by nearest value, because a swept float that has round-tripped through a file need not compare equal to the one the grid declares — but only within a round-trip-sized tolerance (relative ``1e-6``, an order above float32 precision). A value farther from every declared point than storage error can explain means the column is paired with the wrong axis or the grid changed under the cells, and snapping it silently would relabel the surface, so it raises instead. Anything else matches exactly: a string axis (``integration.method`` over "heun"/"euler") cannot be subtracted at all, and placing it by position would be the scrambling this whole path exists to prevent.
 
     ARRAY-VALUED points are REFUSED rather than matched. An axis whose points are whole matrices declares one point INDEX per point as its coordinate, because an xarray coordinate is an index of scalars, so cells carrying the matrices themselves are in a different currency. Only the generated code holds the materialised points, which is where the conversion belongs (:func:`tvbo.templates.tvboptim.callbacks.point_indices`); matching them here would key the surface on a coordinate the cells do not share.
     """
@@ -222,7 +222,19 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
             f"materialised points are still in scope; they never reach the container."
         )
     if np.issubdtype(cell.dtype, np.number) and np.issubdtype(grid.dtype, np.number):
-        return np.abs(cell[:, None] - grid[None, :]).argmin(axis=1)
+        pos = np.abs(cell[:, None] - grid[None, :]).argmin(axis=1)
+        snapped = grid[pos]
+        err = np.abs(np.asarray(cell, dtype=float) - np.asarray(snapped, dtype=float))
+        tol = 1e-6 * np.maximum(np.abs(cell), np.abs(snapped))
+        if np.any(err > tol):
+            i = int(np.argmax(err - tol))
+            raise ValueError(
+                f"cell_coords for observation {name!r} carry value {cell[i]!r} on axis {axis!r}, "
+                f"too far from every declared grid point (nearest: {snapped[i]!r}) to be a storage "
+                f"round-trip. The column is paired with the wrong axis, or the grid changed under "
+                f"the cells; snapping it silently would relabel the surface."
+            )
+        return pos
     index = {v: i for i, v in enumerate(grid.tolist())}
     absent = sorted({v for v in cell.tolist() if v not in index}, key=repr)
     if absent:
@@ -231,6 +243,16 @@ def _axis_positions(cell_vals, grid_vals, axis, name):
             f"which the grid does not declare (it has {grid.tolist()})."
         )
     return np.asarray([index[v] for v in cell.tolist()])
+
+
+def _axis_points_dataarray(name, points):
+    """The materialised points of an ARRAY-valued axis, keyed by its point index.
+
+    An axis of whole arrays coordinates its grid dimension on the point INDEX (an xarray coordinate is a 1-D index of scalars), and that index is meaningless once the run ends unless the points ride along — recovering WHICH matrix a cell used otherwise needs the builder that produced them. The leading dim takes the axis's own name with ``arange(n)`` coords, so it aligns with the grid dimension when merged into a result Dataset and a cell's coordinate value selects its point directly. Inner dims follow the node-array convention (``node`` for per-node vectors, ``node_i``/``node_j`` for per-edge matrices).
+    """
+    a = np.asarray(points)
+    inner = {1: ["node"], 2: ["node_i", "node_j"]}.get(a.ndim - 1, [f"{name}_d{i}" for i in range(a.ndim - 1)])
+    return xr.DataArray(a, dims=[name, *inner], coords={name: np.arange(a.shape[0])}, name=name)
 
 
 def _host_reduced_to_observations(name, out):
@@ -257,7 +279,7 @@ def _stacked_to_dataarray(
 
     Outer dims correspond to exploration axes (parameter names with their explored values as coords). When ``n_trials > 1`` and the leading inner axis matches, a ``trial`` dim is inserted after the grid dims. Remaining inner dims follow the simulation convention ``(time, variable, node, mode)``; the leading ``time`` dim is included only when ``intrinsic_ts`` carries a multi-step time vector matching the leading remaining shape, so time-aggregated observations don't get a spurious ``time`` axis.
 
-    ``cell_coords`` (``{axis_name: per_cell_values}``) is each cell's actual parameter values read back from the grid, in the grid's OWN emission order. It keys results by value rather than by position, because a ``Space`` emits cells in pytree-leaf order, which is NOT the ``axes_info`` order whenever the swept axes live on different state sub-objects (dynamics/coupling/graph) — a plain positional reshape would then scramble the surface. For the full Cartesian product each cell is placed into the rectangular grid at the index its values map to (order-independent). For a flat subset (one HPC array task's shard) the result instead gets a single ``point`` dim with each axis's value hung on it as a coordinate, so the shard is self-describing and reassembles by parameter value across tasks.
+    ``cell_coords`` (``{axis_name: per_cell_values}``) is each cell's actual parameter values read back from the grid, in the grid's OWN emission order. It keys results by value rather than by position, because a ``Space`` emits cells in pytree-leaf order, which is NOT the ``axes_info`` order whenever the swept axes live on different state sub-objects (dynamics/coupling/graph) — a plain positional reshape would then scramble the surface. Every keyed payload is first built flat, one ``point`` per cell with each axis's value hung on it as a coordinate. A flat subset (one HPC array task's shard) is returned in that form, self-describing, so it reassembles by parameter value across tasks. A full Cartesian product is additionally pivoted into the rectangular grid by ``set_index`` + ``unstack`` — the same idiom shard reassembly uses — after each cell coordinate is snapped onto the declared grid value it names (:func:`_axis_positions`), because a float that round-tripped through a file need not compare equal to the declared one and unstack places by coordinate identity. Cells whose snapped values collide cannot be a grid and raise.
 
     ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`). ``nodes`` are the network's node labels, hung on whichever declared dim is the node axis — a swept observation is selected by label the same way an unswept one is, and without them a sweep's node axis is addressable only by index.
     """
@@ -278,10 +300,10 @@ def _stacked_to_dataarray(
         if ax_vals is not None:
             grid_coords[ax_name] = np.asarray(ax_vals)
 
-    # Sharded / non-rectangular subset: the leading axis is a flat list of grid points, not the full Cartesian product, so it cannot be reshaped into one dim per parameter. Emit a single ``point`` dim and hang each axis's per-cell value on it as a (non-dimension) coordinate.
+    # Keyed payloads are built flat first — one ``point`` per cell, axis values as coordinates. A full Cartesian product is then pivoted into the rectangular grid below; a subset keeps the flat, self-describing form.
     _full_grid = bool(grid_sizes) and all(s is not None for s in grid_sizes) and arr.shape[0] == int(np.prod(grid_sizes))
-    # Full rectangular grid with per-cell coords: place each cell BY VALUE (see docstring).
-    if cell_coords is not None and _full_grid and grid_dims:
+    _to_grid = cell_coords is not None and _full_grid and bool(grid_dims)
+    if _to_grid:
         _missing = [n for n in grid_dims if n not in cell_coords or n not in grid_coords]
         if _missing:
             raise ValueError(
@@ -290,18 +312,9 @@ def _stacked_to_dataarray(
                 f"reshape would scramble the surface whenever the Space emission order "
                 f"differs from the declared axis order, so this is an error, not a fallback."
             )
-        _pos = [_axis_positions(cell_coords[_n], grid_coords[_n], _n, name) for _n in grid_dims]
-        _flat_idx = np.ravel_multi_index(tuple(_pos), tuple(grid_sizes))
-        if len(np.unique(_flat_idx)) != arr.shape[0]:
-            raise ValueError(
-                f"cell_coords for observation {name!r} map {arr.shape[0]} cells onto "
-                f"{len(np.unique(_flat_idx))} distinct grid indices — the per-cell values "
-                f"do not identify every cell uniquely."
-            )
-        _rect = np.empty((int(np.prod(grid_sizes)),) + arr.shape[1:], dtype=arr.dtype)
-        _rect[_flat_idx] = arr
-        arr = _rect.reshape(tuple(grid_sizes) + arr.shape[1:])
-        cell_coords = None  # consumed: build the rectangular DataArray from grid_coords
+        cell_coords = {
+            _n: np.asarray(grid_coords[_n])[_axis_positions(cell_coords[_n], grid_coords[_n], _n, name)] for _n in grid_dims
+        }
     if cell_coords is not None or (grid_dims and not _full_grid):
         n_points = arr.shape[0]
         inner_shape = arr.shape[1:]
@@ -330,7 +343,21 @@ def _stacked_to_dataarray(
             inner_dims = inner_dims[:-1]
         all_dims = ["point"] + trial_dims + inner_dims
         coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
-        return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+        da = xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+        if not _to_grid:
+            return da
+        try:
+            if len(grid_dims) > 1:
+                da = da.set_index(point=grid_dims).unstack("point")
+            else:
+                da = da.swap_dims({"point": grid_dims[0]})
+            da = da.reindex({_n: grid_coords[_n] for _n in grid_dims})
+        except ValueError as e:
+            raise ValueError(
+                f"cell_coords for observation {name!r} map {n_points} cells onto fewer "
+                f"distinct grid cells — the per-cell values do not identify every cell uniquely."
+            ) from e
+        return da.transpose(*grid_dims, ...)
 
     # Multi-axis 'product'-mode explorations come back with a flat leading dim of size prod(grid_sizes). Reshape into per-axis dims so the DataArray gets one named axis per parameter.
     if (
@@ -423,7 +450,7 @@ def reassemble_experiment_results(
     one HDF5 file (``<stem>.h5``) holding the data, plus a YAML sidecar (``<stem>.yaml``) carrying the frozen, fully-overridden experiment spec — so the result is self-describing, provenance-complete and reproducible without any extra flags, and identical to what a local run writes.
 
     Each array task wrote a shard as the same ``<prefix>_result.h5`` Dataset with a flat, self-describing ``point`` dimension (see :meth:`ExperimentResult.save`).
-    This concatenates them along ``point`` and pivots by parameter value into the full rectangular grid, giving one standard xarray ``Dataset`` that opens with a plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader.
+    This concatenates them along ``point`` and pivots by parameter value into the full rectangular grid, giving one standard xarray ``Dataset`` that opens with a plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader. ``axis_points__*`` variables — one sweep-wide axis table, required identical in every shard — are carried past the concat and re-attached to the grid, so the gathered artifact stays as self-describing as a local run's.
 
     Args:
         shards_root: directory holding the shard ``.h5`` files (scanned recursively).
@@ -449,7 +476,21 @@ def reassemble_experiment_results(
     if not paths:
         raise FileNotFoundError(f"no shard files matched {pattern!r} under {src!r}")
 
-    combined = xr.concat([xr.open_dataset(p, engine="h5netcdf") for p in paths], dim=point_dim)
+    datasets = [xr.open_dataset(p, engine="h5netcdf") for p in paths]
+    # ``axis_points__*`` vars are one sweep-wide axis table, not per-cell data: concatenating them along ``point`` would tile the sidecar once per shard. Lift them out, require every shard to carry the same table, and re-attach after the pivot.
+    sidecar_names = sorted({str(k) for ds in datasets for k in ds.data_vars if "axis_points__" in str(k)})
+    sidecars = {k: datasets[0][k] for k in sidecar_names if k in datasets[0]}
+    for p, ds in zip(paths, datasets, strict=True):
+        for k in sidecar_names:
+            if k not in ds.data_vars or (k in sidecars and not ds[k].equals(sidecars[k])):
+                raise ValueError(
+                    f"shard {p!r} disagrees with its siblings on {k!r} — the shards were not "
+                    f"produced by one sweep's axis table, so their point indices do not name "
+                    f"the same points and cannot be reassembled."
+                )
+    if sidecar_names:
+        datasets = [ds.drop_vars(sidecar_names) for ds in datasets]
+    combined = xr.concat(datasets, dim=point_dim)
     coord_names = [c for c in combined.coords if point_dim in combined[c].dims and c != point_dim]
     if len(coord_names) >= 2:
         # Multi-parameter sweep: pivot the flat point dim into one dim per parameter, addressing the full rectangular grid by value (order-independent).
@@ -459,6 +500,9 @@ def reassemble_experiment_results(
         grid = combined.sortby(coord_names[0]).swap_dims({point_dim: coord_names[0]})
     else:
         grid = combined
+    for k, da in sidecars.items():
+        # Shards suffix the sidecar's dim (`<axis>__point`) to keep it clear of the flat per-point coordinate; on the pivoted grid the axis IS a dimension, so the name goes back and the sidecar aligns with it.
+        grid[k] = da.rename({d: str(d)[: -len("__point")] for d in da.dims if str(d).endswith("__point")})
     grid.attrs["tvbo_class"] = "tvbo:ExperimentResult"
     if sidecar is not None:
         grid.attrs["sidecar_file"] = f"{stem}.yaml"
@@ -1287,6 +1331,7 @@ class ExplorationResult(Bunch):
         observations=None,
         cell_coords=None,
         is_shard=None,
+        axis_points=None,
         **kwargs,
     ):
         """A sweep's results, labelled against the axes that produced them.
@@ -1294,6 +1339,8 @@ class ExplorationResult(Bunch):
         ``cell_coords`` (``{axis: (n_cell,) array}``) is each cell's actual parameter values, set for EVERY keyed sweep — a whole grid as much as one array task's slice. It drives placement by value in ``as_grid``: into the rectangular grid for a full product, onto a flat ``point`` dim for a subset. It is NOT a shard marker, and reading it as one cost every local sweep its provenance sidecar.
 
         ``is_shard`` is that marker, declared by the producer — the generated script holds ``kwargs['shard']``. ``None`` means undeclared, and ``_is_partial_shard`` falls back to counting cells. Nothing downstream can re-derive it reliably: a branch shard's axis ``n`` is taken from the already-sliced index, so the slice looks complete.
+
+        ``axis_points`` (``{axis: (n_point, ...) array}``) is the materialised points of each ARRAY-valued axis — only the producer holds them, and the point-index coordinate such an axis sweeps on is meaningless without them. Kept as keyed ``DataArray`` sidecars (see :func:`_axis_points_dataarray`); scalar axes carry nothing extra and are dropped here, so the producer may hand over its whole axis table.
         """
         super().__init__(**kwargs)
         self.name = name
@@ -1304,6 +1351,11 @@ class ExplorationResult(Bunch):
         self.output_names = output_names or []
         self.is_shard = is_shard
         self.cell_coords = cell_coords
+        self.axis_points = {
+            str(k): _axis_points_dataarray(str(k), v)
+            for k, v in (axis_points or {}).items()
+            if v is not None and np.asarray(v).ndim > 1
+        }
         # Per-grid-point observations as {name: xr.DataArray} with grid axes prepended to each observation's intrinsic dims (time/variable/node/mode). Grid codegen already hands over labelled DataArrays; the warm-start / adiabatic path hands over plain arrays, so label those here (against the swept axes) — the class honours its own contract regardless of producer, and every consumer (plotting, save, reassembly) sees DataArrays.
         self.observations = {
             k: (
@@ -2140,23 +2192,6 @@ class ExperimentResult:
         def _san(s):
             return "".join(c if (c.isalnum() or c in "._-") else "_" for c in str(s))
 
-        # ── collect every output as a data-variable ──────────────────────────
-        by_output: dict[tuple, xr.DataArray] = {}
-        for expl_name, expl in (self.explorations or {}).items():
-            # ExplorationResult labels every observation as a DataArray at construction (grid and warm-start alike), so this stays uniform.
-            for obs_name, da in (getattr(expl, "observations", None) or {}).items():
-                if da is not None and hasattr(da, "dims"):
-                    by_output[(_san(expl_name), _san(obs_name))] = da
-            if getattr(expl, "results", None) is not None:
-                try:
-                    g = expl.as_grid()
-                except Exception:
-                    g = None
-                if g is not None and hasattr(g, "dims"):
-                    by_output[(_san(expl_name), "results")] = g
-        outputs = [o for _, o in by_output]
-        data_vars = {(o if outputs.count(o) == 1 else f"{e}__{o}"): da for (e, o), da in by_output.items()}
-
         _labels_cache: list = []
 
         def _node_labels():
@@ -2171,6 +2206,32 @@ class ExperimentResult:
                     raw = getattr(getattr(self.source, "network", None), "node_labels", None)
                 _labels_cache.append([str(lbl) for lbl in raw] if raw is not None and len(raw) else None)
             return _labels_cache[0]
+
+        # ── collect every output as a data-variable ──────────────────────────
+        by_output: dict[tuple, xr.DataArray] = {}
+        for expl_name, expl in (self.explorations or {}).items():
+            # ExplorationResult labels every observation as a DataArray at construction (grid and warm-start alike), so this stays uniform.
+            for obs_name, da in (getattr(expl, "observations", None) or {}).items():
+                if da is not None and hasattr(da, "dims"):
+                    by_output[(_san(expl_name), _san(obs_name))] = da
+            # An array-valued axis's materialised points ride along as ``axis_points__<axis>``, aligned with the grid dim of the same name and labelled on their node axes. Written for every run, shards included — the gather pass recognises the reserved prefix and carries the sidecar past its point-concat — so the reassembled artifact is as self-describing as a local one.
+            _shard = _is_partial_shard(expl)
+            for ax_label, da in (getattr(expl, "axis_points", None) or {}).items():
+                if da is not None and hasattr(da, "dims"):
+                    da = da.assign_coords(_node_coords([str(d) for d in da.dims], da.shape, _node_labels()))
+                    if _shard:
+                        # On the flat shard form the axis name is a per-point COORDINATE, and a same-named sidecar dim would silently displace it — the very coordinate reassembly pivots on. The reserved suffix keeps them apart; the gather pass renames it back once the axis is a real dimension.
+                        da = da.rename({da.dims[0]: f"{da.dims[0]}__point"})
+                    by_output[(_san(expl_name), f"axis_points__{_san(ax_label)}")] = da
+            if getattr(expl, "results", None) is not None:
+                try:
+                    g = expl.as_grid()
+                except Exception:
+                    g = None
+                if g is not None and hasattr(g, "dims"):
+                    by_output[(_san(expl_name), "results")] = g
+        outputs = [o for _, o in by_output]
+        data_vars = {(o if outputs.count(o) == 1 else f"{e}__{o}"): da for (e, o), da in by_output.items()}
 
         # Experiments that produce observations/optimizations without an exploration sweep (e.g. a per-subject FC fit) still carry data to persist: the derived observations (simulated + reconciled empirical FC) and the fit outcome (fitted parameters, final loss, loss trajectory). Coerce to float and skip anything non-numeric so the HDF5 write never trips on Python objects.
         def _numeric_da(name, arr, dims=None):

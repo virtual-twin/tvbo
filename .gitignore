@@ -99,7 +99,7 @@ manuscript
 docs/Usage/_output
 presentation
 docs/Interoperability/*.ivp
-docs/Interoperability/*.so
+docs/**/*.so
 docs/Interoperability/*.f90
 temp
 rwongwang_kernel.cu
@@ -117,7 +117,6 @@ pyrates_run_*.py
 tvbo/database/studies/**/*.md
 tvbo/database/studies/**/*.png
 c.ivp
-qif.cpython-313-darwin.so
 qif.f90
 docs/Interoperability/BIDS/derivatives/
 # Atlas parcellation volumes: large binaries shipped as build artifacts, not tracked.
@@ -153,9 +152,6 @@ tvbo/rules/
 # Build artifacts
 dist/
 *.egg-info/
-
-# stray compiled bifurcation module (build artifact; the tracked copy lives in BifurcationTutorial/)
-docs/Usage/*.so
 
 # Local Claude Code state, including the GENERATED `.claude/skills/` tree. The two
 # skill sources of truth are tracked: `tvbo/skills/canonical/` (ships in the wheel)

@@ -336,8 +336,7 @@ NOT_A_STUDY_PATH = ("docs/Interoperability/", "docs/CLI/", "docs/Replication/")
 def _skill_prose() -> list[tuple[str, int, str]]:
     """Every line of every authored skill, with its generated regions removed.
 
-    ``.claude/`` mirrors are skipped: they are gitignored output of ``tvbo skills sync``, so a
-    stale one fails this gate on prose that CI, which sees only tracked files, never reads.
+    ``.claude/`` mirrors are skipped: they are gitignored output of ``tvbo skills sync``, so a stale one fails this gate on prose that CI, which sees only tracked files, never reads.
     """
     lines = []
     for path in sorted(SKILLS.rglob("*.md")):
