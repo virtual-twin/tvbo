@@ -102,7 +102,7 @@ prov/
 
 <!-- END IGNORE FILES -->
 
-Under `--template replication` the same `sourcedata/` rule also covers the A/B composites that embed the original paper's figures, because they are staged inside the deposit they come from, at `sourcedata/original_study/fig_comparisons/`. Neither file is meant to be edited: `tvbo validate study` fails a study whose ignore files have drifted from the record.
+Under `--template replication` the same `sourcedata/` rule also covers the A/B composites that embed the original paper's figures, because they are staged inside the original-study directory they come from, at `sourcedata/original_study/fig_comparisons/`. Neither file is meant to be edited: `tvbo validate study` fails a study whose ignore files have drifted from the record.
 
 ## Where TVBO leaves the standard
 

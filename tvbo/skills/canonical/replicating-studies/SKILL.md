@@ -73,10 +73,11 @@ manuscript can still be replicated, and its divergence register will be empty *b
 invisible*, not because there is nothing to find. Say that explicitly rather than letting the
 open paper look like the sloppy one.
 
-**Do not call any of this "the deposit".** The word names a container rather than a claim, and
-in a report it leaves the reader unable to tell whether a number came from prose the authors
-wrote, code they ran, or an array they saved. Use *the manuscript*, *the published code*, *the
-published data*, or *the published study* when you genuinely mean all three.
+**Do not lump the three under one container word** — "the deposit", "the release", "the
+supplement". Such a word names a container rather than a claim, and in a report it leaves the
+reader unable to tell whether a number came from prose the authors wrote, code they ran, or an
+array they saved. Use *the manuscript*, *the published code*, *the published data*, or *the
+published study* when you genuinely mean all three.
 
 ## The non-negotiables (MUST)
 
@@ -155,17 +156,18 @@ published data*, or *the published study* when you genuinely mean all three.
 
    Two properties of the generated rules are worth understanding, because both were learned the
    hard way. **A negation cannot rescue a file under a directory an ancestor `.gitignore`
-   excluded** — git does not descend into an excluded directory. That is why the gate ignores the whole
-   of `sourcedata/` and re-includes only its README (the rules themselves are generated — read
-   them under **Layout**, never retype one), rather than ignoring the deposit directory and
-   trying to carve exceptions under it; three studies wrote the
-   latter and silently kept their targets table, figure map and adherence notes untracked for
-   weeks. And **a derived copy of copyrighted material is only as protected as where it is put**:
-   ignoring the paper's figures where they were downloaded does nothing about an A/B composite
-   made from them somewhere else. That is why the composites are staged *inside* the deposit, at
-   `sourcedata/original_study/fig_comparisons/` — one directory holds everything the publisher
-   owns, so the one rule that keeps the deposit unpublished covers every composite too, and
-   `report_figure` puts them there without any `.qmd` naming a directory. Verify rather than
+   excluded** — git does not descend into an excluded directory. That is why the gate ignores
+   the whole of `sourcedata/` and re-includes only its README (the rules themselves are
+   generated — read them under **Layout**, never retype one), rather than ignoring
+   `original_study/` and trying to carve exceptions under it; three studies wrote the latter and
+   silently kept their targets table, figure map and adherence notes untracked for weeks. And
+   **a derived copy of copyrighted material is only as protected as where it is put**: ignoring
+   the paper's figures where they were downloaded does nothing about an A/B composite made from
+   them somewhere else. That is why the composites are staged *inside* the original-study
+   directory, at `sourcedata/original_study/fig_comparisons/` — one directory holds everything
+   the publisher owns, so the rule that keeps the original unpublished covers every composite
+   too, and `report_figure` puts them there without any `.qmd` naming a directory. Verify rather
+   than
    assume — `git check-ignore -v <path>` names the file and line that won, and a `!` rule means
    the path is kept, not ignored.
 7. **Replication, stated honestly.** Frame it as *replication* (independent code +
@@ -757,8 +759,8 @@ mapping **by label** (a `custom` surface/heatmap panel's job).
 **A/B compose stays a report concern**, not a `Figure`: the study renders only *our*
 reproduction; the side-by-side against the paper original is composed in the **report** by
 `tvbo.utils.report.report_figure` — one implementation, never a per-study `ab()` — gated for
-copyright by the Phase-6 internal/public split and staged inside the deposit. Do **not** bake the
-© original into any committed or shared image, or into a `Figure`.
+copyright by the Phase-6 internal/public split and staged inside the original-study directory.
+Do **not** bake the © original into any committed or shared image, or into a `Figure`.
 
 **Every figure carries an original caption — `Figure.description` is it.** Write each figure a
 `description:` in the `figures:` block: an original sentence or two describing what OUR
@@ -922,15 +924,16 @@ for every study, so no report grows its own `ab()` again — and with no origina
 there is nothing to stage, so our own figure is embedded where the run rendered it rather than
 copied somewhere second.
 
-**A composite is staged inside the deposit whose figure it embeds, and that is now enforced rather
-than remembered.** A composite is a COPY of the publisher's figure, and a copy is only as protected
-as where it is put: ignoring the deposit **where it was downloaded** does nothing about one made
-under an otherwise-tracked tree. A missing rule left the composites untracked-but-not-ignored, and
+**A composite is staged inside the original-study directory whose figure it embeds, and that is
+now enforced rather than remembered.** A composite is a COPY of the publisher's figure, and a
+copy is only as protected as where it is put: ignoring the original **where it was downloaded**
+does nothing about one made under an otherwise-tracked tree. A missing rule left the composites untracked-but-not-ignored, and
 the next `git add -A` committed the paper's figures to history — every replication shipped before
 the record existed had that hole, in all eleven studies, because the entry was simply missing from
-a hand-written skeleton. Putting the stage under the deposit means the one rule that keeps the
-deposit unpublished covers every composite made from it. It is a `tracked: none` directory in the
-record, `tvbo study init` writes the rule from it, `tvbo validate study` fails if the file drifts,
+a hand-written skeleton. Putting the stage under the original-study directory means the one rule
+that keeps the original unpublished covers every composite made from it. It is a `tracked: none`
+directory in the record, `tvbo study init` writes the rule from it, `tvbo validate study` fails
+if the file drifts,
 and a test scaffolds a study and asks git itself. Verify rather than assume all the same:
 `git check-ignore -v` on the composite must NAME the rule that ignores it. The internal A/B build
 is a **local check**, not a deliverable:
@@ -1299,7 +1302,7 @@ that is written down twice is a rule that will be right in one place.
   code/                         callables the recipe references by bare `module:` name: builders, transforms, observation and analysis functions
   sourcedata/                   inputs the study did not compute
     README.md                   where each input comes from and how to obtain it
-    original_study/             material deposited by the work being reproduced: its PDF, figures, published data and code
+    original_study/             material published by the work being reproduced: its PDF, figures, released data and code
       fig_comparisons/          A/B composites placing one of the paper's figures beside ours
   docs/                         the report and everything it reads
     report.qmd                  the report, every number computed from the run

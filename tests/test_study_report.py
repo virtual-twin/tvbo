@@ -163,7 +163,7 @@ def test_sharing_an_auxiliary_variable_does_not_merge_two_systems(study):
     """A shared readout variable is not evidence of a shared model.
 
     Membership is subset-or-superset of the family's first model, never bare overlap.
-    Overlap merged Pang2023's wave field with its BEI mass model because both carry the four Balloon-Windkessel haemodynamic variables, and the report then presented a mass model the paper never deposited as a *variant* of the wave field.
+    Overlap merged Pang2023's wave field with its BEI mass model because both carry the four Balloon-Windkessel haemodynamic variables, and the report then presented a mass model the paper never published as a *variant* of the wave field.
     """
     from tvbo.utils import report
 

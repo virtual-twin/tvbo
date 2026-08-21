@@ -65,13 +65,13 @@ integration:
   transient_time: 0.0
 """
 
-DEPOSITED = np.array([[0.0, 7.25], [3.5, 0.0]])
+PUBLISHED = np.array([[0.0, 7.25], [3.5, 0.0]])
 
 
 def _render(tmp_path, w_binding):
     """Render the tvboptim module for a spec whose per-edge `w` is bound as given."""
     with h5py.File(tmp_path / "store.h5", "w") as f:
-        f.create_dataset("w_edge", data=DEPOSITED)
+        f.create_dataset("w_edge", data=PUBLISHED)
     spec = tmp_path / "spec.yaml"
     spec.write_text(_SPEC.replace("      # W_BINDING\n", w_binding))
     exp = SimulationExperiment.from_file(str(spec))
@@ -110,7 +110,7 @@ def test_the_loader_is_defined_when_only_a_coupling_needs_it(tmp_path):
     compile(code, "generated_experiment.py", "exec")
 
 
-def test_the_emitted_call_points_at_the_deposited_bytes(tmp_path):
+def test_the_emitted_call_points_at_the_published_bytes(tmp_path):
     """Resolve the emitted (path, key) and confirm it is the declared array, not a stand-in."""
     code = _render(tmp_path, SOURCED)
     m = re.search(r'["\']w["\']:\s*_load_param\(\s*([^,]+),\s*([^,)]+)', code)
@@ -118,7 +118,7 @@ def test_the_emitted_call_points_at_the_deposited_bytes(tmp_path):
     path, key = (ast.literal_eval(g.strip()) for g in m.groups())
     assert key == "w_edge", key
     with h5py.File(path, "r") as f:
-        np.testing.assert_array_equal(f[key][()], DEPOSITED)
+        np.testing.assert_array_equal(f[key][()], PUBLISHED)
 
 
 def test_a_literal_coupling_parameter_still_inlines(tmp_path):
