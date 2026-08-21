@@ -95,6 +95,11 @@ def parse_reference(val, step_names=None, current_obs_name=None):
     if val in observations:
         return ('source_data', val)
 
+    # A bare recorded-variable name (e.g. a second source like r_I) resolves to its column
+    # in the recorded layout — without this it would leak into the callable as a string.
+    if val in var_names:
+        return ('statevar', var_names.index(val))
+
     # Try numeric conversion
     try:
         return ('literal', float(val) if '.' in val else int(val))
@@ -110,6 +115,9 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
     if ref_type == 'source_data':
         # Reference to source observation data (already in _outputs['data'] or _outputs)
         return "_outputs.get('data', _outputs)"
+    if ref_type == 'statevar':
+        # Recorded variable referenced by name: slice its column from the trajectory.
+        return f"result.data[:, {ref_val}, :]"
     if ref_type == 'network':
         # network.observations.BoldCorrelation → _network_observations['BoldCorrelation']
         # ref_val is 'observations.BoldCorrelation'
@@ -1163,6 +1171,7 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
+import numpy as np
 from types import SimpleNamespace
 from tvboptim.experimental.network_dynamics.result import NativeSolution
 from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor
@@ -1178,16 +1187,8 @@ def _load_constant(path, key):
     A packed kit stages these constants into its own ``constants/`` dir, so when the author's
     absolute path is absent (a frozen kit run on another machine) the file is resolved by
     basename under ``$TVBO_CONSTANTS_DIR`` or the run dir's ``constants/``."""
-    import os
-    from pathlib import Path
-    from tvbo.data.matrix_io import LazyArrayStore
-    p = Path(path)
-    if not p.exists():
-        for _base in (os.environ.get("TVBO_CONSTANTS_DIR"), "constants"):
-            if _base and (Path(_base) / p.name).is_file():
-                p = Path(_base) / p.name
-                break
-    return jnp.asarray(LazyArrayStore(p, {}).read_dataset(key))
+    from tvbo.data.matrix_io import LazyArrayStore, resolve_staged_path
+    return jnp.asarray(LazyArrayStore(resolve_staged_path(path), {}).read_dataset(key))
 
 
 % if network_obs_keys and bids_dir:
@@ -1205,10 +1206,17 @@ ${_edge_const(_label)} = jnp.array(${repr(network_edge_arrays[_label])})
 % endif
 
 % if network_node_arrays:
-# Per-node vectors referenced by observations via network.positions/instrength
+# Per-node vectors referenced by observations via network.positions/instrength/labels
 # (embedded once; shared by observation sources, callable args, and observer parameters).
+# Non-numeric vectors (region labels) embed as numpy arrays — jnp has no string dtype.
 % for _label in sorted(network_node_arrays):
-${_node_const(_label)} = jnp.array(${repr(network_node_arrays[_label])})
+<%
+    _flat = network_node_arrays[_label]
+    while isinstance(_flat, list) and _flat and isinstance(_flat[0], list):
+        _flat = _flat[0]
+    _numeric = all(isinstance(_v, (int, float)) for _v in (_flat if isinstance(_flat, list) else [_flat]))
+%>
+${_node_const(_label)} = ${'jnp' if _numeric else 'np'}.array(${repr(network_node_arrays[_label])})
 % endfor
 % endif
 
@@ -1603,9 +1611,12 @@ class ${class_name}(AbstractMonitor):
     call_parts = []
     for arg_name, arg_val in args.items():
         if isinstance(arg_val, str):
-            if arg_val in _src_vars:
-                # Reference to this observation's SOURCE state variable → its data slice
-                # (result.data[:, self.voi, :], bound above as `_data`).
+            if arg_val in var_names:
+                # An argument naming a recorded variable (any source, not just the first)
+                # binds to that variable's OWN column of the trajectory.
+                call_parts.append(f"{arg_name}=result.data[:, {var_names.index(arg_val)}, :]")
+            elif arg_val in _src_vars:
+                # Source variable not in the recorded layout resolves to the bound slice.
                 call_parts.append(f"{arg_name}=_data")
             elif arg_val in step_names or arg_val == 'data':
                 # Reference to previous step output
@@ -1683,7 +1694,10 @@ class ${class_name}(AbstractMonitor):
     call_parts = []
     for arg_name, arg_val in args.items():
         if isinstance(arg_val, str):
-            if arg_val in step_names:
+            if arg_val in var_names:
+                # An argument naming a recorded variable binds to its own trajectory column.
+                call_parts.append(f"{arg_name}=result.data[:, {var_names.index(arg_val)}, :]")
+            elif arg_val in step_names:
                 # Reference to a previous pipeline step output
                 call_parts.append(f"{arg_name}=_{arg_val}")
             elif 'transient' in arg_val:

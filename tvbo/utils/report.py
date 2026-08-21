@@ -483,7 +483,7 @@ def divergence_register(source) -> dict:
     classes: dict[str, dict] = {}
     scores = False
     for line in text.splitlines():
-        cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
+        cells = _cells(line) if line.startswith("|") else []
         if cells and cells[0].lower() in ("#", "id"):
             scores = bool(cells) and _MATERIALITY_RE.match(cells[-1]) is not None
             continue
@@ -1146,6 +1146,8 @@ def event_table(events, derivative_notation="dot"):
     """Markdown table of a model's events (spike conditions, stimuli, resets).
 
     An event is part of the model's definition — a stimulus protocol is not decoration — so it belongs in the report beside the state equations. Its condition and effect are rendered symbolically like every other equation.
+
+    A continuous event may declare ``affect_negative``, a separate effect for the downcrossing; it gets its own column, which drops out for the usual case where one effect serves both crossings.
     """
     from sympy import sympify
 
@@ -1173,12 +1175,15 @@ def event_table(events, derivative_notation="dot"):
                 f"`{name}`",
                 str(slot(ev, "event_type", "") or ""),
                 _expr(ev, "condition"),
-                _expr(ev, "equation", "effect"),
+                _expr(ev, "equation", "effect", "affect"),
+                _expr(ev, "affect_negative"),
                 ", ".join(f"{p} = {format_number(slot(v, 'value', ''))}" for p, v in name_items(params)) if params else "",
                 slot(ev, "description", "") or slot(ev, "label", "") or "",
             ]
         )
-    return table_or_prose(["Event", "Type", "Condition", "Effect", "Parameters", "Description"], rows)
+    return table_or_prose(
+        ["Event", "Type", "Condition", "Effect", "Effect on downcrossing", "Parameters", "Description"], rows
+    )
 
 
 def state_variable_table(svars):
@@ -1403,10 +1408,10 @@ def model_delta(model, baseline):
 
 
 def experiment_models(experiment):
-    """Every distinct model an experiment integrates — one, or one per node.
+    """Every distinct model an experiment integrates — one, or one per component.
 
     ``SimulationExperiment.dynamics`` carries the single model of a homogeneous network.
-    A heterogeneous one leaves it unset and declares a model per node (Deco2014's spiking populations, Mongillo2008's pre/post pair), either inline or by name into the network's own catalogue, so a report reading only the former describes nothing at all for those studies.
+    A heterogeneous one leaves it unset and declares a model per node (Deco2014's spiking populations, Mongillo2008's pre/post pair) **and per edge** — the synapses a projection attaches — either inline or by name into the network's own catalogue. Both are the system the experiment integrates: a report reading only the nodes renders a spiking model without a single synaptic equation, which for Deco2014 dropped the NMDA saturating-gate system (Eqs. 3-4) its Methods prose promises. A component can also be referenced by name from another component's parameters (a ``poissonFiringSynapse`` names the synapse it drives in ``synapse``/``spikeTarget``), so string parameter values that resolve in the catalogue are followed transitively, each name visited once so a reference cycle terminates.
     """
     single = slot(experiment, "dynamics")
     if single is not None:
@@ -1414,14 +1419,54 @@ def experiment_models(experiment):
     net = slot(experiment, "network") or slot(experiment, "connectivity")
     catalogue = dict(name_items(slot(net, "dynamics", None)))
     out, seen = [], set()
-    for node in slot(net, "nodes", None) or []:
-        model = slot(node, "dynamics", None)
+
+    def _resolve_standard_type(model):
+        """A component whose equations live behind a standard `neuroml:` iri, made symbolic.
+
+        Such a component (an ``expOneSynapse`` AMPA/GABA receptor) declares parameters only;
+        rendered as-is its model card shows a symbol table with no mathematics. When the
+        canonical LEMS dynamics of its type are indexed, return an enriched copy carrying
+        them — state, current, spike affect — under the component's own name and parameters.
+        """
+        iri = str(slot(model, "iri", "") or "")
+        if not iri.startswith("neuroml:"):
+            return model
+        if dict(name_items(slot(model, "state_variables", {}) or {})):
+            return model
+        from tvbo import datamodel as dm
+        from tvbo.adapters.neuroml import standard_type_dynamics
+
+        spec = standard_type_dynamics(iri.split(":", 1)[1])
+        if spec is None:
+            return model
+        return dm.Dynamics(
+            name=slot(model, "name", None),
+            label=slot(model, "label", None),
+            description=slot(model, "description", None),
+            iri=iri,
+            parameters={str(k): p for k, p in name_items(slot(model, "parameters", {}) or {})},
+            **spec,
+        )
+
+    def _add(model):
         if isinstance(model, str):
             model = catalogue.get(model)
+        if model is None:
+            return
         key = str(slot(model, "name", None) or slot(model, "label", None) or id(model))
-        if model is not None and key not in seen:
-            seen.add(key)
-            out.append(model)
+        if key in seen:
+            return
+        seen.add(key)
+        out.append(_resolve_standard_type(model))
+        for _, p in name_items(slot(model, "parameters", {}) or {}):
+            ref = slot(p, "value", None)
+            if isinstance(ref, str) and catalogue:
+                _add(ref.lstrip("./"))
+
+    for node in slot(net, "nodes", None) or []:
+        _add(slot(node, "dynamics", None))
+    for edge in slot(net, "edges", None) or []:
+        _add(slot(edge, "dynamics", None))
     return out or list(catalogue.values())
 
 
@@ -1464,18 +1509,24 @@ def model_families(experiments):
     """
     from types import SimpleNamespace
 
-    def _same_system(base, state):
-        """True when *state* extends or restricts *base* rather than replacing it."""
-        if not base and not state:
-            return True
-        return bool(base) and bool(state) and (state <= base or base <= state)
+    def _same_system(family, state, iri):
+        """True when *state* extends or restricts the family's base rather than replacing it.
+
+        A model with no state of its own (its equations live behind its ``iri``, the way a NeuroML ``expOneSynapse`` does) carries no span to compare, so it groups only with a base carrying the SAME NON-EMPTY ``iri`` — an empty set is a subset of every span, and without the gate every equationless synapse filed itself as a variant of whatever family happened to be declared first (Deco2014's AMPA and GABA receptors as "variants" of a Poisson background input). An absent ``iri`` is unknown identity, not shared identity, so two anonymous equationless components each start their own family rather than merging on the strength of both knowing nothing.
+        """
+        if not family.base_state and not state:
+            return bool(iri) and family.base_iri == iri
+        if not family.base_state or not state:
+            return False
+        return state <= family.base_state or family.base_state <= state
 
     families = []
     for exp, model in ((e, m) for e in experiments for m in experiment_models(e)):
         state = frozenset(dict(name_items(slot(model, "state_variables", {}) or {})))
-        family = next((f for f in families if _same_system(f.base_state, state)), None)
+        iri = str(slot(model, "iri", "") or "")
+        family = next((f for f in families if _same_system(f, state, iri)), None)
         if family is None:
-            family = SimpleNamespace(base_state=state, models=[], experiments=[])
+            family = SimpleNamespace(base_state=state, base_iri=iri, models=[], experiments=[])
             families.append(family)
         # Once per experiment, not once per model: a heterogeneous experiment contributes several models to the same family — Deco2014's spiking columns declare a dozen — and appending per model gave its comparison table six rows for three experiments.
         if exp not in family.experiments:

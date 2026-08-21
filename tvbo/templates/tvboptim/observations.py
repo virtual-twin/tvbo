@@ -99,7 +99,8 @@ class TVBBold(AbstractMonitor):
         output_step_count = _tvb_iround(self.period / dt)
         output_interim_count = output_step_count // interim_step_count
 
-        interim = TVBTemporalAverage(voi=self.voi, period=self.downsample_period)(sol).ys
+        # Host-side once: iterating a device array row-by-row would sync per step.
+        interim = np.asarray(TVBTemporalAverage(voi=self.voi, period=self.downsample_period)(sol).ys)
         hrf = self._hrf()
         stock = np.zeros((hrf.shape[1], *interim.shape[1:]))
 

@@ -205,6 +205,8 @@ class Brian2Adapter(BaseAdapter):
             seed = model.get("seed")
         net, meta = _instantiate(model, seed=seed, record_v=record_v)
         duration = model["duration_ms"]  # milliseconds
+        if model.get("ramp"):
+            return self._run_ramp(net, meta, model)
         net.run(duration * ms)
 
         settle = settle_ms if settle_ms is not None else min(1000.0, 0.2 * duration)
@@ -245,6 +247,57 @@ class Brian2Adapter(BaseAdapter):
             result._extras["synapse_state"] = syn_state
         return result
 
+    def _run_ramp(self, net, meta, model):
+        """Run the declared continuation ramp and return its per-step population rates.
+
+        The state is never re-initialised: each declared value is written into the namespace
+        constant that carries the labelled projection's weight, the transient settles the network
+        quasi-statically, and the spikes of the remaining window give that step's rate. Listing the
+        parameter up and back down therefore traces both branches of a hysteresis loop in one run,
+        which is what makes the loop evidence of bistability rather than of two different runs.
+        """
+        import numpy as np
+        from brian2 import ms
+
+        from tvbo.data.types import Bunch, ExperimentResult, ExplorationResult, SimulationResult
+
+        ramp = model["ramp"]
+        step, settle = model["duration_ms"], model.get("transient_ms") or 0.0
+        if settle >= step:
+            raise ValueError(
+                f"Ramp step is {step} ms and its transient {settle} ms: the settled window a step's "
+                f"rate is measured over would be empty."
+            )
+        groups = {o.name: o for o in net.objects if hasattr(o, "namespace")}
+        keep = {r[len("firing_rate_"):] for r in ramp["record"] if r.startswith("firing_rate_")}
+        mons = {n: m for n, m in meta["spike_monitors"].items() if not keep or n in keep}
+        window_s, rates = (step - settle) / 1000.0, {n: [] for n in mons}
+        for value in ramp["values"]:
+            for pop, key in ramp["handles"]:
+                groups[pop].namespace[key] = float(value)
+            if settle:
+                net.run(settle * ms)
+            counted = {n: int(m.num_spikes) for n, m in mons.items()}
+            net.run((step - settle) * ms)
+            for n, mon in mons.items():
+                size = model["populations"][n]["size"]
+                rates[n].append((int(mon.num_spikes) - counted[n]) / (window_s * size))
+        axis = Bunch(name=ramp["parameter"], explored_values=np.asarray(ramp["values"]), n=len(ramp["values"]))
+        expl = ExplorationResult(
+            name=ramp["name"],
+            axes=[axis],
+            observations={f"firing_rate_{n}": np.asarray(v) for n, v in rates.items()},
+        )
+        result = ExperimentResult(
+            integration=SimulationResult(observations={f"firing_rate_{n}": v[-1] for n, v in rates.items()}),
+            explorations={ramp["name"]: expl},
+            name=getattr(self.experiment, "label", None),
+            source=self.experiment,
+        )
+        result._extras["ramp"] = {"parameter": ramp["parameter"], "values": np.asarray(ramp["values"]),
+                                  "rates": {n: np.asarray(v) for n, v in rates.items()}}
+        return result
+
     # ── Analysis: declarative network → Brian2 build description ────────
 
     def _build_context(self):
@@ -263,6 +316,7 @@ class Brian2Adapter(BaseAdapter):
         ts_factor = float(time_unit_factor((network, integration, exp), _BRIAN2_CLOCK))
         dt_ms = float(getattr(integration, "step_size", 0.02) or 0.02) * ts_factor
         duration_ms = float(getattr(integration, "duration", 1000.0) or 1000.0) * ts_factor
+        transient_ms = float(getattr(integration, "transient_time", 0.0) or 0.0) * ts_factor
 
         default_name = getattr(exp.dynamics, "name", None) or "dynamics"
         groups = group_nodes_by_dynamics(nodes, default_name)
@@ -331,6 +385,7 @@ class Brian2Adapter(BaseAdapter):
         hubs = {}  # hub name -> {"source_pop", "gate", "summed_var"} (all_to_all)
         synapses = []  # sparse Synapses descriptors (random / one_to_one)
         probes = []  # observation probes for synapses with recorded internal state (u, x)
+        weight_handles = {}  # edge label -> [(target pop, namespace key holding that edge's weight)]
 
         for edge_idx, edge in enumerate(edges):
             src = getattr(edge, "source", None)
@@ -373,6 +428,8 @@ class Brian2Adapter(BaseAdapter):
 
             if rule_norm == "all_to_all":
                 self._add_conductance_synapse(populations, hubs, src_pop, tgt_pop, syn, prefix, weight)
+                if getattr(edge, "label", None):
+                    weight_handles.setdefault(str(edge.label), []).append((tgt_pop, f"w_{src_pop}__{prefix}"))
             elif rule_norm in ("random", "one_to_one"):
                 self._add_sparse_synapse(
                     populations, synapses, probes, src_pop, tgt_pop, syn, prefix, weight, edge, edge_idx, rule_norm
@@ -391,9 +448,65 @@ class Brian2Adapter(BaseAdapter):
             "synapses": synapses,
             "probes": probes,
             "duration_ms": duration_ms,
+            "transient_ms": transient_ms,
             "dt_ms": dt_ms,
+            "weight_handles": weight_handles,
+            "ramp": self._ramp_spec(weight_handles),
             # Resolved once here, so the rendered script and run() build identical connectivity.
             "seed": getattr(getattr(exp, "execution", None), "random_seed", None),
+        }
+
+    def _ramp_spec(self, weight_handles):
+        """The declared quasi-static ramp, or None when the experiment declares no such protocol.
+
+        An `Exploration` with ``strategy: continuation`` is a protocol rather than a grid: its
+        single axis lists the values in the ORDER they are applied and the simulator state carries
+        from one point to the next, so a hysteresis loop is declared by listing the parameter up
+        and back down. Each point runs for the experiment's integration duration, of which the
+        declared ``transient_time`` settles the state and the remainder is measured. The axis
+        addresses one labelled projection's weight as ``network.edges.<label>.weight``, which is
+        what keeps the sweep off every other synapse of the same dynamics.
+        """
+        expls = getattr(self.experiment, "explorations", None) or {}
+        items = list(expls.items()) if hasattr(expls, "items") else [(getattr(e, "name", None), e) for e in expls]
+        ramps = [(n, e) for n, e in items if str(getattr(e, "strategy", "") or "") == "continuation"]
+        if not ramps:
+            return None
+        if len(ramps) > 1:
+            raise NotImplementedError(f"Brian2 backend runs one continuation ramp per experiment; got {len(ramps)}.")
+        name, expl = ramps[0]
+        space = getattr(expl, "space", None) or []
+        axes = list(space.values()) if hasattr(space, "values") else list(space)
+        if len(axes) != 1:
+            raise NotImplementedError(
+                f"A continuation ramp is a single ordered protocol, so exploration {name!r} takes "
+                f"exactly one axis; it declares {len(axes)}."
+            )
+        axis = axes[0]
+        values = getattr(axis, "explored_values", None)
+        if not values:
+            raise ValueError(
+                f"Exploration {name!r} is a continuation ramp, so its axis must list "
+                f"`explored_values` — the order they are applied IS the protocol."
+            )
+        parameter = str(getattr(axis, "parameter", ""))
+        parts = parameter.split(".")
+        if len(parts) != 4 or parts[:2] != ["network", "edges"] or parts[3] != "weight":
+            raise NotImplementedError(
+                f"Brian2 ramps address a labelled projection's weight as "
+                f"'network.edges.<label>.weight'; exploration {name!r} sweeps {parameter!r}."
+            )
+        label = parts[2]
+        if label not in weight_handles:
+            known = sorted(weight_handles) or ["(none — no edge carries a label)"]
+            raise KeyError(f"No all-to-all edge is labelled {label!r}; labelled projections are {known}.")
+        return {
+            "name": str(name),
+            "parameter": parameter,
+            "values": [float(v) for v in values],
+            "handles": weight_handles[label],
+            # Which per-population rates the ramp keeps; empty means every population's.
+            "record": [str(r) for r in (getattr(expl, "record", None) or [])],
         }
 
     def _add_poisson(self, pop, bg_name, bg_obj, dyn_lib, weight):

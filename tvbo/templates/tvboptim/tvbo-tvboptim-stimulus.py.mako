@@ -30,11 +30,8 @@ from tvbo.codegen import render_expression
 # Extract stimulus events from experiment context
 assert 'experiment' in context.keys(), "experiment required for stimulus template"
 
-events_list = list(experiment.events.values()) if experiment.events else []
-def _is_external_input_event(ev):
-    et = str(getattr(ev, 'event_type', 'stimulus'))
-    return ('stimul' in et) or (et in ('continuous', 'discrete'))
-stimulus_events = [ev for ev in events_list if _is_external_input_event(ev)]
+from tvbo.templates.tvboptim.utils import active_stimulus_events
+stimulus_events = active_stimulus_events(experiment)
 
 # State index lookup for continuous-event conditions (map a state name to its
 # row in the [n_states, n_nodes] state array).
@@ -108,6 +105,31 @@ def _time_axis_distribution(event):
     # Build spatial mask: array of shape (n_nodes,) with weights per region
     has_spatial = bool(ev_regions)
 
+    # `subset`: each trial stimulates round(fraction * pool) regions drawn without replacement; prepare() pre-samples every trial's mask and DEFAULT_PARAMS.trial selects the row.
+    _wd = getattr(event, 'weight_distribution', None)
+    is_subset = _wd is not None and str(getattr(_wd, 'name', '') or '').lower() == 'subset'
+    if is_subset:
+        if ev_weighting:
+            raise ValueError(
+                f"event {str(event.name)!r} declares both `weights` and a `subset` "
+                f"weight_distribution; the per-trial mask is uniform over the drawn regions, "
+                f"so the declared weighting would be discarded. Declare one or the other."
+            )
+        _wd_params = dict(getattr(_wd, 'parameters', None) or {})
+        _frac_obj = _wd_params.get('fraction')
+        _frac_val = getattr(_frac_obj, 'value', _frac_obj) if _frac_obj is not None else None
+        subset_fraction = float(_frac_val) if _frac_val is not None else 0.1
+        subset_seed = int(getattr(_wd, 'seed', None) or 0)
+        subset_pool = [int(r) for r in ev_regions]  # empty -> all nodes
+        _pool_n = len(subset_pool) if subset_pool else int(n_nodes)
+        subset_k = max(1, int(round(subset_fraction * _pool_n)))
+        subset_n_trials = 1
+        for _expl in (getattr(experiment, 'explorations', None) or {}).values():
+            _nt = getattr(_expl, 'n_trials', None)
+            if _nt:
+                subset_n_trials = max(subset_n_trials, int(_nt))
+        has_spatial = False
+
     # Closed-loop 'continuous' event: onset is triggered when a state condition
     # crosses zero, then the affect waveform (a function of tau = t - t_trigger)
     # is emitted. A stateful ExternalInput carries armed/t_trigger/cond_prev.
@@ -129,6 +151,15 @@ def _time_axis_distribution(event):
     # instead of evaluating a symbolic equation.
     data_location = None if is_continuous else getattr(event, 'dataLocation', None)
     is_data = bool(data_location)
+    if is_subset and (is_continuous or is_data):
+        # Only the symbolic open-loop class below carries the per-trial mask table; the
+        # closed-loop and data-driven classes would fall back to jnp.ones(n_nodes) and
+        # stimulate the WHOLE brain without saying so.
+        raise ValueError(
+            f"event {ev_name!r} declares a `subset` weight_distribution, which is only "
+            f"implemented for open-loop symbolic stimuli (event_type '{_ev_type}', "
+            f"dataLocation={data_location!r})."
+        )
     if is_data:
         sampling_rate = float(getattr(event, 'sampling_rate', None) or 1.0)
         interp_kind = str(getattr(event, 'interpolation', None) or 'linear')
@@ -270,7 +301,19 @@ class ${class_name}(AbstractExternalInput):
         % for pname, pobj in det_params.items():
         ${pname}=${float(pobj.value) if pobj.value is not None else 0.0},
         % endfor
+        % if is_subset:
+        trial=0.0,
+        % endif
     )
+    % if is_subset:
+
+    # Per-trial random-subset mask: SUBSET_K of the pool regions per trial, drawn without
+    # replacement, key = fold_in(key(SUBSET_SEED), trial) so adding trials never perturbs
+    # existing ones. params.trial (a state.external leaf) selects the row.
+    SUBSET_SEED = ${subset_seed}
+    SUBSET_K = ${subset_k}
+    SUBSET_N_TRIALS = ${subset_n_trials}
+    % endif
     % if is_stochastic:
 
     # iid per-step driver: u[t] = ${_stoch_info['dist'].capitalize()}(${_stoch_info['lo']}, ${_stoch_info['hi']}),
@@ -292,7 +335,24 @@ class ${class_name}(AbstractExternalInput):
             minval=self.STOCH_LO, maxval=self.STOCH_HI,
         )
         % endif
-        % if has_spatial:
+        % if is_subset:
+        # Pre-sample every trial's mask (pure array -> vmap/pmap-safe).
+        % if subset_pool:
+        _pool = jnp.asarray([${', '.join(str(r) for r in subset_pool)}])
+        % else:
+        _pool = jnp.arange(network.graph.n_nodes)
+        % endif
+        def _draw_mask(_k):
+            _idx = jax.random.choice(_k, _pool, shape=(self.SUBSET_K,), replace=False)
+            return jnp.zeros(network.graph.n_nodes).at[_idx].set(1.0)
+        _keys = jax.vmap(lambda i: jax.random.fold_in(jax.random.key(self.SUBSET_SEED), i))(jnp.arange(self.SUBSET_N_TRIALS))
+        _masks = jax.vmap(_draw_mask)(_keys)
+        % if is_stochastic:
+        return Bunch(masks=_masks, u=_u), Bunch()
+        % else:
+        return Bunch(masks=_masks), Bunch()
+        % endif
+        % elif has_spatial:
         # Spatial weighting mask: stimulus applied to specific regions
         _mask = jnp.zeros(network.graph.n_nodes)
         _regions = [${', '.join(str(r) for r in ev_regions)}]
@@ -326,7 +386,11 @@ class ${class_name}(AbstractExternalInput):
         # Evaluate event equation
         signal = ${stim_jaxcode(eq_rhs, param_names=list(det_params.keys()) + ([_stoch_pname] if is_stochastic else []) + ['t'])}
 
-        % if has_spatial:
+        % if is_subset:
+        # This trial's pre-sampled random-subset mask (params.trial is a state.external leaf).
+        _mask = input_data.masks[jnp.int32(params.trial)]
+        return (signal * _mask)[None, :]
+        % elif has_spatial:
         # Apply spatial mask (broadcast to [1, n_nodes])
         return (signal * input_data.mask)[None, :]
         % else:

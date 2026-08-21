@@ -99,7 +99,7 @@ manuscript
 docs/Usage/_output
 presentation
 docs/Interoperability/*.ivp
-docs/Interoperability/*.so
+docs/**/*.so
 docs/Interoperability/*.f90
 temp
 rwongwang_kernel.cu
@@ -117,7 +117,6 @@ pyrates_run_*.py
 tvbo/database/studies/**/*.md
 tvbo/database/studies/**/*.png
 c.ivp
-qif.cpython-313-darwin.so
 qif.f90
 docs/Interoperability/BIDS/derivatives/
 # Atlas parcellation volumes: large binaries shipped as build artifacts, not tracked.
@@ -155,14 +154,10 @@ tvbo/rules/
 dist/
 *.egg-info/
 
-# Compiled modules a doc builds for itself. Platform- and interpreter-specific
-# (`*.cpython-312-darwin.so`), so a committed one is wrong for everyone else.
+# Compiled modules a doc builds for itself: platform- and interpreter-specific, so a committed one is wrong for everyone else.
 docs/**/*.so
 
-# Animations `PDESimulation.qmd` writes on every render (`anim.save("_output/...")`),
-# ~11 MB of binary churn per docs run. `docs/Models/_output/anim1.gif` is the same
-# shape and is still tracked; the BifurcationKit PNGs beside it are NOT — no doc
-# writes those.
+# Animations `PDESimulation.qmd` rewrites on every render; `docs/Models/_output/anim1.gif` is still tracked.
 docs/Networks/_output/*.gif
 
 # Local Claude Code state, including the GENERATED `.claude/skills/` tree. The two

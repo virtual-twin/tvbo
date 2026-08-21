@@ -537,3 +537,15 @@ in full.
   reversed a mapping's order at 20:29, splitting one sweep into a correct half and a wrong half.
   If you must fix the framework during a run, finish the run first, or accept that everything
   after the edit needs re-running and gate on it.
+
+- **A recipe description that narrates HOW its result is produced goes stale the day the
+  pipeline moves — and the report renders it verbatim.** Symptom: the report's Methods
+  (rendered from the experiment's `description`) contradict its own Results about how an
+  experiment ran. Deco2014's exp-71 description said its FIC contrast was "run by the Brian2
+  reference builder" months after the experiment ran natively, and quoted the reference run's
+  correlations (0.038 → 0.019) beside a container holding different ones — every number and
+  every pipeline claim in a description is a copy nothing regenerates. Descriptions state the
+  current contract and the PAPER's targets only; a measured value of OURS belongs in the result
+  container the report computes from, never in the description. When a pipeline goes native or
+  a driver is replaced, grep the recipe's descriptions for the old mechanism's name in the same
+  commit.

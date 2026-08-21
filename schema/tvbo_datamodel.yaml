@@ -630,6 +630,15 @@ enums:
                     TR stride / Volterra scaling the resolver lifts from the
                     declared pipeline), cumulative mean/std/variance aggregations,
                     and a matrix co-moment FC (compute_fc as a running covariance).
+            trials:
+                description: >-
+                    Evaluate the pipeline across the trial ensemble rather than per
+                    solve: the (single) source observation is computed per trial as
+                    usual, and after the trial map this observation's (single)
+                    pipeline stage runs host-side on the trial-stacked source
+                    (n_trials, ...) — e.g. a pattern-entropy over an ensemble of
+                    per-trial evoked patterns. Requires a trial-only exploration
+                    (n_trials without parameter axes).
 
     ReducerEmitKind:
         description: >-

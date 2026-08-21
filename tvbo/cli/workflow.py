@@ -518,7 +518,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
         script_path = out_dir / "scripts" / f"{plan.experiment_key}.{ext}"
         script_path.write_text(code, encoding="utf-8")
         _common.info(f"wrote {script_path.relative_to(out_dir)}")
-        _staged = _bundle_script_constants(code, out_dir)
+        _staged = _bundle_script_artifacts(code, out_dir)
         if _staged:
             _common.info(f"staged {_staged} producer constant(s) → constants/")
     except Exception as exc:
@@ -708,24 +708,24 @@ def _figure_base_dir(study, out_dir: Path) -> str:
     return str(Path(src).parent) if src else str(out_dir)
 
 
-def _bundle_script_constants(code: str, out_dir: Path) -> int:
-    """Copy every producer/sourced constant a frozen backend script loads into the kit's ``constants/`` dir, so ``--rendered`` execution finds it on a node that lacks the author's ``~/.tvbo/constants``. The rendered ``_load_constant`` resolves a missing absolute path by basename against ``$TVBO_CONSTANTS_DIR`` or the run dir's ``constants/`` (see the observation template), so a frozen kit carries its operators with it. Returns the number staged."""
+def _bundle_script_artifacts(code: str, out_dir: Path) -> int:
+    """Copy every array a frozen backend script loads into the kit's ``constants/`` dir, so ``--rendered`` execution finds it on a node that lacks the author's files. Covers all three emitted readers — ``_load_constant`` for a sourced/produced observer operator, ``_load_param`` for a sourced model or coupling parameter, and ``_load_covariance`` for a sourced noise covariance — because every baked path is an author-machine path that resolves nowhere else. All three go through ``matrix_io.resolve_staged_path``, which looks a missing path up by basename under ``$TVBO_CONSTANTS_DIR`` or the run dir's ``constants/``. Returns the number staged."""
     import re
     import shutil
 
     dest = out_dir / "constants"
     staged: dict[str, Path] = {}
     missing: list[str] = []
-    for p in sorted(set(re.findall(r'_load_constant\(\s*["\']([^"\']+)["\']', code))):
+    for p in sorted(set(re.findall(r'_load_(?:constant|param|covariance)\(\s*["\']([^"\']+)["\']', code))):
         src = Path(p)
         if not src.is_file():
             missing.append(p)
             continue
-        # The rendered `_load_constant` resolves a missing path BY BASENAME, so two constants sharing one would fit against whichever was copied last.
+        # Resolution is BY BASENAME, so two artifacts sharing one would fit against whichever was copied last.
         prior = staged.get(src.name)
         if prior is not None and prior != src.resolve():
             _common.die(
-                f"two constants are named {src.name!r} but come from different files:\n"
+                f"two artifacts are named {src.name!r} but come from different files:\n"
                 f"  - {prior}\n  - {src.resolve()}\n"
                 "The kit resolves them by basename, so one would silently stand in for "
                 "the other. Rename one, or point both at the same file."
@@ -735,7 +735,7 @@ def _bundle_script_constants(code: str, out_dir: Path) -> int:
         staged[src.name] = src.resolve()
     if missing:
         _common.warn(
-            "these constants were not found on this machine and are NOT in the kit; the "
+            "these artifacts were not found on this machine and are NOT in the kit; the "
             "job will fail on the node unless they exist there:\n  - " + "\n  - ".join(missing)
         )
     return len(staged)
@@ -757,7 +757,7 @@ def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: st
         scripts_dir.mkdir(parents=True, exist_ok=True)
         path = scripts_dir / f"{key}.{ext}"
         path.write_text(code, encoding="utf-8")
-        _bundle_script_constants(code, out_dir)
+        _bundle_script_artifacts(code, out_dir)
         rel = str(path.relative_to(out_dir))
         _common.info(f"wrote {rel}")
         return rel
@@ -1114,6 +1114,8 @@ def _write_external_inputs_manifest(out_dir: Path, source_dir: Path | None) -> i
                 candidate = candidate.resolve()
             if candidate.is_relative_to(kit_root) or not candidate.exists():
                 continue
+            if (out_dir / "constants" / candidate.name).is_file():
+                continue  # staged by basename, so the kit does carry it
             entry = seen.setdefault(candidate, (raw, set()))
             entry[1].add(str(path.relative_to(out_dir)))
 
