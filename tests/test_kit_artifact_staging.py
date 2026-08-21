@@ -1,13 +1,9 @@
 """A packed kit carries every array its frozen script reads, sourced parameters included.
 
-`_bundle_script_artifacts` scanned the rendered source for `_load_constant(...)` only, so a
-kit shipped the observer operators and left behind the arrays a `Parameter.source` binds.
-Both readers bake the author's own path, which resolves nowhere else, so an experiment whose
-model or coupling parameter is sourced could be packed, transferred and submitted, and only
-fail on the node when the file it names is not there.
+`_bundle_script_artifacts` scanned the rendered source for `_load_constant(...)` only, so a kit shipped the observer operators and left behind the arrays a `Parameter.source` binds.
+Both readers bake the author's own path, which resolves nowhere else, so an experiment whose model or coupling parameter is sourced could be packed, transferred and submitted, and only fail on the node when the file it names is not there.
 
-The staging directory is keyed by basename, which is why the duplicate-basename guard is part
-of the contract rather than a nicety: without it one artifact silently stands in for another.
+The staging directory is keyed by basename, which is why the duplicate-basename guard is part of the contract rather than a nicety: without it one artifact silently stands in for another.
 """
 
 import pytest
@@ -71,9 +67,7 @@ def test_resolve_staged_path_prefers_an_existing_path(tmp_path, monkeypatch, sto
 def test_a_frozen_spec_source_resolves_from_the_staging_dir(tmp_path, monkeypatch, store):
     """Spec-mode is the kit's DEFAULT code source, so it must find what frozen-mode finds.
 
-    The rule re-renders `spec/<id>/experiment.yaml`, whose `Parameter.source` still spells the
-    author's relative path. Only the frozen script's reader knew about the staging dir, so a
-    kit could carry the artifact and still fail on the node it was packed for.
+    The rule re-renders `spec/<id>/experiment.yaml`, whose `Parameter.source` still spells the author's relative path. Only the frozen script's reader knew about the staging dir, so a kit could carry the artifact and still fail on the node it was packed for.
     """
     from tvbo.data.param_io import _resolve_path
 

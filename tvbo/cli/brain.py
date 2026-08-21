@@ -27,9 +27,7 @@ def brain(
 ) -> None:
     """Draw a model spec dissolving into a cortical surface built from its own characters.
 
-    The surface ships precomputed, so the still frame is instant. ``--render``
-    recomputes the geometry with bsplot for another hemisphere or view, and
-    ``--save-asset`` stores that render for reuse.
+    The surface ships precomputed, so the still frame is instant. ``--render`` recomputes the geometry with bsplot for another hemisphere or view, and ``--save-asset`` stores that render for reuse.
     """
     if background not in _portrait.THEMES:
         raise typer.BadParameter(f"--bg must be one of {', '.join(_portrait.THEMES)}")
