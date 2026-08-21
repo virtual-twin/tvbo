@@ -25,7 +25,6 @@ Model provenance travels with the result rather than in a separate directory. Ea
 | Parameter sweeps | not addressed | swept parameters as named coordinates |
 | Connectivity | delegated to BEP017 | BEP017 via `Network.to_bep017` |
 
-`SimulationExperiment.to_bids` additionally writes `net/`, `ts/`, `eq/`, `coord/` and `map/` directories, which come from an early BEP034 draft and appear in no current BEP034 artifact. Treat that export path as legacy.
 
 ## Proposed alignment
 
