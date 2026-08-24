@@ -148,7 +148,7 @@ network:
   iri: tvbo:DesikanKilliany          # 87-region connectome from the database
   transforms:
     - name: weight
-      equation: {rhs: "W / mean(W[W > 0])"}    # normalize: mean non-zero weight -> 1
+      equation: {rhs: "weight / mean(weight[weight > 0])"}    # normalize: mean non-zero weight -> 1
   coupling:
     c_glob:                                    # key = the model's coupling input
       iri: tvbo:Linear

@@ -128,16 +128,47 @@ _objects.append(mon_${name})
 % endfor
 
 net = Network(_objects)
+<% _N_literal = "{" + ", ".join(f"'{n}': {p['size']}" for n, p in populations.items()) + "}" %>\
+<% _mon_literal = "{" + ", ".join(f"'{n}': mon_{n}" for n in populations) + "}" %>\
+% if ramp:
+<%
+    _keep = {r[len("firing_rate_"):] for r in ramp["record"] if r.startswith("firing_rate_")}
+    _ramp_pops = [n for n in populations if not _keep or n in _keep]
+    _ramp_mons = "{" + ", ".join(f"'{n}': mon_{n}" for n in _ramp_pops) + "}"
+%>\
+
+# ── Quasi-static ramp of ${ramp["parameter"]}, state continued between points ──
+# Each declared value is written into the namespace constant carrying that projection's
+# weight; the transient settles the network and the remaining window gives the step's rate.
+_VALUES, _HANDLES = ${repr(ramp["values"])}, ${repr(ramp["handles"])}
+_settle, _step = ${transient_ms}, ${duration_ms}
+_N, _mons = ${_N_literal}, ${_ramp_mons}
+_groups = {_o.name: _o for _o in net.objects if hasattr(_o, "namespace")}
+RAMP = {"parameter": ${repr(ramp["parameter"])}, "values": np.asarray(_VALUES),
+        "rates": {_p: [] for _p in _mons}}
+for _value in _VALUES:
+    for _pop, _key in _HANDLES:
+        _groups[_pop].namespace[_key] = float(_value)
+    if _settle:
+        net.run(_settle * ms)
+    _counted = {_p: int(_m.num_spikes) for _p, _m in _mons.items()}
+    net.run((_step - _settle) * ms)
+    for _p, _m in _mons.items():
+        RAMP["rates"][_p].append((int(_m.num_spikes) - _counted[_p]) / ((_step - _settle) / 1000.0 * _N[_p]))
+    print(f"{RAMP['parameter']}={_value:g}  " + "  ".join(f"{_p}={RAMP['rates'][_p][-1]:.2f} Hz" for _p in _mons))
+RAMP["rates"] = {_p: np.asarray(_v) for _p, _v in RAMP["rates"].items()}
+% else:
 net.run(${duration_ms} * ms)
 
 # ── Population firing rates over the stationary window ────────────────
-_settle, _T, _N = ${settle}, ${duration_ms}, {${", ".join(f"'{n}': {p['size']}" for n, p in populations.items())}}
+_settle, _T, _N = ${settle}, ${duration_ms}, ${_N_literal}
 RATES = {}
-for _pop, _mon in {${", ".join(f"'{n}': mon_{n}" for n in populations)}}.items():
+for _pop, _mon in ${_mon_literal}.items():
     _t = np.asarray(_mon.t / ms)
     _count = int((_t >= _settle).sum())
     RATES[_pop] = _count / ((_T - _settle) / 1000.0 * _N[_pop])
     print(f"{_pop}: {RATES[_pop]:.3f} Hz")
+% endif
 % if probes:
 
 # ── Recorded synapse-internal state (population-mean u/x + time axis) ──

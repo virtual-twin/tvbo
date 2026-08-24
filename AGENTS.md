@@ -35,6 +35,11 @@ and installation.
 - **LinkML schema:** edit `schema/*.yaml`; the regeneration pipeline produces
   `tvbo/datamodel/**`, which is excluded from `ruff` and `mypy`. **Never**
   hand-edit the generated dir. See the `linkml-schema` skill.
+- **Comments:** a comment states the code's *current* contract, addressed to a
+  reader who has never seen your diff. Changing a commented line means
+  rewriting that comment, never appending a second one beside it. Document a
+  function in its docstring, not a stack of leading `#` lines — `scripts/check_prose.py`
+  gates this. See the `writing-code` and `writing-docstrings` skills.
 - **Git:** the user owns all version control — agents must never run
   `git add` / `git commit` / `git push`. See the `git` skill.
 
@@ -96,3 +101,10 @@ Install with: `tvbo skills install --target claude-code` (or `--target cursor` /
 - Metadata schema: <https://virtual-twin.github.io/tvbo/datamodel>
 - Platform: <https://tvbo.charite.de>
 - Issues: <https://github.com/virtual-twin/tvbo/issues>
+
+## Planning documents
+
+Design papers, audits and roadmaps are not in this repo. They live in an internal
+project-management folder alongside the manuscript repo; ask a maintainer for its location.
+Do not add planning documents here.
+

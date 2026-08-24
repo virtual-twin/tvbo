@@ -23,10 +23,7 @@ env:
   PIP_NO_WARN_SCRIPT_LOCATION: "1"
 
 jobs:
-  # ─── Build & push Docker image (native per-arch, then merge) ────────────
-  # We build amd64 and arm64 on NATIVE runners in parallel instead of
-  # cross-compiling under QEMU. Each arch caches independently. A final
-  # job stitches the two arch-tagged images into the final multi-arch tag.
+  # amd64 and arm64 build on NATIVE runners in parallel, each cached independently; a final job stitches them into the multi-arch tag.
   build:
     name: Build (${{ matrix.platform.tag }})
     runs-on: ${{ matrix.platform.runner }}
@@ -63,8 +60,7 @@ jobs:
           images: |
             leonmartin2/tvbo
             ghcr.io/${{ github.repository }}
-          # Per-arch tag suffix so we can push both arches without colliding,
-          # then merge into the canonical tags in the manifest job.
+          # Per-arch tag suffix, so both arches push without colliding before the manifest job merges them.
           flavor: |
             suffix=-${{ matrix.platform.arch }},onlatest=true
           tags: |
@@ -131,9 +127,7 @@ jobs:
               "${tag}-arm64"
           done <<< "${{ steps.meta.outputs.tags }}"
 
-  # ─── Container tests (after build) ──────────────────────────
-  # Sharded for parallelism + per-test timeout so hangs surface as
-  # tracebacks instead of silent runner kills.
+  # Sharded for parallelism, with a per-test timeout so hangs surface as tracebacks instead of silent runner kills.
   test-container:
     name: Container (${{ matrix.shard }})
     needs: manifest
@@ -218,8 +212,7 @@ jobs:
             --override-ini="addopts=" \
             ${{ matrix.paths }}
 
-  # ─── Doc tests (after build) ─────────────────────────────────
-  # ─── Doc tests — one shard per backend, all run in parallel ────────────
+  # Doc tests — one shard per backend, all in parallel.
   test-docs:
     name: Docs (${{ matrix.shard }})
     needs: manifest
@@ -240,8 +233,7 @@ jobs:
             extra_args: ""
             xla_device_count: "8"
             test_timeout: "900"
-          # Julia backends: BifurcationKit, ModelingToolkit, NetworkDynamics
-          # test_timeout=1800: Julia cold precompilation can take >15 min in Docker
+          # Julia backends; the long timeout covers cold precompilation, which can exceed 15 min in Docker.
           - shard: julia
             doc_pattern: "BifurcationKit or ModelingToolkit or NetworkDynamics"
             extra_args: ""
@@ -265,18 +257,14 @@ jobs:
             extra_args: "--run-slow"
             xla_device_count: "1"
             test_timeout: "900"
-          # nvmap_auto_cap lets the 2GB budget, not the default 64 cells/batch, size the sweep.
+          # The heaviest renders: nvmap_auto_cap lets the 2GB memory budget rather than a fixed count set the batch size, and one device keeps each grid on a single vmap.
           - shard: replication
             doc_pattern: "Replication"
             extra_args: ""
             xla_device_count: "1"
             nvmap_auto_cap: "4096"
             test_timeout: "3600"
-          # Core: Usage, Specification, api, examples (non-NeuroML), OpenMINDS, BIDS, root index
-          # Negative catch-all: everything not covered by the specialised shards above.
-        #   - shard: core
-        #     doc_pattern: "not NeuroML and not BifurcationKit and not ModelingToolkit and not NetworkDynamics and not Pyrates and not TVB and not tvboptim and not Replication"
-        #     extra_args: ""
+          # Core: everything the specialised shards above do not match.
     env:
       JAX_PLATFORMS: cpu
       XLA_PYTHON_CLIENT_ALLOCATOR: platform
@@ -380,10 +368,7 @@ jobs:
           path: dist/*
           retention-days: 30
 
-  # ─── Publish docs from the freshly-built release image (tags only) ──────
-  # `needs: manifest` guarantees the version image (e.g. 0.5.0) is already
-  # pushed before docs-deploy pulls it — proper ordering, no race, no retry.
-  # docs-deploy renders inside that exact image and publishes to gh-pages.
+  # `needs: manifest` guarantees the version image is pushed before docs-deploy pulls it — ordered, no race, no retry.
   publish-docs:
     name: Publish docs
     needs: manifest

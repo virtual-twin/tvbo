@@ -1,9 +1,6 @@
 """Runtime helpers for brain atlases and parcellation volumes.
 
-Provides the `Atlas` wrapper around the LinkML `BrainAtlas` datamodel, exposing
-lazy, computed access to the parcellation volume, SANDS terminology, region
-labels, and region centers. Also defines helpers to build atlas metadata and to
-produce ranked (relabelled) parcellation volumes from FreeSurfer segmentations.
+Provides the `Atlas` wrapper around the LinkML `BrainAtlas` datamodel, exposing lazy, computed access to the parcellation volume, SANDS terminology, region labels, and region centers. Also defines helpers to build atlas metadata and to produce ranked (relabelled) parcellation volumes from FreeSurfer segmentations.
 """
 
 import logging
@@ -17,9 +14,9 @@ except ImportError:
 import numpy as np
 from bids.layout import BIDSLayout
 from linkml_runtime.dumpers import yaml_dumper
-from tvbo.utils import yaml_loader
-
 from scipy.ndimage import center_of_mass
+
+from tvbo.utils import yaml_loader
 
 try:
     from tqdm import tqdm
@@ -30,8 +27,8 @@ except ImportError:
         return x  # No-op if tqdm not available
 
 
-from tvbo.data.tvbo_data import ATLAS_DIR
 from tvbo.adapters import bids as bids_utils
+from tvbo.data.tvbo_data import ATLAS_DIR
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.ontology.atlas import freesurfer
 
@@ -75,9 +72,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
     - Access `metadata` to get a self-reference as a LinkML object.
     - Access properties: volume, volume_file, metadata_file, region_labels, centers.
 
-    SANDS entities are stored in ``self.terminology.entities`` — a schema-native
-    ``dict[ParcellationEntityName, ParcellationEntity]`` produced by the LinkML
-    loader (the ``entities`` slot uses ``inlined: true`` in the SANDS schema).
+    SANDS entities are stored in ``self.terminology.entities`` — a schema-native ``dict[ParcellationEntityName, ParcellationEntity]`` produced by the LinkML loader (the ``entities`` slot uses ``inlined: true`` in the SANDS schema).
     """
 
     def __init__(self, atlas=None, **kwargs):
@@ -124,8 +119,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
         """NIfTI image of the atlas parcellation volume.
 
         Returns an empty 256³ placeholder image for the `wholebrain` atlas.
-        Otherwise loads the parcellation volume from disk, or `None` when no
-        volume file is found.
+        Otherwise loads the parcellation volume from disk, or `None` when no volume file is found.
 
         Raises:
             ImportError: If nibabel is not installed.
@@ -152,8 +146,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
             return_type="file",
         )
         if len(metadata_files) == 1:
-            # Load via LinkML — entities slot is inlined, so the loader
-            # produces a proper dict[ParcellationEntityName, ParcellationEntity].
+            # Load via LinkML — entities slot is inlined, so the loader produces a proper dict[ParcellationEntityName, ParcellationEntity].
             loaded = yaml_loader.load(metadata_files[0], tvbo_datamodel.BrainAtlas)
             if getattr(loaded, "coordinateSpace", None) is not None:
                 self.coordinateSpace = loaded.coordinateSpace
@@ -169,7 +162,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
                     centers = np.loadtxt(centers_file)
                     ent_list = list(ents.values())
                     if len(centers) == len(ent_list):
-                        for ent, xyz in zip(ent_list, centers):
+                        for ent, xyz in zip(ent_list, centers, strict=True):
                             ent.center = tvbo_datamodel.Coordinate(
                                 x=float(xyz[0]),
                                 y=float(xyz[1]),
@@ -265,7 +258,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
                     "Setting to empty. Install nilearn or provide atlas metadata."
                 )
 
-            for center, lookup_label in zip(centers, lookup_labels):
+            for center, lookup_label in zip(centers, lookup_labels, strict=True):
                 key = str(int(lookup_label))
                 if key in ents:
                     ents[key].center = tvbo_datamodel.Coordinate(
@@ -312,9 +305,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
 def create_atlas_metadata(fname_atlas, labels="freesurfer"):
     """Build `BrainAtlas` metadata and region centers of mass from a parcellation file.
 
-    Parses BIDS entities from the file name to seed a `BrainAtlas` with its
-    coordinate space and terminology, then computes the center of mass of each
-    non-background label in the parcellation volume.
+    Parses BIDS entities from the file name to seed a `BrainAtlas` with its coordinate space and terminology, then computes the center of mass of each non-background label in the parcellation volume.
 
     Args:
         fname_atlas: Path to the parcellation NIfTI file to derive metadata from.
@@ -350,10 +341,7 @@ def create_atlas_metadata(fname_atlas, labels="freesurfer"):
 def rank_atlas(fname_atlas, labels="freesurfer", desc="ranked", gm_only=True):
     """Relabel a parcellation with contiguous rank IDs and write the ranked volume and metadata.
 
-    Remaps each original label to a consecutive integer (1, 2, 3, ...), records
-    the mapping as `ParcellationEntity` metadata (keeping the original lookup
-    label), then saves the ranked NIfTI volume alongside its `.yaml` metadata
-    using a BIDS-style path with the given `desc`.
+    Remaps each original label to a consecutive integer (1, 2, 3, ...), records the mapping as `ParcellationEntity` metadata (keeping the original lookup label), then saves the ranked NIfTI volume alongside its `.yaml` metadata using a BIDS-style path with the given `desc`.
 
     Args:
         fname_atlas: Path to the source parcellation NIfTI file.

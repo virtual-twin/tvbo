@@ -1,14 +1,8 @@
 """Symbolic reading, code generation and plotting for :class:`Stimulus`.
 
-Attached to the generated classes by name (``StimulusBehaviour`` -> ``Stimulus``), so a
-stimulus carries these however it was built — loaded from YAML, nested in an experiment,
-or constructed directly. The experiment loader used to reassign ``__class__`` to reach
-the nested one, which left every other construction path without them.
+Attached to the generated classes by name (``StimulusBehaviour`` -> ``Stimulus``), so a stimulus carries these however it was built — loaded from YAML, nested in an experiment, or constructed directly. The experiment loader used to reassign ``__class__`` to reach the nested one, which left every other construction path without them.
 
-A stimulus is emitted as a Python definition, and the only name it has is ``label``, which
-is free text. :attr:`StimulusBehaviour.identifier` is that one resolution — the templates
-and :meth:`StimulusBehaviour.execute` both read it, so what is emitted and what is looked
-up afterwards cannot drift apart.
+A stimulus is emitted as a Python definition, and the only name it has is ``label``, which is free text. :attr:`StimulusBehaviour.identifier` is that one resolution — the templates and :meth:`StimulusBehaviour.execute` both read it, so what is emitted and what is looked up afterwards cannot drift apart.
 """
 
 from __future__ import annotations
@@ -32,10 +26,7 @@ class StimulusBehaviour:
     def from_ontology(cls, ontoclass):
         """Construct a `Stimulus` from an ontology class or its label.
 
-        When given a string, searches the ontology for a stimulus class with that label,
-        raising if none is found and warning if several match, then converts the resolved
-        class to metadata via
-        [`class2metadata`](#tvbo.classes.perturbation.class2metadata).
+        When given a string, searches the ontology for a stimulus class with that label, raising if none is found and warning if several match, then converts the resolved class to metadata via [`class2metadata`](#tvbo.classes.perturbation.class2metadata).
 
         Args:
             ontoclass: A stimulus label to look up, or an ontology stimulus class.
@@ -74,9 +65,7 @@ class StimulusBehaviour:
     def identifier(self) -> str:
         """The Python name the stimulus is emitted under.
 
-        `label` is free text, so it is not a name a backend can be handed as one. This
-        turns it into an identifier once, for every backend and for the lookup that
-        follows execution.
+        `label` is free text, so it is not a name a backend can be handed as one. This turns it into an identifier once, for every backend and for the lookup that follows execution.
         """
         from tvbo.templates.base.utils import safe_name
 
@@ -108,11 +97,7 @@ class StimulusBehaviour:
     def execute(self, format="tvb", connectivity=None, region_indices=None, weighting=None, **kwargs):
         """Build an executable stimulus for the requested backend.
 
-        For `"tvb"`, evaluates the rendered stimulus equation, resolves a connectivity
-        (creating a single-region one when needed) and a per-region weighting, and returns
-        a TVB `StimuliRegion`. For `"python"`/`"jax"`, returns a callable stimulus function
-        built from the symbolic equation, or from an audio file when the stimulus is
-        defined by a `dataLocation`.
+        For `"tvb"`, evaluates the rendered stimulus equation, resolves a connectivity (creating a single-region one when needed) and a per-region weighting, and returns a TVB `StimuliRegion`. For `"python"`/`"jax"`, returns a callable stimulus function built from the symbolic equation, or from an audio file when the stimulus is defined by a `dataLocation`.
 
         Args:
             format: Target backend: `"tvb"`, `"python"`, or `"jax"`.
@@ -168,9 +153,7 @@ class StimulusBehaviour:
     def get_expression(self) -> tuple:
         """Generate a sympy expression for the equation using metadata.
 
-        The one place a stimulus is parsed: the equation's parameters shadow the SymPy
-        builtins they collide with, and `t` is the time symbol whichever spelling the
-        metadata used — a right-hand side or a list of conditional branches.
+        The one place a stimulus is parsed: the equation's parameters shadow the SymPy builtins they collide with, and `t` is the time symbol whichever spelling the metadata used — a right-hand side or a list of conditional branches.
 
         Returns:
             tuple: ``(expression, parameters)`` — the symbolic expression of the equation
@@ -189,8 +172,7 @@ class StimulusBehaviour:
     def plot(self, duration=1000, dt=0.1, ax=None, plot_onset=True, cut_transient=0, **kwargs):
         """Plot the stimulus time course.
 
-        Evaluates the python stimulus function over `[cut_transient, duration]` at step
-        `dt` and draws it, optionally marking the `onset` parameter with a vertical line.
+        Evaluates the python stimulus function over `[cut_transient, duration]` at step `dt` and draws it, optionally marking the `onset` parameter with a vertical line.
 
         Args:
             duration: End of the time window in milliseconds.
@@ -208,9 +190,7 @@ class StimulusBehaviour:
         import matplotlib.pyplot as plt
 
         t_ms = np.linspace(cut_transient, duration, int(duration / dt) + 1)
-        stim_func = self.execute(
-            format="python", duration=duration, sampling_rate=kwargs.pop("sampling_rate", 1000)
-        )
+        stim_func = self.execute(format="python", duration=duration, sampling_rate=kwargs.pop("sampling_rate", 1000))
         expr_values_ms = stim_func(t_ms)
 
         return_fig = ax is None
@@ -220,9 +200,7 @@ class StimulusBehaviour:
         ax.plot(t_ms, expr_values_ms, label="stimulus", **kwargs)
 
         if plot_onset and "onset" in self.parameters:
-            ax.axvline(
-                self.parameters["onset"].value, 0, 1, color="red", linestyle="--", label="onset"
-            )
+            ax.axvline(self.parameters["onset"].value, 0, 1, color="red", linestyle="--", label="onset")
 
         if return_fig:
             plt.close()

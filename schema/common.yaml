@@ -89,11 +89,16 @@ classes:
             - iri
         attributes:
             experiment:
-                range: string
+                any_of:
+                    - range: integer
+                    - range: string
                 description: >-
                     WHERE (short form): an in-study experiment id whose saved result
                     holds the array, resolved within the enclosing study like
-                    ``initial_state.source_experiment``. Mutually exclusive with
+                    ``initial_state.source_experiment``. Written as the bare integer id
+                    (``34``), or as one of the string spellings the workflow planner also
+                    accepts (``exp-34``, ``"34"``) — ``tvbo.data.dataref`` normalises all
+                    three to the integer it globs the container by. Mutually exclusive with
                     ``iri`` (the full cross-study / curated / external form). When
                     both are absent the reference is local — ``output`` names this
                     experiment's own output — otherwise falling back to
@@ -102,7 +107,7 @@ classes:
                 range: string
                 description: >-
                     WHERE (short form): an in-study analysis name whose saved result
-                    holds the array (``output/results/<name>/result.h5``). Mutually
+                    holds the array (``derivatives/tvbo/ana-<name>_result.h5``). Mutually
                     exclusive with ``experiment`` and ``iri``, and — like
                     ``experiment`` — it registers the run-order dependency, so the
                     analysis runs before whatever consumes it.

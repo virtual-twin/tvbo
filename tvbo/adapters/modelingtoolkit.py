@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
 """Standalone ModelingToolkit.jl backend adapter for SimulationExperiment.
 
 Pure MTK adapter using @component + mtkcompile + ODEProblem + solve.
 No dependency on NetworkDynamics.jl.
 
-Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to
-MTK Julia code, MTK's ``mtkcompile`` performs structural transformations
-(e.g. higher-order ODE lowering), and the resulting equations are extracted
-back into SymPy.
+Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to MTK Julia code, MTK's ``mtkcompile`` performs structural transformations (e.g. higher-order ODE lowering), and the resulting equations are extracted back into SymPy.
 """
 
 from __future__ import annotations
@@ -60,8 +56,8 @@ class ModelingToolkitAdapter(BaseAdapter):
     """
 
     def __init__(self, source=None):
-        from tvbo.classes.experiment import SimulationExperiment
         from tvbo.classes.dynamics import Dynamics
+        from tvbo.classes.experiment import SimulationExperiment
 
         if source is None:
             self.experiment = None
@@ -83,10 +79,10 @@ class ModelingToolkitAdapter(BaseAdapter):
         template = templates.lookup.get_template("tvbo-mtk-experiment.jl.mako")
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "ExperimentResult":
+    def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using pure ModelingToolkit.jl.
 
-        Returns
+        Returns:
         -------
         ExperimentResult
             Simulation results with named dimensions and coordinates.
@@ -131,10 +127,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         n_sv = ctx["n_sv"]
         n_nodes = ctx["n_nodes"]
 
-        # Pure MTK: single model, n_nodes=1 typically
-        # u shape from MTK: (n_unknowns, n_t)
-        # n_unknowns may differ from n_sv if mtkcompile introduced
-        # auxiliary variables (e.g., higher-order ODE lowering)
+        # Pure MTK: single model, n_nodes=1 typically u shape from MTK: (n_unknowns, n_t) n_unknowns may differ from n_sv if mtkcompile introduced auxiliary variables (e.g., higher-order ODE lowering)
         n_unknowns = u.shape[0] if u.ndim == 2 else 1
         if n_unknowns != n_sv * n_nodes:
             try:
@@ -163,9 +156,7 @@ class ModelingToolkitAdapter(BaseAdapter):
     def lower(self, source=None, returns="auto", **kwargs):
         """Lower higher-order ODEs via MTK's ``mtkcompile``.
 
-        Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile →
-        lowered first-order SymPy equations, optionally wrapped back into
-        a tvbo ``Dynamics`` or ``SimulationExperiment``.
+        Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile → lowered first-order SymPy equations, optionally wrapped back into a tvbo ``Dynamics`` or ``SimulationExperiment``.
 
         Parameters
         ----------
@@ -182,12 +173,12 @@ class ModelingToolkitAdapter(BaseAdapter):
               if given ``Dynamics``, ``SimulationExperiment`` if given an
               experiment, ``"sympy"`` if empty.
 
-        Returns
+        Returns:
         -------
         dict | Dynamics | SimulationExperiment
         """
-        from tvbo.classes.experiment import SimulationExperiment
         from tvbo.classes.dynamics import Dynamics
+        from tvbo.classes.experiment import SimulationExperiment
 
         # Accept source at call time — set up adapter state
         if source is not None:
@@ -233,8 +224,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         ensure_packages(*MTK_PACKAGES)
         code = self.render_code(**kwargs)
 
-        # Only keep code up to (and including) the mtkcompile line —
-        # we don't need ODEProblem / solve / plot for equation extraction.
+        # Only keep code up to (and including) the mtkcompile line — we don't need ODEProblem / solve / plot for equation extraction.
         lines = []
         for line in code.splitlines():
             lines.append(line)
@@ -335,7 +325,7 @@ def _parse_mtk_equation(lhs_str, rhs_str, unknown_strs, param_names):
     param_names : list[str]
         Parameter names from Julia.
 
-    Returns
+    Returns:
     -------
     tuple[str, sympy.Eq]
         ``(python_var_name, Eq(Derivative(var, t), rhs_expr))``.

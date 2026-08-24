@@ -1,9 +1,6 @@
 """Runtime `Noise` wrapper, and the public import location for `Integrator`.
 
-`Noise` is still a subclass: it registers itself as a JAX pytree, which is a decorator on
-the class being defined and so cannot come from a mixin. `Integrator` has no wrapper —
-its behaviour lives in :mod:`tvbo.behaviour.integrator`, attached to the generated class,
-and is re-exported here so the import path is unchanged.
+`Noise` is still a subclass: it registers itself as a JAX pytree, which is a decorator on the class being defined and so cannot come from a mixin. `Integrator` has no wrapper — its behaviour lives in :mod:`tvbo.behaviour.integrator`, attached to the generated class, and is re-exported here so the import path is unchanged.
 """
 
 import functools
@@ -13,9 +10,9 @@ import sympy as sp
 from jax.tree_util import register_pytree_node_class
 
 from tvbo import templates
+from tvbo.codegen import templater
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.datamodel.schema import Equation
-from tvbo.codegen import templater
 from tvbo.ontology.owl import onto
 
 
@@ -26,8 +23,7 @@ def _available_integrators():
 
 
 def __getattr__(name):  # PEP 562: keep ``available_integrators`` importable, lazily.
-    # Resolving it eagerly at module import would force the ontology to load (through
-    # ``import tvbo``); defer that to first access.
+    # Resolving eagerly at import would force the ontology to load; deferred to first access.
     if name == "available_integrators":
         return _available_integrators()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
@@ -65,8 +61,8 @@ class Noise(tvbo_datamodel.Noise):
         aux.pop("sigma_vec", None)
         # Expose sigma_vec (if present) as a child so it can participate in vmap batching
         children = ()
-        if hasattr(self, "sigma_vec") and getattr(self, "sigma_vec") is not None:
-            children = (getattr(self, "sigma_vec"),)
+        if hasattr(self, "sigma_vec") and self.sigma_vec is not None:
+            children = (self.sigma_vec,)
         return children, (aux,)
 
     @classmethod
@@ -78,7 +74,7 @@ class Noise(tvbo_datamodel.Noise):
         obj = cls(**kwargs)
         # Reattach sigma_vec child if it was provided
         if isinstance(children, tuple) and len(children) == 1:
-            setattr(obj, "sigma_vec", children[0])
+            obj.sigma_vec = children[0]
         return obj
 
     @property
@@ -90,7 +86,7 @@ class Noise(tvbo_datamodel.Noise):
 
     @property
     def symbolic(self):
-        """The symbolic noise term $\\sqrt{dt}\\,\\sigma\\,\\xi$ for gaussian/white noise.
+        r"""The symbolic noise term $\\sqrt{dt}\\,\\sigma\\,\\xi$ for gaussian/white noise.
 
         Returns `None` for noise types other than `gaussian`/`white`.
         """
@@ -105,10 +101,9 @@ class Noise(tvbo_datamodel.Noise):
 
     @property
     def nsig(self):
-        """The noise dispersion `nsig`, derived from `sigma` as $0.5\\,\\sigma^2$ if needed.
+        r"""The noise dispersion `nsig`, derived from `sigma` as $0.5\\,\\sigma^2$ if needed.
 
-        Prefers an explicit `nsig` parameter; otherwise computes it from `sigma`. Returns
-        `None` when neither is available.
+        Prefers an explicit `nsig` parameter; otherwise computes it from `sigma`. Returns `None` when neither is available.
         """
         p = self.parameters_dict
         if "nsig" in p and p["nsig"] is not None:
@@ -123,10 +118,9 @@ class Noise(tvbo_datamodel.Noise):
 
     @property
     def sigma(self):
-        """The noise standard deviation `sigma`, derived from `nsig` as $\\sqrt{2\\,nsig}$ if needed.
+        r"""The noise standard deviation `sigma`, derived from `nsig` as $\\sqrt{2\\,nsig}$ if needed.
 
-        Prefers an explicit `sigma` parameter; otherwise computes it from `nsig`. Returns
-        `None` when neither is available.
+        Prefers an explicit `sigma` parameter; otherwise computes it from `nsig`. Returns `None` when neither is available.
         """
         p = self.parameters_dict
         if "sigma" in p and p["sigma"] is not None:
@@ -163,8 +157,7 @@ class Noise(tvbo_datamodel.Noise):
     def execute(self, format="tvb"):
         """Render, execute, and instantiate the noise backend object.
 
-        The rendered code is executed to obtain the `Noise` class, which is stored on
-        `self.tvb` and returned.
+        The rendered code is executed to obtain the `Noise` class, which is stored on `self.tvb` and returned.
 
         Args:
             format:
@@ -177,8 +170,6 @@ class Noise(tvbo_datamodel.Noise):
         exec(self.render_code(), templater.exec_globals, local_vars)
         self.tvb = local_vars["Noise"]
         return self.tvb
-
-
 
 
 Integrator = tvbo_datamodel.Integrator

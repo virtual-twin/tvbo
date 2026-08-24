@@ -1,17 +1,10 @@
 """A stored matrix keeps the precision it was computed at.
 
-Every writer in `matrix_io` used to cast to float32 unconditionally, so the store
-decided a numerical property of data it did not compute. For a measured connectome
-that is a fair trade — half the file, well inside the measurement's own error. For a
-matrix the spec *computes*, it is silently a different matrix: Pang2023's experiment 4
-declares `precision: float64` and integrated a cotangent Laplace-Beltrami operator that
-had been round-tripped through float32, with nothing anywhere reporting the narrowing.
+Every writer in `matrix_io` used to cast to float32 unconditionally, so the store decided a numerical property of data it did not compute. For a measured connectome that is a fair trade — half the file, well inside the measurement's own error. For a matrix the spec *computes*, it is silently a different matrix: Pang2023's experiment 4 declares `precision: float64` and integrated a cotangent Laplace-Beltrami operator that had been round-tripped through float32, with nothing anywhere reporting the narrowing.
 
-So the contract these pin is round-trip identity — what is written is what is read —
-with narrowing available as a declared choice on the edge rather than a default. The
-sparse index arrays are part of it: forcing int32 on `indptr`, a cumulative count of
-nonzeros, silently wraps on a matrix scipy had already widened to int64 for.
+So the contract these pin is round-trip identity — what is written is what is read — with narrowing available as a declared choice on the edge rather than a default. The sparse index arrays are part of it: forcing int32 on `indptr`, a cumulative count of nonzeros, silently wraps on a matrix scipy had already widened to int64 for.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -132,8 +125,7 @@ class TestDeclaredOnTheEdge:
         meta = {"edges": [{"name": "weight", "format": "dense", "dtype": "float32"}]}
         path = tmp_path / "net.h5"
         with h5py.File(path, "w") as f:
-            _write_edges(f, meta, {"weight": np.eye(4)},
-                         {"weight": {"probability": np.eye(4) * np.pi}})
+            _write_edges(f, meta, {"weight": np.eye(4)}, {"weight": {"probability": np.eye(4) * np.pi}})
         with h5py.File(path, "r") as f:
             assert f["edges/weight/edge_parameters/probability/data"].dtype == np.float32
 
@@ -142,12 +134,14 @@ class TestDeclaredOnTheEdge:
 
         from tvbo.data.network_io import _write_edges
 
-        meta = {"edges": [{"name": "weight", "format": "dense", "dtype": "float32",
-                           "parameters": {"probability": {"dtype": "float64"}}}]}
+        meta = {
+            "edges": [
+                {"name": "weight", "format": "dense", "dtype": "float32", "parameters": {"probability": {"dtype": "float64"}}}
+            ]
+        }
         path = tmp_path / "net.h5"
         with h5py.File(path, "w") as f:
-            _write_edges(f, meta, {"weight": np.eye(4)},
-                         {"weight": {"probability": np.eye(4) * np.pi}})
+            _write_edges(f, meta, {"weight": np.eye(4)}, {"weight": {"probability": np.eye(4) * np.pi}})
         with h5py.File(path, "r") as f:
             assert f["edges/weight/data"].dtype == np.float32
             assert f["edges/weight/edge_parameters/probability/data"].dtype == np.float64
@@ -168,8 +162,7 @@ def test_a_result_sidecar_stores_what_its_descriptor_claims(tmp_path):
 
     J_i = np.linspace(0.0, 1.0, 8, dtype=np.float64)
     yaml_path = tmp_path / "exp_1_seed0.yaml"
-    save_sidecar(yaml_path=yaml_path, parameters={"J_i": J_i},
-                 experiment_yaml_hash="0" * 64)
+    save_sidecar(yaml_path=yaml_path, parameters={"J_i": J_i}, experiment_yaml_hash="0" * 64)
 
     declared = yaml.safe_load(yaml_path.read_text())["parameters"][0]["dtype"]
     with h5py.File(yaml_path.with_suffix(".h5"), "r") as f:
@@ -183,8 +176,7 @@ def test_a_phenotype_measure_round_trips(tmp_path):
     from tvbo.classes.phenotype import Phenotype
 
     scores = np.array([0.1, 0.2, 0.30000000000000004, 0.4])
-    pheno = Phenotype(dataset_id="cohort", data_file="cohort.h5",
-                      subjects=[f"s{i}" for i in range(4)], measures=["iq"])
+    pheno = Phenotype(dataset_id="cohort", data_file="cohort.h5", subjects=[f"s{i}" for i in range(4)], measures=["iq"])
     pheno.to_file(tmp_path / "cohort.yaml", values={"iq": scores})
 
     got = Phenotype.from_file(tmp_path / "cohort.yaml").get("iq")

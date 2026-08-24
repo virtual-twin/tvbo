@@ -122,7 +122,7 @@ csl: https://raw.githubusercontent.com/citation-style-language/styles/master/iee
 
 fig-align: center
 
-# Kernel name only; the interpreter behind it is ambient — set QUARTO_PYTHON to pin it.
+# Kernel name only; its argv is a bare `python`, so PATH decides which interpreter runs the cells.
 jupyter: python3
 
 # `freeze: auto` re-executes only on source change; commit _freeze/ to share the cache.

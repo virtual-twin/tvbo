@@ -1,33 +1,19 @@
 """Heterogeneous-network tvboptim adapter (``tvbo.adapters.tvboptim``).
 
-Covers the P1 interoperability path: a network with different dynamics per node
-is lowered to a tvboptim ``HeterogeneousNetwork`` (nodes partitioned into
-``DynamicsGroup``s, edges collapsed into a ``SignalRoute``) and run in process
-via ``exp.run("tvboptim")``.
+Covers the P1 interoperability path: a network with different dynamics per node is lowered to a tvboptim ``HeterogeneousNetwork`` (nodes partitioned into ``NodeGroup``s, edges collapsed into a ``SignalRoute``) and run in process via ``exp.run("tvboptim")``.
 
-That API is absent from the pinned tvboptim — it landed upstream recently and the names
-are still settling — so the module skips until the integration lands. See
-``tvbo.adapters.tvboptim.to_heterogeneous_network``.
+The module runs only where the installed tvboptim ships the engine it exercises; :func:`tests.tvboptim_capabilities.require_heterogeneous_engine` owns that judgement and names in the skip reason whatever is missing, and the names it checks are exactly the ones ``tvbo.adapters.tvboptim`` imports.
 """
 
 import numpy as np
 import pytest
 import yaml
 
+from .tvboptim_capabilities import require_heterogeneous_engine
+
 pytest.importorskip("jax")
 pytest.importorskip("tvboptim")
-
-try:
-    from tvboptim.experimental.network_dynamics import (  # noqa: F401
-        DynamicsGroup,
-        HeterogeneousNetwork,
-        SignalRoute,
-    )
-except Exception:
-    pytest.skip(
-        "tvboptim heterogeneous-network API not available in the installed tvboptim",
-        allow_module_level=True,
-    )
+require_heterogeneous_engine()
 
 from tvbo import Dynamics, Network, SimulationExperiment  # noqa: E402
 from tvbo.adapters.tvboptim import (  # noqa: E402
@@ -38,11 +24,9 @@ from tvbo.adapters.tvboptim import (  # noqa: E402
 
 
 def test_single_group_equivalence():
-    """The heterogeneous engine reproduces the homogeneous engine exactly on a
-    degenerate one-group partition (same model on every node).
+    """The heterogeneous engine reproduces the homogeneous engine exactly on a degenerate one-group partition (same model on every node).
 
-    This is the strongest guard: if the segmented pack/route/scatter machinery
-    were subtly wrong it would show up as a nonzero difference here.
+    This is the strongest guard: if the segmented pack/route/scatter machinery were subtly wrong it would show up as a nonzero difference here.
     """
     from tvboptim.experimental.network_dynamics import prepare, solve
     from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
@@ -154,8 +138,7 @@ def test_adapter_partitions_and_routes():
 
 
 def test_heterogeneous_run_regions_and_union():
-    """exp.run('tvboptim') integrates the heterogeneous network; per-region /
-    per-variable indexing works and a node holds NaN for variables it lacks."""
+    """exp.run('tvboptim') integrates the heterogeneous network; per-region / per-variable indexing works and a node holds NaN for variables it lacks."""
     exp = _hetero_experiment()
     res = exp.run("tvboptim")
 

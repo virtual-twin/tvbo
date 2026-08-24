@@ -1,9 +1,6 @@
 """Harness abstraction for the skill-cost benchmark.
 
-A *harness* is an agent runner (Claude Code, Codex, …). Each harness knows how
-to (a) prepare a scratch workspace for a given *condition* — which controls
-whether the TVBO skills are available — and (b) drive its agent on a *task* and
-report normalized :class:`RunResult` metrics.
+A *harness* is an agent runner (Claude Code, Codex, …). Each harness knows how to (a) prepare a scratch workspace for a given *condition* — which controls whether the TVBO skills are available — and (b) drive its agent on a *task* and report normalized :class:`RunResult` metrics.
 
 The benchmark compares three conditions:
 
@@ -13,12 +10,13 @@ The benchmark compares three conditions:
               prompt — the agent must trigger them from their descriptions.
 ``explicit``  TVBO skills installed *and* the prompt points the agent at them.
 """
+
 from __future__ import annotations
 
 import abc
-from dataclasses import asdict, dataclass, field
+from collections.abc import Callable
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable, Optional
 
 CONDITIONS = ("control", "implicit", "explicit")
 
@@ -52,8 +50,8 @@ class RunResult:
     output_tokens: int
     tool_calls: int
     wall_seconds: float
-    cost_usd: Optional[float]  # None if the harness does not report cost
-    num_turns: Optional[int] = None
+    cost_usd: float | None  # None if the harness does not report cost
+    num_turns: int | None = None
     subtype: str = ""  # harness-reported completion status
     error: str = ""  # non-empty if the invocation itself failed
 
@@ -71,8 +69,8 @@ class Metrics:
     output_tokens: int
     tool_calls: int
     wall_seconds: float
-    cost_usd: Optional[float]
-    num_turns: Optional[int] = None
+    cost_usd: float | None
+    num_turns: int | None = None
     subtype: str = ""
     detail: str = ""  # verifier detail or error message
 

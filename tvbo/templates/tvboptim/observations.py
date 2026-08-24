@@ -4,13 +4,10 @@ import math
 
 import equinox as eqx
 import numpy as np
-
 from tvboptim.experimental.network_dynamics.result import NativeSolution
 from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor, _slice_variable_names
 
-# Canonical, backend-shared rounding + sampling resolution. Imported here so the
-# tvboptim runtime (the reference) and the jax/tvb code-gen paths compute
-# identical step counts from the same declarative observation and integration dt.
+# Canonical, backend-shared rounding + sampling resolution. Imported here so the tvboptim runtime (the reference) and the jax/tvb code-gen paths compute identical step counts from the same declarative observation and integration dt.
 from tvbo.adapters.observation_sampling import _tvb_iround
 
 
@@ -24,6 +21,7 @@ class TVBTemporalAverage(AbstractMonitor):
         self.period = period
 
     def __call__(self, sol):
+        """Average *sol* over consecutive windows of ``period``, dropping the trailing partial window as TVB does."""
         dt = self._resolve_dt(sol)
         step_count = _tvb_iround(self.period / dt)
         ys = np.asarray(sol.ys)[:, self.voi, ...]
@@ -95,12 +93,14 @@ class TVBBold(AbstractMonitor):
         return kernel_values[::-1][np.newaxis, :]
 
     def __call__(self, sol):
+        """Convolve *sol* with the Balloon-Windkessel HRF after decimating to ``downsample_period``, then sample at every ``period``."""
         dt = self._resolve_dt(sol)
         interim_step_count = _tvb_iround(self.downsample_period / dt)
         output_step_count = _tvb_iround(self.period / dt)
         output_interim_count = output_step_count // interim_step_count
 
-        interim = TVBTemporalAverage(voi=self.voi, period=self.downsample_period)(sol).ys
+        # Host-side once: iterating a device array row-by-row would sync per step.
+        interim = np.asarray(TVBTemporalAverage(voi=self.voi, period=self.downsample_period)(sol).ys)
         hrf = self._hrf()
         stock = np.zeros((hrf.shape[1], *interim.shape[1:]))
 

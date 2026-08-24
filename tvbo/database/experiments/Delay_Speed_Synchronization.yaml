@@ -52,7 +52,7 @@ network:
   transforms:
     - name: weight
       equation:
-        rhs: "W / mean(W[W > 0])"   # normalize so the mean non-zero weight is 1 (keeps G O(1))
+        rhs: "weight / mean(weight[weight > 0])"   # mean over existing edges, not over the zeros too, so G stays O(1)
 
   # Delayed Kuramoto coupling: c_i(t) = G * sum_j w_ij sin(theta_j(t - tau_ij) - theta_i(t))
   coupling:

@@ -5,17 +5,12 @@
 #
 # Copyright (c) 2023 Charité Universitätsmedizin Berlin
 #
-"""
-# LEMS-Generator
-Create LEMS model from TVB-O
-"""
+"""# LEMS-Generator Create LEMS model from TVB-O."""
 
 # %%
+import lems.api as lems
 import numpy as np
 
-import lems.api as lems
-
-# WD = abspath(dirname(__file__))
 np.random.seed(1312)
 
 
@@ -23,10 +18,7 @@ np.random.seed(1312)
 def setup_lems_model():
     """Create a LEMS model preloaded with base dimensions and units.
 
-    Builds an empty `lems.Model` and registers the physical dimensions
-    (`voltage`, `time`, `current`) and their SI-prefixed units
-    (`second`, `milliVolt`, `milliSecond`, `milliAmpere`) that TVB-O
-    component definitions are expressed in.
+    Builds an empty `lems.Model` and registers the physical dimensions (`voltage`, `time`, `current`) and their SI-prefixed units (`second`, `milliVolt`, `milliSecond`, `milliAmpere`) that TVB-O component definitions are expressed in.
 
     Returns:
         The initialized LEMS model ready to have components added to it.

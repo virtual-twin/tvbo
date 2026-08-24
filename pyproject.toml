@@ -1,8 +1,6 @@
 # Copyright © Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 [build-system]
-# `linkml` is pinned here (build-time only) so `hatch_build.py` regenerates the
-# datamodel deterministically. It is intentionally NOT a runtime dependency — only
-# the lightweight `linkml-runtime` is needed to import the generated classes.
+# Build-time only, and pinned so `hatch_build.py` regenerates the datamodel deterministically; importing the generated classes needs only `linkml-runtime`.
 requires = ["hatchling", "linkml==1.11.1"]
 build-backend = "hatchling.build"
 
@@ -20,12 +18,9 @@ dependencies = [
     "numpy>=2.0.0",
     "pandas>=2.2.3",
     "xarray>=2025.0",
-    # `linkml-runtime` is needed to *use* the generated datamodel at runtime; the
-    # heavy `linkml` generator toolkit is build-time only (see [build-system].requires).
+    # Needed to *use* the generated datamodel; the heavy `linkml` generator is build-time only (see [build-system].requires).
     "linkml-runtime>=1.11.0",
-    # `jsonschema` backs `tvbo validate schema` (validates against the shipped JSON
-    # Schema — no runtime linkml). Also pulled transitively by linkml-runtime; declared
-    # explicitly because we import it directly.
+    # Backs `tvbo validate schema` against the shipped JSON Schema; declared explicitly because we import it directly.
     "jsonschema>=4.0.0",
     "h5py>=3.12.1",
     "h5netcdf>=1.3",
@@ -42,21 +37,7 @@ dependencies = [
     # Symbolic
     "sympy>=1.13.0",
 
-    # Visualization
-    # >=0.0.7: format_fig no longer force-sets the "compressed" layout engine,
-    # which raised RuntimeError on figures built with layout="tight" once a
-    # colorbar existed (the tvboptim docs, e.g. RWW_tvboptim). Bumping the floor
-    # also busts the Docker deps-layer cache (keyed on pyproject.toml) so the
-    # container image stops shipping the stale bsplot that carried the bug.
-    # >=0.0.9: bsplot/graph/edges.py gained the missing matplotlib colormap-registry
-    # import; below this, any graph drawn through the bsplot backend (the
-    # Visualization doc) dies with "NameError: name 'colormaps' is not defined".
-    # A >=0.0.7 floor is satisfied by an already-installed 0.0.7, so the stale
-    # build survives an env that is never explicitly upgraded.
-    # >=0.0.10: the declarative Figure renderer (tvbo/adapters/bsplot.py) drives
-    # bsplot.figure.subplots / style.format_fig / panels.add_panel_number as a
-    # first-class dependency; keeping the floor current stops a stale 0.0.8 (below
-    # the previous floor) from lingering in an env that is never explicitly upgraded.
+    # Visualization — floor tracks the declarative Figure renderer in tvbo/adapters/bsplot.py.
     "bsplot>=0.0.10",
     "networkx>=3.4.2",
     "pydot>=3.0.3",
@@ -89,11 +70,7 @@ neuron = ["neuron"]
 # Data formats (tractograms, HDF5)
 data = ["dipy>=1.10.0"]
 
-# Surface/volume PDE backend (finite-element diffusion via the generated
-# tvbo-pde-fem solver). scikit-fem is the FEM engine; meshio is the mesh-IO
-# layer (reads .msh/.vtk/.vtu/.obj/.ply and bridges into skfem via
-# skfem.io.from_meshio); nibabel loads GIFTI/FreeSurfer surfaces. All three are
-# imported unconditionally by tvbo/templates/pde/tvbo-pde-fem.py.mako.
+# Surface/volume PDE backend: skfem is the FEM engine, meshio the mesh IO, nibabel the GIFTI/FreeSurfer loader — all three imported unconditionally by tvbo-pde-fem.py.mako.
 pde = ["scikit-fem>=8.0.0", "meshio>=5.3.0", "nibabel>=5.0.0"]
 
 # Knowledge base features
@@ -106,12 +83,7 @@ knowledge = [
     "wget>=3.2",
 ]
 
-# Audio/signal processing
-# Note: llvmlite >=0.44 has no macosx_x86_64 wheels for cp312/cp313, so we cap
-# numba/llvmlite on Intel Mac. See https://github.com/virtual-twin/tvbo/issues/7
-# The floors are essential: without them the resolver backtracks to the ancient
-# numba 0.53.1 / llvmlite 0.36.0 (no py3.12/3.13 wheels, fails to build) to
-# satisfy librosa/tvb-library. Intel Mac stays capped to <0.60 / <0.44.
+# Audio/signal processing. The floors stop the resolver backtracking to numba 0.53.1 (no py3.12+ wheels); Intel Mac is capped because llvmlite>=0.44 ships none either — issue #7.
 audio = [
     "librosa>=0.10.2",
     "numba>=0.59;    sys_platform != 'darwin' or platform_machine != 'x86_64'",
@@ -128,27 +100,16 @@ docs = [
     "pybtex>=0.24.0",
     "pypdf>=5.1.0",
     "nbclient>=0.10.0",
-    # Specification/Network.qmd renders the fsaverage head surface via
-    # mne.datasets.fetch_fsaverage; the import is unguarded, so without this the
-    # page fails to execute with ModuleNotFoundError.
+    # Specification/Network.qmd calls mne.datasets.fetch_fsaverage with an unguarded import, so the page needs mne to execute.
     "mne>=1.6.0",
-    # Networks/PDESimulation.qmd executes the FEM PDE backend end-to-end
-    # (imports meshio/skfem/nibabel directly), so the doc build needs the pde extra.
+    # Networks/PDESimulation.qmd runs the FEM PDE backend end-to-end, so the doc build needs the pde extra.
     "tvbo[pde]",
 ]
 
-# Bifurcation continuation via AUTO-07p.
-# Installs only pycobi, the Python wrapper. The AUTO-07p engine itself is a
-# Fortran program that is NOT distributed on PyPI: it is built once system-side
-# and its python/ front-end linked onto the environment. pip cannot place it, so
-# the extra covers the pip-installable half only — see docs/installation.md
-# ("AUTO-07p continuation") for the AUTO_DIR + path-link steps that complete it.
-# meson/ninja: numpy>=1.26 dropped distutils, so the f2py call in pyrates' get_run_func needs them.
+# Bifurcation continuation: the pip-installable half only — the AUTO-07p Fortran engine is built system-side, see docs/installation.md. meson/ninja back pyrates' f2py call, since numpy>=1.26 dropped distutils.
 auto7p = ["pycobi>=0.8.0", "meson>=1.4.0", "ninja>=1.11.0"]
 
-# PyRates dynamical systems modeling + continuation (continuation needs auto7p)
-# networkx<=3.5: pyrates passes backend='fortran' to its ComputeGraph(MultiDiGraph);
-# networkx>=3.6 makes graph constructors backend-dispatchable and steals that kwarg.
+# PyRates (continuation needs auto7p). networkx is capped because >=3.6 makes graph constructors backend-dispatchable and steals pyrates' backend='fortran' kwarg.
 pyrates = ["pyrates>=1.0.0", "networkx<=3.5", "tvbo[auto7p]"]
 
 # Julia integration
@@ -157,9 +118,7 @@ julia = ["juliacall>=0.9.20"]
 # API server
 api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]
 
-# TVB integration
-# Same Intel-Mac llvmlite cap + modern floor as [audio]; tvb-library pulls
-# numba transitively and otherwise drags the resolver down to numba 0.53.1.
+# TVB integration — same Intel-Mac cap and floor as [audio], since tvb-library pulls numba transitively.
 tvb = [
     "tvb-library",
     "tvb-framework",
@@ -170,14 +129,10 @@ tvb = [
     "llvmlite<0.44;  sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 
-# TVB optimization (JAX-based simulation & optimization).
-# pymoo backs the NSGA-II multi-objective exploration strategy (Exploration.strategy: nsga2).
+# TVB optimization (JAX). pymoo backs the NSGA-II strategy (Exploration.strategy: nsga2).
 tvboptim = ["tvboptim", "pymoo>=0.6.0"]
 
-# Distributed workflow orchestration. `tvbo workflow submit` shells out to Snakemake to
-# dispatch a kit's per-cell rules; the SLURM executor plugin turns each rule into an sbatch
-# job. These are the ORCHESTRATOR (needed wherever `submit` runs); a study's own runtime
-# deps travel declaratively via `environment.requirements` and are provisioned by setup.sh.
+# The ORCHESTRATOR for `tvbo workflow submit`, needed wherever submit runs; a study's own runtime deps travel via `environment.requirements`.
 workflow = ["snakemake>=8.0.0", "snakemake-executor-plugin-slurm>=0.11.0"]
 
 # Minor pinned so a local run and the CI ruff-action agree on the rule set.
@@ -199,30 +154,25 @@ allow-direct-references = true
 packages = ["tvbo"]
 
 [tool.hatch.build.targets.sdist]
-# `schema/**` and `hatch_build.py` must ship in the sdist so a wheel built *from the
-# sdist* can regenerate the datamodel (the generated .py files are not tracked).
+# schema/** and hatch_build.py ship so a wheel built *from the sdist* can regenerate the untracked datamodel.
 include = ["tvbo/**", "schema/**", "hatch_build.py", "README.md", "pyproject.toml", "LICENSE"]
 
-# Generate tvbo/datamodel/{schema,pydantic}.py from the LinkML schema before every
-# build (wheel, sdist, editable). See hatch_build.py.
+# Generates tvbo/datamodel/{schema,pydantic}.py from the LinkML schema before every build. See hatch_build.py.
 [tool.hatch.build.hooks.custom]
 
 [tool.hatch.build]
 include = ["tvbo/**"]
-# The generated datamodel is .gitignore'd, so hatchling's VCS-based file selection
-# would exclude it from the build. `artifacts` force-includes these build outputs
-# (produced by the hook above) into the wheel/sdist.
+# The generated datamodel is gitignored, so VCS-based file selection would drop it; `artifacts` force-includes the hook's output.
 artifacts = [
     "tvbo/datamodel/schema.py",
     "tvbo/datamodel/pydantic.py",
     "tvbo/datamodel/tvbo_datamodel.schema.json",
+    "tvbo/rules/study_layout.yaml",
 ]
 exclude = [
     "tvbo/database/networks/*.h5",
-    # Atlases live under tvbo/database/atlases (consolidated). Volumes + parcellation
-    # yamls stay out of the wheel (size); shipped/used from source as before.
+    # Volumes only: the parcellation yamls beside them ship, carrying the terminology every node-label crosswalk resolves against.
     "tvbo/database/atlases/**/*.nii.gz",
-    "tvbo/database/atlases/**/*.yaml",
     "tvbo/data/go-basic.obo",
     "tvbo/data/ontology/_tvb-o.owl",
     "tvbo/data/NeuroMMSig_abeta_subgraph.dill",
@@ -267,19 +217,27 @@ extend-exclude = [
     "docs/.quarto",
     "docs/_site",
     "docs/**/.vdoc.*.py",
-    "tvbo/datamodel/**",
+    "tvbo/datamodel/schema.py",
+    "tvbo/datamodel/pydantic.py",
+    "tvbo/datamodel/dialect_tables.py",
 ]
 
 [tool.ruff.lint]
-# Pyflakes (F), pycodestyle errors (E) + warnings (W).
 # C90 (mccabe complexity) is advisory and tracked separately; not gated.
-select = ["E", "F", "W"]
-# Auto-generated code: don't lint generated LinkML models.
-exclude = ["tvbo/datamodel/**"]
+select = ["E", "F", "W", "I", "UP", "B", "D"]
+# Only the build-time artefacts are generated; the rest of the dir is hand-written.
+exclude = [
+    "tvbo/datamodel/schema.py",
+    "tvbo/datamodel/pydantic.py",
+    "tvbo/datamodel/dialect_tables.py",
+]
 # Idiomatic patterns that we accept across the codebase.
 ignore = [
     "E501", # line-too-long: many docstrings narrate; black/format handles code.
     "E402", # module-import-not-at-top: needed by ontology bootstrap & similar.
+    "D105", # magic methods: the contract is the protocol's, stated in the class docstring.
+    "D107", # __init__: documented in the class docstring, so the rule is stated once.
+    "B008", # call-in-default: `Field(...)`/`Parameter(...)` defaults are the datamodel idiom.
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -287,6 +245,20 @@ ignore = [
 "tvbo/ontology/owl.py" = ["F403", "F405"]
 # Package re-exports via `from . import x` are intentional.
 "**/__init__.py" = ["F401", "F405"]
+# A test's name is its documentation; the same goes for build and dev scripts.
+"tests/**" = ["D1"]
+"scripts/**" = ["D1"]
+"benchmarks/**" = ["D1"]
+"docs/scripts/**" = ["D1"]
+"schema/**" = ["D1"]
+
+[tool.ruff.lint.isort]
+# Declared, not inferred: ruff resolves first-party by path, and `tvbo/datamodel/` is generated, so on a checkout that has not been built `tvbo.datamodel.*` sorts as third-party while the rest of tvbo does not.
+known-first-party = ["tvbo"]
+
+[tool.ruff.lint.pydocstyle]
+# Google style, so the NumPy-only D4xx rules do not fire.
+convention = "google"
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
@@ -301,17 +273,24 @@ python_version = "3.12"
 # Non-blocking mode: report issues but don't fail builds yet.
 ignore_missing_imports = true
 follow_imports = "silent"
-exclude = ["tvbo/datamodel/", "tests/", ".venv/", "build/", "dist/", "docs/"]
+exclude = [
+    "tvbo/datamodel/schema.py",
+    "tvbo/datamodel/pydantic.py",
+    "tvbo/datamodel/dialect_tables.py",
+    "tests/",
+    ".venv/",
+    "build/",
+    "dist/",
+    "docs/",
+]
 files = ["tvbo"]
 
 [tool.pytest.ini_options]
 addopts = "-n 1 --dist=loadscope"
 filterwarnings = [
-    # jax's welch clamps nperseg to the shrunk-test signal and warns (benign);
-    # module-scoped to survive jax rewording the message.
+    # jax's welch clamps nperseg to the shrunk test signal and warns; module-scoped to survive a rewording.
     "ignore::UserWarning:jax._src.third_party.scipy.signal_helper",
-    # tvbo's own multi-mode EXPERIMENTAL notice; anchors must match the warn text in
-    # tvbo-tvboptim-experiment.py.mako (n_modes>1).
+    # tvbo's own multi-mode EXPERIMENTAL notice; anchors must match tvbo-tvboptim-experiment.py.mako (n_modes>1).
     "ignore:number_of_modes=.*EXPERIMENTAL:UserWarning",
 ]
 markers = [

@@ -1,21 +1,21 @@
 """TVB interoperability tests — lossless round-trip via Network.from_tvb.
 
 Verifies that tvbo can:
-1. Import TVB default connectivity → save YAML+HDF5 → reload → export back to TVB
-   with zero information loss (weights, tract_lengths, centres, labels, speed).
+1. Import TVB default connectivity → save YAML+HDF5 → reload → export back to TVB with zero information loss (weights, tract_lengths, centres, labels, speed).
 2. Import TVB surface simulation data (connectivity + surface + region_mapping)
    → save multi-level YAML+HDF5 → verify mesh + node_mapping persist.
 """
 
-import numpy as np
-import pytest
 import tempfile
 from pathlib import Path
 
+import numpy as np
+import pytest
+
 try:
     from tvb.datatypes.connectivity import Connectivity
-    from tvb.datatypes.surfaces import CorticalSurface
     from tvb.datatypes.region_mapping import RegionMapping
+    from tvb.datatypes.surfaces import CorticalSurface
 
     _HAVE_TVB = True
 except ImportError:
@@ -103,7 +103,7 @@ class TestConnectivityRoundTrip:
     def test_save_reload_roundtrip(self, tvb_conn):
         """Save as YAML+HDF5, reload, verify arrays match."""
         from tvbo import Network
-        from tvbo.data.network_io import save_network, load_network
+        from tvbo.data.network_io import load_network, save_network
 
         net = Network.from_tvb(tvb_conn)
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -120,7 +120,7 @@ class TestConnectivityRoundTrip:
     def test_full_roundtrip_back_to_tvb(self, tvb_conn):
         """TVB → tvbo → YAML+HDF5 → tvbo → TVB: lossless."""
         from tvbo import Network
-        from tvbo.data.network_io import save_network, load_network
+        from tvbo.data.network_io import load_network, save_network
 
         net = Network.from_tvb(tvb_conn)
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -207,6 +207,7 @@ class TestSurfaceRoundTrip:
     def test_mesh_survives_hdf5(self, tvb_data):
         """Save surface network → HDF5 has /mesh/ group with arrays."""
         import h5py
+
         from tvbo import Network
         from tvbo.data.network_io import save_network
 
@@ -247,6 +248,7 @@ class TestSurfaceRoundTrip:
     def test_node_mapping_survives_hdf5(self, tvb_data):
         """Region mapping array persists in HDF5 companion."""
         import h5py
+
         from tvbo import Network
         from tvbo.data.network_io import save_network
 

@@ -1,15 +1,32 @@
 """Low-level matrix read/write for HDF5 groups and Zarr groups.
 
-Supports dense, CSR, and COO formats. Both HDF5 (h5py.Group) and
-Zarr (zarr.Group) implement the same array-store interface, so a
-single pair of read/write functions handles both backends.
+Supports dense, CSR, and COO formats. Both HDF5 (h5py.Group) and Zarr (zarr.Group) implement the same array-store interface, so a single pair of read/write functions handles both backends.
 
 See §12.1 of the tvbo HDF5 format proposal v0.7.
 """
 
-import numpy as np
+import os
 from pathlib import Path
-from scipy.sparse import csr_matrix, coo_matrix
+
+import numpy as np
+from scipy.sparse import coo_matrix, csr_matrix
+
+
+def resolve_staged_path(path) -> Path:
+    """Resolve an artifact path against a packed kit's staging directory.
+
+    A frozen backend script carries the absolute path its author read. A packed kit copies every artifact that script loads — sourced/produced observer constants and sourced model or coupling parameters alike — into its own ``constants/`` directory, keyed by basename.
+    When the author's path is absent, as it is on any other machine, the file is looked up under ``$TVBO_CONSTANTS_DIR`` and then the run directory's ``constants/``.
+
+    An existing path is returned untouched, so a run on the authoring machine never consults the staging directory and cannot pick up a same-named file by accident.
+    """
+    p = Path(path)
+    if p.exists():
+        return p
+    for base in (os.environ.get("TVBO_CONSTANTS_DIR"), "constants"):
+        if base and (Path(base) / p.name).is_file():
+            return Path(base) / p.name
+    return p
 
 
 def _create_ds(grp, name, *, data, **kwargs):
@@ -34,15 +51,14 @@ def auto_format(matrix) -> str:
     - N < 500 or fill > 30%: dense + gzip wins
     - Otherwise: CSR
 
-    Handles both dense arrays and scipy sparse matrices without
-    densifying the input.
+    Handles both dense arrays and scipy sparse matrices without densifying the input.
 
     Parameters
     ----------
     matrix : array-like or scipy.sparse matrix
         Matrix to analyze.
 
-    Returns
+    Returns:
     -------
     str
         "dense" or "csr"
@@ -67,10 +83,8 @@ def auto_format(matrix) -> str:
 def _at_precision(matrix, dtype):
     """The matrix as it goes to disk: its own precision unless one is declared.
 
-    A writer that picks the precision decides a numerical property of data it did
-    not compute. Narrowing a measured connectome is a fair trade for half the file;
-    narrowing a differential operator someone integrates at float64 is a different
-    operator, and nothing downstream can tell it happened. So the cast is opt-in.
+    A writer that picks the precision decides a numerical property of data it did not compute. Narrowing a measured connectome is a fair trade for half the file;
+    narrowing a differential operator someone integrates at float64 is a different operator, and nothing downstream can tell it happened. So the cast is opt-in.
     """
     return matrix if dtype is None else matrix.astype(dtype)
 
@@ -117,8 +131,7 @@ def write_matrix(grp, matrix, fmt: str = "dense", dtype=None):
         sparse formats are unaffected — they keep the width scipy chose, which is
         int64 exactly when the matrix is too large for int32 to address.
 
-    The shape is read off ``.shape`` directly, never via ``np.asarray`` — a scipy sparse
-    matrix survives that call as a 0-d object array, which would record an empty shape.
+    The shape is read off ``.shape`` directly, never via ``np.asarray`` — a scipy sparse matrix survives that call as a 0-d object array, which would record an empty shape.
     """
     grp.attrs["format"] = str(fmt)
     shape = matrix.shape if hasattr(matrix, "shape") else np.asarray(matrix).shape
@@ -137,7 +150,7 @@ def read_matrix(grp) -> np.ndarray:
     grp : h5py.Group or zarr.Group
         Source group containing format/shape attrs and data datasets.
 
-    Returns
+    Returns:
     -------
     np.ndarray
         Dense numpy array.
@@ -233,6 +246,33 @@ class LazyArrayStore:
         self._ensure_loaded()
         return self._cache[key]
 
+    def dataset_keys(self, prefix: str = "") -> list[str]:
+        """Dataset paths under ``prefix`` (e.g. ``"nodes"``), empty when it holds none.
+
+        Lets a caller carry datasets across a re-save without modelling each one, which is what keeps a companion's per-node arrays alive through ``save_network``.
+        """
+        out: list[str] = []
+        if self._ext in (".h5", ".hdf5"):
+            import h5py
+
+            with h5py.File(self._path, "r") as f:
+                grp = f.get(prefix) if prefix else f
+                if grp is None:
+                    return []
+                for name, obj in grp.items():
+                    if isinstance(obj, h5py.Dataset):
+                        out.append(f"{prefix}/{name}" if prefix else name)
+        elif self._ext == ".zarr" or self._path.is_dir():
+            import zarr
+
+            z = zarr.open(str(self._path), "r")
+            grp = z.get(prefix) if prefix else z
+            if grp is None:
+                return []
+            for name in getattr(grp, "array_keys", lambda: [])():
+                out.append(f"{prefix}/{name}" if prefix else name)
+        return out
+
     def read_dataset(self, key: str) -> np.ndarray:
         """Read an arbitrary dataset by path (e.g. ``"nodes/parent_index"``)."""
         if self._ext in (".h5", ".hdf5"):
@@ -253,8 +293,7 @@ class LazyArrayStore:
 def _read_edges_from_store(store, template_edges: list) -> tuple[dict, dict]:
     """Read all template-edge matrices + edge parameters from a store.
 
-    Works identically for h5py.File and zarr.Group — both support
-    `"path" in store` and `store["path"]` access.
+    Works identically for h5py.File and zarr.Group — both support `"path" in store` and `store["path"]` access.
     """
     arrays, params = {}, {}
 

@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """Base adapter for processing SimulationExperiment metadata.
 
 Extracts Python logic from Mako templates into reusable, testable methods.
-Backend-specific adapters (NetworkDynamics, PyRates, etc.) inherit from
-BaseAdapter and override or extend as needed.
+Backend-specific adapters (NetworkDynamics, PyRates, etc.) inherit from BaseAdapter and override or extend as needed.
 """
 
 from __future__ import annotations
@@ -17,7 +15,6 @@ import numpy as np
 if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
 
-from tvbo.utils import noise_sigma
 from tvbo.templates.base.utils import (
     collect_param_distributions,
     collect_sv_distributions,
@@ -25,17 +22,17 @@ from tvbo.templates.base.utils import (
     graph_generator_call,
     has_distributions,
 )
+from tvbo.utils import noise_sigma
 
 
 class BaseAdapter:
     """Base class for backend adapters.
 
     Provides shared metadata processing that all code-generation backends need:
-    dynamics library, node-dynamics mapping, coupling resolution, graph info,
-    initial state parsing, etc.
+    dynamics library, node-dynamics mapping, coupling resolution, graph info, initial state parsing, etc.
     """
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
 
     # ── Dynamics library ─────────────────────────────────────────────────
@@ -43,8 +40,7 @@ class BaseAdapter:
     def build_dynamics_dict(self) -> OrderedDict:
         """Build an ordered dict of all unique Dynamics models.
 
-        Always includes the default model first, then any additional dynamics
-        from the network's dynamics library (for heterogeneous networks).
+        Always includes the default model first, then any additional dynamics from the network's dynamics library (for heterogeneous networks).
         """
         exp = self.experiment
         model = exp.dynamics
@@ -135,8 +131,7 @@ class BaseAdapter:
     def get_outsym_names(dynamics, outdim: int, coupling=None) -> list[str]:
         """Output symbol names for the edge model.
 
-        Uses coupling.outsym if available, otherwise generates from
-        coupling variables or state variables.
+        Uses coupling.outsym if available, otherwise generates from coupling variables or state variables.
         """
         # Prefer coupling-defined outsym
         if coupling and getattr(coupling, "outsym", None):
@@ -162,8 +157,7 @@ class BaseAdapter:
     def is_stochastic_dynamics(dynamics_dict: OrderedDict) -> bool:
         """Detect a stochastic system: any state variable with a positive noise amplitude."""
         return any(
-            BaseAdapter.get_noise_sigmas(dyn) and max(BaseAdapter.get_noise_sigmas(dyn)) > 0
-            for dyn in dynamics_dict.values()
+            BaseAdapter.get_noise_sigmas(dyn) and max(BaseAdapter.get_noise_sigmas(dyn)) > 0 for dyn in dynamics_dict.values()
         )
 
     # ── Graph / network ──────────────────────────────────────────────────
@@ -292,10 +286,7 @@ class BaseAdapter:
     @staticmethod
     def get_noise_sigmas(dynamics) -> list[float]:
         """Per-state-variable noise amplitude σ, ``0.0`` where none is declared."""
-        return [
-            noise_sigma(getattr(sv, "noise", None)) or 0.0
-            for sv in (dynamics.state_variables or {}).values()
-        ]
+        return [noise_sigma(getattr(sv, "noise", None)) or 0.0 for sv in (dynamics.state_variables or {}).values()]
 
     # ── Events ────────────────────────────────────────────────────────
 
@@ -352,8 +343,7 @@ class BaseAdapter:
     def prepare_context(self) -> dict:
         """Build the full pre-computed context dict for template rendering.
 
-        This is the main entry point: templates receive this dict instead of
-        doing metadata processing themselves.
+        This is the main entry point: templates receive this dict instead of doing metadata processing themselves.
         """
         exp = self.experiment
         model = exp.dynamics

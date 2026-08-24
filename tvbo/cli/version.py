@@ -1,4 +1,5 @@
 """``tvbo version`` — print the package version."""
+
 from __future__ import annotations
 
 import typer

@@ -1,15 +1,12 @@
 """Gillespie SSA backend — finite-size stochastic realization of a mean-field rate model.
 
-The backend (``tvbo/adapters/gillespie.py``) runs any relaxation rate model ``tau*X' = -X + F``
-as a finite birth-death process: it derives the birth/death split (birth ``Omega*F/tau``, death
-``n/tau``) and the between-event ODEs from the model's *own* equations — nothing model-specific.
+The backend (``tvbo/adapters/gillespie.py``) runs any relaxation rate model ``tau*X' = -X + F`` as a finite birth-death process: it derives the birth/death split (birth ``Omega*F/tau``, death ``n/tau``) and the between-event ODEs from the model's *own* equations — nothing model-specific.
 These tests pin: (1) the generic decomposition is correct on a Tsodyks-Markram rate model;
-(2) the mean-field limit — large system size ``Omega`` concentrates the activity on the
-deterministic fixed point (which only holds if the split is right); (3) noise scales as
-``1/sqrt(Omega)``; (4) the backend requires ``execution.system_size``.
+(2) the mean-field limit — large system size ``Omega`` concentrates the activity on the deterministic fixed point (which only holds if the split is right); (3) noise scales as ``1/sqrt(Omega)``; (4) the backend requires ``execution.system_size``.
 
 The model is declared inline (no external recipe) so the test is self-contained.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -17,8 +14,7 @@ import pytest
 
 from tvbo.classes.experiment import SimulationExperiment
 
-# A single-node Tsodyks-Markram rate model in a deep, non-bursting down-state (I0 = -2.0),
-# so the deterministic mean field has one low stable fixed point to converge to.
+# A single-node Tsodyks-Markram rate model in a deep, non-bursting down-state (I0 = -2.0), so the deterministic mean field has one low stable fixed point to converge to.
 TM_YAML = """
 label: "Tsodyks-Markram rate model (gillespie backend test)"
 dynamics:
@@ -67,7 +63,10 @@ def _experiment(tmp_path, system_size=30.0, seed=0):
 def _deterministic_downstate(J=3.07, alpha=1.5, E0=-2.0, tauD=0.2, tauF=1.5, U0=0.3):
     """Steady state of the deterministic mean field (Euler to convergence)."""
     E, x, u, dt = 0.5, 0.98, 0.37, 1e-3
-    g = lambda w: alpha * np.log1p(np.exp(w / alpha))
+
+    def g(w):
+        return alpha * np.log1p(np.exp(w / alpha))
+
     for _ in range(400_000):
         E += (-E + g(J * u * x * E + E0)) / 0.013 * dt
         x += ((1 - x) / tauD - u * x * E) * dt
@@ -87,8 +86,8 @@ def test_generic_decomposition(tmp_path):
     exp = _experiment(tmp_path)
     exp.configure()
     activity, sv_names, tau, birth_fn, slow_fns = GillespieAdapter(exp)._compile(exp.dynamics)
-    assert activity == "E"                       # first output = activity variable
-    assert set(slow_fns) == {"x", "u"}           # the rest integrate deterministically
+    assert activity == "E"  # first output = activity variable
+    assert set(slow_fns) == {"x", "u"}  # the rest integrate deterministically
     assert tau == pytest.approx(0.013, rel=1e-9)  # leak coefficient -> relaxation time
     # birth flux F/tau at the down-state equals the deterministic gain SS1/tau
     Estar = _deterministic_downstate()
@@ -102,7 +101,7 @@ def test_generic_decomposition(tmp_path):
 def test_mean_field_limit(tmp_path):
     """Large Omega concentrates the activity on the deterministic fixed point."""
     E = _run_E(_experiment(tmp_path, system_size=60.0, seed=1))
-    E = E[len(E) // 5:]                            # drop the transient
+    E = E[len(E) // 5 :]  # drop the transient
     assert E.mean() == pytest.approx(_deterministic_downstate(), rel=0.20)
 
 

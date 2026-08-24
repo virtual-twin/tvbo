@@ -1,10 +1,6 @@
 """Tests for resolving ``model.output`` to recorded channel indices.
 
-The solver records state variables followed by the auxiliaries that were actually
-requested, so an output's channel cannot be inferred from its kind: a state output
-sits *before* the auxiliaries, not after them. Outputs are resolved against that
-recorded ordering, in declared order, so the emitted channels and the reported
-``output_names`` always agree — including when states and auxiliaries are mixed.
+The solver records state variables followed by the auxiliaries that were actually requested, so an output's channel cannot be inferred from its kind: a state output sits *before* the auxiliaries, not after them. Outputs are resolved against that recorded ordering, in declared order, so the emitted channels and the reported ``output_names`` always agree — including when states and auxiliaries are mixed.
 """
 
 import pytest
@@ -14,7 +10,6 @@ from tvbo.templates.tvboptim.utils import (
     format_channel_index,
     resolve_model_output_indices,
 )
-
 
 PENDULUM = """
 name: PendulumSystem
@@ -67,15 +62,13 @@ def test_unknown_output_is_rejected_at_construction():
         _model(["not_a_variable"])
 
 
-
-
 @pytest.mark.parametrize(
     "indices, n_channels, expected",
     [
-        ([2], 4, "2"),                    # single channel drops the variable dim
-        ([2, 3], 4, "2:"),                # contiguous to the end -> open slice
+        ([2], 4, "2"),  # single channel drops the variable dim
+        ([2, 3], 4, "2:"),  # contiguous to the end -> open slice
         ([0, 1], 2, "0:"),
-        ([0, 1], 4, "0:2"),               # contiguous, bounded
+        ([0, 1], 4, "0:2"),  # contiguous, bounded
         ([2, 3, 0, 1], 4, "[2, 3, 0, 1]"),  # reordered -> explicit index list
     ],
 )

@@ -1,12 +1,7 @@
-#
-# Module: __init__.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""
-# TVB-Optim Templates
+# SPDX-License-Identifier: EUPL-1.2
+
+"""# TVB-Optim Templates.
 
 Mako templates for generating tvboptim network dynamics code from TVBO models.
 

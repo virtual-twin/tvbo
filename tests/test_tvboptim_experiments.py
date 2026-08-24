@@ -1,7 +1,8 @@
 """Test tvboptim experiment execution for all experiments in database/experiments."""
 
-import pytest
 import os
+
+import pytest
 
 pytest.importorskip("tvboptim", reason="tvboptim not installed")
 
@@ -50,12 +51,7 @@ def test_experiment_runs(experiment_name):
 
     assert results is not None
     if exp.algorithms:
-        # An algorithm (FIC/EIB tuning, …) IS the experiment's deliverable and runs
-        # its own simulations, so 'all' mode no longer runs the spurious pre-tuning
-        # base forward-sim before it — that sim integrates the untuned operating
-        # point nobody consumes, and at a fitting length materializes the whole
-        # trajectory and OOMs. `integration` is therefore legitimately absent; assert
-        # the algorithm output instead. (Forward-sim experiments still carry it.)
+        # An algorithm (FIC/EIB tuning, …) IS the experiment's deliverable and runs its own simulations, so 'all' mode no longer runs the spurious pre-tuning base forward-sim before it — that sim integrates the untuned operating point nobody consumes, and at a fitting length materializes the whole trajectory and OOMs. `integration` is therefore legitimately absent; assert the algorithm output instead. (Forward-sim experiments still carry it.)
         assert "algorithms" in results
     else:
         assert "integration" in results
