@@ -35,11 +35,7 @@ description: >-
 
 imaging_modality: BOLD
 
-# The HRF kernel is sampled on this grid (5000 samples over the 20000 ms support = 4 ms).
-# On an integration grid with a different dt the neural signal is decimated to this same
-# grid before the strided convolution, and the TR subsample counts these downsampled
-# samples — so streaming derives its decimation stride (downsample_period / dt) and TR
-# stride (TR / downsample_period) from this, not from a grid-specific hardcoded stride.
+# The HRF kernel is sampled on this grid (5000 samples over the 20000 ms support = 4 ms). On an integration grid with a different dt the neural signal is decimated to this same grid before the strided convolution and the TR subsample counts these downsampled samples, so streaming derives its decimation stride (downsample_period / dt) and TR stride (TR / downsample_period) from this rather than from a grid-specific hardcoded stride.
 downsample_period: 4.0
 
 references:
@@ -51,8 +47,7 @@ parameters:
         unit: ms
         description: Repetition time (sampling period)
 
-# Helper functions the pipeline calls by name. Emitted as module-level defs and
-# merged into experiment.functions when this model is referenced by `iri`.
+# Helper functions the pipeline calls by name, emitted as module-level defs and merged into experiment.functions when this model is referenced by `iri`.
 functions:
     hrf_kernel:
         description: >-
@@ -169,8 +164,7 @@ pipeline:
           kernel:
               value: hrf_kernel
 
-    # Volterra transform: k_1 * V_0 * (bold - 1.0). Pointwise-linear, so applying it to
-    # the strided output is exact (it commutes with subsampling).
+    # Volterra transform k_1 * V_0 * (bold - 1.0), pointwise-linear so applying it to the strided output is exact: it commutes with subsampling.
     - name: volterra_transform
       input: bold_convolve
       output: Bold

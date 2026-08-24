@@ -22,11 +22,7 @@ else
     echo "[pre-render][WARN] source bib not found: $BIB_SRC" >&2
 fi
 
-# ── Replication publication gate ──
-# Replication results are embargoed until the source work is published. Locally the
-# gate only warns about `publish: false` drafts so they can be worked on; in CI and
-# any deploy job it runs --strict, so a withheld study fails the build instead of
-# reaching a published site. A study page missing `publish:` always hard-fails.
+# Replication results are embargoed until the source work is published: locally the gate only warns about `publish: false` drafts so they can be worked on, while CI and any deploy job run --strict so a withheld study fails the build instead of reaching a published site. A page missing `publish:` always hard-fails.
 REPL_GATE_ARGS=""
 if [ -n "$CI" ] || [ "$TVBO_DOCS_STRICT" = "1" ]; then
     REPL_GATE_ARGS="--strict"

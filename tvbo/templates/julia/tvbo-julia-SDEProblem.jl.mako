@@ -15,9 +15,7 @@ u0 = [
 # Define time span
 tspan = (0.0, ${duration})
 
-## Per-state sigma through the shared reader, so every declared spelling
-## (`parameters.sigma`, `intensity`, `parameters.nsig`) means here what it means
-## on the other backends.
+## Per-state sigma through the shared reader, so every declared spelling — `parameters.sigma`, `intensity`, `parameters.nsig` — means here what it means on the other backends.
 <%! from tvbo.utils import noise_sigma %>\
 # Per-state noise standard deviation (diagonal diffusion)
 sigma_vec = [

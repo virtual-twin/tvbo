@@ -21,10 +21,7 @@ fout = context.get('fout', False)
 mc = build_model_context(model)
 %>
 
-## ODE vs SDE: any state variable with a positive noise amplitude makes it stochastic.
-## Read through the shared `noise_sigma`, so a recipe spelling its amplitude as
-## `parameters.sigma` is not silently integrated as a deterministic ODE here while
-## every other backend simulates it with noise.
+## ODE against SDE: any state variable with a positive noise amplitude makes it stochastic, read through the shared `noise_sigma` so a recipe spelling its amplitude as `parameters.sigma` is not silently integrated as a deterministic ODE here while every other backend simulates it with noise.
 <%
 from tvbo.utils import noise_sigma
 

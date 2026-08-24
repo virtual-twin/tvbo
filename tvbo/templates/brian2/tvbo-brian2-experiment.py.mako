@@ -137,9 +137,7 @@ net = Network(_objects)
     _ramp_mons = "{" + ", ".join(f"'{n}': mon_{n}" for n in _ramp_pops) + "}"
 %>\
 
-# ── Quasi-static ramp of ${ramp["parameter"]}, state continued between points ──
-# Each declared value is written into the namespace constant carrying that projection's
-# weight; the transient settles the network and the remaining window gives the step's rate.
+# Quasi-static ramp of ${ramp["parameter"]} with state continued between points: each declared value is written into the namespace constant carrying that projection's weight, the transient settles the network, and the remaining window gives the step's rate.
 _VALUES, _HANDLES = ${repr(ramp["values"])}, ${repr(ramp["handles"])}
 _settle, _step = ${transient_ms}, ${duration_ms}
 _N, _mons = ${_N_literal}, ${_ramp_mons}

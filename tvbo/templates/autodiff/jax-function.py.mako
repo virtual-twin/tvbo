@@ -37,8 +37,7 @@ from tvbo.templates.base.utils import get_source_code, retime, time_series_input
             if hasattr(param, 'value') and param.value is not None:
                 params[name] = param.value
     _kwargs = [f"{name}={value}" for name, value in params.items()]
-    # A no-default argument is a parameter when the call site supplies it (`supplied`),
-    # and the pipeline input bound from the TimeSeries in the body when it does not.
+    # A no-default argument is a parameter when the call site supplies it (`supplied`), and the pipeline input bound from the TimeSeries in the body when it does not.
     _in_signature = [name for name in params_required if name in supplied]
     _bound_in_body = [name for name in params_required if name not in supplied]
     param_args = ', '.join(_in_signature + _kwargs)

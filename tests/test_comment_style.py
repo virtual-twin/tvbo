@@ -124,3 +124,48 @@ def test_a_missing_base_ref_is_reported_rather_than_passed(tmp_path: Path):
 
     assert proc.returncode == 2
     assert "no such ref" in proc.stdout
+
+
+def test_scheduler_directives_are_not_a_comment_block():
+    """A run of `#SBATCH` lines is the job's resource request, not prose about it."""
+    lines = ["#SBATCH --job-name=x", "#SBATCH --ntasks=1", "#SBATCH --time=02:00:00"]
+
+    assert not list(added_blocks(_diff("run.sbatch.mako", lines)))
+
+
+def test_a_templates_two_comment_layers_are_counted_apart():
+    """`##` is prose the renderer strips and `#` is text it emits, so one run cannot span both."""
+    diff = _diff("t.yaml.mako", ["## explains the option", "## across two lines", "# the emitted note", "key: value"])
+
+    ((path, block),) = added_blocks(diff)
+    assert path == "t.yaml.mako"
+    assert [line for _, line in block] == ["explains the option", "across two lines"]
+
+
+def test_the_same_lines_in_python_stay_one_run():
+    """Outside a template there is one comment layer, so a second `#` does not start a new run."""
+    diff = _diff("tvbo/x.py", ["## explains it", "## across two lines", "# and a third", "value = 1"])
+
+    ((_, block),) = added_blocks(diff)
+    assert len(block) == 3
+
+
+def test_a_shell_sample_inside_a_fence_is_content_not_comment(tmp_path: Path):
+    """In a template that emits markdown, a fenced `#` line is a usage example the reader is meant to see."""
+    from check_prose import check
+
+    f = tmp_path / "readme.md.mako"
+    f.write_text("# Title\n\n```bash\n# submit it to the scheduler:\n#   needs a plugin\nsbatch job\n```\n")
+
+    assert check(f) == []
+
+
+def test_a_named_template_is_read_whole_file(tmp_path: Path):
+    """A template has no AST, so the docstring rules cannot apply — but the comment rule still does."""
+    from check_prose import check
+
+    f = tmp_path / "t.py.mako"
+    f.write_text("<%\n    # one line\n    # and a second\n    x = 1\n%>\n")
+
+    (message,) = check(f)
+    assert "2-line `#` block" in message

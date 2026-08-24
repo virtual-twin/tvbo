@@ -12,8 +12,7 @@ project:
     - datamodel/**/*.qmd
     - Models/*.qmd
     - Simulation/*.qmd
-    # index.qmd dissolved into SPECIFY/RUN IT; its old URL is owned by
-    # Simulation/SimulationExperiments.qmd's `aliases:`, so exclude the stub here.
+    # index.qmd dissolved into SPECIFY/RUN IT; Simulation/SimulationExperiments.qmd owns its old URL via `aliases:`, so the stub is excluded here.
     - "!Simulation/index.qmd"
     - ScaleOut/*.qmd
     - Bifurcation/*.qmd
@@ -21,8 +20,7 @@ project:
     - BeyondMeanField/*.qmd
     - Fitting/*.qmd
     - CLI/*.qmd
-    # backends.qmd moved to Simulation/Backends.qmd; its old URL is owned by that
-    # page's `aliases:` entry, so exclude the stub here to avoid a duplicate path.
+    # backends.qmd moved to Simulation/Backends.qmd, whose `aliases:` owns its old URL, so the stub is excluded here to avoid a duplicate path.
     - "!CLI/backends.qmd"
     - examples/**/*.qmd
     - Specification/*.qmd
@@ -57,10 +55,7 @@ website:
         logo: _static/tvbo_favicon.png
         logo-alt: "TVB-O logo"
 
-        # Keep in step with the sidebar in _toc.yml — the two menus should tell the
-        # same story about what the site contains.
-        # Mirrors the sidebar PARTS in _toc.yml: each item is the representative
-        # landing for one part, so navbar and sidebar tell the same story.
+        # Mirrors the sidebar PARTS in _toc.yml: each item is the representative landing for one part, so navbar and sidebar tell the same story.
         left:
             - href: index.qmd
               text: Home
