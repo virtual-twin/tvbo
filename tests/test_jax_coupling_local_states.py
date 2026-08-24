@@ -75,25 +75,21 @@ def test_a_local_state_the_model_does_not_declare_is_refused():
 def test_a_list_pre_emits_one_row_per_component_however_many_inputs_exist():
     """The rows a multi-output coupling returns come from `pre`, not from the input count.
 
-    `pre: [S*wLRE, S*wFFI]` is two weighted routes over one connectome, so `cfun` returns
-    two rows whatever the model declares alongside them. An emitter that counted
-    `coupling_inputs` instead counted the local ones too — a `local: true` input is not
-    driven by the connectome and has no row — and returned the first route twice, at the
-    right shape and with no error to say so.
+    `pre: [S*wLRE, S*wFFI]` is two weighted routes over one connectome, so `cfun` returns two rows whatever the model declares alongside them. An emitter that counted `coupling_inputs` instead counted the local ones too — a `local: true` input is not driven by the connectome and has no row — and returned the first route twice, at the right shape and with no error to say so.
 
-    The weights are named `wLRE`/`wFFI` because the emitter that got this wrong found its
-    per-row weight matrix by matching those literal names, so any other pair leaves the
-    defect unreachable and the test pinning nothing.
+    The weights are named `wLRE`/`wFFI` because the emitter that got this wrong found its per-row weight matrix by matching those literal names, so any other pair leaves the defect unreachable and the test pinning nothing.
     """
     model = _model()
-    coupling = Coupling(**{
-        "name": "c",
-        "delayed": False,
-        "incoming_states": ["theta"],
-        "parameters": {"wLRE": {"value": 1.0}, "wFFI": {"value": 2.0}},
-        "pre_expression": {"rhs": "[theta * wLRE, theta * wFFI]"},
-        "post_expression": {"rhs": "gx"},
-    })
+    coupling = Coupling(
+        **{
+            "name": "c",
+            "delayed": False,
+            "incoming_states": ["theta"],
+            "parameters": {"wLRE": {"value": 1.0}, "wFFI": {"value": 2.0}},
+            "pre_expression": {"rhs": "[theta * wLRE, theta * wFFI]"},
+            "post_expression": {"rhs": "gx"},
+        }
+    )
     one_input = coupling.render_code("jax", model=model)
 
     model.coupling_inputs["local_coupling"] = {"local": True}

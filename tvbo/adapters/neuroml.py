@@ -534,8 +534,7 @@ def _nml_type_name(dynamics):
 def _is_custom_nml_type(dynamics):
     """Return True if this dynamics needs a custom LEMS ComponentType definition.
 
-    Asks the collections, not their emitted order: whether a model declares anything is
-    the question here, and settling a dependency order to answer it parses the whole model.
+    Asks the collections, not their emitted order: whether a model declares anything is the question here, and settling a dependency order to answer it parses the whole model.
     """
     return bool(dynamics.derived_variables or dynamics.state_variables)
 
