@@ -1,31 +1,18 @@
-#
-# Module: localdynamics.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
 """Python behaviour layer for `Dynamics` models.
 
-Defines [`DynamicalSystem`](#tvbo.classes.dynamics.DynamicalSystem) — the base
-class that augments the generated LinkML `Dynamics` datamodel with model
-construction and ontology resolution, equation normalization and
-dependency-ordered sorting, multi-backend code generation, simulation and
-bifurcation runs, plotting, and report export — together with the `Model` and
-`Dynamics` convenience subclasses.
+Defines [`DynamicalSystem`](#tvbo.classes.dynamics.DynamicalSystem) — the base class that augments the generated LinkML `Dynamics` datamodel with model construction and ontology resolution, equation normalization and dependency-ordered sorting, multi-backend code generation, simulation and bifurcation runs, plotting, and report export — together with the `Model` and `Dynamics` convenience subclasses.
 
-The SymPy view of a model is not here. It is attached to the generated classes by
-[`DynamicsBehaviour`](../behaviour/dynamics.qmd), so a model answers symbolically however
-it was built, and the equations themselves live on a [`SymbolicSystem`](../parse/system.qmd).
+The SymPy view of a model is not here. It is attached to the generated classes by [`DynamicsBehaviour`](../behaviour/dynamics.qmd), so a model answers symbolically however it was built, and the equations themselves live on a [`SymbolicSystem`](../parse/system.qmd).
 """
 
-import logging
 import copy as _copy
 import functools
+import logging
 import os
 import re
-import tempfile
 from os.path import basename, dirname, join, splitext
 from typing import Any
 
@@ -33,8 +20,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import owlready2
-from tvbo.utils import initial_value, yaml_loader
-from matplotlib import colormaps
 from sympy import Eq, Symbol
 
 from tvbo import templates
@@ -49,18 +34,18 @@ from tvbo.datamodel.schema import Case, ConditionalBlock, DerivedVariable, Equat
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
 from tvbo.parse.expression import function_bodies, parse_eq
-from tvbo.utils import report
+from tvbo.utils import initial_value, report, yaml_loader
 
 logger = logging.getLogger(__name__)
 
 TEMPLATES = templates.root
 
+
 @functools.cache
 def _available_neural_mass_models():
     """The ontology's neural-mass-model classes, resolved and memoised on first use.
 
-    Kept lazy so importing this module (through ``import tvbo``) does not force the
-    ontology to load — it is only needed to validate/build models from the ontology.
+    Kept lazy so importing this module (through ``import tvbo``) does not force the ontology to load — it is only needed to validate/build models from the ontology.
     """
     return set(ontology.get_models().values())
 
@@ -77,8 +62,7 @@ def __getattr__(name):  # PEP 562: keep ``available_neural_mass_models`` importa
 def clean_code(code):
     """Replace Unicode infinity (`∞`) with the Python literal `inf`.
 
-    Generated model code occasionally carries the ∞ glyph from upstream
-    ontology labels; SymPy and most backends can't parse it.
+    Generated model code occasionally carries the ∞ glyph from upstream ontology labels; SymPy and most backends can't parse it.
     """
     cleaned_code = re.sub(r"∞", "inf", code)
     return cleaned_code
@@ -87,29 +71,19 @@ def clean_code(code):
 def _normalize_conditionals(model):
     """Ensure dv.equation.conditionals is populated for all conditional DVs.
 
-    If dv.cases is populated but dv.equation.conditionals is empty, copy the cases into
-    equation.conditionals as ConditionalBlock objects. This makes dv.equation.conditionals
-    the single canonical location for conditional data; nothing is written back to
-    `equation.rhs`, which stays whatever the model's author wrote.
+    If dv.cases is populated but dv.equation.conditionals is empty, copy the cases into equation.conditionals as ConditionalBlock objects. This makes dv.equation.conditionals the single canonical location for conditional data; nothing is written back to `equation.rhs`, which stays whatever the model's author wrote.
 
-    dv.cases is deprecated — new models should define conditionals
-    directly on the equation.
+    dv.cases is deprecated — new models should define conditionals directly on the equation.
     """
     for dv in model.derived_variables.values():
         cases = getattr(dv, "cases", None)
         if not cases:
             continue
         # Already normalized — skip
-        if (
-            getattr(dv.equation, "conditionals", None)
-            and len(dv.equation.conditionals) > 0
-        ):
+        if getattr(dv.equation, "conditionals", None) and len(dv.equation.conditionals) > 0:
             continue
         # Populate equation.conditionals from dv.cases
-        dv.equation.conditionals = [
-            ConditionalBlock(condition=case.condition, expression=case.equation.rhs)
-            for case in cases
-        ]
+        dv.equation.conditionals = [ConditionalBlock(condition=case.condition, expression=case.equation.rhs) for case in cases]
         # Mark the DV as conditional if not already
         if not getattr(dv, "conditional", False):
             dv.conditional = True
@@ -118,14 +92,10 @@ def _normalize_conditionals(model):
 def _migrate_coupling_terms(model):
     """Bidirectional sync between coupling_terms and coupling_inputs.
 
-    coupling_terms (dict[str, Parameter]) is deprecated in favor of
-    coupling_inputs (dict[str, CouplingInput]).  This function:
-    1. Copies coupling_terms entries into coupling_inputs (forward migration)
-    2. Copies coupling_inputs entries back into coupling_terms as Parameters
-       (backward compat for templates that still read coupling_terms)
+    coupling_terms (dict[str, Parameter]) is deprecated in favor of coupling_inputs (dict[str, CouplingInput]).  This function:
+    1. Copies coupling_terms entries into coupling_inputs (forward migration) 2. Copies coupling_inputs entries back into coupling_terms as Parameters (backward compat for templates that still read coupling_terms)
     """
     ct = getattr(model, "coupling_terms", None) or {}
-    model.coupling_inputs
 
     # Forward: coupling_terms → coupling_inputs
     if ct:
@@ -147,8 +117,7 @@ def _migrate_coupling_terms(model):
 
 
 def order_by_equations(derived_variables, dependent_equations):
-    """
-    Orders the `derived_variables` dictionary based on the key order of the `dependent_equations` dictionary.
+    """Orders the `derived_variables` dictionary based on the key order of the `dependent_equations` dictionary.
 
     Parameters:
     derived_variables (dict): Dictionary to be ordered.
@@ -159,9 +128,7 @@ def order_by_equations(derived_variables, dependent_equations):
     """
     dependency = {k.replace("dot", ""): v for k, v in dependent_equations.items()}
     # Order derived_variables based on the order in dependent_equations
-    ordered_dict = {
-        k: derived_variables[k] for k in dependency if k in derived_variables
-    }
+    ordered_dict = {k: derived_variables[k] for k in dependency if k in derived_variables}
 
     return ordered_dict
 
@@ -169,9 +136,9 @@ def order_by_equations(derived_variables, dependent_equations):
 def class2metadata(ontoclass: Any, metadata: Any):
     """Populate a `Dynamics` metadata object from an owlready2 ontology class.
 
-    Fills in description, state variables (with equations, boundaries, and
-    coupling-variable flags), derived variables, and parameters by querying
-    the TVB-O ontology for the corresponding semantic annotations.
+    Fills in description, state variables (with equations, boundaries, and coupling-variable flags), derived variables, and parameters by querying the TVB-O ontology for the corresponding semantic annotations.
+
+    Every name in the model is put into a `local_dict` as a plain `Symbol` before any equation is parsed. Without it, sympy reads `e` as Euler's number and `I` as the imaginary unit, so neither turns up in `free_symbols` and the parameters behind them are dropped in silence. An ontology coupling term is added only where a state equation actually requires it.
 
     Args:
         ontoclass: The owlready2 class to read from.
@@ -179,17 +146,11 @@ def class2metadata(ontoclass: Any, metadata: Any):
     """
     if not metadata.description:
         metadata.description = ontology.get_def(ontoclass, mode="long")
-    dependent_equations = _equation_mod.sort_equations_by_dependencies(
-        _equation_mod.symbolic_model_equations(ontoclass)
-    )
-    state_variables = order_by_equations(
-        ontology.get_model_statevariables(ontoclass), dependent_equations
-    )
+    dependent_equations = _equation_mod.sort_equations_by_dependencies(_equation_mod.symbolic_model_equations(ontoclass))
+    state_variables = order_by_equations(ontology.get_model_statevariables(ontoclass), dependent_equations)
     state_variables = ontology.get_model_statevariables(ontoclass)
 
-    functions = order_by_equations(
-        ontology.get_model_functions(ontoclass), dependent_equations
-    )
+    functions = order_by_equations(ontology.get_model_functions(ontoclass), dependent_equations)
 
     for k, v in state_variables.items():
         range = ontology.get_range(v)
@@ -200,9 +161,7 @@ def class2metadata(ontoclass: Any, metadata: Any):
         else:
             boundaries = None
 
-        # Preserve the descriptive stateVariableRange (IC-sampling support) as the
-        # sampling distribution when a clamp exists — mirrors the file/adapter paths.
-        # (Previously `range` was computed but dropped, so it was lost on round-trip.)
+        # Kept as the sampling distribution when a clamp exists, mirroring the file and adapter paths.
         sv_range = (
             tvbo_datamodel.Range(lo=float(range[0]), hi=float(range[1]))
             if range and range[0] is not None and range[1] is not None
@@ -218,9 +177,7 @@ def class2metadata(ontoclass: Any, metadata: Any):
                         name=k,
                         equation=tvbo_datamodel.Equation(
                             lhs=td.symbol.first(),
-                            rhs=td.value.first()
-                            .replace("numpy.", "")
-                            .replace("np.", ""),
+                            rhs=td.value.first().replace("numpy.", "").replace("np.", ""),
                         ),
                         description=ontology.get_def(v),
                         domain=_sv_domain,
@@ -238,28 +195,18 @@ def class2metadata(ontoclass: Any, metadata: Any):
                     rhs=td.value.first().replace("numpy.", "").replace("np.", ""),
                 ),
                 "description": state_var.description or ontology.get_def(v),
-                # An ontology-declared clamp (stateVariableBoundaries) is the
-                # operative constraint, so it wins over a pre-existing
-                # descriptive (unenforced) domain — consistent with how the
-                # file loader folds boundaries → domain+enforce=clamp. The
-                # descriptive range is kept as the sampling distribution (a
-                # pre-existing distribution takes precedence).
+                # An ontology-declared clamp (stateVariableBoundaries) is the operative constraint, so it wins over a pre-existing descriptive (unenforced) domain — consistent with how the file loader folds boundaries → domain+enforce=clamp. The descriptive range is kept as the sampling distribution (a pre-existing distribution takes precedence).
                 "domain": _sv_domain or state_var.domain,
                 "distribution": state_var.distribution or _sv_distribution,
-                "coupling_variable": state_var.coupling_variable
-                or (v in ontoclass.has_cvar),
+                "coupling_variable": state_var.coupling_variable or (v in ontoclass.has_cvar),
             }
 
             for attr, value in updates.items():
                 setattr(state_var, attr, value)
 
-    # Update parameters AFTER state_variables are populated so that
-    # update_parameters can parse their equations and determine which
-    # ontology parameters are actually used.
+    # Update parameters AFTER state_variables are populated so that update_parameters can parse their equations and determine which ontology parameters are actually used.
     update_parameters(metadata, ontoclass)
 
-    # Collect all free symbols from state variable equations
-    # Build a local_dict to avoid sympy interpreting 'I' as imaginary unit, etc.
     from sympy import Symbol, sympify
 
     # First pass: collect all known symbol names to build local_dict
@@ -271,9 +218,7 @@ def class2metadata(ontoclass: Any, metadata: Any):
         | set(functions.keys())
     )
     # Add coupling terms from ontology
-    onto_coupling_terms = ontology.get_model_coupling_terms(
-        ontoclass, only_global=False
-    )
+    onto_coupling_terms = ontology.get_model_coupling_terms(ontoclass, only_global=False)
     known_names |= set(onto_coupling_terms.keys())
 
     local_dict = {name: Symbol(name) for name in known_names}
@@ -305,9 +250,7 @@ def class2metadata(ontoclass: Any, metadata: Any):
                         name=k,
                         equation=tvbo_datamodel.Equation(
                             lhs=v.symbol.first(),
-                            rhs=v.value.first()
-                            .replace("numpy.", "")
-                            .replace("np.", ""),
+                            rhs=v.value.first().replace("numpy.", "").replace("np.", ""),
                         ),
                         description=v.definition.first(),
                     )
@@ -335,9 +278,7 @@ def class2metadata(ontoclass: Any, metadata: Any):
                         equation=tvbo_datamodel.Equation(
                             lhs=name,
                             conditionals=[
-                                tvbo_datamodel.ConditionalBlock(
-                                    condition=condtion, expression=expr
-                                )
+                                tvbo_datamodel.ConditionalBlock(condition=condtion, expression=expr)
                                 for expr, condtion in val.args
                             ],
                         ),
@@ -345,13 +286,10 @@ def class2metadata(ontoclass: Any, metadata: Any):
                 }
             )
 
-    # Only add ontology coupling terms if they are required in state equations
-    # (onto_coupling_terms was fetched earlier for building local_dict)
-    # Store them in coupling_inputs (canonical) with fallback to coupling_terms
-    # for backward compat until coupling_terms is fully removed from schema.
+    # An ontology coupling term is added — to the canonical `coupling_inputs`, with the deprecated `coupling_terms` still consulted — only where a state equation reads it.
     ci_dict = metadata.coupling_inputs
     ct_dict = metadata.coupling_terms
-    for k, v in onto_coupling_terms.items():
+    for k in onto_coupling_terms:
         if k in required_symbols and k not in ci_dict and k not in ct_dict:
             metadata.coupling_inputs[k] = tvbo_datamodel.CouplingInput(name=k)
 
@@ -361,8 +299,9 @@ def class2metadata(ontoclass: Any, metadata: Any):
 
 
 def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
-    """
-    Update parameters from ontology.
+    """Update a model's parameters from the ontology.
+
+    As in `class2metadata`, every model name is bound as a plain `Symbol` first, so `e` and `I` are not read as Euler's number and the imaginary unit and their parameters silently lost.
 
     Parameters
     ----------
@@ -383,10 +322,6 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
     if only_used:
         from sympy.parsing.sympy_parser import parse_expr
 
-        # Build local_dict so that ALL names in the model are treated as plain
-        # Symbols.  Without this, sympy interprets 'e' as Euler's number (E)
-        # and 'I' as the imaginary unit, so they never appear as free_symbols
-        # and the corresponding parameters are silently dropped.
         all_names: set[str] = set()
         eq_dicts = [
             getattr(metadata, "parameters", {}),
@@ -405,11 +340,7 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
 
         for eq_dict in eq_dicts:
             for item in eq_dict.values():
-                if (
-                    hasattr(item, "equation")
-                    and item.equation
-                    and hasattr(item.equation, "rhs")
-                ):
+                if hasattr(item, "equation") and item.equation and hasattr(item.equation, "rhs"):
                     expr = parse_expr(str(item.equation.rhs), local_dict=local_dict)
                     used_symbols.update(str(s) for s in expr.free_symbols)
 
@@ -428,9 +359,7 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
         else:
             domain = None
 
-        if label not in metadata.parameters and not any(
-            synonym in metadata.parameters for synonym in k.synonym + k.symbol
-        ):
+        if label not in metadata.parameters and not any(synonym in metadata.parameters for synonym in k.synonym + k.symbol):
             if verbose > 0:
                 logger.debug("using parameter %s from the ontology", label)
             metadata.parameters.update(
@@ -438,9 +367,7 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
                     label: tvbo_datamodel.Parameter(
                         name=label,
                         value=kwargs.get(k, v),
-                        description=ontology.get_def(k, mode="short").replace(
-                            "\n", " "
-                        ),
+                        description=ontology.get_def(k, mode="short").replace("\n", " "),
                         domain=domain,
                         definition=k.definition.first(),
                     )
@@ -449,36 +376,21 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
 
         if label in metadata.parameters:
             if metadata.parameters[label].description is None:
-                metadata.parameters[label].description = ontology.get_def(
-                    k, mode="short"
-                ).replace("\n", " ")
+                metadata.parameters[label].description = ontology.get_def(k, mode="short").replace("\n", " ")
 
             if metadata.parameters[label].unit is None:
-                metadata.parameters[label].unit = (
-                    k.has_unit.first().name if k.has_unit else k.unit.first()
-                )
+                metadata.parameters[label].unit = k.has_unit.first().name if k.has_unit else k.unit.first()
 
             if metadata.parameters[label].value is None:
                 metadata.parameters[label].value = k.defaultValue.first()
 
 
-# When False (default), authored equation term order is preserved end-to-end
-# (parse unevaluated + stringify order='none'); set True to restore SymPy's
-# canonical Add/Mul re-sorting. Generated dynamics then read like the source.
-
-
 def sort_equations(model: Any, variable_type: str, graph=None):
     """Reorder `model[variable_type]` by topological dependency order, in place.
 
-    Resolves the model's equation dependency DAG and reorders the variables
-    so each equation appears after the variables it references — required by
-    backends that emit straight-line code (JAX, NumPy printers).
+    Resolves the model's equation dependency DAG and reorders the variables so each equation appears after the variables it references — required by backends that emit straight-line code (JAX, NumPy printers).
 
-    Variables the dependency graph does not mention keep the order they came in and stay
-    ahead of the sorted ones. Prepending them one at a time instead reverses them, and
-    because each call re-sorts whatever order the last one left behind, that made the result
-    alternate: rendering a model twice emitted its derived variables in opposite orders, so
-    generated code depended on how often it had been generated before.
+    Variables the dependency graph does not mention keep the order they came in and stay ahead of the sorted ones. Prepending them one at a time instead reverses them, and because each call re-sorts whatever order the last one left behind, that made the result alternate: rendering a model twice emitted its derived variables in opposite orders, so generated code depended on how often it had been generated before.
 
     Args:
         model: The dynamics model whose equations should be sorted.
@@ -503,9 +415,7 @@ def sort_equations(model: Any, variable_type: str, graph=None):
     sorted_variables_metadata = {}
     for var_name in sorted_variables:
         if str(var_name) in model[variable_type]:
-            sorted_variables_metadata[str(var_name)] = original_metadata.pop(
-                str(var_name)
-            )
+            sorted_variables_metadata[str(var_name)] = original_metadata.pop(str(var_name))
 
     sorted_variables_metadata = {**original_metadata, **sorted_variables_metadata}
 
@@ -518,8 +428,7 @@ def _clamp_domain(rng):
     """Mark a bounds Range as a hard clamp (``enforce='clamp'``) and return it.
 
     Folds a legacy ``boundaries`` Range into the unified ``domain`` representation:
-    ``boundaries`` always meant "clamp the trajectory to [lo, hi]", which is now
-    expressed as a ``domain`` with ``enforce='clamp'``. Returns None unchanged.
+    ``boundaries`` always meant "clamp the trajectory to [lo, hi]", which is now expressed as a ``domain`` with ``enforce='clamp'``. Returns None unchanged.
     """
     if rng is None:
         return None
@@ -534,11 +443,7 @@ def _fold_range_boundaries(rng, boundaries):
     """Fold a descriptive range + hard-clamp boundaries into ``(domain, distribution)``.
 
     Mirrors ``adapters.tvb`` so ontology / programmatic imports match file ingestion:
-    the clamp (``boundaries``) becomes the enforced ``domain``; the descriptive range
-    (the IC-sampling support) is preserved as the sampling ``distribution`` — but only
-    when it differs from the clamp, since an identical clamp already conveys it. With no
-    clamp, the descriptive range is the (unenforced) ``domain`` and there is no separate
-    distribution. ``rng``/``boundaries`` are ``Range`` objects or ``None``.
+    the clamp (``boundaries``) becomes the enforced ``domain``; the descriptive range (the IC-sampling support) is preserved as the sampling ``distribution`` — but only when it differs from the clamp, since an identical clamp already conveys it. With no clamp, the descriptive range is the (unenforced) ``domain`` and there is no separate distribution. ``rng``/``boundaries`` are ``Range`` objects or ``None``.
     """
     if boundaries is None:
         return rng, None
@@ -552,21 +457,11 @@ def _fold_range_boundaries(rng, boundaries):
 def _resolve_dynamics_aliases(d: dict) -> dict:
     """Normalize a Dynamics kwargs/metadata dict through the SINGLE shared route.
 
-    Every construction path — ``Dynamics(**dict)``, ``from_file``, ``from_string`` and
-    the network/experiment coercion helpers — funnels through here, so they apply
-    identical conveniences and cannot drift.
+    Every construction path — ``Dynamics(**dict)``, ``from_file``, ``from_string`` and the network/experiment coercion helpers — funnels through here, so they apply identical conveniences and cannot drift.
 
-    It applies only what a class cannot: the legacy ``boundaries``/``range`` → ``domain``
-    fold (``boundaries`` gaining ``enforce: clamp``; a co-existing descriptive ``domain``
-    preserved as the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}``
-    lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``), so
-    clamping stays opt-in. Declared slot aliases — ``components`` → ``modes`` among them —
-    are folded by the dialect at construction, at every nesting level, from the schema's
-    own ``aliases:``.
+    It applies only what a class cannot: the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries`` gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}`` lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``), so clamping stays opt-in. Declared slot aliases — ``components`` → ``modes`` among them — are folded by the dialect at construction, at every nesting level, from the schema's own ``aliases:``.
 
-    ``_normalize_loaded`` rebuilds mappings, so the normalized content is written
-    back into ``d`` in place (``clear`` + ``update``) to honour the in-place
-    contract the coercion callers rely on; ``d`` is also returned for convenience.
+    ``_normalize_loaded`` rebuilds mappings, so the normalized content is written back into ``d`` in place (``clear`` + ``update``) to honour the in-place contract the coercion callers rely on; ``d`` is also returned for convenience.
     """
     normalized = yaml_loader._normalize_loaded(d)
     if normalized is not d:
@@ -590,9 +485,7 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
     if output is not None and isinstance(output, dict):
         # Check if it looks like derived variable definitions
         first_val = next(iter(output.values()), None)
-        if isinstance(first_val, dict) and (
-            "equation" in first_val or "rhs" in first_val
-        ):
+        if isinstance(first_val, dict) and ("equation" in first_val or "rhs" in first_val):
             raise ValueError(
                 "'output' should be a list of variable names, not variable definitions. "
                 "Did you mean 'derived_variables'?\n\n"
@@ -611,21 +504,11 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
 class DynamicalSystem(tvbo_datamodel.Dynamics):
     """Enhanced base class for `Dynamics` adding Python-side behaviour.
 
-    Wraps the generated LinkML `Dynamics` datamodel with the methods that
-    make a model usable: ontology resolution (`use_ontology=True`), equation
-    reordering, backend code generation, YAML / JSON / Pydantic round-tripping,
-    and matplotlib plotting hooks. The symbolic view comes from
-    [`DynamicsBehaviour`](../behaviour/dynamics.qmd), which every `Dynamics` carries.
+    Wraps the generated LinkML `Dynamics` datamodel with the methods that make a model usable: ontology resolution (`use_ontology=True`), equation reordering, backend code generation, YAML / JSON / Pydantic round-tripping, and matplotlib plotting hooks. The symbolic view comes from [`DynamicsBehaviour`](../behaviour/dynamics.qmd), which every `Dynamics` carries.
 
-    Most users should construct via [`Dynamics`](#tvbo.classes.dynamics.Dynamics)
-    or `Dynamics.from_db(name)` — this class is the implementation base.
+    Most users should construct via [`Dynamics`](#tvbo.classes.dynamics.Dynamics) or `Dynamics.from_db(name)` — this class is the implementation base.
 
-    An `iri=` is expanded by the dialect, before validation, so a model named by one
-    arrives already carrying the curated record — see
-    [`expand_iri`](../datamodel/dialect.qmd#expand_iri). Every path then runs
-    `update_metadata`, which migrates the deprecated `cases:` slot into conditionals and
-    sorts derived variables into the dependency order the straight-line JAX and NumPy
-    emitters require; a path that skipped it rendered `cases:` models with no branches.
+    An `iri=` is expanded by the dialect, before validation, so a model named by one arrives already carrying the curated record — see [`expand_iri`](../datamodel/dialect.qmd#expand_iri). Every path then runs `update_metadata`, which migrates the deprecated `cases:` slot into conditionals and sorts derived variables into the dependency order the straight-line JAX and NumPy emitters require; a path that skipped it rendered `cases:` models with no branches.
     """
 
     def __init__(
@@ -661,12 +544,8 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
     # Factory constructors
     @classmethod
-    def from_datamodel(
-        cls, model_meta: tvbo_datamodel.Dynamics, use_ontology: bool = False
-    ):
-        """Create from a datamodel Dynamics instance by copying its
-        already-normalized state (avoids ``_as_dict`` re-init crash on
-        ``inlined_as_dict`` fields)."""
+    def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics, use_ontology: bool = False):
+        """Create from a datamodel Dynamics instance by copying its already-normalized state (avoids ``_as_dict`` re-init crash on ``inlined_as_dict`` fields)."""
         inst = cls.__new__(cls)
         inst.__dict__.update(model_meta.__dict__)
         if use_ontology:
@@ -691,9 +570,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         """
         # Construct with name and then populate from ontology
         if isinstance(ontoclass, str):
-            ontoclass = query.label_search(
-                ontoclass, root_class="NeuralMassModel", exact_match=["label"]
-            )[0]
+            ontoclass = query.label_search(ontoclass, root_class="NeuralMassModel", exact_match=["label"])[0]
         inst = cls(name=ontoclass.name, **kwargs)
         inst._populate_from_ontology(ontoclass, **kwargs)
         inst.update_metadata()
@@ -701,9 +578,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         return inst
 
     @classmethod
-    def from_file(
-        cls, path: str | os.PathLike, use_ontology: bool = False
-    ) -> "Dynamics":
+    def from_file(cls, path: str | os.PathLike, use_ontology: bool = False) -> "Dynamics":
         """Load a model from a YAML/JSON specification file on disk.
 
         Args:
@@ -714,7 +589,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             The instance parsed from the file.
         """
-        data = yaml_loader.load_as_dict(str(path))
+        data = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str(path)))
         _resolve_dynamics_aliases(data)
         inst = cls(**data)
         if use_ontology:
@@ -735,7 +610,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             The instance parsed from the string.
         """
-        data = yaml_loader.load_as_dict(str) or {}
+        data = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str)) or {}
         _resolve_dynamics_aliases(data)
         inst = cls(**data)
         if use_ontology:
@@ -756,8 +631,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     ) -> "Dynamics":
         """Load a dynamics model from the tvbo platform API.
 
-        Fetches the full LinkML-valid YAML definition from the platform
-        and constructs a Dynamics instance.
+        Fetches the full LinkML-valid YAML definition from the platform and constructs a Dynamics instance.
 
         Parameters
         ----------
@@ -766,7 +640,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         base_url : str
             Platform base URL.
 
-        Returns
+        Returns:
         -------
         Dynamics
             Dynamics instance loaded from the platform.
@@ -789,7 +663,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         **filters
             Filtering parameters (e.g., system_type="continuous").
 
-        Returns
+        Returns:
         -------
         list[dict]
             List of model summaries.
@@ -814,12 +688,12 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             If None, loads the first OperatorTemplate found.
             Use SimulationExperiment.from_pyrates() to load all operators.
 
-        Returns
+        Returns:
         -------
         Dynamics
             New Dynamics instance populated from the PyRates template.
 
-        Example
+        Example:
         -------
         >>> model = Dynamics.from_pyrates("jansen_rit.yaml")
         >>> # Load specific operator from multi-operator file
@@ -848,7 +722,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             ``neural_mass``, ``phase_oscillator``, ``phenomenological``,
             ``spiking``, ``generic``, ``field``.
 
-        Examples
+        Examples:
         --------
         >>> Dynamics.list_db()                           # all models
         >>> Dynamics.list_db(model_type='mean_field')    # mean-field only
@@ -872,7 +746,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         model_type : str, optional
             If given, only show models of that category.
 
-        Examples
+        Examples:
         --------
         >>> Dynamics.db_overview()
         >>> Dynamics.db_overview(model_type='neural_mass')
@@ -906,12 +780,9 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def enrich_from_ontology(self):
         """Explicitly enrich this model from the ontology by name.
 
-        Looks up the model name in the TVB ontology and backfills missing
-        parameter values, descriptions, ranges, state-variable metadata, and
-        derived variables.  Useful when you define a partial model spec and
-        want the ontology to fill in the gaps.
+        Looks up the model name in the TVB ontology and backfills missing parameter values, descriptions, ranges, state-variable metadata, and derived variables.  Useful when you define a partial model spec and want the ontology to fill in the gaps.
 
-        Example
+        Example:
         -------
         >>> d = Dynamics.from_string(partial_spec)
         >>> d.enrich_from_ontology()  # fill in defaults from the knowledge base
@@ -947,12 +818,12 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             Output format: "tvbo" (default) or "pyrates".
             PyRates format generates a complete experiment YAML (model + network).
 
-        Returns
+        Returns:
         -------
         str
             YAML string or filepath if written to file.
 
-        Example
+        Example:
         -------
         >>> model.to_yaml("model.yaml")  # TVBO format
         >>> model.to_yaml("model.yaml", format="pyrates")  # PyRates experiment format
@@ -998,16 +869,9 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def update_metadata(self):
         """Normalize the model's equation metadata in place.
 
-        Migrates the deprecated `cases` and `coupling_terms` slots onto `conditionals` and
-        `coupling_inputs`, then sorts derived parameters, derived variables and outputs into
-        dependency order — which the backends emitting straight-line code (JAX, NumPy)
-        require. Every construction path runs this, including the ones that skip the
-        ontology lookup because the model already arrived fully specified.
+        Migrates the deprecated `cases` and `coupling_terms` slots onto `conditionals` and `coupling_inputs`, then sorts derived parameters, derived variables and outputs into dependency order — which the backends emitting straight-line code (JAX, NumPy) require. Every construction path runs this, including the ones that skip the ontology lookup because the model already arrived fully specified.
 
-        It used to also call `update_equations`, whose result it discarded. Once
-        `get_equations` became a projection of the symbolic layer, returning `Eq` objects
-        already keyed by the bare variable name, that call's loop re-filed each entry under
-        the key it already had: verified a no-op on all 106 curated models.
+        It used to also call `update_equations`, whose result it discarded. Once `get_equations` became a projection of the symbolic layer, returning `Eq` objects already keyed by the bare variable name, that call's loop re-filed each entry under the key it already had: verified a no-op on all 106 curated models.
         """
         _normalize_conditionals(self)
         _migrate_coupling_terms(self)
@@ -1017,9 +881,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         for collection in ("derived_parameters", "derived_variables", "output"):
             sort_equations(self, collection, graph=graph)
 
-    # -----------------------
     # Fluent builder helpers and setters
-    # -----------------------
     @staticmethod
     def _coerce_range(domain):
         """Accept None | Range | (lo, hi[, step]) | {lo, hi[, step, enforce]} → Range."""
@@ -1037,9 +899,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 return tvbo_datamodel.Range(lo=float(lo), hi=float(hi))
             if len(domain) == 3:
                 lo, hi, step = domain
-                return tvbo_datamodel.Range(
-                    lo=float(lo), hi=float(hi), step=float(step)
-                )
+                return tvbo_datamodel.Range(lo=float(lo), hi=float(hi), step=float(step))
         return domain
 
     def _coerce_equation(self, expr, lhs: str | None = None):
@@ -1111,9 +971,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         )
         return self
 
-    def update_parameters_from_equations(
-        self, default_value: float = 1.0, overwrite: bool = False
-    ):
+    def update_parameters_from_equations(self, default_value: float = 1.0, overwrite: bool = False):
         """Scan all equations and add any free symbols as parameters (default value if missing).
 
         - Skips symbols that are known state variables, derived variables, or function arguments
@@ -1143,11 +1001,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         nonparam_known.add("t")
 
         # If any existing parameters clash with known entities, remove them (they were falsely inferred earlier)
-        to_remove = [
-            pname
-            for pname in list(self.parameters.keys())
-            if str(pname) in nonparam_known
-        ]
+        to_remove = [pname for pname in list(self.parameters.keys()) if str(pname) in nonparam_known]
         for pname in to_remove:
             del self.parameters[pname]
 
@@ -1167,9 +1021,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             if s in known:
                 continue
             if overwrite or s not in self.parameters:
-                self.parameters[s] = tvbo_datamodel.Parameter(
-                    name=s, value=float(default_value)
-                )
+                self.parameters[s] = tvbo_datamodel.Parameter(name=s, value=float(default_value))
                 added.append(s)
 
         return added
@@ -1193,10 +1045,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     ):
         """Add a state variable (with its differential equation) to the model.
 
-        Any free symbols in `equation` that are not yet known are
-        auto-registered as parameters. A legacy `boundaries` clamp is folded
-        into `domain` (with the descriptive range preserved as the sampling
-        `distribution`).
+        Any free symbols in `equation` that are not yet known are auto-registered as parameters. A legacy `boundaries` clamp is folded into `domain` (with the descriptive range preserved as the sampling `distribution`).
 
         Args:
             name: State-variable name (also its dict key).
@@ -1215,15 +1064,8 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             `self`, to allow fluent chaining.
         """
-        eq = (
-            self._coerce_equation(equation, lhs=str(name))
-            if equation is not None
-            else None
-        )
-        # ``boundaries`` is the legacy name for a hard clamp; fold it into the
-        # unified ``domain`` with enforce='clamp'. When both are given, the clamp
-        # is the operative domain and the descriptive ``domain`` (the IC-sampling
-        # range) is preserved as the sampling ``distribution`` rather than dropped.
+        eq = self._coerce_equation(equation, lhs=str(name)) if equation is not None else None
+        # ``boundaries`` is the legacy name for a hard clamp; fold it into the unified ``domain`` with enforce='clamp'. When both are given, the clamp is the operative domain and the descriptive ``domain`` (the IC-sampling range) is preserved as the sampling ``distribution`` rather than dropped.
         _domain, _distribution = _fold_range_boundaries(
             self._coerce_range(domain),
             self._coerce_range(boundaries) if boundaries is not None else None,
@@ -1287,11 +1129,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                         equation=tvbo_datamodel.Equation(lhs=str(name), rhs=str(expr)),
                     )
                 )
-                cond_blocks.append(
-                    tvbo_datamodel.ConditionalBlock(
-                        condition=str(cond), expression=str(expr)
-                    )
-                )
+                cond_blocks.append(tvbo_datamodel.ConditionalBlock(condition=str(cond), expression=str(expr)))
         if cond_blocks:
             eq.conditionals = cond_blocks
         self.derived_variables[str(name)] = tvbo_datamodel.DerivedVariable(
@@ -1334,21 +1172,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         # Normalize arguments into a dict[str, Parameter]
         if isinstance(arguments, dict):
             args_dict = {
-                str(k): (
-                    v
-                    if isinstance(v, tvbo_datamodel.Parameter)
-                    else tvbo_datamodel.Parameter(name=str(k))
-                )
+                str(k): (v if isinstance(v, tvbo_datamodel.Parameter) else tvbo_datamodel.Parameter(name=str(k)))
                 for k, v in arguments.items()
             }
         else:
             args = list(arguments) if isinstance(arguments, (list, tuple)) else []
             args_dict = {str(a): tvbo_datamodel.Parameter(name=str(a)) for a in args}
-        eq = (
-            self._coerce_equation(expression, lhs=str(name))
-            if expression is not None
-            else None
-        )
+        eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else None
         self.functions[str(name)] = tvbo_datamodel.Function(
             name=str(name),
             equation=eq,
@@ -1369,8 +1199,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     ):
         """Add a coupling input (a network-supplied term) to the model.
 
-        Any existing parameter with the same name is removed so the name
-        resolves to the coupling input.
+        Any existing parameter with the same name is removed so the name resolves to the coupling input.
 
         Args:
             name: Coupling-input name (also its dict key).
@@ -1396,17 +1225,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
         return self
 
-    def add_coupling_term(self, name, description=None, unit=None):
-        """Deprecated. Use add_coupling_input() instead."""
-        import warnings
-
-        warnings.warn(
-            "add_coupling_term() is deprecated. Use add_coupling_input() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.add_coupling_input(name=name, description=description)
-
     def add_output(
         self,
         name: str,
@@ -1418,11 +1236,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         """Add an output variable. Creates a derived_variable and adds its name to output list."""
         name_str = str(name)
         # Create derived variable with the equation
-        eq = (
-            self._coerce_equation(expression, lhs=name_str)
-            if expression is not None
-            else None
-        )
+        eq = self._coerce_equation(expression, lhs=name_str) if expression is not None else None
         self.derived_variables[name_str] = tvbo_datamodel.DerivedVariable(
             name=name_str, equation=eq, unit=unit, description=description
         )
@@ -1454,11 +1268,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             `self`, to allow fluent chaining.
         """
-        eq = (
-            self._coerce_equation(expression, lhs=str(name))
-            if expression is not None
-            else None
-        )
+        eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else None
         self.derived_parameters[str(name)] = tvbo_datamodel.DerivedParameter(
             name=str(name),
             equation=eq,
@@ -1517,16 +1327,10 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def symbolic_rhs(self, obj, evaluate: bool = True):
         """The parsed right-hand side of one of this model's elements.
 
-        Resolved through the symbolic layer, so rendering an element reuses the expression
-        already parsed for it rather than parsing its metadata again — the reason a second
-        `render_code` on the same model costs nothing. Falls back to the element's own
-        `Equation` for anything the model does not declare (a stimulus, a caller's ad-hoc
-        element); `parse_eq` accepts either, so the caller does not need to know which.
+        Resolved through the symbolic layer, so rendering an element reuses the expression already parsed for it rather than parsing its metadata again — the reason a second `render_code` on the same model costs nothing. Falls back to the element's own `Equation` for anything the model does not declare (a stimulus, a caller's ad-hoc element); `parse_eq` accepts either, so the caller does not need to know which.
 
         *evaluate* must match what the caller would have parsed with. A backend that
-        preserves authored term order needs the unevaluated form: SymPy canonicalises
-        `a + V*b + c*V**2` out of the order its author wrote it in, and the emitted source
-        is compared against a frozen reference.
+        preserves authored term order needs the unevaluated form: SymPy canonicalises `a + V*b + c*V**2` out of the order its author wrote it in, and the emitted source is compared against a frozen reference.
         """
         name = str(obj.name) if getattr(obj, "name", None) else ""
         if name:
@@ -1535,12 +1339,23 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                     return group[name].rhs
         return obj.equation
 
+    def _printer_arguments(self, obj, inline_functions: bool, kwargs: dict) -> dict:
+        """What both render paths hand the printer, stated once.
+
+        Inlining and naming are exclusive: a body substituted into the expression leaves no function head for the printer to name, so the user-function table empties exactly when a body table is supplied. `evaluate` follows the caller's `preserve_order`, so the expression is parsed the way the caller is about to print it.
+        """
+        inline_funcs = function_bodies(self) if inline_functions else None
+        return {
+            "equation": self.symbolic_rhs(obj, evaluate=not kwargs.get("preserve_order", False)),
+            "local_dict": self.get_symbolic_elements(),
+            "user_functions": {} if inline_funcs else {str(name): str(name) for name in self.functions},
+            "inline_funcs": inline_funcs,
+        }
+
     def render_equation(self, obj, format="latex", inline_functions=False, **kwargs):
         """Render a model element's equation to a string.
 
-        Handles conditional derived variables (converting `conditionals` to a
-        SymPy `Piecewise`) and can optionally inline the model's function
-        definitions.
+        Handles conditional derived variables (converting `conditionals` to a SymPy `Piecewise`) and can optionally inline the model's function definitions.
 
         Args:
             obj: A model element exposing an `equation` (state/derived
@@ -1555,58 +1370,21 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         """
         from tvbo.codegen.code import render_equation
 
-        scope = self.get_symbolic_elements()
-        # Tell the printer which names are functions so it emits f(x) cleanly
-        uf = {str(name): str(name) for name in self.functions}
-
-        inline_funcs = function_bodies(self) if inline_functions else None
-        if inline_funcs:
-            # Inlined calls leave no function heads for the printer to name
-            uf = {}
-
-        return render_equation(
-            self.symbolic_rhs(obj, evaluate=not kwargs.get("preserve_order", False)),
-            local_dict=scope,
-            format=format,
-            user_functions=uf,
-            inline_funcs=inline_funcs,
-            **kwargs,
-        )
+        return render_equation(format=format, **self._printer_arguments(obj, inline_functions, kwargs), **kwargs)
 
     def render_equation_cse(self, obj, format="numpy", inline_functions=False, **kwargs):
         """Common-subexpression-eliminated variant of :meth:`render_equation`.
 
-        Returns ``(setup, final)`` — a list of ``(name, expr)`` assignments plus the
-        return expression — so interpreted backends (TVB / numpy) evaluate each
-        shared subexpression (notably repeated model-function calls) once instead of
-        per occurrence. Builds the same symbolic scope / user-function set as
-        :meth:`render_equation`; see :func:`tvbo.codegen.code.render_equation_cse`.
+        Returns ``(setup, final)`` — a list of ``(name, expr)`` assignments plus the return expression — so interpreted backends (TVB / numpy) evaluate each shared subexpression (notably repeated model-function calls) once instead of per occurrence. Builds the same symbolic scope / user-function set as :meth:`render_equation`; see :func:`tvbo.codegen.code.render_equation_cse`.
         """
         from tvbo.codegen.code import render_equation_cse
 
-        scope = self.get_symbolic_elements()
-        uf = {str(name): str(name) for name in self.functions}
-
-        inline_funcs = function_bodies(self) if inline_functions else None
-        if inline_funcs:
-            uf = {}
-
-        return render_equation_cse(
-            self.symbolic_rhs(obj, evaluate=not kwargs.get("preserve_order", False)),
-            local_dict=scope,
-            format=format,
-            user_functions=uf,
-            inline_funcs=inline_funcs,
-            **kwargs,
-        )
+        return render_equation_cse(format=format, **self._printer_arguments(obj, inline_functions, kwargs), **kwargs)
 
     def fill_in_equations(self, **kwargs):
         """Substitute parameter values (and any overrides) into every equation.
 
-        Parameter symbols are replaced with their numeric values, then any
-        `**kwargs` overrides are applied, and finally all coupling inputs are
-        forced to `0` (for fixed-point / equilibrium analysis) — so a `kwargs`
-        entry named after a coupling input is overridden by that `0`.
+        Parameter symbols are replaced with their numeric values, then any `**kwargs` overrides are applied, and finally all coupling inputs are forced to `0` (for fixed-point / equilibrium analysis) — so a `kwargs` entry named after a coupling input is overridden by that `0`.
 
         Args:
             **kwargs: Additional symbol-name to value substitutions.
@@ -1625,10 +1403,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def calculate_derived_parameters(self):
         """Evaluate and cache each derived parameter's numeric value.
 
-        Scalar parameters are substituted into every derived-parameter
-        equation and the result stored on the model. Array-valued or otherwise
-        unresolved derived parameters keep a `None` value and are recomputed at
-        runtime by the generated code.
+        Scalar parameters are substituted into every derived-parameter equation and the result stored on the model. Array-valued or otherwise unresolved derived parameters keep a `None` value and are recomputed at runtime by the generated code.
 
         Returns:
             A mapping of derived-parameter name to its computed value (or
@@ -1638,34 +1413,23 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             return None
         from tvbo.utils import is_array_valued
 
-        # Loop-invariant: build the symbol scope and the scalar-parameter
-        # substitution once. Array-valued parameters (mode-coupling matrices,
-        # quadrature vectors) are excluded — they have no load-time scalar and
-        # would make ``subs`` raise — so the derived parameters that depend on
-        # them stay symbolic and are recomputed at runtime.
+        # Loop-invariant: build the symbol scope and the scalar-parameter substitution once. Array-valued parameters (mode-coupling matrices, quadrature vectors) are excluded — they have no load-time scalar and would make ``subs`` raise — so the derived parameters that depend on them stay symbolic and are recomputed at runtime.
         local_dict = self.get_symbolic_elements()
-        scalar_subs = {
-            Symbol(p.name): p.value
-            for p in self.parameters.values()
-            if not is_array_valued(p.value)
-        }
+        scalar_subs = {Symbol(p.name): p.value for p in self.parameters.values() if not is_array_valued(p.value)}
         for k, dp in self.derived_parameters.items():
             try:
                 eq = parse_eq(dp.equation, local_dict=local_dict, evaluate=False).subs(scalar_subs)
                 # Convert SymPy Float to Python float for YAML serialization.
                 self.derived_parameters[k].value = float(eq.evalf())
             except (TypeError, ValueError):
-                # Array-valued / unresolved derived parameter: no load-time scalar;
-                # recomputed at runtime by the generated update_derived_parameters.
+                # Array-valued or unresolved: recomputed at runtime by update_derived_parameters.
                 self.derived_parameters[k].value = None
         return {k: self.derived_parameters[k].value for k in self.derived_parameters}
 
     def get_dependency_tree(self, ontomapping=False, include_state_equations=False):
         """Build the equation dependency graph for this model.
 
-        Nodes are the model's symbols; each edge points from a dependency to
-        the quantity whose equation uses it (dependencies → dependents). State
-        equations are excluded by default to avoid cycles in discrete systems.
+        Nodes are the model's symbols; each edge points from a dependency to the quantity whose equation uses it (dependencies → dependents). The graph exists mainly to sort derived quantities, and state equations are excluded by default because a discrete system makes them cyclic: an algebraic derived variable depends on the states, and the states depend on that derived variable at the same step.
 
         Args:
             ontomapping: If `True`, also build an ontology-class version of
@@ -1679,9 +1443,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         """
         import sympy
 
-        # Build dependency graph primarily for sorting derived quantities.
-        # Exclude state-equations by default to avoid cycles in discrete systems
-        # (e.g., algebraic dv depending on states and states depending on dv at same step).
         eqs = self.get_equations(format="dict")
         eq_list = []
         for key in ["derived-parameters", "functions", "derived-variables"]:
@@ -1699,11 +1460,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         # Coupling inputs don't have model-specific suffixes in ontology
         coupling_term_names = set(self.coupling_inputs.keys())
         for n in G.nodes:
-            suffix = (
-                ontology.get_model_suffix(self.ontology or self.name)
-                if str(n) not in coupling_term_names
-                else ""
-            )
+            suffix = ontology.get_model_suffix(self.ontology or self.name) if str(n) not in coupling_term_names else ""
             if isinstance(n, sympy.core.function.Derivative):
                 searchstr = f"{n.args[0]}dot{suffix}"
             else:
@@ -1735,7 +1492,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         edgecolor="#426665",
         color_nodes_by=None,
         pos="graphviz",
-        edgekwargs={"connectionstyle": "arc3,rad=0", "edge_color": "grey"},
+        edgekwargs=None,
         **kwargs,
     ):
         """Plot the model's equation dependency graph.
@@ -1754,11 +1511,12 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             The created figure when `ax` was not supplied, otherwise `None`.
         """
-
         import sympy
 
         from tvbo.plot import ontology as ontology_plot
 
+        if edgekwargs is None:
+            edgekwargs = {"connectionstyle": "arc3,rad=0", "edge_color": "grey"}
         if not ax:
             fig, ax = plt.subplots(figsize=(12, 2))
             return_fig = True
@@ -1770,20 +1528,12 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             G = G[0]
 
         if color_nodes_by is not None:
-            G, G_onto, symbol_onto_mapping, onto_symbol_mapping = (
-                self.get_dependency_tree(ontomapping=True, include_state_equations=True)
+            G, G_onto, symbol_onto_mapping, onto_symbol_mapping = self.get_dependency_tree(
+                ontomapping=True, include_state_equations=True
             )
             edgecolor = None
-            cat_dict, categories = ontology_plot.get_node_color_mapping(
-                G_onto, color_nodes_by, return_categories=True
-            )
-            kwargs.update(
-                {
-                    "node_colors": [
-                        cat_dict[categories[symbol_onto_mapping[n]]] for n in G.nodes
-                    ]
-                }
-            )
+            cat_dict, categories = ontology_plot.get_node_color_mapping(G_onto, color_nodes_by, return_categories=True)
+            kwargs.update({"node_colors": [cat_dict[categories[symbol_onto_mapping[n]]] for n in G.nodes]})
 
         G = nx.relabel_nodes(
             G,
@@ -1801,10 +1551,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 default=None,
             )
             if min_y is not None:
-                pos = {
-                    key: (x, min_y) if isinstance(key, sympy.Derivative) else (x, y)
-                    for key, (x, y) in pos.items()
-                }
+                pos = {key: (x, min_y) if isinstance(key, sympy.Derivative) else (x, y) for key, (x, y) in pos.items()}
         else:
             pos = nx.kamada_kawai_layout(G)
 
@@ -1839,16 +1586,9 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def render_code(self, format="tvb", alt_label=None, **kwargs):
         """Generate backend source code for this model.
 
-        Dispatches to the template (or adapter) for the requested backend and returns the
-        formatted source. Reads the model and does not modify it, so the source depends on
-        the model alone and not on how often it has been rendered.
+        Dispatches to the template (or adapter) for the requested backend and returns the formatted source. Reads the model and does not modify it, so the source depends on the model alone and not on how often it has been rendered.
 
-        Normalisation belongs to construction: every path that builds a `Dynamics` runs
-        [`update_metadata`](#tvbo.classes.dynamics.DynamicalSystem.update_metadata)
-        already. Repeating it here made rendering a command as well as a query, and because
-        the normalisation was not idempotent the emitted code alternated between two
-        spellings depending on the number of previous renders. A model mutated by hand
-        after construction should be normalised by whoever mutated it.
+        Normalisation belongs to construction: every path that builds a `Dynamics` runs [`update_metadata`](#tvbo.classes.dynamics.DynamicalSystem.update_metadata) already. Repeating it here made rendering a command as well as a query, and because the normalisation was not idempotent the emitted code alternated between two spellings depending on the number of previous renders. A model mutated by hand after construction should be normalised by whoever mutated it.
 
         Args:
             format: Target backend, e.g. `"tvb"`, `"jax"`, `"numpy"`,
@@ -1883,17 +1623,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             template = templates.lookup.get_template("tvbo-jax-dfuns.py.mako")
 
         elif format == "julia":
-            template = templates.lookup.get_template(
-                "tvbo-julia-DifferentialEquations.jl.mako"
-            )
+            template = templates.lookup.get_template("tvbo-julia-DifferentialEquations.jl.mako")
         elif format == "bifurcation-julia":
             from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
 
             continuation = kwargs.pop("continuation", None)
             ctx = BifurcationKitAdapter._prepare_context(self, continuation, **kwargs)
-            template = templates.lookup.get_template(
-                "tvbo-julia-BifurcationKit.jl.mako"
-            )
+            template = templates.lookup.get_template("tvbo-julia-BifurcationKit.jl.mako")
             rendered_code = template.render(**ctx)
             return templater.format_code(rendered_code, format=format)
         elif format == "bifurcation-numcont":
@@ -1917,9 +1653,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         else:
             raise ValueError(f"Format {format} not supported.")
 
-        rendered_code = template.render(
-            model=self, format=format, jax="jax" in format, **kwargs
-        )
+        rendered_code = template.render(model=self, format=format, jax="jax" in format, **kwargs)
         return templater.format_code(rendered_code, format=format)
 
     def render(self, format="yaml", **kwargs) -> str:
@@ -1942,7 +1676,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         **kwargs
             Forwarded to the underlying renderer.
 
-        Returns
+        Returns:
         -------
         str
         """
@@ -1975,19 +1709,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         """
         from IPython.display import Markdown
 
-        code = templater.format_code(
-            self.render_code(format=format, **kwargs), format=format
-        )
-        return Markdown(
-            f"```{'python' if format in ['tvb', 'python', 'jax', 'autodiff'] else format}\n{code}\n```"
-        )
+        code = templater.format_code(self.render_code(format=format, **kwargs), format=format)
+        return Markdown(f"```{'python' if format in ['tvb', 'python', 'jax', 'autodiff'] else format}\n{code}\n```")
 
     def execute(self, format="tvb", **kwargs):
         """Generate and execute the model code, returning a runnable object.
 
-        Dispatches on `format`: builds a configured TVB model instance, a
-        tvboptim dynamics instance, a compiled C module (`sympy2c`), a
-        bifurcation/continuation run, or a plain dfun callable.
+        Dispatches on `format`: builds a configured TVB model instance, a tvboptim dynamics instance, a compiled C module (`sympy2c`), a bifurcation/continuation run, or a plain dfun callable.
 
         Args:
             format: Backend to execute, e.g. `"tvb"`, `"tvboptim"`, `"c"`,
@@ -1998,7 +1726,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             The executed object, whose type depends on `format`.
         """
-
         if format == "tvb":
             rendered_code = clean_code(self.render_code(format=format, **kwargs))
             namespace = {}
@@ -2019,36 +1746,23 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 import importlib
 
                 _sympy2c = importlib.import_module("sympy2c")
-                Module = getattr(_sympy2c, "Module")
-                OdeFast = getattr(_sympy2c, "OdeFast")
+                Module = _sympy2c.Module
+                OdeFast = _sympy2c.OdeFast
             except Exception as e:
-                raise RuntimeError(
-                    "sympy2c is not installed. Install it to use format='c' or 'sympy2c'."
-                ) from e
+                raise RuntimeError("sympy2c is not installed. Install it to use format='c' or 'sympy2c'.") from e
 
             params = self.keyed_parameters
-            params.update(
-                {Symbol(str(ci)): 0.0 for ci in self.coupling_inputs}
-            )
+            params.update({Symbol(str(ci)): 0.0 for ci in self.coupling_inputs})
             params.update({Symbol("local_coupling"): 0.0})
 
             scope = self.get_symbolic_elements()
-            derived_variables = {
-                Symbol(k): parse_eq(v.equation, local_dict=scope)
-                for k, v in self.derived_variables.items()
-            }
+            derived_variables = {Symbol(k): parse_eq(v.equation, local_dict=scope) for k, v in self.derived_variables.items()}
 
             lhs = list()
             rhs = list()
             for k, v in self.get_equations(format="state-equations").items():
                 lhs.append(Symbol(k))
-                expr = (
-                    v.rhs.subs(params)
-                    .subs(derived_variables)
-                    .subs(derived_variables)
-                    .subs(derived_variables)
-                    .subs(params)
-                )
+                expr = v.rhs.subs(params).subs(derived_variables).subs(derived_variables).subs(derived_variables).subs(params)
                 rhs.append(expr)
 
             module_decl = Module()
@@ -2057,16 +1771,12 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             return imported_module
 
         elif format in ["bifurcation-numcont", "bifurcation-auto7p"]:
-            # Standalone in-tree AUTO-07p backend (no external `numcont` package).
-            # Builds a one-off SimulationExperiment wrapping this Dynamics and
-            # delegates to NumContAdapter.
+            # In-tree AUTO-07p: a one-off SimulationExperiment around this Dynamics, run through NumContAdapter.
             from tvbo.adapters.numcont import NumContAdapter
             from tvbo.classes.continuation import Continuation
             from tvbo.classes.experiment import SimulationExperiment
 
-            cont = kwargs.pop("continuation", None) or Continuation(
-                name=self.name + "_eq"
-            )
+            cont = kwargs.pop("continuation", None) or Continuation(name=self.name + "_eq")
             exp = SimulationExperiment(
                 name=self.name,
                 label=getattr(self, "label", self.name),
@@ -2082,166 +1792,10 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             model_dfun = namespace[self.name]
             return model_dfun
 
-    def to_lems(self, initial_conditions=1, component_id=None):
-        """Build a LEMS model for this local neural mass model.
-
-        .. deprecated::
-            Use ``NeuroMLAdapter(model).render_code()`` from
-            ``tvbo.adapters.neuroml`` instead.  This method returns a
-            ``lems.Model`` object (PyLEMS API); the adapter produces a
-            validated XML string.
-
-        Parameters:
-        - initial_conditions: number or dict; if number, used for all SVs; if dict, keys are sv name or sv_name_0
-        - component_id: optional id for the component; defaults to model label
-
-        Returns:
-        - lems.Model instance containing a ComponentType and a Component for this model
-        """
-        import warnings
-
-        warnings.warn(
-            "Dynamics.to_lems() is deprecated. Use NeuroMLAdapter(model).render_code() from tvbo.adapters.neuroml instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        import lems.api as lems  # lazy import
-
-        from tvbo.codegen.lems import setup_lems_model  # lazy to avoid cycles
-        from tvbo.ontology import owl as _ontology  # avoid shadowing
-
-        model = setup_lems_model()
-
-        from tvbo.utils.units import unit_to_lems_dimension
-
-        local_ct = lems.ComponentType(
-            name=self.name,
-            description=(
-                self.ontology.description.first()
-                if self.ontology and self.ontology.description
-                else None
-            ),
-        )
-        model.add(local_ct)
-
-        # Parameters from metadata
-        for k, p in self.parameters.items():
-            local_ct.add(
-                lems.Parameter(
-                    name=k,
-                    dimension=unit_to_lems_dimension(getattr(p, "unit", None)),
-                )
-            )
-
-        # No extra network input channel; coupling terms (e.g., c_glob) are already in metadata
-
-        # Coupling parameters as exposed Parameters
-        cterms = _ontology.get_model_coupling_terms(self.ontology)
-        p_coup_defaults = {}
-        for k, cterm in cterms.items():
-            p_coup_defaults[k] = 0.0
-            local_ct.add(lems.Parameter(name=k, dimension="none"))
-        if "local_coupling" not in cterms.keys():
-            local_ct.add(lems.Parameter(name="local_coupling", dimension="none"))
-            p_coup_defaults["local_coupling"] = 0.0
-
-        # Derived variables / functions
-        if self.derived_variables:
-            for dp in self.derived_variables.values():
-                if getattr(dp, "conditional", False):
-                    cv = lems.ConditionalDerivedVariable(
-                        name=dp.name,
-                        dimension=unit_to_lems_dimension(getattr(dp, "unit", None)),
-                        exposure=dp.name,
-                    )
-                    for case in dp.cases:
-                        condition_str = (
-                            None if case.condition is True else str(case.condition)
-                        )
-                        cv.add_case(
-                            lems.Case(
-                                condition=condition_str,
-                                value=str(case.equation.rhs).replace("**", "^"),
-                            )
-                        )
-                    local_ct.dynamics.add(cv)
-                else:
-                    local_ct.dynamics.add(
-                        lems.DerivedVariable(
-                            name=dp.name,
-                            dimension=unit_to_lems_dimension(getattr(dp, "unit", None)),
-                            value=str(dp.equation.rhs).replace("**", "^"),
-                        )
-                    )
-
-        # Dynamics and state variables (time in milliseconds)
-        local_ct.add(lems.Constant(name="ms", value="1ms", dimension="time"))
-        onstart = lems.OnStart()
-
-        if isinstance(initial_conditions, dict):
-            init_conds = dict(initial_conditions)
-            assign_uniform = False
-        else:
-            init_conds = {}
-            assign_uniform = True
-
-        for sv in _ontology.get_model_statevariables(self.ontology).values():
-            sv_name = _ontology.replace_suffix(sv)
-            dimension = unit_to_lems_dimension(
-                sv.has_unit.first().label.first() if sv.has_unit.first() else None
-            )
-            sv_start = sv_name + "_0"
-
-            if assign_uniform:
-                init_conds[sv_start] = initial_conditions
-            else:
-                init_conds[sv_start] = init_conds.get(
-                    sv_start, init_conds.get(sv_name, 0.0)
-                )
-
-            deriv = sv.has_derivative.first()
-
-            local_ct.add(lems.Parameter(name=sv_start, dimension=dimension))
-            local_ct.add(lems.Exposure(name=sv_name, dimension=dimension))
-
-            local_ct.dynamics.add(
-                lems.StateVariable(name=sv_name, dimension=dimension, exposure=sv_name)
-            )
-            # Base derivative from ontology
-            base_expr = str(_equation_mod.sympify_value(deriv)).replace("**", "^")
-            # Do not inject extra inputs here; global coupling is represented via coupling_inputs (e.g., c_glob)
-
-            local_ct.dynamics.add(
-                lems.TimeDerivative(
-                    variable=sv_name,
-                    value=f"({base_expr}) / ms",
-                ),
-            )
-
-            onstart.add(lems.StateAssignment(variable=sv_name, value=sv_start))
-
-        local_ct.dynamics.add(onstart)
-
-        # Component instance
-        parameter_values = {k: p.value for k, p in self.parameters.items()}
-        parameter_values.update(init_conds)
-        parameter_values.update(p_coup_defaults)
-        model.add(
-            lems.Component(
-                id_=(component_id or (self.name or "model")),
-                type_=local_ct.name,
-                **parameter_values,
-            )
-        )
-
-        return model
-
     def get_run_filename(self, format, **kwargs):
         """Build a deterministic cache filename for a run in the temp directory.
 
-        Non-identifying keyword arguments (e.g. `filename`, `force`,
-        `verbose`) are dropped and the rest are sorted so the same run maps to
-        the same path.
+        Non-identifying keyword arguments (e.g. `filename`, `force`, `verbose`) are dropped and the rest are sorted so the same run maps to the same path.
 
         Args:
             format: Backend format string included in the filename.
@@ -2264,96 +1818,53 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         kwargs = {k: kwargs[k] for k in sorted(kwargs.keys())}
         filename = join(
             tempdir,
-            self.name
-            + f"_format-{format}_"
-            + "_".join(f"{k}-{v}" for k, v in kwargs.items()),
+            self.name + f"_format-{format}_" + "_".join(f"{k}-{v}" for k, v in kwargs.items()),
         )
 
         return filename
 
-    def get_initial_values(self, default=0.1, random=False, N=1, **kwargs):
+    def get_initial_values(self, default=0.1, N=1, **kwargs):
         """Build the initial state vector for a simulation.
 
-        If any state variable defines a `distribution` (or `random=True`),
-        initial values are sampled from it (Gaussian or uniform over the
-        finite domain bounds); otherwise each variable's `initial_value` (or
-        `default`) is used.
+        A state variable that declares a `distribution` is sampled from it — Gaussian, or uniform over the finite domain bounds; every other variable uses its `initial_value`, or *default*. Declaring a distribution is the only way to ask for sampling: the old `random=True` flag sampled every variable's raw domain regardless of what the model said, and is gone.
 
         Args:
             default: Fallback value for variables without an initial value.
-            random: Deprecated flag to sample from each variable's domain.
             N: Number of samples per state variable.
             **kwargs: Ignored extra arguments.
 
         Returns:
-            A NumPy array of initial values. When sampling from a distribution
-            (or `random=True`) the shape is `(n_state_variables, N)`; otherwise
-            it is 1-D with one entry per state variable.
+            A NumPy array of initial values, shaped `(n_state_variables, N)` when any variable declares a distribution, and 1-D with one entry per state variable otherwise.
         """
-        if random:
-            import warnings
-
-            warnings.warn(
-                "random=True is deprecated. Set distribution on state variables instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        # Auto-detect: if any SV has a distribution, sample from it
-        has_distributions = any(
-            getattr(sv, "distribution", None) for sv in self.state_variables.values()
-        )
-        if random or has_distributions:
+        has_distributions = any(getattr(sv, "distribution", None) for sv in self.state_variables.values())
+        if has_distributions:
             init = []
-            for k, sv in self.state_variables.items():
+            for sv in self.state_variables.values():
                 dist = getattr(sv, "distribution", None)
                 if dist:
                     # Use distribution.domain, fall back to sv.domain
-                    domain = getattr(dist, "domain", None) or getattr(
-                        sv, "domain", None
-                    )
-                    # Guard against non-finite / missing bounds: a distribution
-                    # without its own domain falls back to sv.domain, which may be a
-                    # half-open clamp (e.g. [0, inf)); uniform(0, inf) would overflow.
+                    domain = getattr(dist, "domain", None) or getattr(sv, "domain", None)
+                    # Guard against non-finite / missing bounds: a distribution without its own domain falls back to sv.domain, which may be a half-open clamp (e.g. [0, inf)); uniform(0, inf) would overflow.
                     _dlo = getattr(domain, "lo", None) if domain else None
                     _dhi = getattr(domain, "hi", None) if domain else None
                     lo = float(_dlo) if (isinstance(_dlo, (int, float)) and np.isfinite(_dlo)) else -10.0
                     hi = float(_dhi) if (isinstance(_dhi, (int, float)) and np.isfinite(_dhi)) else 10.0
                     dist_name = str(getattr(dist, "name", "Uniform")).lower()
                     if dist_name in ("gaussian", "normal"):
-                        sv_init = np.random.normal(
-                            loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N
-                        )
+                        sv_init = np.random.normal(loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N)
                     else:
                         sv_init = np.random.uniform(lo, hi, size=N)
-                elif random:
-                    # Legacy fallback: sample from the domain range. The domain
-                    # may carry a one-sided clamp (e.g. [0, inf) for a firing
-                    # rate), so guard against non-finite / inverted bounds —
-                    # uniform(0, inf) would yield inf/NaN initial states.
-                    dlo = getattr(sv.domain, "lo", None) if sv.domain else None
-                    dhi = getattr(sv.domain, "hi", None) if sv.domain else None
-                    lo = dlo if (isinstance(dlo, (int, float)) and np.isfinite(dlo)) else -10.0
-                    hi = dhi if (isinstance(dhi, (int, float)) and np.isfinite(dhi)) else 10.0
-                    if hi <= lo:
-                        hi = lo + 1.0
-                    sv_init = np.random.uniform(lo, hi, size=N)
                 else:
-                    # No distribution, no random flag → use initial_value
                     sv_init = np.repeat(initial_value(sv, default), N)
                 init.append(sv_init)
         else:
-            init = [
-                initial_value(sv, default) for sv in self.state_variables.values()
-            ]
+            init = [initial_value(sv, default) for sv in self.state_variables.values()]
         return np.array(init)
 
-    def run(
-        self, format="python", verbose=0, save=True, run_kwargs={}, **kwargs
-    ) -> TimeSeries | BifurcationResult:
+    def run(self, format="python", verbose=0, save=True, run_kwargs=None, **kwargs) -> TimeSeries | BifurcationResult:
         """Generate, execute, and integrate the model, returning its output.
 
-        Supports Julia (ODE and bifurcation), Python (SciPy `odeint`, or an
-        iterated map for discrete systems), and compiled C backends.
+        Supports Julia (ODE and bifurcation), Python (SciPy `odeint`, or an iterated map for discrete systems), and compiled C backends.
 
         Args:
             format: Backend to run, e.g. `"python"`, `"julia"`,
@@ -2372,6 +1883,8 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Raises:
             ValueError: If `format` is not supported.
         """
+        if run_kwargs is None:
+            run_kwargs = {}
         if save:
             kwargs.update({"filename": self.get_run_filename(format=format, **kwargs)})
 
@@ -2408,22 +1921,19 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 bif_res = BifurcationResult(br=br_obj, model=self, **kwargs)
                 # Auto-detect PO branches from continuation object or explicit kwarg
                 cont = kwargs.get("continuation", None)
-                _has_branches = (
-                    "periodic_orbits" in kwargs and kwargs["periodic_orbits"]
-                ) or (cont and getattr(cont, "branches", None))
+                _has_branches = ("periodic_orbits" in kwargs and kwargs["periodic_orbits"]) or (
+                    cont and getattr(cont, "branches", None)
+                )
                 if _has_branches:
                     from tvbo.adapters.julia import eval_with_auto_install
 
                     try:
                         po = eval_with_auto_install("po_results")
-                        bif_res.periodic_orbits = [
-                            BifurcationResult(br=p, model=self, **kwargs)
-                            for p in po.branches
-                        ]
+                        bif_res.periodic_orbits = [BifurcationResult(br=p, model=self, **kwargs) for p in po.branches]
                     except Exception as e:
                         import warnings
 
-                        warnings.warn(f"Periodic orbit extraction failed: {e}")
+                        warnings.warn(f"Periodic orbit extraction failed: {e}", stacklevel=2)
                         bif_res.periodic_orbits = []
                 return bif_res
 
@@ -2434,9 +1944,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             if getattr(self, "system_type", "continuous") == "discrete":
                 # Initial conditions
                 if "u_0" not in kwargs:
-                    u_0 = self.get_initial_values(
-                        random=kwargs.get("random_initial_conditions", False)
-                    )
+                    u_0 = self.get_initial_values()
                 else:
                     u_0 = kwargs.pop("u_0")
 
@@ -2469,7 +1977,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 for i in range(1, steps):
                     # Substitute previous state and parameter numeric values
                     sub = param_subs.copy()
-                    sub.update({sym: val for sym, val in zip(ssyms, data[i - 1, :])})
+                    sub.update({sym: val for sym, val in zip(ssyms, data[i - 1, :], strict=True)})
                     next_vals = [float(expr.subs(sub)) for expr in rhs_exprs]
 
                     data[i, :] = next_vals
@@ -2490,9 +1998,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
             if "u_0" not in kwargs:
                 # Initial conditions
-                u_0 = self.get_initial_values(
-                    random=kwargs.get("random_initial_conditions", False)
-                )
+                u_0 = self.get_initial_values()
             else:
                 u_0 = kwargs.pop("u_0")
 
@@ -2506,9 +2012,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             else:
                 t = kwargs.pop("t")
             # Run the simulation with the updated parameters
-            solution_slider = odeint(
-                lambda u, t: model_dfun(u, t, **run_kwargs), u_0, t
-            )
+            solution_slider = odeint(lambda u, t: model_dfun(u, t, **run_kwargs), u_0, t)
 
             return TimeSeries(
                 data=solution_slider.reshape(*solution_slider.shape, 1, 1),
@@ -2526,9 +2030,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             T = kwargs.pop("t", np.arange(0, duration, dt, dtype=np.float64))
 
             compiled_module = self.execute(format=format, **kwargs)
-            result, diagnostics = compiled_module.solve_fast_robertson(
-                u_0, T, rtol=rtol, atol=atol
-            )
+            result, diagnostics = compiled_module.solve_fast_robertson(u_0, T, rtol=rtol, atol=atol)
             return TimeSeries(
                 data=result.reshape(*result.shape, 1, 1),
                 time=T,
@@ -2542,9 +2044,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         """Attach a stimulus to the model.
 
         Warns if no state variable is marked as a stimulation target.
-        Depending on `as_derived_variable`, the stimulus is either stored on
-        `self.stimulus` or lowered into a `stim_t` derived variable plus
-        suffixed stimulus parameters.
+        Depending on `as_derived_variable`, the stimulus is either stored on `self.stimulus` or lowered into a `stim_t` derived variable plus suffixed stimulus parameters.
 
         Args:
             stimulus: A
@@ -2553,17 +2053,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 derived variable; if `False`, store the `Stimulus` object
                 directly.
         """
-
-        if not any(
-            [sv.stimulation_variable for sv in self.state_variables.values()]
-        ) and not any(
+        if not any([sv.stimulation_variable for sv in self.state_variables.values()]) and not any(
             ["stim_t" in sv.equation.rhs for sv in self.state_variables.values()]
         ):
             import warnings
 
             warnings.warn(
-                "No state variable with attribute `stimulation_variable=True` set. "
-                "Stimulation will have no effect.",
+                "No state variable with attribute `stimulation_variable=True` set. Stimulation will have no effect.",
                 stacklevel=2,
             )
         if isinstance(stimulus, Stimulus) and not as_derived_variable:
@@ -2575,18 +2071,9 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             params = {param_map[k]: v for k, v in params.items()}
             eq = eq.subs(param_map)
             self.derived_variables.update(
-                {
-                    "stim_t": tvbo_datamodel.DerivedVariable(
-                        name="stim_t", equation=tvbo_datamodel.Equation(rhs=eq)
-                    )
-                }
+                {"stim_t": tvbo_datamodel.DerivedVariable(name="stim_t", equation=tvbo_datamodel.Equation(rhs=eq))}
             )
-            self.parameters.update(
-                {
-                    str(k): tvbo_datamodel.Parameter(name=str(k), value=v)
-                    for k, v in params.items()
-                }
-            )
+            self.parameters.update({str(k): tvbo_datamodel.Parameter(name=str(k), value=v) for k, v in params.items()})
 
     def find_periodic_orbits(self, f):
         """Find sibling periodic-orbit output files for a run.
@@ -2623,9 +2110,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     ):
         """Plot a bifurcation diagram alongside representative time series.
 
-        Builds two linked panels — a bifurcation diagram over `ICS` and time
-        series of `VOI` sampled at several parameter values — and either
-        returns the combined figure or draws into the supplied axes.
+        Builds two linked panels — a bifurcation diagram over `ICS` and time series of `VOI` sampled at several parameter values — and either returns the combined figure or draws into the supplied axes.
 
         Args:
             ICS: Name of the continuation/bifurcation parameter to vary.
@@ -2711,8 +2196,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def save_python_class(self, directory="."):
         """Write the model as a standalone TVB Python class file.
 
-        Emits `<name>.py` in `directory` with the required imports followed
-        by the rendered TVB model code.
+        Emits `<name>.py` in `directory` with the required imports followed by the rendered TVB model code.
 
         Args:
             directory: Target directory for the generated `<name>.py` file.
@@ -2738,14 +2222,9 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
     ):
         """Render a human-readable report of the model.
 
-        Reads the model and does not modify it, for the same reason as
-        [`render_code`](#tvbo.classes.dynamics.DynamicalSystem.render_code): normalisation
-        belongs to construction, and repeating it here made a report a command as well as a
-        query.
+        Reads the model and does not modify it, for the same reason as [`render_code`](#tvbo.classes.dynamics.DynamicalSystem.render_code): normalisation belongs to construction, and repeating it here made a report a command as well as a query.
 
-        Refreshes metadata and renders the Markdown report template; the
-        result is optionally written to `outputfile` (as Markdown or, for
-        `format="pdf"`, a PDF).
+        Renders the Markdown report template; the result is optionally written to `outputfile` (as Markdown or, for `format="pdf"`, a PDF).
 
         Args:
             format: `"markdown"`/`"md"` or `"pdf"`.
@@ -2831,11 +2310,13 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
         return clone
 
     def __deepcopy__(self, memo):
+        """Deep-copy every declared field, not just those present in `__dict__`.
+
+        A dataclass field still holding its default may be absent from `__dict__`, so copying that alone would silently drop it.
+        """
         import dataclasses
 
         cls = self.__class__
-        # For dataclasses, we need to copy all fields, not just __dict__
-        # __dict__ may not include fields that are still at their default values
         data = {}
         if dataclasses.is_dataclass(self):
             for field in dataclasses.fields(self):
@@ -2865,9 +2346,7 @@ class Model(DynamicalSystem):
 class Dynamics(DynamicalSystem):
     """A named local neural-mass / population model: parameters, state variables, equations.
 
-    The smallest runnable unit in TVBO. A `Dynamics` binds a name to a set
-    of parameters and an ODE system, and is round-trippable through YAML,
-    SymPy, and any of the supported backends (JAX, TVB, PyRates, Julia, …).
+    The smallest runnable unit in TVBO. A `Dynamics` binds a name to a set of parameters and an ODE system, and is round-trippable through YAML, SymPy, and any of the supported backends (JAX, TVB, PyRates, Julia, …).
 
     Construct one inline, from the curated TVB-O database, or by IRI:
 
@@ -2893,10 +2372,8 @@ class Dynamics(DynamicalSystem):
         rww = Dynamics(iri="tvbo:ReducedWongWangExcInh")
         ```
 
-    See the [writing-models](../../../skills/writing-models/SKILL.md) skill
-    for the YAML form and equation conventions.
+    See the [writing-models](../../../skills/writing-models/SKILL.md) skill for the YAML form and equation conventions.
     """
 
     def __init__(self, name=None, **kwargs):
         super().__init__(name=name, **kwargs)
-

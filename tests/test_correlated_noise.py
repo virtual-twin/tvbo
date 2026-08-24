@@ -2,12 +2,9 @@
 
 These pin the contract `Noise.covariance` + `Noise.correlated_over` promise — that the
 *sampled* increments really carry the declared second-order structure — rather than
-merely that a run completes. A diagonal approximation would pass a "does it run" check
-while quietly changing the science.
+merely that a run completes. A diagonal approximation would pass a "does it run" check while quietly changing the science.
 
-The mechanism is a solver wrapper (tvbo's concrete implementation against tvboptim's
-`NativeSolver` contract), so the tests exercise it through `step`, which is the one path
-every network shape shares.
+The mechanism is a solver wrapper (tvbo's concrete implementation against tvboptim's `NativeSolver` contract), so the tests exercise it through `step`, which is the one path every network shape shares.
 """
 
 import numpy as np
@@ -28,6 +25,7 @@ def _psd(n, rank=None, seed=0):
 
 
 # ------------------------------------------------------------------ factorisation
+
 
 def test_factor_reproduces_the_covariance():
     C = _psd(6)
@@ -63,6 +61,7 @@ def test_non_square_is_rejected():
 
 
 # ----------------------------------------------------------------------- sampling
+
 
 def test_sampled_increments_carry_the_declared_covariance():
     """The whole point: empirical covariance of the mixed draws converges to C."""
@@ -130,10 +129,9 @@ def test_mode_axis_is_rejected_with_an_explanation():
 
 # ------------------------------------------------------------------------- solver
 
+
 def _euler():
-    solvers = pytest.importorskip(
-        "tvboptim.experimental.network_dynamics.solvers"
-    )
+    solvers = pytest.importorskip("tvboptim.experimental.network_dynamics.solvers")
     return solvers.Euler()
 
 
@@ -229,9 +227,7 @@ def test_covariance_sized_to_the_wrong_axis_is_rejected():
     """A shape mismatch must name the problem, not fail deep inside the scan."""
     jax = pytest.importorskip("jax")
 
-    solver = CorrelatedNoiseSolver(
-        _euler(), covariance_factor(np.eye(3)), axis="node"
-    )
+    solver = CorrelatedNoiseSolver(_euler(), covariance_factor(np.eye(3)), axis="node")
     xi = jax.random.normal(jax.random.key(7), (2, 5))
     with pytest.raises(ValueError, match="must be square in the axis"):
         solver._mix(xi)

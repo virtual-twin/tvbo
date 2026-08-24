@@ -13,6 +13,7 @@ prefixes:
     tvbo_sw: https://w3id.org/tvbo/software/
     schema: http://schema.org/
     doap: http://usefulinc.com/ns/doap#
+    prov: http://www.w3.org/ns/prov#
     sio: http://semanticscience.org/resource/
     nidm: http://purl.org/nidash/nidm#
     biotools: https://bio.tools/ontology/
@@ -260,6 +261,8 @@ classes:
             Identity and metadata for a software package, aligned with
             schema.org/SoftwareApplication and CodeMeta v3.
         class_uri: schema:SoftwareApplication
+        close_mappings:
+            - prov:SoftwareAgent
         slots:
             - name
         attributes:
@@ -282,6 +285,27 @@ classes:
                 range: string
                 slot_uri: bibo:doi
                 description: "Digital Object Identifier for the software or its reference publication."
+            version:
+                range: string
+                slot_uri: schema:softwareVersion
+                description: >-
+                    Version of the package as it ran. Required by BEP028's software record,
+                    where a provenance claim without a version is unverifiable.
+            alternative_identifier:
+                multivalued: true
+                range: uriorcurie
+                description: >-
+                    Further identifiers for the same package, an RRID among them (BEP028
+                    ``AlternativeIdentifier``).
+            acted_on_behalf_of:
+                multivalued: true
+                range: SoftwarePackage
+                inlined: false
+                exact_mappings:
+                    - prov:actedOnBehalfOf
+                description: >-
+                    Packages whose use triggered this one, so a backend invoked through a
+                    framework records the chain rather than only the innermost caller.
             ecosystem:
                 range: EcosystemEnum
                 multivalued: true

@@ -1,17 +1,11 @@
 """Validate every YAML in tvbo/database/ against the shipped JSON Schema.
 
-Each YAML file in a known subdirectory is loaded and validated against the
-corresponding target LinkML class. The test parametrizes over every file so
-that failures point directly at the offending file.
+Each YAML file in a known subdirectory is loaded and validated against the corresponding target LinkML class. The test parametrizes over every file so that failures point directly at the offending file.
 
-Validation goes through the *shipped* ``tvbo/datamodel/tvbo_datamodel.schema.json``
-(generated from the LinkML source by ``hatch_build.py``) and the lightweight
-``jsonschema`` library — exactly the path the ``tvbo validate schema`` CLI takes.
-Using the shipped artifact rather than re-running LinkML's runtime validator keeps
-one validation source of truth (the test can no longer pass while the CLI fails, or
-vice-versa) and avoids importing ``linkml`` here, whose enums are mutated to an
-unhashable form once ``tvbo`` is imported elsewhere in a combined test run.
+Validation goes through the *shipped* ``tvbo/datamodel/tvbo_datamodel.schema.json`` (generated from the LinkML source by ``hatch_build.py``) and the lightweight ``jsonschema`` library — exactly the path the ``tvbo validate schema`` CLI takes.
+Using the shipped artifact rather than re-running LinkML's runtime validator keeps one validation source of truth (the test can no longer pass while the CLI fails, or vice-versa) and avoids importing ``linkml`` here, whose enums are mutated to an unhashable form once ``tvbo`` is imported elsewhere in a combined test run.
 """
+
 import json
 
 import jsonschema
@@ -30,13 +24,10 @@ IDS = [str(p.relative_to(REPO)) for p, _ in CASES]
 def validators():
     """One ``jsonschema`` validator per target class, ``$ref``-ing into ``$defs``.
 
-    Mirrors ``tvbo validate schema``: each document is validated as an instance of
-    its target class via a ``$ref`` into the schema's ``$defs``.
+    Mirrors ``tvbo validate schema``: each document is validated as an instance of its target class via a ``$ref`` into the schema's ``$defs``.
     """
     if not SCHEMA_JSON.exists():
-        pytest.skip(
-            f"Generated JSON Schema missing at {SCHEMA_JSON}; run `make gen-linkml`."
-        )
+        pytest.skip(f"Generated JSON Schema missing at {SCHEMA_JSON}; run `make gen-linkml`.")
     full = json.loads(SCHEMA_JSON.read_text(encoding="utf-8"))
     defs = full.get("$defs", {})
     cache = {}
@@ -57,21 +48,15 @@ def test_database_yaml_validates(validators, path, target_class):
     if not isinstance(data, dict):
         pytest.skip(f"{path} is not a top-level mapping")
     messages = [
-        f"{e.message} in /{'/'.join(str(p) for p in e.absolute_path)}"
-        for e in validators[target_class].iter_errors(data)
+        f"{e.message} in /{'/'.join(str(p) for p in e.absolute_path)}" for e in validators[target_class].iter_errors(data)
     ]
-    assert not messages, (
-        f"{path.relative_to(REPO)} failed validation as {target_class}:\n  - "
-        + "\n  - ".join(messages)
-    )
+    assert not messages, f"{path.relative_to(REPO)} failed validation as {target_class}:\n  - " + "\n  - ".join(messages)
 
 
 def test_every_directory_of_metadata_has_a_class():
     """No corner of the database may be authored metadata that nothing validates.
 
-    ``coordinate_spaces`` and ``reducers`` each sat outside `TARGETS` for as long as they
-    existed, so nothing checked them — one had a `description` its class did not declare,
-    the other had no class at all.
+    ``coordinate_spaces`` and ``reducers`` each sat outside `TARGETS` for as long as they existed, so nothing checked them — one had a `description` its class did not declare, the other had no class at all.
     """
     assert not uncovered(), (
         "database directories no entry of TARGETS claims: "

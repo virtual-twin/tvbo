@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-"""
-Auto-generate the 'Replication Studies' section of _toc.yml by scanning
-Replication/*/ for .qmd files and reading their YAML frontmatter.
+"""Auto-generate the 'Replication Studies' section of _toc.yml.
+
+Scans Replication/*/ for .qmd files and reads their YAML frontmatter.
 
 Publication gate
 ----------------
-Replication results are embargoed until the corresponding paper is published, so
-this generator is **default-deny**: a study page is listed only if it explicitly
-declares ``publish: true`` in its frontmatter.
+Replication results are embargoed until the corresponding paper is published, so this generator is **default-deny**: a study page is listed only if it explicitly declares ``publish: true`` in its frontmatter.
 
 Every study page must make the decision explicit:
 
@@ -18,17 +16,16 @@ Every study page must make the decision explicit:
   and prints that URL.
 * **missing**         -> hard error. Omission must never be a silent publish.
 
-Run with ``--strict`` (recommended in CI and any deploy job) to also fail on
-``publish: false``, guaranteeing that a withheld study never reaches a built site.
+Run with ``--strict`` (recommended in CI and any deploy job) to also fail on ``publish: false``, guaranteeing that a withheld study never reaches a built site.
 
-Rewrites the block between # BEGIN:replication-autogen … # END:replication-autogen
-markers in _toc.yml.
+Rewrites the block between # BEGIN:replication-autogen … # END:replication-autogen markers in _toc.yml.
 """
+
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
-import re
 
 DOCS_DIR = Path(__file__).parent.parent
 TOC_FILE = DOCS_DIR / "_toc.yml"
@@ -37,8 +34,8 @@ REPL_DIR = DOCS_DIR / "Replication"
 BEGIN_MARKER = "# BEGIN:replication-autogen"
 END_MARKER = "# END:replication-autogen"
 
-L1 = "              "   # 14 sp
-L2 = "                  "   # 18 sp
+L1 = "              "  # 14 sp
+L2 = "                  "  # 18 sp
 
 _TRUE = {"true", "yes", "on", "1"}
 _FALSE = {"false", "no", "off", "0"}
@@ -82,13 +79,22 @@ def publish_state(qmd_path: Path) -> bool | None:
 
 
 def study_pages() -> list[Path]:
-    """Every .qmd inside a Replication/<Study>/ subdirectory."""
+    """Every .qmd a study offers as a page: at its root, or under the layout's docs role.
+
+    A study is a BIDS study dataset, which keeps its report in ``docs/`` (see :mod:`tvbo.utils.study_layout`). A study embedded in this site may instead keep its page at its root, because the site owns the Quarto project and a nested one would split the build.
+    Both are listed, so where a study puts its report is the study's choice rather than a rule the sidebar imposes.
+    """
     if not REPL_DIR.is_dir():
         return []
+    from tvbo.utils.study_layout import relpath
+
+    docs_role = relpath("docs")
     pages: list[Path] = []
     for study_dir in sorted(REPL_DIR.iterdir()):
-        if study_dir.is_dir():
-            pages.extend(sorted(study_dir.glob("*.qmd")))
+        if not study_dir.is_dir():
+            continue
+        pages.extend(sorted(study_dir.glob("*.qmd")))
+        pages.extend(sorted((study_dir / docs_role).glob("*.qmd")))
     return pages
 
 
@@ -109,16 +115,14 @@ def enforce_gate(strict: bool) -> list[Path]:
 
     if withheld:
         print(
-            "\n[replication gate] WITHHELD (publish: false) — these still render "
-            "into _site and are reachable by direct URL:",
+            "\n[replication gate] WITHHELD (publish: false) — these still render into _site and are reachable by direct URL:",
             file=sys.stderr,
         )
         for qmd in withheld:
             url = qmd.relative_to(DOCS_DIR).with_suffix(".html")
             print(f"    {qmd.relative_to(DOCS_DIR)}  ->  /{url}", file=sys.stderr)
         print(
-            "    Do not deploy this build. Remove the page from docs/ or run with "
-            "--strict in CI.",
+            "    Do not deploy this build. Remove the page from docs/ or run with --strict in CI.",
             file=sys.stderr,
         )
 
@@ -136,8 +140,7 @@ def enforce_gate(strict: bool) -> list[Path]:
 
     if strict and withheld:
         print(
-            "\n[replication gate] ERROR — --strict: withheld studies must not be "
-            "present in a published build.",
+            "\n[replication gate] ERROR — --strict: withheld studies must not be present in a published build.",
             file=sys.stderr,
         )
         raise SystemExit(1)
@@ -145,8 +148,7 @@ def enforce_gate(strict: bool) -> list[Path]:
     return published
 
 
-# Section-level pages that are not studies. They live directly in Replication/ and
-# would otherwise be orphaned: rendered by the glob but absent from the sidebar.
+# Section-level pages that are not studies. They live directly in Replication/ and would otherwise be orphaned: rendered by the glob but absent from the sidebar.
 SECTION_PAGES = [
     ("The replication pipeline", "Replication/pipeline.qmd"),
     ("Custom figure panels", "Replication/custom-panels.qmd"),
@@ -156,19 +158,19 @@ SECTION_PAGES = [
 def build_block(published: list[Path]) -> str:
     lines: list[str] = [BEGIN_MARKER]
     lines.append(f'{L1}- section: "Replication Studies"')
-    lines.append(f'{L1}  href: Replication/index.qmd')
-    lines.append(f'{L1}  contents:')
+    lines.append(f"{L1}  href: Replication/index.qmd")
+    lines.append(f"{L1}  contents:")
 
     for text, href in SECTION_PAGES:
         if (DOCS_DIR / href).is_file():
             lines.append(f'{L2}- text: "{text}"')
-            lines.append(f'{L2}  href: {href}')
+            lines.append(f"{L2}  href: {href}")
 
     for qmd in published:
         title = extract_title(qmd) or qmd.stem.replace("_", " ").title()
         rel = qmd.relative_to(DOCS_DIR)
         lines.append(f'{L2}- text: "{title}"')
-        lines.append(f'{L2}  href: {rel}')
+        lines.append(f"{L2}  href: {rel}")
 
     lines.append(END_MARKER)
     return "\n".join(lines)
@@ -186,7 +188,7 @@ def update_toc(strict: bool = False) -> None:
         raise SystemExit(1)
 
     new_block = build_block(published)
-    new_text = text[:begin_idx] + new_block + text[end_idx + len(END_MARKER):]
+    new_text = text[:begin_idx] + new_block + text[end_idx + len(END_MARKER) :]
 
     print(f"[replication gate] {len(published)} study page(s) cleared for publication.")
 

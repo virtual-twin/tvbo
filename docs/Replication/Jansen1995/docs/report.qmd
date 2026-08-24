@@ -1,0 +1,125 @@
+---
+title: "Jansen & Rit (1995)"
+description: "Replication of electroencephalogram and evoked potential simulations from the Jansen-Rit neural mass model."
+jupyter: python3
+# Publication gate (see docs/scripts/update_toc_replication.py): replication
+# results are embargoed until the source work is published. This study
+# replicates the already-published Jansen & Rit (1995), so it may ship.
+publish: true
+---
+
+Replication of the simulation experiments from @Jansen1995.
+
+This study is a BIDS study dataset (`DatasetType: "study"`): the entry recipe is `Jansen1995.yaml` at its root, the plotting callables live in `code/`, and the figures render into `docs/figures/` beside this report. See [BIDS Integration](../../../Interoperability/BIDS/index.qmd) for the layout every study shares.
+
+```{python}
+import importlib
+import sys
+from pathlib import Path
+
+from tvbo import SimulationStudy
+from tvbo.utils.study_layout import file_relpath, study_path, study_root
+import bsplot
+
+bsplot.style.use("tvbo")
+
+# The report renders from inside the study, so every path below is asked of the layout record.
+STUDY = "Jansen1995"
+ROOT = study_root(Path.cwd())
+sys.path.insert(0, str(study_path("code", root=ROOT)))
+import Jansen1995_plot as jr_plot
+
+odir = study_path("figures", root=ROOT)
+odir.mkdir(parents=True, exist_ok=True)
+```
+
+```{python}
+s = SimulationStudy.from_file(ROOT / file_relpath("recipe", study=STUDY))
+```
+
+```{python}
+exp1 = s.get_experiment(1)
+```
+
+```{python}
+# ── Experiment 1: C sweep (Fig. 3) ──
+res1 = exp1.run("tvboptim")
+fig3 = jr_plot.plot_fig3(res1)
+fig3.savefig(odir / "Jansen1995_Fig3.png", dpi=300)
+fig3
+```
+
+```{python}
+# ── Experiment 2: Parameter space exploration (Fig. 4) ──
+res2 = s.get_experiment(2).run("tvboptim")
+```
+
+```{python}
+importlib.reload(jr_plot)
+fig4 = jr_plot.plot_fig4(res2)
+fig4.savefig(odir / "Jansen1995_Fig4.png", dpi=300)
+fig4
+```
+
+```{python}
+# ── Experiment 3: Symmetric K sweep (Fig. 5) ──
+exp3 = s.get_experiment(3)
+res3 = exp3.run("tvboptim")
+fig5 = jr_plot.plot_fig5(res3, exp3)
+fig5.savefig(odir / "Jansen1995_Fig5.png", dpi=300)
+fig5
+```
+
+```{python}
+# ── Experiment 4: Asymmetric K sweep (Fig. 6) ──
+exp4 = s.get_experiment(4)
+res4 = exp4.run("tvboptim")
+```
+
+```{python}
+importlib.reload(jr_plot)
+fig6 = jr_plot.plot_fig6(res4, exp4)
+fig6.savefig(odir / "Jansen1995_Fig6.png", dpi=300)
+fig6
+```
+
+```{python}
+# ── Experiment 5: VEP — identical columns, no delay (Figs. 8, 9, 10) ──
+exp5 = s.get_experiment(5)
+res5 = exp5.run("tvboptim")
+```
+
+```{python}
+importlib.reload(jr_plot)
+fig8 = jr_plot.plot_fig8(res5, exp5)
+fig8.savefig(odir / "Jansen1995_Fig8.png", dpi=300)
+fig8
+```
+
+```{python}
+importlib.reload(jr_plot)
+fig9 = jr_plot.plot_fig9(res5, exp5)
+fig9.savefig(odir / "Jansen1995_Fig9.png", dpi=300)
+fig9
+```
+
+```{python}
+importlib.reload(jr_plot)
+fig10 = jr_plot.plot_fig10(res5, exp5)
+fig10.savefig(odir / "Jansen1995_Fig10.png", dpi=300)
+fig10
+```
+
+```{python}
+# ── Experiment 6: VEP — different columns, with delay (Fig. 11) ──
+exp6 = s.get_experiment(6)
+res6 = exp6.run("tvboptim")
+```
+
+```{python}
+importlib.reload(jr_plot)
+fig11=jr_plot.plot_fig11(res6, exp6)
+fig11.savefig(odir / "Jansen1995_Fig11.png", dpi=300)
+fig11
+```
+

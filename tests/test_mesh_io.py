@@ -1,12 +1,8 @@
 """``Mesh.mesh_file`` finally has a reader, and it must not invent precision.
 
-The slot has always said a mesh may live in an external GIFTI/VTK/FreeSurfer file; nothing
-in core read one, so every study that drew a cortical surface shipped its own parser. The
-one behaviour worth pinning beyond "it parses" is the declared scalar type: VTK's ``float``
-is single precision, and a reader that helpfully keeps the full decimal width returns
-coordinates the file does not claim to carry — which is enough to move a rendered surface
-by a sub-pixel and put two readers of the same file permanently out of agreement.
+The slot has always said a mesh may live in an external GIFTI/VTK/FreeSurfer file; nothing in core read one, so every study that drew a cortical surface shipped its own parser. The one behaviour worth pinning beyond "it parses" is the declared scalar type: VTK's ``float`` is single precision, and a reader that helpfully keeps the full decimal width returns coordinates the file does not claim to carry — which is enough to move a rendered surface by a sub-pixel and put two readers of the same file permanently out of agreement.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -35,10 +31,16 @@ def _write(tmp_path, name, text):
     return path
 
 
-@pytest.mark.parametrize("name,expected", [
-    ("s.vtk", "vtk"), ("s.surf.gii", "gifti"), ("lh.pial", "freesurfer"),
-    ("m.msh", "meshio"), ("m.obj", "meshio"),
-])
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("s.vtk", "vtk"),
+        ("s.surf.gii", "gifti"),
+        ("lh.pial", "freesurfer"),
+        ("m.msh", "meshio"),
+        ("m.obj", "meshio"),
+    ],
+)
 def test_the_format_is_read_off_the_name(name, expected):
     assert detect_format(name) == expected
 
@@ -76,8 +78,7 @@ def test_a_declared_format_overrides_the_name(tmp_path):
 
 def test_a_quad_mesh_is_refused_by_name(tmp_path):
     """Silently dropping the 4th vertex of every face would give a plausible wrong mesh."""
-    quads = _VTK.format(scalar="double").replace("POLYGONS 2 8", "POLYGONS 1 5") \
-                                        .replace("3 0 1 2\n3 1 3 2\n", "4 0 1 3 2\n")
+    quads = _VTK.format(scalar="double").replace("POLYGONS 2 8", "POLYGONS 1 5").replace("3 0 1 2\n3 1 3 2\n", "4 0 1 3 2\n")
     with pytest.raises(ValueError, match="only triangular POLYGONS"):
         read_mesh(_write(tmp_path, "q.vtk", quads))
 

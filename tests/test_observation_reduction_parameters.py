@@ -1,11 +1,7 @@
 """An observation reduction observer binds its ``Dynamics.parameters`` as named constants.
 
-A model ``Dynamics`` declares its constants as ``parameters`` (scalar, or array-valued for
-an operator such as a mode-coupling matrix). An observer ``Dynamics`` — the co-integrated
-auxiliary that computes an observation as a time recurrence — is the same class and so
-declares constants the same way. These tests pin that the reduction resolver honours them:
-they enter the symbolic vocabulary, survive into the rendered triple, and cannot silently
-shadow a state variable.
+A model ``Dynamics`` declares its constants as ``parameters`` (scalar, or array-valued for an operator such as a mode-coupling matrix). An observer ``Dynamics`` — the co-integrated auxiliary that computes an observation as a time recurrence — is the same class and so declares constants the same way. These tests pin that the reduction resolver honours them:
+they enter the symbolic vocabulary, survive into the rendered triple, and cannot silently shadow a state variable.
 """
 
 import pytest
@@ -109,8 +105,7 @@ def _render(obs):
 
 
 def test_constants_are_bound_in_the_rendered_triple():
-    """Both kinds of constant bind by name in the closure the triple shares, and an
-    array operator reaches the backend as an array rather than a Python list."""
+    """Both kinds of constant bind by name in the closure the triple shares, and an array operator reaches the backend as an array rather than a Python list."""
     obs = _observer(
         "acc + g * matmul(A, x)",
         "acc / count",
@@ -123,9 +118,7 @@ def test_constants_are_bound_in_the_rendered_triple():
 
     assert "A = jnp.array([[1.0, 2.0], [3.0, 4.0]])" in code
     assert "g = 0.5" in code
-    # The array-op handler lowers matmul through the reduction path. Operands are
-    # parenthesized so a compound operand (e.g. matmul(A, x/c)) keeps `@` binding
-    # tighter than `/` -> `A @ (x/c)`, not `(A @ x)/c`.
+    # The array-op handler lowers matmul through the reduction path. Operands are parenthesized so a compound operand (e.g. matmul(A, x/c)) keeps `@` binding tighter than `/` -> `A @ (x/c)`, not `(A @ x)/c`.
     assert "(A) @ (x)" in code
 
 
@@ -138,6 +131,7 @@ def test_a_parameterless_observer_emits_no_constants_block():
 
 # --- lazy constants: sourced/produced operators emit a load, never the bytes ---------
 
+
 class _Experiment:
     """Minimal render context: only what resolve_reduction reads for materialisation."""
 
@@ -147,8 +141,7 @@ class _Experiment:
 
 
 def test_a_sourced_operator_emits_a_lazy_load_not_its_bytes(tmp_path):
-    """A large operator must never enter the generated source — the reduction reads it
-    from the companion at run time instead."""
+    """A large operator must never enter the generated source — the reduction reads it from the companion at run time instead."""
     pytest.importorskip("h5py")
     import h5py
 
@@ -161,9 +154,7 @@ def test_a_sourced_operator_emits_a_lazy_load_not_its_bytes(tmp_path):
         {"A": Parameter(name="A", source="ops.h5", measure="grad_op")},
     )
     red = resolve_reduction(obs, _Experiment(tmp_path / "study.yaml"))
-    code = Template(filename=_TEMPLATE).get_def("render_reduction").render(
-        red=red, name="obs", s_idx=0, dt=0.1
-    )
+    code = Template(filename=_TEMPLATE).get_def("render_reduction").render(red=red, name="obs", s_idx=0, dt=0.1)
 
     assert "_load_constant(" in code
     assert "grad_op" in code
@@ -173,8 +164,10 @@ def test_a_sourced_operator_emits_a_lazy_load_not_its_bytes(tmp_path):
 
 
 def test_the_existence_check_does_not_materialise(tmp_path, monkeypatch):
-    """resolve_reduction is also called bare as an 'is this a streaming reducer?' predicate;
-    that must not run the producer or write to disk as a side effect."""
+    """resolve_reduction is also called bare as an 'is this a streaming reducer?' predicate.
+
+    That must not run the producer or write to disk as a side effect.
+    """
     import tvbo.data.param_io as param_io
 
     called = []
@@ -187,14 +180,13 @@ def test_the_existence_check_does_not_materialise(tmp_path, monkeypatch):
     )
     red = resolve_reduction(obs)  # bare: the predicate path
 
-    assert red is not None                       # still recognised as a reducer
-    assert called == []                          # but nothing materialised
+    assert red is not None  # still recognised as a reducer
+    assert called == []  # but nothing materialised
     assert red["parameters"]["A"]["lazy"] is None  # deferred, not resolved
 
 
 def test_the_emitted_path_is_absolute(tmp_path):
-    """Generated modules are exec'd in memory, so a relative path has nothing to anchor
-    to — codegen resolves it against the spec dir, exactly as bids_dir is emitted."""
+    """Generated modules are exec'd in memory, so a relative path has nothing to anchor to — codegen resolves it against the spec dir, exactly as bids_dir is emitted."""
     pytest.importorskip("h5py")
     import h5py
 

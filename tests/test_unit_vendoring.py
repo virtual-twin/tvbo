@@ -1,15 +1,8 @@
 """Every curated unit resolves to a real SymPy quantity — the hard gate.
 
-The failure this guards is silent. TVBO's unit map used to be a 37-entry display
-table in which 25 entries did not resolve: `mV`, `nS`, `pA`, `pF`, `per_ms`,
-`mm_per_ms`, `kHz`, `degC` and `dimensionless` all became *free symbols named after
-themselves*, which compare equal to nothing, raise nothing, and quietly make every
-dimensional statement about them vacuous. A separate 19-entry SI-factor table had
-the same shape: `.get(unit, 1.0)`, so `mm` converted as though it were metres.
+The failure this guards is silent. TVBO's unit map used to be a 37-entry display table in which 25 entries did not resolve: `mV`, `nS`, `pA`, `pF`, `per_ms`, `mm_per_ms`, `kHz`, `degC` and `dimensionless` all became *free symbols named after themselves*, which compare equal to nothing, raise nothing, and quietly make every dimensional statement about them vacuous. A separate 19-entry SI-factor table had the same shape: `.get(unit, 1.0)`, so `mm` converted as though it were metres.
 
-Both are now read from `tvbo/data/ontology/unit_facts.json`, vendored from QUDT by
-`scripts/ontology/gen_units.py`. These tests assert the property that made the old
-tables wrong — that a unit TVBO claims to know is one it can actually compute with.
+Both are now read from `tvbo/data/ontology/unit_facts.json`, vendored from QUDT by `scripts/ontology/gen_units.py`. These tests assert the property that made the old tables wrong — that a unit TVBO claims to know is one it can actually compute with.
 """
 
 from __future__ import annotations
@@ -48,8 +41,7 @@ def test_every_enum_value_has_a_vendored_record():
 def test_a_curated_unit_resolves_to_a_sympy_expression(unit: str):
     """The gate: a curated unit is one TVBO can put in an expression.
 
-    A free symbol is the failure mode being excluded — it would satisfy "is not None"
-    while carrying no dimensional content at all.
+    A free symbol is the failure mode being excluded — it would satisfy "is not None" while carrying no dimensional content at all.
     """
     if VENDORED[unit].get("offset"):
         pytest.skip("affine unit — refused by design, covered by its own test")
@@ -106,9 +98,7 @@ def test_a_unit_expression_is_the_quantity_it_names(unit: str, expected):
 def test_the_same_quantity_under_two_spellings_is_one_expression():
     """`mm/ms` and `m/s` are the same velocity, and must be exactly equal.
 
-    Exactly, not approximately: the multiplier is composed as a `Fraction`, so this
-    is `1`, where composing it in floating point gives 0.9999999999999999 and turns
-    "identical" into "inconsistent by 1e-16" for every check downstream.
+    Exactly, not approximately: the multiplier is composed as a `Fraction`, so this is `1`, where composing it in floating point gives 0.9999999999999999 and turns "identical" into "inconsistent by 1e-16" for every check downstream.
     """
     assert unit_multiplier("mm_per_ms") == Fraction(1)
     assert simplify(unit_expression("mm_per_ms") - unit_expression("m_per_s")) == 0
@@ -130,12 +120,7 @@ def test_si_factors_the_old_table_defaulted_to_one(unit: str, factor: float):
 def test_lems_time_normalisation_is_not_the_base_dimension_vector():
     """`unit_has_time_dimension` asks a narrower question than the dimension vector.
 
-    It drives NeuroML's `/ SEC` normalisation: does this quantity already express a
-    rate. That is not "does the SI decomposition contain a second" — under the base
-    vector `mV` is `kg·m²·s⁻³·A⁻¹` and would qualify, as would `V`, `nS`, `ohm` and
-    `W`; 24 of the 62 units differ between the two readings. Deriving this predicate
-    from the vendored vector would therefore silently change emitted LEMS, so it
-    stays its own vocabulary, and this test records why.
+    It drives NeuroML's `/ SEC` normalisation: does this quantity already express a rate. That is not "does the SI decomposition contain a second" — under the base vector `mV` is `kg·m²·s⁻³·A⁻¹` and would qualify, as would `V`, `nS`, `ohm` and `W`; 24 of the 62 units differ between the two readings. Deriving this predicate from the vendored vector would therefore silently change emitted LEMS, so it stays its own vocabulary, and this test records why.
     """
     from tvbo.utils.units import unit_has_time_dimension
 
@@ -147,11 +132,7 @@ def test_lems_time_normalisation_is_not_the_base_dimension_vector():
 def test_an_uncurated_unit_is_recorded_rather_than_rejected():
     """The `unit` range is open, so a unit nobody curated yet can still be written down.
 
-    `nM` used to raise `ValueError: Unknown UnitEnum enumeration code`, which left an
-    author two options — misdeclare the quantity as something in the enum, or declare
-    nothing. Both lose more than an unrecognised string does. It is recorded verbatim
-    and carries no dimensional claim, so anything reasoning about it reports
-    underdetermined instead of guessing.
+    `nM` used to raise `ValueError: Unknown UnitEnum enumeration code`, which left an author two options — misdeclare the quantity as something in the enum, or declare nothing. Both lose more than an unrecognised string does. It is recorded verbatim and carries no dimensional claim, so anything reasoning about it reports underdetermined instead of guessing.
     """
     from tvbo.datamodel import schema
 

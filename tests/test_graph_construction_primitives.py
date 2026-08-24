@@ -1,25 +1,15 @@
 """Graph-construction primitives render and compute correctly on every backend.
 
-These are the vocabulary a ``Procedural`` GraphGenerator's typed DAG lowers to, so a
-paper's network construction (distance kernel, stochastic connection mask, Gaussian
-field, axis normalisation) is authored as metadata and emitted natively per backend
-instead of living in per-generator Python.
+These are the vocabulary a ``Procedural`` GraphGenerator's typed DAG lowers to, so a paper's network construction (distance kernel, stochastic connection mask, Gaussian field, axis normalisation) is authored as metadata and emitted natively per backend instead of living in per-generator Python.
 
 Two things are pinned here:
 
-* **Numerical agreement with the reference implementation.** Each deterministic
-  primitive is checked against the scipy/numpy routine a hand-written generator would
-  have called, so "expressible in the primitive set" also means "computes the same
-  thing".
-* **numpy/jax agreement.** The same expression must produce the same array on both, to
-  float tolerance — that is what makes a generator backend-independent rather than
-  merely re-implemented twice.
+* **Numerical agreement with the reference implementation.** Each deterministic primitive is checked against the scipy/numpy routine a hand-written generator would have called, so "expressible in the primitive set" also means "computes the same thing".
+* **numpy/jax agreement.** The same expression must produce the same array on both, to float tolerance — that is what makes a generator backend-independent rather than merely re-implemented twice.
 
-The samplers are the exception, and deliberately so: per the RNG contract in
-``dev/GenericProcedureEngine.md`` §4, a fixed seed is reproducible *within* a backend and
-statistically equivalent *across* backends, but never bit-identical (numpy PCG64 is not
-jax Threefry). They are therefore checked for shape, support, distributional moments and
-within-backend reproducibility — never for cross-backend equality.
+The samplers are the exception, and deliberately so: by contract a fixed seed is reproducible
+*within* a backend and statistically equivalent *across* backends, but never bit-identical
+(numpy PCG64 is not jax Threefry). They are therefore checked for shape, support, distributional moments and within-backend reproducibility — never for cross-backend equality.
 """
 
 import numpy as np
@@ -39,8 +29,7 @@ def _eval_numpy(src, **env):
 
 def _eval_jax(src, **env):
     return np.asarray(
-        eval(src, {"jnp": jnp, "jax": jax}, {k: jnp.asarray(v) if isinstance(v, np.ndarray) else v
-                                             for k, v in env.items()})  # noqa: S307
+        eval(src, {"jnp": jnp, "jax": jax}, {k: jnp.asarray(v) if isinstance(v, np.ndarray) else v for k, v in env.items()})  # noqa: S307
     )
 
 
@@ -52,17 +41,11 @@ def _both(expr, **env):
     return np.asarray(out_np)
 
 
-# --------------------------------------------------------------------------- #
-# Deterministic primitives                                                     #
-# --------------------------------------------------------------------------- #
+# Deterministic primitives
 def test_grid_positions_reproduces_the_reference_node_ORDER():
     """Node order is the contract, not an implementation detail.
 
-    A connectome's row order *is* its node identity, so a layout that produced the same
-    coordinate set in a different order would silently permute every per-node quantity
-    downstream (in-strength gradients, region labels, recorded traces) while every
-    aggregate check still passed. This pins byte-equality against the reference
-    meshgrid construction, not just set equality.
+    A connectome's row order *is* its node identity, so a layout that produced the same coordinate set in a different order would silently permute every per-node quantity downstream (in-strength gradients, region labels, recorded traces) while every aggregate check still passed. This pins byte-equality against the reference meshgrid construction, not just set equality.
     """
     nx, ny, xe, ye = 30, 30, 140.0, 140.0
     got = _both("grid_positions(nx, ny, xe, ye)", nx=nx, ny=ny, xe=xe, ye=ye)
@@ -82,9 +65,7 @@ def test_grid_positions_spans_the_requested_extent():
 def test_grid_positions_handles_a_degenerate_axis(nx, ny):
     """A 1-D lattice (a line of nodes) is a legitimate layout, not an error.
 
-    Spacing is extent / (n - 1), which divides by zero when an axis has one node. The
-    reference `linspace(0, extent, 1)` returns [0.0] with no division, so this used to
-    crash on a layout the thing it replaces handles.
+    Spacing is extent / (n - 1), which divides by zero when an axis has one node. The reference `linspace(0, extent, 1)` returns [0.0] with no division, so this used to crash on a layout the thing it replaces handles.
     """
     got = _both("grid_positions(nx, ny, xe, ye)", nx=nx, ny=ny, xe=140.0, ye=140.0)
     assert got.shape == (nx * ny, 2)
@@ -96,9 +77,7 @@ def test_grid_positions_handles_a_degenerate_axis(nx, ny):
 def test_normalize_leaves_an_all_zero_slice_as_zeros():
     """An unconnected node must not poison the connectome with NaN.
 
-    A stochastic connection mask routinely leaves a peripheral node with no incoming
-    edges, giving an all-zero column. Dividing by that sum yields NaN, which then
-    propagates silently through every downstream step into the weights.
+    A stochastic connection mask routinely leaves a peripheral node with no incoming edges, giving an all-zero column. Dividing by that sum yields NaN, which then propagates silently through every downstream step into the weights.
     """
     M = np.array([[0.0, 1.0], [0.0, 2.0]])  # column 0: a node with no incoming edges
     got = _both("normalize(M, 0)", M=M)
@@ -110,9 +89,7 @@ def test_normalize_leaves_an_all_zero_slice_as_zeros():
 def test_minmax_rescale_maps_a_constant_field_to_the_midpoint():
     """A flat field has zero span; it must stay neutral rather than become NaN.
 
-    Rescaling a constant to [-1, 1] gives 0 — which is what a hand-written generator
-    special-cases a zero-span gradient to, so a degenerate field stays neutral instead
-    of NaN-ing every node's in-strength.
+    Rescaling a constant to [-1, 1] gives 0 — which is what a hand-written generator special-cases a zero-span gradient to, so a degenerate field stays neutral instead of NaN-ing every node's in-strength.
     """
     got = _both("minmax_rescale(x, -1, 1)", x=np.full(5, 3.0))
     assert np.isfinite(got).all()
@@ -141,8 +118,7 @@ def test_fill_diagonal_matches_numpy_fill_diagonal():
 
 
 def test_fill_diagonal_leaves_off_diagonal_untouched():
-    """The diagonal is replaced; nothing else may move (a generator relies on this to
-    suppress self-connections without perturbing the kernel)."""
+    """The diagonal is replaced; nothing else may move (a generator relies on this to suppress self-connections without perturbing the kernel)."""
     M = RNG.normal(size=(5, 5))
     got = _both("fill_diagonal(M, 7)", M=M)
     off = ~np.eye(5, dtype=bool)
@@ -194,9 +170,7 @@ def test_spectral_radius_composes_from_primitives():
     assert got == pytest.approx(np.max(np.abs(np.linalg.eigvals(M))))
 
 
-# --------------------------------------------------------------------------- #
-# Samplers — within-backend reproducibility, never cross-backend equality      #
-# --------------------------------------------------------------------------- #
+# Samplers — within-backend reproducibility, never cross-backend equality
 def test_sample_exponential_shape_support_and_mean():
     src = render_expression("sample_exponential(key, 0, 17.0, n, n)", format="jax")
     got = _eval_jax(src, key=jax.random.key(0), n=64)
@@ -246,15 +220,11 @@ def test_fold_in_derives_independent_substreams():
             assert np.abs(draws[i] - draws[j]).max() > 0
 
 
-# --------------------------------------------------------------------------- #
-# The composite: Koller2024's stochastic connection mask                       #
-# --------------------------------------------------------------------------- #
+# The composite: Koller2024's stochastic connection mask
 def test_connection_mask_composes_from_primitives():
     """`d <= abs(Exponential(scale))` — Koller2024's mask — needs no bespoke head.
 
-    A comparison parses to a SymPy relational and prints on every backend, so
-    `stochastic_mask` is a typed DAG step that LOWERS to this expression rather than a
-    primitive of its own.
+    A comparison parses to a SymPy relational and prints on every backend, so `stochastic_mask` is a typed DAG step that LOWERS to this expression rather than a primitive of its own.
     """
     expr = "d <= abs(sample_exponential(key, 0, 17.0, n, n))"
     src = render_expression(expr, format="jax")

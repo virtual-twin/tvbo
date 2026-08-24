@@ -7,6 +7,7 @@ Canonical sources live in:
 
 Both are rendered to per-tool adapter formats by :mod:`tvbo.skills._render`.
 """
+
 from __future__ import annotations
 
 from ._render import (

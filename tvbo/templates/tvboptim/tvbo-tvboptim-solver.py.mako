@@ -86,11 +86,14 @@ def _load_covariance(path, key):
 
     A sourced or produced covariance is materialised at codegen time and read here, so
     an operator of any size costs nothing in the generated source. Read once when the
-    solver is built, never per step."""
-    from pathlib import Path
+    solver is built, never per step.
 
-    from tvbo.data.matrix_io import LazyArrayStore
-    return LazyArrayStore(Path(path), {}).read_dataset(key)
+    A packed kit stages this artifact into its own ``constants/`` dir, so when the author's
+    absolute path is absent (a frozen kit run on another machine) the file is resolved by
+    basename under ``$TVBO_CONSTANTS_DIR`` or the run dir's ``constants/``."""
+    from tvbo.data.matrix_io import LazyArrayStore, resolve_staged_path
+
+    return LazyArrayStore(resolve_staged_path(path), {}).read_dataset(key)
 
 
 % endif

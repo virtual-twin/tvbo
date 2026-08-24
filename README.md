@@ -70,7 +70,7 @@ Load it with `Dynamics.from_file("lorenz.yaml")`.
 
 ```python
 exp = SimulationExperiment(dynamics=lorenz)
-print(exp.render_code("jax"))     # or "numpy", "julia", "tvb", "pyrates", ...
+print(exp.render_code("jax"))  # or "numpy", "julia", "tvb", "pyrates", ...
 ```
 
 ### Load a curated model from the library
@@ -82,7 +82,7 @@ from tvbo import Dynamics, SimulationExperiment
 
 exp = SimulationExperiment(dynamics=Dynamics.from_db("JansenRit"))
 exp.run("jax").plot()
-exp.report("pdf", outputfile="methods.pdf")   # provenance-aware methods report
+exp.report("pdf", outputfile="methods.pdf")  # provenance-aware methods report
 ```
 
 Assemble a network model from curated components, referenced by semantic `iri` pointers:

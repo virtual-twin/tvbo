@@ -1,7 +1,6 @@
 import pytest
 
-# The REST API surface ships in the optional ``tvbo[api]`` extra (fastapi). Skip
-# the whole module cleanly when it is not installed instead of failing collection.
+# The REST API surface ships in the optional ``tvbo[api]`` extra (fastapi). Skip the whole module cleanly when it is not installed instead of failing collection.
 pytest.importorskip("fastapi", reason="requires the 'api' extra (pip install tvbo[api])")
 
 from fastapi import FastAPI

@@ -1,7 +1,7 @@
 id: https://w3id.org/tvbo/figure
 name: figure
 title: TVB-O Figure Spec (DRAFT)
-description: "Declarative, backend-independent specification of a publication figure rendered from TVBO result containers. A Figure is a mosaic of Panels; grammar panels (cartesian/heatmap) bind container fields to visual channels via mark + encoding, while custom and image panels are peer escape-hatch kinds. Data binding (Layer.used) is a DataRef — the shared cross-container reference primitive (defined in common, reused here and by Argument.used / Parameter.used) — and doubles as the PROV provenance edge. It reuses shared slots/classes (name, description, label, iri, Provenance, Argument, DataRef); those resolve in the merged schema because this file is generated only as part of tvbo_datamodel.yaml, which imports it (so it does not import tvbo_datamodel back, avoiding a cycle). Design write-up: dev/figure-spec-design.md."
+description: "Declarative, backend-independent specification of a publication figure rendered from TVBO result containers. A Figure is a mosaic of Panels; grammar panels (cartesian/heatmap) bind container fields to visual channels via mark + encoding, while custom and image panels are peer escape-hatch kinds. Data binding (Layer.used) is a DataRef — the shared cross-container reference primitive (defined in common, reused here and by Argument.used / Parameter.used) — and doubles as the PROV provenance edge. It reuses shared slots/classes (name, description, label, iri, Provenance, Argument, DataRef); those resolve in the merged schema because this file is generated only as part of tvbo_datamodel.yaml, which imports it (so it does not import tvbo_datamodel back, avoiding a cycle)."
 
 prefixes:
   linkml: https://w3id.org/linkml/
@@ -37,8 +37,8 @@ enums:
     permissible_values:
       line:    {description: "Connected line (timeseries, bifurcation branch, trajectory)."}
       scatter: {description: "Points (fixed points, special points, per-node profiles)."}
-      rule:    {description: "Reference line / span (threshold, stimulus window, vline)."}
-      band:    {description: "Filled band between two series (error/CI)."}
+      rule:    {description: "Reference line at a value the layer's output HOLDS (a threshold, a published number, an ensemble mean) — one line per value. The encoded channel picks the orientation: `x:` draws vertical, `y:` horizontal. Distinct from the `axvline`/`axhline` opts, which take a literal typed into the spec and are drawn as subdued gridlines."}
+      band:    {description: "Filled band between two series (an error band, a CI). Its layer's output carries a length-2 axis beside the swept one, holding the two edges in ONE array — binding a lower edge and an upper edge as separate layers lets them come from different runs."}
       area:    {description: "Series filled down to the baseline (a density/pdf, a cumulative share). Distinct from `band`, which spans two series, and from `bar`, which asserts the x values are discrete categories."}
       bar:     {description: "Vertical bars, one per x (spectrum, per-category magnitude). Distinct from `line` because a spectrum read as a line implies interpolation between mode numbers that do not exist."}
 
@@ -165,6 +165,14 @@ classes:
         range: string
         multivalued: true
         description: "Importable module names whose import registers this figure's custom panels / transforms (via bsplot.register_panel / register_transform). The emitted plot.py imports them, so a study ships its bespoke figure code in its code_source instead of in core tvbo. The modules must be importable when the figure renders (loading the study puts its code/ dir on the path)."
+      share_x:
+        range: string
+        multivalued: true
+        description: "Panel groups that share one x scale, each entry a comma-separated list of mosaic keys ('c,g,h'). Every panel in a group ends on the union of the group's limits. Declare it whenever a panel's tick labels are hidden as another panel's: hiding them alone asserts a shared scale the axes do not actually have, and a reader then compares two panels drawn at different ranges."
+      share_y:
+        range: string
+        multivalued: true
+        description: "Panel groups that share one y scale, each entry a comma-separated list of mosaic keys ('c,g,h'). Same rule as share_x."
       panels:
         range: Panel
         multivalued: true
@@ -223,7 +231,7 @@ classes:
         range: Argument
         multivalued: true
         inlined: true
-        description: "Keyword options for the custom callable (reuses Argument; typed values)."
+        description: "A panel's axis directives, and the keyword options of a custom callable (reuses Argument; typed values). The axis family is applied by the renderer's `_apply_axopts`: labels (`xlabel`, `ylabel`, `title`, `*_side`), scales and limits (`xscale`, `xlim`, `aspect`, `box_aspect`, `invert_x`), ticks (`xticks`, `nbins`, `hide_xticklabels`, `tick_size`, `tick_length`, `xtick_rotation`/`ytick_rotation` in degrees counter-clockwise, `xtick_format`/`ytick_format` of `sci`|`plain`, `tick_prune` of `lower`|`upper`|`both`), label spacing (`xlabel_pad`/`ylabel_pad` in points, for the case where an axis label would sit on its own tick numbers), reference rules (`axhline`, `axvline`), and `legend`. Rotate x tick labels when a dense row of panels would otherwise run its numbers together — a slanted label is anchored at its tick rather than centred under it, so it costs width it would otherwise steal from its neighbour."
       annotations:
         range: Annotation
         multivalued: true

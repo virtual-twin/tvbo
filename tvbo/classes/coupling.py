@@ -1,19 +1,11 @@
-#  coupling.py
-#
-# Created on Mon Jan 22 2024
-# Author: Leon K. Martin
-#
-# Copyright (c) 2024 Charité Universitätsmedizin Berlin
-#
-"""
-Coupling functions
-==================
-The public import location for :class:`Coupling`, alongside the helpers that read a
-coupling function out of the database or the ontology.
+# Copyright © 2024 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
 
-There is no wrapper class: the coupling's own methods live in
-:mod:`tvbo.behaviour.coupling` and are attached to the generated class itself, so a
-coupling carries them however it was built.
+"""Coupling functions.
+
+The public import location for :class:`Coupling`, alongside the helpers that read a coupling function out of the database or the ontology.
+
+There is no wrapper class: the coupling's own methods live in :mod:`tvbo.behaviour.coupling` and are attached to the generated class itself, so a coupling carries them however it was built.
 
 ```{seealso}
 - [Coupling](![wiki]/Coupling/index.html)
@@ -21,9 +13,9 @@ coupling carries them however it was built.
 
 """
 
+from tvbo.classes import equation as equations
 from tvbo.datamodel.schema import Coupling
 from tvbo.ontology import owl as ontology
-from tvbo.classes import equation as equations
 
 __all__ = [
     "Coupling",
@@ -36,9 +28,7 @@ __all__ = [
 def peer_module(instance):
     """The generated module *instance*'s class comes from.
 
-    A coupling is filled with ``Equation`` and ``Parameter`` members, and those have to be
-    of the same generated form as the coupling itself: the strict Pydantic models validate
-    on assignment and reject a LinkML dataclass where they want their own peer.
+    A coupling is filled with ``Equation`` and ``Parameter`` members, and those have to be of the same generated form as the coupling itself: the strict Pydantic models validate on assignment and reject a LinkML dataclass where they want their own peer.
     """
     import importlib
 
@@ -48,9 +38,7 @@ def peer_module(instance):
 def _ensure_parameters(coupling) -> None:
     """Give *coupling* a parameters mapping to fill.
 
-    The LinkML dataclass defaults the slot to an empty collection; the Pydantic model
-    defaults it to ``None``. A keyed collection is otherwise always mutated in place, so
-    this is the one assignment.
+    The LinkML dataclass defaults the slot to an empty collection; the Pydantic model defaults it to ``None``. A keyed collection is otherwise always mutated in place, so this is the one assignment.
     """
     if getattr(coupling, "parameters", None) is None:
         coupling.parameters = {}
@@ -59,18 +47,12 @@ def _ensure_parameters(coupling) -> None:
 def _load_coupling_from_database(name, coupling):
     """Fill coupling metadata from a curated database YAML file.
 
-    Resolves ``name`` through the database registry — the one component that knows where
-    the database lives — and fills the ``pre_expression``, ``post_expression`` and
-    ``parameters`` the coupling does not already carry.
+    Resolves ``name`` through the database registry — the one component that knows where the database lives — and fills the ``pre_expression``, ``post_expression`` and ``parameters`` the coupling does not already carry.
 
-    Reading the curated entry is what makes population deterministic: the ontology answers
-    with an unordered set, so the parameters it yields come back in a different order in
-    every process, which no frozen record can be written against.
+    Reading the curated entry is what makes population deterministic: the ontology answers with an unordered set, so the parameters it yields come back in a different order in every process, which no frozen record can be written against.
 
-    A curated ``delayed:`` is NOT applied. The slot carries a schema default of ``True``,
-    so it is never unset by the time this runs and the guard that read it could not fire.
-    Only ``FastLinearCoupling`` declares anything else, and honouring it would change that
-    coupling's delays — a measured change of its own, not a side effect of this one.
+    A curated ``delayed:`` is NOT applied. The slot carries a schema default of ``True``, so it is never unset by the time this runs and the guard that read it could not fire.
+    Only ``FastLinearCoupling`` declares anything else, and honouring it would change that coupling's delays — a measured change of its own, not a side effect of this one.
 
     Parameters
     ----------
@@ -79,7 +61,7 @@ def _load_coupling_from_database(name, coupling):
     coupling : Coupling
         Coupling instance to fill (modified in-place), in either generated form.
 
-    Returns
+    Returns:
     -------
     bool
         True if a database file was found and applied.
@@ -105,8 +87,7 @@ def _load_coupling_from_database(name, coupling):
         if pname in coupling.parameters:
             continue
         coupling.parameters[pname] = (
-            peer.Parameter(**{"name": pname, **pval}) if isinstance(pval, dict)
-            else peer.Parameter(name=pname, value=pval)
+            peer.Parameter(**{"name": pname, **pval}) if isinstance(pval, dict) else peer.Parameter(name=pname, value=pval)
         )
 
     return True
@@ -151,8 +132,7 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
 
     If overwrite is False (default), only fill missing fields.
     If overwrite is True, always set name and pre/post expressions.
-    Parameters are added if missing; existing parameter value/description are
-    only filled if missing regardless of overwrite.
+    Parameters are added if missing; existing parameter value/description are only filled if missing regardless of overwrite.
 
     Members are built in *metadata*'s own generated form — see :func:`peer_module`.
     """
@@ -175,7 +155,7 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
         if overwrite or getattr(metadata, "post_expression", None) is None:
             metadata.post_expression = peer.Equation(rhs=str(eqs["post"]))
 
-    for key, param in get_parameters(ontoclass).items():
+    for param in get_parameters(ontoclass).values():
         label = param["label"]
         if label not in metadata.parameters:
             metadata.parameters[label] = peer.Parameter(
@@ -193,8 +173,7 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
 def get_global_coupling_functions():
     """Return all coupling function classes defined in the ontology.
 
-    Loads the ontology on demand and collects the subclasses of its
-    `Coupling` class.
+    Loads the ontology on demand and collects the subclasses of its `Coupling` class.
 
     Returns:
         A list of the ontology's `Coupling` subclasses.
@@ -202,13 +181,8 @@ def get_global_coupling_functions():
     onto = ontology.get_onto()
     CouplingFunctions = onto.Coupling.subclasses()
 
-    # for CF in CouplingFunctions:
     #     CF.pre = MethodType(get_pre_summation_coupling_function, CF)
     return list(CouplingFunctions)
 
 
-# NOTE: do NOT eagerly compute an ``available_coupling_functions`` set at import
-# time. It has no consumers, and traversing ``onto.Coupling.subclasses()`` forces
-# the (metadata-only) owlready2 ontology to fully load on every ``import tvbo`` —
-# including JAX/codegen processes that never query the ontology. Call
-# ``get_global_coupling_functions()`` on demand instead.
+# No eager set here: traversing subclasses would load the whole ontology on every `import tvbo`.

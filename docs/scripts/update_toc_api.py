@@ -1,19 +1,20 @@
 #!/usr/bin/env python
-"""
-Auto-generate the 'API Documentation' section of _toc.yml from
-api/_quartodoc_sections.yml (the source of truth for quartodoc sections).
+"""Auto-generate the 'API Documentation' section of _toc.yml.
 
-Rewrites the block between the # BEGIN:api-autogen … # END:api-autogen
-markers in _toc.yml.
+Reads api/_quartodoc_sections.yml, the source of truth for quartodoc sections.
+
+Rewrites the block between the # BEGIN:api-autogen … # END:api-autogen markers in _toc.yml.
 
 Sub-packages are nested under their parent package section (e.g.
 Templates → RateML, tvboptim) rather than appearing as flat siblings.
 
 Run automatically as a Quarto pre-render step (after quartodoc build).
 """
+
 from __future__ import annotations
 
 from pathlib import Path
+
 import yaml
 
 DOCS_DIR = Path(__file__).parent.parent
@@ -25,43 +26,40 @@ BEGIN_MARKER = "# BEGIN:api-autogen"
 END_MARKER = "# END:api-autogen"
 
 BASE_INDENT = 14  # spaces — matches sidebar nesting level in _toc.yml
-INDENT_STEP = 4   # additional spaces per nesting level
+INDENT_STEP = 4  # additional spaces per nesting level
 
 # Section titles that are internal/noise — skip them entirely
 SKIP_TITLES = {
     "Welcome to the TVB-O project!",
 }
 
-# Display-name overrides for individual module files. Anything not listed
-# here falls back to ``basename.replace("_", " ").title()`` (e.g. ``base``
-# → ``Base``). Use this map to preserve product casings that ``.title()``
-# would mangle (``Tvb`` → ``TVB``, ``Pyrates`` → ``PyRates`` …).
+# Display-name overrides for individual module files. Anything not listed here falls back to ``basename.replace("_", " ").title()`` (e.g. ``base`` → ``Base``). Use this map to preserve product casings that ``.title()`` would mangle (``Tvb`` → ``TVB``, ``Pyrates`` → ``PyRates`` …).
 MODULE_DISPLAY_NAMES: dict[str, str] = {
-    "bids":                  "BIDS",
-    "tvb":                   "TVB",
-    "tvboptim":              "tvboptim",
-    "pyrates":               "PyRates",
-    "pyrates_bifurcation":   "PyRates (Bifurcation)",
-    "modelingtoolkit":       "ModelingToolkit",
-    "networkdynamics":       "NetworkDynamics",
-    "neuroml":               "NeuroML",
-    "openminds":             "openMINDS",
-    "bifurcationkit":        "BifurcationKit",
-    "numcont":               "NumCont",
-    "diffeq":                "DiffEq",
-    "rateml":                "RateML",
-    "lems":                  "LEMS",
-    "cuda":                  "CUDA",
-    "jax":                   "JAX",
-    "cli":                   "CLI",
-    "api":                   "API",
-    "io":                    "I/O",
-    "fc":                    "FC",
-    "psd":                   "PSD",
-    "owl":                   "OWL",
-    "db":                    "DB",
-    "tvbgo":                 "TVB-GO",
-    "import_":               "Import",   # trailing underscore to avoid keyword clash
+    "bids": "BIDS",
+    "tvb": "TVB",
+    "tvboptim": "tvboptim",
+    "pyrates": "PyRates",
+    "pyrates_bifurcation": "PyRates (Bifurcation)",
+    "modelingtoolkit": "ModelingToolkit",
+    "networkdynamics": "NetworkDynamics",
+    "neuroml": "NeuroML",
+    "openminds": "openMINDS",
+    "bifurcationkit": "BifurcationKit",
+    "numcont": "NumCont",
+    "diffeq": "DiffEq",
+    "rateml": "RateML",
+    "lems": "LEMS",
+    "cuda": "CUDA",
+    "jax": "JAX",
+    "cli": "CLI",
+    "api": "API",
+    "io": "I/O",
+    "fc": "FC",
+    "psd": "PSD",
+    "owl": "OWL",
+    "db": "DB",
+    "tvbgo": "TVB-GO",
+    "import_": "Import",  # trailing underscore to avoid keyword clash
 }
 
 
@@ -125,8 +123,7 @@ class _Node:
 
     __slots__ = ("package", "label", "index_href", "pages", "children")
 
-    def __init__(self, package: str, label: str,
-                 index_href: str | None, pages: list[tuple[str, str]]):
+    def __init__(self, package: str, label: str, index_href: str | None, pages: list[tuple[str, str]]):
         self.package = package
         self.label = label
         self.index_href = index_href
@@ -137,13 +134,9 @@ class _Node:
 def _build_tree(sections: list[dict]) -> list[_Node]:
     """Build a tree of _Nodes from the flat quartodoc sections list.
 
-    A section with package ``tvbo.templates.rateml`` becomes a child of
-    ``tvbo.templates`` (if present).  Sections whose parent is not in
-    the set become root nodes.
+    A section with package ``tvbo.templates.rateml`` becomes a child of ``tvbo.templates`` (if present).  Sections whose parent is not in the set become root nodes.
 
-    Parent packages that have no section of their own (e.g. no modules)
-    are synthesised as container nodes using SECTION_TITLES from
-    tvbo_package_struct.
+    Parent packages that have no section of their own (e.g. no modules) are synthesised as container nodes using SECTION_TITLES from tvbo_package_struct.
     """
     # Import SECTION_TITLES for synthesising missing parent nodes
     from tvbo_package_struct import SECTION_TITLES
@@ -163,9 +156,7 @@ def _build_tree(sections: list[dict]) -> list[_Node]:
 
         nodes[package] = _Node(package, label, index_href, pages)
 
-    # Synthesise missing parent nodes so children can be nested properly.
-    # E.g. if tvbo.templates.rateml exists but tvbo.templates does not,
-    # create an empty tvbo.templates container node.
+    # Synthesise missing parents so children nest: tvbo.templates.rateml without tvbo.templates gets an empty container.
     for pkg in list(nodes):
         parts = pkg.split(".")
         for i in range(2, len(parts)):
@@ -198,14 +189,14 @@ def _render_node(node: _Node, depth: int, lines: list[str]) -> None:
     i = _indent(depth)
     ic = _indent(depth + 1)
 
-    lines.append(f"{i}- section: \"{node.label}\"")
+    lines.append(f'{i}- section: "{node.label}"')
     if node.index_href:
         lines.append(f"{i}  href: {node.index_href}")
     lines.append(f"{i}  contents:")
 
     # Render leaf pages first
     for display, href in node.pages:
-        lines.append(f"{ic}- text: \"{display}\"")
+        lines.append(f'{ic}- text: "{display}"')
         lines.append(f"{ic}  href: {href}")
 
     # Then render child sections
@@ -222,16 +213,15 @@ def build_block() -> str:
     lines: list[str] = [BEGIN_MARKER]
     i0 = _indent(0)
     i1 = _indent(1)
-    lines.append(f"{i0}- section: \"API Documentation\"")
+    lines.append(f'{i0}- section: "API Documentation"')
     lines.append(f"{i0}  href: api/index.qmd")
     lines.append(f"{i0}  contents:")
 
     for node in roots:
-        # The root `tvbo` section has no label of its own — inline its
-        # pages directly (they're top-level modules like tvbo.utils).
+        # The root `tvbo` section has no label of its own — inline its pages directly (they're top-level modules like tvbo.utils).
         if node.package == "tvbo":
             for display, href in node.pages:
-                lines.append(f"{i1}- text: \"{display}\"")
+                lines.append(f'{i1}- text: "{display}"')
                 lines.append(f"{i1}  href: {href}")
             continue
 
@@ -255,7 +245,7 @@ def update_toc() -> None:
         raise SystemExit(1)
 
     new_block = build_block()
-    new_text = text[:begin_idx] + new_block + text[end_idx + len(END_MARKER):]
+    new_text = text[:begin_idx] + new_block + text[end_idx + len(END_MARKER) :]
 
     if new_text == text:
         print("API TOC section unchanged — skipping write.")

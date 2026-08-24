@@ -1,9 +1,6 @@
 """Shared machinery for TVBO's golden corpora.
 
-A golden corpus freezes an artifact TVBO promises to produce — generated source, simulation
-output — and fails when it changes. Every corpus needs the same five behaviours, and this
-module owns them once so a new corpus is a storage format plus a comparison, not another
-copy of the harness:
+A golden corpus freezes an artifact TVBO promises to produce — generated source, simulation output — and fails when it changes. Every corpus needs the same five behaviours, and this module owns them once so a new corpus is a storage format plus a comparison, not another copy of the harness:
 
 * resolving a case to its reference file,
 * re-baselining under ``--regenerate-golden``, including pruning references whose case no
@@ -12,16 +9,13 @@ copy of the harness:
 * reporting a mismatch as a diagnostic rather than an opaque assertion,
 * checking that the case set and the reference set describe the same things.
 
-Regeneration deliberately cannot produce a green run: every regenerated case is skipped
-rather than passed, and :func:`pytest_sessionfinish` in ``conftest`` fails the session. A
-re-baseline is a change to what TVBO promises, so it must be reviewed and committed on its
-own — never mistaken for a suite that passed.
+Regeneration deliberately cannot produce a green run: every regenerated case is skipped rather than passed, and :func:`pytest_sessionfinish` in ``conftest`` fails the session. A re-baseline is a change to what TVBO promises, so it must be reviewed and committed on its own — never mistaken for a suite that passed.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import pytest
 
@@ -59,8 +53,7 @@ class GoldenCorpus:
     def check(self, case_id: str, produced, *, regenerate: bool, what: str) -> None:
         """Assert ``produced`` matches the reference for ``case_id``.
 
-        Skips (never passes) when regenerating. Fails with a pointed message when the
-        reference is absent, so a newly added case cannot slip in unreviewed.
+        Skips (never passes) when regenerating. Fails with a pointed message when the reference is absent, so a newly added case cannot slip in unreviewed.
         """
         reference = self.path(case_id)
 
@@ -86,9 +79,7 @@ class GoldenCorpus:
     def reconcile(self, case_ids, *, regenerate: bool, what: str) -> None:
         """Assert the reference set and ``case_ids`` describe the same cases.
 
-        Under ``--regenerate-golden`` the references of cases that no longer exist are
-        deleted instead, so renaming a case does not leave the corpus permanently
-        inconsistent and needing a hand-fix.
+        Under ``--regenerate-golden`` the references of cases that no longer exist are deleted instead, so renaming a case does not leave the corpus permanently inconsistent and needing a hand-fix.
         """
         expected = set(case_ids)
         present = {p.name[: -len(self.suffix)] for p in self.root.glob(f"*{self.suffix}")}

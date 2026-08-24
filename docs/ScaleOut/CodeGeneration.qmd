@@ -76,11 +76,7 @@ print(yaml_str[:300])
 
 ### BIDS
 
-Export as a [BEP034](https://bids.neuroimaging.io/) computational modeling derivative:
-
-```python
-exp.to_bids("output/derivatives/tvbo")
-```
+A run writes its own BIDS derivative: `tvbo run` puts each result and its YAML sidecar in the study's `derivatives/tvbo/`, named by the layout record. There is no separate export call.
 
 ### [OpenMINDS](https://openminds.ebrains.eu/)
 
@@ -101,5 +97,4 @@ Markdown(report)
 ## See Also
 
 - [Simulation Experiments](../Simulation/SimulationExperiments.qmd) — running experiments
-- [BIDS Export](/Interoperability/BIDS/BIDS_Export.qmd) — detailed BIDS workflow
 - [OpenMINDS](/Interoperability/OpenMINDS.qmd) — OpenMINDS JSON-LD export

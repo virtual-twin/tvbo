@@ -1,13 +1,8 @@
-#
-# Module: __init__.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""
-TVB-O's plotting utilities
-==========================
+# SPDX-License-Identifier: EUPL-1.2
+
+"""TVB-O's plotting utilities.
+
 This module contains utilities for plotting TVB-O models.
 
 
@@ -19,13 +14,13 @@ plot.ontology.plot_model('JansenRit')
 """
 
 from . import (
-	network,
-	ontology,
-	timeseries,
-	phase,
-	animate,
-	dynamics,
-	layout_mosaic,
-	dynamics_layout,
-	experiment_layout,
+    animate,
+    dynamics,
+    dynamics_layout,
+    experiment_layout,
+    layout_mosaic,
+    network,
+    ontology,
+    phase,
+    timeseries,
 )

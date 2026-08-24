@@ -1,41 +1,21 @@
 """Golden corpus for simulation output — the guard rail that freezes the numbers.
 
 The generated-code corpus (``test_codegen_golden_corpus``) freezes what codegen *emits*.
-That is necessary but not sufficient: a change can leave every emitted character identical
-and still move the numbers — a different noise draw, a reordered reduction, a solver that
-evaluates auxiliaries at a different point in the step. Equally, emitted code can change
-for a purely cosmetic reason and leave the numbers untouched. The two corpora fail on
-disjoint classes of regression, so both are needed.
+That is necessary but not sufficient: a change can leave every emitted character identical and still move the numbers — a different noise draw, a reordered reduction, a solver that evaluates auxiliaries at a different point in the step. Equally, emitted code can change for a purely cosmetic reason and leave the numbers untouched. The two corpora fail on disjoint classes of regression, so both are needed.
 
-Each case is a small, fully declarative ``SimulationExperiment`` under ``specs/``, chosen
-to cover one axis the others cannot:
+Each case is a small, fully declarative ``SimulationExperiment`` under ``specs/``, chosen to cover one axis the others cannot:
 
 ===========================  ==================================================
-``pendulum_euler``           first-order integrator arithmetic
-``pendulum_heun``            second-order integrator arithmetic
-``pendulum_noise_seeded``    stochastic draw + seed threading
-``conditional_piecewise``    ``Piecewise`` through codegen into a running solver
-``network_ring_kuramoto``    coupling sum, weight matrix, per-node state axis
-``modes_reducedset_hmr``     the ``mode_dot`` / ``mode_sum`` array primitives
+``pendulum_euler``           first-order integrator arithmetic ``pendulum_heun``            second-order integrator arithmetic ``pendulum_noise_seeded``    stochastic draw + seed threading ``conditional_piecewise``    ``Piecewise`` through codegen into a running solver ``network_ring_kuramoto``    coupling sum, weight matrix, per-node state axis ``modes_reducedset_hmr``     the ``mode_dot`` / ``mode_sum`` array primitives
 ===========================  ==================================================
 
-Runs are reproducible: every spec produces byte-identical output across processes and
-across ``PYTHONHASHSEED`` values, seeded noise included. Comparison is nevertheless made
-with a tolerance rather than bit-for-bit, because floating-point results are not portable
-across architectures and CI does not run on the machine that produced the reference.
+Runs are reproducible: every spec produces byte-identical output across processes and across ``PYTHONHASHSEED`` values, seeded noise included. Comparison is nevertheless made with a tolerance rather than bit-for-bit, because floating-point results are not portable across architectures and CI does not run on the machine that produced the reference.
 
-:data:`DEFAULT_TOLERANCE` is tight enough that any change to the arithmetic is caught and
-loose enough to survive a different CPU or BLAS; :data:`TOLERANCES` overrides it per spec
-so a chaotic system can state its own without loosening the gate for everything else.
+:data:`DEFAULT_TOLERANCE` is tight enough that any change to the arithmetic is caught and loose enough to survive a different CPU or BLAS; :data:`TOLERANCES` overrides it per spec so a chaotic system can state its own without loosening the gate for everything else.
 
-Both live here rather than in the spec files. A spec is a ``SimulationExperiment`` and
-rejects keys outside the schema, so a ``golden_tolerance:`` entry would make the spec fail
-to load; and reading it back would mean parsing the file a second time outside TVBO's YAML
-dialect, which breaks on ``!include``.
+Both live here rather than in the spec files. A spec is a ``SimulationExperiment`` and rejects keys outside the schema, so a ``golden_tolerance:`` entry would make the spec fail to load; and reading it back would mean parsing the file a second time outside TVBO's YAML dialect, which breaks on ``!include``.
 
-The frozen output lives in ``expected/`` rather than ``output/`` because ``.gitignore``
-carries a bare ``output`` rule — under that name the references would be silently
-untracked and this suite would pass on CI while asserting nothing.
+The frozen output lives in ``expected/`` rather than ``output/`` because ``.gitignore`` carries a bare ``output`` rule — under that name the references would be silently untracked and this suite would pass on CI while asserting nothing.
 
 See ``tests/golden.py`` for the regeneration and reconciliation semantics.
 """
@@ -74,9 +54,7 @@ def _run(spec: Path):
 def _capture(spec: Path) -> dict:
     """Values, dimension names, coordinate labels and the time base.
 
-    Time is pinned as numbers rather than labels: a regression in transient handling, in the
-    ms-versus-s unit, or an off-by-one in the sample stamps can leave every state value and
-    the sample count untouched and would otherwise pass.
+    Time is pinned as numbers rather than labels: a regression in transient handling, in the ms-versus-s unit, or an off-by-one in the sample stamps can leave every state value and the sample count untouched and would otherwise pass.
     """
     data = _run(spec)
     return {
@@ -107,8 +85,7 @@ def _read(path: Path) -> dict:
             "values": ref["values"],
             "time": ref["time"],
             "dims": [str(d) for d in ref["dims"]],
-            "labels": {k[len("coord__"):]: [str(v) for v in ref[k]] for k in ref.files
-                       if k.startswith("coord__")},
+            "labels": {k[len("coord__") :]: [str(v) for v in ref[k]] for k in ref.files if k.startswith("coord__")},
         }
 
 
@@ -117,10 +94,7 @@ def _compare(produced: dict, expected: dict, tol: dict) -> str | None:
     if produced["dims"] != expected["dims"]:
         return f"  dimension names changed — {expected['dims']} → {produced['dims']}"
     if set(produced["labels"]) != set(expected["labels"]):
-        return (
-            f"  coordinate set changed — {sorted(expected['labels'])} → "
-            f"{sorted(produced['labels'])}"
-        )
+        return f"  coordinate set changed — {sorted(expected['labels'])} → {sorted(produced['labels'])}"
     for key, want in expected["labels"].items():
         if produced["labels"][key] != want:
             return f"  '{key}' coordinate labels changed — {want} → {produced['labels'][key]}"
@@ -128,10 +102,7 @@ def _compare(produced: dict, expected: dict, tol: dict) -> str | None:
         return f"  sample count changed — {expected['time'].shape} → {produced['time'].shape}"
     if not np.allclose(produced["time"], expected["time"], **tol):
         first = int(np.argmax(np.abs(produced["time"] - expected["time"])))
-        return (
-            f"  time base changed — sample {first} was {expected['time'][first]!r}, "
-            f"now {produced['time'][first]!r}"
-        )
+        return f"  time base changed — sample {first} was {expected['time'][first]!r}, now {produced['time'][first]!r}"
     values, reference = produced["values"], expected["values"]
     if values.shape != reference.shape:
         return f"  output shape changed — {reference.shape} → {values.shape}"
@@ -167,27 +138,18 @@ CORPUS = _corpus_for("")
 def test_simulation_output_matches_golden(spec: Path, regenerate: bool):
     """Running a curated spec reproduces its frozen output, values, labels and time base.
 
-    Runs twice and asserts the two agree bit for bit before comparing. Reproducibility is
-    what makes a frozen trajectory meaningful — without it a failure could not be told from
-    run-to-run jitter — so it is asserted here rather than behind a marker CI never enables.
+    Runs twice and asserts the two agree bit for bit before comparing. Reproducibility is what makes a frozen trajectory meaningful — without it a failure could not be told from run-to-run jitter — so it is asserted here rather than behind a marker CI never enables.
     """
     pytest.importorskip("tvboptim")
     produced = _capture(spec)
-    assert produced["values"].tobytes() == _capture(spec)["values"].tobytes(), (
-        f"{spec.stem} does not run reproducibly"
-    )
-    _corpus_for(spec.stem).check(
-        spec.stem, produced, regenerate=regenerate, what="simulation output"
-    )
+    assert produced["values"].tobytes() == _capture(spec)["values"].tobytes(), f"{spec.stem} does not run reproducibly"
+    _corpus_for(spec.stem).check(spec.stem, produced, regenerate=regenerate, what="simulation output")
 
 
 @pytest.mark.backend_core
 def test_corpus_covers_every_spec(regenerate: bool):
     """Every spec has a frozen output, and none outlives its spec.
 
-    Pure filesystem arithmetic, so it needs no simulation backend and is marked for the core
-    shard rather than the tvboptim one — it is the signal that a spec was added without its
-    reference, and that mistake should surface on every pull request, not only where the
-    backend happens to be installed.
+    Pure filesystem arithmetic, so it needs no simulation backend and is marked for the core shard rather than the tvboptim one — it is the signal that a spec was added without its reference, and that mistake should surface on every pull request, not only where the backend happens to be installed.
     """
     CORPUS.reconcile((p.stem for p in SPEC_PATHS), regenerate=regenerate, what="specs")

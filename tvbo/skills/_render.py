@@ -2,55 +2,45 @@
 
 A canonical skill is a single ``SKILL.md`` file with YAML frontmatter:
 
-.. code-block:: yaml
+```yaml
+---
+name: linkml-schema
+description: How to edit the LinkML schema and why the generated dir is off-limits.
+audience: maintainer        # maintainer | user | both
+applies_to:                 # globs — used by Copilot/Cursor
+  - "schema/**/*.yaml"
+  - "tvbo/datamodel/**"
+tags: [schema, codegen]
+requires_extras: []         # e.g. ["jax"] — surfaced in user-target docs
+---
 
-   ---
-   name: linkml-schema
-   description: How to edit the LinkML schema and why the generated dir is off-limits.
-   audience: maintainer        # maintainer | user | both
-   applies_to:                 # globs — used by Copilot/Cursor
-     - "schema/**/*.yaml"
-     - "tvbo/datamodel/**"
-   tags: [schema, codegen]
-   requires_extras: []         # e.g. ["jax"] — surfaced in user-target docs
-   ---
-
-   # body in plain markdown
+# body in plain markdown
+```
 
 Renderers translate the canonical form into the format each tool consumes:
 
-================  =================================================
-Target            Output
-================  =================================================
-``claude-code``   ``<dest>/<name>/SKILL.md``      (Claude frontmatter)
-``copilot``       ``<dest>/<name>.instructions.md`` (``applyTo`` frontmatter)
-``cursor``        ``<dest>/<name>.mdc``           (``globs`` + ``description``)
-``agents-md``     marker region in ``AGENTS.md``
-``prompt``        concatenated markdown, returned as str
-================  =================================================
+| Target | Output |
+|---|---|
+| ``claude-code`` | ``<dest>/<name>/SKILL.md`` (Claude frontmatter) |
+| ``copilot`` | ``<dest>/<name>.instructions.md`` (``applyTo`` frontmatter) |
+| ``cursor`` | ``<dest>/<name>.mdc`` (``globs`` + ``description``) |
+| ``agents-md`` | marker region in ``AGENTS.md`` |
+| ``prompt`` | concatenated markdown, returned as str |
 
-User-target installs (``claude-code`` / ``cursor`` invoked by
-``tvbo skills install``) add a ``tvbo-`` prefix to the on-disk name and stamp
-``managed-by: tvbo`` + ``tvbo-version: …`` into the frontmatter so we can
-safely overwrite our own files on upgrade without clobbering user edits.
+User-target installs (``claude-code`` / ``cursor`` invoked by ``tvbo skills install``) add a ``tvbo-`` prefix to the on-disk name and stamp ``managed-by: tvbo`` + ``tvbo-version: …`` into the frontmatter so we can safely overwrite our own files on upgrade without clobbering user edits.
 
-A skill directory may carry an ``assets/`` sibling of its ``SKILL.md`` (helper
-scripts, templates, a skeleton, reference chapters the body defers detail to).
-Only the directory-shaped ``claude-code`` target can hold it: the renderer
-mirrors ``assets/`` next to the rendered ``SKILL.md`` and prunes it on
-uninstall. The flat targets (``cursor``, ``copilot``, ``prompt``,
-``agents-md``) have nowhere to put a mirror, so they inline every referenced
-``assets/*.md`` into the body instead — a deferred chapter must not become an
-unreachable pointer just because the target is a single file.
+A skill directory may carry an ``assets/`` sibling of its ``SKILL.md`` (helper scripts, templates, a skeleton, reference chapters the body defers detail to).
+Only the directory-shaped ``claude-code`` target can hold it: the renderer mirrors ``assets/`` next to the rendered ``SKILL.md`` and prunes it on uninstall. The flat targets (``cursor``, ``copilot``, ``prompt``, ``agents-md``) have nowhere to put a mirror, so they inline every referenced ``assets/*.md`` into the body instead — a deferred chapter must not become an unreachable pointer just because the target is a single file.
 """
+
 from __future__ import annotations
 
 import fnmatch
 import re
 import shutil
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
 
 import yaml
 
@@ -61,6 +51,7 @@ ASSET_IGNORE = ("__pycache__", "*.py[cod]", ".DS_Store")
 def is_asset_noise(rel: Path) -> bool:
     """True if any component of a mirrored-asset relative path is :data:`ASSET_IGNORE`."""
     return any(fnmatch.fnmatch(part, pat) for part in rel.parts for pat in ASSET_IGNORE)
+
 
 CANONICAL_PACKAGE_DIR = Path(__file__).parent / "canonical"
 """User-skill canonical root (ships in the wheel as package data)."""
@@ -91,9 +82,7 @@ class Skill:
     def install_name(self) -> str:
         """Name used when installing to a user-global skill directory.
 
-        User skills get a ``tvbo-`` prefix to avoid clashing with skills from
-        other packages. Maintainer skills are rendered into the repo and need
-        no prefix (the repo is already scoped).
+        User skills get a ``tvbo-`` prefix to avoid clashing with skills from other packages. Maintainer skills are rendered into the repo and need no prefix (the repo is already scoped).
         """
         if self.audience == "maintainer":
             return self.name
@@ -121,10 +110,7 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
 def parse_skill(path: Path) -> Skill:
     """Parse a ``SKILL.md`` file into a :class:`Skill`.
 
-    Custom fields (``audience``, ``applies_to``, ``tags``, ``requires_extras``)
-    may live either at the top level or under a ``metadata:`` key — the latter
-    satisfies VS Code's SKILL.md schema, which only allows a known set of
-    top-level attributes plus a free-form ``metadata`` block.
+    Custom fields (``audience``, ``applies_to``, ``tags``, ``requires_extras``) may live either at the top level or under a ``metadata:`` key — the latter satisfies VS Code's SKILL.md schema, which only allows a known set of top-level attributes plus a free-form ``metadata`` block.
     """
     text = path.read_text(encoding="utf-8")
     fm, body = split_frontmatter(text)
@@ -163,10 +149,7 @@ def load_canonical(roots: Iterable[Path]) -> list[Skill]:
         for skill_md in sorted(root.glob("*/SKILL.md")):
             skill = parse_skill(skill_md)
             if skill.name in skills:
-                raise ValueError(
-                    f"duplicate skill name {skill.name!r}: "
-                    f"{skills[skill.name].source} vs {skill.source}"
-                )
+                raise ValueError(f"duplicate skill name {skill.name!r}: {skills[skill.name].source} vs {skill.source}")
             skills[skill.name] = skill
     return sorted(skills.values(), key=lambda s: s.name)
 
@@ -183,18 +166,11 @@ def asset_refs(body: str) -> list[str]:
 def flat_body(skill: Skill) -> str:
     """Body with every referenced ``assets/*.md`` chapter appended.
 
-    The flat targets carry no ``assets/`` mirror, so a body that defers detail
-    to a reference file would *lose* that detail rather than defer it. Inlining
-    keeps those consumers whole; the directory-shaped target leaves the pointer
-    alone so the agent reads the chapter only when it reaches that phase.
+    The flat targets carry no ``assets/`` mirror, so a body that defers detail to a reference file would *lose* that detail rather than defer it. Inlining keeps those consumers whole; the directory-shaped target leaves the pointer alone so the agent reads the chapter only when it reaches that phase.
     """
     if skill.assets_dir is None:
         return skill.body
-    chapters = [
-        (ref, skill.assets_dir / ref)
-        for ref in asset_refs(skill.body)
-        if ref.endswith(".md")
-    ]
+    chapters = [(ref, skill.assets_dir / ref) for ref in asset_refs(skill.body) if ref.endswith(".md")]
     parts = [skill.body.rstrip()]
     parts += [
         f"<!-- inlined from assets/{ref} -->\n\n{path.read_text(encoding='utf-8').strip()}"
@@ -215,18 +191,14 @@ def _wrap(fm: dict, body: str) -> str:
 def _sync_assets(assets_dir: Path | None, dest_skill_dir: Path) -> None:
     """Mirror a skill's ``assets/`` dir next to its rendered ``SKILL.md``.
 
-    Idempotent: the destination ``assets/`` is rebuilt from source on every
-    render, so files removed upstream do not linger. A skill with no ``assets/``
-    leaves the destination without one (and prunes a stale copy if present).
+    Idempotent: the destination ``assets/`` is rebuilt from source on every render, so files removed upstream do not linger. A skill with no ``assets/`` leaves the destination without one (and prunes a stale copy if present).
     """
     dest_assets = dest_skill_dir / "assets"
     if dest_assets.exists():
         shutil.rmtree(dest_assets)
     if assets_dir is not None and assets_dir.is_dir():
         # Skip byte-compiled / OS noise so the mirror (and wheel) stay deterministic.
-        shutil.copytree(
-            assets_dir, dest_assets, ignore=shutil.ignore_patterns(*ASSET_IGNORE)
-        )
+        shutil.copytree(assets_dir, dest_assets, ignore=shutil.ignore_patterns(*ASSET_IGNORE))
 
 
 def render_claude_code(
@@ -261,11 +233,33 @@ def render_claude_code(
     return out
 
 
-def render_copilot(skill: Skill, dest_dir: Path) -> Path:
-    """Render a skill as a GitHub Copilot ``<name>.instructions.md`` file."""
+def render_copilot(
+    skill: Skill,
+    dest_dir: Path,
+    *,
+    managed: bool = False,
+    tvbo_version: str | None = None,
+    use_install_name: bool = False,
+) -> Path:
+    """Render a skill as a GitHub Copilot ``<name>.instructions.md`` file.
+
+    Parameters
+    ----------
+    managed
+        If True, stamp ``managed-by: tvbo`` and ``tvbo-version`` into the
+        frontmatter so :func:`uninstall_managed` can recognise our files.
+    use_install_name
+        If True, use :attr:`Skill.install_name` (with the ``tvbo-`` prefix);
+        otherwise use the raw canonical ``name`` (for in-repo rendering).
+    """
+    target_name = skill.install_name if use_install_name else skill.name
     apply_to = ",".join(skill.applies_to) if skill.applies_to else "**"
-    fm = {"applyTo": apply_to}
-    out = dest_dir / f"{skill.name}.instructions.md"
+    fm: dict = {"applyTo": apply_to}
+    if managed:
+        fm["managed-by"] = "tvbo"
+        if tvbo_version:
+            fm["tvbo-version"] = tvbo_version
+    out = dest_dir / f"{target_name}.instructions.md"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(_wrap(fm, flat_body(skill)), encoding="utf-8")
     return out
@@ -317,8 +311,7 @@ def render_agents_md(skills: list[Skill], dest: Path) -> Path:
     """Rewrite the skills-index region of ``AGENTS.md`` in place.
 
     The region is delimited by :data:`AGENTS_MD_BEGIN` / :data:`AGENTS_MD_END`.
-    Prose outside the markers is left untouched. If ``dest`` does not exist,
-    a minimal stub is created so the generator has something to update.
+    Prose outside the markers is left untouched. If ``dest`` does not exist, a minimal stub is created so the generator has something to update.
     """
     maintainer = [s for s in skills if s.audience in {"maintainer", "both"}]
     user = [s for s in skills if s.audience in {"user", "both"}]
@@ -330,25 +323,19 @@ def render_agents_md(skills: list[Skill], dest: Path) -> Path:
         lines.append("| Skill | Description | Location |")
         lines.append("|-------|-------------|----------|")
         for s in maintainer:
-            lines.append(
-                f"| `{s.name}` | {s.description} | `.claude/skills/{s.name}/SKILL.md` |"
-            )
+            lines.append(f"| `{s.name}` | {s.description} | `.claude/skills/{s.name}/SKILL.md` |")
     else:
         lines.append("_(none)_")
     lines.append("")
     lines.append("### User skills (shipped via `pip install tvbo`)")
     lines.append("")
-    lines.append("Install with: `tvbo skills install --target claude-code` "
-                 "(or `--target cursor` / `--target prompt`).")
+    lines.append("Install with: `tvbo skills install --target claude-code` (or `--target cursor` / `--target prompt`).")
     lines.append("")
     if user:
         lines.append("| Skill | Description | Canonical source |")
         lines.append("|-------|-------------|------------------|")
         for s in user:
-            lines.append(
-                f"| `{s.install_name}` | {s.description} | "
-                f"`tvbo/skills/canonical/{s.name}/SKILL.md` |"
-            )
+            lines.append(f"| `{s.install_name}` | {s.description} | `tvbo/skills/canonical/{s.name}/SKILL.md` |")
     else:
         lines.append("_(none)_")
     lines.append("")

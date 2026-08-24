@@ -213,7 +213,7 @@ network:
   transforms:
     - name: weight
       equation:
-        rhs: "W / max(W)"
+        rhs: "weight / max(weight)"
 
     # Coupling functions: key == class name == coupling_input key
   coupling:
@@ -661,9 +661,7 @@ observations:
       - fc
       - fc_target
     pipeline:
-      - callable:
-          name: fc_corr
-          module: tvboptim.observations.observation
+      - function: fc_corr
         arguments:
           A:
             value: fc
@@ -677,9 +675,7 @@ observations:
       - fc
       - fc_target
     pipeline:
-      - callable:
-          name: rmse
-          module: tvboptim.observations.observation
+      - function: fc_rmse
         arguments:
           A:
             value: fc

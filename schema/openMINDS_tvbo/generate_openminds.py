@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""
-Generate openMINDS-compatible schemas from LinkML source of truth.
+"""Generate openMINDS-compatible schemas from LinkML source of truth.
 
-This script reads the TVBO LinkML datamodel and generates openMINDS JSON schema
-templates, dynamically mapping types to existing openMINDS namespaces where
-appropriate.
+This script reads the TVBO LinkML datamodel and generates openMINDS JSON schema templates, dynamically mapping types to existing openMINDS namespaces where appropriate.
 
-All type mappings are imported from tvbo.adapters.openminds to maintain a single
-source of truth.
+All type mappings are imported from tvbo.adapters.openminds to maintain a single source of truth.
 
 Usage:
     python generate_openminds.py [--input PATH] [--output PATH]
@@ -89,8 +85,7 @@ def linkml_range_to_openminds(
     is_inlined: bool = False,
     all_classes: set[str] | None = None,
 ) -> dict[str, Any]:
-    """
-    Convert LinkML range to openMINDS property definition.
+    """Convert LinkML range to openMINDS property definition.
 
     Returns a dict with type, _linkedTypes, or _embeddedTypes as appropriate.
     """
@@ -138,9 +133,7 @@ def build_instruction(slot_name: str, slot_def: dict[str, Any]) -> str:
 def inherited_chain(class_name: str, class_defs: dict[str, Any]) -> list[dict[str, Any]]:
     """The class and its ``is_a`` ancestors, most distant first.
 
-    A subclass carries its parents' slots at runtime, so an export that emitted only a
-    class's own declarations would silently drop them — a `PDESolver is_a Solver` would
-    serialize without the step size and tolerances it actually has.
+    A subclass carries its parents' slots at runtime, so an export that emitted only a class's own declarations would silently drop them — a `PDESolver is_a Solver` would serialize without the step size and tolerances it actually has.
     """
     chain, seen, name = [], set(), class_name
     while name and name in class_defs and name not in seen:
@@ -170,10 +163,8 @@ def convert_class_to_openminds(
     if class_name in OPENMINDS_CATEGORIES:
         schema["_categories"] = OPENMINDS_CATEGORIES[class_name]
 
-    # Required flag per property name. A map, not an append-only list, so a
-    # subclass that redeclares an inherited slot as optional flips it off:
-    # inherited definitions run first and own last, and the last write wins.
     required_flags: dict[str, bool] = {}
+    """Required flag per property name — a map, not an append-only list, so a subclass redeclaring an inherited slot as optional flips it off: inherited definitions run first and own last, and the last write wins."""
 
     # Properties
     properties: dict[str, Any] = {}
@@ -223,8 +214,7 @@ def convert_slot_to_property(
         all_classes=all_classes,
     )
 
-    # Add instruction
-    # prop["_instruction"] = build_instruction(slot_name, slot_def)
+    # Add instruction prop["_instruction"] = build_instruction(slot_name, slot_def)
 
     # Handle enums
     enum_values = slot_def.get("enum")
