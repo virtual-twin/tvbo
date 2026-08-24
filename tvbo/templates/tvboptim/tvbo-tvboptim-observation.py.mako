@@ -15,6 +15,10 @@ state_names = list(model.state_variables.keys()) if model else ['x']
 # produced by tvboptim >= 0.2.7 and the dfun's VARIABLES_OF_INTEREST tuple.
 _, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if model else ([], [], ['x'])
 dt = experiment.integration.step_size if experiment.integration else 0.1
+# Steps of settle at the head of the scan. Computed here rather than inherited: an <%include>
+# carries the render context, not the including template's local bindings.
+_transient_time = float(getattr(experiment.integration, 'transient_time', 0.0) or 0.0) if experiment.integration else 0.0
+n_transient = int(round(_transient_time / dt)) if dt else 0
 
 
 def resolve_var_index(source, label: str) -> int:
@@ -142,10 +146,10 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
         return f"kwargs.get('{ref_val}')"
     if ref_type == 'integration':
         if ref_val == 'transient':
-            if state_idx is not None:
-                # Slice to source state and squeeze state dimension → (time, nodes)
-                return f"_result_transient.data[:, {state_idx}, :]"
-            return "_result_transient.data"
+            raise ValueError(
+                "`integration.transient` is not a data channel: the settle is the head of the same window, "
+                "so read `integration.result` — its leading samples are the settle and are cut for you."
+            )
         if ref_val == 'result':
             if state_idx is not None:
                 # Slice to source state and squeeze state dimension → (time, nodes)
@@ -273,7 +277,7 @@ def parse_step(func, step_name):
 # =============================================================================
 def analyze_pipeline(pipeline):
     """Analyze pipeline to determine data requirements."""
-    needs_transient = False
+    refs_settle = False
     needs_result = False
 
     for step in pipeline:
@@ -283,7 +287,7 @@ def analyze_pipeline(pipeline):
             ref_type, ref_val = parse_reference(step_input)
             if ref_type == 'integration':
                 if 'transient' in str(ref_val):
-                    needs_transient = True
+                    refs_settle = True
                 if 'result' in str(ref_val):
                     needs_result = True
 
@@ -292,11 +296,11 @@ def analyze_pipeline(pipeline):
             ref_type, ref_val = parse_reference(val)
             if ref_type == 'integration':
                 if 'transient' in str(ref_val):
-                    needs_transient = True
+                    refs_settle = True
                 if 'result' in str(ref_val):
                     needs_result = True
 
-    return needs_transient, needs_result
+    return refs_settle, needs_result
 
 def is_kernel_generator(step_name):
     """Check if function is a kernel generator (has time_range)."""
@@ -437,9 +441,7 @@ def parse_class_reference(class_ref, obs):
         'constructor_args': {},
         'constructor_arg_codes': {},
         'call_args': {},
-        'warmup_source': get_attr(class_ref, 'warmup_source') or get_attr(obs, 'warmup_source'),
         'accepts_voi': False,
-        'accepts_history': False,
         'extra_imports': [],
     }
 
@@ -655,8 +657,8 @@ ${render_recurrence_reduction(red, name, s_idx, dt)}\
         raise ValueError("co-moment reducer: no carry-init shape for state(s) %s" % _missing)
     _init_tuple = ", ".join(_INIT_SHAPE[_s] for _s in _states)
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
-    # warm_history and progress are accepted and ignored, so every reducer factory shares one call site.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
+    # progress is accepted and ignored, so every reducer factory shares one call site.
     _skip = skip + ${_skip_t}
     def _init(template, n_steps):
         n = template.shape[-1]
@@ -683,31 +685,28 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
 </%def>\
 <%def name="render_convolution_reduction(red, name, s_idx, dt)">\
 <%doc>
-    Streaming HRF-Volterra BOLD reducer (Observation.reduce == 'streaming'). Recasts the post-scan bold pipeline (HRF kernel -> stride decimation -> prepend downsampled transient -> 'valid' HRF convolution -> Volterra scaling -> subsample at the TR) as a block reducer: a downsampled-history ring buffer folds each integration block, and strided_convolve (a backend-abstracted printer primitive) evaluates the 'valid' convolution ONLY at the TR boundaries, so the full trajectory is never held. The portable array ops (subsample / concatenate / strided_convolve / Volterra scaling) are rendered via render_expression; the ring/buffer scaffolding is the backend template's concern, exactly as the recurrence reducer mixes jax.lax.scan with printed exprs. Byte-identical to the materialised pipeline to f64 rounding (strided_convolve is ~1e-12 vs the FFT fftconvolve). `warm_history` seeds the ring from the downsampled transient (HRF warm-up); None -> zeros (a transient-free run, e.g. the Schirner group fit).
+    Streaming HRF-Volterra BOLD reducer (Observation.reduce == 'streaming'). Recasts the post-scan bold pipeline (HRF kernel -> stride decimation -> prepend downsampled transient -> 'valid' HRF convolution -> Volterra scaling -> subsample at the TR) as a block reducer: a downsampled-history ring buffer folds each integration block, and strided_convolve (a backend-abstracted printer primitive) evaluates the 'valid' convolution ONLY at the TR boundaries, so the full trajectory is never held. The portable array ops (subsample / concatenate / strided_convolve / Volterra scaling) are rendered via render_expression; the ring/buffer scaffolding is the backend template's concern, exactly as the recurrence reducer mixes jax.lax.scan with printed exprs. Byte-identical to the materialised pipeline to f64 rounding (strided_convolve is ~1e-12 vs the FFT fftconvolve). The declared settle is the head of the same window, so the ring warms on real signal and `skip` drops the settle's whole BOLD samples at finalize (codegen requires the settle to span whole BOLD periods, so the scan-anchored and measurement-anchored TR grids coincide).
 </%doc>\
 <%
     from tvbo.codegen import render_expression
     _cv = ['_block_voi', '_ds', '_ring', '_block_ds', '_signal', '_kernel', '_tr', '_conv', 'k_1', 'V_0']
     _rc = lambda e: render_expression(e, format='jax', parameters=_cv)
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
     k_1 = ${repr(red['k_1'])}
     V_0 = ${repr(red['V_0'])}
     _kernel = ${red['kernel_call']}   # HRF kernel array [K] (the pipeline's kernel function)
     _K = _kernel.shape[0]
     _ds = ${red['ds_steps']}          # decimation stride (raw integration steps / downsampled sample)
     _tr = ${red['tr_stride']}         # TR stride (downsampled samples / BOLD sample)
+    # The settle is folded in-band so the HRF warm-up is real signal, then its whole BOLD samples are dropped at finalize; `skip` is a multiple of _ds*_tr (enforced at codegen), so the scan-anchored and measurement-anchored TR grids coincide.
+    _skip_bold = skip // (_ds * _tr)
     def _init(template, n_steps):
         n = template.shape[-1]
         _n_ds = len(range(_ds - 1, n_steps, _ds))     # downsampled samples over the run
         _n_bold = len(range(_tr, _n_ds + 1, _tr))     # BOLD samples at TR boundaries
-        if warm_history is None:
-            _ring0 = jnp.zeros((_K, n))
-        else:
-            # One kernel length of HRF warm-up, front-zero-padded when the transient is short.
-            _wh = jnp.asarray(warm_history)
-            _ring0 = (jnp.vstack([jnp.zeros((_K - _wh.shape[0], n), _wh.dtype), _wh])
-                      if _wh.shape[0] < _K else _wh[-_K:])
+        # A run whose window opens cold has no preceding signal; a declared settle supplies it in-band.
+        _ring0 = jnp.zeros((_K, n))
         return (_ring0, jnp.zeros((_n_bold, n)), jnp.array(0))
     def _update(acc, block):
         _ring, _bold, _ds_count = acc
@@ -734,7 +733,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         return (_ring, _bold, _ds_next)
     def _finalize(acc):
         _ring, _bold, _ds_count = acc
-        return _bold
+        return _bold[_skip_bold:]
     return (_init, _update, _finalize)
 </%def>\
 <%def name="render_stride_reduction(red, name, s_idx, dt)">\
@@ -745,8 +744,8 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
     from tvbo.codegen import render_expression
     _rc = lambda e: render_expression(e, format='jax', parameters=['_block_voi', '_ds'])
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
-    # warm_history and progress are accepted and ignored, so every reducer factory shares one call site.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
+    # progress is accepted and ignored, so every reducer factory shares one call site.
     _ds = ${red['ds_steps']}           # decimation stride (integration steps per kept sample)
     # The sweep folds transient and main run into one window, so without this a swept cell keeps extra leading samples and is not the same computation as the run alone.
     _skip_n = max(0, -(-(skip + 1) // _ds) - 1) if skip else 0
@@ -833,8 +832,8 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
     _mem_ini = "".join("jnp.full((n,), %r), " % s['init'] for s in _mem)
     _ind = ' ' * 12   # the scan-step body's indentation, shared by the emitted fragments
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
-    # warm_history and progress are accepted and ignored, so every reducer factory shares one call site.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
+    # progress is accepted and ignored, so every reducer factory shares one call site.
 % if _rpars:
     # Bound by name in the closure the init/update/finalize triple shares: a literal inlines, a sourced operator is read once so a large array never enters this source.
 % for _pname, _pdef in _rpars.items():
@@ -980,8 +979,8 @@ ${render_observer_states(red['states'], _jc, _ind)}\
     _gate = ('real_face_mask' in _rpars) and all(('pgn%d' % _k) in _dvnames for _k in range(3))
     _pthr = 0.06
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
-    # warm_history and progress are accepted and ignored, so every reducer factory shares one call site.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
+    # progress is accepted and ignored, so every reducer factory shares one call site.
 % if _rpars:
     # A literal inlines and a sourced operator is read once, so a large array never enters this source.
 % for _pname, _pdef in _rpars.items():
@@ -1198,8 +1197,6 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
     constructor_args = class_ref['constructor_args']
     constructor_arg_codes = dict(class_ref.get('constructor_arg_codes') or {})
     call_args = class_ref['call_args']
-    warmup_source = class_ref.get('warmup_source')
-    accepts_history = class_ref.get('accepts_history') or bool(warmup_source)
     if class_ref.get('accepts_voi') and 'voi' not in constructor_arg_codes:
         constructor_arg_codes['voi'] = 'voi'
 
@@ -1213,8 +1210,6 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
                 init_kwargs.append(f"{arg_name}={arg_val}")
     init_kwargs_str = ', '.join(init_kwargs)
 
-    # Check if history is needed (warmup_source specified)
-    needs_history = bool(accepts_history)
 %>
 
 class ${class_name}(eqx.Module):
@@ -1227,11 +1222,10 @@ class ${class_name}(eqx.Module):
     # External monitor instance
     _monitor: eqx.Module
 
-    def __init__(self, history=None, voi: int = ${state_idx}, dt: float = ${dt}, **kwargs):
+    def __init__(self, voi: int = ${state_idx}, dt: float = ${dt}, **kwargs):
         """Initialize observation using external class.
 
         Args:
-            history: NativeSolution from transient simulation (for warmup)
             voi: Variable of interest index (default: ${state_idx})
             dt: Time step (default: ${dt})
             **kwargs: Additional arguments passed to ${ext_class_name}
@@ -1239,20 +1233,27 @@ class ${class_name}(eqx.Module):
         # Merge default constructor args with kwargs (filter out internal keys)
         _init_kwargs = {${', '.join([f"'{k}': {v}" for k, v in constructor_arg_codes.items()])}}
         # Filter out internal keys not meant for external class
-        _internal_keys = {'result', 'result_transient', 'model_fn', 'state', 'history'}
+        _internal_keys = {'result', 'model_fn', 'state'}
         _init_kwargs.update({k: v for k, v in kwargs.items() if k not in _internal_keys})
-% if needs_history:
-        _init_kwargs['history'] = history
-% endif
-    % if class_ref.get('accepts_voi') or 'voi' in constructor_arg_codes or needs_history:
+    % if class_ref.get('accepts_voi') or 'voi' in constructor_arg_codes:
         _init_kwargs.setdefault('voi', voi)
 % endif
 
         self._monitor = _Ext${ext_class_name}(**_init_kwargs)
 
     def __call__(self, result):
-        """Process simulation result using external class."""
-        return self._monitor(result)
+        """Process the run, reporting only its measured part.
+
+        The settle is the head of the same window, so the monitor's own warm-up is real signal; its output samples before t=0 are the settle's and are dropped here.
+        """
+        _out = self._monitor(result)
+        _ts = getattr(_out, "ts", None)
+        if _ts is None:
+            return _out
+        _keep = int(jnp.count_nonzero(jnp.asarray(_ts) <= 0.0))
+        if _keep == 0:
+            return _out
+        return type(_out)(_out.ts[_keep:], _out.ys[_keep:], dt=getattr(_out, "dt", None), variable_names=getattr(_out, "variable_names", None))
 
 % elif obs['reduction'] is not None:
 ## A host monitor backed by `_reduction_${obs_name}`: the observer is the definition, so the whole-trajectory fold equals the value the grid streams.
@@ -1260,22 +1261,14 @@ class ${class_name}(AbstractMonitor):
     """${obs['label'] or obs_name} observation (dynamics observer)."""
     dt: float = eqx.field(static=True, default=${dt})
 % if obs['reduction'].get('kind') == 'convolution':
-    _history: jax.Array = None
-
-    def __init__(self, history=None, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
+    def __init__(self, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
         self.voi = voi
         self.period = period if period is not None else dt
         self.dt = dt
-        if history is not None:
-            _h = history.data if hasattr(history, 'data') else history
-            # The source-column transient decimated to the downsampled grid, which is the HRF warm-up the reducer seeds its ring with.
-            self._history = _h[:, ${state_idx}, :][${obs['reduction']['ds_steps'] - 1}::${obs['reduction']['ds_steps']}]
-        else:
-            self._history = None
 
     def __call__(self, result):
-        # One block over the whole trajectory equals the value the grid streams, seeded so the HRF warm-up matches the pipeline.
-        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, warm_history=self._history)
+        # One block over the whole window equals the value the grid streams: the settle warms the HRF ring in-band and its BOLD samples are dropped at finalize.
+        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, skip=_N_TRANSIENT)
         _data = result.data if hasattr(result, 'data') else result
         _acc = _init(_data[0], _data.shape[0])
         _acc = _update(_acc, _data)
@@ -1286,14 +1279,14 @@ class ${class_name}(AbstractMonitor):
     # a monitor reports at its declared period; a folded statistic collapses to one value (dt)
     _obs_period = repr(float(to_numeric(obs['period']))) if obs['reduction'].get('kind') == 'monitor' else 'dt'
 %>\
-    def __init__(self, history=None, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
+    def __init__(self, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
         self.voi = voi
         self.period = period if period is not None else ${_obs_period}
         self.dt = dt
 
     def __call__(self, result):
-        # One big block over the whole trajectory == the post-scan reduction.
-        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt)
+        # One big block over the whole window == the post-scan reduction, less the settle.
+        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, skip=_N_TRANSIENT)
         _data = result.data if hasattr(result, 'data') else result
         _acc = _init(_data[0], _data.shape[0])
         _acc = _update(_acc, _data)
@@ -1306,7 +1299,14 @@ class ${class_name}(AbstractMonitor):
 ## =============================================================================
 <%
     # Analyze pipeline for data requirements
-    needs_transient, needs_result_from_pipeline = analyze_pipeline(pipeline)
+    refs_settle, needs_result_from_pipeline = analyze_pipeline(pipeline)
+    if refs_settle:
+        raise ValueError(
+            f"Observation {obs_name!r} references `integration.transient` in its pipeline. The settle is no "
+            "longer a separate simulation: it is the head of the same window, so a kernel's warm-up is already "
+            "in-band and its leading output samples are dropped for you. Drop the history reference (and any "
+            "`prepend_history` step) and read `integration.result`."
+        )
 
     # Resolve source to its column in the recorded variable layout.
     state_idx = resolve_var_index(obs_source, obs_name)
@@ -1317,7 +1317,6 @@ class ${class_name}(AbstractMonitor):
 
     # Identify precomputable steps (kernels) and history steps
     static_steps = []  # Kernel generators - computed in __init__, stored as static
-    history_steps = []  # Steps that reference integration.transient
     dynamic_steps = []  # Everything else - computed in __call__
 
     for step in pipeline:
@@ -1325,16 +1324,7 @@ class ${class_name}(AbstractMonitor):
         if is_kernel_generator(step_name):
             static_steps.append(step)
         else:
-            # Check if step references transient
-            refs_transient = False
-            for val in step.get('arguments', {}).values():
-                if isinstance(val, str) and 'transient' in val:
-                    refs_transient = True
-                    break
-            if refs_transient:
-                history_steps.append(step)
-            else:
-                dynamic_steps.append(step)
+            dynamic_steps.append(step)
 
     # Determine final output key - must match the actual variable name generated
     if pipeline:
@@ -1365,8 +1355,6 @@ class ${class_name}(AbstractMonitor):
                 if prefix in observations:
                     referenced_observations.add(prefix)
 
-    # Check if pipeline has explicit prepend_history step (avoids redundant auto-generation)
-    has_prepend_history_step = any(s['name'] == 'prepend_history' for s in pipeline)
 %>
 
 class ${class_name}(AbstractMonitor):
@@ -1384,16 +1372,12 @@ class ${class_name}(AbstractMonitor):
     # Precomputed: ${step['name']} (kernel)
     _${step['name']}: jax.Array
 % endfor
-% if needs_transient:
-    # History buffer (preprocessed from transient)
-    _history: jax.Array = None
-% endif
 % for ref_obs in referenced_observations:
     # Referenced observation monitor: ${ref_obs}
     _${ref_obs}_monitor: eqx.Module = None
 % endfor
 
-    def __init__(self, history=None, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}${''.join([f", {step['name']}_params=None" for step in static_steps])}):
+    def __init__(self, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}${''.join([f", {step['name']}_params=None" for step in static_steps])}):
         self.voi = self._normalize_voi(voi)
         self.period = period if period is not None else dt
         self.dt = dt
@@ -1412,25 +1396,9 @@ class ${class_name}(AbstractMonitor):
         self._${step_name} = ${step_name}(${', '.join(default_args)})
 % endfor
 
-% if needs_transient:
-        if history is not None:
-            if hasattr(history, 'data'):
-% if static_steps:
-                n_samples = int(math.ceil(self._${static_steps[0]['name']}.shape[0]))
-% else:
-                n_samples = 5000  # Default history length
-% endif
-% if obs_source:
-                self._history = history.data[-n_samples:, self.voi, :]
-% else:
-                self._history = history.data[-n_samples:, :, :]
-% endif
-            else:
-                self._history = history
-% endif
 
 % for ref_obs in referenced_observations:
-        self._${ref_obs}_monitor = ${ref_obs.replace('_', ' ').title().replace(' ', '')}(history=history, voi=voi, dt=dt)
+        self._${ref_obs}_monitor = ${ref_obs.replace('_', ' ').title().replace(' ', '')}(voi=voi, dt=dt)
 % endfor
 
     def __call__(self, result):
@@ -1449,9 +1417,6 @@ class ${class_name}(AbstractMonitor):
         _time = result.time
 % endif
 
-% if needs_transient and not has_prepend_history_step:
-        _data_with_history = jnp.concatenate([self._history, _data], axis=0)
-% endif
 
 % for step_idx, step in enumerate(pipeline):
 <%
@@ -1471,7 +1436,7 @@ class ${class_name}(AbstractMonitor):
 
     # Determine input variable
     if step_idx == 0:
-        # First step always gets _data; prepend_history step handles concatenation if needed
+        # Every step reads the window it is given; the settle is its head.
         input_var = '_data'
     else:
         prev_step = pipeline[step_idx - 1]
@@ -1505,8 +1470,6 @@ class ${class_name}(AbstractMonitor):
                     call_parts.append(f"{arg_name}={input_var}")
                 else:
                     call_parts.append(f"{arg_name}=_{arg_val}")
-            elif 'transient' in arg_val:
-                call_parts.append(f"{arg_name}=self._history")
             elif arg_val.startswith('integration.'):
                 # Reference to simulation data
                 call_parts.append(f"{arg_name}=_data")
@@ -1581,12 +1544,8 @@ class ${class_name}(AbstractMonitor):
             elif arg_val in step_names:
                 # Reference to a previous pipeline step output
                 call_parts.append(f"{arg_name}=_{arg_val}")
-            elif 'transient' in arg_val:
-                # Reference to transient history
-                call_parts.append(f"{arg_name}=self._history")
             elif arg_val.startswith('integration.'):
-                # Reference to simulation data - use _data (raw simulation output)
-                # Functions that need history should reference integration.transient separately
+                # The scan's own window, settle included — a kernel's warm-up is its head.
                 call_parts.append(f"{arg_name}=_data")
             elif arg_val == 'data':
                 # Generic data reference - use input_var (previous step output)
@@ -1624,6 +1583,26 @@ class ${class_name}(AbstractMonitor):
         ${prefixed_output} = ${input_var}
 % endif
 % endfor
+<%
+    # Samples of settle on THIS observation's output grid. A pipeline reading `integration.result`
+    # turns the scan onto its own grid, so the settle's share of it is dropped once, here; one whose
+    # source is another observation inherits an already-cut input and must not cut twice.
+    _obs_period = to_numeric(obs['period']) if obs.get('period') else None
+    _grid_steps = int(round(float(_obs_period) / dt)) if _obs_period else 1
+    _cut = (n_transient // _grid_steps) if (n_transient and needs_result_from_pipeline) else 0
+%>\
+% if _cut:
+<%
+    if pipeline:
+        _last = pipeline[-1]
+        _lo = _last.get('output') or _last['name']
+        _cut_var = f"_{[o.strip() for o in _lo.split(',')][-1]}"
+    else:
+        _cut_var = '_data'
+%>\
+        # The settle warmed this pipeline's kernels in-band; its own ${_cut} output samples go no further.
+        ${_cut_var} = ${_cut_var}[${_cut}:]
+% endif
 
 % if tail_samples or aggregation:
 <%

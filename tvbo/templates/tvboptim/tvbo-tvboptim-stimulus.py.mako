@@ -51,11 +51,9 @@ if hasattr(_exp_functions, 'keys'):
 
 n_nodes = getattr(experiment.network, 'number_of_nodes', None) or getattr(experiment.network, 'number_of_regions', 1)
 
-# Integration timing — needed to size pre-generated per-step input arrays and
-# to map an absolute time t to an integer step index (step = round(t / dt)).
-# The native solver runs the main sim from t0=transient .. transient+duration,
-# so absolute t spans the full [0, transient + duration] window; the array is
-# sized to cover it and indexed by absolute t.
+# Integration timing — needed to size pre-generated per-step input arrays and to map a time t
+# to an integer step index. The scan runs from -transient to +duration on the measurement clock,
+# so t spans [-transient, duration] and the step index counts from the scan start, not from t=0.
 _dt = float(experiment.integration.step_size)
 _inv_dt = 1.0 / _dt
 _duration = float(experiment.integration.duration) if experiment.integration.duration else 0.0
@@ -320,11 +318,12 @@ class ${class_name}(AbstractExternalInput):
     STOCH_LO = ${_stoch_info['lo']}
     STOCH_HI = ${_stoch_info['hi']}
     INV_DT = ${_inv_dt}
+    SCAN_T0 = ${-_transient}   # the scan's own start on the measurement clock
     % endif
 
     def prepare(self, network, dt: float):
         % if is_stochastic:
-        # Pre-generate the iid per-step sequence (indexed by step = round(t/dt)).
+        # Pre-generate the iid per-step sequence (indexed by step = round((t - scan_t0)/dt)).
         _u = jax.random.uniform(
             jax.random.key(self.STOCH_SEED), (self.STOCH_N_STEPS,),
             minval=self.STOCH_LO, maxval=self.STOCH_HI,
@@ -373,8 +372,9 @@ class ${class_name}(AbstractExternalInput):
         ${pname} = params.${pname}
         % endfor
         % if is_stochastic:
-        # Per-step iid sample: index the pre-generated sequence by step number.
-        _step = jnp.int32(jnp.clip(t * self.INV_DT, 0, input_data.u.shape[0] - 1))
+        # Per-step iid sample: index the pre-generated sequence by step number, counted from the
+        # scan start so the settle draws its own samples rather than repeating the first.
+        _step = jnp.int32(jnp.clip((t - self.SCAN_T0) * self.INV_DT, 0, input_data.u.shape[0] - 1))
         ${_stoch_pname} = input_data.u[_step]
         % endif
 

@@ -681,8 +681,7 @@ def run_${algo_name}(
         # Scores against this call's `${', '.join(external_inputs)}`, since the module-level default would score a per-subject run against the wrong target.
         post_tuning_observations = compute_all_observations(
             post_tuning, state, history,
-            network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
-        )
+            network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}})
 % else:
         post_tuning_observations = compute_all_observations(post_tuning, state, history)
 % endif

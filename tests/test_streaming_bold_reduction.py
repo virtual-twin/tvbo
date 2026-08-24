@@ -148,25 +148,20 @@ def _emit_reducer(red, kernel):
     return ns["_reduction_bold"]
 
 
-def _reference_bold(data_col, warm, kernel, ds, tr, k_1, V_0):
+def _reference_bold(data_col, kernel, ds, tr, k_1, V_0, skip=0):
     """From-scratch SubSampling BOLD, the decimation ``streaming_hrf_bold`` requires.
 
-    Ring = downsampled transient fitted to one kernel length; 'valid' HRF convolution of concat(ring, downsampled data); Volterra scaling; sample at every TR boundary.
+    Cold ring; 'valid' HRF convolution of concat(ring, downsampled data); Volterra scaling; sample at every TR boundary; drop the whole BOLD samples that fall inside ``skip``. The settle is part of ``data_col``, so the kernel's warm-up is real signal rather than a separately-supplied history.
     """
     K, n = kernel.shape[0], data_col.shape[-1]
     ds_data = data_col[ds - 1 :: ds]
-    if warm is None:
-        ring = jnp.zeros((K, n))
-    else:
-        wd = warm[ds - 1 :: ds]
-        ring = jnp.vstack([jnp.zeros((K - wd.shape[0], n), wd.dtype), wd]) if wd.shape[0] < K else wd[-K:]
-    sig = jnp.concatenate([ring, ds_data], axis=0)
+    sig = jnp.concatenate([jnp.zeros((K, n)), ds_data], axis=0)
     conv = jax.vmap(lambda x: jsp.signal.fftconvolve(x, kernel, "valid"), in_axes=1, out_axes=1)(sig)
-    return (V_0 * k_1 * (conv - 1.0))[tr::tr]
+    return (V_0 * k_1 * (conv - 1.0))[tr::tr][skip // (ds * tr) :]
 
 
-@pytest.mark.parametrize("warm_len", [0, 30, 80])  # 0 -> cold; <K and >K exercise the pad/trim
-def test_reducer_matches_subsampling_reference(warm_len):
+@pytest.mark.parametrize("skip", [0, 36, 180])  # 0 -> no settle; both are whole BOLD periods
+def test_reducer_matches_subsampling_reference(skip):
     tr, K, T, n = 18, 50, 360, 6
     red = {
         "kind": "convolution",
@@ -182,16 +177,43 @@ def test_reducer_matches_subsampling_reference(warm_len):
 
     data = 0.5 + 0.1 * jax.random.normal(jax.random.PRNGKey(1), (T, 4, n))  # [T, n_states, n]
     data_col = data[:, 0, :]
-    warm = None if warm_len == 0 else 0.5 + 0.1 * jax.random.normal(jax.random.PRNGKey(2), (warm_len, n))
 
-    init, update, finalize = factory(s_var=0, dt=1.0, warm_history=warm)
+    init, update, finalize = factory(s_var=0, dt=1.0, skip=skip)
     acc = init(data[0], T)
     acc = update(acc, data)
     got = finalize(acc)
 
-    ref = _reference_bold(data_col, warm, kernel, ds=1, tr=tr, k_1=5.6, V_0=0.02)
+    ref = _reference_bold(data_col, kernel, ds=1, tr=tr, k_1=5.6, V_0=0.02, skip=skip)
     assert got.shape == ref.shape
     assert float(jnp.max(jnp.abs(got - ref))) < 1e-11  # strided_convolve ~1e-12 vs FFT
+
+
+def test_skip_drops_only_the_settles_samples():
+    """`skip` reports the same samples an unskipped fold does, minus the settle's.
+
+    This is the property the single-scan design rests on: the settle is folded (so the HRF ring warms on real signal) and only the settle's own output samples are withheld, so a run with a settle and the same run without one agree sample for sample past t=0.
+    """
+    tr, K, T, n, skip = 18, 50, 360, 6, 90
+    red = {
+        "kind": "convolution",
+        "source": "S_e",
+        "kernel_call": "hrf_kernel()",
+        "ds_steps": 1,
+        "tr_stride": tr,
+        "k_1": 5.6,
+        "V_0": 0.02,
+    }
+    kernel = jax.random.normal(jax.random.PRNGKey(7), (K,))
+    factory = _emit_reducer(red, kernel)
+    data = 0.5 + 0.1 * jax.random.normal(jax.random.PRNGKey(8), (T, 4, n))
+
+    def fold(**kw):
+        init, update, finalize = factory(s_var=0, dt=1.0, **kw)
+        return finalize(update(init(data[0], T), data))
+
+    whole, cut = fold(), fold(skip=skip)
+    assert cut.shape[0] == whole.shape[0] - skip // tr
+    assert float(jnp.max(jnp.abs(cut - whole[skip // tr :]))) == 0.0
 
 
 @pytest.mark.parametrize("block_size", [18, 36, 90, 180])  # all multiples of period_in_steps (18)

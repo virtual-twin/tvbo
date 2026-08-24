@@ -164,21 +164,6 @@ functions:
         value: 20000.0
         description: "HRF kernel duration in ms"
 
-  prepend_history:
-    description: >
-      Fit the (downsampled) transient history to exactly one kernel length and
-      prepend it. Zero-pads at the front when the transient is shorter than the
-      kernel support, otherwise keeps the last `kernel_samples` — matching
-      tvboptim HRFBold._process_history so a 'valid' convolution loses no samples.
-    source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
-    arguments:
-      data:
-        description: "Input time series (time, nodes)"
-      history:
-        description: "Downsampled transient history data"
-      kernel_samples:
-        value: 5000
-        description: "Kernel support = ceil(kernel_duration / downsample_period)"
 
   volterra_transform:
     description: "Volterra nonlinear BOLD transformation"
@@ -250,22 +235,7 @@ observations:
           period_samples:
             value: 1
 
-      - output: downsampled_history
-        function: temporal_average
-        arguments:
-          data:
-            value: integration.transient
-          period_samples:
-            value: 1
 
-      - function: prepend_history
-        arguments:
-          data:
-            value: downsampled_data
-          history:
-            value: downsampled_history
-          kernel_samples:
-            value: 5000
 
       - output: bold_convolve
         callable:
@@ -274,7 +244,7 @@ observations:
         apply_on_dimension: node
         arguments:
           in1:
-            value: prepend_history
+            value: downsampled_data
           in2:
             value: hrf_kernel
           mode:
@@ -305,7 +275,7 @@ observations:
             value: bold
           skip_t:
             value: 20
-            description: "Skip first 20 TRs to avoid transient effects"
+            description: "Skip 20 TRs beyond the settle, which is already cut, to clear the HRF edge"
 
 # =============================================================================
 # OPTIMIZATION: Parameter fitting (keyed by name)
