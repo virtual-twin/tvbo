@@ -96,6 +96,17 @@ def _observation_dataarray(raw_data, dims=None, nodes=None):
     return xr.DataArray(a, dims=dims, coords=_node_coords(dims, a.shape, nodes))
 
 
+def _jax_array(value):
+    """*value* unwrapped to its array when it implements the JAX array protocol, else *value* itself.
+
+    tvboptim's ``Parameter``/``BoundedParameter`` expose their value only through
+    ``__jax_array__``: their ``__array__`` takes no ``dtype``, so ``np.asarray(p, dtype=float)``
+    raises and a fitted parameter would be dropped as non-numeric rather than saved.
+    """
+    unwrap = getattr(value, "__jax_array__", None)
+    return unwrap() if unwrap is not None else value
+
+
 def _declared_observation_dims(source) -> dict:
     """Axis names each of *source*'s observations declares, keyed by observation name.
 
@@ -1068,7 +1079,7 @@ class OptimizationResult:
         # Treat JAX-array-protocol objects (e.g. tvboptim Parameter, BoundedParameter) as leaf nodes — don't recurse into their internal attrs like .low / .high.
         if hasattr(state, "__jax_array__"):
             try:
-                arr = np.asarray(state.__jax_array__())
+                arr = np.asarray(_jax_array(state))
                 if arr.dtype.kind in ("f", "i", "u"):
                     flat[prefix] = arr
             except (TypeError, ValueError):
@@ -1088,8 +1099,7 @@ class OptimizationResult:
         else:
             # Leaf node
             try:
-                val = state.__jax_array__() if hasattr(state, "__jax_array__") else state
-                arr = np.asarray(val)
+                arr = np.asarray(_jax_array(state))
                 if arr.dtype.kind in ("f", "i", "u"):
                     flat[prefix] = arr
             except (TypeError, ValueError):
@@ -2240,6 +2250,7 @@ class ExperimentResult:
             if arr is None:
                 return None
             try:
+                arr = _jax_array(arr)
                 a = np.asarray(getattr(arr, "values", arr), dtype=float)
             except (ValueError, TypeError):
                 try:  # jax/0-d scalar wrapped as object
@@ -2292,6 +2303,26 @@ class ExperimentResult:
             for var, da in _numeric_leaves(key, _unwrap_observation(obs)):
                 if var not in data_vars:
                     data_vars[var] = da
+        _dims_cache: list = []
+
+        def _declared_dims():
+            """Declared axis names per observation, resolved once and shared by both fit-outcome writers below."""
+            if not _dims_cache:
+                _dims_cache.append(_declared_observation_dims(self.source))
+            return _dims_cache[0]
+
+        def _write_fit_observations(observations, prefix_for):
+            """Persist a fit's achieved observations (simulated FC + reconciled empirical target) under ``prefix_for(name)``.
+
+            Saving these makes the fit OUTCOME legible from the artifact, not only the tuned parameters. Each keeps the axes its declared reduction implies, so a per-node result lands on a labelled `node` axis like the `estimate__` params beside it rather than an unnamed one.
+            """
+            for obs_name, obs in (observations or {}).items():
+                for var, da in _numeric_leaves(
+                    prefix_for(obs_name), _unwrap_observation(obs), dims=_declared_dims().get(str(obs_name))
+                ):
+                    if var not in data_vars:
+                        data_vars[var] = da
+
         for opt_name, opt in (self.optimizations or {}).items():
             for field in ("final_loss", "loss_trajectory"):
                 da = _numeric_da(field, getattr(opt, field, None))
@@ -2301,24 +2332,19 @@ class ExperimentResult:
             if fitted is not None:
                 for name, da in _numeric_leaves(f"optimization__{_san(opt_name)}__fitted", fitted):
                     data_vars[name] = da
-
-        # Persist algorithm post-tuning observations (achieved fc_corr / fc_rmse / fc) so the fit outcome is legible from the saved result, not only the tuned parameters. Each keeps the axes its declared reduction implies, so a per-node fit result lands on a labelled `node` axis like the `estimate__` params beside it rather than an unnamed one.
-        _dims_cache: list = []
-
-        def _declared_dims():
-            """Declared axis names per observation, resolved once and only if an algorithm has any."""
-            if not _dims_cache:
-                _dims_cache.append(_declared_observation_dims(self.source))
-            return _dims_cache[0]
+            # The `__observation__` infix keeps these clear of the sibling `optimization__<name>__final_loss` / `__fitted__*` keys, which share the prefix.
+            _sim = getattr(opt, "simulation", None)
+            _write_fit_observations(
+                getattr(_sim, "observations", None),
+                lambda n, _o=opt_name: f"optimization__{_san(_o)}__observation__{_san(n)}",
+            )
 
         for algo_name, algo in (self.algorithms or {}).items():
             post = getattr(algo, "post_tuning", None)
-            post_obs = getattr(post, "observations", None) if post is not None else None
-            for obs_name, obs in (post_obs or {}).items():
-                prefix = f"algorithm__{_san(algo_name)}__{_san(obs_name)}"
-                for var, da in _numeric_leaves(prefix, _unwrap_observation(obs), dims=_declared_dims().get(str(obs_name))):
-                    if var not in data_vars:
-                        data_vars[var] = da
+            _write_fit_observations(
+                getattr(post, "observations", None) if post is not None else None,
+                lambda n, _a=algo_name: f"algorithm__{_san(_a)}__{_san(n)}",
+            )
 
         # Persist each tuned FREE parameter's fitted value as ``estimate__<param>`` so a from_experiment warm-start can reload it as a prior location (point prior). Kept on LABELLED node axes (``node`` for vectors, ``node_i``+``node_j`` for per-edge matrices) — the same convention FC matrices use — so the consumer reconciles by label with the existing `.sel` path, no bespoke reindex. Container-layer only (values already live in AlgorithmResult.state) → no codegen change; free params only, so it can't shadow a ``<sv>_final`` key; sourced from the algorithm that FITS each param (last-writer among fitting passes, see _algo_tuned_params).
         free_names = _free_param_names(self.source) if self.algorithms else set()

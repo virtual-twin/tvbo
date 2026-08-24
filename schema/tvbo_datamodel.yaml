@@ -4303,6 +4303,16 @@ classes:
                 multivalued: true
                 range: Algorithm
                 description: Other algorithms that must run first (e.g., EIB depends on FIC)
+            evaluate:
+                range: boolean
+                ifabsent: boolean(true)
+                description: >-
+                    Materialise this algorithm's post-tuning evaluation: a simulation of the
+                    tuned model over the experiment's full duration, recorded as
+                    algorithm__<name>__<observation>. False keeps only the tuned parameters and
+                    state, which is all a dependency of another algorithm contributes - the
+                    algorithm that follows supersedes its observations - while the evaluation
+                    itself costs a complete run of the experiment's duration.
 
     # =============================================================================
     # Continuation & Bifurcation Analysis

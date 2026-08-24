@@ -327,10 +327,13 @@ def analysis_dataset(out_dir, name):
     """
     import xarray as xr
 
-    from tvbo.data.dataref import analysis_container_path
+    from tvbo.data.dataref import locate_analysis_container
 
-    path = analysis_container_path(Path(out_dir), name)
-    return xr.open_dataset(path, engine="h5netcdf") if path.exists() else None
+    try:  # the resolver that also sees a container left by the pre-record layout
+        path = locate_analysis_container(Path(out_dir), name)
+    except FileNotFoundError:
+        return None
+    return xr.open_dataset(path, engine="h5netcdf")
 
 
 def analysis_output(out_dir, name, variable):
@@ -529,7 +532,7 @@ def report_figure(
         theirs: The published original — one path, or several stacked vertically when the
             paper splits one quantity across scans. None embeds ours alone.
         stage: Where to compose the A/B. Defaults to the layout's own place for it, which
-            sits under the deposit whose figure it embeds, so a composite is covered by the
+            sits under the original-study directory whose figure it embeds, so a composite is covered by the
             rule that keeps the original out of the repository.
         credit: Attribution over the original, e.g. ``"Pang et al. 2023 (c)"``.
         label: Qualifier after "TVBO replication", e.g. the parcellation or backend.
@@ -1501,7 +1504,7 @@ def model_families(experiments):
     A **family** is one system: its first model is written out in full, and every later model in it contributes only its :func:`model_delta`, the way Jansen1995 §3.3 adds a flash stimulus by printing Eq. 18 alone instead of reprinting the six-equation column.
     Two models share a family when they span the same state variables, which also settles the case a delta cannot: a model that introduces the *entire* state is not a variant but a second system — Pang2023's mass model against its wave field, Koller2024's Jansen–Rit against its Kuramoto — and starts a family of its own, printed in full.
 
-    Membership is tested by **subset-or-superset** of the family's first model, not by equality and not by mere overlap. Equality splits Jansen1995's delayed column off from the column it extends (it only adds ``z0``/``z1``); bare overlap goes wrong the other way and merges genuinely unrelated systems that happen to share auxiliary state — Pang2023's wave field and its BEI mass model both carry the four Balloon–Windkessel haemodynamic variables, and overlap presented the mass model, which the paper never even deposited, as a *variant* of the wave field.
+    Membership is tested by **subset-or-superset** of the family's first model, not by equality and not by mere overlap. Equality splits Jansen1995's delayed column off from the column it extends (it only adds ``z0``/``z1``); bare overlap goes wrong the other way and merges genuinely unrelated systems that happen to share auxiliary state — Pang2023's wave field and its BEI mass model both carry the four Balloon–Windkessel haemodynamic variables, and overlap presented the mass model, which the paper never even published, as a *variant* of the wave field.
 
     Returns one namespace per family, in the order the experiments declare them, with ``label``, ``base`` and ``variants`` (each a namespace of ``model``, ``experiments`` and, for a variant, its ``delta`` against the base), plus the family's own ``experiments`` and ``shared_parameters`` — the parameter names every member defines, which are the only ones an experiment table can compare without leaving holes.
     """

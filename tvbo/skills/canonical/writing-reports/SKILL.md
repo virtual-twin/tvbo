@@ -87,9 +87,9 @@ can produce (a reference implementation's output, the paper's own print) may be 
 ONE file that owns it; every value of yours in it is a bug.
 
 **There are THREE owners, not two, and the third is the one a caption gets wrong.** Besides
-yours and the paper's there is a measurement *you* made on *their* artifact — the deposit
-re-analysed under a candidate definition, a reference implementation you compiled and ran. It
-is computed by you and it is not a result of your replication, and the tell that you have
+yours and the paper's there is a measurement *you* made on *their* artifact — the arrays they
+released, re-analysed under a candidate definition; a reference implementation you compiled and
+ran. It is computed by you and it is not a result of your replication, and the tell that you have
 mixed the classes is a caption asserting the leftover rule: Kadak2025's transcription said "a
 column naming NFTsim or the paper says so, and every other column is this replication's own",
 under a table of correlations measured on the authors' arrays. The report then contradicts
@@ -99,8 +99,9 @@ let a caption derive ownership by elimination. Say which artifact each column wa
 and have the transcribed file state its own rule in its first paragraph so the caption can
 defer to it rather than invent one.
 
-**A deposit measurement is still recomputable, and two typed copies of it will drift.** The
-class being external does not license typing it: `load_published_results()` is right there, so
+**A measurement on the authors' files is still recomputable, and two typed copies of it will
+drift.** The class being external does not license typing it: `load_published_results()` is
+right there, so
 give it a helper and let both the note and the prose read the one call. The Fig-2D settings
 scan lived as a typed table in `verification.md` *and* as a typed `p = .088` in the report's
 Results — one measurement, two hand-kept copies, no way to notice when they part. The
@@ -593,9 +594,10 @@ What that buys, and what a per-report copy kept getting wrong:
 - **A greyscale scan stays grey.** `imshow` on a 2-D array applies the default colormap, which
   silently recolours the paper's figure.
 - **The stage comes from the layout record**, so no report names a directory: the composite lands
-  in `sourcedata/original_study/fig_comparisons/`, inside the deposit whose figure it embeds, and
-  the one rule that keeps the deposit unpublished covers it. The copyrighted original then reaches
-  exactly one artifact and never the repository. Embed it through `embed_path`, which makes the
+  in `sourcedata/original_study/fig_comparisons/`, inside the original-study directory whose
+  figure it embeds, and the one rule that keeps the original unpublished covers it. The
+  copyrighted original then reaches exactly one artifact and never the repository. Embed it
+  through `embed_path`, which makes the
   reference relative to the render: LaTeX prefixes a bare path with `./`, so an absolute one
   arrives as `./Users/…` and the build fails on an image that is plainly there.
 - **Our own figure is embedded where it was rendered.** With no original to compose against there

@@ -85,7 +85,7 @@ subdirs:
         tracked: none
         in_templates: [replication]
         description: >-
-          Material deposited by the work being reproduced: its PDF, figures, published data
+          Material published by the work being reproduced: its PDF, figures, released data
           and code. Kept apart from the study's own inputs so it is never mistaken for an
           output, and never tracked.
         subdirs:
@@ -95,9 +95,9 @@ subdirs:
             in_templates: [replication]
             description: >-
               A/B composites placing one of the paper's figures beside ours. They live under
-              the deposit they embed rather than beside our own figures: one directory then
-              holds everything the publisher owns, so the rule that keeps the original out of
-              the repository covers every composite made from it too.
+              the original-study directory they embed rather than beside our own figures: one
+              directory then holds everything the publisher owns, so the rule that keeps the
+              original out of the repository covers every composite made from it too.
 
   - name: docs
     role: docs

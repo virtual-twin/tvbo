@@ -458,3 +458,37 @@ def test_select_sees_through_the_prefix_on_a_non_dimension_coordinate():
     )
     out = dr.select_labeled(da, {"K": 0.2})
     assert float(out) == 2.0
+
+
+def test_analysis_container_path_flat_default(tmp_path):
+    """A fresh root (neither layout on disk) resolves to the flat ana- container."""
+    p = dr.analysis_container_path(tmp_path, "edf9_lag_wave")
+    assert p.parent == tmp_path
+    assert p.name.startswith("ana-") and p.name.endswith("_result.h5")
+
+
+def test_the_write_target_is_flat_even_beside_a_legacy_container(tmp_path):
+    """A write never lands in the pre-record layout: the figure adapter globs the root flat."""
+    legacy = tmp_path / "results" / "edf9_lag_wave" / "result.h5"
+    legacy.parent.mkdir(parents=True)
+    legacy.write_bytes(b"")
+    resolved = dr.analysis_container_path(tmp_path, "edf9_lag_wave")
+    assert resolved.parent == tmp_path and resolved.name.startswith("ana-")
+
+
+def test_locate_falls_back_to_the_legacy_container(tmp_path):
+    """A container produced under results/<name>/ keeps resolving there mid-migration."""
+    legacy = dr.legacy_analysis_container_path(tmp_path, "edf9_lag_wave")
+    legacy.parent.mkdir(parents=True)
+    legacy.write_bytes(b"")
+    assert dr.locate_analysis_container(tmp_path, "edf9_lag_wave") == legacy
+
+
+def test_locate_prefers_the_flat_container_over_the_legacy_one(tmp_path):
+    """Once the analysis is rewritten flat, that container shadows the legacy one."""
+    legacy = dr.legacy_analysis_container_path(tmp_path, "edf9_lag_wave")
+    legacy.parent.mkdir(parents=True)
+    legacy.write_bytes(b"")
+    flat = dr.analysis_container_path(tmp_path, "edf9_lag_wave")
+    flat.write_bytes(b"")
+    assert dr.locate_analysis_container(tmp_path, "edf9_lag_wave") == flat

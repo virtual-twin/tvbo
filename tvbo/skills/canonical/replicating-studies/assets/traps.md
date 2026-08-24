@@ -166,7 +166,108 @@ in full.
   (Phase 1.5) applied to a control parameter, stated as such in the scorecard. Locate the transition
   with a quick 3–4 point scan of the control parameter *before* committing the recipe value.
 
+## Cost traps — when a run is slower than it should be
+
+The instinct when a fit is too slow is to schedule around it: split it, ask for more cores, drop
+precision. Every one of those is a guess until you have measured where the time goes, and on a
+cohort a guess costs thousands of CPU-hours. Measure first, in this order.
+
+- **Read the cluster's own job logs before proposing anything.** They are the only record of what
+  the fit actually costs, and they are usually already there. In Schirner2023 a per-subject fit was
+  documented in the recipe as "about 30 h on CPU"; 4525 job logs and `sacct` said 71-85 h, and that
+  **2208 jobs had already TIMED OUT at exactly 12:00:00** with not one subject ever finishing. A
+  plan built on the recipe's number would have resubmitted straight back into the wall.
+  `sacct -u $USER --starttime now-14days -X -o State | sort | uniq -c` takes thirty seconds and it
+  reframes the whole problem.
+- **Never put a duration in the recipe.** Runtime claims go stale in a week, nobody re-measures
+  them, and the next reader sizes a 1096-job fan-out from a comment. The recipe is metadata about
+  the *model*: biological time ("6 stages of 10 h simulated each") belongs there, wall time does
+  not. Where a duration matters — a `time:` limit — let it be the value, not a claim about the
+  value. The paper's own compute budget is the paper's number and belongs in the report.
+- **A phase timer that spans more than its label is how a 10 h forward simulation reads as a 287x
+  per-iteration anomaly.** `run_<algo>` started its clock at function entry and printed the total
+  under the label `tuning`, so an intermediate algorithm's *post-tuning evaluation* — a
+  full-duration simulation of the whole experiment — was invisible inside the tuning number.
+  Nothing was slow; the instrument was wrong. When one phase costs 200x what identical work costs
+  elsewhere in the same run, **suspect the instrument before the code**: find where the clock
+  starts and what sits between it and the print. And beware the opposite error once you split it —
+  JAX dispatch is async, so a timer around a jitted call measures queueing unless you
+  `block_until_ready` first.
+- **Check what an intermediate step materialises.** An algorithm that another algorithm
+  `depends_on` contributes only its tuned state — the one that follows re-tunes from it and
+  supersedes its observations — yet its post-tuning evaluation runs anyway, at the experiment's
+  full declared duration. Whether that output is *consumed* is a property of the study's figures,
+  not of the algorithm, so no structural rule can decide it: grep the `used:` bindings. In
+  Schirner2023 the FIC fold feeds one panel on one group experiment and nothing at all on 2192
+  cohort jobs — about 21 600 job-hours. `Algorithm.evaluate: false` is the declaration; it defaults
+  true so nothing existing changes.
+- **Measure core scaling as CPU-time over elapsed before asking for cores.** `sstat -j <id>.0
+  --format=AveCPU` against `Elapsed` gives the effective core count directly, mid-run, for free. A
+  379-node delayed gather went 1.98 / 2.98 / 4.48 / 5.05 / 6.12 effective at 2 / 8 / 16 / 32 / 64
+  allocated — a 3.1x ceiling and 9.6 % efficiency at 64, later confirmed by throughput. On a cohort
+  total CPU-hours bind, so the efficient point (2 cores) and the point that fits a short wall (16)
+  are different decisions; make both deliberately.
+- **Precision is a divergence-register question before it is a performance one.** Check what the
+  deposit integrates in. Schirner2023's C is single precision throughout (85 `float` against one
+  `double`, and that one in a file parser), so *our* float64 was the deviation — and the recipe's
+  recorded reason for it ("float32 NaN'd the tuning") could not be a property of the model when the
+  authors' float32 does not NaN. Tested: float32 did not NaN, bought ~10 % rather than the 2x the
+  byte count suggests, and degraded the fit from stage 4 on. Both halves are worth knowing, and
+  neither was knowable from the comment.
+- **Splitting a staged fit across jobs is free only where the deposit already restarts.** A split
+  job cannot carry what the result container does not persist: the delay history, the haemodynamic
+  monitor state and the FC ring all restart, and only the state variables and tuned parameters
+  cross. Where the deposit runs each stage as a fresh process that is *more* faithful; where the
+  schedule is one continuous trajectory it is a deviation and belongs in the register. Cost either
+  way is one ring refill per boundary.
+
+## Silent-override traps — the declaration that looks honoured and is not
+
+Three of these turned up in one afternoon and they share a shape: a setting is accepted, nothing
+raises, and the run does something else. **Verify a setting by its EFFECT, never by the fact you
+set it** — diff the emitted spec, diff the generated script, or find two runs that must differ and
+check that they do.
+
+- **An environment variable can beat the spec.** `execution.precision: float32` is lowered
+  correctly (the float64 script emits `jax.config.update("jax_enable_x64", True)`, the float32 one
+  omits it) — and then the workflow's own `JAX_ENABLE_X64=1` env, which JAX reads at import, puts
+  x64 back on. The tell was that two runs which must diverge agreed to four decimals after 1.2 M
+  steps and finished within 0.1 s of each other. If a control and a variant produce the same
+  numbers, the variant did not happen.
+- **`--set` at the workflow layer silently drops experiment keys.** `tvbo workflow snakemake --set
+  execution.precision=float32` is accepted and reaches neither the emitted rule nor the frozen
+  spec. Grep `spec/<id>/experiment.yaml` for the key after every emission that claims success.
+- **The cluster's tvbo may not be able to read the spec your tvbo emitted**, and `--code-source
+  frozen` does not save you: `tvbo run` parses the spec either way. Check the runtime's version
+  before submitting, and install a worktree wheel into a **dedicated** venv rather than upgrading
+  the one other jobs are running on. A `cp -a` copy of a venv keeps the *source* path inside
+  `bin/activate`, so sourcing it silently activates the original — rewrite `VIRTUAL_ENV` and
+  `pyvenv.cfg` before trusting it, and keep the wheel's canonical filename or `uv` rejects it.
+- **`pkill -f <pattern>` over ssh matches the shell running the pattern.** The remote `bash -lc`
+  command line contains the string you are matching, so it kills itself and the submission you were
+  about to make never launches — silently, with no output at all.
+
 ## Pitfalls we hit (so you don't)
+
+- **Running an author's code in THEIR language: a running mean built with a NaN mask poisons
+  itself, and nothing raises.** `td_sum + x .* ~isnan(x)` is the idiom everyone writes, and in
+  MATLAB `NaN * 0` is `NaN`, so one missing entry in one trial permanently kills that cell of the
+  accumulator. The stored mean then silently describes only the always-clean cells (31 % of pairs
+  here) and reads as a *systematic* effect: two configurations reported +0.13 and +0.23 where the
+  honest values were +0.03 and −0.14. Zero the masked entries before adding (`x(isn) = 0`), keep
+  a companion NaN count, and **store the per-item stack so every aggregate can be recomputed
+  outside the loop.** The stack is what let this be caught at all.
+- **Porting a transfer function across an FFT sign convention time-reverses every filter.** A
+  deposit whose `coord2freq` uses `ifft` as the FORWARD transform is reconstructing with
+  e^{−iωt}; numpy's `rfft` reconstructs with e^{+iωt}. Its published `−2iωγ`-style formulas are
+  then conjugated relative to yours, and the ported chain runs its haemodynamics backwards in
+  time. Nothing errors, spectra look right, and only phase-sensitive statistics (lags, latencies,
+  anything from a cross-covariance) come out wrong. Read which direction the authors call
+  "forward" before copying any formula, and cross-check the port against their own run.
+- **An FFT at a prime length falls back to Bluestein and appears to hang.** A 172,657-point
+  transform inside a per-trial loop pins a core at 33 % with no progress and looks like a
+  deadlock. Pad to `scipy.fft.next_fast_len` (exact for the real causal filters this arises in),
+  and prefer `rfft`/`irfft` over the complex pair.
 
 - **A fan container can hold every cell correct and still be scrambled — the cell ADDRESSES
   are a separate thing to verify.** Symptom: two analyses that score the same quantity with
@@ -394,6 +495,46 @@ in full.
   check — newest container ≤ oldest figure ≤ compare artifacts ≤ both PDFs — and rebuild until
   it holds. Beware that *running* the detector can create the staleness it reports: recomputing
   one analysis to test it invalidates everything downstream.
+- **A single timing is not a measurement — take the SLOPE across two or three sizes.** Symptom:
+  the same configuration measures 594 us/step on one run and 1328 on the next, and a "gap" you
+  have already reported to someone evaporates. One `exp.run()` call includes codegen and XLA
+  compile; at 5000 steps a 3 s compile IS 600 us/step. Fit `time = a + b*steps` and quote `b`;
+  the intercept tells you how much of what you were about to optimise was the compiler. Ours was
+  0.86 s against a 1035.7 us/step slope — negligible, but only because it was measured.
+
+- **A performance gap is only real against a LIKE-FOR-LIKE floor, and building the wrong floor
+  will send you to rewrite working code.** Symptom: a hand-written "same physics" `lax.scan` runs
+  10x faster than the generated module, so the codegen looks broken. Ours had no delays and
+  reduced a vector through one matvec; the declared model has per-edge delays, which force an
+  (N, N) gather that cannot collapse to a matvec. A fair floor — per-edge delayed gather,
+  dual-output edge-weighted reduction, hand-written and minimal — measured **230.6 us/step**
+  against the generated module's **229.1**. The generated code was AT its floor the whole time,
+  and the "gap" was a different computation. Write the floor from the spec's own declarations,
+  not from the model you have in your head.
+
+- **Measure before you "optimise" an emitted expression; the obvious rewrite is often slower.**
+  Symptom: the printer emits `jnp.stack([...], axis=0)` for a dual-output per-edge coupling and it
+  looks like an obvious fusion opportunity. Benchmarked in the right shapes, the emitted form is
+  the FASTEST of the three candidates (260.6 us/step) against a stacked-parameter broadcast
+  (423.7) and a fused einsum (444.2). XLA had already done the work. A printer change is expensive
+  to make and expensive to revert — earn it with a microbenchmark in the real shapes first.
+
+- **Check the generated module actually runs its solves compiled.** `prepare()` returns an
+  UN-jitted callable: invoked directly it dispatches op by op for every step, costing ~4.5x
+  (1023 vs 229 us/step on a 379-node network). Tuning cores usually take the raw callable as a
+  static argument and compile the scan around it, so the FIT looks fine while the transient, the
+  plain forward path and the full-length post-tuning evaluation quietly run interpreted. Nothing
+  raises and nothing warns — the run is simply four times longer, which reads as "this model is
+  expensive". Grep the emitted source for a bare `= model_fn(state)` outside a jitted scan.
+
+- **The keys under a pipeline `callable:`'s `arguments:` are the CALLEE's parameter names, and a
+  mismatch is only discovered after the expensive part has run.** Symptom: a multi-hour fit tunes
+  to completion, streams its post-tuning evaluation, and then dies with
+  `TypeError: fc_corr() got an unexpected keyword argument 'A'`. Ours had `A:`/`B:` against
+  `fc_corr(fc1, fc2)` and `rmse(matrix1, matrix2)` in the pinned backend — wrong on the laptop and
+  on the cluster alike. Check every `arguments:` block against `inspect.signature` of the callable
+  it names, as part of Phase 1.5, not after the first long run.
+
 - **Framework gaps surface late** if you skip Phase 1.5. Find them before the YAML.
 
 - **A quantity can match the published material at r = 1.000 and still be in the wrong unit.** Symptom:
@@ -549,3 +690,26 @@ in full.
   container the report computes from, never in the description. When a pipeline goes native or
   a driver is replaced, grep the recipe's descriptions for the old mechanism's name in the same
   commit.
+
+- **A fit's result container can silently hold NEITHER the fitted parameters NOR the fitted
+  observable — open one and check before trusting it, and ALWAYS before a cohort re-run.**
+  Symptom: an `optimizations:`/`stages:`/`algorithm: adam` fit runs and the loss visibly
+  decreases, but its `..._result.h5` (a plain xarray dataset — `xr.open_dataset(engine=
+  "h5netcdf")`) is missing the very thing the fit produced. The tell is diagnostic: exactly the
+  FREE parameters are absent while every FIXED model parameter is written (a fitted free param is
+  a tvboptim `BoundedParameter` that `np.asarray(x, dtype=float)` drops, whereas a fixed param is
+  a plain float), and there is no post-fit `fc`/observable at all (the optimization writer read
+  only top-level `self.observations`, which an `optimizations:` experiment never populates, not
+  `opt.simulation.observations`). The rich `estimate__<param>` + achieved-fc path is gated on
+  `self.algorithms`, so it never fires for the `optimizations:` path — a fit expressed as an
+  `algorithms:` block (Schirner-style closed-form `update_rules`) records fine, an adam
+  `optimizations:` fit did not. This makes the results USELESS for the target metric (per-subject
+  FC r needs the fitted `fc`), and it is invisible until you look: 698 cohort subjects "completed"
+  before anyone opened one. So before wiring a fit into the report or re-running it across a
+  cohort, open ONE result and assert it contains `optimization__<name>__fitted__…__<free_param>`
+  AND `optimization__<name>__observation__<observable>`. Both were container-layer serialization
+  bugs in `tvbo/data/types.py` (`ExperimentResult` save): `_numeric_da` must unwrap
+  `__jax_array__` before `asarray`, and the optimization loop must serialize
+  `opt.simulation.observations`. Validate any such fix on a **2-iteration local run** (set
+  `max_iterations: 2`) — it exercises the exact save path in seconds, and the fitted free params
+  should read back moved off their init.

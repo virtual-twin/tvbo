@@ -370,6 +370,7 @@ def run_${algo_name}(
 
     _raw_model_fn = model_fn  # un-jitted; the tuning core takes it as a STATIC arg (stable identity across stages -> jit caches the scan once)
     model_fn = jax.jit(model_fn)  # tvboptim's solve fn is un-jitted by design (its tests jit it); jit once so warmup/tuning calls fuse+cache instead of eager per-step dispatch
+    post_model_fn = None if post_model_fn is None else jax.jit(post_model_fn)  # same: the post-tuning evaluation is the longest solve in a fit, and it arrives un-jitted from prepare()
 
     def _smart_interval(n):
         """Compute smart interval: 1 for 0-10, 10 for 10-100, 100 for 100-1000, etc."""
@@ -632,6 +633,10 @@ def run_${algo_name}(
 % endif
     )
     state = _ls_final['state']
+    # Tuning ends here; the scan dispatches asynchronously, so its output must land before the split from the full-duration eval below is honest.
+    if verbose:
+        jax.block_until_ready(state)
+    _tune_t1 = time.perf_counter()
 % for src_obs in source_observations_needed:
 % if use_maxwin:
     # Return the window (last window_size rows) of the M-ring, so a chained/next-stage
@@ -751,7 +756,7 @@ def run_${algo_name}(
 % endfor
 
     if verbose:
-        logger.info(f"${algo_name} complete! (tuning {time.perf_counter() - _algo_t0:.1f}s, {n_iterations} iters)")
+        logger.info(f"${algo_name} complete! (tuning {_tune_t1 - _algo_t0:.1f}s, {n_iterations} iters; post-tuning eval {time.perf_counter() - _tune_t1:.1f}s)")
 
     if raw:
         # vmap-safe cohort return: pure jnp arrays only; no AlgorithmResult/DataArray wrapping (host-side numpy conversion breaks under jax.vmap). Wrap per-subject host-side after the vmap.

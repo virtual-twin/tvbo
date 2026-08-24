@@ -87,6 +87,58 @@ it is legitimate only under conditions you can state in advance:
 Never repair the statistic by dropping the elements that disagree. Excluding the one region that
 carried the whole gap reproduces the paper's number exactly and is fitting, not replication.
 
+## The SEED is a degree of freedom too, and a bootstrap of your one ensemble cannot score their number
+
+The section above sweeps a deterministic choice the paper left unstated. A stochastic protocol
+needs a different instrument, because the tempting one is wrong. **Resampling trials within your
+realised ensemble is centred on that ensemble's own draw.** It answers "could *this* ensemble have
+produced their number", never "where does a *fresh* ensemble land", and it understates the real
+spread badly: in Pang2023 the within-ensemble bootstrap gave sd 0.12 where independent ensembles
+gave 0.18. Reading that bootstrap as evidence about the model ("0 of 2,000 draws reach their value,
+z = +3.7, so the arms differ systematically") pointed a whole investigation at our own integrator
+for days. **A subset-size trend inside one pool is worse than useless**: subset means of a fixed
+pool converge to the pool mean by construction, so a curve "converging on a real value" is
+converging on the draw you already have.
+
+The instrument is **N independent ensembles, fresh seeds through the entire chain**, each the size
+the paper ran. Three numbers come out of it, and they answer different questions:
+
+- **the across-ensemble sd**, which scores the published number as a z. Pang2023's EDF9 wave arm:
+  ±0.18 over 40 ensembles of 255 trials, putting their +0.2914 at z = +1.58 and ours at −1.27.
+  Both are inside the same lottery.
+- **the inter-replicate map correlation**, which asks whether one ensemble carries any stable
+  content at all. Here it is +0.00 ± 0.21, so the published wave-vs-mass margin is one draw per arm
+  of a statistic whose per-arm noise is as large as the margin.
+- **the grand mean over every replicate**, which is the systematic centre if one exists. Here it
+  reaches only +0.06 against the empirical map, inside the noise floor of a 180-parcel map.
+
+**Stability and accuracy are separate axes, so measure both.** One configuration's startup
+transient gave a beautifully reproducible map (split-half +0.945) that correlated at −0.06 with the
+empirical one. A stable map can be stably wrong, and a split-half alone will not tell you.
+
+**Afford the ensemble count by porting the chain, then validating the port.** 40 × 255 trials of a
+vertex-resolution simulation is not affordable directly. Where the model is linear, its solver can
+run in mode space: pass `eye(N)` as the basis so the deposit's own eigendecomposition step becomes
+the identity, and the vertex noise matrix (22 GB here) never exists. Two details make the port
+trustworthy rather than plausible: **validate it against the authors' own implementation
+configuration by configuration** before believing any of its numbers, and preserve the RNG stream
+exactly (MATLAB's `randn` fills column-major, so chunked generation reproduces `rng(trial)` bit for
+bit). Ours was checked against the MATLAB harness on every shared configuration first.
+
+**When the deposit ships every building block but not the driver, rebuild the driver.** This is the
+strongest form of the head-to-head in the spine's Phase 7, and it is available even when there is
+no tool to install: chain the released functions exactly as Methods describes, at the paper's own
+trial count, and sweep the knobs Methods omits. Pang2023's four configurations at ≥100 trials score
+r ∈ [−0.313, +0.029] against the authors' own empirical map, so their code does not reach their own
+published +0.2914 either. That is what turns "our number differs" into "the statistic has no stable
+value", and it is the only evidence that fully exonerates your implementation.
+
+**The verdict rule.** If the published value sits inside the seed-to-seed spread of the paper's own
+pipeline, the target is `short`, and the reason is that the criterion has no stable value at the
+paper's own protocol. It is NOT `met` by searching seeds until one lands on their number. Say so in
+the scorecard in those words, because the alternative reading (our simulation is broken) is what a
+reader will otherwise assume, and it is false.
+
 ## Prove a step inert with algebra before hunting for it with sweeps
 
 When a pipeline stage seems not to matter, ask whether it *can* matter before sweeping its

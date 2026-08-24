@@ -122,7 +122,7 @@ def test_results_and_figures_resolve_where_the_design_puts_them(record):
     assert layout_rules.relpath("kits", record) == ".tvbo/kits"
 
 
-def test_a_composite_is_staged_under_the_deposit_it_embeds(record):
+def test_a_composite_is_staged_under_the_original_study_it_embeds(record):
     """One directory holds everything the publisher owns, so one rule keeps all of it unpublished."""
     stage = layout_rules.relpath("figures_restricted", record)
     assert stage.startswith(layout_rules.relpath("original_study", record) + "/")
@@ -280,7 +280,7 @@ def _ignored(scaffold, rel: str) -> tuple[bool, str]:
 def test_the_gate_ignores_copyrighted_material(scaffold):
     """What must never be committed, checked against git rather than by reading the patterns.
 
-    ``sourcedata/original_study/`` holds the reproduced work's own figures, and the A/B composites that embed them are staged inside it, so the single rule that keeps the deposit unpublished covers every composite made from it.
+    ``sourcedata/original_study/`` holds the reproduced work's own figures, and the A/B composites that embed them are staged inside it, so the single rule that keeps the original unpublished covers every composite made from it.
     """
     subprocess.run(["git", "init", "-q"], cwd=scaffold, check=True)
     must_be_ignored = [

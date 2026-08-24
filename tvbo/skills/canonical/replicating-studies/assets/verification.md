@@ -110,7 +110,7 @@ exactly — which is itself one more check. Two rules keep it honest: recompute 
 from the container's own inputs rather than trusting the stored one, and say plainly which rows
 still read stale containers.
 
-## Forensics on the deposit is a THIRD kind of number
+## Forensics on the authors' own files is a THIRD kind of number
 
 A verification note carries three classes of number, not two. Yours come from your containers,
 the paper's come from its pages, and the third is a measurement *you* made on *their* artifact:
@@ -123,8 +123,9 @@ and why a caption must never derive it by elimination; two things follow for the
 **Declare the note's own ownership rule in its opening paragraph**, naming the artifact each
 column was measured on, so the report's caption defers to it rather than inventing one.
 
-**Give a deposit measurement a helper, exactly as a container measurement gets one.** The
-deposit is on disk and your loader already reads it, so being external licenses nothing:
+**Give a measurement on the authors' files a helper, exactly as a container measurement gets
+one.** Their files are on disk and your loader already reads them, so being external licenses
+nothing:
 
 ```python
 def figure_2d_settings(condition="...", file="..."):
