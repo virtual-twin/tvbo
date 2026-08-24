@@ -47,11 +47,7 @@ nextflow run main.nf
 - backend       : `${head.backend.name}` (${head.backend.label})
 - container     : `${head.container or '(none)'}`
 % if study:
-## The Snakefile's global `container:` is keyed on the first experiment, so the line
-## above matches it; per-experiment fan-out differs and gets its own row below. Both
-## cell counts are reported: a fully backend-vectorized sweep has one workflow cell but
-## many simulations inside it (a 4x39x10 grid is 1 job, 1560 cells), so workflow cells
-## alone would understate the study by 1000x.
+## Both cell counts are reported, because a fully vectorized sweep is one workflow cell holding many simulations.
 - experiments   : ${len(plans)}
 - workflow cells: ${sum(p.n_workflow_cells for p in plans)} (jobs; ${sum(p.n_workflow_cells * p.n_vectorize_cells for p in plans)} simulation cells once each job's vectorized axes are expanded)
 

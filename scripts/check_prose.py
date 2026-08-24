@@ -123,13 +123,20 @@ def _comment_runs(lines: list[str], path: str = ""):
     mako = path.endswith(".mako")
     markdown = path.endswith(".md.mako")
     run: list[tuple[int, str]] = []
-    layer, fenced = None, False
+    layer, fenced, documented = None, False, False
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
         if markdown and stripped.startswith("```"):
             fenced = not fenced
+        if mako and stripped.startswith("<%doc>"):
+            documented = "</%doc>" not in stripped
+        elif mako and stripped.startswith("</%doc>"):
+            documented = False
+            continue
         here = _layer(stripped, mako)
-        is_comment = stripped.startswith("#") and not _DIRECTIVE.match(stripped) and not (fenced and here == "#")
+        is_comment = (
+            stripped.startswith("#") and not _DIRECTIVE.match(stripped) and not (fenced and here == "#") and not documented
+        )
         if is_comment and layer in (None, here):
             layer = here
             run.append((i, stripped.lstrip("#").strip()))
@@ -267,20 +274,30 @@ def _added_comment_runs(diff: str):
         yield path, block
 
 
-def _fenced_lines(path: str) -> set[int]:
-    """Line numbers inside a fenced block of a template that emits markdown.
+def _exempt_lines(path: str) -> set[int]:
+    """Line numbers the comment rule does not read, for a template.
 
-    A `#` line there is a shell sample in the emitted document, so it is content the reader is meant to see rather than prose about the source. Read from the working tree because a unified diff of added lines alone cannot say whether a fence is open.
+    Inside a `<%doc>` block the prose IS the docstring, which is where the rule wants it. Inside a fence of a template that emits markdown, a `#` line is a shell sample the reader of the emitted document is meant to see. Read from the working tree because a unified diff of added lines alone cannot say whether either is open.
     """
     try:
         lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
         return set()
-    inside, fenced = set(), False
+    markdown = path.endswith(".md.mako")
+    inside, fenced, documented = set(), False, False
     for i, line in enumerate(lines, 1):
-        if line.strip().startswith("```"):
+        stripped = line.strip()
+        if markdown and stripped.startswith("```"):
             fenced = not fenced
-        elif fenced:
+        elif stripped.startswith("<%doc>"):
+            documented = "</%doc>" not in stripped
+            inside.add(i)
+            continue
+        elif stripped.startswith("</%doc>"):
+            documented = False
+            inside.add(i)
+            continue
+        if fenced or documented:
             inside.add(i)
     return inside
 
@@ -310,7 +327,7 @@ def check_diff(base: str | None) -> tuple[int, list[str]]:
             continue
         if any(path.startswith(d) for d in GENERATED_DIRS):
             continue
-        if path.endswith(".md.mako") and run[0][0] in _fenced_lines(path):
+        if path.endswith(".mako") and run[0][0] in _exempt_lines(path):
             continue
         bad.append(
             f"{path}:{run[0][0]}: {len(run)}-line `#` block added — at most {MAX_COMMENT_RUN}; "

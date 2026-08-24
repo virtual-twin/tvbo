@@ -12,11 +12,7 @@ from tvbo.templates.tvboptim.utils import (
 # Backend key this template targets — used for streaming-reducer registry lookups.
 _STREAMING_BACKEND = 'tvboptim'
 
-# Streaming post-tuning evaluation plan (shared with the experiment template — same
-# resolver — so the two sides cannot drift). Non-empty `names` => post_model_fn was built
-# with prepare(reduce=...) folding those observations, so it returns their streamed values
-# (a tuple), not a trajectory; the FC deliverable is computed from them without a
-# materialised trajectory. Empty => the materialise post-eval path is unchanged.
+# Shared with the experiment template, so the two sides cannot drift: non-empty `names` means post_model_fn returns streamed values rather than a trajectory.
 _pp = streaming_post_eval_plan(experiment)
 _pp_names = _pp['names']
 _pp_deliverables = _pp['deliverables']
@@ -265,14 +261,7 @@ if network and network.coupling:
 
     use_sliding_window = has_window_size and len(source_observations_needed) > 0
 
-    # ── Streaming-reducer resolution (backend-independent, registry-gated) ──────
-    # For each derived observation computed over a sliding-window source, look up
-    # whether its FIRST pipeline reducer (e.g. compute_fc) has a registered
-    # streaming form for this backend. When it does, the loop below replaces the
-    # O(window*N^2)/step recompute over the ring buffer with an O(N^2)/step
-    # incremental (init/add/evict/emit/finalize) reducer; when it does not (or
-    # streaming is disabled), the recompute path is kept unchanged. Transparent to
-    # the recipe: nothing here reads schema fields the recompute path does not.
+    # A registered streaming form replaces the O(window*N^2)/step recompute with an O(N^2)/step incremental reducer; without one the recompute path stands.
     def _pipeline_reducer_ref(dobs_def):
         """(module, name, skip_t, s_var) of a derived obs's FIRST pipeline step, else None."""
         pipeline = getattr(dobs_def, 'pipeline', None)
@@ -304,21 +293,14 @@ if network and network.coupling:
                 continue
             _mod, _name, _skip_t, _s_var = _ref
             _spec = lookup_streaming_reducer(_STREAMING_BACKEND, _mod, _name)
-            # Only step-wise ('window') reducers are wired here; 'stride' (FCD)
-            # specs keep the recompute fallback until the stride branch lands.
+            # Only step-wise 'window' reducers are wired here; a 'stride' spec keeps the recompute fallback.
             if _spec is not None and _spec.emit_kind == 'window' and _src_list[0] in source_observations_needed:
                 streaming_map[_dobs_name] = dict(
                     src_obs=_src_list[0], spec=_spec,
                     skip_t=_skip_t, s_var=_s_var,
                 )
 
-    # ── Max-window ring gate ────────────────────────────────────────────────────
-    # A multi-stage schedule whose per-stage window_size VARIES recompiles the tuning
-    # scan once per stage, because the sliding-window buffer shape is baked from
-    # window_size. When every streaming reducer offers a masked resync, size the buffer
-    # at the largest stage window (a codegen constant) and drive the window with a
-    # TRACED window_size + mask, so the scan compiles ONCE across all stages. Constant-
-    # window (or single-stage) algorithms keep the contiguous per-stage path verbatim.
+    # Sizing the ring at the largest stage window and tracing window_size compiles the scan once across stages, where a varying window would recompile per stage.
     _stage_windows = []
     for _st in (getattr(algo, 'stages', None) or []):
         _ws_over = None
@@ -500,10 +482,7 @@ def run_${algo_name}(
         return state, key, _buf, _mon
 
 % if use_maxwin:
-    # Fill the last `window_size` slots of the M-sized ring with the same samples the
-    # contiguous path holds — carried tail (last min(passed, window_size)) plus warmup
-    # for the remainder — so the warmup sim steps (and thus the trajectory) are identical.
-    # Leading slots stay zero: they sit outside the window [_M - (window_size - skip_t):].
+    # The last window_size slots hold what the contiguous path holds, so the trajectory is identical; leading slots sit outside the window and stay zero.
     _${src_obs}_buffer = jnp.zeros((_M, 1, n_nodes))
     if ${src_obs}_buffer is not None:
         _passed_buffer = ${src_obs}_buffer
@@ -575,8 +554,7 @@ def run_${algo_name}(
 % endfor
 % endif
 
-    # Compile-once tuning: route the scan through the module-level jitted core so a
-    # multi-stage schedule reuses ONE compiled scan (see _${algo_name}_tuning_core).
+    # Routed through the module-level jitted core, so a multi-stage schedule reuses one compiled scan.
     _rec_positions = [_ri for _ri in range(n_iterations) if (_ri + 1) % save_every == 0 or _ri == 0]
     _rec_idx = jnp.asarray(_rec_positions)  # record positions for the post-scan result_history rebuild
 % if streaming_map:
@@ -587,9 +565,7 @@ def run_${algo_name}(
     _use_ring = max_window_size is not None
 % endif
     def _canon(_x):
-        # Strip weak_type so stage 1 (fresh inputs, weakly typed) and stage 2+ (the scan's
-        # strongly-typed outputs re-fed as inputs) share ONE jit specialization -> the tuning
-        # scan compiles once across stages. Typed PRNG keys pass through unchanged.
+        # Stripping weak_type lets a fresh first stage and the scan's own outputs share one jit specialization.
         _a = _x if hasattr(_x, "dtype") else jnp.asarray(_x)
         if jax.dtypes.issubdtype(_a.dtype, jax.dtypes.prng_key):
             return _a
@@ -639,8 +615,7 @@ def run_${algo_name}(
     _tune_t1 = time.perf_counter()
 % for src_obs in source_observations_needed:
 % if use_maxwin:
-    # Return the window (last window_size rows) of the M-ring, so a chained/next-stage
-    # call carries the same window-sized buffer the contiguous path does (identical warmup).
+    # Return the M-ring's last window_size rows, so a next-stage call carries what the contiguous path does.
     _${src_obs}_buffer = _ls_final['${src_obs}__buf'][-int(window_size):] if max_window_size is not None else _ls_final['${src_obs}__buf']
 % else:
     _${src_obs}_buffer = _ls_final['${src_obs}__buf']
@@ -669,20 +644,10 @@ def run_${algo_name}(
 % endfor
     )
 
-    # Run post-tuning simulation (use full integration setup if provided).
-    # Carry over the TUNED PARAMETERS (dynamics J_i, coupling wLRE/wFFI) but
-    # keep post_state's own settled initial conditions — NOT the tuning loop's
-    # last mid-trajectory state. Seeding from the loop's last state lands a
-    # different attractor in multistable models, corrupting the post-tuning FC
-    # (it made identical-weight post sims score far below the base sim).
-    # Skipped entirely when run as a nested inner loop (only the state is needed).
+    # Carries the tuned parameters but keeps post_state's settled initial conditions: the loop's last mid-trajectory state lands a different attractor in a multistable model.
     if run_post_tuning:
 % if _pp_names:
-        # Streaming post-tuning evaluation: post_model_fn was built with prepare(reduce=...)
-        # folding ${', '.join(_pp_names)} into the integrator carry, so it returns the streamed
-        # value(s) — NOT a trajectory (the full-length fit trajectory is never materialised).
-        # The FC deliverable(s) ${', '.join(_pp_deliverables)} are computed from the streamed BOLD
-        # alone; observations that need the raw trajectory are absent (unavailable at fit scale).
+        # ${', '.join(_pp_names)} fold into the integrator carry, so ${', '.join(_pp_deliverables)} come from the streamed value alone and no fit-scale trajectory is materialised.
         if post_model_fn is not None and post_state is not None:
             import copy
             _post_state = copy.deepcopy(post_state)
@@ -712,14 +677,9 @@ def run_${algo_name}(
         else:
             post_tuning = model_fn(state)
 
-        # Compute ALL observations from post-tuning simulation (in dependency order)
-        # This uses the experiment-level compute_all_observations function
-        # Pass history as result_transient for BOLD pipeline continuity
+        # History is passed as result_transient so the BOLD pipeline continues across the boundary.
 % if external_inputs:
-        # Score against THIS call's targets, not the module-level constants:
-        # the in-loop path already reads the `${', '.join(external_inputs)}`
-        # argument(s), so post-tuning must use the same values or a per-subject
-        # run would be scored against the process-wide default target.
+        # Scores against this call's `${', '.join(external_inputs)}`, since the module-level default would score a per-subject run against the wrong target.
         post_tuning_observations = compute_all_observations(
             post_tuning, state, history,
             network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
@@ -775,12 +735,7 @@ def run_${algo_name}(
 % endif
         )
 
-    # Fail loud on a diverged fit (host path only — the vmapped `raw` cohort
-    # returned above). Tuning update rules such as EIB carry no restoring force,
-    # so a too-hot or too-long schedule drives estimates to non-finite values;
-    # returning them would write a NaN result to disk as a "successful" run.
-    # A pure post-check: byte-identical for any finite run, a no-op when the
-    # algorithm has no update rules.
+    # An update rule with no restoring force can drive estimates non-finite, and returning them would write a NaN result as a "successful" run.
 % if all_update_rules_with_source:
     _nonfinite_estimates = [
         _nm for _nm, _arr in (
@@ -931,17 +886,11 @@ def _${algo_name}_tuning_core_impl(
 % if streaming_map:
 <%
     from tvbo.codegen.reducers import resolve_streaming_reducer
-    # All wired ('window') reducers share one recipe here; lower its declarative spec
-    # (streaming_reducers.py) to this backend's source. The scaffolding below is generic
-    # — it emits the resolved state / assignments for ANY reducer spec, no use case baked in.
+    # One recipe for every wired reducer: the scaffolding below emits the resolved state for any spec, with no use case baked in.
     _r = resolve_streaming_reducer(next(iter(streaming_map.values()))['spec'], 'jax')
     _acc = ', '.join(_r['state'])
 %>
-    # Streaming windowed reducer, emitted from a declarative recurrence spec and lowered
-    # to this backend by the sympy printers — tvbo needs no backend reducer. The
-    # scaffolding (buffer slicing, sample selection, protocol object) is backend-shaped;
-    # the accumulator math is the resolved spec: `resync` rebuilds the state from the
-    # window, `add`/`evict` fold in / drop one sample, `emit` reads out the reduced value.
+    # The scaffolding is backend-shaped and the accumulator math is the resolved spec: resync rebuilds from the window, add and evict fold one sample, emit reads out.
     from types import SimpleNamespace as _StreamReducer
     def _make_windowed_reducer(s_var=0, skip_t=0):
         def _samp(x):
@@ -972,9 +921,7 @@ def _${algo_name}_tuning_core_impl(
             return (${_acc})
 % if use_maxwin:
         def resync_masked(buffer, ws):
-            # Rebuild the state from a fixed M-sized ring whose valid window is the last
-            # L = ws - skip_t rows, selected by mask `m`; `ws` is a TRACED scalar so the
-            # tuning scan compiles once across stage window sizes. == resync(buffer[-ws:]).
+            # Equals resync(buffer[-ws:]) with `ws` traced, so the scan compiles once across stage window sizes.
             _MM = buffer.shape[0]
             x = buffer[:, s_var, :] if buffer.ndim == 3 else buffer
             L = jnp.asarray(ws, jnp.int32) - skip_t
@@ -989,11 +936,7 @@ def _${algo_name}_tuning_core_impl(
 % endif
 % endif
 % for dobs_name, sinfo in streaming_map.items():
-    # Streaming reducer for '${dobs_name}' over the '${sinfo['src_obs']}' window:
-    # replaces the O(window*N^2)/step recompute with an O(N^2)/step incremental
-    # accumulator. The accumulator is (re)built EXACTLY from the ring buffer here
-    # (post-warmup / post-passed-buffer) and re-synced every _${dobs_name}_resync_every
-    # steps to reset float drift.
+    # Built exactly from the ring buffer and re-synced every _${dobs_name}_resync_every steps to reset float drift.
     _${dobs_name}_reducer = _make_windowed_reducer(s_var=${sinfo['s_var']}, skip_t=${sinfo['skip_t']})
     _${dobs_name}_resync_every = _resync_period  # traced period -> tuning scan compiles once across stage window sizes
 % if use_maxwin:
@@ -1092,9 +1035,7 @@ def _${algo_name}_tuning_core_impl(
     _stream_for_src = [(d, si) for d, si in streaming_map.items() if si['src_obs'] == src_obs]
 %>
 % for dobs_name, sinfo in _stream_for_src:
-        # Sample leaving the effective window, read PRE-roll (falls out as the window
-        # slides). Contiguous window starts at skip_t; the masked ring's window is the
-        # last L = window_size - skip_t rows, so it leaves at _M - L (traced window_size).
+        # Read pre-roll, as the sample falls out when the window slides.
 % if use_maxwin:
         if use_ring:
             _${dobs_name}_evict = _${src_obs}_buffer[_${src_obs}_buffer.shape[0] - (_ws - ${sinfo['skip_t']}), ${sinfo['s_var']}, :]
@@ -1112,9 +1053,7 @@ def _${algo_name}_tuning_core_impl(
         else:
             _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_${src_obs}_sample_data)
 % for dobs_name, sinfo in _stream_for_src:
-        # Incremental update: drop the leaving sample, fold in the arriving one
-        # (read from the buffer's newest slot — the canonical storage). The
-        # accumulator now holds EXACTLY _${src_obs}_buffer[skip_t:] (the window).
+        # Drop the leaving sample and fold in the arriving one, leaving the accumulator holding exactly the window.
         _${dobs_name}_acc = _${dobs_name}_reducer.evict(_${dobs_name}_acc, _${dobs_name}_evict)
         _${dobs_name}_acc = _${dobs_name}_reducer.add(_${dobs_name}_acc, _${src_obs}_buffer[-1, ${sinfo['s_var']}, :])
 % endfor
@@ -1212,9 +1151,7 @@ def _${algo_name}_tuning_core_impl(
     direct_call_kwargs = ", ".join(direct_call_args) if direct_call_args else ""
 %>
 % if obs in streaming_map:
-        # ${obs}: streaming windowed reducer over _${streaming_map[obs]['src_obs']}_buffer.
-        # emit() == ${direct_call}(buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''}) up to float rounding
-        # (re-synced every _${obs}_resync_every steps) at O(N^2)/step instead of O(window*N^2)/step.
+        # emit() equals ${direct_call}(buffer) up to float rounding, at O(N^2)/step rather than O(window*N^2)/step.
         ${obs} = _${obs}_reducer.emit(_${obs}_acc)
 % elif src_obs_for_this:
         # ${obs} depends on ${src_obs_for_this} - compute directly from accumulated buffer
@@ -1522,15 +1459,12 @@ _${algo_name}_tuning_core = jax.jit(
 
 
 <%
-    # On-device cohort driver: emit only when this experiment's dataset runs on-device
-    # AND this algorithm consumes a per-subject dataset-sourced target the cohort varies.
-    # The shared network stays in the model closure; those targets are the vmap axis.
+    # The shared network stays in the model closure and the per-subject targets are the vmap axis.
     _ds_targets = set(getattr(experiment, 'dataset_observation_targets', None) or {})
     batched_inputs = [i for i in external_inputs if i in _ds_targets]
     shared_inputs = [i for i in external_inputs if i not in _ds_targets]
     emit_cohort = bool(getattr(experiment, 'dataset_on_device', lambda: False)()) and len(batched_inputs) > 0
-    # One tuning schedule for both cases: Algorithm.stages, or a single synthetic stage
-    # from the algo defaults (n_iterations + hyperparameter values) when there are none.
+    # One schedule either way: Algorithm.stages, or a single synthetic stage from the algo defaults.
     _c_stages = list(getattr(algo, 'stages', None) or [])
     c_stage_defs = []
     for _st in _c_stages:

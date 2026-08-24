@@ -5,9 +5,7 @@ sb = block
 %>\
 #!/bin/bash
 #SBATCH --job-name=${plan.study_key}-${plan.experiment_key}
-## Provenance tag visible in `squeue -o %k`, so a queued job maps back to its
-## study/experiment (mirrors what the Snakemake executor stamps as the rule name).
-## `workflow.slurm.comment` overrides the auto tag with a custom string.
+## Provenance tag in `squeue -o %k`, so a queued job maps back to its study and experiment.
 #SBATCH --comment=${sb.get("comment") or "tvbo:%s/exp_%s" % (plan.study_key, plan.experiment_key)}
 #SBATCH --array=0-${plan.n_array_tasks - 1}
 #SBATCH --ntasks=1
@@ -67,42 +65,26 @@ module load ${mod}
 % if sb.get("venv"):
 source ${sb["venv"]}/bin/activate
 % endif
-## workflow.<engine>.setup — verbatim shell lines for env setup the typed fields
-## don't cover (e.g. `conda activate <env>`). Runs after module/venv activation.
+## Verbatim shell lines the typed fields do not cover, run after module and venv activation.
 % for _line in (sb.get("setup") or []):
 ${_line}
 % endfor
-## env is normalized to a shell-quoted [{name, value}] list in the plan builder
-## (tvbo.cli._workflow._normalize_env), so values are emitted verbatim.
+## Shell-quoted by the plan builder, so the values are emitted verbatim.
 % for _e in (sb.get("env") or []):
 export ${_e["name"]}=${_e["value"]}
 % endfor
 % if bundled_code:
-## The recipe's custom callable/builder modules were bundled into ./code; put it
-## on the path so the frozen spec's `module:` references resolve on the node.
-## ${'$'}{PYTHONPATH:-} escapes the Mako ${} so bash sees a literal ${PYTHONPATH:-},
-## which keeps an unset PYTHONPATH from tripping `set -u` above.
+## Puts the kit's bundled ./code on the path; the escaped ${'$'}{PYTHONPATH:-} keeps an unset PYTHONPATH off `set -u`.
 export PYTHONPATH="code:${'$'}{PYTHONPATH:-}"
 % endif
 
 <%
-    # A per-subject dataset fan-out lowers to a Slurm array indexed BY SUBJECT: each
-    # task resolves one subject's empirical target via `tvbo run --subject <id>`
-    # (mirrors the Snakemake emitter's _run_flags, which maps a dataset.active_subject
-    # wildcard to --subject). The generic --shard path (else branch) still serves a
-    # backend-vectorized sweep with no workflow-fanned axis: there each task slices
-    # 1/N of the vmap/pmap-ed sweep in-process, and multiple tasks each write a shard
-    # subdir for finalize to reassemble. A single task IS the whole run — write
-    # straight to the canonical results dir (no gather); per-subject tasks likewise
-    # write there, since each produces an independent sub-<id>_…_result.h5.
+    # A per-subject fan-out indexes the array by subject and each task writes its own result; the --shard path instead slices one vectorized sweep for finalize to reassemble.
     subject_axis = next((ax for ax in plan.workflow_axes if ax.kind == "subjects"), None)
     single_task = plan.n_array_tasks == 1
     ## Array tasks write flat into shards/, each file carrying its own `split-` entity, so the gather globs one directory.
     out_pat = plan.out_dir if (single_task or subject_axis) else "shards"
-    # When requirements are layered onto the image (see WorkflowPlan.needs_container_layer),
-    # `setup.sh` built a --system-site-packages venv; expose its site-packages to the task
-    # via PYTHONPATH inside the container. The `python*` glob resolves the venv's own
-    # interpreter version, computed just below so the exec line stays a single string.
+    # Exposes the layered venv's site-packages inside the container, the `python*` glob resolving its interpreter version below.
     _extras_env = ("--env PYTHONPATH=\"${TVBO_EXTRAS}${PYTHONPATH:+:$PYTHONPATH}\" "
                    if plan.needs_container_layer else "")
     prefix = ("singularity exec " + (plan.container_exec_flags + " " if plan.container_exec_flags else "")
@@ -110,12 +92,7 @@ export PYTHONPATH="code:${'$'}{PYTHONPATH:-}"
     run_target = spec_relpath if spec_relpath else plan.run_spec
 %>\
 % if plan.needs_container_layer:
-## Requirements layered onto ${plan.container} by setup.sh (run it once first).
-## Resolve the layer's site-packages to an ABSOLUTE path: PYTHONPATH is evaluated
-## relative to the container's CWD, which is not guaranteed to be the kit dir. The
-## -d check then fails loudly when setup.sh never ran OR left a half-built venv — an
-## unmatched glob would otherwise stay the literal `python*` path and import-crash
-## the task mid-run instead.
+## Absolute, because PYTHONPATH resolves against the container's CWD; the -d check below fails loudly rather than import-crashing mid-run.
 TVBO_EXTRAS=$(echo "$(pwd)/${plan.container_extras_venv}"/lib/python*/site-packages)
 if [ ! -d "${'$'}{TVBO_EXTRAS}" ]; then
     echo "ERROR: run setup.sh once before submitting — the requirements layer under ${plan.container_extras_venv} is missing or incomplete." >&2
@@ -123,24 +100,15 @@ if [ ! -d "${'$'}{TVBO_EXTRAS}" ]; then
 fi
 % endif
 % if subject_axis:
-## Per-subject dataset fan-out: one array task per subject. $SLURM_ARRAY_TASK_ID
-## indexes SUBJECTS; `tvbo run --subject <id>` resolves that subject's empirical
-## target (e.g. their FC) before the fit. Independent per-subject results — no gather.
+## One array task per subject, $SLURM_ARRAY_TASK_ID indexing SUBJECTS; the results are independent, so no gather follows.
 SUBJECTS=(${" ".join(str(v) for v in subject_axis.values)})
 SUBJECT=${'$'}{SUBJECTS[$SLURM_ARRAY_TASK_ID]}
-## The frozen spec's dataset.bids_root is machine-specific (the per-subject data
-## tree). Override it from $TVBO_BIDS_ROOT when set, else keep the frozen value —
-## so this kit ports to another cluster with no hand-edit: `export TVBO_BIDS_ROOT=…`.
-## ${'$'}{arr[@]+"${'$'}{arr[@]}"} expands to nothing (not an error) under `set -u`
-## when the array is empty.
+## $TVBO_BIDS_ROOT overrides the frozen machine-specific path, so the kit ports to another cluster with no hand-edit.
 bids_root_override=()
 if [ -n "${'$'}{TVBO_BIDS_ROOT:-}" ]; then
     bids_root_override=(--set "dataset.bids_root=${'$'}{TVBO_BIDS_ROOT}")
 fi
-## If this experiment warm-starts (initial_state.from_experiment), its source run's
-## result is searched under --results-root. Point it at the source run's output via
-## $TVBO_RESULTS_ROOT (e.g. the group-fit results for a per-subject warm-start); unset
-## → defaults to the output dir's parent.
+## $TVBO_RESULTS_ROOT points a warm-start at its source run's output, defaulting to the output dir's parent.
 results_root_override=()
 if [ -n "${'$'}{TVBO_RESULTS_ROOT:-}" ]; then
     results_root_override=(--results-root "${'$'}{TVBO_RESULTS_ROOT}")

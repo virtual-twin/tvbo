@@ -169,3 +169,13 @@ def test_a_named_template_is_read_whole_file(tmp_path: Path):
 
     (message,) = check(f)
     assert "2-line `#` block" in message
+
+
+def test_prose_inside_a_doc_block_is_the_docstring(tmp_path: Path):
+    """A `<%doc>` block is where the rule wants the explanation, so it is not a run to report."""
+    from check_prose import check
+
+    f = tmp_path / "t.py.mako"
+    f.write_text("<%doc>\n    One line of it.\n\n    And a second paragraph.\n</%doc>\\\n<%\n    x = 1\n%>\n")
+
+    assert check(f) == []

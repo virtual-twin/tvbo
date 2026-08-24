@@ -9,9 +9,7 @@ prefix = ("singularity exec " + (plan.container_exec_flags + " " if plan.contain
 %>\
 #!/bin/bash
 #SBATCH --job-name=${plan.study_key}-${plan.experiment_key}-finalize
-## Provenance tag visible in `squeue -o %k` (see run.sbatch); the gather step of
-## the same experiment. A custom `workflow.slurm.comment` applies verbatim; the auto
-## tag gets a :finalize suffix to distinguish the gather from the array.
+## Provenance tag in `squeue -o %k`; the :finalize suffix distinguishes this gather from the array it follows.
 #SBATCH --comment=${sb.get("comment") or "tvbo:%s/exp_%s:finalize" % (plan.study_key, plan.experiment_key)}
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2

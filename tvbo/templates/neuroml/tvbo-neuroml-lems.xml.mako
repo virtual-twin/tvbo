@@ -95,8 +95,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for pname, p in ct_params.items():
     <Parameter name="${pname}" dimension="${ct_lems_dim(getattr(p, 'unit', None))}"/>
 % endfor
-## The refractory regime reads `refract`, so default it in — unless the model
-## declares its own refractory period, which would otherwise be emitted twice.
+## Default `refract` in for the refractory regime, unless the model declares its own and it would be emitted twice.
 % if ct_regime_data and 'refract' not in ct_params:
     <Parameter name="refract" dimension="time"/>
 % endif
@@ -344,9 +343,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <Component id="${ct_dyn_id}_inst" type="${ct_dyn_id}"\
 % for pname, p in ct_params.items():
 <% p_unit = ct_lems_sym(getattr(p, 'unit', None)) %>\
-## A parameter with no value has nothing to assign. Omitting it lets LEMS name
-## the unset parameter ("no value supplied for parameter: X"); emitting the
-## attribute anyway would write the string "None" and fail on the quantity.
+## Omit an unset parameter so LEMS names it, rather than writing "None" and failing on the quantity.
 % if getattr(p, 'value', None) is not None:
  ${pname}="${p.value}${(' ' + p_unit) if p_unit else ''}"\
 % endif
@@ -388,17 +385,14 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   # The per-connection weight scales the current the postsynaptic cell sums.
   ct_weighted = ct.get('weighted_exposure')
   ct_weigh = lambda n, v: 'weight * (%s)' % v if n == ct_weighted else v
-  # A state or derived variable named for one of the base type's exposures
-  # fulfils that exposure (LEMS requires the subtype to provide it).
+  # A variable named for one of the base type's exposures fulfils it, which LEMS requires the subtype to do.
   ct_expose = lambda n: ' exposure="%s"' % n if n in ct_exposure_names else ''
 %>\
 
   <!-- ── Synapse ComponentType: ${ct_dyn_id} (extends ${ct_synapse_extends}) ── -->
   <ComponentType name="${ct_dyn_id}" extends="${ct_synapse_extends}">
 % if ct_weighted:
-## jLEMS does not surface baseSynapse's inherited `weight` Property to the
-## DerivedVariable checker, so re-declare it locally (as NeuroML's own
-## gradedSynapse does) to reference the per-connection weight in the current.
+## jLEMS hides baseSynapse's inherited `weight` from the DerivedVariable checker, so re-declare it as gradedSynapse does.
     <Property name="weight" dimension="none" defaultValue="1"/>
 % endif
 % for pname, p in ct_params.items():
@@ -503,9 +497,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <Component id="${ct_dyn_id}_inst" type="${ct_dyn_id}"\
 % for pname, p in ct_params.items():
 <% p_unit = ct_lems_sym(getattr(p, 'unit', None)) %>\
-## A parameter with no value has nothing to assign. Omitting it lets LEMS name
-## the unset parameter ("no value supplied for parameter: X"); emitting the
-## attribute anyway would write the string "None" and fail on the quantity.
+## Omit an unset parameter so LEMS names it, rather than writing "None" and failing on the quantity.
 % if getattr(p, 'value', None) is not None:
  ${pname}="${p.value}${(' ' + p_unit) if p_unit else ''}"\
 % endif
@@ -592,8 +584,7 @@ ${spike_children_xml}
   conn_delay_unit = conn.get('delay_unit') or time_scale
 %>\
 % if has_wd:
-## synapticConnectionWD requires BOTH weight and delay; supply the neutral
-## default for whichever the edge left unset.
+## synapticConnectionWD requires both weight and delay, so supply the neutral default for whichever the edge left unset.
     <synapticConnectionWD from="${conn['from_pop']}[${conn['from_idx']}]" to="${conn['to_pop']}[${conn['to_idx']}]" synapse="${conn['synapse']}" destination="synapses" weight="${1.0 if conn.get('weight') is None else conn['weight']}" delay="${0 if conn.get('delay') is None else conn['delay']}${conn_delay_unit}"/>
 % else:
     <synapticConnection from="${conn['from_pop']}[${conn['from_idx']}]" to="${conn['to_pop']}[${conn['to_idx']}]" synapse="${conn['synapse']}" destination="synapses"/>
