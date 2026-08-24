@@ -266,6 +266,11 @@ def _freeze_referenced_networks(experiment, spec_dir: Path, restore: list[tuple[
     from tvbo.data.registry import database_dir
 
     source_file = getattr(experiment, "_source_file", None)
+    try:
+        curated = database_dir("Network")
+    except Exception:  # no curated database on this install; the other bases still apply
+        curated = None
+    bases = [Path(source_file).parent if source_file else None, Path.cwd() / "spec", curated]
     for _name, obs in keyed_items(getattr(experiment, "observations", None), "observations"):
         ds = getattr(obs, "data_source", None)
         original = str(getattr(ds, "path", "") or "") if ds is not None else ""
@@ -274,11 +279,7 @@ def _freeze_referenced_networks(experiment, spec_dir: Path, restore: list[tuple[
             continue
         resolved = Path(original)
         if not resolved.is_absolute():
-            for base in (
-                Path(source_file).parent if source_file else None,
-                Path.cwd() / "spec",
-                database_dir("Network"),
-            ):
+            for base in bases:
                 if base and (Path(base) / original).exists():
                     resolved = Path(base) / original
                     break

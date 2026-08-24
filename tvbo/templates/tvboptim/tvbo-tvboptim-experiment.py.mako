@@ -1779,9 +1779,8 @@ def _bind_data_sources(spec_dir=None):
     ]
     for _key, _spec in _DATA_SOURCE_SPECS.items():
         _declared = pathlib.Path(_spec['path'])
-        _candidates = [_declared] if _declared.is_absolute() else [
-            b / rel for rel in (_declared, pathlib.Path(_declared.name)) for b in bases
-        ]
+        _candidates = [_declared] if _declared.is_absolute() else [b / _declared for b in bases]
+        _candidates += [b / _declared.name for b in bases]
         _path = next((c for c in _candidates if c.exists()), _candidates[0])
         if not _path.exists():
             raise FileNotFoundError(
