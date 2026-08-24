@@ -9,9 +9,7 @@ description: >
   / speed) and measures the Kuramoto order parameter, reproducing the
   non-monotonic delay-organised synchronization of Petkoski & Jirsa (2019).
 
-# --------------------------------------------------------
-# LOCAL DYNAMICS: Kuramoto phase oscillator
-# --------------------------------------------------------
+# Local dynamics: Kuramoto phase oscillator.
 dynamics:
   name: Kuramoto
   label: "Kuramoto phase oscillator"
@@ -35,9 +33,7 @@ dynamics:
   output: [theta]
   number_of_modes: 1
 
-# --------------------------------------------------------
-# NETWORK: Desikan-Killiany connectome (weights + tract lengths)
-# --------------------------------------------------------
+# Desikan-Killiany connectome, carrying weights and tract lengths.
 network:
   label: "Desikan-Killiany"
   description: "Structural connectivity from the dk_average dataset."
@@ -71,19 +67,13 @@ network:
       post_expression:
         rhs: "G * gx"
 
-# --------------------------------------------------------
-# INTEGRATION: Heun, dt = 0.5 ms, 800 ms, no separate transient
-# (the order parameter averages only the last 20% of the run).
-# --------------------------------------------------------
+# Heun at dt = 0.5 ms over 800 ms with no separate transient, since the order parameter averages only the last 20% of the run.
 integration:
   method: Heun
   step_size: 0.5
   duration: 800.0
   transient_time: 0.0
 
-# =============================================================================
-# FUNCTIONS
-# =============================================================================
 functions:
   kuramoto_order:
     name: kuramoto_order
@@ -98,9 +88,6 @@ functions:
         value: 0.2
         description: "Fraction of the run averaged (settled window)."
 
-# =============================================================================
-# OBSERVATIONS
-# =============================================================================
 observations:
   order_parameter:
     label: "Kuramoto order parameter"
@@ -113,9 +100,7 @@ observations:
             value: integration.result
             description: "Simulated phase trajectory."
 
-# =============================================================================
-# EXPLORATION: sweep the conduction speed (a live DenseLengthGraph leaf)
-# =============================================================================
+# Sweeps the conduction speed, a live DenseLengthGraph leaf.
 explorations:
   speed_sweep:
     label: "Conduction-speed sweep"

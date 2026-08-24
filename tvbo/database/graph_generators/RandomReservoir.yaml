@@ -6,10 +6,7 @@ description: >-
   target spectral radius, and the weight distribution of the non-zero entries.
 iri: tvbo:RandomReservoir
 
-# Neither size nor seed is declared here. `n_nodes` always comes from
-# Network.number_of_nodes and the PRNG seed from the generator's own `seed:` slot,
-# so a parameter for either would be a second source of truth that can disagree
-# with the one that actually takes effect.
+# Neither size nor seed is declared here: `n_nodes` always comes from Network.number_of_nodes and the PRNG seed from the generator's own `seed:` slot, so a parameter for either would be a second source of truth that can disagree with the one that actually takes effect.
 parameters:
   sparsity:           { datatype: float,   description: "Fraction of non-zero weights in [0, 1]" }
   spectral_radius:    { datatype: float,   description: "Target spectral radius (post-rescaling)" }
@@ -19,11 +16,7 @@ parameters:
       Distribution the non-zero weights are drawn from. Overrides the standard
       Normal that the `raw` step declares as its default.
 
-# Typed DAG. Each step is a named intermediate carrying its options as schema
-# fields, which is what lets it lower straight onto a backend-native primitive:
-# the resolver in tvbo/graph_generators/procedural.py builds the SymPy tree and
-# the printer tables in tvbo/codegen/code.py render it per backend, so eager
-# numpy construction and emitted JAX are the same expressions rendered twice.
+# Typed DAG: each step is a named intermediate carrying its options as schema fields, which is what lets it lower straight onto a backend-native primitive — the resolver in tvbo/graph_generators/procedural.py builds the SymPy tree and the printer tables in tvbo/codegen/code.py render it per backend, so eager numpy construction and emitted JAX are the same expressions rendered twice.
 procedure:
   steps:
     raw:
@@ -54,17 +47,11 @@ procedure:
       equation: { rhs: "max(abs(eigvals(masked)))" }
     scale:
       description: "Rescaling factor onto the target spectral radius"
-      # A step of its own rather than a parenthesised sub-expression inside the output,
-      # and that is load-bearing: SymPy canonicalises `masked * (spectral_radius / rho)`
-      # into `masked*spectral_radius/rho`, and float multiplication is not associative,
-      # so a minority of entries would round differently. Each step is evaluated
-      # separately, so the DAG can carry an association expression syntax cannot.
+      # A step of its own rather than a parenthesised sub-expression inside the output, which is load-bearing: SymPy canonicalises `masked * (spectral_radius / rho)` into `masked*spectral_radius/rho`, float multiplication is not associative, so a minority of entries would round differently. Each step is evaluated separately, so the DAG can carry an association expression syntax cannot.
       equation: { rhs: "spectral_radius / rho" }
   output:
     weights:
       description: "Masked draw rescaled to the target spectral radius"
       equation: { rhs: "masked * scale" }
 
-# A degenerate draw (every sampled edge masked out, so rho is 0) divides by zero here.
-# That is caught by the non-finite output check in `procedural.materialize` rather than
-# by a guard step, so every generator is covered rather than this one construction.
+# A degenerate draw (every sampled edge masked out, so rho is 0) divides by zero here, which the non-finite output check in `procedural.materialize` catches rather than a guard step, so every generator is covered rather than this one construction.

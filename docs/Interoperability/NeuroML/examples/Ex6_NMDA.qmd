@@ -59,8 +59,8 @@ network:
           iri: neuroml:voltageConcDepBlockMechanism
           parameters:
             species: {description: mg}
-            blockConcentration: {value: 1.2, unit: mmol_per_m3}
-            scalingConc: {value: 1.920544, unit: mmol_per_m3}
+            blockConcentration: {value: 1.2, unit: mM}
+            scalingConc: {value: 1.920544, unit: mM}
             scalingVolt: {value: 16.129, unit: mV}
     pulseGen2:
       name: pulseGen2

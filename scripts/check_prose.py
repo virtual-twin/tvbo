@@ -12,8 +12,9 @@ new code cannot add one, and the existing ones do not have to be cleared first. 
 
 Exit 1 on any violation.
 
-    python scripts/check_prose.py                  # whole-file: tvbo/ tests/ scripts/ benchmarks/
-    python scripts/check_prose.py path/to/file.py  # pre-commit passes changed files
+    python scripts/check_prose.py                    # whole-file sweep: tvbo/ tests/ scripts/ benchmarks/
+    python scripts/check_prose.py path/to/file.py    # pre-commit passes changed files
+    python scripts/check_prose.py path/to/x.py.mako  # a named template is read whole-file too
     python scripts/check_prose.py --diff           # added lines only, vs the index
     python scripts/check_prose.py --diff origin/dev  # added lines only, vs a ref (CI)
 """
@@ -44,7 +45,11 @@ WRAP_LIMIT = 100
 _SENTENCE_END = re.compile(r"[.!?:;]$")
 _SECTION = re.compile(r"^[A-Z][\w /-]{0,24}:(\s|$)")
 _ORDERED = re.compile(r"^\d+[.)]\s")
-_DIRECTIVE = re.compile(r"^\s*#\s*(type:|noqa|pragma|ruff:|mypy:|fmt:|isort:|pylint:|!|:)")
+_DIRECTIVE = re.compile(
+    r"^\s*#\s*(type:|noqa|pragma|ruff:|mypy:|fmt:|isort:|pylint:|!|:)"
+    r"|^\s*#(SBATCH|PBS|BSUB|FLUX|OAR)\b|^\s*#\$\s"
+)
+"""Lines that open with `#` but declare something rather than say something. Tool pragmas, and the batch directives a scheduler reads out of a job script — a run of `#SBATCH` lines is the job's resource request, so it has no shorter form and nowhere else to live."""
 _LICENCE = re.compile(r"copyright|licen[cs]e|SPDX|\(c\)\s*\d{4}|©", re.IGNORECASE)
 _CODEISH = re.compile(
     r"^\s*(def |class |return\b|import |from \S+ import|if .+:|for .+ in .+:|while .+:|"
@@ -102,17 +107,46 @@ def is_licence_run(start: int, run: list[tuple[int, str]]) -> bool:
     return start == 1 and any(_LICENCE.search(body) for _, body in run)
 
 
-def _comment_runs(lines: list[str]):
-    """Yield `(start_line, bodies)` for each run of standalone `#` lines."""
+def _layer(stripped: str, mako: bool) -> str:
+    """Which comment layer a `#` line belongs to.
+
+    A Mako template carries two on the same character: `##` opens a comment the renderer strips, so it addresses whoever reads the template, while a single `#` is text the renderer emits, so it addresses whoever reads the generated artifact. Everywhere else there is only one layer, and reporting one keeps adjacent lines in a single run.
+    """
+    return "##" if mako and stripped.startswith("##") else "#"
+
+
+def _comment_runs(lines: list[str], path: str = ""):
+    """Yield `(start_line, bodies)` for each run of standalone `#` lines.
+
+    A run breaks where the comment layer changes, so a block of template prose and the one-line comment it emits below itself are counted apart rather than as one long block. In a template that emits markdown a `#` line inside a fence is a shell sample in the emitted document, which is content and not a comment at all.
+    """
+    mako = path.endswith(".mako")
+    markdown = path.endswith(".md.mako")
     run: list[tuple[int, str]] = []
+    layer, fenced, documented = None, False, False
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
-        if stripped.startswith("#") and not _DIRECTIVE.match(stripped):
+        if markdown and stripped.startswith("```"):
+            fenced = not fenced
+        if mako and stripped.startswith("<%doc>"):
+            documented = "</%doc>" not in stripped
+        elif mako and stripped.startswith("</%doc>"):
+            documented = False
+            continue
+        here = _layer(stripped, mako)
+        is_comment = (
+            stripped.startswith("#") and not _DIRECTIVE.match(stripped) and not (fenced and here == "#") and not documented
+        )
+        if is_comment and layer in (None, here):
+            layer = here
             run.append((i, stripped.lstrip("#").strip()))
-        else:
-            if run:
-                yield run[0][0], run
-            run = []
+            continue
+        if run:
+            yield run[0][0], run
+        run, layer = [], None
+        if is_comment:
+            layer = here
+            run.append((i, stripped.lstrip("#").strip()))
     if run:
         yield run[0][0], run
 
@@ -148,7 +182,7 @@ def check(path: Path) -> list[str]:
     lines = text.splitlines()
     bad: list[str] = []
 
-    for start, run in _comment_runs(lines):
+    for start, run in _comment_runs(lines, rel):
         if is_licence_run(start, run):
             continue
         for lineno, body in run:
@@ -159,6 +193,9 @@ def check(path: Path) -> list[str]:
                 f"{rel}:{start}: {len(run)}-line `#` block — at most {MAX_COMMENT_RUN}; "
                 f"move the explanation into the docstring"
             )
+
+    if path.suffix != ".py":
+        return bad
 
     try:
         tree = ast.parse(text)
@@ -177,13 +214,21 @@ def check(path: Path) -> list[str]:
     return bad
 
 
+WHOLE_FILE_SUFFIXES = (".py", ".mako")
+"""What a whole-file run can read. The docstring rules need an AST and so apply to Python alone; the comment rule is about prose and reads the same in a template."""
+
+SWEEP_SUFFIXES = (".py",)
+"""What a directory sweep reads. A template is checked when its path is named, which is how the pre-commit hook passes the files a commit touches."""
+
+
 def iter_files(targets: list[str]):
-    """Python files under *targets*, skipping vendored and generated trees."""
+    """Checkable files under *targets*, skipping vendored and generated trees."""
     for t in targets:
         p = Path(t)
-        candidates = [p] if p.is_file() else sorted(p.rglob("*.py"))
+        explicit = p.is_file()
+        candidates = [p] if explicit else sorted(f for suffix in SWEEP_SUFFIXES for f in p.rglob(f"*{suffix}"))
         for f in candidates:
-            if f.suffix != ".py" or any(s in f.parts for s in SKIP_PARTS):
+            if not f.name.endswith(WHOLE_FILE_SUFFIXES) or any(s in f.parts for s in SKIP_PARTS):
                 continue
             rel = f.as_posix()
             if rel in GENERATED or any(rel.startswith(d) for d in GENERATED_DIRS):
@@ -196,12 +241,12 @@ def _added_comment_runs(diff: str):
 
     A run starting at line 1 is a file header — the copyright and licence block — and is exempt, as it is whole-file. Only added lines are read, so an existing block is untouched until someone edits it.
     """
-    path, lineno, run = None, 0, []
+    path, lineno, run, layer = None, 0, [], None
 
     def close():
-        nonlocal run
+        nonlocal run, layer
         finished = run if len(run) > MAX_COMMENT_RUN and run[0][0] > 1 else []
-        run = []
+        run, layer = [], None
         return finished
 
     for raw in diff.splitlines():
@@ -215,15 +260,46 @@ def _added_comment_runs(diff: str):
             lineno = int(raw.split("+", 1)[1].split(",")[0].split(" ")[0])
         elif raw.startswith("+") and not raw.startswith("+++"):
             body = raw[1:].strip()
-            if body.startswith("#") and not _DIRECTIVE.match(body):
-                run.append((lineno, body.lstrip("#").strip()))
-            elif block := close():
+            here = _layer(body, bool(path) and path.endswith(".mako"))
+            is_comment = body.startswith("#") and not _DIRECTIVE.match(body)
+            if not (is_comment and layer in (None, here)) and (block := close()):
                 yield path, block
+            if is_comment:
+                layer = here
+                run.append((lineno, body.lstrip("#").strip()))
             lineno += 1
         elif block := close():
             yield path, block
     if block := close():
         yield path, block
+
+
+def _exempt_lines(path: str) -> set[int]:
+    """Line numbers the comment rule does not read, for a template.
+
+    Inside a `<%doc>` block the prose IS the docstring, which is where the rule wants it. Inside a fence of a template that emits markdown, a `#` line is a shell sample the reader of the emitted document is meant to see. Read from the working tree because a unified diff of added lines alone cannot say whether either is open.
+    """
+    try:
+        lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return set()
+    markdown = path.endswith(".md.mako")
+    inside, fenced, documented = set(), False, False
+    for i, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if markdown and stripped.startswith("```"):
+            fenced = not fenced
+        elif stripped.startswith("<%doc>"):
+            documented = "</%doc>" not in stripped
+            inside.add(i)
+            continue
+        elif stripped.startswith("</%doc>"):
+            documented = False
+            inside.add(i)
+            continue
+        if fenced or documented:
+            inside.add(i)
+    return inside
 
 
 def check_diff(base: str | None) -> tuple[int, list[str]]:
@@ -250,6 +326,8 @@ def check_diff(base: str | None) -> tuple[int, list[str]]:
         if not path or not path.endswith(DIFF_SUFFIXES):
             continue
         if any(path.startswith(d) for d in GENERATED_DIRS):
+            continue
+        if path.endswith(".mako") and run[0][0] in _exempt_lines(path):
             continue
         bad.append(
             f"{path}:{run[0][0]}: {len(run)}-line `#` block added — at most {MAX_COMMENT_RUN}; "

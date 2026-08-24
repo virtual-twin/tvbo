@@ -36,8 +36,7 @@ for expl in exploration_list:
         'name': getattr(expl, 'name', 'exploration'),
         'label': getattr(expl, 'label', ''),
         'mode': getattr(expl, 'mode', 'product'),
-        # n_parallel = backend-agnostic batch size → tvboptim n_vmap. 'auto' (default)
-        # resolves to min(grid.N, cap) at runtime; an explicit int passes through.
+        # 'auto' resolves to min(grid.N, cap) at runtime; an explicit int passes through as tvboptim's n_vmap.
         'n_parallel': normalize_n_parallel(expl),
         'axes': [],
     }

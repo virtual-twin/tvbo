@@ -9,12 +9,9 @@ from tvbo.adapters.julia_model import build_model_context
 svs = list(model.state_variables.values())
 mc = build_model_context(model, network, constraints=constraints)
 n_nodes = mc.get("n_nodes", 1)
-# Single-node: record each state var directly. Network: a loop-based record
-# (below) computes derived observables (e.g. H_e) per node and reduces to max/mean.
+# A single node records each state variable directly; a network reduces derived observables across nodes below.
 _rec = ", ".join(f"{sv.name} = x[{i+1}]" for i, sv in enumerate(svs))
-# BifurcationKit calls record_from_solution(x, p) with p = the SCALAR value of the
-# continuation parameter. The fixed parameters come from the closure `p` NamedTuple;
-# exclude the continuation parameter from that destructure (the record arg supplies it).
+# The record argument supplies the continuation parameter, so exclude it from the closure's destructure.
 _destr_no_ics = ", ".join(n for n in (nm.strip() for nm in mc["destructure"].split(",")) if n and n != ICS)
 %>
 ##
@@ -64,8 +61,7 @@ x0_eq = _find_steady_state(${model.name}!, x0, p)
 
 # Record observables for each continuation step
 % if network:
-## Network: recompute derived observables per node (reusing the model's equation
-## emission) and reduce across nodes to max & mean — e.g. max firing rate r_E vs G.
+## Recompute derived observables per node, reusing the model's equation emission, and reduce to max and mean.
 record_from_sol = (${mc['arg_x']}, ${ICS}; k...) -> begin
     (; ${_destr_no_ics}) = p
     N = ${n_nodes}
@@ -245,18 +241,12 @@ for hopf_idx in hopf_indices
     end
 end
 
-# Orbit waveforms: for each PO branch, reconstruct every step's orbit with
-# get_periodic_orbit and phase-resample it to NPROF points over one period. This makes
-# the actual periodic-orbit profile (E(t), x(t), … over t/T) recoverable downstream —
-# BifurcationKit only records amplitude/period by default, not the waveform. Stored as a
-# [n_steps, NPROF, n_vars] array per branch under po_results.profiles.
+# BifurcationKit records only amplitude and period, so phase-resample each orbit to NPROF points to keep the waveform recoverable.
 NPROF = 400
 NVARS = ${len(svs)}
 _PHASE_GRID = LinRange(0.0, 1.0, NPROF)
 
-# Bracketing index and linear-interpolation weight of each phase-grid point in the
-# normalised time vector `tn`. Depends only on the orbit's time axis, so it is computed
-# once per orbit and reused for every state variable.
+# Depends only on the orbit's time axis, so it is computed once per orbit and reused for every state variable.
 function _phase_brackets(tn)
     map(_PHASE_GRID) do g
         k = searchsortedfirst(tn, g)
@@ -269,11 +259,7 @@ end
 po_profiles = Any[]
 for (bi, br_po) in enumerate(po_branches)
     try
-        # Rows are the BRANCH steps — the same axis `po_results.branches` serialises —
-        # not the number of saved solutions. The two differ whenever BifurcationKit
-        # saves at a coarser stride, and the reader drops any profile whose first axis
-        # disagrees with the branch. Each saved solution lands on its own step; rows
-        # with no saved solution stay NaN.
+        # Rows are the branch steps that `po_results.branches` serialises, not the saved solutions, which can be a coarser stride.
         nrows = length(br_po.branch)
         profs = fill(NaN, nrows, NPROF, NVARS)
         for (si, _s) in enumerate(br_po.sol)

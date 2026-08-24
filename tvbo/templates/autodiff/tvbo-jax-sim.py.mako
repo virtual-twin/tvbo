@@ -23,7 +23,8 @@
     except TypeError:
         monitors_seq = _mon.values() if hasattr(_mon, 'values') else (_mon or [])
     model = experiment.dynamics
-    coupling = experiment.coupling
+    from tvbo.templates.base.utils import experiment_coupling
+    coupling = experiment_coupling(experiment)
     integration = experiment.integration
 
     dt = integration.step_size if integration is not None else 0.1
@@ -149,8 +150,7 @@ def kernel(state):
     # problem dimensions
     n_nodes = ${getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions}
     n_svar = ${len(experiment.dynamics.state_variables)}
-## n_cvar sizes the delay-history pad; nh slices it and the returned ICs. Emitting
-## either outside the branch that reads it leaves a binding nothing consumes.
+## n_cvar sizes the delay-history pad and nh slices it and the returned ICs, so emitting either outside the branch that reads it leaves a binding nothing consumes.
 % if is_delayed and small_dt:
     n_cvar = ${len(cvar) if len(cvar) > 0 else len(experiment.dynamics.state_variables)}
 % endif
