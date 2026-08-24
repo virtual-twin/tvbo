@@ -24,8 +24,8 @@ parameters:
 # `seed` is not a parameter: it is the generator's own `seed:` slot, and declaring
 # it twice would give the same quantity two sources that can disagree.
 
-# The documented Callable exception to the typed-DAG rule (dev/GenericProcedureEngine.md
-# §5). A masked extract, a permutation and a scatter are not expressible in the
+# The documented Callable exception to the typed-DAG rule.
+# A masked extract, a permutation and a scatter are not expressible in the
 # backend-independent primitive set — `M[M != 0]` in particular cannot survive expression
 # parsing at all, because the comparison evaluates to a plain Python `True` before a tree
 # is built. Rather than bend the printer vocabulary around one generator, the algorithm

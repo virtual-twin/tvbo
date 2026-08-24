@@ -1,11 +1,8 @@
 """Tests for per-skill ``assets/`` handling in the skills pipeline.
 
-Locks in the behaviour that lets a canonical user skill ship an ``assets/``
-directory: ``parse_skill`` discovers it, ``render_claude_code`` mirrors it next
-to ``SKILL.md`` (pruning stale files, skipping bytecode), the flat targets
-inline the reference chapters they cannot mirror, and the CLI ``install`` /
-``uninstall`` round-trip carries then removes it.
+Locks in the behaviour that lets a canonical user skill ship an ``assets/`` directory: ``parse_skill`` discovers it, ``render_claude_code`` mirrors it next to ``SKILL.md`` (pruning stale files, skipping bytecode), the flat targets inline the reference chapters they cannot mirror, and the CLI ``install`` / ``uninstall`` round-trip carries then removes it.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -32,8 +29,7 @@ def _make_skill(root: Path, name: str, *, assets: dict[str, str] | None = None) 
     d = root / name
     d.mkdir(parents=True)
     (d / "SKILL.md").write_text(
-        f"---\nname: {name}\ndescription: test skill\n"
-        f"metadata:\n  audience: user\n---\n\n# {name}\n\nbody\n",
+        f"---\nname: {name}\ndescription: test skill\nmetadata:\n  audience: user\n---\n\n# {name}\n\nbody\n",
         encoding="utf-8",
     )
     for rel, content in (assets or {}).items():
@@ -60,9 +56,7 @@ def test_parse_skill_without_assets_is_none(tmp_path):
 
 
 def test_render_mirrors_assets_tree(tmp_path):
-    md = _make_skill(
-        tmp_path / "src", "s", assets={"a.tmpl": "A", "sub/b.py": "print('b')"}
-    )
+    md = _make_skill(tmp_path / "src", "s", assets={"a.tmpl": "A", "sub/b.py": "print('b')"})
     dest = tmp_path / "dest"
     out = render_claude_code(parse_skill(md), dest)
     assert out == dest / "s" / "SKILL.md"
@@ -192,8 +186,7 @@ def test_install_then_uninstall_carries_and_removes_assets(tmp_path):
 
     res = runner.invoke(
         app,
-        ["skills", "install", "--target", "claude-code",
-         "--skill", name, "--out", str(tmp_path)],
+        ["skills", "install", "--target", "claude-code", "--skill", name, "--out", str(tmp_path)],
     )
     assert res.exit_code == 0, res.stdout
     skill_dir = tmp_path / f"tvbo-{name}"
@@ -201,8 +194,6 @@ def test_install_then_uninstall_carries_and_removes_assets(tmp_path):
     assert (skill_dir / "assets").is_dir()
     assert any((skill_dir / "assets").rglob("*")), "installed assets/ is empty"
 
-    res = runner.invoke(
-        app, ["skills", "uninstall", "--target", "claude-code", "--out", str(tmp_path)]
-    )
+    res = runner.invoke(app, ["skills", "uninstall", "--target", "claude-code", "--out", str(tmp_path)])
     assert res.exit_code == 0, res.stdout
     assert not skill_dir.exists()  # SKILL.md + assets/ + dir all gone

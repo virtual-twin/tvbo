@@ -17,6 +17,7 @@ tvbo
 ├── info        Inspect a SPEC (tasks, outputs, declared backends)
 ├── formats     List all registered I/O formats
 ├── version     Print the tvbo version
+├── brain       Draw a spec dissolving into a cortical surface (bare `tvbo` shows it)
 ├── validate    [schema | bids | sedml | omex]
 ├── config      [path | show]
 ├── network     [build]
@@ -51,6 +52,7 @@ Each page below documents one verb (or sub-tree) with all flags, exit codes, and
 - [`tvbo import`](import.qmd) — load foreign files into TVBO objects
 - [`tvbo info`](info.qmd) — inspect a SPEC without running it
 - [`tvbo formats`](formats.qmd) — list registered I/O formats
+- [`tvbo brain`](brain.qmd) — the ASCII spec-to-cortex portrait a bare `tvbo` prints
 - [`tvbo validate`](validate.qmd) — schema, BIDS, SED-ML, OMEX validation
 - [`tvbo config`](config.qmd) — view CLI configuration
 - [`tvbo network`](network.qmd) — build connectomes from a tractogram + parcellation (MRtrix wrapper)

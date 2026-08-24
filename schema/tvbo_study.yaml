@@ -3,9 +3,10 @@ name: tvbo_study
 title: TVB-O Study Schema
 description: >-
   General-purpose classes for multi-subject, multi-session study metadata.
-  Defines Subject, Session, and Dataset for workflow orchestration and
-  BIDS-compatible data organization. Domain-specific schemas (e.g., tvb_dbs)
-  extend these with specialized attributes.
+  Defines Subject, Session, and Dataset for workflow orchestration, and
+  StudyLayout for the directory structure of a BIDS study dataset.
+  Domain-specific schemas (e.g., tvb_dbs) extend these with specialized
+  attributes.
 
 prefixes:
   linkml: https://w3id.org/linkml/
@@ -190,6 +191,148 @@ classes:
         slot_uri: dcterms:references
         description: "DOI or citation for this dataset."
 
+
+  StudyLayout:
+    description: >-
+      Directory layout of a study dataset, and the single ground truth for it. Everything
+      that creates, resolves, ignores, validates or documents a study's directories reads
+      this record instead of restating the tree, so the layout cannot drift between the
+      scaffolder, the path resolvers, the ignore files, the validator and the docs. The
+      vocabulary deliberately mirrors the BIDS ``rules/directories.yaml`` (``name``,
+      ``level``, ``opaque``, ``subdirs``) so a layout can be diffed against the standard.
+    slots:
+      - name
+      - description
+    attributes:
+      dataset_type:
+        range: BidsDatasetType
+        ifabsent: string(study)
+        description: >-
+          BIDS ``DatasetType`` this layout realises, written into the dataset's
+          ``dataset_description.json``.
+      bids_version:
+        range: string
+        description: "BIDS version the layout was written against."
+      subdirs:
+        multivalued: true
+        range: StudyDirectory
+        inlined: true
+        inlined_as_list: true
+        description: "Directories under the dataset root, in the order a reader should meet them."
+      files:
+        multivalued: true
+        range: StudyFile
+        inlined: true
+        inlined_as_list: true
+        description: "Files at the dataset root."
+
+  StudyDirectory:
+    description: >-
+      One directory in a study layout. ``role`` is the stable key code resolves by: a
+      resolver asks the layout where the ``results`` go and never for a literal path, so
+      moving a directory is a one-line edit to this record. ``bids`` states the directory's
+      standing with the standard, which is what decides whether it needs a ``.bidsignore``
+      entry, and ``tracked`` states what version control keeps.
+    slots:
+      - name
+      - description
+    attributes:
+      role:
+        range: StudyDirectoryRole
+        description: >-
+          Semantic key this directory is resolved by. Absent for a directory that only
+          groups others, whose own path no code needs.
+      level:
+        range: RequirementLevel
+        ifabsent: string(optional)
+        description: >-
+          Whether a study MUST, SHOULD or MAY have this directory. Enforced by
+          ``tvbo validate study``; a BIDS-sanctioned directory is optional to BIDS
+          regardless of what a study requires of itself.
+      opaque:
+        range: boolean
+        ifabsent: "false"
+        description: >-
+          BIDS: the standard does not specify the contents, so a validator does not read
+          inside. A sanctioned opaque directory therefore needs no ``.bidsignore`` entry
+          however its files are named.
+      bids:
+        range: BidsDirectoryStatus
+        ifabsent: string(sanctioned)
+        description: "Standing with the BIDS standard."
+      tracked:
+        range: TrackedContent
+        ifabsent: string(all)
+        description: "What version control keeps, which is what the ``.gitignore`` writer emits."
+      expires_with:
+        range: string
+        description: >-
+          For an unsanctioned or proposed directory, what would retire its ``.bidsignore``
+          entry (a BEP identifier, or a change we would have to propose). Naming the exit
+          keeps the ignore surface from becoming permanent by default.
+      in_templates:
+        multivalued: true
+        range: string
+        description: >-
+          Init templates that include this directory. Absent means every study gets it, so
+          one record covers the general layout and its specialisations without a second copy
+          of the tree to keep in step.
+      files:
+        multivalued: true
+        range: StudyFile
+        inlined: true
+        inlined_as_list: true
+        description: "Files this directory is expected to carry."
+      subdirs:
+        multivalued: true
+        range: StudyDirectory
+        inlined: true
+        inlined_as_list: true
+        description: "Nested directories."
+
+  StudyFile:
+    description: >-
+      One file a study layout accounts for. ``name`` may interpolate ``{study}``, the
+      dataset's own name, which is how the entry recipe is named without the layout
+      knowing any particular study.
+    slots:
+      - name
+      - description
+    attributes:
+      role:
+        range: StudyFileRole
+        description: "Semantic key this file is resolved by."
+      level:
+        range: RequirementLevel
+        ifabsent: string(optional)
+      bids:
+        range: BidsDirectoryStatus
+        ifabsent: string(sanctioned)
+        description: "Standing with the BIDS standard; an unsanctioned file needs a ``.bidsignore`` entry."
+      expires_with:
+        range: string
+        description: >-
+          For an unsanctioned or proposed file, what would retire its ``.bidsignore`` entry.
+      tracked:
+        range: TrackedContent
+        ifabsent: string(all)
+      template:
+        range: string
+        description: >-
+          Asset that seeds the file at ``tvbo study init``, resolved against the
+          scaffolder's template directory. Absent means the file is written from the
+          layout record itself, or left to the author.
+      generated:
+        range: boolean
+        ifabsent: "false"
+        description: >-
+          Written by tooling and overwritten on the next run, so it is never hand-edited.
+      in_templates:
+        multivalued: true
+        range: string
+        description: >-
+          Init templates that include this file. Absent means every study gets it.
+
 enums:
   SubjectBatchMode:
     description: >-
@@ -207,3 +350,140 @@ enums:
         description: "Female"
       other:
         description: "Other or not reported"
+
+  BidsDatasetType:
+    description: >-
+      BIDS ``DatasetType``: how a dataset is to be interpreted. ``study`` has been in the
+      released standard since BIDS 1.10.1 and is the type a simulation study takes.
+    permissible_values:
+      raw:
+        description: "Unprocessed acquired data."
+      derivative:
+        description: "Data computed from another dataset."
+      study:
+        description: >-
+          A dataset that organises the material of one study: its inputs under
+          ``sourcedata/``, its outputs under ``derivatives/``, its prose under ``docs/``.
+
+  RequirementLevel:
+    description: "BIDS requirement level: whether something MUST, SHOULD or MAY be present."
+    permissible_values:
+      required:
+        description: "MUST be present."
+      recommended:
+        description: "SHOULD be present."
+      optional:
+        description: "MAY be present."
+
+  BidsDirectoryStatus:
+    description: >-
+      A directory's standing with the BIDS standard, which is what decides whether it
+      needs a ``.bidsignore`` entry.
+    permissible_values:
+      sanctioned:
+        description: >-
+          Named in the released BIDS ``rules/directories.yaml`` for this ``DatasetType``.
+          Needs no ``.bidsignore`` entry.
+      proposed:
+        description: >-
+          Named only by a BEP still under review, so a released validator does not know it.
+          Ignored until the BEP merges, which ``expires_with`` records.
+      nested_dataset:
+        description: >-
+          A BIDS dataset in its own right, carrying its own ``dataset_description.json``
+          and validated as that type.
+      unsanctioned:
+        description: >-
+          Outside the BIDS vocabulary. Must be listed in ``.bidsignore``, and
+          ``expires_with`` must say what would retire the entry.
+      hidden:
+        description: >-
+          Dot-prefixed, so validators skip it by convention and no ``.bidsignore`` entry
+          is needed.
+
+  TrackedContent:
+    description: "What version control keeps of a directory."
+    permissible_values:
+      all:
+        description: "Everything in it is tracked."
+      declared_files:
+        description: >-
+          Only the files the record declares under it are tracked, at whatever depth they
+          sit; everything else it accumulates is not. A source directory keeps its README,
+          so third-party material is documented without being redistributed, and a
+          derivative dataset keeps the description that declares what it is, so a checkout
+          validates before anything has been run.
+      none:
+        description: "Nothing in it is tracked; the directory is reproduced by running the study."
+
+  StudyDirectoryRole:
+    description: >-
+      What a directory is for, as a key code resolves paths by. Roles are properties of a
+      study dataset in general, so a layout that renames or moves a directory keeps working
+      without touching the code that reads it.
+    permissible_values:
+      spec:
+        description: "Recipe fragments the entry recipe includes."
+      code:
+        description: "Callables the recipe references by bare module name."
+      sourcedata:
+        description: "Inputs the study did not compute: connectomes, atlases, empirical data."
+      original_study:
+        description: >-
+          Material published by the work being reproduced, kept apart from the study's own
+          inputs so it is never mistaken for an output.
+      raw_bids:
+        description: "An input that is itself a BIDS raw dataset, mounted rather than copied."
+      docs:
+        description: "Report sources: the prose, its bibliography and its render config."
+      analysis:
+        description: "Analysis definitions the report and figures read."
+      figures:
+        description: "Rendered figures cleared for publication."
+      figure_scripts:
+        description: >-
+          The self-contained plotting script each declarative figure generates: the editable
+          escape hatch from the spec, kept beside what it renders rather than beside the
+          authored code, which it is not.
+      figures_restricted:
+        description: >-
+          Rendered figures that reproduce copyrighted material and are never tracked or
+          published, so an internal comparison stays possible without redistributing it.
+      derivatives:
+        description: "Grouping directory for the nested derivative datasets."
+      results:
+        description: "Result containers a run and its analyses write, and figures read."
+      provenance:
+        description: "Provenance records for what was run, in what environment, by what software."
+      logs:
+        description: "Run logs."
+      build:
+        description: "Build root for artifacts that are pure products and reproduce from the spec."
+      kits:
+        description: "Self-contained runnable kits packaged from the spec."
+      cache:
+        description: "Cached intermediate results, keyed on their inputs."
+      notes:
+        description: >-
+          Working notes kept beside the study and never published: the gap register a
+          reproduction accumulates, the open threads. Untracked, so a note can be blunt.
+
+  StudyFileRole:
+    description: "What a file at a known place in the layout is."
+    permissible_values:
+      dataset_description:
+        description: "The BIDS ``dataset_description.json``."
+      readme:
+        description: "The dataset or directory README."
+      citation:
+        description: "``CITATION.cff``."
+      license:
+        description: "The dataset license."
+      changelog:
+        description: "``CHANGES``."
+      recipe:
+        description: "The entry recipe: the one specification a run is given."
+      gitignore:
+        description: "``.gitignore``, generated from the layout's ``tracked`` fields."
+      bidsignore:
+        description: "``.bidsignore``, generated from the layout's ``bids`` fields."

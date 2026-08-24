@@ -220,7 +220,7 @@ c = Coupling.from_ontology("Linear")
 c.parameters["a"].value = 1.0
 
 sc = Network.from_db("DesikanKilliany")
-sc.add_transform("weight", "(W - W_min) / (W_max - W_min)")
+sc.add_transform("weight", "(weight - min(weight)) / (max(weight) - min(weight))")
 sc.coupling["Linear"] = c
 
 exp = SimulationExperiment(

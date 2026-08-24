@@ -2,9 +2,7 @@
 
 The schema has always said an observer's output is "read at the final step for a reduction
 ... or, when ``period`` is set, sub-sampled over time for a monitor". Only the first half
-was implemented: every observer collapsed time into one value per node, so a hemodynamic
-forward model — an ODE whose whole point is the time course it produces — could not be
-declared as one. These tests pin the second half:
+was implemented: every observer collapsed time into one value per node, so a hemodynamic forward model — an ODE whose whole point is the time course it produces — could not be declared as one. These tests pin the second half:
 
 * the resolver reads ``period`` against the integration grid and tags the reduction
   ``monitor`` (axes ``time x node``), leaving a period-less observer folding as before;
@@ -35,6 +33,7 @@ from tvbo.datamodel.schema import (
     StateVariable,
 )
 from tvbo.templates.tvboptim.utils import (
+    observation_dims,
     reduction_dims,
     resolve_reduction,
     streaming_post_eval_plan,
@@ -63,13 +62,16 @@ def _observer(source="x", period=None, states=None, dvs=None, output=None, **obs
         dynamics=Dynamics(
             name="observer",
             state_variables={
-                n: StateVariable(name=n, equation=Equation(rhs=rhs), equation_type="recurrence",
-                                 **({} if init is None else {"initial_value": init}))
+                n: StateVariable(
+                    name=n,
+                    equation=Equation(rhs=rhs),
+                    equation_type="recurrence",
+                    **({} if init is None else {"initial_value": init}),
+                )
                 for n, (rhs, init) in states.items()
             },
             derived_variables={
-                n: DerivedVariable(name=n, equation=Equation(rhs=rhs), record=rec)
-                for n, (rhs, rec) in dvs.items()
+                n: DerivedVariable(name=n, equation=Equation(rhs=rhs), record=rec) for n, (rhs, rec) in dvs.items()
             },
             **({"output": output} if output else {}),
         ),
@@ -111,8 +113,7 @@ def test_a_period_shorter_than_the_step_raises():
 
 
 def test_the_predicate_call_without_an_experiment_stays_truthy():
-    # `resolve_reduction(obs)` is used bare as "is this a reduction?"; the period needs the
-    # grid, so the bare call answers the boolean without resolving it.
+    # `resolve_reduction(obs)` is used bare as "is this a reduction?"; the period needs the grid, so the bare call answers the boolean without resolving it.
     red = resolve_reduction(_observer(period=720.0))
     assert red is not None and red["period_steps"] is None
 
@@ -124,14 +125,13 @@ def test_post_eval_plan_aligns_the_block_to_the_emission_period():
     plan = streaming_post_eval_plan(exp)
     assert plan["names"] == ["obs"]
     assert plan["period_in_steps"] == 720
-    assert plan["dims"] == {"obs": ("time", "node")}
+    assert observation_dims(exp) == {"obs": ("time", "node")}
 
 
 def test_reduce_streaming_on_an_observer_keeps_the_observer_not_the_pipeline_resolver():
     """`reduce: streaming` opts an observer into the post-tuning carry.
 
-    It must not send an observation that already IS a reducer down the pipeline-lifting
-    path, which would reject it for having no HRF kernel.
+    It must not send an observation that already IS a reducer down the pipeline-lifting path, which would reject it for having no HRF kernel.
     """
     red = resolve_reduction(_observer(period=720.0, reduce="streaming"), _Exp())
     assert red["kind"] == "monitor"
@@ -143,8 +143,7 @@ def test_reduce_streaming_on_an_observer_keeps_the_observer_not_the_pipeline_res
 def test_a_curated_observer_binds_its_canonical_input_to_the_study_source():
     """An observation model is authored once and pointed at any model's state variable.
 
-    The observer writes `x`; the study says `source: [r]`. Without the binding a curated
-    model would only work for a model whose state happens to share the author's name.
+    The observer writes `x`; the study says `source: [r]`. Without the binding a curated model would only work for a model whose state happens to share the author's name.
     """
     red = resolve_reduction(_observer(source="r", period=720.0), _Exp())
     assert red["source"] == "r"
@@ -196,7 +195,10 @@ def _bw_reducer(period_steps, dt=1.0, n_var=1):
     red = resolve_reduction(obs, exp)
     red["period_steps"] = period_steps
     src = _OBS_TEMPLATE.get_def("render_recurrence_reduction").render(
-        red=red, name="bold", s_idx=0, dt=dt,
+        red=red,
+        name="bold",
+        s_idx=0,
+        dt=dt,
     )
     ns = {"jnp": jnp, "jax": jax}
     exec(compile(src, "<reducer>", "exec"), ns)
@@ -228,10 +230,7 @@ def test_the_reducer_reproduces_the_balloon_windkessel_monitor(period_steps):
     got = np.asarray(finalize(update(init(data[0], n_steps), data)))
     expected = _tvboptim_bw(rates, period_ms=period_steps * dt, dt=dt)
 
-    # Measured max|diff| is 0.0 — the declared recurrence is the same sequence of
-    # operations the monitor performs. Asserted to f64 rounding rather than exactly,
-    # because the emitted `s / tau_s` and the monitor's precomputed `(1/tau_s) * s`
-    # coincide only through XLA's reciprocal rewrite.
+    # Measured max|diff| is 0.0 — the declared recurrence is the same sequence of operations the monitor performs. Asserted to f64 rounding rather than exactly, because the emitted `s / tau_s` and the monitor's precomputed `(1/tau_s) * s` coincide only through XLA's reciprocal rewrite.
     assert got.shape == expected.shape
     assert np.allclose(got, expected, rtol=1e-12, atol=1e-14), np.abs(got - expected).max()
 
@@ -251,12 +250,12 @@ def test_the_reducer_is_block_decomposition_invariant(blocks):
     acc = init(data[0], n_steps)
     block = n_steps // blocks
     for start in range(0, n_steps, block):
-        acc = update(acc, data[start:start + block])
+        acc = update(acc, data[start : start + block])
     assert np.array_equal(np.asarray(finalize(acc)), ref)
 
 
 def test_a_short_tail_block_advances_the_observer_without_emitting():
-    """tvboptim's blocked scan ends with one partial block; it holds no whole sample."""
+    """Tvboptim's blocked scan ends with one partial block; it holds no whole sample."""
     rng = np.random.default_rng(2)
     period_steps, n_node = 25, 3
     n_steps = period_steps * 8 + 7
@@ -265,13 +264,12 @@ def test_a_short_tail_block_advances_the_observer_without_emitting():
     init, update, finalize = _bw_reducer(period_steps)()
     acc = init(data[0], n_steps)
     for b in range(n_steps // period_steps):
-        acc = update(acc, data[b * period_steps:(b + 1) * period_steps])
-    acc = update(acc, data[(n_steps // period_steps) * period_steps:])
+        acc = update(acc, data[b * period_steps : (b + 1) * period_steps])
+    acc = update(acc, data[(n_steps // period_steps) * period_steps :])
     got = np.asarray(finalize(acc))
 
     assert got.shape == (n_steps // period_steps, n_node)
-    assert np.allclose(got, _tvboptim_bw(data[:, 0, :], period_steps * 1.0, 1.0)[:got.shape[0]],
-                       rtol=1e-12, atol=1e-14)
+    assert np.allclose(got, _tvboptim_bw(data[:, 0, :], period_steps * 1.0, 1.0)[: got.shape[0]], rtol=1e-12, atol=1e-14)
 
 
 def test_a_block_that_is_not_a_whole_number_of_periods_raises():
@@ -310,8 +308,7 @@ def test_the_reducer_holds_no_trajectory():
     acc = update(init(data[0], n_steps), data)
     carried = sum(int(np.asarray(a).size) for a in jax.tree_util.tree_leaves(acc))
 
-    # The 4 hemodynamic states, the output buffer and the counter — nothing else. The BOLD
-    # readout is a function of the states alone, so it is not carried through the scan.
+    # The 4 hemodynamic states, the output buffer and the counter — nothing else. The BOLD readout is a function of the states alone, so it is not carried through the scan.
     assert carried == 4 * n_node + (n_steps // period_steps) * n_node + 1
     assert carried < n_steps * n_node
 
@@ -319,27 +316,21 @@ def test_the_reducer_holds_no_trajectory():
 def test_a_state_only_readout_is_evaluated_once_per_sample():
     """The readout runs per emitted sample, not per integration step.
 
-    BOLD is a function of the hemodynamic states alone, so evaluating it every step and
-    discarding all but the boundary value is ~`period` times more work than needed. The
-    resolver decides this symbolically: a readout that reads the observed signal or a
-    per-step derived variable cannot be deferred and stays in the scan body.
+    BOLD is a function of the hemodynamic states alone, so evaluating it every step and discarding all but the boundary value is ~`period` times more work than needed. The resolver decides this symbolically: a readout that reads the observed signal or a per-step derived variable cannot be deferred and stays in the scan body.
     """
     obs = CuratedObservation.from_db("BOLD_Balloon")
     obs.source = ["r"]
     assert resolve_reduction(obs, _Exp())["output_per_step"] is False
 
     # ... whereas one that reads the source itself must stay per-step.
-    reads_source = _observer(source="r", period=720.0, states={"acc": ("acc + r", None)},
-                             dvs={"out": ("acc * r", True)})
+    reads_source = _observer(source="r", period=720.0, states={"acc": ("acc + r", None)}, dvs={"out": ("acc * r", True)})
     assert resolve_reduction(reads_source, _Exp())["output_per_step"] is True
 
 
 def test_derived_parameters_are_bound_once_outside_the_scan():
     """Observer constants belong in the preamble, not recomputed every step.
 
-    `derived_parameters` is the slot every other backend already uses for this; declaring
-    them as `derived_variables` instead would put them in the per-step body AND force the
-    readout that reads them onto the per-step path.
+    `derived_parameters` is the slot every other backend already uses for this; declaring them as `derived_variables` instead would put them in the per-step body AND force the readout that reads them onto the per-step path.
     """
     obs = CuratedObservation.from_db("BOLD_Balloon")
     obs.source = ["r"]
@@ -347,8 +338,7 @@ def test_derived_parameters_are_bound_once_outside_the_scan():
     assert [d["name"] for d in red["derived_constants"]] == ["dt_s", "k1", "k2", "k3"]
     assert red["derived"] == [] or all(d["name"] == "bold_signal" for d in red["derived"])
 
-    src = _OBS_TEMPLATE.get_def("render_recurrence_reduction").render(
-        red=red, name="bold", s_idx=0, dt=1.0)
+    src = _OBS_TEMPLATE.get_def("render_recurrence_reduction").render(red=red, name="bold", s_idx=0, dt=1.0)
     body = src.split("def _step(")[1]
     assert "k1 = " not in body and "dt_s = " not in body
 
@@ -357,7 +347,6 @@ def test_a_derived_parameter_that_varies_per_step_is_rejected():
     """A constant that reads a state is not a constant; say so instead of emitting it."""
     obs = _observer(period=720.0)
     # multivalued slot: mutate in place, an assignment does not go through the normaliser
-    obs.dynamics.derived_parameters["bad"] = DerivedParameter(
-        name="bad", equation=Equation(rhs="acc * 2"))
+    obs.dynamics.derived_parameters["bad"] = DerivedParameter(name="bad", equation=Equation(rhs="acc * 2"))
     with pytest.raises(ValueError, match="which vary per step"):
         resolve_reduction(obs, _Exp())

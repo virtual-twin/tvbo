@@ -229,7 +229,7 @@ network:
   transforms:
   - name: weight
     equation:
-      rhs: W / max(W)
+      rhs: weight / max(weight)
       latex: false
   bids_dir: ../networks/bids/dk_average
   structural_measures:

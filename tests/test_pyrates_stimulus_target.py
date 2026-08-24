@@ -1,10 +1,8 @@
 """A PyRates stimulus drives the variable the recipe names, not `I_ext` by assumption.
 
-`_build_inputs` read `target_variable` off `experiment.stimulation`. That slot holds a
-`Stimulus`, which has no such attribute at all — TVBO names a stimulus target by the
+`_build_inputs` read `target_variable` off `experiment.stimulation`. That slot holds a `Stimulus`, which has no such attribute at all — TVBO names a stimulus target by the
 *event*, and `SimulationExperiment._resolve_events` lowers a declarative `target_variable`
-onto the event's `name`. So the read returned its `I_ext` default for every experiment ever
-run, and PyRates was handed an input key for a variable the model need not declare.
+onto the event's `name`. So the read returned its `I_ext` default for every experiment ever run, and PyRates was handed an input key for a variable the model need not declare.
 """
 
 import pytest
@@ -79,14 +77,13 @@ def test_a_stimulus_with_no_event_and_no_I_ext_says_so(tmp_path):
 def test_a_model_declaring_I_ext_keeps_the_legacy_path_through_build_inputs(tmp_path):
     """Through `_build_inputs`, not the helper alone.
 
-    The lookup consulted `experiment.dynamics` while `dyn_name` keys the network's library,
-    so it always missed and a legacy `stimulation:`-only recipe raised instead of falling
-    back — a regression the helper-only test could not see.
+    The lookup consulted `experiment.dynamics` while `dyn_name` keys the network's library, so it always missed and a legacy `stimulation:`-only recipe raised instead of falling back — a regression the helper-only test could not see.
     """
-    recipe = (RECIPE
-              .replace("event_type: stimulus", "event_type: discrete")
-              .replace("{tau: {value: 10.0}}", "{tau: {value: 10.0}, I_ext: {value: 0.0}}")
-              .replace("(-v + P)/tau", "(-v + I_ext)/tau"))
+    recipe = (
+        RECIPE.replace("event_type: stimulus", "event_type: discrete")
+        .replace("{tau: {value: 10.0}}", "{tau: {value: 10.0}, I_ext: {value: 0.0}}")
+        .replace("(-v + P)/tau", "(-v + I_ext)/tau")
+    )
     inputs = PyRatesAdapter(_experiment(recipe, tmp_path))._build_inputs()
 
     assert inputs, "the legacy fallback produced no PyRates input at all"
@@ -97,10 +94,8 @@ def test_the_legacy_default_is_kept_only_where_the_model_declares_it(tmp_path):
     """`I_ext` stays available to models that really have it, and only to those."""
     from types import SimpleNamespace
 
-    with_it = SimpleNamespace(state_variables={}, parameters={"I_ext": object()},
-                              coupling_inputs={}, derived_variables={})
-    without = SimpleNamespace(state_variables={"v": object()}, parameters={},
-                              coupling_inputs={}, derived_variables={})
+    with_it = SimpleNamespace(state_variables={}, parameters={"I_ext": object()}, coupling_inputs={}, derived_variables={})
+    without = SimpleNamespace(state_variables={"v": object()}, parameters={}, coupling_inputs={}, derived_variables={})
 
     assert _legacy_input_variable(with_it) == "I_ext"
     assert _legacy_input_variable(without) is None

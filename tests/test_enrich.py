@@ -1,10 +1,6 @@
 """``enrich()`` — filling a record's gaps from the entity it names.
 
-Construction resolves what is deterministic, local and cheap: the dialect expands an
-``iri`` from one curated file. Everything past that is an act the caller asks for, and
-``enrich()`` is the verb. What these pin is that it is one verb with one contract, reached
-by a rule rather than a list — the schema says which classes carry it, and the class says
-which sources answer.
+Construction resolves what is deterministic, local and cheap: the dialect expands an ``iri`` from one curated file. Everything past that is an act the caller asks for, and ``enrich()`` is the verb. What these pin is that it is one verb with one contract, reached by a rule rather than a list — the schema says which classes carry it, and the class says which sources answer.
 """
 
 from __future__ import annotations
@@ -21,8 +17,7 @@ GENERATED_FORMS = pytest.mark.parametrize("model", (schema, pyd), ids=("dataclas
 def test_the_schema_says_which_classes_are_enrichable():
     """A class that may name an entity elsewhere is one that can be filled from it.
 
-    Nothing lists them: declaring the slot is what makes a class's records enrichable, and
-    a subclass inherits the base its parent was given.
+    Nothing lists them: declaring the slot is what makes a class's records enrichable, and a subclass inherits the base its parent was given.
     """
     from tvbo.behaviour._enrich import IriEnrichable
 
@@ -68,9 +63,7 @@ def test_filling_never_overwrites(model):
 def test_the_first_source_that_resolves_answers_alone(monkeypatch, model):
     """Ranked, not combined — otherwise one record enriches to two different things.
 
-    Topping a curated record up from the ontology adds whatever the curators left out,
-    and only where the ontology resolves the same names: ``Sigmoidal`` filled from both
-    came to 5 parameters locally and 10 in CI, from the same YAML.
+    Topping a curated record up from the ontology adds whatever the curators left out, and only where the ontology resolves the same names: ``Sigmoidal`` filled from both came to 5 parameters locally and 10 in CI, from the same YAML.
 
     Asserted on the mechanism rather than a count, so it holds wherever it runs.
     """
@@ -145,8 +138,7 @@ def test_a_source_the_class_does_not_have_raises(model):
 def test_filling_leaves_the_class_its_own_containers(model):
     """Assigning a plain container into a LinkML slot is what makes a ``JsonObj``.
 
-    A keyed collection is therefore mutated, never assigned — otherwise the setter wraps
-    what it is handed and the typed members inside stop reading as themselves.
+    A keyed collection is therefore mutated, never assigned — otherwise the setter wraps what it is handed and the typed members inside stop reading as themselves.
     """
     from tvbo.utils import keyed_items
 

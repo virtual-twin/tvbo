@@ -1,14 +1,8 @@
 """``execution.accelerator`` decides the JAX platform, and it must be pinned before import.
 
-JAX fixes its platform the first time it initialises, so a generated script has exactly
-one chance to honour the declaration: an ``os.environ.setdefault("JAX_PLATFORMS", ...)``
-emitted above ``import jax``. That makes the line load-bearing rather than cosmetic —
-if it is missing, or names the wrong platform, the run silently lands on whatever
-device JAX picked and nothing downstream can move it.
+JAX fixes its platform the first time it initialises, so a generated script has exactly one chance to honour the declaration: an ``os.environ.setdefault("JAX_PLATFORMS", ...)`` emitted above ``import jax``. That makes the line load-bearing rather than cosmetic — if it is missing, or names the wrong platform, the run silently lands on whatever device JAX picked and nothing downstream can move it.
 
-The mapping itself lives in one helper (:func:`tvbo.templates.tvboptim.utils.jax_platform`)
-because three call sites need it — both codegen templates and the in-process analysis
-renderer — and a fourth spelling of ``gpu -> cuda`` is how they drift apart.
+The mapping itself lives in one helper (:func:`tvbo.templates.tvboptim.utils.jax_platform`) because three call sites need it — both codegen templates and the in-process analysis renderer — and a fourth spelling of ``gpu -> cuda`` is how they drift apart.
 """
 
 import pytest
@@ -77,8 +71,8 @@ def test_declared_accelerator_pins_the_platform_before_import(tmp_path, accelera
     """Assert the contract, not the spelling: the emitted source is formatter-wrapped."""
     code = _render(tmp_path, f"execution:\n  accelerator: {accelerator}\n")
     pin = code.index("JAX_PLATFORMS")
-    assert "os.environ.setdefault(" in code[max(0, pin - 80):pin]
-    assert f'"{platform}"' in code[pin:pin + 80]
+    assert "os.environ.setdefault(" in code[max(0, pin - 80) : pin]
+    assert f'"{platform}"' in code[pin : pin + 80]
     assert pin < code.index("import jax"), "pin must precede the import"
 
 

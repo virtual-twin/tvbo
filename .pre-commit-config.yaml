@@ -1,25 +1,35 @@
-# Install both stages once:
-#     pre-commit install --hook-type pre-commit --hook-type pre-push
-# Run manually with `pre-commit run --all-files` or `--hook-stage pre-push`.
-# Sub-second checks run at pre-commit, test-shaped ones at pre-push; ruff format and its full lint are absent because both still fail on the tree.
+# Install once with `pre-commit install`; run over everything with `pre-commit run --all-files`.
 
 repos:
   - repo: local
     hooks:
-      - id: ruff-syntax
-        name: Ruff — syntax errors (the subset CI blocks on)
-        entry: ruff check --select=E9,F63,F7,F82 --force-exclude
+      - id: ruff-check
+        name: ruff (lint)
+        entry: ruff check --force-exclude
         language: system
-        types_or: [python, pyi]
-        stages: [pre-commit]
+        types: [python]
+        require_serial: false
 
-      - id: no-stacked-comments
-        name: No stacked '#' comment blocks in added lines
-        entry: python3 scripts/check_comment_blocks.py
+      - id: ruff-format
+        name: ruff (format)
+        entry: ruff format --force-exclude
+        language: system
+        types: [python]
+
+      - id: check-prose
+        name: Comment and docstring prose (no formatter fixes these)
+        entry: python scripts/check_prose.py
+        language: system
+        types: [python]
+
+      # Templates and config still carry a backlog, so there the comment rule is diff-only.
+      - id: check-prose-diff
+        name: No stacked '#' blocks added to templates or config
+        entry: python scripts/check_prose.py --diff
         language: system
         pass_filenames: false
-        files: '\.(py|mako|ya?ml|toml|jl|sh)$'
-        stages: [pre-commit]
+        # `files` alone: `types_or` is ANDed with it, and mako and julia have no identify tag.
+        files: \.(py|mako|ya?ml|toml|jl|sh)$
 
       - id: database-validation
         name: Validate tvbo/database/*.yaml against LinkML schema

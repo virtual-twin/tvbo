@@ -1,9 +1,6 @@
 """Sidecar I/O + cross-experiment cache for :class:`ExperimentResult`.
 
-Lets downstream experiments depend on an upstream experiment's fitted
-parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``,
-``J_i`` via an ``aux_data: Reference``) without recomputing on every
-notebook re-execution.
+Lets downstream experiments depend on an upstream experiment's fitted parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``, ``J_i`` via an ``aux_data: Reference``) without recomputing on every notebook re-execution.
 
 Layout
 ------
@@ -18,8 +15,7 @@ Layout
         ├── J_i       (n_nodes,)
         └── ...
 
-Each array is stored at the precision it was computed at, which is the precision
-the descriptor's ``parameters[].dtype`` reports.
+Each array is stored at the precision it was computed at, which is the precision the descriptor's ``parameters[].dtype`` reports.
 
 Cache invalidation
 ------------------
@@ -32,35 +28,30 @@ Cache invalidation
 A cache hit requires both:
 
 1. Current experiment YAML hash matches ``provenance.experiment_yaml_hash``.
-2. For each input fingerprint, the underlying file's ``(mtime, size)``
-   matches (fast path). On mismatch, recompute the sha256; if THAT
-   matches, still a hit (handles ``touch`` and rename-in-place).
+2. For each input fingerprint, the underlying file's ``(mtime, size)`` matches (fast path). On mismatch, recompute the sha256; if THAT matches, still a hit (handles ``touch`` and rename-in-place).
 """
 
 from __future__ import annotations
 
 import hashlib
 import os
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import h5py
 import numpy as np
 import yaml
 
-
-# ----------------------------------------------------------------------------
 # YAML hashing
-# ----------------------------------------------------------------------------
+
 
 def hash_yaml(normalized_dict: Mapping[str, Any]) -> str:
     """Stable SHA-256 hex digest of a Python-side YAML representation.
 
-    Uses ``yaml.safe_dump(sort_keys=True)`` so the digest only depends on
-    semantic content, not key ordering.
+    Uses ``yaml.safe_dump(sort_keys=True)`` so the digest only depends on semantic content, not key ordering.
     """
-    blob = yaml.safe_dump(dict(normalized_dict), sort_keys=True,
-                          default_flow_style=False).encode("utf-8")
+    blob = yaml.safe_dump(dict(normalized_dict), sort_keys=True, default_flow_style=False).encode("utf-8")
     return hashlib.sha256(blob).hexdigest()
 
 
@@ -75,20 +66,21 @@ def file_fingerprint(path: str | os.PathLike) -> dict:
     with open(p, "rb") as f:
         for chunk in iter(lambda: f.read(65536), b""):
             h.update(chunk)
-    return {"mtime": float(st.st_mtime), "size": int(st.st_size),
-            "hash": h.hexdigest()}
+    return {"mtime": float(st.st_mtime), "size": int(st.st_size), "hash": h.hexdigest()}
 
 
-# ----------------------------------------------------------------------------
 # Sidecar I/O
-# ----------------------------------------------------------------------------
 
-def save_sidecar(*, parameters: Mapping[str, np.ndarray],
-                 yaml_path: str | os.PathLike,
-                 experiment_yaml_hash: str,
-                 inputs: list[dict] | None = None,
-                 extra_metadata: Mapping[str, Any] | None = None,
-                 provenance_comment: str | None = None) -> tuple[Path, Path]:
+
+def save_sidecar(
+    *,
+    parameters: Mapping[str, np.ndarray],
+    yaml_path: str | os.PathLike,
+    experiment_yaml_hash: str,
+    inputs: list[dict] | None = None,
+    extra_metadata: Mapping[str, Any] | None = None,
+    provenance_comment: str | None = None,
+) -> tuple[Path, Path]:
     """Write an ExperimentResult sidecar (yaml descriptor + h5 companion).
 
     Parameters
@@ -124,8 +116,7 @@ def save_sidecar(*, parameters: Mapping[str, np.ndarray],
         "tvbo_class": "tvbo:ExperimentResultSidecar",
         "data_file": h5_path.name,
         "parameters": [
-            {"name": name, "shape": list(np.shape(arr)),
-             "dtype": str(np.asarray(arr).dtype)}
+            {"name": name, "shape": list(np.shape(arr)), "dtype": str(np.asarray(arr).dtype)}
             for name, arr in parameters.items()
         ],
         "provenance": {
@@ -147,7 +138,7 @@ def save_sidecar(*, parameters: Mapping[str, np.ndarray],
 def load_sidecar(yaml_path: str | os.PathLike) -> tuple[dict, dict]:
     """Load an ExperimentResult sidecar.
 
-    Returns
+    Returns:
     -------
     parameters
         ``{name: ndarray}`` — eagerly loaded numeric arrays.
@@ -165,12 +156,12 @@ def load_sidecar(yaml_path: str | os.PathLike) -> tuple[dict, dict]:
     return parameters, descriptor
 
 
-# ----------------------------------------------------------------------------
 # Cache hit/miss check
-# ----------------------------------------------------------------------------
+
 
 class CacheStatus:
     """Reason a cache entry was accepted or rejected."""
+
     HIT = "hit"
     MISS_NO_SIDECAR = "miss_no_sidecar"
     MISS_YAML_HASH = "miss_yaml_hash"
@@ -179,10 +170,12 @@ class CacheStatus:
     MISS_INPUT_MISSING = "miss_input_missing"
 
 
-def check_cache(*, sidecar_yaml: str | os.PathLike,
-                expected_yaml_hash: str,
-                input_paths: Mapping[str, str | os.PathLike] | None = None,
-                ) -> tuple[str, str | None]:
+def check_cache(
+    *,
+    sidecar_yaml: str | os.PathLike,
+    expected_yaml_hash: str,
+    input_paths: Mapping[str, str | os.PathLike] | None = None,
+) -> tuple[str, str | None]:
     """Decide whether a cached ExperimentResult sidecar is still valid.
 
     Parameters
@@ -197,7 +190,7 @@ def check_cache(*, sidecar_yaml: str | os.PathLike,
         identifier to its current on-disk path. For each fingerprint in
         the sidecar, the matching ``path`` is fingerprinted and compared.
 
-    Returns
+    Returns:
     -------
     status
         One of :class:`CacheStatus` constants.
@@ -213,16 +206,16 @@ def check_cache(*, sidecar_yaml: str | os.PathLike,
     prov = descriptor.get("provenance", {}) or {}
     recorded_hash = prov.get("experiment_yaml_hash")
     if recorded_hash != expected_yaml_hash:
-        return (CacheStatus.MISS_YAML_HASH,
-                f"yaml hash differs: cached={recorded_hash[:8]!r}, "
-                f"current={expected_yaml_hash[:8]!r}")
+        return (
+            CacheStatus.MISS_YAML_HASH,
+            f"yaml hash differs: cached={recorded_hash[:8]!r}, current={expected_yaml_hash[:8]!r}",
+        )
 
     inputs = prov.get("inputs", []) or []
     input_paths = dict(input_paths or {})
     for fp in inputs:
         key = fp.get("iri") or fp.get("field") or "?"
-        path = input_paths.get(key) or input_paths.get(fp.get("iri")) \
-               or input_paths.get(fp.get("field"))
+        path = input_paths.get(key) or input_paths.get(fp.get("iri")) or input_paths.get(fp.get("field"))
         if path is None:
             # No mapping provided — skip (assume caller doesn't track this input)
             continue
@@ -230,12 +223,10 @@ def check_cache(*, sidecar_yaml: str | os.PathLike,
         if not path.exists():
             return CacheStatus.MISS_INPUT_MISSING, f"input {key!r}: {path} missing"
         st = path.stat()
-        if (float(st.st_mtime) == float(fp.get("mtime", 0)) and
-                int(st.st_size) == int(fp.get("size", -1))):
+        if float(st.st_mtime) == float(fp.get("mtime", 0)) and int(st.st_size) == int(fp.get("size", -1)):
             continue  # fast-path hit
         # mtime/size differ — recompute hash
         cur_hash = file_fingerprint(path)["hash"]
         if cur_hash != fp.get("hash"):
-            return (CacheStatus.MISS_INPUT_HASH,
-                    f"input {key!r} hash mismatch (file modified)")
+            return (CacheStatus.MISS_INPUT_HASH, f"input {key!r} hash mismatch (file modified)")
     return CacheStatus.HIT, None

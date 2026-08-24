@@ -1,9 +1,9 @@
 """CodeSource resolution — a recipe's callable code as a local dir or git repo.
 
 Covers ``register_recipe_code_paths`` / ``_resolve_code_source`` (tvbo.utils):
-the ``code/`` convention, an explicit local ``path``, a ``git`` source (cloned +
-cached, with ``ref``/``subdir``), and the ``path``/``git`` mutual-exclusion guard.
+the ``code/`` convention, an explicit local ``path``, a ``git`` source (cloned + cached, with ``ref``/``subdir``), and the ``path``/``git`` mutual-exclusion guard.
 """
+
 import subprocess
 import sys
 
@@ -57,7 +57,10 @@ def test_git_source_ref_subdir_and_cache(tmp_path, monkeypatch):
     """code_source.git shallow-clones a repo, checks out ref, uses subdir, caches."""
     repo = tmp_path / "repo"
     _write_module(repo / "recipe" / "git_mod.py", "from_git")
-    run = lambda *a: subprocess.run(a, cwd=repo, check=True, capture_output=True)
+
+    def run(*a):
+        return subprocess.run(a, cwd=repo, check=True, capture_output=True)
+
     run("git", "init", "-q")
     run("git", "add", "-A")
     run("git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init")

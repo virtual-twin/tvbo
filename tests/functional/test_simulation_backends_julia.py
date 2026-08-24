@@ -2,33 +2,24 @@
 
 import pytest
 
-from tvbo.classes.experiment import SimulationExperiment
-from tvbo.classes.dynamics import Dynamics
 from tests.functional.simulation_backends_shared import (
+    _HAVE_JULIACALL,
     MODEL_FILES,
     MODEL_IDS,
-    _HAVE_JULIACALL,
     _assert_timeseries,
 )
+from tvbo.classes.dynamics import Dynamics
+from tvbo.classes.experiment import SimulationExperiment
 
-
-# Multi-mode models (number_of_modes > 1). The DifferentialEquations.jl backend
-# (``test_run_julia``) lays each state variable out as a length-n_modes block and
-# contracts mode_dot/mode_sum over the mode axis, matching jax/tvb (per-mode corr
-# 1.0), so those models run there. The NetworkDynamics.jl and ModelingToolkit.jl
-# backends still use scalar-per-variable templates without a mode-axis state layout,
-# so they stay xfail'd. Mirrors _PYRATES_UNSUPPORTED.
 _JULIA_MODE_UNSUPPORTED = {
     "ReducedSetHindmarshRose": "mode-axis model: nd/mtk backends have no mode-axis state layout yet",
     "ReducedSetFitzHughNagumo": "mode-axis model: nd/mtk backends have no mode-axis state layout yet",
     "StefanescuJirsa2D": "mode-axis model: nd/mtk backends have no mode-axis state layout yet",
     "StefanescuJirsa3D": "mode-axis model: nd/mtk backends have no mode-axis state layout yet",
 }
+"""Multi-mode models (``number_of_modes > 1``) the NetworkDynamics.jl and ModelingToolkit.jl backends cannot run: their scalar-per-variable templates have no mode-axis state layout, so these stay xfailed. ``test_run_julia`` (DifferentialEquations.jl) does run them, contracting ``mode_dot``/``mode_sum`` over the mode axis to match jax/tvb at per-mode correlation 1.0. Mirrors ``_PYRATES_UNSUPPORTED``."""
 
-# NetworkDynamics-specific: the stiff KIonEx ion-exchange model diverges under the
-# nd solver, driving a concentration negative so a Nernst-potential log() hits a
-# negative argument (Julia raises DomainError where numpy returns NaN). It runs
-# correctly on the diffeq / jax / tvb backends.
+# NetworkDynamics-specific: the stiff KIonEx ion-exchange model diverges under the nd solver, driving a concentration negative so a Nernst-potential log() hits a negative argument (Julia raises DomainError where numpy returns NaN). It runs correctly on the diffeq / jax / tvb backends.
 _ND_UNSUPPORTED = {
     "KIonEx": "stiff ion-exchange model diverges under the nd solver (log of negative concentration)",
 }
@@ -46,9 +37,7 @@ class TestJuliaBackends:
     def test_run_julia(self, model_file):
         """Run single-node simulation via DifferentialEquations.jl.
 
-        Multi-mode models run here too: the DifferentialEquations.jl template lays
-        each state variable out as a length-n_modes block (see tvbo-julia-model.jl.mako)
-        and the result carries a ``mode`` axis.
+        Multi-mode models run here too: the DifferentialEquations.jl template lays each state variable out as a length-n_modes block (see tvbo-julia-model.jl.mako) and the result carries a ``mode`` axis.
         """
         model = Dynamics.from_file(model_file)
         exp = SimulationExperiment(dynamics=model)

@@ -58,7 +58,7 @@ from tvboptim.experimental.network_dynamics.graph import DenseLengthGraph
 from tvboptim.experimental.network_dynamics.solvers import Heun
 
 # Model parameters read straight off the (declarative) experiment.
-W = jnp.asarray(np.asarray(exp.network.weights_matrix))   # W / mean(W[W > 0])
+W = jnp.asarray(np.asarray(exp.network.matrix("weight")))   # weight / mean(weight[weight > 0])
 L = jnp.asarray(np.asarray(exp.network.lengths_matrix))   # tract lengths [mm]
 labels = [n.label for n in exp.network.nodes]
 omega = float(exp.dynamics.parameters["omega"].value)

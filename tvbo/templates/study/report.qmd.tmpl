@@ -1,0 +1,309 @@
+<!-- report.qmd — the WHOLE replication report, and the ONLY file you edit. It carries NO YAML
+     front matter: all format/title/bibliography settings live in docs/_quarto.yml (copied from
+     _quarto.yml.tmpl), so that report_internal.qmd can `{{< include report.qmd >}}` without the
+     included front matter overriding the wrapper's output name. `quarto render` (run in docs/,
+     no file arg) builds BOTH report.pdf (public) and report_internal.pdf (internal A/B) in one
+     pass — see the header of _quarto.yml.tmpl. Do NOT add a front-matter block here. -->
+
+```{python}
+#| label: setup
+#| echo: false
+import sys, numpy as np, xarray as xr, yaml, matplotlib.pyplot as plt
+from pathlib import Path
+from tvbo.utils.study_layout import study_path, study_root
+# Every path comes from the layout record, so moving a directory there moves it here too.
+ROOT = study_root(Path.cwd())
+sys.path.insert(0, str(study_path("code", root=ROOT)))
+SOURCEDATA = study_path("sourcedata", root=ROOT)
+RESULTS = study_path("results", root=ROOT)
+FIGS = study_path("figures", root=ROOT)
+
+# --- INTERNAL vs PUBLIC build (copyright-safe, chosen by WHICH entry file is rendering) --------
+# Showing the paper's own published figures is copyright-restricted, so ONE report.qmd renders
+# two ways depending on the entry file Quarto is building (it exposes the input filename as
+# QUARTO_DOCUMENT_FILE):
+#   report.qmd          -> PUBLIC   -> report.pdf          : ONLY our reproduction (no © originals).
+#   report_internal.qmd -> INTERNAL -> report_internal.pdf : paper figure beside each reproduction
+#                                                            for A/B validation. Local-only, git-ignored.
+# `quarto render` (no file arg) builds BOTH from the project `render:` list — one command, no
+# --profile, no post-render hook. The internal (© author) build can never write report.pdf.
+# The shared report toolkit. Everything a replication report does the same way lives in tvbo:
+# number formatting, container reading, recipe lookups, the A/B figure composition and the
+# scorecard. This file should end up holding ONLY what is specific to this study -- its metrics.
+from tvbo.cli.figures import reference_image_for
+from tvbo.utils.report import (
+    Scorecard, analysis_scalar, crossref_div, embed_path, figure_caption, figure_title,
+    figures_in_paper_order, fmt, is_internal, md_table, open_result, recipe_param,
+    report_figure, result_sidecar, sci, sidecar_value,
+)
+INTERNAL = is_internal()
+
+CLEARED = False   # True ONLY with documented copyright clearance from publisher AND authors
+
+def original(fig):
+    """The published figure and its attribution, resolved only where we may show them.
+
+    Two grounds permit it: the INTERNAL build (local, git-ignored) or documented clearance.
+    Resolving BOTH here means the public build never opens the file nor builds the credit line
+    -- a `CREDIT` constant at the top of the report is one careless argument from the shareable
+    PDF. `report_figure` raises rather than embedding an original without one of the grounds.
+    """
+    if not (CLEARED or INTERNAL):
+        return None, ""
+    return reference_image_for(fig, ROOT), "<Author> et al. <Year> (c)"
+
+# ---- Every reported number is computed here from the result container or metadata. ----
+# No value below this line may be typed into prose/captions. Reference M[...] via inline
+# `{python} ...`. Papers are not ground truth; your own asserted numbers are not either.
+from tvbo.classes.study import SimulationStudy
+STUDY = SimulationStudy.from_file("../<Study>.yaml")
+EXP  = STUDY.get_experiment(<base_exp_id>)     # e.g. the uncontrolled/base variant
+
+# CTRL = STUDY.get_experiment(<ctrl_exp_id>)   # e.g. a controlled variant, if any
+
+def param(exp_id, name):
+    """A model parameter straight from the recipe metadata (never hand-typed)."""
+    return recipe_param(STUDY.get_experiment(exp_id), name)
+
+# --- Study-specific metric functions: read a container, return a number. Examples: ---
+def peak_rate(exp_id):
+    """The quantity the paper reports, straight out of the run that produced it."""
+    ds = open_result(RESULTS, str(exp_id))
+    return None if ds is None else float(ds["r_E"].max())
+
+def grid_counts():
+    """Topology counts from the processed connectome, so the exact-match claims compute."""
+    p = SOURCEDATA / "<study>_grid.npz"
+    if not p.exists():
+        return {}
+    d = np.load(str(p), allow_pickle=True)
+    return dict(n_nodes=int(np.asarray(d["A"]).shape[0]))   # + n_lines, n_gen, ... as needed
+
+# One dict, computed once. The prose/captions reference these via inline code.
+M = dict(
+    K=param(<base_exp_id>, "K"),
+    **grid_counts(),
+    # n_sol=solitary_count("exp<id>"), tc=decay_time("exp<id>"), ...
+)
+```
+
+```{python}
+#| label: internal-banner
+#| output: asis
+if INTERNAL:
+    print("::: {.callout-important}\n"
+          "**Internal A/B validation build — do not distribute.** This render embeds the "
+          "© <Year> <Author> original figures beside the reproduction for side-by-side "
+          "checking; it is local-only and must never be committed. The public build is "
+          "report.pdf, which omits every original.\n:::\n")
+```
+
+<!-- Canonical report STRUCTURE — a real paper (IMRAD), not a figure walk:
+     Abstract · Introduction · Methods · Results · Discussion · Conclusion. NO manual References
+     heading — Quarto auto-appends the bibliography from the `@key` citations + `bibliography:`
+     (set in _quarto.yml). Keep every number computed from M; write math as LaTeX (xelatex
+     drops Unicode). Hold the prose to the writing-reports anti-slop standard before you ship: max 1
+     em-dash per paragraph; no "robust/comprehensive/seamless/leverage/furthermore/moreover/in
+     conclusion" filler; break the rule-of-three list and adjective habit; active voice, one idea
+     per sentence; slop score 0-2. -->
+
+# Abstract {.unnumbered}
+
+<One paragraph, and the first place a citation appears: introduce the paper as `@<Author><Year>`
+(an inline `@key` from references.bib, which Quarto resolves and lists once at the end — you never
+write a References section). The paper's core result; that the whole study is a single declarative
+recipe (`<Study>.yaml`) whose equations are rendered and run from the same metadata; the headline
+that reproduces; and — stated honestly up front — the one thing that does not. Every number
+inline-computed from M, none typed by hand.>
+
+# Introduction
+
+<Motivate: the paper's question and contribution (`@<Author><Year>`); why replicate it in TVBO
+(declarative, native equations, backend-independent); the scope (which figures/targets, Phase 1.5).
+Preview the reproduction-vs-replication framing and any negative result — establishing it
+rigorously is part of an honest replication, not something to hide. Cite background work inline
+with `@key`; a bare `@key` renders "Author (Year)", a bracketed `[@key]` renders "(Author, Year)".>
+
+# Methods
+
+## Model and equations (rendered natively from the recipe)
+
+The model is **generated from the recipe** (`EXP.dynamics.render("markdown", citeformat="quarto")`,
+or `generate_report(format="markdown", citeformat="quarto")` for the full parameter table) — the
+equations and parameters shown are exactly what runs on the backend, not a hand-transcribed copy,
+so they can be checked one-to-one against the paper's equations. `citeformat="quarto"` makes the
+render emit the model's own references as inline `@key` citations (resolved by THIS document's
+bibliography, so they merge into the one auto-appended list) instead of a separate reference list —
+which is why the model's citekeys must exist in references.bib.
+
+```{python}
+#| output: asis
+#| echo: false
+print(EXP.dynamics.render("markdown", citeformat="quarto"))
+# Full model card incl. the parameter table (Deco-style audit against the paper's Table N):
+# print(EXP.dynamics.generate_report(format="markdown", citeformat="quarto"))
+# For a controlled/extended variant, render only the delta vs the base:
+# print(CTRL.dynamics.render("markdown", baseline=EXP.dynamics, citeformat="quarto"))
+```
+
+<Then the non-equation methods, each a short subsection: variants, coupling, network +
+data provenance / substitute (Phase 1.5 fidelity tier), analyses (native `analysis`
+observations where applicable), backend (Phase 1.5), and the Phase-7 verification against
+an independent reference integration. Callouts (`.callout-note`) carry proxies/caveats.>
+
+# Results
+
+<Open with the computed scorecard/comparison table (below), then one subsection per paper
+figure. Each subsection: a sentence or two of what the panel shows, the `ab()` call, and a
+three-colour status callout. A NEGATIVE result is STATED here (with the evidence) and
+INTERPRETED in the Discussion.>
+
+```{python}
+#| label: tbl-comparison
+from IPython.display import Markdown
+# Build each row from computed values (M / result containers); paper column is the
+# published target, verdict DERIVED from the data, never asserted.
+rows = [
+    ("<quantity>", "<paper value>", fmt(M.get("K"), 0), "yes"),
+]
+hdr = "| Quantity | Paper | This replication | |\n|:--|:--:|:--:|:--:|\n"
+Markdown(hdr + "\n".join("| " + " | ".join(map(str, r)) + " |" for r in rows))
+```
+
+## The replicated figures
+
+<!-- ONE loop over the recipe's own `figures:` block — never a hand-written list of stems and
+     captions, which drifts from the recipe the moment a figure is added or renamed. Each
+     caption is the figure's `Figure.description` (original, public-facing prose describing OUR
+     reproduction: never the paper's caption, never the A/B framing). `output: asis` prints raw
+     markdown, so the bold lead renders and the description may use LaTeX ($I_0$) -- keep it
+     LaTeX + ASCII, never Unicode. The A/B composition, the copyright gate and the staging all
+     live in tvbo's `report_figure`; no report writes its own `ab()`. -->
+```{python}
+#| output: asis
+def status_callout(fig):
+    """The figure's verdict, derived from the status of every target it carries.
+
+    Three colours, no emoji (callout-icon:false in _quarto.yml): note=reproduced,
+    warning=missing (data/target unavailable), important=attempted and short of its criterion.
+    """
+    by = {}
+    for r in figure_targets(fig, TARGET_ROWS):
+        by.setdefault(r["Status"].strip(), []).append(r["ID"])
+    if not by:
+        return ""
+    met, partial, out = by.get("met", []), by.get("partial", []), by.get("out", [])
+    kind = "important" if partial else "warning" if out and not met else "note"
+    said = []
+    if met:
+        said.append(f"{', '.join(met)} met")
+    if partial:
+        said.append(f"{', '.join(partial)} attempted and short of its criterion")
+    if out:
+        said.append(f"{', '.join(out)} out of scope by declaration")
+    return f"::: {{.callout-{kind}}}\n{'; '.join(said)}.\n:::\n"
+
+for n, fig in enumerate(figures_in_paper_order(STUDY.figures), 1):
+    print(f"### {figure_title(fig)}\n")
+    theirs, credit = original(fig)
+    staged = report_figure(FIGS / f"{fig.name}.png", theirs,
+                           credit=credit, cleared=CLEARED)
+    if staged is None:
+        print(f"::: {{.callout-warning}}\n`{fig.name}.png` is not rendered — "
+              f"run `tvbo run <Study>.yaml`.\n:::\n")
+        continue
+    print(f"![**Fig {n}.** {figure_caption(fig)}]({embed_path(staged)})"
+          f"{{#fig-{fig.name.replace('_', '-')} width=100%}}\n")
+    print(status_callout(fig))
+```
+
+# Discussion
+
+<Interpret. Lead with what reproduced and why it is robust (scale/seed-invariant, across
+several read-outs). Then any negative result: state the mechanism/cause and its downstream
+consequences (often one modelling fact explains several panel mismatches — say so rather
+than listing them as independent failures). Then the reproduction-vs-replication framing
+(below) and the accepted limitations.>
+
+**Reproduction vs. replication.** In the NASEM terminology [@NASEM2019] *reproduction* re-runs
+the same code on the same data; *replication* re-derives a paper's findings with **independent
+methods and independently-sourced data** — which is what this is. Separate **mechanism-level**
+targets (a sign / pattern / ordering that any reasonable input reproduces) from **decimal-level**
+targets (a number needing the paper's exact input): the former reproduce; the latter are capped by
+unavailable inputs and stated as limitations, never claimed as matches.
+
+## Replication scorecard {#sec-scorecard}
+
+<!-- The whole scorecard is READ from docs/analysis/targets.md, where every criterion was
+     written before the first run: the tally, the per-target table, the shortfall prose and each
+     figure's status callout all come from that one reading. Nothing here is typed.
+     `Scorecard` owns the vocabulary: TIER (core | extended -- how central the target is) is
+     independent of OUTCOME (met | short | out | blocked). Never reuse an outcome word as a tier;
+     the same targets then appear in a tier row AND an outcome column and the tally crosses
+     itself. Tables are wrapped in `crossref_div` so a COMPUTED caption gets a real "Table N"
+     number -- the `tbl-cap` cell option only takes a literal string. -->
+```{python}
+#| label: scorecard
+#| output: asis
+SC = Scorecard(study_path("analysis", root=ROOT) / "targets.md")
+
+print(crossref_div("tbl-tally", SC.tally_table(),
+    "Replication targets by **tier** and **outcome**, each counted once. *Tier*: **core** "
+    "carries one of the paper's headline claims, **extended** a supporting one. The three ways "
+    "of falling short are not interchangeable -- **short of criterion** is attempted and missed "
+    "(the only failure of this replication), **out of scope** is declared unattempted, **input "
+    "unobtainable** is a data gap. From `docs/analysis/targets.md`."))
+
+print(crossref_div("tbl-targets", SC.target_table(),
+    f"All {len(SC.rows)} declared targets with the figure each supports, its tier, its fidelity "
+    f"(*dec* = scored against the authors' own numbers, *mech* = against the shape of their "
+    f"claim) and its outcome."))
+```
+
+### Where the replication stands against its criteria {#sec-outcomes}
+
+<!-- The heading is the SUBJECT, never a count. `## Why {N} targets fall short` reads correctly
+     at fifteen, awkwardly at five and absurdly at zero -- and zero is what you are working
+     toward, so a count-titled section is guaranteed to end up false. Counts belong in the
+     sentences, where falling to zero still reads. Render this block mentally at N = 0 and at
+     N = all before shipping: any sentence that presupposes a non-empty set needs a branch. -->
+```{python}
+#| label: outcomes
+#| output: asis
+unmet = len(SC.rows) - SC.count("met")
+print(f"Of {len(SC.rows)} declared targets, **{SC.count('met')} are met**"
+      + (f" and **{unmet}** do not reach their criterion, in senses the next paragraphs keep "
+         f"apart: only the first is a failure of this replication.\n" if unmet else
+         ", each with the measurement that decided it. Where our numbers still differ from the "
+         "published ones without breaching a criterion is taken apart below.\n"))
+print(SC.shortfall_prose())
+```
+
+## Accepted limitations
+
+- <e.g. exact counts depend on the paper's unpublished seed — counted median-relative;
+  the picture reproduces, the integer cannot match.>
+- <out-of-scope tiers / open-data gaps / framework gaps (with a pointer to the todo).>
+
+# Conclusion
+
+<Short: what the replication establishes; the headline reproduces; a negative result is
+documented and pinned to its cause. An honest replication reproduces what is real and
+explains what is not.>
+
+<!-- No References heading here: Quarto auto-appends the bibliography at the end from the `@key`
+     citations + the project `bibliography:` (references.bib in _quarto.yml). A manual heading /
+     `::: {#refs}` div only adds a second, empty section. Every source you cite — the paper
+     (`@<Author><Year>`), NASEM 2019, the connectome/empirical-data/substitute-input sources, any
+     positive-control paper, and every citekey the native model render emits — lives in
+     references.bib and is cited inline with `@key` at least once in the prose. -->
+
+<!-- Running the study:
+`tvbo run <Study>.yaml` runs every experiment in dependency order (each `from_experiment`
+source before its dependents) and then renders the `figures:` block to figures/
+(`tvbo figure render <Study>.yaml` re-renders figures only).
+Report SOURCE is report.qmd; ONE command builds BOTH PDFs (docs/_quarto.yml `render:` list):
+    quarto render                 # in docs/ -> report.pdf (public) AND report_internal.pdf (A/B, local-only)
+Rendered via LaTeX (xelatex): longtable is what breaks a wide scorecard across a page with its
+header repeated. Keep rendered tables OUT of callouts -- LaTeX cannot page-break a longtable
+inside one, and ships each to a page of its own. -->

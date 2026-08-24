@@ -60,9 +60,7 @@ def test_tvboptim_uses_native_monitors_for_tvb_class_references():
 
     code = experiment.render_code("tvboptim")
 
-    # The aliased import substring, not the whole `from ... import ...` line: black wraps the
-    # longer aliased import (>88 chars) into a parenthesized group, so an exact single-line
-    # match is brittle. The alias appears only in the native-monitor import either way.
+    # The aliased import substring, not the whole `from ... import ...` line: black wraps the longer aliased import (>88 chars) into a parenthesized group, so an exact single-line match is brittle. The alias appears only in the native-monitor import either way.
     assert "TVBBold as _ExtTVBBold" in code
     assert "TVBTemporalAverage as _ExtTVBTemporalAverage" in code
     assert "'hrf_kernel': 'FirstOrderVolterra'" not in code
@@ -80,6 +78,10 @@ def test_tvboptim_uses_native_monitors_for_tvb_class_references():
 
 
 def test_tvboptim_observations_match_native_tvb():
+    """The tvboptim and TVB backends return the same observations under the same experiment.
+
+    The tolerance is loose on purpose: two independent float64 Heun implementations (TVB's NumPy path and tvboptim's JAX path) sum and multiply in different orders, so identical maths diverges at the ULP level and accumulates linearly. ~1e-3 covers 10000 dt=0.1 steps; tighten it if either backend's integrator changes.
+    """
     pytest.importorskip("tvb")
     pytest.importorskip("tvboptim")
 
@@ -104,8 +106,29 @@ def test_tvboptim_observations_match_native_tvb():
     ]
     for tvboptim_data, tvb_data in comparisons:
         tvboptim_data, tvb_data = _aligned_observation_data(tvboptim_data, tvb_data)
-        # Two independent float64 Heun implementations (TVB's NumPy path and
-        # tvboptim's JAX path) sum/multiply in different orders, so identical
-        # math diverges at the ULP level and accumulates linearly. ~1e-3 covers
-        # 10000 dt=0.1 steps; tighten if either backend's integrator changes.
         np.testing.assert_allclose(tvboptim_data, tvb_data, rtol=2e-3, atol=1e-4)
+
+
+def test_derived_observation_arguments_bind_by_name():
+    """A derived observation's `arguments:` is keyed by the callable's parameter, so the emitted call must name them.
+
+    Emitted positionally, the binding was decided by whatever order the datamodel yielded the arguments mapping: a regenerated datamodel reversed it, and a two-spectrum reducer silently began computing `(post - pre)/post` where the recipe declares `(pre - post)/pre`. Every container written after that stored the wrong column, and nothing raised.
+    """
+    from tvbo.export.formats import _render_tvboptim
+
+    experiment = _two_node_bold_experiment(duration=200.0)
+    experiment.observations["ratio"] = SchemaObservation(
+        name="ratio",
+        source=["TemporalAverage", "Bold_TVB"],
+        pipeline=[
+            {
+                "name": "ratio",
+                "callable": {"name": "divide", "module": "numpy"},
+                "arguments": {"x1": {"name": "x1", "value": "TemporalAverage"}, "x2": {"name": "x2", "value": "Bold_TVB"}},
+            }
+        ],
+    )
+    call = next(line for line in _render_tvboptim(experiment).split("\n") if "numpy.divide(" in line)
+    assert "x1=_obs_data(obs.TemporalAverage)" in call, call
+    assert "x2=" in call, call
+    assert "divide(_obs_data(" not in call, call  # nothing rides on the arguments mapping's order

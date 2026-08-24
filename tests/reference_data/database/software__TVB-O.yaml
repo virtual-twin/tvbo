@@ -7,6 +7,7 @@ homepage: https://tvbo.charite.de
 license: EUPL-1.2
 repository: https://github.com/virtual-twin/tvbo
 doi: 10.1101/2025.11.19.689211
+version: 0.3.10
 ecosystem:
 - pypi
 application_category: simulation
@@ -41,7 +42,6 @@ interoperates_with:
 - BifurcationKit.jl
 - DifferentialEquations.jl
 - AUTO-07p
-version: 0.3.10
 date_created: '2024-01-01'
 development_status: active
 author:

@@ -11,7 +11,7 @@ metadata:
 
 # Writing Reports in TVBO
 
-This skill owns the **report** for a study replication: one `report/report.qmd` that
+This skill owns the **report** for a study replication: one `docs/report.qmd` that
 reads like a paper and computes every number it prints. It is the reporting layer that
 **replicating-studies** composes; that skill decides *which* targets you replicate and
 their fidelity tier, and **running-simulations** covers how the runs produce the
@@ -75,12 +75,89 @@ solver step is the bug — replace it with an `M[...]` entry. And don't excuse o
 run read against a scan's parameter axis) — add the helper and compute it; an "≈" sitting next
 to a typed number in prose is usually the tell.
 
+**Audit every file the report TRANSCRIBES, not just the `.qmd`.** A report that reads a hand-kept
+analysis note and prints its tables has moved the typed numbers, not removed them — and the note
+is the worse place for them, because nothing renders it and nobody re-reads it. Kadak2025's
+`verification.md` held its own alpha peak, seed spread, *t*, CI and argmax ridge as literals and
+the report printed them as a table for weeks; when the run improved, the table did not, and it
+still opened "Fifteen targets score short" at a scorecard of 35 met. The fix is not to update the
+literals. It is to compute them in the report and leave the note a pointer with no numbers in it.
+The rule to apply to a transcribed file is the same asymmetric one: a value only an external run
+can produce (a reference implementation's output, the paper's own print) may be a literal in the
+ONE file that owns it; every value of yours in it is a bug.
+
+**There are THREE owners, not two, and the third is the one a caption gets wrong.** Besides
+yours and the paper's there is a measurement *you* made on *their* artifact — the arrays they
+released, re-analysed under a candidate definition; a reference implementation you compiled and
+ran. It is computed by you and it is not a result of your replication, and the tell that you have
+mixed the classes is a caption asserting the leftover rule: Kadak2025's transcription said "a
+column naming NFTsim or the paper says so, and every other column is this replication's own",
+under a table of correlations measured on the authors' arrays. The report then contradicts
+itself in print, because the same four correlations appear computed from our containers
+twenty pages earlier with different values — both correct, on two different datasets. Never
+let a caption derive ownership by elimination. Say which artifact each column was measured on,
+and have the transcribed file state its own rule in its first paragraph so the caption can
+defer to it rather than invent one.
+
+**A measurement on the authors' files is still recomputable, and two typed copies of it will
+drift.** The class being external does not license typing it: `load_published_results()` is
+right there, so
+give it a helper and let both the note and the prose read the one call. The Fig-2D settings
+scan lived as a typed table in `verification.md` *and* as a typed `p = .088` in the report's
+Results — one measurement, two hand-kept copies, no way to notice when they part. The
+exception worth stating plainly is a measurement no call reproduces: a *search* over candidate
+definitions is not the same helper as one that evaluates the definition it chose, so until
+someone writes the search it stays recorded — and the note should say so in that sentence,
+rather than leaving a number that looks like every other computed one.
+
+**Literals hide as number WORDS, and a digit grep sails past them.** The sentence "T13 disagrees
+with the paper on which **two of eleven** alpha conditions fail a Bonferroni-corrected test" sat
+in a section otherwise computed to three decimals, and matched no `[0-9]` audit. Grep for the
+spelled forms too — one, two, three … dozen, both, neither, all four, half. When that particular
+"two" was finally computed it came out **zero**: the typed number was not merely un-auditable, it
+was wrong, and had been asserting a disagreement the run no longer had.
+
+**Never let a COUNT title a section.** `print(f"## Why {N_SHORT} targets fall short")` is correct
+at fifteen, awkward at five and absurd at zero — and zero is the outcome you are working toward,
+so the heading is guaranteed to end up false. Title a section by its subject, which does not move
+("Where our numbers still differ, and why"), and let the counts live in its sentences, where
+falling to zero reads fine. The same goes for any sentence that presupposes the set is non-empty:
+"the reason beside each non-`met` row" needs an `if` around it, or it promises a column that
+isn't there. Write the boundary case first — render the section mentally at N = 0 and at N = all
+— because a report whose prose only works mid-range will embarrass you exactly when the work
+succeeds.
+
 ```python
 from tvbo.classes.study import SimulationStudy
 STUDY = SimulationStudy.from_file("../<Study>.yaml")
 EXP = STUDY.get_experiment(<base_exp_id>)
-# read output/nc/exp*/…h5 containers, reduce to M[...] once, reference via inline `{python}`
+# read derivatives/tvbo/exp-*_result.h5 containers, reduce to M[...] once, reference via inline `{python}`
 ```
+
+**Give the paper's numbers ONE home too: `docs/analysis/published-values.md`.** The literals
+you are allowed to type are still literals scattered through prose, and scattered literals drift
+— the same correlation gets quoted twice with different rounding, a table and a paragraph
+disagree, and nobody can audit which values came from the manuscript at all. Transcribe every
+published number ONCE into a markdown table in that file, with the version of record named at
+the top, and have the report `read_md_tables` it. Three things follow that are worth the file on
+their own:
+
+- a reader can diff the paper against your transcription in one place, so the transcription
+  itself is reviewable;
+- the report can *join* on it — every results table becomes "published | ours" side by side
+  rather than a bare column of yours with a sentence claiming agreement;
+- the join makes a **concordance test** cheap. Recompute every statistic the paper prints, pair
+  each with its published value, and report the pairing: correlation across all of them,
+  direction agreement, significance-verdict agreement at ONE threshold applied to both sides,
+  and a paired location test (Wilcoxon) with a bootstrap interval on the median difference.
+  That is a numerical answer to "did the replication succeed", instead of a per-figure verdict
+  the reader has to aggregate themselves. Kadak2025 joins 82 published statistics this way and
+  reports Pearson *r* = 0.98 with a median difference whose 95 % interval brackets zero.
+
+Two rules keep the join honest. Quote the paper's own STATISTIC — if it prints *t*, report *t*;
+never convert its *t* to your *r* and call them the same column. And when the paper's
+significance marks are internally inconsistent (they usually are), score both sides with your
+own single rule and say so in the caption, rather than inheriting their bolding.
 
 Build the comparison table's verdict column from the data as well: derive "reproduces" /
 "does not" from `M`, do not assert it. A placeholder panel (TVBO data not yet run) gets a
@@ -102,7 +179,7 @@ for every experiment — Jansen1995's seven emitted 1209 lines and ~31 tables wh
 call emits 136 and 3, with 115 lines identical between experiments 1 and 5.
 
 ```python
-print(STUDY.report("qmd", level=3))                        # whole Methods, deduplicated
+print(STUDY.report("qmd", level=3))  # whole Methods, deduplicated
 print(STUDY.report("qmd", level=3, part="supplementary"))  # the experiments demoted out of it
 print(EXP.dynamics.render("markdown", citeformat="quarto"))  # one model's equations, standalone
 ```
@@ -136,6 +213,52 @@ Because `citeformat="quarto"` emits the model's citekeys as `@key`, **every cite
 references must exist in `references.bib`** — if a curated model cites `Tsodyks1998`, that
 entry has to be present or Quarto flags an unresolved key.
 
+## The report is the finished work, not the log of making it
+
+A report says what is true now. The reader is deciding whether to trust a result and reuse a
+method; what you believed at an earlier point in the work is not evidence about either, and
+narrating it spends the reader's attention on the author. Three habits creep in and all three
+are cuttable:
+
+- **A "corrections to earlier claims" section.** Superseding a claim is real and worth
+  recording — in the working notes under `docs/analysis/`, where the next session reads it
+  and where it stops a wrong "impossible" from being re-derived. In the report, the corrected
+  statement is simply the statement.
+- **Build-state branches.** `if M4 is None: print("this condition has not been run in this
+  build")` reads as a report describing its own incompleteness. **Assert instead**, in the setup
+  cell: a missing result is a broken build, not a section. The exception is a genuine difference
+  in the *reader's* copy — gitignored third-party inputs are absent from a public build, and one
+  sentence saying so is right.
+- **Meta-commentary on the writing.** "This is the kind of entry a register has to be willing
+  to close." The preceding sentence already made the point.
+- **Self-references to prior builds.** "An earlier build of this report had this inverted,
+  which traced to …" is unauditable: the reader holds one build, cannot see the earlier one,
+  and cannot follow the trace — the sentence documents a mistake in an artifact that no longer
+  exists instead of stating the result that does. This trap is strongest right after FIXING
+  something, when the flip feels like the news; in the report the news is the correct value.
+  The same discipline applies to the word "regression" for an upstream defect: it asserts a
+  history ("this worked before") the reader cannot verify — name the *current* defect and its
+  consequence ("a stimulus-targeting defect in the current backend means X is computed
+  host-side"). The flip itself, with dates and evidence, goes in `docs/analysis/` beside
+  the corrections list, where it is auditable and where the next session needs it.
+
+**Guard the rendered Methods by its presence, not only by its purity.** `unrendered_equations`
+catches an equation typed into prose and says nothing about a report carrying no equations at
+all — which is where a report lands when the model section is written as prose and the render
+call is never wired in. Assert both:
+
+```python
+METHODS = STUDY.report("qmd", part="main", level=3)
+assert "$$" in METHODS, "the Methods carry no rendered equations"
+assert not unrendered_equations(Path("report.qmd")), "equations typed into the prose"
+```
+
+Reading that render once will also show you two recipe bugs it merely reflects: an experiment
+that inherits a sibling's `description:` through a YAML anchor prints the sibling's paragraph
+verbatim, and a `label:`/`description:` containing raw `*` or `_` is eaten by the markdown pass
+(`nu_ED*alpha*beta*A` renders as italics). Fix both in the recipe — the render is not the place
+to patch them.
+
 ## An equation is in the report because the code runs it
 
 Two rules, and the second is the one that gets broken:
@@ -153,6 +276,48 @@ reader. The check strips executable cells first, so what `STUDY.report()` emits 
 bad = report.unrendered_equations("report.qmd")
 assert not bad, f"hand-written equations: {bad}"
 ```
+
+**Guard the transcribed notes the same way, by naming the files allowed to hold literals.** The
+equation guard works because it is mechanical; the typed-result rule stays manual and therefore
+rots. Make it mechanical too: list the analysis files that legitimately own external numbers —
+`published-values.md`, and whatever holds a reference implementation's output — and assert that
+every *other* file the report reads carries none. It is a crude check and that is the point; a
+decimal appearing in a note nobody renders is exactly the thing no reviewer will catch.
+
+Do NOT do this with a blanket "no decimals" scan. Most notes legitimately carry the paper's
+criteria and parameters, so it fires on all of them — ours reported 36, 74, 177 and 59 hits
+across four files that were entirely correct. The reviewable act is classifying each note ONCE by
+whose numbers it holds; the mechanical part is refusing to transcribe one nobody has classified:
+
+```python
+NUMBER_OWNERS = {
+    "published-values.md": "paper",
+    "targets.md": "paper",
+    "methods-vs-code.md": "both",
+    "verification.md": "reference-run",
+}
+notes = {p.name for p in study_path("analysis", root=ROOT).glob("*.md")}
+assert not notes - set(NUMBER_OWNERS), f"unclassified analysis note: {sorted(notes - set(NUMBER_OWNERS))}"
+assert "ours" not in NUMBER_OWNERS.values(), "a result of ours belongs in a computed cell, not a note"
+```
+
+`ours` is a category that must stay empty; it exists so that writing it down feels as wrong as it
+is. A new note then cannot reach a reader without someone answering the one question that matters
+about it.
+
+**One scorer, and the report is it.** A standalone script that computes the scorecard is useful
+while the run is in flight, and it is a liability the moment it diverges from the report. Ours
+did: the script defined its seed-ensemble helper before use, the report defined the same helper
+*after* the cell that called it, and the result was a scorecard printing a clean 35 of 35 beside
+a report that could not compile at all (`NameError`). Neither artifact was wrong about the
+science; there were simply two orderings of one computation and only one of them ran. If you keep
+a standalone scorer, have it import the report's own module rather than restate it, and treat a
+green scorer as no evidence whatsoever that the report builds — render the report.
+
+**A setup cell is a program, so read it as one.** A `.qmd` chunk invites you to append, and
+appending is how a value ends up used forty lines above its own `def`. When you add a term to a
+context object, put the addition *below* everything it reads, and re-render rather than trusting
+that a notebook-shaped file will sort itself out.
 
 When an equation is genuinely implemented but no renderer can reach it — a solver-level
 construction such as the correlated-noise mix in `CorrelatedNoiseSolver` — it is **framework
@@ -244,7 +409,7 @@ yourself defining `ab()`, `figcap()`, `fmt()`, `_open()` or a scorecard tally, s
 | A/B figure | `report_figure(...)` / `show_report_figure(...)` | a hand-rolled `ab()` |
 | Figure order, title, caption | `figures_in_paper_order`, `figure_title`, `figure_caption` | a hardcoded list of stems and captions |
 | Number for prose | `fmt`, `sci` | a local formatter per report |
-| Result container | `open_result`, `result_sidecar`, `sidecar_value` | globbing `output/nc` inline |
+| Result container | `open_result`, `result_sidecar`, `sidecar_value` | globbing the results dir inline |
 | Declared analysis | `analysis_dataset`, `analysis_output`, `analysis_scalar` | recomputing what the recipe computed |
 | Recipe value | `recipe_param`, `value_of` | reaching into `.parameters` by hand |
 | Scorecard | `Scorecard(targets_md)` | a tally loop and a verdict dict per study |
@@ -258,7 +423,8 @@ attribution in one function behind the permission check, so the public build nei
 file nor builds the credit string:
 
 ```python
-CLEARED = False   # True ONLY with documented clearance from publisher AND authors
+CLEARED = False  # True ONLY with documented clearance from publisher AND authors
+
 
 def original(fig):
     if not (CLEARED or INTERNAL):
@@ -278,8 +444,16 @@ caption them from metadata wherever metadata exists.
 
 - **Figures**: `![{figure_caption(fig)}](path){#fig-name}` — the caption is the recipe's own
   `Figure.description`, so it cannot drift from the figure, and the `#fig-` id makes it
-  cross-referenceable. Never retype the paper's caption, and never use the A/B framing
-  ("left: paper") — that composite exists only in the internal build.
+  cross-referenceable. Never retype the paper's caption.
+- **Say whose figure it is, in the caption, in every build.** A replication report shows two
+  kinds of picture and the reader cannot tell them apart from the image alone. Open each caption
+  with which original it reproduces (`**Reproducing Figure 3 of @Paper.**`, or nothing at all
+  when the figure is the replication's own addition), and close it with a provenance sentence
+  that is *derived from the build*, not written once: internally "the published original is on
+  the left and this replication on the right", publicly "every panel is this replication's own
+  output". One `figure()` helper emits both, so the two builds can never disagree about which
+  half of the image is whose. Do NOT hardcode the A/B wording — that composite exists only in
+  the internal build.
 - **Tables with a computed caption**: the `tbl-cap` cell option takes a *literal* string, so a
   caption holding a computed value must use Quarto's **cross-reference div** — the div's last
   paragraph is the caption and is ordinary markdown. `crossref_div("tbl-x", table, caption)`
@@ -311,7 +485,9 @@ and hold to six rules.
 
 - **A small grid is a sentence.** A numbered, captioned float tells the reader something has to
   be looked up, and journals cap how many a paper may carry — spending one on two numbers is a
-  waste of a scarce slot. `md_table` writes any grid below the threshold as prose instead
+  waste of a scarce slot. `report.table_or_prose` writes any grid below the threshold as prose
+  instead; `md_table` always renders a table, so reach for it when the grid has no subject
+  column for a sentence to name (a parameter block, a state-variable list, a scorecard).
   (`Exp 50 — Duration: 2000 ms; Exp 51 — Duration: 7000 ms.`), so this is automatic; the rule
   matters when you are deciding whether to build a table at all. Pang2023 had a one-row float
   announcing that a model declares one event.
@@ -374,14 +550,14 @@ report renders two ways: a **PUBLIC** `report.pdf` (your reproduction only, shar
 Quarto-native way to get both from one command is a small **project with two entry files**:
 
 - **`report.qmd`** holds the *whole* report and carries **no YAML front matter** — every
-  format/title/bibliography setting lives in `report/_quarto.yml` (copied from
+  format/title/bibliography setting lives in `docs/_quarto.yml` (seeded from
   `_quarto.yml.tmpl`). This is the only file you write prose in.
 - **`report_internal.qmd`** is a four-line wrapper: its front matter overrides only the
   `output-file` (and title), then `{{< include report.qmd >}}` pulls in the real report.
-- **`report/_quarto.yml`** lists both under `project: render:` and holds the shared
+- **`docs/_quarto.yml`** lists both under `project: render:` and holds the shared
   `format: pdf` (+ `output-file: report.pdf`), `bibliography:`, and `execute:`.
 
-`quarto render` (run in `report/`, no file argument) builds the project's render list → **both
+`quarto render` (run in `docs/`, no file argument) builds the project's render list → **both
 PDFs in one pass**. No `--profile`, no `_quarto-internal.yml`, no post-render shell hook.
 
 - `INTERNAL = tvbo.utils.report.is_internal()` reads `QUARTO_DOCUMENT_FILE` — the input filename,
@@ -396,12 +572,14 @@ that helper and they drifted: different widths, different title wording, one tha
 greyscale scan through the default colormap. The layout lives in `tvbo.utils.report`:
 
 ```python
-from tvbo.utils.report import report_figure, show_report_figure
+from tvbo.utils.report import embed_path, report_figure, show_report_figure
 
-staged = report_figure(FIGDIR / f"{fig.name}.png",                    # ours
-                       reference_image_for(fig, ROOT) if INTERNAL else None,   # theirs
-                       STAGE, credit="Pang et al. 2023 (c)")
-print(f"![**Fig {n}.** {figure_caption(fig)}](_figures/{staged.name}){{width=100%}}")
+staged = report_figure(
+    FIGDIR / f"{fig.name}.png",  # ours
+    reference_image_for(fig, ROOT) if INTERNAL else None,  # theirs
+    credit="Pang et al. 2023 (c)",
+)
+print(f"![**Fig {n}.** {figure_caption(fig)}]({embed_path(staged)}){{width=100%}}")
 ```
 
 What that buys, and what a per-report copy kept getting wrong:
@@ -415,8 +593,16 @@ What that buys, and what a per-report copy kept getting wrong:
   Fig 2A/2B.
 - **A greyscale scan stays grey.** `imshow` on a 2-D array applies the default colormap, which
   silently recolours the paper's figure.
-- **The composite is staged into `report/_figures/`** (gitignored), so the copyrighted original
-  reaches exactly one artifact and never the repository.
+- **The stage comes from the layout record**, so no report names a directory: the composite lands
+  in `sourcedata/original_study/fig_comparisons/`, inside the original-study directory whose
+  figure it embeds, and the one rule that keeps the original unpublished covers it. The
+  copyrighted original then reaches exactly one artifact and never the repository. Embed it
+  through `embed_path`, which makes the
+  reference relative to the render: LaTeX prefixes a bare path with `./`, so an absolute one
+  arrives as `./Users/…` and the build fails on an image that is plainly there.
+- **Our own figure is embedded where it was rendered.** With no original to compose against there
+  is nothing to stage, and `report_figure` returns the path it was given; staging a copy would give
+  every public figure a second location to keep current.
 
 Prefer `report_figure` + a markdown embed over `show_report_figure`: the embed gets a real figure
 number, a caption and a cross-reference target. Use `show_report_figure` only where a report
@@ -439,7 +625,8 @@ verdict in the scorecard cannot disagree.
   of `report.qmd` (in `_quarto.yml` instead) removes the collision, and the two distinct input
   stems (`report`, `report_internal`) keep each build's `<stem>.pdf` intermediate from ever being
   the other's final. Track `report.qmd`, `report_internal.qmd`, `_quarto.yml`, and
-  `references.bib`; git-ignore `report/*.pdf` and the paper's figures under `original_study/`.
+  `references.bib`. The generated `.gitignore` already covers the PDFs and the whole of
+  `sourcedata/`, composites included — never hand-edit it.
 Verify by rendering and confirming the public `report.pdf` embeds no © original: the internal
 PDF is visibly larger (it carries the paper figures) and its A/B composites are wide (~2.2+),
 while public figure aspect ratios stay near 1.0–1.5.
@@ -472,6 +659,19 @@ Two settings earn their place in `include-in-header`:
 
 `\small` buys a wide scorecard the width it needs; `\RaggedRight` stops LaTeX stretching
 inter-word space in a narrow column until the row looks broken.
+
+## Section references — Quarto crossrefs, never typed numbers
+
+A reference like "(Sec. 2.8)" typed into prose is a number the build does not own: any change
+that renumbers the sections — a new Methods subsection, a model card the generator starts
+emitting, a supplementary family — silently retargets every typed reference in the document.
+Deco2014's report pointed "(Sec. 2.8)" at its Backend section until the equation render gained
+the spiking synapse families, after which the same string pointed mid-way into the Methods; a
+second reference ("Sec. 3.1") was stale on arrival, written for a numbering that had already
+moved. Give the heading an explicit id (`## Backend {#sec-backend}`) and reference it as
+`@sec-backend` — Quarto renders "Section 2.8" and re-resolves it on every build
+(`number-sections: true` required). Headings the model render emits already carry
+`{#sec-model-…}` / `{#sec-experiment-…}` anchors for exactly this use.
 
 ## References — Quarto's bibliography, never a hand-written list
 
@@ -545,9 +745,13 @@ the generated text was cleaned came from the YAML.
 
 **Structural patterns to kill.**
 
-- **Em-dash inflation.** At most one ` — ` per paragraph. The em-dash is a genuine tool,
-  not a default connector; replace the rest with a period, comma, colon, or parenthesis.
-  (Section-title separators like `## Fig. 2 — …` are one per heading and fine.)
+- **No em-dashes at all in reader-facing text.** Nothing that reaches the PDF may contain
+  one: not the prose, not a figure caption, not a table cell, not a title or subtitle, not a
+  recipe `description:` or `label:`, and not a row of an analysis table the report reads and
+  reprints. Use a period, comma, colon or parenthesis instead. Grep the rendered PDF, not the
+  sources, because generated text has sources you will not think of: `pdftotext -layout
+  report_internal.pdf - | grep -c '—'` must print `0`. That single check doubles as a
+  container check, since a missing result renders as `—` too.
 - **Rule-of-three fetish.** Not every list has three items and not every noun needs three
   adjectives. When there are genuinely three points, keep them, but drop the "threefold /
   First… Second… Third…" scaffolding and vary the count when you can.
@@ -589,18 +793,29 @@ statistical term. Same for "attractor landscape" and other genuine terms of art.
 - Cut before you rewrite; the finished prose should be roughly 20% shorter than the first
   draft.
 
-**Before submitting**, re-scan: count the em-dashes per paragraph, check the banned list,
-check for the three-item-list habit, and confirm no Unicode math slipped in.
+**Before submitting**, re-scan: grep the rendered PDF for em-dashes (it must return none),
+check the banned list, check for the three-item-list habit, and confirm no Unicode math
+slipped in.
 
 ## Render and verify
 
 ```bash
-# from report/ — ONE command renders BOTH report.pdf (public) and report_internal.pdf (A/B, local-only)
-QUARTO_PYTHON=<repo>/.venv/bin/python quarto render     # no file arg -> the project render: list
+# from docs/ — ONE command renders BOTH report.pdf (public) and report_internal.pdf (A/B, local-only)
+PATH=<repo>/.venv/bin:$PATH quarto render     # no file arg -> the project render: list
 ```
+
+**PATH, not `QUARTO_PYTHON`, decides which interpreter executes the cells.** Quarto runs the
+notebook through the `python3` kernelspec, whose `argv` is a bare `python`, resolved against PATH
+at execution time; `QUARTO_PYTHON` only picks the Python that drives the render. Get this wrong
+and the report is executed by whatever `python` came first, which fails as
+`No module named 'tvbo.utils.study_layout'` — a missing-module message that names the module you
+just wrote rather than the one actually absent (`numpy`, imported by `tvbo/utils/__init__.py`).
+Check with `import sys; print(sys.executable)` in the first cell when a render fails on an import
+you are certain exists.
 
 The render must succeed and the public `report.pdf` must contain no copyrighted original (the
 internal PDF is the larger one, carrying the paper figures). Open the PDF and confirm the numbers
-rendered (an absent container shows as `—`, not a crash), the math typeset (no dropped subscripts,
+rendered (an absent container shows as `—`, not a crash, so the em-dash grep above catches
+it), the math typeset (no dropped subscripts,
 no stray `\pm`), the citations resolved (no "Citation key not found", one auto-appended
 bibliography), and the prose passes the slop scan.

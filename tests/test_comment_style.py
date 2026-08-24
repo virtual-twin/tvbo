@@ -1,8 +1,6 @@
 """The stacked-comment rule is checked by a script, so the script is checked here.
 
-A run of two or more consecutive whole-line ``#`` comments is what the convention
-forbids. The check reads a diff rather than the tree, so that the blocks already in the
-repository need not be cleared before the rule can hold for everything written after it.
+A run of two or more consecutive whole-line ``#`` comments is what the convention forbids. The check reads a diff rather than the tree, so that the blocks already in the repository need not be cleared before the rule can hold for everything written after it.
 """
 
 from __future__ import annotations
@@ -13,9 +11,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from check_comment_blocks import added_blocks  # noqa: E402
+from check_prose import _added_comment_runs as added_blocks  # noqa: E402
 
-CHECKER = Path(__file__).resolve().parents[1] / "scripts" / "check_comment_blocks.py"
+CHECKER = Path(__file__).resolve().parents[1] / "scripts" / "check_prose.py"
 
 
 def _diff(path: str, added: list[str], start: int = 10) -> str:
@@ -27,9 +25,9 @@ def _diff(path: str, added: list[str], start: int = 10) -> str:
 def test_a_stacked_block_is_reported():
     diff = _diff("tvbo/x.py", ["# one line of it", "# and a second", "value = 1"])
 
-    (path, block), = added_blocks(diff)
+    ((path, block),) = added_blocks(diff)
     assert path == "tvbo/x.py"
-    assert [line for _, line in block] == ["# one line of it", "# and a second"]
+    assert [line for _, line in block] == ["one line of it", "and a second"]
     assert block[0][0] == 10, "reported against the first line of the run"
 
 
@@ -62,7 +60,7 @@ def test_an_attribute_doc_is_not_a_comment_block():
 
 
 def test_the_run_at_the_end_of_a_hunk_is_still_reported():
-    (_, block), = added_blocks(_diff("tvbo/x.py", ["# trailing", "# block"]))
+    ((_, block),) = added_blocks(_diff("tvbo/x.py", ["# trailing", "# block"]))
 
     assert len(block) == 2
 
@@ -70,10 +68,9 @@ def test_the_run_at_the_end_of_a_hunk_is_still_reported():
 def _repo(tmp_path: Path, *files: tuple[str, str]) -> Path:
     """A git repo with one base commit, then *files* written on top but uncommitted.
 
-    ``git add -N`` registers the intent to add, which is what puts an as-yet-untracked
-    file into ``git diff`` at all — without it the checker would see an empty diff and
-    the test would pass for the wrong reason.
+    ``git add -N`` registers the intent to add, which is what puts an as-yet-untracked file into ``git diff`` at all — without it the checker would see an empty diff and the test would pass for the wrong reason.
     """
+
     def run(*cmd):
         subprocess.run(cmd, cwd=tmp_path, check=True, capture_output=True)
 
@@ -92,9 +89,7 @@ def _repo(tmp_path: Path, *files: tuple[str, str]) -> Path:
 
 
 def _check(repo: Path, ref: str = "base"):
-    return subprocess.run(
-        [sys.executable, str(CHECKER), ref], cwd=repo, capture_output=True, text=True
-    )
+    return subprocess.run([sys.executable, str(CHECKER), "--diff", ref], cwd=repo, capture_output=True, text=True)
 
 
 def test_the_checker_fails_on_a_block_a_real_diff_adds(tmp_path: Path):

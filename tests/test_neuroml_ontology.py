@@ -7,9 +7,7 @@ Covers the two artifacts emitted by ``scripts/ontology/gen_neuroml.py``:
 - ``tvbo/data/ontology/neuroml_contracts.json`` — the accumulated contract index
   the adapter loads to ground its base-type emission.
 
-These assert the committed artifacts have the structure the adapter and the
-ontology merge depend on; a final determinism check (gated on pylems + the jar)
-guards against generator drift.
+These assert the committed artifacts have the structure the adapter and the ontology merge depend on; a final determinism check (gated on pylems + the jar) guards against generator drift.
 """
 
 from __future__ import annotations
@@ -30,8 +28,7 @@ CONTRACTS_PATH = pathlib.Path(tvbo.__file__).resolve().parent / "data" / "ontolo
 NML = Namespace("https://w3id.org/tvbo/neuroml/")
 NEUROML2 = Namespace("http://www.neuroml.org/schema/neuroml2#")
 
-# The synapse branch is the first ingested vertical slice; its chain anchors the
-# structural assertions below.
+# The synapse branch is the first ingested vertical slice; its chain anchors the structural assertions below.
 SYNAPSE_CHAIN = [
     "baseConductanceBasedSynapse",
     "baseVoltageDepSynapse",
@@ -64,6 +61,7 @@ class TestNeuroMLOntologyModule:
 
     def test_synapse_subclass_chain(self, ttl):
         """``extends`` is faithfully rendered as a navigable ``subClassOf`` chain."""
+
         def parent(cls):
             supers = list(ttl.objects(cls, RDFS.subClassOf))
             return supers[0] if supers else None
@@ -134,7 +132,8 @@ class TestGeneratorDeterminism:
         try:
             subprocess.run(
                 [sys.executable, str(script), "-o", str(ttl_out), "--contracts", str(json_out)],
-                check=True, capture_output=True,
+                check=True,
+                capture_output=True,
             )
         except FileNotFoundError:
             pytest.skip("jNeuroML jar not available")

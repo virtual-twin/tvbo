@@ -1,18 +1,11 @@
 """Ontology-backed metadata, code generation and factories for :class:`Integrator`.
 
 Attached to the generated classes by name (``IntegratorBehaviour`` -> ``Integrator``).
-Only schema fields are ever stored; everything derived from the ontology is a property,
-so an integrator can be serialized at any point without carrying runtime state.
+Only schema fields are ever stored; everything derived from the ontology is a property, so an integrator can be serialized at any point without carrying runtime state.
 
-Population from the ontology is NOT done at construction. It is
-:meth:`IntegratorBehaviour.enrich`, called explicitly and idempotent, so that resolving an
-integrator against the ontology stays an act the caller asks for rather than the cost of
-naming one. The wrapper this replaces called it from ``__init__``, which meant it ran for
-a directly constructed integrator and not for a loaded one; the loaded path compensated
-with its own call, and that call is now the only one.
+Population from the ontology is NOT done at construction. It is :meth:`IntegratorBehaviour.enrich`, called explicitly and idempotent, so that resolving an integrator against the ontology stays an act the caller asks for rather than the cost of naming one. The wrapper this replaces called it from ``__init__``, which meant it ran for a directly constructed integrator and not for a loaded one; the loaded path compensated with its own call, and that call is now the only one.
 
-A mixin *can* hook construction — see :mod:`tvbo.behaviour` on ``__post_init__``, which
-:class:`CouplingBehaviour` uses. This one deliberately does not.
+A mixin *can* hook construction — see :mod:`tvbo.behaviour` on ``__post_init__``, which :class:`CouplingBehaviour` uses. This one deliberately does not.
 """
 
 from __future__ import annotations
@@ -22,14 +15,14 @@ class IntegratorBehaviour:
     """Ontology metadata, rendering and loading for an integrator."""
 
     @classmethod
-    def from_file(cls, filepath: str) -> "IntegratorBehaviour":
+    def from_file(cls, filepath: str) -> IntegratorBehaviour:
         """Load an Integrator from a YAML file."""
         from tvbo.utils import yaml_loader
 
         return yaml_loader.load(str(filepath), target_class=cls)
 
     @classmethod
-    def from_db(cls, name: str) -> "IntegratorBehaviour":
+    def from_db(cls, name: str) -> IntegratorBehaviour:
         """Load an Integrator by name from the tvbo database."""
         from tvbo.data.registry import resolve
 
@@ -51,8 +44,7 @@ class IntegratorBehaviour:
     def ontoclass(self):
         """The ontology class for this integrator, resolved from `method`.
 
-        Resolves a string `method` via the ontology, passes through an existing ontology
-        `ThingClass`, and yields `None` otherwise.
+        Resolves a string `method` via the ontology, passes through an existing ontology `ThingClass`, and yields `None` otherwise.
         """
         import owlready2
 
@@ -86,8 +78,7 @@ class IntegratorBehaviour:
     def noise_wrapper(self):
         """The noise as a runtime `Noise` wrapper, or `None` when non-stochastic.
 
-        A plain datamodel `Noise` is upgraded to the runtime `Noise` subclass so it gains
-        the computed properties and code-generation helpers.
+        A plain datamodel `Noise` is upgraded to the runtime `Noise` subclass so it gains the computed properties and code-generation helpers.
         """
         from tvbo.classes.noise import Noise
         from tvbo.datamodel import schema as tvbo_datamodel
@@ -112,10 +103,7 @@ class IntegratorBehaviour:
     def enrich(self, source: str | None = None):
         """Fill the ontology-derived fields that are still unset. Idempotent.
 
-        The same verb as :meth:`IriEnrichable.enrich`, and the same gap-filling contract,
-        but its own implementation and no *key*: an integrator names an ontology method
-        rather than a curated entity, so there is nothing for the database to answer and
-        nothing to redirect the lookup at.
+        The same verb as :meth:`IriEnrichable.enrich`, and the same gap-filling contract, but its own implementation and no *key*: an integrator names an ontology method rather than a curated entity, so there is nothing for the database to answer and nothing to redirect the lookup at.
         """
         from tvbo.datamodel.schema import DerivedVariable, Equation
         from tvbo.ontology.owl import onto
@@ -146,9 +134,7 @@ class IntegratorBehaviour:
             self.number_of_stages = len(self.intermediate_expressions) + 1
 
         if getattr(self, "update_expression", None) is None and "dX_expr" in info:
-            self.update_expression = DerivedVariable(
-                name="dX", equation=Equation(lhs="X_{t+1}", rhs=info["dX_expr"])
-            )
+            self.update_expression = DerivedVariable(name="dX", equation=Equation(lhs="X_{t+1}", rhs=info["dX_expr"]))
         return self
 
     def render_code(self, format="tvb", **kwargs):
@@ -180,8 +166,7 @@ class IntegratorBehaviour:
     def execute(self, format="tvb"):
         """Render, execute, and instantiate the integrator backend object.
 
-        For the `tvb` backend the integrator class is instantiated, wiring in an executed
-        noise object when stochastic; for other backends the generated class is returned.
+        For the `tvb` backend the integrator class is instantiated, wiring in an executed noise object when stochastic; for other backends the generated class is returned.
 
         Args:
             format:

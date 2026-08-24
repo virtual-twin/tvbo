@@ -1,13 +1,9 @@
 """A keyed collection means the same thing in both generated forms, and in both spellings.
 
-``parameters: {TR: {value: 720.0}}`` says a Parameter *called* ``TR``, so writing the name
-a second time inside the member is a redundancy this project's records are written without.
-Only the generated dataclasses acted on that: they fill the identifier from the key, and
-the generated Pydantic models left it missing and rejected the member as incomplete. The
-list spelling of the same collection they rejected outright, as not a mapping.
+``parameters: {TR: {value: 720.0}}`` says a Parameter *called* ``TR``, so writing the name a second time inside the member is a redundancy this project's records are written without.
+Only the generated dataclasses acted on that: they fill the identifier from the key, and the generated Pydantic models left it missing and rejected the member as incomplete. The list spelling of the same collection they rejected outright, as not a mapping.
 
-Both are the dialect's business — it is the one implementation both construction paths run
-— and what these pin is that neither the form nor the spelling changes what a record means.
+Both are the dialect's business — it is the one implementation both construction paths run — and what these pin is that neither the form nor the spelling changes what a record means.
 """
 
 from __future__ import annotations
@@ -54,9 +50,7 @@ def test_a_member_may_still_state_its_own_name(model):
 def test_a_curated_record_loads_on_either_form(model):
     """The regression: an ``iri`` reference to a record written without redundant names.
 
-    ``BOLD_TVB`` writes ``TR: {value: 720.0}``. The dataclass form took it and the Pydantic
-    form raised ``Field required: parameters.TR.name`` — the same YAML meaning two different
-    things depending on which generated class read it.
+    ``BOLD_TVB`` writes ``TR: {value: 720.0}``. The dataclass form took it and the Pydantic form raised ``Field required: parameters.TR.name`` — the same YAML meaning two different things depending on which generated class read it.
     """
     observation = model.Observation(iri="tvbo:BOLD_TVB")
 

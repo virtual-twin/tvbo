@@ -1,6 +1,5 @@
-"""
-TVB-O Ontology
-==============
+"""TVB-O Ontology.
+
 OWL ontology access, query, and configuration.
 """
 

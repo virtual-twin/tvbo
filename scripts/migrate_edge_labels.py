@@ -2,11 +2,9 @@
 """Migrate all database networks from plural edge labels to singular.
 
 Renames HDF5 groups and YAML sidecar edge labels:
-  weights → weight
-  lengths → length
+  weights → weight lengths → length
 
-Uses Network load/save round-trip: loads each network, renames internal
-arrays and template edge labels, then saves back to the same path.
+Uses Network load/save round-trip: loads each network, renames internal arrays and template edge labels, then saves back to the same path.
 """
 
 from pathlib import Path

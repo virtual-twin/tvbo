@@ -12,8 +12,7 @@ canonical bifurcations (saddle-node, pitchfork, Hopf) as a parameter varies. Eac
 short, copy-pasteable recipe.
 
 It is built as a self-contained, declarative reproduction of the canonical normal-form
-bifurcation tutorial in [`dev/BifurcationTutorial/`](https://github.com/virtual-twin/tvbo/tree/dev/dev/BifurcationTutorial),
-written entirely with **TVBO** primitives.
+bifurcation tutorial, written entirely with **TVBO** primitives.
 
 The original tutorial is built on hand-written `ContinuationSystem` Python
 classes that wrap AUTO-07p Fortran subroutines (one `model.f90` per system).

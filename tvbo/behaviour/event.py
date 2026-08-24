@@ -1,8 +1,6 @@
 """User-facing helpers for :class:`Event`.
 
-Attached to the generated classes by name (``EventBehaviour`` -> ``Event``), so
-``event.plot()`` works on any Event — including the nested ones a loaded experiment
-holds, which previously only gained it if some call path remembered to retype them.
+Attached to the generated classes by name (``EventBehaviour`` -> ``Event``), so ``event.plot()`` works on any Event — including the nested ones a loaded experiment holds, which previously only gained it if some call path remembered to retype them.
 """
 
 from __future__ import annotations
@@ -16,8 +14,7 @@ class EventBehaviour:
     def _signal(self):
         """Return ``callable(t)`` for the event's signal.
 
-        Generic: works for any ``event.equation.rhs`` expressed in terms of ``t`` and the
-        event's own parameters.
+        Generic: works for any ``event.equation.rhs`` expressed in terms of ``t`` and the event's own parameters.
         """
         from sympy import Symbol, lambdify
 
@@ -26,17 +23,20 @@ class EventBehaviour:
         params = {name: Symbol(name) for name in (self.parameters or {})}
         params.setdefault("t", Symbol("t"))
         expr = parse_eq(self.equation, local_dict=params)
-        subs = {Symbol(name): float(p.value)
-                for name, p in (self.parameters or {}).items()
-                if p.value is not None}
+        subs = {Symbol(name): float(p.value) for name, p in (self.parameters or {}).items() if p.value is not None}
         return lambdify(Symbol("t"), expr.subs(subs), modules="numpy")
 
     def _default_window(self):
         """Infer a sensible (t0, t1) window from event parameters."""
         p = self.parameters or {}
         onset = float(p["onset"].value) if "onset" in p and p["onset"].value is not None else 0.0
-        width = (float(p["width"].value) if "width" in p and p["width"].value is not None
-                 else float(self.duration) if self.duration else 1.0)
+        width = (
+            float(p["width"].value)
+            if "width" in p and p["width"].value is not None
+            else float(self.duration)
+            if self.duration
+            else 1.0
+        )
         return onset - max(width, 0.1), onset + width + max(width, 0.1)
 
     def plot(self, t=None, n=1001, ax=None, onset_kw=None, **kwargs):

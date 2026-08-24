@@ -134,7 +134,7 @@ network:
   transforms:
     - name: weight
       equation:
-        rhs: "W / W_max"
+        rhs: "weight / max(weight)"
 
     # Coupling functions: key == class name == coupling_input key
   coupling:

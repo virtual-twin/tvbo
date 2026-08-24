@@ -77,10 +77,7 @@ def test_dynamics_accepts_human_readable_spring_units():
 def test_dynamics_records_an_uncurated_unit_as_written():
     """`m/ms` and `kg/ms²` are real units TVBO has not curated.
 
-    Both used to be rewritten to the curated unit a thousand (and a million) times
-    away — `m/s` and `N/m` — which loads and runs and is wrong. Recording them as
-    written keeps the declaration honest and leaves the checker able to say it
-    cannot settle them.
+    Both used to be rewritten to the curated unit a thousand (and a million) times away — `m/s` and `N/m` — which loads and runs and is wrong. Recording them as written keeps the declaration honest and leaves the checker able to say it cannot settle them.
     """
     spring = _spring(velocity_unit="m/ms", stiffness_unit="kg/ms^2")
 

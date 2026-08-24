@@ -1,17 +1,13 @@
 """``tvbo install`` — provision optional components that pip alone cannot place.
 
-Some extras have a half that is not distributed on PyPI. ``pip install tvbo[…]``
-installs the Python wrapper; this verb installs the native component and links it
-onto the current environment so imports resolve.
+Some extras have a half that is not distributed on PyPI. ``pip install tvbo[…]`` installs the Python wrapper; this verb installs the native component and links it onto the current environment so imports resolve.
 
 Currently one target:
 
 * ``tvbo install auto7p`` — the AUTO-07p bifurcation-continuation engine used
-  through :mod:`pycobi`. AUTO-07p is a Fortran program: this command locates an
-  existing build (or builds one from source with ``--build``), then drops a
-  ``.pth`` link to its ``python/`` front-end into the active environment's
-  site-packages, so ``import auto`` resolves for every process using this venv.
+  through :mod:`pycobi`. AUTO-07p is a Fortran program: this command locates an existing build (or builds one from source with ``--build``), then drops a ``.pth`` link to its ``python/`` front-end into the active environment's site-packages, so ``import auto`` resolves for every process using this venv.
 """
+
 from __future__ import annotations
 
 import os
@@ -29,8 +25,7 @@ app = typer.Typer(name="install", no_args_is_help=True)
 AUTO_REPO = "https://github.com/auto-07p/auto-07p"
 PTH_NAME = "auto-07p.pth"
 
-# Locations searched for an existing AUTO-07p install, in order, before falling
-# back to ``--build``. Each is tested with :func:`_is_auto_dir`.
+# Locations searched for an existing AUTO-07p install, in order, before falling back to ``--build``. Each is tested with :func:`_is_auto_dir`.
 _DEFAULT_AUTO_LOCATIONS = (
     "/opt/auto-07p",
     "/usr/local/auto-07p",
@@ -66,8 +61,7 @@ def _search_auto_dir() -> Path | None:
 def _module_importable(module: str) -> bool:
     """Whether *module* imports in a fresh interpreter using this venv.
 
-    A subprocess is used so a ``.pth`` written earlier in this run — which the
-    already-initialised parent process would not see — is honoured.
+    A subprocess is used so a ``.pth`` written earlier in this run — which the already-initialised parent process would not see — is honoured.
     """
     return (
         subprocess.run(
@@ -81,9 +75,7 @@ def _module_importable(module: str) -> bool:
 def _run_step(cmd: list[str], *, cwd: str | None = None, what: str) -> None:
     """Run a build step, converting a non-zero exit into a clean ``die``.
 
-    Keeps a failed clone/configure/make from surfacing as a raw
-    ``CalledProcessError`` traceback — the reason is reported the same way as
-    every other fatal path in this command.
+    Keeps a failed clone/configure/make from surfacing as a raw ``CalledProcessError`` traceback — the reason is reported the same way as every other fatal path in this command.
     """
     result = subprocess.run(cmd, cwd=cwd)
     if result.returncode != 0:
@@ -93,9 +85,7 @@ def _run_step(cmd: list[str], *, cwd: str | None = None, what: str) -> None:
 def _build_auto(prefix: Path) -> Path:
     """Clone and build AUTO-07p under *prefix*, returning the build directory.
 
-    Requires a source toolchain (git, make, a Fortran compiler). Missing tools
-    are reported up front, and a build-step failure is reported cleanly rather
-    than as an opaque traceback.
+    Requires a source toolchain (git, make, a Fortran compiler). Missing tools are reported up front, and a build-step failure is reported cleanly rather than as an opaque traceback.
     """
     import shutil
 
@@ -120,16 +110,11 @@ def _build_auto(prefix: Path) -> Path:
         _common.info(f"updating AUTO-07p source in {prefix}")
         _run_step(["git", "-C", str(prefix), "pull", "--ff-only"], what="git pull")
     elif prefix.exists() and any(prefix.iterdir()):
-        _common.die(
-            f"--prefix {prefix} already exists and is not an AUTO-07p checkout; "
-            "remove it or choose another --prefix."
-        )
+        _common.die(f"--prefix {prefix} already exists and is not an AUTO-07p checkout; remove it or choose another --prefix.")
     else:
         prefix.parent.mkdir(parents=True, exist_ok=True)
         _common.info(f"cloning AUTO-07p into {prefix}")
-        _run_step(
-            ["git", "clone", "--depth", "1", AUTO_REPO, str(prefix)], what="git clone"
-        )
+        _run_step(["git", "clone", "--depth", "1", AUTO_REPO, str(prefix)], what="git clone")
     _common.info("configuring AUTO-07p")
     _run_step(["./configure"], cwd=str(prefix), what="configure")
     _common.info("building AUTO-07p (make) — this can take a few minutes")
@@ -155,8 +140,7 @@ def auto7p(
         None,
         "--auto-dir",
         metavar="PATH",
-        help="Path to an existing AUTO-07p install. Defaults to $AUTO_DIR, then "
-        "common locations.",
+        help="Path to an existing AUTO-07p install. Defaults to $AUTO_DIR, then common locations.",
     ),
     build: bool = typer.Option(
         False,
@@ -169,22 +153,12 @@ def auto7p(
         metavar="PATH",
         help="Where to clone + build AUTO-07p when --build is used.",
     ),
-    force: bool = typer.Option(
-        False, "--force", help="Rewrite the .pth link even if it is already correct."
-    ),
-    uninstall: bool = typer.Option(
-        False, "--uninstall", help="Remove the AUTO-07p link from this environment."
-    ),
+    force: bool = typer.Option(False, "--force", help="Rewrite the .pth link even if it is already correct."),
+    uninstall: bool = typer.Option(False, "--uninstall", help="Remove the AUTO-07p link from this environment."),
 ) -> None:
     """Install AUTO-07p and link it onto this environment for pycobi continuation.
 
-    The pip half (pycobi) comes from the ``auto7p`` extra; this command
-    provides the native AUTO-07p engine, which is not on PyPI. It locates an
-    existing build (``--auto-dir`` / ``$AUTO_DIR`` / common paths), or builds one
-    with ``--build``, then links its ``python/`` front-end into site-packages so
-    ``import auto`` resolves. Safe to re-run — this is the step to repeat after
-    recreating the virtualenv, since the link lives inside it. Pass ``--uninstall``
-    to remove the link (the AUTO-07p build itself is left untouched).
+    The pip half (pycobi) comes from the ``auto7p`` extra; this command provides the native AUTO-07p engine, which is not on PyPI. It locates an existing build (``--auto-dir`` / ``$AUTO_DIR`` / common paths), or builds one with ``--build``, then links its ``python/`` front-end into site-packages so ``import auto`` resolves. Safe to re-run — this is the step to repeat after recreating the virtualenv, since the link lives inside it. Pass ``--uninstall`` to remove the link (the AUTO-07p build itself is left untouched).
     """
     if uninstall:
         pth = _site_packages() / PTH_NAME
@@ -196,14 +170,10 @@ def auto7p(
         return
 
     if auto_dir:
-        # An explicit path is honoured strictly: a typo must fail loudly rather
-        # than fall through to a different auto-detected install.
+        # An explicit path is honoured strictly: a typo must fail loudly rather than fall through to a different auto-detected install.
         given = Path(auto_dir).expanduser()
         if not _is_auto_dir(given):
-            _common.die(
-                f"--auto-dir {auto_dir} is not an AUTO-07p install "
-                "(no python/auto/__init__.py under it)."
-            )
+            _common.die(f"--auto-dir {auto_dir} is not an AUTO-07p install (no python/auto/__init__.py under it).")
         resolved = given.resolve()
     else:
         resolved = _search_auto_dir()
@@ -218,11 +188,7 @@ def auto7p(
                 )
 
     pth, changed = _write_link(resolved, force=force)
-    _common.info(
-        f"linked AUTO-07p ({resolved}) → {pth}"
-        if changed
-        else f"AUTO-07p already linked → {pth}"
-    )
+    _common.info(f"linked AUTO-07p ({resolved}) → {pth}" if changed else f"AUTO-07p already linked → {pth}")
 
     if not _module_importable("auto"):
         _common.die(

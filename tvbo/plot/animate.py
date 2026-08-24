@@ -1,10 +1,6 @@
-#
-# Module: animate.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Animation utilities for SimulationResult."""
 
 import matplotlib.pyplot as plt
@@ -34,7 +30,7 @@ def _graph_from_experiment(result):
     node_ids = sorted(G.nodes)
     positions = np.array([pos_dict[n][:2] for n in node_ids])
 
-    W = getattr(network, "weights_matrix", None)
+    W = network.matrix("weight") if hasattr(network, "matrix") else None
     if W is None:
         W = np.zeros((len(node_ids), len(node_ids)))
 
@@ -45,8 +41,7 @@ def _graph_from_experiment(result):
 def _extract_node_timeseries(data, max_points=200):
     """Extract a list of ``(var_name, vals[time, node], time)`` from data.
 
-    Handles data that may or may not still have a *variable* dimension
-    (e.g. after ``.sel(variable='V')``).  When the time axis has more than
+    Handles data that may or may not still have a *variable* dimension (e.g. after ``.sel(variable='V')``).  When the time axis has more than
     *max_points* samples the arrays are downsampled so that animations
     stay lightweight.
     """
@@ -91,13 +86,10 @@ def _extract_node_timeseries(data, max_points=200):
 def animate_network(result, state=None, interval=50, cmap="viridis", node_size=120, figsize=None, format=None):
     """Animate time-series on a graph layout (nodes colored by state value).
 
-    Supports the ``.sel(variable='V').animate()`` pattern: if the variable
-    dimension is already selected, animates that variable.  With no selection
-    all variables are shown (one row per variable).
+    Supports the ``.sel(variable='V').animate()`` pattern: if the variable dimension is already selected, animates that variable.  With no selection all variables are shown (one row per variable).
 
     Graph data is resolved in order:
-    1. ``result.graph`` / ``result._extras['graph']`` (explicitly attached)
-    2. Experiment metadata via ``result._source.source.network``
+    1. ``result.graph`` / ``result._extras['graph']`` (explicitly attached) 2. Experiment metadata via ``result._source.source.network``
 
     Parameters
     ----------
@@ -114,7 +106,7 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
         Scatter point size.
     figsize : tuple, optional
 
-    Returns
+    Returns:
     -------
     matplotlib.animation.FuncAnimation
     """
@@ -229,9 +221,7 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
 
     fig.tight_layout()
 
-    # Data is already downsampled by _extract_node_timeseries;
-    # animate sequentially over all points.
-    n_frames = len(slices[0][2])
+    n_frames = len(slices[0][2])  # already downsampled by _extract_node_timeseries
 
     def update(i):
         """Recolor nodes and extend per-node traces for frame `i`."""
@@ -257,8 +247,7 @@ def animate_timeseries(result, state=None, interval=50, cmap=None, figsize=None)
 
     Parameters
     ----------
-    result : SimulationResult
-    state : int, str or None
+    result : SimulationResult state : int, str or None
         If given, selects a single variable by index or name.
     interval : int
         Milliseconds between frames.
@@ -266,7 +255,7 @@ def animate_timeseries(result, state=None, interval=50, cmap=None, figsize=None)
         Matplotlib colormap.
     figsize : tuple, optional
 
-    Returns
+    Returns:
     -------
     matplotlib.animation.FuncAnimation
     """
@@ -315,9 +304,7 @@ def animate_timeseries(result, state=None, interval=50, cmap=None, figsize=None)
 
     fig.tight_layout()
 
-    # Data is already downsampled by _extract_node_timeseries;
-    # animate sequentially over all points.
-    n_frames = len(slices[0][2])
+    n_frames = len(slices[0][2])  # already downsampled by _extract_node_timeseries
 
     def update(i):
         """Update each panel's title and traces for frame `i`."""
@@ -339,19 +326,16 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0, interval=50,
 
     Parameters
     ----------
-    result : SimulationResult
-    x_var, y_var : str, optional
-    region, mode : int
-    interval : int
-    trail : int
+    result : SimulationResult x_var, y_var : str, optional region, mode : int interval : int trail : int
         Number of trailing points.
     figsize : tuple
 
-    Returns
+    Returns:
     -------
     matplotlib.animation.FuncAnimation
     """
     from matplotlib.animation import FuncAnimation
+
     from tvbo.plot.phase import _extract_2d
 
     time, x, y, xlabel, ylabel = _extract_2d(result, x_var, y_var, region, mode)
@@ -384,17 +368,8 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0, interval=50,
     return ani
 
 
-# =========================================================================
-# Composable Panel System
-# =========================================================================
-#
-# Each panel function has the signature:
-#     panel_fn(result, ax, max_points=200) -> (n_frames, update_fn)
-#
-# update_fn(i) updates artists for frame i and returns a list of artists.
-# Panels share a common frame count (the minimum across all panels).
+# A panel is `panel_fn(result, ax, max_points=200) -> (n_frames, update_fn)`; frames are the minimum.
 
-# Built-in composite types: string -> list of panel names
 _COMPOSITE_TYPES = {
     "pendulum": ["pendulum_bob", "timeseries"],
 }
@@ -425,7 +400,7 @@ def _panel_timeseries(result, ax, max_points=200):
     n_frames = len(slices[0][2]) if slices else 0
 
     def update(i):
-        for ln, (vals, time) in zip(all_lines, all_data):
+        for ln, (vals, time) in zip(all_lines, all_data, strict=True):
             ln.set_data(time[: i + 1], vals[: i + 1])
         return all_lines
 
@@ -523,20 +498,18 @@ def animate_multi(result, panels, interval=50, figsize=None, max_points=200, sav
 
     Parameters
     ----------
-    result : SimulationResult
-    panels : list of str
+    result : SimulationResult panels : list of str
         Panel type names (e.g. ['pendulum_bob', 'timeseries']).
     interval : int
         Milliseconds between frames.
-    figsize : tuple, optional
-    max_points : int
+    figsize : tuple, optional max_points : int
         Maximum time points per panel (downsampled for performance).
     save : str, optional
         If given, save the animation to this path (e.g. 'anim.gif').
     fps : int
         Frames per second when saving.
 
-    Returns
+    Returns:
     -------
     matplotlib.animation.FuncAnimation
     """
@@ -552,7 +525,7 @@ def animate_multi(result, panels, interval=50, figsize=None, max_points=200, sav
 
     updaters = []
     n_frames = None
-    for ax, panel_name in zip(axes, panels):
+    for ax, panel_name in zip(axes, panels, strict=True):
         panel_fn = _PANEL_REGISTRY.get(panel_name)
         if panel_fn is None:
             raise ValueError(f"Unknown panel type '{panel_name}'. Available: {list(_PANEL_REGISTRY.keys())}")
