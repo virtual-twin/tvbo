@@ -16,7 +16,8 @@ from tvbo.datamodel.dialect_tables import SLOT_ALIASES
 
 ROOT = Path(__file__).resolve().parents[1] / "tvbo"
 
-SKIP = ("datamodel/schema.py", "datamodel/pydantic.py", "datamodel/tvbo_datamodel", "datamodel/dialect")
+SKIP = ("datamodel/schema.py", "datamodel/pydantic.py", "datamodel/tvbo_datamodel", "datamodel/dialect", ".mako.py")
+"""Generated files, which this gate must not read: the datamodel LinkML emits, and the module cache Mako writes beside each template. Both are gitignored, so CI sees only the tracked source they come from, and a stale one left in a working tree would fail the gate on a line no source contains."""
 
 ACCESSORS = ("getattr", "slot", "_p")
 
