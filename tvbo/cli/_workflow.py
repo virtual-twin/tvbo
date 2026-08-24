@@ -6,9 +6,7 @@ Given a Study + Experiment + workflow spec + (resolved) backend, produce a :clas
 * which axes the workflow engine must fan out as wildcards / array tasks,
 * the resulting cell count, chunking, and per-cell command line.
 
-The planner is intentionally backend-aware. It consults :mod:`tvbo.cli._backends` (mirrored
-from ``ontology/tvb-o-axioms.ttl``) so the same ``study.yaml`` produces a *different* DAG when
-re-rendered against a different backend.
+The planner is intentionally backend-aware. It consults :mod:`tvbo.cli._backends` (mirrored from ``ontology/tvb-o-axioms.ttl``) so the same ``study.yaml`` produces a *different* DAG when re-rendered against a different backend.
 """
 
 from __future__ import annotations

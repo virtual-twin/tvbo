@@ -1,12 +1,6 @@
 """The curated GraphGenerator catalog: entry lookup, declared defaults, reference matrices.
 
-What is left here is the residue that no printer should ever emit. Graph construction itself
-lives in :mod:`tvbo.graph_generators.procedural`, which resolves a generator's typed DAG to
-SymPy and renders it through the printer tables in ``tvbo/codegen/code.py`` — one primitive
-definition per backend. This module used to carry a second, numpy-only implementation of those
-same primitives (sampling, reductions, linear algebra) behind a restricted ``eval``; that table
-is gone, because two implementations of one vocabulary can only ever agree by coincidence, and
-the disagreement would show up as a network that differs between a local run and a swept one.
+What is left here is the residue that no printer should ever emit. Graph construction itself lives in :mod:`tvbo.graph_generators.procedural`, which resolves a generator's typed DAG to SymPy and renders it through the printer tables in ``tvbo/codegen/code.py`` — one primitive definition per backend. This module used to carry a second, numpy-only implementation of those same primitives (sampling, reductions, linear algebra) behind a restricted ``eval``; that table is gone, because two implementations of one vocabulary can only ever agree by coincidence, and the disagreement would show up as a network that differs between a local run and a swept one.
 """
 
 from __future__ import annotations

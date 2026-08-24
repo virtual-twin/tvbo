@@ -1,18 +1,11 @@
 """TVBO graph generators — declarative typed DAGs, one resolver.
 
-A curated ``GraphGenerator`` under ``tvbo/database/graph_generators/`` is defined by its
-``procedure:`` block: an ordered DAG of typed steps whose options are schema fields.
-:mod:`tvbo.graph_generators.procedural` resolves that DAG to SymPy and renders it through the
-printer tables in ``tvbo/codegen/code.py``, so eager construction at ``Network`` load time and
-emitted backend source are the same expressions rendered twice. There are no per-generator
-Python materialisers.
+A curated ``GraphGenerator`` under ``tvbo/database/graph_generators/`` is defined by its ``procedure:`` block: an ordered DAG of typed steps whose options are schema fields.
+:mod:`tvbo.graph_generators.procedural` resolves that DAG to SymPy and renders it through the printer tables in ``tvbo/codegen/code.py``, so eager construction at ``Network`` load time and emitted backend source are the same expressions rendered twice. There are no per-generator Python materialisers.
 
-Two kinds of generator sit outside the DAG, both through the standard ``bindings`` slot: library
-wrappers (Graphs.jl / NetworkX families) and the documented Callable exception below, for a
-construction the backend-independent primitive set genuinely cannot express.
+Two kinds of generator sit outside the DAG, both through the standard ``bindings`` slot: library wrappers (Graphs.jl / NetworkX families) and the documented Callable exception below, for a construction the backend-independent primitive set genuinely cannot express.
 
-The helper below is a *thin convenience wrapper* over the resolver (it holds no generation
-algorithm) for scripts and notebooks that want a matrix directly.
+The helper below is a *thin convenience wrapper* over the resolver (it holds no generation algorithm) for scripts and notebooks that want a matrix directly.
 """
 
 from __future__ import annotations
@@ -40,16 +33,9 @@ def random_reservoir(
 def weight_shuffle(source: str, preserve: str = "binary_mask", seed: int | None = None) -> dict:
     """Materialise a ``WeightShuffle`` null-model adjacency: permute the non-zero weights.
 
-    This is the documented exception to the typed-DAG rule: a masked extract, a permutation and
-    a scatter are not expressible in the backend-independent primitive set. Boolean-mask
-    extraction in particular cannot survive expression parsing at all — ``M[M != 0]`` evaluates
-    its comparison to a plain Python ``True`` before an expression tree is ever built. So the
-    algorithm lives here as ordinary Python, reached through the generator's ``bindings.python``
-    binding like any other library wrapper.
+    This is the documented exception to the typed-DAG rule: a masked extract, a permutation and a scatter are not expressible in the backend-independent primitive set. Boolean-mask extraction in particular cannot survive expression parsing at all — ``M[M != 0]`` evaluates its comparison to a plain Python ``True`` before an expression tree is ever built. So the algorithm lives here as ordinary Python, reached through the generator's ``bindings.python`` binding like any other library wrapper.
 
-    ``preserve='binary_mask'`` keeps the ``{0, nonzero}`` pattern and permutes the weight values
-    among their existing positions, so density and topology are held fixed while the
-    weight-to-edge assignment is randomised.
+    ``preserve='binary_mask'`` keeps the ``{0, nonzero}`` pattern and permutes the weight values among their existing positions, so density and topology are held fixed while the weight-to-edge assignment is randomised.
 
     Args:
         source: IRI, path or database name of the reference Network to shuffle.

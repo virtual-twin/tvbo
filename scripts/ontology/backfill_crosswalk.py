@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """Backfill `crosswalk.md` and `boundary-matrix.md` from authoritative sources.
 
-Both tables must list one row per LinkML class so contributors can trace a concept across the
-five surfaces (YAML / LinkML / OWL / API / Odoo). This script regenerates the structural rows
-from the same inputs that the runtime already trusts.
+Both tables must list one row per LinkML class so contributors can trace a concept across the five surfaces (YAML / LinkML / OWL / API / Odoo). This script regenerates the structural rows from the same inputs that the runtime already trusts.
 
 Inputs
 ------
@@ -29,8 +27,7 @@ Outputs
 - `crosswalk.md` (structural section).
 - `boundary-matrix.md` (structural section).
 
-Both documents live outside the repo. Point `TVBO_CROSSWALK_DIR` at the directory that holds
-them; without it the script falls back to `dev/OntologicalRestructuring/` inside the repo.
+Both documents live outside the repo. Point `TVBO_CROSSWALK_DIR` at the directory that holds them; without it the script falls back to `dev/OntologicalRestructuring/` inside the repo.
 
 Boundary-matrix classification rules (mirroring the file's own §"Decision rules")
 - `LinkML+OWL` is the default surface for every schema class.
@@ -48,8 +45,7 @@ Usage
     python scripts/ontology/backfill_crosswalk.py             # write both files
     python scripts/ontology/backfill_crosswalk.py --check     # diff only
 
-The Makefile target `make crosswalk` invokes the writing form; CI may invoke the `--check` form
-once it is wired in.
+The Makefile target `make crosswalk` invokes the writing form; CI may invoke the `--check` form once it is wired in.
 """
 
 from __future__ import annotations
@@ -303,8 +299,7 @@ def write_section(path: pathlib.Path, rows: Iterable[str], check_only: bool) -> 
     body = "\n".join(rows)
     if not path.exists():
         raise SystemExit(
-            f"{path} not found. Set TVBO_CROSSWALK_DIR to the folder holding crosswalk.md "
-            "and boundary-matrix.md."
+            f"{path} not found. Set TVBO_CROSSWALK_DIR to the folder holding crosswalk.md and boundary-matrix.md."
         )
     current = path.read_text()
     new = splice(current, body)
