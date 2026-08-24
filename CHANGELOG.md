@@ -1,4 +1,4 @@
-## Unreleased
+## 1.0.0 – 2026-08-24
 
 ### Added
 - **`tvbo.__all__` and `__dir__`.** `dir(tvbo)` now lists the API rather than the
