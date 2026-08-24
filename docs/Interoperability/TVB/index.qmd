@@ -100,7 +100,7 @@ print(f"TVB Simulator: {sim.model.__class__.__name__}, "
 exp = SimulationExperiment.from_tvb_simulator(sim)
 
 print(f"Model:      {exp.model}")
-print(f"Coupling:   {', '.join(exp.network.coupling)}")
+print(f"Coupling:   {list(exp.network.coupling)}")
 print(f"Integrator: {exp.integration.method}")
 print(f"Duration:   {exp.integration.duration} ms")
 print(f"dt:         {exp.integration.step_size}")
@@ -176,11 +176,10 @@ observations:
   Raw:
     name: Raw
 """)
-# The connectome comes from TVB; the declared coupling rides along on it
-tvb_network = Network.from_tvb(conn)
-for name in exp2.network.coupling:
-    tvb_network.coupling[name] = exp2.network.coupling[name]
-exp2.network = tvb_network
+# Coupling belongs to the network, so carry the declared one onto the imported connectivity
+_declared_coupling = exp2.network.coupling
+exp2.network = Network.from_tvb(conn)
+exp2.network.coupling = _declared_coupling
 
 print(f"Model:    {exp2.model}")
 print(f"Method:   {exp2.integration.method}")

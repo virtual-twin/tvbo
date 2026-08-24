@@ -268,9 +268,7 @@ params = getattr(model, 'parameters', {}) or {}
 output = getattr(model, 'output', []) or []
 coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
 observed = getattr(model, 'observed', {}) or {}
-# The Dynamics carries only the event NAMES its dfuns reference (propagated so they parse
-# in the model's symbolic scope); the full declaration — condition, effect, parameters —
-# lives on the experiment, so the experiment's definition wins where both name an event.
+# The Dynamics carries only event names, the experiment the full declaration, so the experiment wins where both name one.
 events = dict(report.name_items(getattr(model, 'events', None)))
 events.update(dict(report.name_items(getattr(exp, 'events', None))))
 unit_verdicts = report.unit_verdicts(model) if model else []

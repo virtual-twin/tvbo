@@ -22,7 +22,8 @@ Output:
 # Get experiment info
 model = experiment.dynamics
 network = experiment.network
-coupling = experiment.coupling
+from tvbo.templates.base.utils import experiment_coupling
+coupling = experiment_coupling(experiment)
 n_nodes = N_nodes = (getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)) if network else 1
 
 # Get optimization specifications

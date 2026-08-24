@@ -24,10 +24,7 @@ from tvbo.utils import report
 derivative_notation = context.get('derivative_notation', 'd')
 mul_symbol = context.get('mul_symbol', None)
 
-# Per-symbol display overrides {identifier Symbol -> LaTeX string}, populated from the
-# model's `symbol` slots once `model` is resolved (see _collect_symbols below). Passed to
-# every sympy.latex call so rendered equations use the source's own notation (fully
-# sympy-native): e.g. identifier ``w_plus`` renders as ``w_+``, ``S_e`` as ``S^{(E)}``.
+# Display overrides passed to every sympy.latex call, so equations use the source's own notation (``w_plus`` as ``w_+``).
 symbol_names = {}
 
 def _dot_lhs(deriv, mul_symbol='*'):
@@ -72,13 +69,10 @@ if 'experiment' in context.keys():
 else:
     model = context.get('dynamics', context.get('model'))
 
-# Display-symbol overrides {identifier Symbol -> LaTeX}; resolution lives on the model
-# (Dynamics.symbol_map), the template only consumes it.
+# Resolution lives on the model in Dynamics.symbol_map; the template only consumes it.
 symbol_names.update(model.symbol_map())
 
-# Optional baseline diff: when a `baseline` model is passed, render only what this
-# model adds or changes relative to it. report.model_delta does the comparison in
-# Python; the template just filters its collections by the returned name sets.
+# A passed `baseline` renders only what this model adds or changes, report.model_delta doing the comparison.
 _baseline = context.get('baseline', None)
 _delta = report.model_delta(model, _baseline) if _baseline is not None else None
 
@@ -90,9 +84,7 @@ functions = _equations['functions']
 
 outputs = list(model.output or [])
 
-# Events (discrete condition -> affect updates, e.g. a spike threshold/reset or a
-# spike-driven increment). Rendered from the model's own event declarations so the
-# native report is complete for spiking models, not just continuous ODEs.
+# Rendered from the model's own event declarations, so the report is complete for a spiking model too.
 events_lines = []
 for _en, _ev in (getattr(model, 'events', None) or {}).items():
     _cond = _slot(_slot(_ev, 'condition', None), 'rhs', None)
@@ -104,9 +96,7 @@ for _en, _ev in (getattr(model, 'events', None) or {}).items():
         except Exception:
             _c = str(_cond)
         _parts.append(f"when ${_c}$")
-    # The affect may be SEVERAL assignments separated by ';' (a spike updates u and x and delivers
-    # to v). Parse and render EACH natively with sympy, so multiplication is implicit and every
-    # update shows as its own $lhs \leftarrow rhs$ — not the raw semicolon-joined string.
+    # An affect may hold several ';'-separated assignments, so render each with sympy rather than the joined string.
     _updates = []
     for _stmt in str(_aff or '').split(';'):
         _stmt = _stmt.strip()
@@ -122,6 +112,7 @@ for _en, _ev in (getattr(model, 'events', None) or {}).items():
         _parts.append("$" + ",\\; ".join(_updates) + "$")
     events_lines.append(f"- *{_en}*: " + ", ".join(_parts))
 
+# coupling_inputs is the rendered surface, each input being its own term.
 coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
 if _delta is not None:
     coupling_inputs = {n: o for n, o in report.name_items(coupling_inputs) if n in _delta.coupling_inputs}
@@ -166,8 +157,7 @@ if not ref_names:
     if isinstance(raw_refs, str):
         raw_refs = [raw_refs]
     ref_names = list(raw_refs)
-# citeformat: 'quarto' -> inline @key citations in the fulltext and NO References list (a host
-# Quarto doc's own bibliography resolves them into one bibliography); else a formatted list below.
+# 'quarto' emits inline @key citations and no References list, the host document's bibliography resolving them.
 citeformat = context.get('citeformat', None)
 _quarto_cites = ("[" + "; ".join("@" + n for n in ref_names) + "]") if (citeformat == 'quarto' and ref_names) else ""
 %>\
@@ -221,8 +211,7 @@ ${report.parameter_table(_params_show)}
 % endif
 % if coupling_inputs:
 <%
-# One md_table (empty columns dropped; a scalar-only input list collapses to plain
-# text) instead of a hand-rolled table — a trivial dimension=1 carries no information.
+# One md_table rather than a hand-rolled one, so empty columns drop and a scalar-only list collapses to text.
 ci_rows = [[nm, report.slot(o, "source", ""),
             ("" if report.slot(o, "dimension", "") in (1, "1", None, "") else report.slot(o, "dimension", "")),
             ", ".join(report.slot(o, "keys", []) or []), report.slot(o, "description", "") or ""]

@@ -10,9 +10,7 @@ import textwrap
 from tvbo.templates.base.utils import get_coupling_terms, get_func_name, get_func_args, gathered_state_indices, np_module, needs_scipy_special, referenced_parameters
 %>
 
-## The special-function import is gated on the equations actually using it — emitting it
-## unconditionally is what left `jsp` unused in every JAX module. `model=None` cannot be
-## checked, so it keeps the old unconditional form.
+## The special-function import is gated on the equations actually using it, since emitting it unconditionally is what left `jsp` unused in every JAX module; `model=None` cannot be checked, so it keeps the unconditional form.
 <%def name="imports(model=None, fmt='jax')">
 <% _scipy = needs_scipy_special(model, fmt) if model is not None else True %>\
 % if fmt == 'jax':

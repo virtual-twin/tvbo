@@ -20,7 +20,8 @@ import numpy as np
 assert 'experiment' in context.keys(), "experiment required for simulation template"
 
 model = experiment.dynamics
-coupling = experiment.coupling
+from tvbo.templates.base.utils import experiment_coupling
+coupling = experiment_coupling(experiment)
 integration = experiment.integration
 network = experiment.network
 
@@ -201,9 +202,7 @@ def create_network(
     if distances is None:
         distances = jnp.zeros_like(weights)
     _speed = ${conduction_speed}
-    # max over distances/_speed (not max(distances)/_speed): a float32 ULP apart for some
-    # speeds, which lands the bound under the graph's own max(delay) and trips its strict
-    # `bound >= max(delay)` check; a hair of headroom keeps the buffer never an ULP short.
+    # max over distances/_speed, not max(distances)/_speed: a float32 ULP apart, and the headroom keeps the bound off the graph's strict check.
     _max_delay_bound = max_delay if max_delay is not None else (float(jnp.max(distances / _speed)) * (1.0 + 1e-4) if _speed > 0 else 0.0)
     graph = DenseLengthGraph(weights, distances, speed=_speed, region_labels=region_labels, max_delay_bound=_max_delay_bound)
     % elif use_delay_graph:

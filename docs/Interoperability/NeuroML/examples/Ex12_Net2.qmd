@@ -69,8 +69,8 @@ network:
           iri: neuroml:voltageConcDepBlockMechanism
           parameters:
             species: {description: mg}
-            blockConcentration: {value: 1.2, unit: mmol_per_m3}
-            scalingConc: {value: 1.9205441817997078, unit: mmol_per_m3}
+            blockConcentration: {value: 1.2, unit: mM}
+            scalingConc: {value: 1.9205441817997078, unit: mM}
             scalingVolt: {value: 16.129032258064516, unit: mV}
   nodes:
     # 9 post-synaptic cells

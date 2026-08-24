@@ -7,7 +7,8 @@ from sympy import Symbol
 if 'experiment' in context.keys():
     integration = experiment.integration
     model = experiment.dynamics
-    coupling = experiment.coupling
+    from tvbo.templates.base.utils import experiment_coupling
+    coupling = experiment_coupling(experiment)
 elif 'integration' in context.keys():
     integration = context['integration']
     model = context['model']

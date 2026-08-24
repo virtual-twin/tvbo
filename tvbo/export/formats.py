@@ -151,7 +151,7 @@ def _render_rateml_cuda(exp, **kw):
     from tvbo.classes.experiment import templates
 
     template = templates.lookup.get_template("rateml/tvbo-rateml-cuda.c.mako")
-    return template.render(model=exp.dynamics, experiment=exp, coupling=exp.coupling, **kw)
+    return template.render(model=exp.dynamics, experiment=exp, **kw)
 
 
 def _render_rateml_driver(exp, **kw):

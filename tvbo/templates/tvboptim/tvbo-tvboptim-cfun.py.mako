@@ -115,13 +115,7 @@ if coupling_inputs_info and all_couplings:
     description = spec['description']
     jaxcode = lambda expr: render_expression(expr, format='jax', parameters=all_symbols)
     _uses_local = spec['uses_local']    # pre() reads a target-local state (resolved in resolve_coupling_spec)
-    # tvboptim 0.4.0 validates pre().shape[0] == N_OUTPUT_STATES: the number of message
-    # components pre() emits and the base class reduces over edges. That is n_pre (the
-    # pre_expression term count), which equals n_output for a single term, a mode-coupled
-    # pre, or a multi-output list (each reduction its own output) — but NOT for a factored
-    # pre that post() recombines into one coupling input (n_pre > 1, n_output == 1, e.g. the
-    # Kuramoto angle-addition [sinθ, cosθ] → sin(θⱼ−θᵢ)). Same gate as the post() recombination
-    # below, so N_OUTPUT_STATES tracks pre()'s leading axis in every case.
+    # N_OUTPUT_STATES tracks pre()'s leading axis, so a factored pre that post() recombines (n_pre > 1, n_output == 1) reduces over n_pre.
     n_output_states = n_pre if (n_pre > 1 and n_output == 1) else n_output
 %>
 
@@ -147,10 +141,7 @@ class ${class_name}(${base_class}):
 
     def __init__(self, **kwargs):
         % if vectorized:
-## A source-only/factored pre folds declared local_states into vec_states, registered as
-## incoming for the edge reduction. When post() recombines via a target-local alias (θ_i,
-## post_aliases_i non-empty) those states must ALSO be registered as local_states, because
-## 0.4.0 keeps incoming (source) and local (target) distinct and post() reads only local.
+## tvboptim keeps incoming (source) and local (target) states distinct and post() reads only local, so a target-local alias must register both.
         super().__init__(${_interp_kw}incoming_states=${vec_states}${''.join([', local_states=' + str(vec_states)] if _post_aliases_i else [])}, **kwargs)
         % elif incoming_states:
         super().__init__(${_interp_kw}incoming_states=${incoming_states}${''.join([', local_states=' + str(local_states)] if local_states else [])}, **kwargs)
@@ -192,8 +183,7 @@ class ${class_name}(${base_class}):
         ${state_name} = incoming_states[${i}]
         % endif
         % endfor
-## Local states: the base class aligns them to the message axes (dense [N_target, 1]),
-## so index straight in — pre() stays elementwise, no reshape.
+## The base class aligns local states to the message axes, so pre() indexes straight in and stays elementwise.
         % for i, state_name in enumerate(local_states):
         % if state_name not in incoming_states and referenced([state_name], _pre_ref):
         ${state_name} = local_states[${i}]
@@ -253,10 +243,7 @@ class ${class_name}(${base_class}):
 ## Stacked list pre: already 3D [n_pre, N_target, N_source].
         return coupling_term
         % elif (incoming_states and local_states) or has_delay:
-## Per-edge message (a pre() that reads target-local state, or a delayed coupling):
-## prepend the n_output axis over the message whatever its rank — dense
-## [N_target, N_source] or sparse [nnz] — so the base class reduces every output
-## component over the edges.
+## Prepend the n_output axis whatever the message's rank, so the base class reduces every output component over the edges.
         return jnp.expand_dims(coupling_term, axis=0)
         % elif mode_coupling:
 ## Mode-fold: coupling_term already carries the leading per-mode axis [n_modes, n_source].

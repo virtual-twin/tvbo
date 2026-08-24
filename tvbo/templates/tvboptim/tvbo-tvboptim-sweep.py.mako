@@ -39,20 +39,14 @@ from tvbo.templates.tvboptim.utils import axis_keypath
     label = axis.get('label', name)  # dotted axis name for the ExplorationResult (== space key)
     path = axis_keypath(axis)
     bothways = expl['sweep_direction'] == 'bidirectional'
-    # Total scan points for the progress ticker: n per branch, doubled when bidirectional.
-    # Mirrors the n resolution used in the _adiabatic_scan call (runtime n_<name> override).
+    # Scan points for the ticker: n per branch, doubled when bidirectional, resolved as the scan call does.
     n_total_expr = ("2 * " if bothways else "") + ("kwargs.get('n_%s', %s)" % (name, axis['n']))
 %>\
 % if a:
-    # -- Adiabatic bifurcation scan (delegates to tvboptim adiabatic_scan) --
-    # Ramp the swept parameter up then back down, carrying the settled state; record the
-    # oscillation envelope (per-node temporal min/max averaged across nodes, plus the mean)
-    # of the observed signal at each value. The up/down branches expose any hysteresis.
+    # Ramp the parameter up then down carrying the settled state, recording the envelope at each value so hysteresis shows.
     def _adia_observe(_r):
         return ${a['signal_code']}
-    # observe() runs once per swept value inside adiabatic_scan's lax.scan (sequential
-    # warm-start, no batch axis for the grid-path ticker), so wrapping it streams the
-    # JAX-native "<name> i/N" tick per point instead of going silent until the scan returns.
+    # observe() runs once per swept value, so wrapping it ticks per point instead of going silent until the scan returns.
     _adia_observe = progress_ticker(${n_total_expr}, label="${expl['name']}")(_adia_observe)
     _adia_stats = {"mean": lambda _a: _a.mean(), "lo": lambda _a: _a.min(axis=0).mean(), "hi": lambda _a: _a.max(axis=0).mean()}
     _adia_res = _adiabatic_scan(
@@ -76,22 +70,17 @@ from tvbo.templates.tvboptim.utils import axis_keypath
     for a in ws_analysis:
         obs_pairs += ["'%s': %s_lam" % (a['name'], a['name']), "'%s_xi': %s_xi" % (a['name'], a['name'])]
 %>\
-    # -- Warm-started record sweep (delegates to tvboptim adiabatic_scan) --
-    # Ramp the swept parameter, carrying each settled state into the next value; at every
-    # value record the declared trajectory-reduction observations of the settled rollout.
-    # bidirectional (up then back down) exposes hysteresis / multistability.
+    # Carry each settled state into the next value and record the declared observations of the settled rollout.
     def _ws_observe(_r):
         return _r.ys
-    # Per-value progress: observe() is called once per swept value inside adiabatic_scan's
-    # lax.scan, so the ticker fires the JAX-native "<name> i/N" line as each point settles.
+    # observe() is called once per swept value, so the ticker fires as each point settles.
     _ws_observe = progress_ticker(${n_total_expr}, label="${expl['name']}")(_ws_observe)
     _ws_stats = {
 % for r in expl['warmstart_records']:
         '${r['name']}': (lambda _a, _f=${r['call']}, _i=${r['var_idx']}: _f(_a[:, _i, :])),
 % endfor
 % if ws_analysis:
-        # Capture the settled (n_states, n_nodes) state at each value — the same carry the
-        # scan feeds to the next value — to seed the post-scan analysis pass below.
+        # The settled state at each value, the same carry the scan feeds forward, seeds the analysis pass below.
         '_seed_state': (lambda _a: _a[-1]),
 % endif
     }
@@ -104,8 +93,7 @@ from tvbo.templates.tvboptim.utils import axis_keypath
     )
     _ws_p = jnp.asarray(_ws_res.p)
 % if ws_analysis:
-    # -- Per-value analysis on the warm-start branch (seeded from the carried state) --
-    # Independent per value → a memory-bounded lax.map (one analysis run per point).
+    # Independent per value, so a memory-bounded lax.map runs one analysis per point.
     _ws_seed_states = jnp.asarray(_ws_res.stats['_seed_state'])   # (n_values, n_states, n_nodes)
 % for a in ws_analysis:
 ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_ws_p', '_ws_seed_states')}\
@@ -121,11 +109,7 @@ ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_ws_p', '_ws_seed_stat
 </%def>\
 ##
 <%def name="lyapunov_map(a, path, dt, solver_class, solver_kwargs, values_expr, seeds_expr)">\
-    # ${a['name']}: Benettin QR lambda_1 / xi_i at each swept value, re-seeded from that
-    # value's settled state so it tracks the continued branch, not a cold start. Independent
-    # per value → a memory-bounded lax.map (one analysis run per point); slicing the paired
-    # (value, seed) arrays is all an HPC shard needs. ``${values_expr}`` are the swept values
-    # (n_cells,); ``${seeds_expr}`` the matching settled states (n_cells, n_states, n_nodes).
+    # Re-seeded from each value's settled state, so ${a['name']} tracks the continued branch rather than a cold start.
     _le_solve_${a['name']}, _le_cfg_${a['name']} = prepare(_network, ${solver_class}(${solver_kwargs}), t0=0.0, t1=${a['segment_time']}, dt=${dt})
     def _lyap_at_${a['name']}(_carry):
         _val, _seed = _carry
@@ -133,8 +117,7 @@ ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_ws_p', '_ws_seed_stat
         _cfg = eqx.tree_at(lambda _c: _c.initial_state.dynamics, _cfg, _seed)
         return benettin_spectrum_and_vectors(_le_solve_${a['name']}, _cfg, t=${a['segment_time']}, n=${a['n_steps']}, k=${a['n_exponents']})
     _lyap_pairs_${a['name']} = (${values_expr}, ${seeds_expr})
-    # Stream "<name> i/N" as each independent Lyapunov point completes (JAX-native
-    # jax.debug.callback per lax.map step) so a long branch does not go silent.
+    # Ticks as each independent Lyapunov point completes, so a long branch does not go silent.
     _exps_${a['name']}, ${a['name']}_xi = jax.lax.map(
         progress_ticker(len(_lyap_pairs_${a['name']}[0]), label="${a['name']}")(_lyap_at_${a['name']}),
         _lyap_pairs_${a['name']})
@@ -169,15 +152,11 @@ the loaded branch instead of an in-process scan.
         "exploration '${expl['name']}' needs a from_experiment branch seed; run its "
         "source_experiment first so its recorded branch is available")
     _branch_p = jnp.asarray(_BRANCH_SEED['axis_values'])          # (n_cells,) swept values
-    # Place each state variable's per-cell settled state into its canonical row → IC batch.
-    # Keyed by name (never positional): sort the loaded states by their model row index.
+    # Keyed by name, never positional: sort the loaded states by their model row index.
     _branch_seeds = _BRANCH_SEED['seeds']
     _rows = sorted(_branch_seeds, key=lambda _s: _STATE_INDEX[_s])
     _branch_ic = jnp.stack([jnp.asarray(_branch_seeds[_s]) for _s in _rows], axis=1)  # (n_cells, n_states, n_nodes)
-    # Original branch position of each cell — preserved through sharding so the reassembled
-    # result reorders to the source traversal (up then down). A bidirectional branch repeats
-    # its swept values, so the position index (not the value) is what keeps the two hysteresis
-    # branches separable across shards.
+    # A bidirectional branch repeats its swept values, so the position index is what keeps the two hysteresis branches separable.
     _branch_idx = jnp.arange(_branch_p.shape[0])
     # HPC shard: keep this array task's slice of the branch (cells j where j % N == i).
     _shard = kwargs.get('shard')
@@ -191,10 +170,7 @@ ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_branch_p', '_branch_i
 % endfor
     return ExplorationResult(
         name='${expl['name']}',
-        # The restarted branch is a flat, ordered sequence of points, not a rectangular grid:
-        # index it by branch position so shard files reassemble (concat + sort by branch_point)
-        # losslessly even where the swept value repeats (bidirectional). cell_coords marks the
-        # flat 'point' layout — the same result whether run whole or fanned across array tasks.
+        # A flat ordered sequence rather than a grid, so indexing by branch position reassembles shards losslessly where a value repeats.
         axes=[Bunch(name='branch_point', explored_values=_branch_idx, n=int(_branch_idx.shape[0]))],
         observations={${', '.join(obs_pairs)}},
         cell_coords={'branch_point': _branch_idx},

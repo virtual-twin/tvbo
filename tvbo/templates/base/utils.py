@@ -46,6 +46,18 @@ def is_local_coupling(name, coupling_input=None):
     return getattr(coupling_input, "local", False) or name == "local_coupling"
 
 
+def experiment_coupling(experiment):
+    """The single coupling an experiment declares, which its network carries.
+
+    Coupling belongs to the network, keyed by name, so ``SimulationExperiment`` has no coupling slot of its own; reading one back returns ``None`` rather than raising, and a template that asked for it emitted code with no coupling at all. These single-coupling templates render the one the experiment declares, so the first keyed member is it. ``None`` when the network declares none, which every caller already reads as "no coupling".
+    """
+    from tvbo.utils import keyed_items
+
+    network = getattr(experiment, "network", None)
+    pairs = keyed_items(getattr(network, "coupling", None), "coupling") if network is not None else []
+    return pairs[0][1] if pairs else None
+
+
 def get_coupling_terms(model):
     """*model*'s coupling inputs, split by where each one is driven from.
 

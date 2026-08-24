@@ -45,8 +45,7 @@ slots:
         range: FunctionCall
         inlined: true
         required: false
-        # PROV-O: *prospective* provenance — the plan, not the run. Strictly the value
-        # `prov:wasGeneratedBy` an `prov:Activity` that `prov:hadPlan` this FunctionCall.
+        # PROV-O prospective provenance, the plan rather than the run: strictly the value `prov:wasGeneratedBy` an `prov:Activity` that `prov:hadPlan` this FunctionCall.
         close_mappings:
             - prov:wasGeneratedBy
         description: >-
@@ -184,11 +183,7 @@ slots:
     provenance:
         range: Provenance
         inlined: true
-        # Defined once and shared: LinkML maps every slot of a given name onto one
-        # property, so per-class copies would merge into a bare `tvbo:provenance` and
-        # drop their annotations. Close, not exact: `prov:wasGeneratedBy` relates an
-        # entity to the prov:Activity that generated it, whereas this points at a
-        # record *describing* that generation.
+        # Defined once and shared, because LinkML maps every slot of a given name onto one property and per-class copies would merge into a bare `tvbo:provenance` and drop their annotations. Close rather than exact: `prov:wasGeneratedBy` relates an entity to the prov:Activity that generated it, whereas this points at a record describing that generation.
         close_mappings:
             - prov:wasGeneratedBy
         description: >-
@@ -1198,8 +1193,7 @@ classes:
                 range: string
             generated_by:
                 range: string
-                # An agent identifier, so the PROV relation is attribution, not generation:
-                # `prov:wasGeneratedBy` ranges over a prov:Activity, never a prov:Agent.
+                # An agent identifier, so the PROV relation is attribution rather than generation: `prov:wasGeneratedBy` ranges over a prov:Activity, never a prov:Agent.
                 close_mappings:
                     - prov:wasAttributedTo
                 description: "Software/agent identifier: the prov:Agent this artifact is attributed to."
@@ -2294,12 +2288,7 @@ classes:
             - unit
             - references
         attributes:
-            # Helper functions this observation's pipeline calls by name (an HRF kernel,
-            # a downsampler, a fused strided convolution, …). Emitted as module-level defs
-            # and merged non-destructively into experiment.functions when the model is
-            # referenced by `iri` — the runtime already consumes them
-            # (tvbo.classes.observation.populate_observation_from_iri), the schema now
-            # declares them. Same shape as Dynamics.functions.
+            # Helper functions this observation's pipeline calls by name — an HRF kernel, a downsampler, a fused strided convolution — emitted as module-level defs and merged non-destructively into experiment.functions when the model is referenced by `iri`. Same shape as Dynamics.functions.
             functions:
                 multivalued: true
                 range: Function
@@ -2523,9 +2512,7 @@ classes:
     Analysis:
         class_uri: tvbo:Analysis
         is_a: FunctionCall
-        # No prov:Activity mapping: like every FunctionCall this is a prov:Plan (the
-        # prospective recipe), and a Plan is an Entity, disjoint from the Activity that
-        # executes it. The Activity is the run; the Entity it generates is the container.
+        # No prov:Activity mapping: like every FunctionCall this is a prov:Plan, the prospective recipe, and a Plan is an Entity disjoint from the Activity that executes it — the Activity is the run, and the Entity it generates is the container.
         description: >-
             A quantity obtained by ANALYZING something — a model, its solve, a derived
             loss, simulated results, or empirical data — rather than by transforming a
@@ -3146,9 +3133,7 @@ classes:
                 inlined: true
     FunctionCall:
         class_uri: tvbo:FunctionCall
-        # A FunctionCall is a specification of an invocation — what PROV-O calls a Plan
-        # (the prospective recipe an Activity follows when it runs). True of every use:
-        # a pipeline step, a loss, an observation's producer.
+        # A FunctionCall specifies an invocation, what PROV-O calls a Plan: the prospective recipe an Activity follows when it runs, which holds for every use — a pipeline step, a loss, an observation's producer.
         exact_mappings:
             - prov:Plan
         description: >-

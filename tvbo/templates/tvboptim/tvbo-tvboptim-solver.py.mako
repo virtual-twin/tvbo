@@ -54,10 +54,7 @@ from tvbo.templates.tvboptim.utils import (
 )
 state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
 
-# A declared noise covariance wraps the solver in tvbo's CorrelatedNoiseSolver, the same
-# way finite bounds wrap it in tvboptim's BoundedSolver. Wrapping is what makes the
-# declaration reach every network shape: grouped and ungrouped scans both hand their
-# increment to `solver.step`.
+# A declared covariance wraps the solver in CorrelatedNoiseSolver, so every scan shape reaches it through `solver.step`.
 noise_cov = get_noise_covariance(model, context.get('experiment'))
 state_bounds_lo_str = format_bounds_array(state_bounds_lo, 'jax')
 state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
@@ -137,8 +134,7 @@ def get_solver(block_size=None):
     )
 % endif
 % if noise_cov:
-    # Impose the declared noise covariance on the Wiener increment (correlated_over:
-    # ${noise_cov['axis']}). Factorised once here, not per step.
+    # Factorise the declared covariance (correlated_over: ${noise_cov['axis']}) once here, not per step.
 % if noise_cov['lazy']:
     _covariance = _load_covariance(${repr(noise_cov['lazy'][0])}, ${repr(noise_cov['lazy'][1])})
 % else:

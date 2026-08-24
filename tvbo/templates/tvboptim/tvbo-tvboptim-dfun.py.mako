@@ -32,9 +32,7 @@ else:
     model = context['model']
     _exp_functions = {}
 
-# Seed resolution (shared rule): a distribution's own seed overrides execution.random_seed,
-# which defaults to 0. Time-axis parameter distributions below fall back to this when they
-# declare no seed — matching the space-axis path in the experiment template.
+# A distribution's own seed overrides execution.random_seed, which defaults to 0.
 _exec_ctx = getattr(_experiment_ctx, 'execution', None)
 _rs = getattr(_exec_ctx, 'random_seed', None) if _exec_ctx is not None else None
 _random_seed = int(_rs) if _rs is not None else 0
@@ -234,10 +232,7 @@ class ${class_name}(AbstractDynamics):
         ${key_name} = coupling.${ci_name}[${idx}] if hasattr(coupling, '${ci_name}') else 0.0
         % endfor
         % elif ci_dim == 1:
-        ## `hasattr` only proves the attribute exists. An unsatisfied coupling input
-        ## (e.g. local_coupling in a region simulation) arrives as a scalar rather than
-        ## an array, and subscripting it raises "'int' object is not subscriptable".
-        ## atleast_1d makes the scalar case indexable and is a no-op for real arrays.
+        ## An unsatisfied coupling input arrives as a scalar, so atleast_1d makes it indexable and is a no-op for a real array.
         ${ci_name} = jnp.atleast_1d(coupling.${ci_name})[0] if hasattr(coupling, '${ci_name}') else 0.0
         % else:
         ${ci_name} = coupling.${ci_name} if hasattr(coupling, '${ci_name}') else jnp.zeros(${ci_dim})

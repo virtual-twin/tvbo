@@ -152,9 +152,6 @@ def _time_axis_distribution(event):
     data_location = None if is_continuous else getattr(event, 'dataLocation', None)
     is_data = bool(data_location)
     if is_subset and (is_continuous or is_data):
-        # Only the symbolic open-loop class below carries the per-trial mask table; the
-        # closed-loop and data-driven classes would fall back to jnp.ones(n_nodes) and
-        # stimulate the WHOLE brain without saying so.
         raise ValueError(
             f"event {ev_name!r} declares a `subset` weight_distribution, which is only "
             f"implemented for open-loop symbolic stimuli (event_type '{_ev_type}', "
@@ -307,9 +304,7 @@ class ${class_name}(AbstractExternalInput):
     )
     % if is_subset:
 
-    # Per-trial random-subset mask: SUBSET_K of the pool regions per trial, drawn without
-    # replacement, key = fold_in(key(SUBSET_SEED), trial) so adding trials never perturbs
-    # existing ones. params.trial (a state.external leaf) selects the row.
+    # Keyed by fold_in(key(SUBSET_SEED), trial) so adding trials never perturbs the existing ones.
     SUBSET_SEED = ${subset_seed}
     SUBSET_K = ${subset_k}
     SUBSET_N_TRIALS = ${subset_n_trials}

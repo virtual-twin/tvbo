@@ -9,9 +9,7 @@ using SpecialFunctions
 import NaNMath
 % endif
 % if mc.get('network_mode'):
-## ── Network-coupled RHS: n_nodes blocks per state var; long-range coupling is a
-## ── W·s matvec (once/step); per-node scalar RHS runs in a loop (reuses the
-## ── single-node equation emission verbatim — no vectorised broadcasting). ──
+## Network-coupled RHS with n_nodes blocks per state var: long-range coupling is a W·s matvec once per step, and the per-node scalar RHS runs in a loop that reuses the single-node equation emission verbatim rather than broadcasting.
 const W_NET = ${mc['w_const']}
 
 function ${mc['func_name']}!(dx, ${mc['arg_x']}, p, t = 0)

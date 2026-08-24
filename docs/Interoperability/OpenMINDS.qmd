@@ -120,7 +120,6 @@ network:
       target: 0
       parameters:
         weight: {value: 0.2}
-  # The coupling acts along these edges, so it is declared on the network
   coupling:
     Linear:
       label: Linear Diffusive Coupling

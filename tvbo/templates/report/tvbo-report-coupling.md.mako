@@ -66,11 +66,7 @@ def _safe_latex(rhs):
 
 pre_rhs = getattr(getattr(cpl, "pre_expression", None), "rhs", None)
 post_rhs = getattr(getattr(cpl, "post_expression", None), "rhs", None)
-# An identity half of the decomposition states nothing: `c_post = gx` says the summed input
-# is used as it stands, `c_pre = local_states` that each source contributes its own state.
-# Both are alias tokens the recipe needs and a reader does not, so they become clauses.
-# `local_states`/`incoming_states` are placeholders `symbolic()` substitutes; printed raw
-# they typeset as a variable named "local_states".
+# Alias tokens the recipe needs and a reader does not: printed raw they typeset as a variable named "local_states".
 _ALIASES = {"gx", "local_states", "incoming_states", "x_i", "x_j"}
 _states = [str(s) for s in (list(local) + list(incoming))]
 post_is_identity = str(post_rhs or "").strip() in _ALIASES
@@ -87,15 +83,12 @@ for attr, label in (
     if value:
         coupling_meta.append(f"{label}: {value}")
 
-# Full equation (indexed-symbolic form preserves sign ordering). A delayed coupling
-# must show its delay -- theta_j(t - tau_ij) -- otherwise it reads identically to its
-# instantaneous twin, so pass the coupling's own `delayed` flag through.
+# Pass the coupling's own `delayed` flag through, or a delayed coupling reads identically to its instantaneous twin.
 full_latex = ""
 try:
     sym = cpl.symbolic(delays=bool(getattr(cpl, "delayed", False)))
     if sym is not None:
-        # order="none" keeps the constructed term order (e.g. theta_j - theta_i) instead
-        # of sympy's canonical reordering to -theta_i + theta_j.
+        # order="none" keeps the constructed term order instead of sympy's canonical reordering.
         full_latex = latex(sym, mul_symbol="dot", order="none")
 except Exception:
     try:
@@ -105,8 +98,7 @@ except Exception:
     except Exception:
         full_latex = ""
 
-# Factored / vectorized couplings: define gx_k = Sum_j w_ij (c_pre)_k so the post's
-# gx_0, gx_1, ... are mathematically precise, not bare symbols.
+# Define gx_k = Sum_j w_ij (c_pre)_k so a factored coupling's gx_0, gx_1, ... are precise rather than bare symbols.
 try:
     gx_defs = cpl.summed_inputs(delays=bool(getattr(cpl, "delayed", False)))
 except Exception:

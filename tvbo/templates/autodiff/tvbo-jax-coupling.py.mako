@@ -6,7 +6,8 @@ from tvbo.codegen import render_expression
 jaxcode = lambda expr, parameters=None: render_expression(expr, format='jax', parameters=parameters)
 
 if 'coupling' not in context.keys():
-    coupling = experiment.coupling
+    from tvbo.templates.base.utils import experiment_coupling
+    coupling = experiment_coupling(experiment)
     model = experiment.dynamics
 else:
     coupling = context['coupling']

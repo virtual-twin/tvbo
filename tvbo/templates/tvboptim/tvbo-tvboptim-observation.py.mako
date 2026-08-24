@@ -95,8 +95,7 @@ def parse_reference(val, step_names=None, current_obs_name=None):
     if val in observations:
         return ('source_data', val)
 
-    # A bare recorded-variable name (e.g. a second source like r_I) resolves to its column
-    # in the recorded layout — without this it would leak into the callable as a string.
+    # A bare recorded-variable name resolves to its column, which stops it leaking into the callable as a string.
     if val in var_names:
         return ('statevar', var_names.index(val))
 
@@ -124,16 +123,11 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
         if ref_val.startswith('observations.'):
             obs_key = ref_val.split('.', 1)[1]
             return f"_network_observations['{obs_key}']"
-        # network.weight(s)/length(s), or the explicit network.edges.<label>, → the
-        # connectivity matrix embedded once as a module constant (network_edge_arrays
-        # below), so a callable can receive the connectome (connectogram, betweenness,
-        # moments, ...).
+        # Resolves to the connectivity matrix embedded once as a module constant, so a callable can receive the connectome.
         _label = _edge_label(ref_val)
         if _label:
             return _edge_const(_label)
-        # network.positions/instrength → the per-node vector embedded once as a module
-        # constant (network_node_arrays below), mirroring the edge-matrix path, so a
-        # callable or observer parameter can receive region centroids / in-strength.
+        # The per-node analogue of the edge-matrix path, so a callable can receive region centroids or in-strength.
         _nlabel = _node_label(ref_val)
         if _nlabel:
             return _node_const(_nlabel)
@@ -481,12 +475,9 @@ for obs_name, obs in observations.items():
         'period': get_attr(obs, 'period'),  # Sampling period (ms) for time computation
         'tail_samples': resolve_tail_samples(obs, dt),  # Last N samples before aggregation; a `tail_duration` is converted here
         'aggregation': get_attr(obs, 'aggregation'),  # Aggregation type (mean, last, first, etc.)
-        # Aggregation knobs, resolved once from the observation's generic
-        # `parameters` slot so any parametric aggregation (e.g. first_passage's
-        # crossing `threshold`) reads its values by name.
+        # Resolved once from the observation's generic `parameters` slot, so any parametric aggregation reads its values by name.
         'agg_params': dict(iter_parameter_values(get_attr(obs, 'parameters'))),
-        # An Observation.dynamics observer resolves to a streaming reducer (init, update,
-        # finalize). None when the observation has no dynamics — the pipeline path applies.
+        # A dynamics observer resolves to a streaming reducer; None means the pipeline path applies.
         'reduction': resolve_reduction(obs, experiment),
     }
 
@@ -597,16 +588,10 @@ for obs in obs_list:
         key = str(src).split('network.observations.')[1]
         network_obs_keys.add(key)
 
-# Embed connectome matrices referenced by observations (source or callable argument,
-# via the network.weight(s)/length(s) shortcut or the explicit network.edges.<label>
-# form) as module constants. Covers derived and non-derived observations, so the same
-# constant serves both the source path here and the derived resolver in the experiment
-# template (which includes this module). See utils.collect_network_edge_arrays.
+# One module constant per referenced connectome matrix, serving both the source path here and the experiment template's derived resolver.
 network_edge_arrays = collect_network_edge_arrays(experiment)
 
-# Embed per-node vectors referenced by observations (network.positions/instrength) as
-# module constants, the node-level analogue of the connectome matrices above. See
-# utils.collect_network_node_arrays.
+# The node-level analogue of the connectome matrices above.
 network_node_arrays = collect_network_node_arrays(experiment)
 
 # Get BIDS directory from experiment network (resolve to absolute path)
@@ -629,16 +614,10 @@ if network_obs_keys:
                     _bids_path = (Path.cwd() / _bids_dir_raw).resolve()
             bids_dir = str(_bids_path)
 %>\
-## Emit a tvboptim reducer (init, update, finalize) from a resolved Observation.dynamics
-## observer (utils.resolve_reduction). The observer's per-step recurrence runs as an inner
-## scan over each block — accumulators commit only after a global-step warmup (`_gstep >
-## skip`), so the block trajectory is never held. `skip` skips leading samples from the
-## reduction: `skip=0` reproduces the plain "no accumulate on the first step" behaviour
-## (the first phase increment needs a previous sample); `skip=n_transient` streams a run
-## whose transient has NOT been trimmed, folding only the post-transient window. Memory
-## states (e.g. the previous phase) advance every step so the boundary increment is exact.
-## Every expression is a sympy Expr rendered via render_expression — backend-independent.
 <%def name="render_reduction(red, name, s_idx, dt)">\
+<%doc>
+    Emit a tvboptim reducer (init, update, finalize) from a resolved Observation.dynamics observer (utils.resolve_reduction). The observer's per-step recurrence runs as an inner scan over each block — accumulators commit only after a global-step warmup (`_gstep > skip`), so the block trajectory is never held. `skip` skips leading samples from the reduction: `skip=0` reproduces the plain "no accumulate on the first step" behaviour (the first phase increment needs a previous sample); `skip=n_transient` streams a run whose transient has NOT been trimmed, folding only the post-transient window. Memory states (e.g. the previous phase) advance every step so the boundary increment is exact. Every expression is a sympy Expr rendered via render_expression — backend-independent.
+</%doc>\
 % if red.get('kind') == 'convolution':
 ${render_convolution_reduction(red, name, s_idx, dt)}\
 % elif red.get('kind') == 'stride':
@@ -651,16 +630,10 @@ ${render_wave_reduction(red, name, s_idx, dt)}\
 ${render_recurrence_reduction(red, name, s_idx, dt)}\
 % endif
 </%def>\
-## Cumulative co-moment FC reducer (a compute_fc pipeline marked reduce: streaming). Folds
-## the whole post-transient window as a Welford co-moment (add-only, NO eviction — cumulative,
-## not a sliding window), then reads the zero-diagonal Pearson correlation at finalize.
-## Matrix-valued state: `comoment` is (n, n), `mean` is (n,), `count` a scalar. The `add`
-## assignments and the Pearson `emit` are the declarative windowed_fc recipe already lowered to
-## this backend (utils._resolve_fc_stream via resolve_streaming_reducer), so this partial only
-## emits the block scaffolding — the accumulator math is the shared reducer spec, no FC logic
-## baked here. Byte-identical to compute_fc(source, skip_t) to f64 summation order; the
-## compute_fc skip_t adds to the transient `skip` so the same leading samples are dropped.
 <%def name="render_comoment_reduction(red, name, s_idx, dt)">\
+<%doc>
+    Cumulative co-moment FC reducer (a compute_fc pipeline marked reduce: streaming). Folds the whole post-transient window as a Welford co-moment (add-only, NO eviction — cumulative, not a sliding window), then reads the zero-diagonal Pearson correlation at finalize. Matrix-valued state: `comoment` is (n, n), `mean` is (n,), `count` a scalar. The `add` assignments and the Pearson `emit` are the declarative windowed_fc recipe already lowered to this backend (utils._resolve_fc_stream via resolve_streaming_reducer), so this partial only emits the block scaffolding — the accumulator math is the shared reducer spec, no FC logic baked here. Byte-identical to compute_fc(source, skip_t) to f64 summation order; the compute_fc skip_t adds to the transient `skip` so the same leading samples are dropped.
+</%doc>\
 <%
     _states = list(red['states'])          # ['count', 'mean', 'comoment']
     _add = red['add']                      # [(lhs, jax_rhs), ...] sequential Welford update
@@ -668,8 +641,7 @@ ${render_recurrence_reduction(red, name, s_idx, dt)}\
     _skip_t = int(red.get('skip_t', 0))
     _acc = ", ".join(_states)
     _acc0 = ", ".join("_%s0" % _s for _s in _states)
-    # Carry-init shape keyed by state ROLE (not position), so a reducer-spec state reorder
-    # cannot silently mis-shape the accumulator; an unknown state fails loudly at emit.
+    # Keyed by state role, never position, so a reducer-spec reorder cannot silently mis-shape the accumulator.
     _INIT_SHAPE = {'count': 'jnp.array(0)', 'mean': 'jnp.zeros((n,))', 'comoment': 'jnp.zeros((n, n))'}
     _missing = [_s for _s in _states if _s not in _INIT_SHAPE]
     if _missing:
@@ -677,10 +649,7 @@ ${render_recurrence_reduction(red, name, s_idx, dt)}\
     _init_tuple = ", ".join(_INIT_SHAPE[_s] for _s in _states)
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
-    # warm_history/progress are accepted-and-ignored so this reducer shares ONE call site
-    # with the recurrence and convolution factories. The compute_fc skip_t (${_skip_t}) adds
-    # to the transient `skip`: the first (skip + ${_skip_t}) samples are dropped, matching the
-    # materialised compute_fc(source, skip_t=${_skip_t}).
+    # warm_history and progress are accepted and ignored, so every reducer factory shares one call site.
     _skip = skip + ${_skip_t}
     def _init(template, n_steps):
         n = template.shape[-1]
@@ -690,8 +659,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
             ${_acc}, _gstep = carry
             v = s_row[s_var]
             _accept = _gstep >= _skip
-            # Fold one sample via the Welford `add` recurrence, then commit only past `skip`
-            # (a running correlation must not fold the dropped leading samples).
+            # Commit only past `skip`, since a running correlation must not fold the dropped leading samples.
             ${_acc0} = ${_acc}
 % for _lhs, _rhs in _add:
             ${_lhs} = ${_rhs}
@@ -706,19 +674,10 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         return ${_emit}
     return (_init, _update, _finalize)
 </%def>\
-## Streaming HRF-Volterra BOLD reducer (Observation.reduce == 'streaming'). Recasts the
-## post-scan bold pipeline (HRF kernel -> stride decimation -> prepend downsampled
-## transient -> 'valid' HRF convolution -> Volterra scaling -> subsample at the TR) as a
-## block reducer: a downsampled-history ring buffer folds each integration block, and
-## strided_convolve (a backend-abstracted printer primitive) evaluates the 'valid'
-## convolution ONLY at the TR boundaries, so the full trajectory is never held. The
-## portable array ops (subsample / concatenate / strided_convolve / Volterra scaling) are
-## rendered via render_expression; the ring/buffer scaffolding is the backend template's
-## concern, exactly as the recurrence reducer mixes jax.lax.scan with printed exprs.
-## Byte-identical to the materialised pipeline to f64 rounding (strided_convolve is ~1e-12
-## vs the FFT fftconvolve). `warm_history` seeds the ring from the downsampled transient
-## (HRF warm-up); None -> zeros (a transient-free run, e.g. the Schirner group fit).
 <%def name="render_convolution_reduction(red, name, s_idx, dt)">\
+<%doc>
+    Streaming HRF-Volterra BOLD reducer (Observation.reduce == 'streaming'). Recasts the post-scan bold pipeline (HRF kernel -> stride decimation -> prepend downsampled transient -> 'valid' HRF convolution -> Volterra scaling -> subsample at the TR) as a block reducer: a downsampled-history ring buffer folds each integration block, and strided_convolve (a backend-abstracted printer primitive) evaluates the 'valid' convolution ONLY at the TR boundaries, so the full trajectory is never held. The portable array ops (subsample / concatenate / strided_convolve / Volterra scaling) are rendered via render_expression; the ring/buffer scaffolding is the backend template's concern, exactly as the recurrence reducer mixes jax.lax.scan with printed exprs. Byte-identical to the materialised pipeline to f64 rounding (strided_convolve is ~1e-12 vs the FFT fftconvolve). `warm_history` seeds the ring from the downsampled transient (HRF warm-up); None -> zeros (a transient-free run, e.g. the Schirner group fit).
+</%doc>\
 <%
     from tvbo.codegen import render_expression
     _cv = ['_block_voi', '_ds', '_ring', '_block_ds', '_signal', '_kernel', '_tr', '_conv', 'k_1', 'V_0']
@@ -738,8 +697,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         if warm_history is None:
             _ring0 = jnp.zeros((_K, n))
         else:
-            # Fit the downsampled transient to one kernel length, front-zero-padded when
-            # short — the HRF warm-up, matching prepend_history / HRFBold._process_history.
+            # One kernel length of HRF warm-up, front-zero-padded when the transient is short.
             _wh = jnp.asarray(warm_history)
             _ring0 = (jnp.vstack([jnp.zeros((_K - _wh.shape[0], n), _wh.dtype), _wh])
                       if _wh.shape[0] < _K else _wh[-_K:])
@@ -757,11 +715,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         _ring = _signal[-_K:]
         _ds_next = _ds_count + _m_b
         if progress:
-            # JAX-native streaming progress: jax.debug.print fires from INSIDE the compiled
-            # block scan, so a long post-tuning fold (e.g. the 36e6-step group-fit eval)
-            # streams ~50 lines live instead of the log sitting silent until the whole scan
-            # returns. Gated to the non-vmapped post-eval (progress=True) so the vmapped
-            # exploration grid never floods; the guard is a plain Python bool, not traced.
+            # Fires from inside the compiled scan so a long fold streams live; the plain-bool guard keeps a vmapped grid from flooding.
             _done = _ds_next // _tr
             _ntot = _bold.shape[0]
             _every = jnp.maximum(1, _ntot // 50)
@@ -776,30 +730,18 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         return _bold
     return (_init, _update, _finalize)
 </%def>\
-## Streaming stride reducer (Observation.reduce == 'streaming' over a pure decimation
-## pipeline). Keeps every _ds-th sample of the source column and writes it straight into a
-## preallocated buffer, so a run that reports 1/_ds of its samples never materialises the
-## other (_ds - 1)/_ds. Bit-identical to the materialised SubSampling: the kept samples are
-## the same samples. Block boundaries are multiples of _ds (streaming_post_eval_plan), so a
-## block's local decimation grid is the global one and the write slot is exact.
 <%def name="render_stride_reduction(red, name, s_idx, dt)">\
+<%doc>
+    Streaming stride reducer (Observation.reduce == 'streaming' over a pure decimation pipeline). Keeps every _ds-th sample of the source column and writes it straight into a preallocated buffer, so a run that reports 1/_ds of its samples never materialises the other (_ds - 1)/_ds. Bit-identical to the materialised SubSampling: the kept samples are the same samples. Block boundaries are multiples of _ds (streaming_post_eval_plan), so a block's local decimation grid is the global one and the write slot is exact.
+</%doc>\
 <%
     from tvbo.codegen import render_expression
     _rc = lambda e: render_expression(e, format='jax', parameters=['_block_voi', '_ds'])
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
-    # warm_history/progress are accepted-and-ignored so this reducer shares ONE call site
-    # with the recurrence, comoment and convolution factories.
+    # warm_history and progress are accepted and ignored, so every reducer factory shares one call site.
     _ds = ${red['ds_steps']}           # decimation stride (integration steps per kept sample)
-    # `skip` is the transient, in integration steps, for the sweep path, which folds
-    # transient and main run into ONE window (the single-run path integrates them
-    # separately and streams only the main one). Without this the sweep silently keeps
-    # `skip/_ds` extra leading samples and a swept cell is NOT the same computation as the
-    # same experiment run alone. Dropped at finalize rather than gated per block, so the
-    # arithmetic never depends on the block size dividing the stride. The sample GRID stays
-    # anchored at 0, so when `skip` is not a multiple of `_ds` the kept samples sit up to
-    # one stride earlier than the single run's — same count, same post-transient window,
-    # phase offset < 1 sample.
+    # The sweep folds transient and main run into one window, so without this a swept cell keeps extra leading samples and is not the same computation as the run alone.
     _skip_n = max(0, -(-(skip + 1) // _ds) - 1) if skip else 0
     def _init(template, n_steps):
         n = template.shape[-1]
@@ -815,10 +757,10 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         return _out[_skip_n:]
     return (_init, _update, _finalize)
 </%def>\
-## The two per-step observer fragments every reduction branch shares, emitted at the caller's
-## indentation `ind` with its expression printer `jc`. Kept separate because the histogram
-## fold evaluates its per-step sample BETWEEN them.
 <%def name="render_observer_dvs(dvs, jc, ind)">\
+<%doc>
+    The two per-step observer fragments every reduction branch shares, emitted at the caller's indentation `ind` with its expression printer `jc`. Kept separate because the histogram fold evaluates its per-step sample BETWEEN them.
+</%doc>\
 % for _d in dvs:
 % if 'surrogate' in _d:
 ${render_surrogate(_d['name'], _d['surrogate'], jc, ind)}\
@@ -827,14 +769,10 @@ ${ind}${_d['name']} = ${jc(_d['expr'])}
 % endif
 % endfor
 </%def>\
-## A permutation-significance surrogate (DerivedVariable.surrogate): re-evaluate a named
-## statistic under the fixed `(n_perm, n)` permutation table and report the per-element
-## exceedance p-value. `expr` is the statistic as a self-contained function of the permuted
-## symbol; the observed value reuses the already-computed statistic DV. `family_reduce`
-## (e.g. `nanmax`) collapses the permuted statistic over its element axes to one family-wise
-## extremum per permutation — the Westfall–Young max-T FWE null each observed element is
-## tested against; absent → the symmetric per-element test.
 <%def name="render_surrogate(sname, surr, jc, ind)">\
+<%doc>
+    A permutation-significance surrogate (DerivedVariable.surrogate): re-evaluate a named statistic under the fixed `(n_perm, n)` permutation table and report the per-element exceedance p-value. `expr` is the statistic as a self-contained function of the permuted symbol; the observed value reuses the already-computed statistic DV. `family_reduce` (e.g. `nanmax`) collapses the permuted statistic over its element axes to one family-wise extremum per permutation — the Westfall–Young max-T FWE null each observed element is tested against; absent → the symmetric per-element test.
+</%doc>\
 <%
     _perm = surr['permute']
     _perms = surr['perms']
@@ -853,9 +791,10 @@ ${ind}${sname} = jnp.mean((_null_${sname}.reshape((-1,) + (1,) * _obs_${sname}.n
 ${ind}${sname} = jnp.mean((_null_${sname} ${_cmp} _obs_${sname}) * 1.0, axis=0)
 % endif
 </%def>\
-## `states` is the subset this branch advances: all of them, or memory-only for the
-## histogram fold (an accumulator there is the histogram itself).
 <%def name="render_observer_states(states, jc, ind)">\
+<%doc>
+    `states` is the subset this branch advances: all of them, or memory-only for the histogram fold (an accumulator there is the histogram itself).
+</%doc>\
 % for s in states:
 ${ind}_new_${s['name']} = ${jc(s['update'])}
 % endfor
@@ -866,8 +805,7 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
     from tvbo.templates.tvboptim.utils import render_jax_default
     _is_median = red.get('statistic', 'mean') == 'median'
     _period_steps = red.get('period_steps')
-    # Pure accumulators (skip_inclusive) fold the sample AT skip; a memory-dependent
-    # observer's first step has no predecessor, so it starts the step after (`>`).
+    # A pure accumulator folds the sample at skip; a memory-dependent observer has no predecessor there, so it starts after.
     _gate = '>=' if red.get('skip_inclusive') else '>'
     _snames = [s['name'] for s in red['states']]
     _mem = [s for s in red['states'] if not s['is_accumulator']]   # memory-only states
@@ -875,9 +813,7 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
     _src = red['source']
     _rpars = red.get('parameters') or {}   # observer constants, bound by name below
     _derived = red.get('derived', [])      # per-step derived-variable chain (sympy Exprs)
-    # Non-output DVs are computed per step (they feed states / the median's per-step sample);
-    # the output DV itself stays inlined at finalize, so it is excluded here. Inert (empty)
-    # for a simple observer whose only DV IS its output.
+    # The output DV stays inlined at finalize, so only the DVs that feed states are computed per step.
     _step_dvs = [d for d in _derived if d['name'] != red.get('output_name')]
     _dconsts = red.get('derived_constants') or []
     _rparams = (_snames + [d['name'] for d in _derived] + [d['name'] for d in _dconsts]
@@ -891,13 +827,9 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
     _ind = ' ' * 12   # the scan-step body's indentation, shared by the emitted fragments
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
-    # warm_history/progress are accepted-and-ignored so the recurrence and convolution
-    # factories share ONE call site (the convolution reducer uses both; a recurrence does not).
+    # warm_history and progress are accepted and ignored, so every reducer factory shares one call site.
 % if _rpars:
-    # Observer constants (Dynamics.parameters), bound by name in the closure the
-    # init/update/finalize triple shares. A literal inlines; a sourced/produced operator
-    # was materialised to a companion at codegen and is read once here (a large array
-    # never enters this source), becoming a captured constant for the traced reduction.
+    # Bound by name in the closure the init/update/finalize triple shares: a literal inlines, a sourced operator is read once so a large array never enters this source.
 % for _pname, _pdef in _rpars.items():
 % if _pdef.get('lazy'):
     ${_pname} = _load_constant(${repr(_pdef['lazy'][0])}, ${repr(_pdef['lazy'][1])})
@@ -913,17 +845,13 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         return ${_jc(_fdef['expr'], _fdef['args'])}
 % endfor
 % if _dconsts:
-    # Observer constants derived from the parameters above (Dynamics.derived_parameters).
-    # Bound once here, not per step — they cannot depend on a state or the observed signal.
+    # Bound once rather than per step, as they cannot depend on a state or the observed signal.
 % for _d in _dconsts:
     ${_d['name']} = ${_jc(_d['expr'])}
 % endfor
 % endif
 % if _is_median:
-    # Streaming median: fold a per-node histogram of the per-step output into the carry
-    # (O(bins) memory, no trajectory) and read the 0.5 quantile at finalize — the robust
-    # statistic a running sum cannot give. Memory states advance every step; the histogram
-    # only accumulates after the warmup (_gstep > skip).
+    # A per-node histogram folded into the carry gives the 0.5 quantile at finalize in O(bins) memory, which a running sum cannot.
     _hlo, _hhi, _hbins = ${_h['lo']}, ${_h['hi']}, ${_h['bins']}
     _hbw = (_hhi - _hlo) / _hbins
     def _init(template, n_steps):
@@ -1023,24 +951,10 @@ ${render_observer_states(red['states'], _jc, _ind)}\
     return (_init, _update, _finalize)
 % endif
 </%def>\
-## Grouped wave-metrics reducer (Observation whose value collapses BOTH time and the node axis
-## into per-group scalars — the cortical wave detector: proportion_waves, proportion_directed,
-## rho per hemisphere). Unlike the per-node recurrence, the output is keyed by (group, metric),
-## not node, so it cannot come from `template.shape[-1]`. The heavy per-emitted-step math
-## (gradient → angular-similarity → surrogate → HHD → correlation) is the SAME declarative DV
-## chain the other observers use — incl. the permutation surrogate (render_surrogate) — and
-## produces one (n_groups,) vector per named output (`corr`, `wave_present`, `sig_corr`). Only
-## the outer carry is bespoke: a monitor-style (n_ds, n_groups) buffer per output (n_ds is the
-## downsampled sample count — small, so buffering is cheap and duration is never materialised at
-## node resolution), reduced at finalize to the three metrics via exact masked statistics
-## (`nanmedian` over wave-present samples is Koller's rho, no binning). One block per grid cell;
-## blocks are period-aligned (streaming_post_eval_plan), matching the stride reducer.
-## TRAVELING-WAVE GATE (active iff the chain has pgn0/1/2 and a `real_face_mask` param): a standing
-## field passes Koller's per-frame test yet does not travel, so the carry also holds a running
-## O(faces) post-transient sum of the per-face unit gradient direction, and finalize zeroes a
-## group's proportion_waves when its direction dispersion mean_faces(1-|time-mean dir|) < 0.06. The
-## non-gated path is byte-identical; byte-consistent with the host cortical_wave_metrics gate.
 <%def name="render_wave_reduction(red, name, s_idx, dt)">\
+<%doc>
+    Grouped wave-metrics reducer (Observation whose value collapses BOTH time and the node axis into per-group scalars — the cortical wave detector: proportion_waves, proportion_directed, rho per hemisphere). Unlike the per-node recurrence, the output is keyed by (group, metric), not node, so it cannot come from `template.shape[-1]`. The heavy per-emitted-step math (gradient → angular-similarity → surrogate → HHD → correlation) is the SAME declarative DV chain the other observers use — incl. the permutation surrogate (render_surrogate) — and produces one (n_groups,) vector per named output (`corr`, `wave_present`, `sig_corr`). Only the outer carry is bespoke: a monitor-style (n_ds, n_groups) buffer per output (n_ds is the downsampled sample count — small, so buffering is cheap and duration is never materialised at node resolution), reduced at finalize to the three metrics via exact masked statistics (`nanmedian` over wave-present samples is Koller's rho, no binning). One block per grid cell; blocks are period-aligned (streaming_post_eval_plan), matching the stride reducer. TRAVELING-WAVE GATE (active iff the chain has pgn0/1/2 and a `real_face_mask` param): a standing field passes Koller's per-frame test yet does not travel, so the carry also holds a running O(faces) post-transient sum of the per-face unit gradient direction, and finalize zeroes a group's proportion_waves when its direction dispersion mean_faces(1-|time-mean dir|) < 0.06. The non-gated path is byte-identical; byte-consistent with the host cortical_wave_metrics gate.
+</%doc>\
 <%
     from tvbo.codegen import render_expression
     from tvbo.templates.tvboptim.utils import render_jax_default
@@ -1060,11 +974,9 @@ ${render_observer_states(red['states'], _jc, _ind)}\
     _pthr = 0.06
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
-    # warm_history/progress are accepted-and-ignored so this reducer shares ONE call site with
-    # the recurrence, convolution, comoment and stride factories.
+    # warm_history and progress are accepted and ignored, so every reducer factory shares one call site.
 % if _rpars:
-    # Observer constants (operators / permutation table) — a literal inlines, a produced/sourced
-    # operator is read once here as a captured constant (a large array never enters this source).
+    # A literal inlines and a sourced operator is read once, so a large array never enters this source.
 % for _pname, _pdef in _rpars.items():
 % if _pdef.get('lazy'):
     ${_pname} = _load_constant(${repr(_pdef['lazy'][0])}, ${repr(_pdef['lazy'][1])})
@@ -1081,11 +993,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
 % endfor
     _period = ${_period}
 % if _gv:
-    # Grouped detector: the per-timestep body is written ONCE for a single group (1-D, exactly
-    # detect_matmul + the 1-D surrogates) and vmapped over the partition axis. The group-indexed
-    # operators (`over`) carry a leading group axis and are sliced per call; `gather` selects each
-    # group's vertices out of the whole-brain source. General to any partition; the surrogate
-    # stays a clean per-vertex max-T inside the vmap.
+    # The per-timestep body is written once for a single group and vmapped over the partition axis, so the surrogate stays a per-vertex max-T inside the vmap.
     def _detect(${", ".join([_src] + _gv['over'])}):
 ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
         return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0${', pgn0, pgn1, pgn2' if _gate else ''}
@@ -1094,8 +1002,7 @@ ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
         return jax.vmap(_detect, in_axes=(0,) * ${1 + len(_gv['over'])})(${_src}_g, ${", ".join(_gv['over'])})
 % else:
     def _sample(${_src}):
-        # one downsampled sample -> (n_groups,) per named output; a body that is already
-        # group-batched (operators with a leading group axis) produces the per-group vector directly.
+        # One downsampled sample gives (n_groups,) per named output, an already group-batched body producing it directly.
 ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
         return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0${', pgn0, pgn1, pgn2' if _gate else ''}
 % endif
@@ -1114,9 +1021,7 @@ ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
         _corr_buf, _wave_buf, _sig_buf, _count = acc
 % endif
         if block.shape[0] % _period:
-            # A block must be a whole number of downsample periods, else its samples shift off
-            # the global grid and the write row (_count // _period) drifts — the same alignment
-            # the stride/monitor reducers require; size streaming blocks from period_in_steps.
+            # A partial period shifts the block's samples off the global grid and drifts the write row.
             raise ValueError(
                 f"wave reducer: a {block.shape[0]}-step block is not a whole number of "
                 f"{_period}-step downsample periods; size streaming blocks from period_in_steps.")
@@ -1198,17 +1103,14 @@ _bids_network = _TvboNetwork.from_bids('${bids_dir}', observational_measures=${l
 % endif
 
 % if network_edge_arrays:
-# Connectome matrices referenced by observations via network.weight(s)/length(s) or
-# network.edges.<label> (embedded once; shared by observation sources and callable args).
+# Embedded once and shared by observation sources and callable arguments.
 % for _label in sorted(network_edge_arrays):
 ${_edge_const(_label)} = jnp.array(${repr(network_edge_arrays[_label])})
 % endfor
 % endif
 
 % if network_node_arrays:
-# Per-node vectors referenced by observations via network.positions/instrength/labels
-# (embedded once; shared by observation sources, callable args, and observer parameters).
-# Non-numeric vectors (region labels) embed as numpy arrays — jnp has no string dtype.
+# Embedded once; a non-numeric vector such as region labels embeds as a numpy array, jnp having no string dtype.
 % for _label in sorted(network_node_arrays):
 <%
     _flat = network_node_arrays[_label]
@@ -1245,19 +1147,12 @@ from ${module} import ${class_name} as _Ext${class_name}
     is_network_observation = obs_source and str(obs_source).startswith('network.observations.')
     network_obs_key = str(obs_source).split('network.observations.')[1] if is_network_observation else None
 
-    # Check if source is a connectome matrix — bare network.weight(s)/length(s)
-    # shortcut or explicit network.edges.<label>; resolves to the shared embedded
-    # constant (network_edge_arrays / _edge_const). Only short-circuits to the raw
-    # matrix when there is NO pipeline; a source matrix WITH a pipeline (e.g.
-    # betweenness_centrality(sc=network.weight)) falls through to the pipeline path,
-    # where the matrix reaches the callable as an argument via ref_to_code.
+    # A connectome source short-circuits to the embedded constant only without a pipeline; with one it falls through so the matrix reaches the callable as an argument.
     _src_type, _src_val = parse_reference(obs_source) if obs_source else (None, None)
     network_edge_label = _edge_label(_src_val) if _src_type == 'network' else None
     is_network_edge = network_edge_label is not None and not pipeline
 
-    # A per-subject dataset target (dataset.subject.<measure>) is materialized as a
-    # module-level constant and bound at run_experiment time by
-    # _bind_network_observations, so this template emits no monitor for it.
+    # Bound at run_experiment time by _bind_network_observations, so this template emits no monitor for it.
     is_dataset_target = obs_source and str(obs_source).startswith('dataset.subject.')
 
     # Resolve source to its column in the recorded variable layout (states + recorded aux).
@@ -1265,20 +1160,11 @@ from ${module} import ${class_name} as _Ext${class_name}
     state_idx = resolve_var_index(obs_source, obs_name)
 %>
 % if obs['reduction'] is not None:
-## =============================================================================
-## Streaming reducer for the Observation.dynamics observer `${obs_name}`.
-## The (init, update, finalize) triple serves both paths: the host/base run passes
-## the whole trajectory as one block (update scans it → post-scan value), while the
-## exploration grid passes it to prepare(reduce=...) to fold the value in-carry with
-## no trajectory held. `_reduction_${obs_name}(s_var, dt)` builds a fresh triple.
-## =============================================================================
+## The (init, update, finalize) triple serves both paths: the host run scans the whole trajectory as one block, the grid folds it in-carry with none held.
 ${render_reduction(obs['reduction'], obs_name, state_idx, dt)}
 % endif
 % if is_dataset_target:
-## =============================================================================
-## Per-subject dataset target — bound at run_experiment time (see
-## _bind_network_observations); no monitor emitted here.
-## =============================================================================
+## Bound at run_experiment time by _bind_network_observations, so no monitor is emitted here.
 # ${obs['label'] or obs_name} <- dataset.subject.${str(obs_source).split('.')[-1]} (runtime-bound)
 
 % elif is_network_edge and network_edge_label in network_edge_arrays:
@@ -1362,13 +1248,7 @@ class ${class_name}(eqx.Module):
         return self._monitor(result)
 
 % elif obs['reduction'] is not None:
-## =============================================================================
-## Dynamics-observer Observation `${obs_name}` — host monitor backed by the
-## streaming reducer `_reduction_${obs_name}`. The host/base run folds the reducer
-## over the whole trajectory as a single block, which equals the in-carry value the
-## exploration grid streams via prepare(reduce=...). There is no pipeline: the
-## Observation.dynamics observer *is* the definition, one source of truth for both.
-## =============================================================================
+## A host monitor backed by `_reduction_${obs_name}`: the observer is the definition, so the whole-trajectory fold equals the value the grid streams.
 class ${class_name}(AbstractMonitor):
     """${obs['label'] or obs_name} observation (dynamics observer)."""
     dt: float = eqx.field(static=True, default=${dt})
@@ -1381,15 +1261,13 @@ class ${class_name}(AbstractMonitor):
         self.dt = dt
         if history is not None:
             _h = history.data if hasattr(history, 'data') else history
-            # Source-column transient, decimated to the downsampled grid — the HRF warm-up
-            # the reducer seeds its ring with (matches the pipeline's prepend_history).
+            # The source-column transient decimated to the downsampled grid, which is the HRF warm-up the reducer seeds its ring with.
             self._history = _h[:, ${state_idx}, :][${obs['reduction']['ds_steps'] - 1}::${obs['reduction']['ds_steps']}]
         else:
             self._history = None
 
     def __call__(self, result):
-        # One big block over the whole trajectory == the in-carry value the grid streams;
-        # seeded with the downsampled transient so the HRF warm-up matches the pipeline.
+        # One block over the whole trajectory equals the value the grid streams, seeded so the HRF warm-up matches the pipeline.
         _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, warm_history=self._history)
         _data = result.data if hasattr(result, 'data') else result
         _acc = _init(_data[0], _data.shape[0])
@@ -1553,9 +1431,7 @@ class ${class_name}(AbstractMonitor):
         _${ref_obs}_result = self._${ref_obs}_monitor(result)
 % endfor
 % if network_edge_label:
-        # Source is a connectome matrix (network.${obs_source}); the embedded constant
-        # is the pipeline input, not a simulation trajectory. An argument naming the
-        # source (e.g. sc=network.weight) is bound to `_data` below.
+        # The embedded constant is the pipeline input rather than a trajectory, and an argument naming the source binds to `_data` below.
         _data = ${_edge_const(network_edge_label)}
         _time = result.time
 % elif obs_source:
@@ -1603,8 +1479,7 @@ class ${class_name}(AbstractMonitor):
 <%
     full_call = step_callable['full_call']
     args = step.get('arguments', {})
-    # This observation's source state variable(s): an argument value naming one of
-    # them refers to the source time series (bound above as `_data`), not a string.
+    # An argument naming one of these refers to the source time series bound above as `_data`, not to a string.
     _src_vars = [str(s) for s in (obs_source if isinstance(obs_source, (list, tuple)) else [obs_source])] if obs_source else []
 
     # Build call arguments
@@ -1612,8 +1487,7 @@ class ${class_name}(AbstractMonitor):
     for arg_name, arg_val in args.items():
         if isinstance(arg_val, str):
             if arg_val in var_names:
-                # An argument naming a recorded variable (any source, not just the first)
-                # binds to that variable's OWN column of the trajectory.
+                # An argument naming any recorded variable binds to that variable's own column.
                 call_parts.append(f"{arg_name}=result.data[:, {var_names.index(arg_val)}, :]")
             elif arg_val in _src_vars:
                 # Source variable not in the recorded layout resolves to the bound slice.
@@ -1633,10 +1507,7 @@ class ${class_name}(AbstractMonitor):
                 # Reference to another observation's data
                 call_parts.append(f"{arg_name}=_data")
             elif _node_label(arg_val):
-                # network.positions / network.instrength → the per-node vector embedded once
-                # as a module constant (network_node_arrays), so a host callable receives the
-                # region centroids / in-strength. Without this the ref falls through to the
-                # string-literal branch below and the callable gets the raw 'network.positions'.
+                # Resolves to the embedded per-node vector, without which the ref falls through below and the callable receives the raw reference string.
                 call_parts.append(f"{arg_name}={_node_const(_node_label(arg_val))}")
             elif _edge_label(arg_val):
                 # network.weight(s)/length(s)/edges.<label> → the embedded connectome matrix.
@@ -1782,9 +1653,7 @@ class ${class_name}(AbstractMonitor):
         raise ValueError(f"Observation '{obs.get('name')}' uses aggregation: first_passage "
                          f"but has no parameters.threshold to cross.")
 %>
-        # Declarative: first-passage index over the time axis — the first sample
-        # where the source crosses the threshold (>=), or the sample count if it
-        # never crosses. Backend-independent (argmax of the threshold-crossing).
+        # The first sample crossing the threshold, or the sample count when it never does, as a backend-independent argmax.
         _fp_cross = ${decl_input} >= ${_fp_thr}
         ${decl_input} = jnp.where(jnp.any(_fp_cross, axis=0),
                                   jnp.argmax(_fp_cross, axis=0), _fp_cross.shape[0])
@@ -1866,9 +1735,7 @@ class ${class_name}(AbstractMonitor):
 % endif
 % endfor
 <%
-    # Registry of every Observation.dynamics observer: name -> (reducer_factory, source
-    # column index). The exploration grid uses it to stream recorded observables via
-    # prepare(reduce=...) with no trajectory held (see the experiment template).
+    # Lets the exploration grid stream recorded observables with no trajectory held.
     _streaming = [(o['name'], resolve_var_index(o['source'], o['name']))
                   for o in obs_list if o.get('reduction') is not None]
 %>

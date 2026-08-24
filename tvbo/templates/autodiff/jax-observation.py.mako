@@ -112,10 +112,7 @@ def build_sampling_overrides(resolved_pipeline, sampling):
             count = sampling.output_istep
         sampling_args = _sampling_arg_names(func)
         if sampling_args and int(count) <= 0:
-            # A resolved count of 0 means the observation declared no output period,
-            # so there is nothing to derive the stride from. Emitting it anyway would
-            # produce `X[::0]`, which raises deep inside the generated pipeline with
-            # no trace back to the missing declaration.
+            # Without this the pipeline emits `X[::0]`, which fails far from the missing declaration.
             raise ValueError(
                 f"observation pipeline step {getattr(func, 'name', func)!r} needs a "
                 f"sampling stride, but the observation declares no output period. "
@@ -214,10 +211,6 @@ from ${jax_module} import ${name} as ${name}
         else:
             resolved_pipeline.append(fc)
 
-    # This backend renders an observation as a post-scan function pipeline, so an
-    # observation with none (an `Observation.dynamics` observer, a bare `class_reference`)
-    # has nothing to render. Say so here; without this the template reaches for the
-    # pipeline's last step and dies with an IndexError that names nothing.
     if not resolved_pipeline:
         raise ValueError(
             f"Observation {observation.name!r} declares no pipeline. The jax backend "
@@ -231,8 +224,7 @@ from ${jax_module} import ${name} as ${name}
     step_names = [f.output or f"_step{i}" for i, f in enumerate(resolved_pipeline)]
     # Resolve temporal-sampling step counts once, backend-independently.
     sampling_overrides_map = build_sampling_overrides(resolved_pipeline, obs_sampling)
-    # One resolution of each step's arguments, shared by its definition and its call:
-    # a name in here is a signature parameter, one absent is bound from the TimeSeries.
+    # Resolved once for both the definition and the call: a name here is a signature parameter, one absent is bound from the TimeSeries.
     pipeline_outputs = set(f.output for f in resolved_pipeline if f.output)
     params_map = {
         id(func): get_parameters(

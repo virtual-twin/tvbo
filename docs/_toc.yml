@@ -13,13 +13,7 @@ website:
           logo: _static/tvbo_logo.png
           collapse-level: 1
           contents:
-              # ──────────────────────────────────────────────────────────────
-              # Curated navigation grouped into declarative PARTS. A PART header
-              # is a text-only (non-link) row that Quarto renders as a plain
-              # label; topic sections stay collapsible under collapse-level: 1.
-              # Autogen blocks (replication / datamodel / api) are spliced in by
-              # scripts/update_toc_*.py and fall under the preceding PART.
-              # ──────────────────────────────────────────────────────────────
+              # Curated navigation in declarative PARTS: a PART header is a text-only row Quarto renders as a plain label, topic sections stay collapsible under collapse-level 1, and the replication / datamodel / api blocks are spliced in by scripts/update_toc_*.py under the preceding PART.
 
               - text: "GET STARTED"
               - text: "Home"
