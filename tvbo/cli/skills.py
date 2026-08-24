@@ -3,7 +3,7 @@
 Three subcommands:
 
 * ``tvbo skills sync``       — repo-side: regenerate ``.claude/skills/``,
-  ``.github/instructions/`` and the index region of ``AGENTS.md`` from the canonical sources in ``skills/`` and ``tvbo/skills/canonical/``.
+  ``.github/instructions/``, ``.cursor/rules/`` and the index region of ``AGENTS.md`` from the canonical sources in ``skills/`` and ``tvbo/skills/canonical/``.
 * ``tvbo skills install``    — user-side: render canonical user skills onto
   a user's machine (``~/.claude/skills/``, ``./.cursor/rules/``, stdout, …).
 * ``tvbo skills uninstall``  — user-side: remove files previously written by
@@ -105,6 +105,10 @@ def _scope_dir(target: Target, scope: Scope) -> Path:
         if scope is Scope.user:
             return Path.home() / ".cursor" / "rules"
         return Path.cwd() / ".cursor" / "rules"
+    if target is Target.copilot:
+        if scope is Scope.user:
+            raise typer.BadParameter("copilot instructions are repo-scoped; use --scope project")
+        return Path.cwd() / ".github" / "instructions"
     raise typer.BadParameter(f"--scope does not apply to target {target.value!r}")
 
 
@@ -125,7 +129,7 @@ def sync(
     check: bool = typer.Option(False, "--check", help="Exit non-zero if any adapter file would change. CI guard."),
     repo_root: Path = typer.Option(Path.cwd(), "--repo-root", help="Repo root containing skills/ and AGENTS.md."),
 ) -> None:
-    """Regenerate ``.claude/skills/``, ``.github/instructions/`` and ``AGENTS.md``."""
+    """Regenerate ``.claude/skills/``, ``.github/instructions/``, ``.cursor/rules/`` and ``AGENTS.md``."""
     skills = load_canonical([repo_root / CANONICAL_REPO_DIR, CANONICAL_PACKAGE_DIR])
     if not skills:
         typer.echo("no canonical skills found", err=True)
@@ -133,14 +137,17 @@ def sync(
 
     claude_dir = repo_root / ".claude" / "skills"
     copilot_dir = repo_root / ".github" / "instructions"
+    cursor_dir = repo_root / ".cursor" / "rules"
     agents_md = repo_root / "AGENTS.md"
 
     if check:
-        return _sync_check(skills, claude_dir, copilot_dir, agents_md, repo_root)
+        return _sync_check(skills, claude_dir, copilot_dir, cursor_dir, agents_md, repo_root)
 
     written: list[Path] = []
     for skill in skills:
         written.append(render_claude_code(skill, claude_dir))
+        # Cursor, like Claude Code, is a full agent surface: it gets every skill.
+        written.append(render_cursor(skill, cursor_dir))
         # Copilot files only make sense in-repo for maintainer-tagged skills.
         if skill.audience in {"maintainer", "both"}:
             written.append(render_copilot(skill, copilot_dir))
@@ -149,7 +156,7 @@ def sync(
     typer.echo(f"synced {len(skills)} skills → {len(written)} files")
 
     # Warn, never repair: an unrecognised file may be someone's local work, and a bad reference or extra is a content decision the maintainer has to make.
-    _report(_lint(skills, claude_dir, copilot_dir, repo_root))
+    _report(_lint(skills, claude_dir, copilot_dir, cursor_dir, repo_root))
 
 
 def _references(body: str, name: str) -> bool:
@@ -205,13 +212,13 @@ def _find_bad_extras(skills: list[Skill], repo_root: Path) -> list[str]:
     ]
 
 
-def _lint(skills: list[Skill], claude_dir: Path, copilot_dir: Path, repo_root: Path) -> list[tuple[str, list[str], str]]:
+def _lint(skills: list[Skill], claude_dir: Path, copilot_dir: Path, cursor_dir: Path, repo_root: Path) -> list[tuple[str, list[str], str]]:
     """Content problems that re-rendering cannot fix, as (title, items, hint).
 
     Distinct from drift: these live in the canonical sources, or in what surrounds the rendered output, so they are reported for a human to resolve rather than silently repaired.
     """
     findings: list[tuple[str, list[str], str]] = []
-    if stray := _find_orphans(skills, claude_dir, copilot_dir):
+    if stray := _find_orphans(skills, claude_dir, copilot_dir, cursor_dir):
         findings.append(
             (
                 "orphaned rendered skills (no canonical source):",
@@ -259,7 +266,7 @@ def _report(findings: list[tuple[str, list[str], str]]) -> None:
         typer.echo(f"\n{hint}\n", err=True)
 
 
-def _find_orphans(skills: list[Skill], claude_dir: Path, copilot_dir: Path) -> list[str]:
+def _find_orphans(skills: list[Skill], claude_dir: Path, copilot_dir: Path, cursor_dir: Path) -> list[str]:
     """Rendered skill files that no canonical source accounts for.
 
     The rendered directories hold generated output only, so anything in them without a canonical source behind it is a stray — typically a personal skill committed by accident. Those belong in a user-scope directory (``~/.claude/skills/``) instead.
@@ -277,6 +284,11 @@ def _find_orphans(skills: list[Skill], claude_dir: Path, copilot_dir: Path) -> l
         for inst in sorted(copilot_dir.glob("*.instructions.md"))
         if inst.name.removesuffix(".instructions.md") not in copilot_known
     ]
+    stray += [
+        f".cursor/rules/{rule.name}"
+        for rule in sorted(cursor_dir.glob("*.mdc"))
+        if rule.stem not in claude_known
+    ]
     return stray
 
 
@@ -284,6 +296,7 @@ def _sync_check(
     skills: list[Skill],
     claude_dir: Path,
     copilot_dir: Path,
+    cursor_dir: Path,
     agents_md: Path,
     repo_root: Path,
 ) -> None:
@@ -299,6 +312,7 @@ def _sync_check(
         tmp_path = Path(tmp)
         for skill in skills:
             render_claude_code(skill, tmp_path / "claude")
+            render_cursor(skill, tmp_path / "cursor")
             if skill.audience in {"maintainer", "both"}:
                 render_copilot(skill, tmp_path / "copilot")
         if agents_md.exists():
@@ -334,6 +348,7 @@ def _sync_check(
                     drift.append(f"{label}/{rel}")
 
         check_claude = claude_dir.exists()
+        check_cursor = cursor_dir.exists()
         for skill in skills:
             if check_claude:
                 _cmp(
@@ -346,6 +361,12 @@ def _sync_check(
                     claude_dir / skill.name / "assets",
                     f".claude/skills/{skill.name}/assets",
                 )
+            if check_cursor:
+                _cmp(
+                    tmp_path / "cursor" / f"{skill.name}.mdc",
+                    cursor_dir / f"{skill.name}.mdc",
+                    f".cursor/rules/{skill.name}.mdc",
+                )
             if skill.audience in {"maintainer", "both"}:
                 _cmp(
                     tmp_path / "copilot" / f"{skill.name}.instructions.md",
@@ -354,7 +375,7 @@ def _sync_check(
                 )
         _cmp(tmp_path / "AGENTS.md", agents_md, "AGENTS.md")
 
-    findings = _lint(skills, claude_dir, copilot_dir, repo_root)
+    findings = _lint(skills, claude_dir, copilot_dir, cursor_dir, repo_root)
     if drift:
         findings.insert(
             0,
@@ -411,6 +432,10 @@ def install(
 
     if target is Target.all:
         targets = [Target.claude_code, Target.cursor, Target.agents_md]
+        if scope is Scope.project:
+            targets.insert(2, Target.copilot)
+        else:
+            typer.echo("  skipping copilot: its instructions are repo-scoped (--scope project)")
     else:
         targets = [target]
 
@@ -418,7 +443,7 @@ def install(
     refused_paths: list[Path] = []
 
     for t in targets:
-        dest_dir = out or _scope_dir(t, scope) if t in {Target.claude_code, Target.cursor} else out
+        dest_dir = out or _scope_dir(t, scope) if t in {Target.claude_code, Target.cursor, Target.copilot} else out
         if t is Target.agents_md:
             agents_dest = out or (Path.cwd() / "AGENTS.md")
             if not dry_run:
@@ -458,6 +483,8 @@ def _target_path(target: Target, dest_dir: Path, skill: Skill) -> Path:
         return dest_dir / skill.install_name / "SKILL.md"
     if target is Target.cursor:
         return dest_dir / f"{skill.install_name}.mdc"
+    if target is Target.copilot:
+        return dest_dir / f"{skill.install_name}.instructions.md"
     raise typer.BadParameter(f"no target-path mapping for {target.value!r}")
 
 
@@ -466,6 +493,8 @@ def _render_target(target: Target, skill: Skill, dest_dir: Path, version: str) -
         return render_claude_code(skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True)
     if target is Target.cursor:
         return render_cursor(skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True)
+    if target is Target.copilot:
+        return render_copilot(skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True)
     raise typer.BadParameter(f"cannot render to {target.value!r}")
 
 
@@ -486,6 +515,8 @@ def uninstall(
 
     if target is Target.all:
         targets = [Target.claude_code, Target.cursor]
+        if scope is Scope.project:
+            targets.append(Target.copilot)
     else:
         targets = [target]
 

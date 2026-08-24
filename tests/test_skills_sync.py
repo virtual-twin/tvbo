@@ -18,7 +18,7 @@ from tvbo.cli.skills import (
     _sync_check,
 )
 from tvbo.skills import load_canonical
-from tvbo.skills._render import render_agents_md, render_claude_code, render_copilot
+from tvbo.skills._render import render_agents_md, render_claude_code, render_copilot, render_cursor
 
 
 def _canonical(
@@ -49,36 +49,45 @@ def synced(tmp_path):
 
     claude_dir = tmp_path / ".claude" / "skills"
     copilot_dir = tmp_path / ".github" / "instructions"
+    cursor_dir = tmp_path / ".cursor" / "rules"
     agents_md = tmp_path / "AGENTS.md"
     for s in skills:
         render_claude_code(s, claude_dir)
         render_copilot(s, copilot_dir)
+        render_cursor(s, cursor_dir)
     render_agents_md(skills, agents_md)
-    return skills, claude_dir, copilot_dir, agents_md, tmp_path
+    return skills, claude_dir, copilot_dir, cursor_dir, agents_md, tmp_path
 
 
 # ------------------------------------------------------------- _find_orphans
 
 
 def test_no_orphans_when_every_render_has_a_source(synced):
-    skills, claude_dir, copilot_dir, *_ = synced
-    assert _find_orphans(skills, claude_dir, copilot_dir) == []
+    skills, claude_dir, copilot_dir, cursor_dir, *_ = synced
+    assert _find_orphans(skills, claude_dir, copilot_dir, cursor_dir) == []
 
 
 def test_detects_stray_claude_skill(synced):
-    skills, claude_dir, copilot_dir, *_ = synced
+    skills, claude_dir, copilot_dir, cursor_dir, *_ = synced
     stray = claude_dir / "personal-thing"
     stray.mkdir()
     (stray / "SKILL.md").write_text("---\nname: personal-thing\n---\n\nmine\n")
 
-    assert _find_orphans(skills, claude_dir, copilot_dir) == [".claude/skills/personal-thing/"]
+    assert _find_orphans(skills, claude_dir, copilot_dir, cursor_dir) == [".claude/skills/personal-thing/"]
 
 
 def test_detects_stray_copilot_instructions(synced):
-    skills, claude_dir, copilot_dir, *_ = synced
+    skills, claude_dir, copilot_dir, cursor_dir, *_ = synced
     (copilot_dir / "ghost.instructions.md").write_text("---\napplyTo: '**'\n---\n\nx\n")
 
-    assert _find_orphans(skills, claude_dir, copilot_dir) == [".github/instructions/ghost.instructions.md"]
+    assert _find_orphans(skills, claude_dir, copilot_dir, cursor_dir) == [".github/instructions/ghost.instructions.md"]
+
+
+def test_detects_stray_cursor_rule(synced):
+    skills, claude_dir, copilot_dir, cursor_dir, *_ = synced
+    (cursor_dir / "ghost.mdc").write_text("---\ndescription: x\n---\n\nx\n")
+
+    assert _find_orphans(skills, claude_dir, copilot_dir, cursor_dir) == [".cursor/rules/ghost.mdc"]
 
 
 def test_user_skill_needs_no_copilot_render(tmp_path):
@@ -89,11 +98,14 @@ def test_user_skill_needs_no_copilot_render(tmp_path):
 
     claude_dir = tmp_path / ".claude" / "skills"
     copilot_dir = tmp_path / ".github" / "instructions"
+    cursor_dir = tmp_path / ".cursor" / "rules"
     copilot_dir.mkdir(parents=True)
+    cursor_dir.mkdir(parents=True)
     for s in skills:
         render_claude_code(s, claude_dir)
+        render_cursor(s, cursor_dir)
 
-    assert _find_orphans(skills, claude_dir, copilot_dir) == []
+    assert _find_orphans(skills, claude_dir, copilot_dir, cursor_dir) == []
 
 
 # ----------------------------------------------------------- _find_leaked_refs
@@ -181,21 +193,21 @@ def test_sync_check_passes_when_clean(synced):
 
 
 def test_sync_check_fails_on_orphan(synced):
-    skills, claude_dir, copilot_dir, agents_md, root = synced
+    skills, claude_dir, copilot_dir, cursor_dir, agents_md, root = synced
     stray = claude_dir / "personal-thing"
     stray.mkdir()
     (stray / "SKILL.md").write_text("---\nname: personal-thing\n---\n\nmine\n")
 
     with pytest.raises(typer.Exit) as exc:
-        _sync_check(skills, claude_dir, copilot_dir, agents_md, root)
+        _sync_check(skills, claude_dir, copilot_dir, cursor_dir, agents_md, root)
     assert exc.value.exit_code == 1
 
 
 def test_sync_check_fails_on_drift(synced):
-    skills, claude_dir, copilot_dir, agents_md, root = synced
+    skills, claude_dir, copilot_dir, cursor_dir, agents_md, root = synced
     edited = claude_dir / "real-skill" / "SKILL.md"
     edited.write_text(edited.read_text() + "\nhand-edited\n", encoding="utf-8")
 
     with pytest.raises(typer.Exit) as exc:
-        _sync_check(skills, claude_dir, copilot_dir, agents_md, root)
+        _sync_check(skills, claude_dir, copilot_dir, cursor_dir, agents_md, root)
     assert exc.value.exit_code == 1

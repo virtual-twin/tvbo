@@ -233,11 +233,33 @@ def render_claude_code(
     return out
 
 
-def render_copilot(skill: Skill, dest_dir: Path) -> Path:
-    """Render a skill as a GitHub Copilot ``<name>.instructions.md`` file."""
+def render_copilot(
+    skill: Skill,
+    dest_dir: Path,
+    *,
+    managed: bool = False,
+    tvbo_version: str | None = None,
+    use_install_name: bool = False,
+) -> Path:
+    """Render a skill as a GitHub Copilot ``<name>.instructions.md`` file.
+
+    Parameters
+    ----------
+    managed
+        If True, stamp ``managed-by: tvbo`` and ``tvbo-version`` into the
+        frontmatter so :func:`uninstall_managed` can recognise our files.
+    use_install_name
+        If True, use :attr:`Skill.install_name` (with the ``tvbo-`` prefix);
+        otherwise use the raw canonical ``name`` (for in-repo rendering).
+    """
+    target_name = skill.install_name if use_install_name else skill.name
     apply_to = ",".join(skill.applies_to) if skill.applies_to else "**"
-    fm = {"applyTo": apply_to}
-    out = dest_dir / f"{skill.name}.instructions.md"
+    fm: dict = {"applyTo": apply_to}
+    if managed:
+        fm["managed-by"] = "tvbo"
+        if tvbo_version:
+            fm["tvbo-version"] = tvbo_version
+    out = dest_dir / f"{target_name}.instructions.md"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(_wrap(fm, flat_body(skill)), encoding="utf-8")
     return out

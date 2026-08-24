@@ -101,3 +101,10 @@ Install with: `tvbo skills install --target claude-code` (or `--target cursor` /
 - Metadata schema: <https://virtual-twin.github.io/tvbo/datamodel>
 - Platform: <https://tvbo.charite.de>
 - Issues: <https://github.com/virtual-twin/tvbo/issues>
+
+## Planning documents
+
+Design papers, audits and roadmaps are not in this repo. They live in an internal
+project-management folder alongside the manuscript repo; ask a maintainer for its location.
+Do not add planning documents here.
+

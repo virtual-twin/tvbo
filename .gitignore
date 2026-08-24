@@ -156,8 +156,9 @@ dist/
 # Local Claude Code state, including the GENERATED `.claude/skills/` tree. The two
 # skill sources of truth are tracked: `tvbo/skills/canonical/` (ships in the wheel)
 # and `skills/` (maintainer-only). `.claude/skills/` is only ever a `tvbo skills sync`
-# render of those, so it does not belong in the index.
+# render of those, as is `.cursor/rules/`, so neither belongs in the index.
 .claude
+.cursor
 
 # Scratch renders left by `tvbo export pyrates` runs.
 pyrates_run__*.py
