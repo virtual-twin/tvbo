@@ -1,11 +1,8 @@
 """Exogenous stimuli for simulation experiments.
 
-The public import location for :class:`Stimulus`, alongside the helpers that build one
-from an ontology class or from an audio file.
+The public import location for :class:`Stimulus`, alongside the helpers that build one from an ontology class or from an audio file.
 
-There is no wrapper class: the stimulus's own methods live in
-:mod:`tvbo.behaviour.perturbation` and are attached to the generated class itself, so a
-stimulus carries them however it was built.
+There is no wrapper class: the stimulus's own methods live in :mod:`tvbo.behaviour.perturbation` and are attached to the generated class itself, so a stimulus carries them however it was built.
 """
 
 import logging
@@ -36,9 +33,7 @@ def _require_librosa():
 def class2metadata(ontoclass):
     """Build `Stimulus` metadata from an ontology stimulus class.
 
-    Reads the class's defining equation. The class name (identifier) and definition
-    become the stimulus label and description, and every descendant `Parameter` is
-    added with its default value and definition.
+    Reads the class's defining equation. The class name (identifier) and definition become the stimulus label and description, and every descendant `Parameter` is added with its default value and definition.
 
     Args:
         ontoclass: An owlready2 stimulus class whose `value`, `definition` and
@@ -72,9 +67,7 @@ def class2metadata(ontoclass):
 def load_acoustic_stimulus_from_audiofile(file_path, sampling_rate=1000, duration="full"):
     """Load an audio file as a callable stimulus time course.
 
-    Loads the waveform, resamples it to `sampling_rate`, normalises it to the
-    `[-1, 1]` range, optionally truncates it to `duration`, and fits a smoothing
-    spline over time (in milliseconds).
+    Loads the waveform, resamples it to `sampling_rate`, normalises it to the `[-1, 1]` range, optionally truncates it to `duration`, and fits a smoothing spline over time (in milliseconds).
 
     Args:
         file_path: Path to the audio file to read (any format `librosa`

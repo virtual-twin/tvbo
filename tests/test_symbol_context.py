@@ -1,9 +1,6 @@
 """The parsing namespace is frozen, explicit, and never SymPy's.
 
-These tests pin the three properties that make a `SymbolContext` worth having over the
-plain dict it replaces: parsing cannot change it, deriving one cannot change its parent,
-and none of it reaches back into `sympy.abc`. Each corresponds to a way the previous
-shared-and-mutated namespace produced a wrong parse.
+These tests pin the three properties that make a `SymbolContext` worth having over the plain dict it replaces: parsing cannot change it, deriving one cannot change its parent, and none of it reaches back into `sympy.abc`. Each corresponds to a way the previous shared-and-mutated namespace produced a wrong parse.
 """
 
 from __future__ import annotations
@@ -12,7 +9,6 @@ import subprocess
 import sys
 
 import pytest
-import sympy.abc
 from sympy import Function, Symbol, pi, srepr
 
 from tvbo.parse.symbols import AUTO, BUILTIN_SHADOW, SymbolContext
@@ -33,8 +29,7 @@ MUTATORS = {
 def test_every_mutator_is_refused(name):
     """No route into `dict`'s mutating API is left open.
 
-    Blocking only `__setitem__` would be worthless: SymPy's `auto_symbol` assigns, but
-    `parse_expr` reaches for `pop`, and callers reach for `update`.
+    Blocking only `__setitem__` would be worthless: SymPy's `auto_symbol` assigns, but `parse_expr` reaches for `pop`, and callers reach for `update`.
     """
     with pytest.raises(TypeError, match="frozen"):
         MUTATORS[name](BUILTIN_SHADOW.extend(x=Symbol("x")))
@@ -60,8 +55,7 @@ def test_the_same_context_parses_the_same_way_twice():
 def test_an_earlier_parse_cannot_decide_a_later_one():
     """`E` is a symbol in one expression and a function in the next, in either order.
 
-    Under the mutated global this was order-dependent: whichever expression parsed first
-    wrote its choice into the shared dict, and the other silently got that answer.
+    Under the mutated global this was order-dependent: whichever expression parsed first wrote its choice into the shared dict, and the other silently got that answer.
     """
     scope = BUILTIN_SHADOW.extend(x=Symbol("x"))
 
@@ -127,8 +121,7 @@ def test_unshadowed_sympy_would_get_this_wrong():
 def test_importing_tvbo_does_not_touch_sympys_namespace():
     """Run in a clean interpreter: the pollution being removed happened at import time.
 
-    Checked in a subprocess because `sympy.abc._clash1` is process-global — once this
-    session's imports have run, an in-process assertion proves nothing about import order.
+    Checked in a subprocess because `sympy.abc._clash1` is process-global — once this session's imports have run, an in-process assertion proves nothing about import order.
     """
     source = (
         "import sympy.abc, copy;"

@@ -1,13 +1,6 @@
 """Every curated model's dimensional standing, frozen.
 
-The point of freezing it is that the numbers are *supposed* to move — as models
-gain declarations they should shift from `underdetermined` towards `consistent` —
-and a movement nobody intended is exactly what a corpus catches. Today 86 of the
-108 registered models declare no unit anywhere, and 104 have no equation the
-checker can settle either way — which is why it reports three answers instead of
-two. A gate demanding consistency of all 108 would pressure invented declarations
-into the published record, and a unit somebody made up to satisfy a test is worse
-than no unit.
+The point of freezing it is that the numbers are *supposed* to move — as models gain declarations they should shift from `underdetermined` towards `consistent` — and a movement nobody intended is exactly what a corpus catches. Today 86 of the 108 registered models declare no unit anywhere, and 104 have no equation the checker can settle either way — which is why it reports three answers instead of two. A gate demanding consistency of all 108 would pressure invented declarations into the published record, and a unit somebody made up to satisfy a test is worse than no unit.
 
 Update the table in the same commit as the model change, and say why.
 """
@@ -165,9 +158,7 @@ def test_a_models_verdicts_are_unchanged(name):
 def test_a_model_is_dimensionally_sound(name, request):
     """No curated model contradicts itself.
 
-    The one that does is marked `xfail(strict=True)`, so fixing its declarations
-    fails this test deliberately and prompts the freeze above to be updated in the
-    same commit. A plain skip would let the fix land unnoticed.
+    The one that does is marked `xfail(strict=True)`, so fixing its declarations fails this test deliberately and prompts the freeze above to be updated in the same commit. A plain skip would let the fix land unnoticed.
     """
     if name in INCONSISTENT_MODELS:
         request.node.add_marker(pytest.mark.xfail(strict=True, reason=INCONSISTENT_MODELS[name]))
@@ -183,8 +174,7 @@ def test_the_corpus_covers_every_model():
 def test_most_models_still_declare_nothing_to_check():
     """The reason the checker reports three answers rather than two.
 
-    If this ever reads "all 106 consistent" without the declarations to back it,
-    the checker has started guessing.
+    If this ever reads "all 106 consistent" without the declarations to back it, the checker has started guessing.
     """
     nothing_to_check = [name for name, (c, i, _) in VERDICTS.items() if not c and not i]
 
@@ -195,8 +185,7 @@ def test_most_models_still_declare_nothing_to_check():
 def test_a_model_with_no_state_equations_reaches_no_verdicts():
     """`HH_KineticScheme` is the one model with nothing to check at all.
 
-    An empty verdict list is the right answer for it — not a crash, and not a
-    vacuous "consistent" that would count as a checked model in the tally above.
+    An empty verdict list is the right answer for it — not a crash, and not a vacuous "consistent" that would count as a checked model in the tally above.
     """
     assert VERDICTS["HH_KineticScheme"] == (0, 0, 0)
     assert check_units(Dynamics.from_file(str(resolve("Dynamics", "HH_KineticScheme")))) == []

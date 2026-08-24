@@ -1,20 +1,25 @@
-"""Tests for the report table primitives — `md_table` and its inverse `read_md_tables`.
+"""Tests for the report primitives every study's report shares — `md_table` and its inverse `read_md_tables`, the figure helpers, and the scorecard.
 
-A replication report computes its scorecard from a hand-maintained analysis file
-(`report/analysis/targets.md`), so the reader is the difference between a tally that is
-derived and one that is typed. It has to survive what people actually write in those
-files: escaped pipes inside a cell, LaTeX, several tables under different headings.
+A replication report computes its scorecard from a hand-maintained analysis file (`report/analysis/targets.md`), so the reader is the difference between a tally that is derived and one that is typed. It has to survive what people actually write in those files: escaped pipes inside a cell, LaTeX, several tables under different headings.
+
+One implementation serves them all, so these pin the behaviour the reports rely on — the scorecard included, since it carries the report's whole claim about what reproduced and its vocabulary has to hold: a tier is not an outcome, and the three ways of falling short are not one bucket.
 """
 
 from types import SimpleNamespace
 
 import pytest
 
+from tvbo.utils import study_layout as layout_rules
 from tvbo.utils.report import (
-    figure_caption, figure_label, figure_targets, figure_title, figures_in_paper_order,
-    is_internal, md_table, read_md_tables, report_figure,
+    figure_caption,
+    figure_targets,
+    figure_title,
+    figures_in_paper_order,
+    is_internal,
+    md_table,
+    read_md_tables,
+    report_figure,
 )
-
 
 DOC = """
 # Targets
@@ -49,7 +54,7 @@ def test_rows_are_keyed_by_header():
 
 
 def test_an_escaped_pipe_stays_inside_its_cell():
-    """`\\|` is how a markdown cell writes a pipe — splitting on it shifts every column."""
+    r"""`\\|` is how a markdown cell writes a pipe — splitting on it shifts every column."""
     row = read_md_tables(DOC)[0].rows[0]
     assert row["Target"] == "per-mode |r| above 0.99"
     assert row["Scope"] == "core"
@@ -93,8 +98,7 @@ def test_a_long_column_earns_more_width_than_a_short_one():
 
 
 def test_a_short_column_is_not_starved_beside_prose():
-    """Proportional-to-content alone gives an `ID` column beside a prose column ~6 % of the
-    text width — narrower than the word `T14`, so its cells collide with the next column."""
+    """Proportional-to-content alone gives an `ID` column beside a prose column ~6 % of the text width — narrower than the word `T14`, so its cells collide with the next column."""
     widths = _rule_widths(md_table(["ID", "Why"], [["T14", "b" * 44], ["T15", "b" * 44], ["T16", "b" * 44]]))
     assert widths[0] / sum(widths) >= 0.15
 
@@ -111,7 +115,6 @@ def test_a_path_to_a_markdown_file_is_read(tmp_path):
 
 
 # ── Replication-report figures ──────────────────────────────────────────────────────────
-# One implementation serves every study's report; these pin the behaviour the reports rely on.
 
 
 def _fig(name, description="", label=""):
@@ -120,23 +123,27 @@ def _fig(name, description="", label=""):
 
 def _png(path, size=(40, 60)):
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.image as mpimg
     import numpy as np
+
     mpimg.imsave(str(path), np.ones((*size, 3)))
     return path
 
 
 def test_extended_data_figures_sort_after_the_main_text_and_our_own_last():
-    order = figures_in_paper_order([_fig("S_ours_x"), _fig("S_EDF10_x"), _fig("S_Fig4_y"),
-                                    _fig("S_Fig1_z")])
+    order = figures_in_paper_order([_fig("S_ours_x"), _fig("S_EDF10_x"), _fig("S_Fig4_y"), _fig("S_Fig1_z")])
     assert [f.name for f in order] == ["S_Fig1_z", "S_Fig4_y", "S_EDF10_x", "S_ours_x"]
 
 
-@pytest.mark.parametrize("name,expected", [
-    ("Pang2023_Fig4_wave", "Figure 4"),
-    ("Pang2023_EDF10_rs", "Extended Data Fig. 10"),
-])
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("Pang2023_Fig4_wave", "Figure 4"),
+        ("Pang2023_EDF10_rs", "Extended Data Fig. 10"),
+    ],
+)
 def test_a_figure_titles_itself_from_its_declared_name(name, expected):
     assert figure_title(_fig(name)) == expected
 
@@ -179,10 +186,32 @@ def test_extended_data_targets_do_not_leak_into_the_main_figure():
     assert "T5" not in [r["ID"] for r in figure_targets(_fig("S_Fig11_x"), TARGET_ROWS)]
 
 
-def test_the_public_build_stages_our_figure_alone(tmp_path):
+def test_the_public_build_embeds_our_figure_where_it_was_rendered(tmp_path):
+    """With no original to compose against there is nothing to stage, so a copy would be a second path to keep current."""
     ours = _png(tmp_path / "Fig1.png")
-    staged = report_figure(ours, None, tmp_path / "_figures")
-    assert staged.name == "Fig1.png" and staged.parent.name == "_figures"
+    assert report_figure(ours, None, tmp_path / "_figures") == ours
+
+
+def test_an_embedded_figure_is_relative_to_the_render(tmp_path, monkeypatch):
+    """LaTeX prefixes a bare image path with `./`, so an absolute one arrives as `./Users/…` and the build fails on an image that is plainly there."""
+    from tvbo.utils.report import embed_path
+
+    figures = tmp_path / "docs" / "figures"
+    figures.mkdir(parents=True)
+    monkeypatch.chdir(tmp_path / "docs")
+    assert embed_path(_png(figures / "Fig1.png")) == "figures/Fig1.png"
+    assert embed_path(tmp_path / "sourcedata" / "Fig1_ab.png") == "../sourcedata/Fig1_ab.png"
+
+
+def test_an_unstaged_composite_lands_where_the_layout_puts_it(tmp_path, monkeypatch):
+    """A report asks the layout record, so no `.qmd` has to spell a relative directory that the record could move."""
+    monkeypatch.setenv("QUARTO_DOCUMENT_FILE", "report_internal.qmd")
+    (tmp_path / "dataset_description.json").write_text("{}")
+    figures = tmp_path / layout_rules.relpath("figures")
+    figures.mkdir(parents=True)
+    ours, theirs = _png(figures / "Fig1.png"), _png(tmp_path / "paper.png")
+    staged = report_figure(ours, theirs, credit="A et al. (c)")
+    assert staged.parent == tmp_path / layout_rules.relpath("figures_restricted")
 
 
 def test_the_internal_build_composes_the_original_beside_ours(tmp_path, monkeypatch):
@@ -193,8 +222,7 @@ def test_the_internal_build_composes_the_original_beside_ours(tmp_path, monkeypa
 
 
 def test_the_public_build_refuses_an_original_rather_than_embedding_it(tmp_path, monkeypatch):
-    """The last line of defence: a report that forgets its INTERNAL guard must FAIL the build,
-    not quietly ship the paper's figure in the shareable PDF."""
+    """The last line of defence: a report that forgets its INTERNAL guard must FAIL the build, not quietly ship the paper's figure in the shareable PDF."""
     monkeypatch.setenv("QUARTO_DOCUMENT_FILE", "report.qmd")
     ours, theirs = _png(tmp_path / "Fig1.png"), _png(tmp_path / "paper.png")
     with pytest.raises(RuntimeError, match="PUBLIC build"):
@@ -206,12 +234,10 @@ def test_an_unrendered_figure_reports_absence_rather_than_failing(tmp_path):
 
 
 def test_a_declared_original_that_is_absent_still_holds_its_pane(tmp_path, monkeypatch):
-    """A missing © original must be VISIBLY missing. Degrading to a lone panel would read as
-    a completed A/B, hiding that the comparison never happened."""
+    """A missing © original must be VISIBLY missing. Degrading to a lone panel would read as a completed A/B, hiding that the comparison never happened."""
     monkeypatch.setenv("QUARTO_DOCUMENT_FILE", "report_internal.qmd")
     ours = _png(tmp_path / "Fig1.png")
-    staged = report_figure(ours, tmp_path / "nope.png", tmp_path / "_figures",
-                           missing="obtain per input/DATA.md")
+    staged = report_figure(ours, tmp_path / "nope.png", tmp_path / "_figures", missing="obtain per input/DATA.md")
     assert staged.name == "Fig1_ab.png"
 
 
@@ -227,24 +253,29 @@ def test_a_greyscale_scan_is_not_false_coloured(tmp_path):
     """A 2-D scan through `imshow` would come out viridis — a paper figure recoloured."""
     import matplotlib.image as mpimg
     import numpy as np
+
     from tvbo.utils.figure_compare import _pane_image
+
     grey = tmp_path / "scan.png"
     mpimg.imsave(str(grey), np.linspace(0, 1, 400).reshape(20, 20), cmap="gray")
     out = _pane_image(grey)
     assert out.shape[-1] == 3 and np.allclose(out[..., 0], out[..., 2])
 
 
-@pytest.mark.parametrize("document,expected", [
-    ("report_internal.qmd", True), ("report.qmd", False), ("", False),
-])
+@pytest.mark.parametrize(
+    "document,expected",
+    [
+        ("report_internal.qmd", True),
+        ("report.qmd", False),
+        ("", False),
+    ],
+)
 def test_the_build_branches_on_the_entry_file_quarto_is_rendering(monkeypatch, document, expected):
     monkeypatch.setenv("QUARTO_DOCUMENT_FILE", document)
     assert is_internal() is expected
 
 
 # ── Scorecard ───────────────────────────────────────────────────────────────────────────
-# The scorecard is the report's whole claim about what reproduced, so its vocabulary has to
-# hold: a tier is not an outcome, and the three ways of falling short are not one bucket.
 
 TARGETS_MD = """
 ## A. Group
@@ -268,6 +299,7 @@ TARGETS_MD = """
 
 def _scorecard():
     from tvbo.utils.report import Scorecard
+
     return Scorecard(TARGETS_MD)
 
 
@@ -284,8 +316,7 @@ def test_a_shortfall_verdict_is_spelled_out_not_abbreviated():
 
 
 def test_each_target_is_counted_in_exactly_one_cell_of_the_tally():
-    """The tally crossed itself while `out` was both a tier and an outcome. Tier rows and
-    outcome columns must partition the targets, so the row totals sum to the target count."""
+    """The tally crossed itself while `out` was both a tier and an outcome. Tier rows and outcome columns must partition the targets, so the row totals sum to the target count."""
     sc = _scorecard()
     rows = read_md_tables(sc.tally_table())[0].rows
     tiers = [r for r in rows if r["Tier"] in ("core", "extended")]
@@ -302,13 +333,12 @@ def test_the_tier_column_never_carries_an_outcome_word():
 def test_the_three_shortfall_kinds_are_reported_separately():
     """Each non-met outcome gets its own led group, in the order failure-first.
 
-    Asserted through ``VERDICTS`` rather than against literal headings, so rewording a
-    label cannot silently turn this into a test of nothing.
+    Asserted through ``VERDICTS`` rather than against literal headings, so rewording a label cannot silently turn this into a test of nothing.
     """
     from tvbo.utils.report import VERDICTS
 
     prose = _scorecard().shortfall_prose()
-    assert prose.count("**") >= 6                       # a bold lead per group
+    assert prose.count("**") >= 6  # a bold lead per group
     leads = [prose.lower().find(VERDICTS[v]) for v in ("short", "out", "blocked")]
     assert all(i >= 0 for i in leads), f"a shortfall group is unlabelled: {leads}"
     assert leads == sorted(leads), "failure must be led first, never buried after a scope decision"
@@ -316,22 +346,23 @@ def test_the_three_shortfall_kinds_are_reported_separately():
 
 def test_a_target_with_no_recorded_reason_says_so_rather_than_going_blank():
     from tvbo.utils.report import Scorecard
+
     sc = Scorecard("| ID | Target | Scope | Status |\n|--|--|--|--|\n| T9 | X | core | out |\n")
     assert "gap" in sc.reason(sc.of("out")[0])
 
 
 def test_a_figure_callout_is_red_only_for_an_attempted_and_missed_target():
     sc = _scorecard()
-    assert "callout-important" in sc.figure_callout(_fig("S_Fig4_x"))     # T2 is short
-    assert "callout-note" in sc.figure_callout(_fig("S_Fig1_x"))          # T1 met
+    assert "callout-important" in sc.figure_callout(_fig("S_Fig4_x"))  # T2 is short
+    assert "callout-note" in sc.figure_callout(_fig("S_Fig1_x"))  # T1 met
     assert "callout-warning" in sc.figure_callout(_fig("S_Fig3_x")) or True
 
 
 def test_a_scope_decision_alone_is_not_reported_as_a_failure():
     """A figure carrying only `out`/`blocked` targets is yellow, never red."""
     from tvbo.utils.report import Scorecard
-    sc = Scorecard("| ID | Target | Fig(s) | Scope | Status |\n|--|--|--|--|--|\n"
-                   "| T7 | X | 9a | extended | out |\n")
+
+    sc = Scorecard("| ID | Target | Fig(s) | Scope | Status |\n|--|--|--|--|--|\n| T7 | X | 9a | extended | out |\n")
     callout = sc.figure_callout(_fig("S_Fig9_x"))
     assert "callout-warning" in callout and "callout-important" not in callout
 
@@ -339,6 +370,88 @@ def test_a_scope_decision_alone_is_not_reported_as_a_failure():
 def test_a_computed_caption_becomes_a_crossreferenceable_float():
     """`tbl-cap` takes a literal, so a computed caption needs the cross-reference div."""
     from tvbo.utils.report import crossref_div
+
     out = crossref_div("tbl-x", "| A |\n|---|\n| 1 |", "Caption with 4 items.")
     assert out.startswith("::: {#tbl-x}") and out.rstrip().endswith(":::")
     assert out.index("| A |") < out.index("Caption with 4 items.")
+
+
+def test_the_divergence_register_reads_a_register_that_bolds_its_ids():
+    """Registers write `| **A1** |`, and some ids carry an annotation after them.
+
+    A pattern demanding a bare id matches nothing on such a file and returns zeros, which a report renders as "no divergences found" — the failure is silent, so it is worth a test.
+    """
+    from tvbo.utils.report import divergence_register
+
+    reg = divergence_register(
+        "| id | class | Methods says | Code does | Established | Material? |\n"
+        "|--|--|--|--|--|--|\n"
+        "| **A1** | A | prints 1.0 | runs 2.0 | verified | **yes** — doubles the current |\n"
+        "| **A2** *(cross-impl)* | A | one value | two values | read | no |\n"
+        "| **B1** | B | an integral | a least-squares solve | verified | **Yes** |\n"
+    )
+    assert reg["total"] == 3
+    assert reg["classes"]["A"]["ids"] == ["A1", "A2"]
+    assert reg["material"] == 2  # case-insensitive, emphasis-tolerant
+    assert reg["scored"] == 3
+
+
+def test_a_class_continued_into_a_second_table_keeps_its_material_rows():
+    """A register that continues one class into a second table must not drop that table's verdicts.
+
+    Materiality used to be tracked per class but decided per table, so rows under a second header spelling the column `Changes a number?` were counted in the total and skipped in the tally. Kadak2025 printed 25 of 53 where the file says 37, and Koller2024 — whose only table uses that spelling — scored 0 of 8.
+    """
+    from tvbo.utils.report import divergence_register
+
+    reg = divergence_register(
+        "| id | class | Methods says | Code does | Established | Material |\n"
+        "|--|--|--|--|--|--|\n"
+        "| A1 | A | prints 1.0 | runs 2.0 | verified | yes |\n"
+        "\n## Entries added by the published-data audit\n\n"
+        "| id | class | Methods says | Code does | Established | Changes a number? |\n"
+        "|--|--|--|--|--|--|\n"
+        "| A2 | A | one value | two values | verified | yes |\n"
+        "| B1 | B | an integral | a least-squares solve | verified | no |\n"
+    )
+    assert reg["total"] == 3 and reg["scored"] == 3
+    assert reg["material"] == 2
+    assert reg["classes"]["A"]["material"] == 2
+
+
+def test_a_register_without_a_materiality_column_reports_none_not_zero():
+    """`material=None` lets a caption say it counted nothing, rather than counting zero."""
+    from tvbo.utils.report import divergence_register
+
+    reg = divergence_register(
+        "| id | class | Methods says | Code does |\n|--|--|--|--|\n| **C1** | C | silent | picks a basis |\n"
+    )
+    assert reg["total"] == 1 and reg["scored"] == 0
+    assert reg["classes"]["C"]["material"] is None
+
+
+def test_the_integration_time_unit_comes_from_whichever_slot_declared_it():
+    """`Integrator` carries `unit` AND `time_scale`, and the schema defaults `time_scale`.
+
+    Reading `unit` alone made every recipe that omits it fall back to seconds: a 0.5 ms step over 800 ms reported as 0.5 s over 800 s. Same 1000x error as the hardcoded `ms` it replaced, with the affected recipes swapped.
+    """
+    from tvbo import SimulationExperiment
+    from tvbo.utils import report
+
+    exp = SimulationExperiment.from_db("Delay_Speed_Synchronization")
+    assert getattr(exp.integration, "unit", None) is None, "fixture must exercise the time_scale fallback"
+    sentence = report.settings_sentence(exp)
+    assert "0.5 ms" in sentence and "800 ms" in sentence, sentence
+
+
+def test_a_swept_axis_reaches_the_report():
+    """A swept axis reaches the report.
+
+    `sweep_axes` read `parameters` (the exploration's own hyper-parameters) and iterated the `explorations` mapping's keys, so it returned {} for every curated recipe and no report ever showed a swept range.
+    """
+    from tvbo import SimulationExperiment
+    from tvbo.utils import report
+
+    exp = SimulationExperiment.from_db("Delay_Speed_Synchronization")
+    axes = report.sweep_axes(exp)
+    assert "network.conduction_speed" in axes, axes
+    assert "n=50" in axes["network.conduction_speed"]

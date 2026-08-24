@@ -195,7 +195,7 @@ if is_network:
         # Base Network/Connectome class (datamodel-based)
         # Get model from context or use a default operator name
         base_model = context.get('model')
-        weights = network.weights_matrix if hasattr(network, 'weights_matrix') else None
+        weights = network.matrix("weight") if hasattr(network, 'matrix') else None
         n_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)
         if weights is not None:
             n_nodes = weights.shape[0]

@@ -1,10 +1,6 @@
 """APA citation rendering, including the author lists that used to crash it.
 
-BibTeX truncates an author list by ending it with `and others`. pybtex parses that as a
-person whose only name is `others` and who has no first name, so formatting code that
-takes a first initial from every author raises `IndexError` on it. Twelve of the 115
-entries in the shipped bibliography use the idiom, which made ten curated models unable to
-produce a report at all.
+BibTeX truncates an author list by ending it with `and others`. pybtex parses that as a person whose only name is `others` and who has no first name, so formatting code that takes a first initial from every author raises `IndexError` on it. Twelve of the 115 entries in the shipped bibliography use the idiom, which made ten curated models unable to produce a report at all.
 """
 
 from __future__ import annotations
@@ -21,8 +17,7 @@ def _people(*names: str) -> list[Person]:
 
 
 def test_a_single_author_keeps_its_initial():
-    """Given names only, matching the existing house style — pybtex files `H.` as a
-    middle name and reports have never shown middle initials."""
+    """Given names only, matching the existing house style — pybtex files `H.` as a middle name and reports have never shown middle initials."""
     assert _format_authors(_people("Jansen, Ben H.")) == "Jansen, B."
 
 
@@ -62,9 +57,7 @@ def test_no_authors_renders_empty_rather_than_raising():
 def test_a_particled_surname_keeps_its_particles(written: str, expected: str):
     """`van der Pol` is not `Pol`.
 
-    pybtex splits a particled surname across `prelast_names` and `last_names`, so reading
-    only the latter cites a different person's name entirely. Four shipped entries carry
-    six such authors, and every report citing them was wrong.
+    pybtex splits a particled surname across `prelast_names` and `last_names`, so reading only the latter cites a different person's name entirely. Four shipped entries carry six such authors, and every report citing them was wrong.
     """
     assert _format_authors([Person(written)]) == expected
 
@@ -91,11 +84,7 @@ class _Reference:
 def test_an_ontology_citation_formats_its_authors_the_same_way(author: str, expected: str):
     """`render_citation` and `get_citation` are one formatter, so they cannot disagree.
 
-    `render_citation` used to split each name on whitespace and call the last word the
-    surname. A BibTeX name is written either `First Last` or `Last, First`, and the
-    ontology's citations carry both, so every comma-ordered entry came out garbled —
-    `Wilson, Hugh R. and Cowan, Jack D.` rendered as `R., W. H., D., C. J.`, which is
-    what `tvbo.ontology.owl.get_info` printed for that model.
+    `render_citation` used to split each name on whitespace and call the last word the surname. A BibTeX name is written either `First Last` or `Last, First`, and the ontology's citations carry both, so every comma-ordered entry came out garbled — `Wilson, Hugh R. and Cowan, Jack D.` rendered as `R., W. H., D., C. J.`, which is what `tvbo.ontology.owl.get_info` printed for that model.
     """
     assert render_citation(_Reference(author)).startswith(f"{expected} (1972).")
 
@@ -113,9 +102,7 @@ def test_every_shipped_bibliography_entry_renders():
 def test_every_ontology_citation_renders():
     """A malformed author field fails here rather than in a user's `get_info()`.
 
-    `DPA_2014` separated its authors with commas instead of `and`, which the old
-    whitespace split turned into initials rather than rejecting. Now that names are
-    parsed, an author list that is not BibTeX raises — so it has to be caught in CI.
+    `DPA_2014` separated its authors with commas instead of `and`, which the old whitespace split turned into initials rather than rejecting. Now that names are parsed, an author list that is not BibTeX raises — so it has to be caught in CI.
     """
     from tvbo.ontology.owl import onto
     from tvbo.utils.report import render_citation

@@ -7,15 +7,9 @@
 #
 """The symbolic layer between a model's metadata and everything rendered from it.
 
-[`SymbolicSystem`](#tvbo.parse.system.SymbolicSystem) parses a model's equations once and
-holds them, together with the symbol tables they were parsed against. Every consumer —
-code generation, the analysis views, the report — is a projection of it, so an equation is
-parsed once no matter how many of them ask.
+[`SymbolicSystem`](#tvbo.parse.system.SymbolicSystem) parses a model's equations once and holds them, together with the symbol tables they were parsed against. Every consumer — code generation, the analysis views, the report — is a projection of it, so an equation is parsed once no matter how many of them ask.
 
-It is a service object rather than a set of methods on `Dynamics` because a scope and the
-equations parsed against it have to agree, and that agreement is what the cache is keyed
-on. Owning both here makes the one invalidation point visible instead of leaving it as an
-attribute convention spread across a model class.
+It is a service object rather than a set of methods on `Dynamics` because a scope and the equations parsed against it have to agree, and that agreement is what the cache is keyed on. Owning both here makes the one invalidation point visible instead of leaving it as an attribute convention spread across a model class.
 """
 
 from __future__ import annotations
@@ -29,28 +23,19 @@ from tvbo.parse.symbols import assumptions_of, symbol_in
 def _referenced_names(expression):
     """Every model quantity *expression* names, however the notation spells it.
 
-    A reference to ``x`` is the symbol ``x`` in the codegen view and the applied function
-    ``x(t)`` in the analysis view, and an applied function's free symbols are its arguments
-    alone — so free symbols by themselves see no dependency at all in the second.
+    A reference to ``x`` is the symbol ``x`` in the codegen view and the applied function ``x(t)`` in the analysis view, and an applied function's free symbols are its arguments alone — so free symbols by themselves see no dependency at all in the second.
     """
     from sympy.core.function import AppliedUndef
 
-    return {str(s) for s in expression.free_symbols} | {
-        f.func.__name__ for f in expression.atoms(AppliedUndef)
-    }
+    return {str(s) for s in expression.free_symbols} | {f.func.__name__ for f in expression.atoms(AppliedUndef)}
 
 
 def _declared(element, collection: str):
     """*element*'s named collection, empty when it holds nothing.
 
-    LinkML's dataclasses default an unfilled collection to an empty one and Pydantic's
-    models default it to `None`, so a layer written against either alone raises on the
-    other for a model that simply declares nothing yet. Stating that difference once here
-    is what lets this layer read a model — or one of its elements — from either generator,
-    rather than as an `or {}` at each of the two dozen reads below.
+    LinkML's dataclasses default an unfilled collection to an empty one and Pydantic's models default it to `None`, so a layer written against either alone raises on the other for a model that simply declares nothing yet. Stating that difference once here is what lets this layer read a model — or one of its elements — from either generator, rather than as an `or {}` at each of the two dozen reads below.
 
-    An empty mapping stands in for an empty list as well: every list slot read here is
-    either iterated or tested for membership, and both answer the same on either.
+    An empty mapping stands in for an empty list as well: every list slot read here is either iterated or tested for membership, and both answer the same on either.
     """
     return getattr(element, collection, None) or {}
 
@@ -58,13 +43,9 @@ def _declared(element, collection: str):
 class SymbolicSystem:
     """A model's equations in SymPy form, parsed against a symbol table built from its names.
 
-    Built for a model by
-    [`Dynamics.symbolic_system`](../behaviour/dynamics.qmd#symbolic_system), which keeps one
-    per model; construct it directly only to work against a model that does not.
+    Built for a model by [`Dynamics.symbolic_system`](../behaviour/dynamics.qmd#symbolic_system), which keeps one per model; construct it directly only to work against a model that does not.
 
-    Before this layer existed each caller re-derived from metadata: loading
-    `ZerlautAdaptationSecondOrder` parsed its 27 equations 264 times, and every
-    `render_code` and `generate_report` parsed all 27 again because nothing was kept.
+    Before this layer existed each caller re-derived from metadata: loading `ZerlautAdaptationSecondOrder` parsed its 27 equations 264 times, and every `render_code` and `generate_report` parsed all 27 again because nothing was kept.
     """
 
     _GROUP_COLLECTIONS = {
@@ -104,14 +85,10 @@ class SymbolicSystem:
     def scope(self, include_time_symbol: bool = True, time_dependent: bool = False):
         """Build a unified local_dict for parsing model expressions.
 
-        Includes symbols for parameters, coupling terms, derived parameters, derived
-        variables, output transforms, state variables, event names, function names, and
-        (optionally) the time symbol 't'.
+        Includes symbols for parameters, coupling terms, derived parameters, derived variables, output transforms, state variables, event names, function names, and (optionally) the time symbol 't'.
 
         Every declared name must appear here so it shadows SymPy's own global namespace:
-        `Q` is SymPy's assumptions object, `S` its sympify shortcut, `O` big-O, `N`
-        numeric evaluation and `I` the imaginary unit, so a model that names a quantity
-        after any of them would otherwise fail to parse.
+        `Q` is SymPy's assumptions object, `S` its sympify shortcut, `O` big-O, `N` numeric evaluation and `I` the imaginary unit, so a model that names a quantity after any of them would otherwise fail to parse.
 
         Args:
             include_time_symbol: Bind `t` to `Symbol("t")`.
@@ -121,7 +98,7 @@ class SymbolicSystem:
                 two symbolic views of a model — everything downstream of the scope is
                 shared, which is why it is a parameter here and not a second builder.
 
-        Returns
+        Returns:
         -------
         dict
             Mapping of names to SymPy objects suitable for parse_eq(local_dict=...).
@@ -136,14 +113,9 @@ class SymbolicSystem:
     def form(self, notation: str = "symbol", evaluate: bool = True):
         """The model's equations, parsed once per (notation, evaluate) and remembered.
 
-        Both public views — [`get_equations`](../behaviour/dynamics.qmd#get_equations) and
-        [`view`](#tvbo.parse.system.SymbolicSystem.view) — are projections of this, as is
-        the function-body table the inliner consumes.
+        Both public views — [`get_equations`](../behaviour/dynamics.qmd#get_equations) and [`view`](#tvbo.parse.system.SymbolicSystem.view) — are projections of this, as is the function-body table the inliner consumes.
 
-        The cache is discarded whole whenever [`_inputs`](#tvbo.parse.system.SymbolicSystem)
-        changes, which is what makes it safe on a mutable model. Rendering is a query — no
-        path from `render_code` writes to the model — so no consumer can invalidate it
-        mid-use.
+        The cache is discarded whole whenever [`_inputs`](#tvbo.parse.system.SymbolicSystem) changes, which is what makes it safe on a mutable model. Rendering is a query — no path from `render_code` writes to the model — so no consumer can invalidate it mid-use.
 
         Args:
             notation: `"symbol"` binds variables to `Symbol(name)`; `"function"` binds
@@ -163,11 +135,9 @@ class SymbolicSystem:
     def view(self):
         """Full symbolic ODE system using proper SymPy conventions.
 
-        State variables are represented as ``Function(name)(t)`` so that
-        ``Derivative(theta(t), t)`` stays unevaluated.  Derived variables
-        and derived parameters are included as algebraic equations.
+        State variables are represented as ``Function(name)(t)`` so that ``Derivative(theta(t), t)`` stays unevaluated.  Derived variables and derived parameters are included as algebraic equations.
 
-        Returns
+        Returns:
         -------
         dict
             ``{'state': [...], 'derived': [...], 'parameters': {...}}``
@@ -176,7 +146,7 @@ class SymbolicSystem:
             symbols: rebuilt keys look identical, compare unequal, and make
             substituting it into these equations silently replace nothing.
 
-        Example
+        Example:
         -------
         >>> model.symbolic['state']
         [Eq(Derivative(theta(t), t), I + omega)]
@@ -200,30 +170,17 @@ class SymbolicSystem:
     def keyed_parameters(self, time_dependent: bool = False):
         """Each declared parameter's symbol mapped to its value, for substitution.
 
-        Keyed through the scope rather than by minting `Symbol(name)`, because the analysis
-        view carries assumptions and a rebuilt key would print identically, compare unequal,
-        and make `subs` replace nothing. *time_dependent* selects which view's symbols the
-        map is keyed by, and must match the equations it will be substituted into.
+        Keyed through the scope rather than by minting `Symbol(name)`, because the analysis view carries assumptions and a rebuilt key would print identically, compare unequal, and make `subs` replace nothing. *time_dependent* selects which view's symbols the map is keyed by, and must match the equations it will be substituted into.
         """
         scope = self.scope(time_dependent=time_dependent)
-        return {
-            scope[str(p.name)]: p.value
-            for p in _declared(self.model, "parameters").values()
-            if str(p.name) in scope
-        }
+        return {scope[str(p.name)]: p.value for p in _declared(self.model, "parameters").values() if str(p.name) in scope}
 
     def symbol_map(self):
         """Display-symbol overrides for report rendering: ``{identifier Symbol: LaTeX str}``.
 
-        For each element that declares a ``symbol`` (e.g. ``w_+`` for the identifier
-        ``w_plus``, or ``S^{(E)}`` for ``S_e``), map its identifier Symbol to the LaTeX
-        of that override, so ``sympy.latex(expr, symbol_names=model.symbol_map())``
-        renders the source's own notation. Elements without an override are omitted (they
-        render from their identifier). Fully sympy-native: the override is itself rendered
-        through ``sympy.latex(Symbol(...))``, inheriting Greek/sub/superscript handling.
+        For each element that declares a ``symbol`` (e.g. ``w_+`` for the identifier ``w_plus``, or ``S^{(E)}`` for ``S_e``), map its identifier Symbol to the LaTeX of that override, so ``sympy.latex(expr, symbol_names=model.symbol_map())`` renders the source's own notation. Elements without an override are omitted (they render from their identifier). Fully sympy-native: the override is itself rendered through ``sympy.latex(Symbol(...))``, inheriting Greek/sub/superscript handling.
 
-        Keyed by the canonical collection keys (the identifiers used in the equations),
-        over the same element collections as [`scope`](#tvbo.parse.system.SymbolicSystem.scope).
+        Keyed by the canonical collection keys (the identifiers used in the equations), over the same element collections as [`scope`](#tvbo.parse.system.SymbolicSystem.scope).
         """
         collections = (
             "parameters",
@@ -242,23 +199,16 @@ class SymbolicSystem:
     def _state(self):
         """The per-content cache the symbol table and the equations share.
 
-        One invalidation point for both, because they have to agree: a scope built from one
-        set of names and equations parsed against another is precisely the drift this layer
-        exists to remove.
+        One invalidation point for both, because they have to agree: a scope built from one set of names and equations parsed against another is precisely the drift this layer exists to remove.
 
-        A reorder keeps the parsed equations and re-keys them; the scopes are dropped
-        instead, since rebuilding a symbol table is a few hundred `Symbol` constructions
-        while reparsing is the expensive half.
+        A reorder keeps the parsed equations and re-keys them; the scopes are dropped instead, since rebuilding a symbol table is a few hundred `Symbol` constructions while reparsing is the expensive half.
         """
         content, order = self._inputs()
         cache = self._cache
         if cache is None or cache[0] != content:
             cache = (content, order, {"scopes": {}, "forms": {}})
         elif cache[1] != order:
-            reordered = {
-                key: self._in_dependency_order(self._reordered(form))
-                for key, form in cache[2]["forms"].items()
-            }
+            reordered = {key: self._in_dependency_order(self._reordered(form)) for key, form in cache[2]["forms"].items()}
             cache = (content, order, {"scopes": {}, "forms": reordered})
         else:
             return cache[2]
@@ -268,21 +218,11 @@ class SymbolicSystem:
     def in_dependency_order(self, collection: str):
         """*collection*'s members in the order a straight-line backend must print them.
 
-        The model's own mapping, re-keyed into the order
-        [`form`](#tvbo.parse.system.SymbolicSystem.form) settled on — so a backend that
-        needs each quantity defined before it is used reads that order from the one place
-        that decides it, rather than from whatever order the collection happens to be in.
+        The model's own mapping, re-keyed into the order [`form`](#tvbo.parse.system.SymbolicSystem.form) settled on — so a backend that needs each quantity defined before it is used reads that order from the one place that decides it, rather than from whatever order the collection happens to be in.
 
-        The order spans BOTH views, because a backend chooses which one it renders and the
-        two do not always agree about what an equation reads. `a: z - z + k` reads `z` as
-        written and only `k` once evaluated, so an order settled on the evaluated view alone
-        prints `a` before `z` — an unbound name in every backend that preserves the authored
-        form, tvboptim's dfun among them. Ranking against the union means no caller has to
-        declare which view it is about to print.
+        The order spans BOTH views, because a backend chooses which one it renders and the two do not always agree about what an equation reads. `a: z - z + k` reads `z` as written and only `k` once evaluated, so an order settled on the evaluated view alone prints `a` before `z` — an unbound name in every backend that preserves the authored form, tvboptim's dfun among them. Ranking against the union means no caller has to declare which view it is about to print.
 
-        A member neither view holds — one declared with no equation — prints no statement,
-        and keeps its declared position at the front alongside the members nothing
-        constrains.
+        A member neither view holds — one declared with no equation — prints no statement, and keeps its declared position at the front alongside the members nothing constrains.
 
         Raises:
             ValueError: If *collection* is one whose order is a layout rather than a
@@ -302,16 +242,12 @@ class SymbolicSystem:
     def _inputs(self):
         """What `_build_form` reads, split into content and order.
 
-        The cache is sound only if *content* changes whenever a built equation would, so it
-        walks the same collections the builder walks rather than a hand-listed subset: a
-        slot the builder starts reading without being added here would serve a stale
-        equation forever. Content is compared as dicts, which ignore key order.
+        The cache is sound only if *content* changes whenever a built equation would, so it walks the same collections the builder walks rather than a hand-listed subset: a slot the builder starts reading without being added here would serve a stale equation forever. Content is compared as dicts, which ignore key order.
 
         *order* is tracked separately because a caller may rearrange a collection without
-        changing a single equation, and the groups this layer does not settle an order for
-        follow the order they were declared in. Treating that as a content change would
-        re-parse everything to produce the same expressions in a different sequence.
+        changing a single equation, and the groups this layer does not settle an order for follow the order they were declared in. Treating that as a content change would re-parse everything to produce the same expressions in a different sequence.
         """
+
         def _equation(element):
             equation = getattr(element, "equation", None)
             if equation is None:
@@ -325,10 +261,7 @@ class SymbolicSystem:
         def _assumed(element):
             """Keyed on `assumptions_of` itself, so the key cannot drift from what it reads.
 
-            A `domain` is not an equation, but it decides whether a symbol is `positive` or
-            merely `real`, and `Symbol('a', positive=True) != Symbol('a', real=True)`. Naming
-            the fields here instead would leave the key stale the day `assumptions_of` starts
-            reading one more of them.
+            A `domain` is not an equation, but it decides whether a symbol is `positive` or merely `real`, and `Symbol('a', positive=True) != Symbol('a', real=True)`. Naming the fields here instead would leave the key stale the day `assumptions_of` starts reading one more of them.
             """
             return tuple(sorted(assumptions_of(element).items()))
 
@@ -339,10 +272,7 @@ class SymbolicSystem:
             frozenset(str(name) for name in _declared(self.model, "events")),
             frozenset(str(name) for name in _declared(self.model, "output")),
             {str(k): _equation(v) for k, v in _declared(self.model, "derived_parameters").items()},
-            {
-                str(k): (_equation(v), _assumed(v))
-                for k, v in _declared(self.model, "derived_variables").items()
-            },
+            {str(k): (_equation(v), _assumed(v)) for k, v in _declared(self.model, "derived_variables").items()},
             {
                 str(k): (
                     _equation(v),
@@ -357,17 +287,14 @@ class SymbolicSystem:
             },
         )
         order = tuple(
-            tuple(str(name) for name in _declared(self.model, collection))
-            for collection in self._GROUP_COLLECTIONS.values()
+            tuple(str(name) for name in _declared(self.model, collection)) for collection in self._GROUP_COLLECTIONS.values()
         )
         return content, order
 
     def _reordered(self, form):
         """The same equations, re-keyed into their collections' current order.
 
-        The starting point for a rearranged model, not the answer: the caller hands the
-        result to `_in_dependency_order`, which settles the two groups whose order it owns
-        and leaves the rest as the model now declares them.
+        The starting point for a rearranged model, not the answer: the caller hands the result to `_in_dependency_order`, which settles the two groups whose order it owns and leaves the rest as the model now declares them.
         """
         return {
             group: {
@@ -381,29 +308,13 @@ class SymbolicSystem:
     def _build_scope(self, include_time_symbol: bool, time_dependent: bool):
         """Assemble the symbol table. See `scope`.
 
-        Holds only the names the *model* declares. A function's formal arguments are bound by
-        that function, exactly as a lambda binds its parameters, and are supplied as an
-        overlay while its body is parsed — see `_assemble`. Registering them here
-        let a formal shadow a variable of the same name: `ReducedWongWangTvboptim` declares
-        both `H(x)` and a derived variable `x`, and the formal won, so the analysis view held
-        `x` constant and dropped the chain-rule term from every Jacobian through `H`.
+        Holds only the names the *model* declares. A function's formal arguments are bound by that function, exactly as a lambda binds its parameters, and are supplied as an overlay while its body is parsed — see `_assemble`. Registering them here let a formal shadow a variable of the same name: `ReducedWongWangTvboptim` declares both `H(x)` and a derived variable `x`, and the formal won, so the analysis view held `x` constant and dropped the chain-rule term from every Jacobian through `H`.
 
-        Assumptions ride on the time-dependent view only. They are what SymPy's analysis
-        machinery needs — without `real=True` the fixed points of a two-variable model do
-        not come back inside a minute — but they also enter `Symbol.sort_key`, so the same
-        product prints as `q*alpha` instead of `alpha*q`. That is no gain for a backend
-        that parses, inlines and prints without ever simplifying, and every emitted file is
-        compared against a frozen reference. The codegen view therefore stays plain, and
-        the two are never mixed: a `Symbol` from one does not compare equal to the same name
-        from the other, so nothing can substitute across them by accident.
+        Assumptions ride on the time-dependent view only. They are what SymPy's analysis machinery needs — without `real=True` the fixed points of a two-variable model do not come back inside a minute — but they also enter `Symbol.sort_key`, so the same product prints as `q*alpha` instead of `alpha*q`. That is no gain for a backend that parses, inlines and prints without ever simplifying, and every emitted file is compared against a frozen reference. The codegen view therefore stays plain, and the two are never mixed: a `Symbol` from one does not compare equal to the same name from the other, so nothing can substitute across them by accident.
 
-        Function heads are the exception, and carry `assumptions_of()` in both views: a head
-        is notation-independent — `Sigm` is the same function whether the variables around it
-        are Symbols or Functions of `t`. Building it per view made `Function("Sigm", real=True)`
-        and `Function("Sigm")`, which print identically, compare unequal, and make
-        `expr.has(Sigm)` False on an expression that visibly calls it, so every inliner
-        matched nothing, silently.
+        Function heads are the exception, and carry `assumptions_of()` in both views: a head is notation-independent — `Sigm` is the same function whether the variables around it are Symbols or Functions of `t`. Building it per view made `Function("Sigm", real=True)` and `Function("Sigm")`, which print identically, compare unequal, and make `expr.has(Sigm)` False on an expression that visibly calls it, so every inliner matched nothing, silently.
         """
+
         def _assume(element=None):
             return assumptions_of(element) if time_dependent else {}
 
@@ -458,19 +369,13 @@ class SymbolicSystem:
     def _build_form(self, notation: str, evaluate: bool):
         """Parse every equation the model states, once. See `form`.
 
-        The two views differ in what they are for, and the evaluation policy follows from
-        that rather than the other way round.
+        The two views differ in what they are for, and the evaluation policy follows from that rather than the other way round.
 
         `"symbol"` feeds codegen, which parses, inlines and prints. It honours the caller's
         *evaluate* so a backend can keep the term order its author wrote.
 
-        `"function"` is the analysis view — the one `Matrix.jacobian`, `solve` and `dsolve`
-        act on — so it is canonical. It used to suppress evaluation globally, which kept
-        `Derivative(theta(t), t)` from collapsing but also left the right-hand sides in a
-        nested unevaluated form that SymPy's solvers cannot make progress on: asked for the
-        fixed points of `Generic2dOscillator` in that form, `solve` returns nothing in 45 s;
-        canonical and with real symbols it answers in under one. `Derivative` is built
-        explicitly here, so nothing needs the global suppression to survive.
+        `"function"` is the analysis view — the one `Matrix.jacobian`, `solve` and `dsolve` act on — so it is canonical. It used to suppress evaluation globally, which kept `Derivative(theta(t), t)` from collapsing but also left the right-hand sides in a nested unevaluated form that SymPy's solvers cannot make progress on: asked for the fixed points of `Generic2dOscillator` in that form, `solve` returns nothing in 45 s;
+        canonical and with real symbols it answers in under one. `Derivative` is built explicitly here, so nothing needs the global suppression to survive.
         """
         time_dependent = notation == "function"
         return self._assemble(
@@ -481,12 +386,7 @@ class SymbolicSystem:
     def _assemble(self, time_dependent: bool, evaluate: bool):
         """Build the five equation groups against one scope. See `_build_form`.
 
-        Every symbol an equation's left-hand side names is resolved through `scope` — the
-        same table the right-hand sides were parsed against. Minting one here instead
-        produces a name that prints identically and compares unequal once the analysis view
-        attaches assumptions, and `subs` across that mismatch replaces nothing rather than
-        raising: a derivative taken w.r.t. a freshly built `t` leaves `doit()` returning 0,
-        and a derived parameter's definition substitutes into none of its own equations.
+        Every symbol an equation's left-hand side names is resolved through `scope` — the same table the right-hand sides were parsed against. Minting one here instead produces a name that prints identically and compares unequal once the analysis view attaches assumptions, and `subs` across that mismatch replaces nothing rather than raising: a derivative taken w.r.t. a freshly built `t` leaves `doit()` returning 0, and a derived parameter's definition substitutes into none of its own equations.
         """
         scope = self.scope(time_dependent=time_dependent)
         t = symbol_in(scope, "t")
@@ -500,9 +400,7 @@ class SymbolicSystem:
         def _states(element):
             """Whether the element has anything to parse — see `states_an_expression`.
 
-            An element declared with no `rhs` and no conditionals is skipped rather than
-            parsed. Every rendering path funnels through here, so one such element used
-            to break all of them at once instead of only `get_equations`.
+            An element declared with no `rhs` and no conditionals is skipped rather than parsed. Every rendering path funnels through here, so one such element used to break all of them at once instead of only `get_equations`.
             """
             return states_an_expression(getattr(element, "equation", None))
 
@@ -532,9 +430,7 @@ class SymbolicSystem:
                 if _states(f) and _declared(f, "arguments")
             },
             "derived-variables": {
-                str(k): Eq(lhs=_lhs(k), rhs=_parse(dv))
-                for k, dv in derived_variables.items()
-                if _states(dv)
+                str(k): Eq(lhs=_lhs(k), rhs=_parse(dv)) for k, dv in derived_variables.items() if _states(dv)
             },
             "state-equations": {},
             "output-transformations": {},
@@ -552,38 +448,22 @@ class SymbolicSystem:
             name = str(name)
             if name in derived_variables:
                 if _states(derived_variables[name]):
-                    form["output-transformations"][name] = Eq(
-                        lhs=_lhs(name), rhs=_parse(derived_variables[name])
-                    )
+                    form["output-transformations"][name] = Eq(lhs=_lhs(name), rhs=_parse(derived_variables[name]))
             elif name not in state_variables:
-                raise ValueError(
-                    f"Output variable '{name}' not found in derived_variables or state_variables"
-                )
+                raise ValueError(f"Output variable '{name}' not found in derived_variables or state_variables")
 
         return self._in_dependency_order(form)
 
     def _in_dependency_order(self, form):
         """*form* with the straight-line groups reordered so each equation follows what it reads.
 
-        JAX and NumPy emit these as consecutive assignments, so a derived variable printed
-        before the one it reads emits an unbound name. The order is settled here, on the
-        parsed equations, rather than by rewriting the model's collections: rendering is a
-        query, and a model that answers differently for having been rendered is exactly the
-        drift this layer exists to remove.
+        JAX and NumPy emit these as consecutive assignments, so a derived variable printed before the one it reads emits an unbound name. The order is settled here, on the parsed equations, rather than by rewriting the model's collections: rendering is a query, and a model that answers differently for having been rendered is exactly the drift this layer exists to remove.
 
-        The graph spans derived parameters and derived variables together, since either can
-        read the other. Functions are not among them: a function is applied, never read as a
-        value, and it is emitted in its own block ahead of both — so it constrains nothing
-        here, while admitting it would let a formal argument shadowing a model name stand in
-        for a dependency that does not exist.
+        The graph spans derived parameters and derived variables together, since either can read the other. Functions are not among them: a function is applied, never read as a value, and it is emitted in its own block ahead of both — so it constrains nothing here, while admitting it would let a formal argument shadowing a model name stand in for a dependency that does not exist.
 
-        Quantities the graph does not mention keep their declared order and stay ahead of
-        the sorted ones. Their position is unconstrained, and moving them would be churn.
+        Quantities the graph does not mention keep their declared order and stay ahead of the sorted ones. Their position is unconstrained, and moving them would be churn.
 
-        Each form is ordered against what it actually holds, since evaluation can leave the
-        views holding different equations — an Epileptor conditional collapses to a constant
-        under the analysis view's assumptions. The order a *backend* reads comes from
-        `in_dependency_order`, which spans both views for the reason given there.
+        Each form is ordered against what it actually holds, since evaluation can leave the views holding different equations — an Epileptor conditional collapses to a constant under the analysis view's assumptions. The order a *backend* reads comes from `in_dependency_order`, which spans both views for the reason given there.
         """
         ranked = self._dependency_rank((form,))
         for group in self._ORDERED_GROUPS:
@@ -596,19 +476,11 @@ class SymbolicSystem:
     def _dependency_rank(self, forms):
         """Every name in *forms*' straight-line groups, ranked after what it reads.
 
-        The graph spans derived parameters and derived variables together, since either can
-        read the other, and it is built over *names* rather than parsed objects so that a
-        reference is recognised in either notation: the analysis view spells a reference to
-        ``x`` as ``x(t)``, whose free symbols are ``{t}`` alone.
+        The graph spans derived parameters and derived variables together, since either can read the other, and it is built over *names* rather than parsed objects so that a reference is recognised in either notation: the analysis view spells a reference to ``x`` as ``x(t)``, whose free symbols are ``{t}`` alone.
 
-        Functions are not spanned: a function is applied, never read as a value, and it is
-        emitted in its own block ahead of both — so it constrains nothing, while admitting it
-        would let a formal argument shadowing a model name stand in for a dependency that
-        does not exist.
+        Functions are not spanned: a function is applied, never read as a value, and it is emitted in its own block ahead of both — so it constrains nothing, while admitting it would let a formal argument shadowing a model name stand in for a dependency that does not exist.
 
-        Passing several forms ranks against the union of their edges. A constraint present in
-        any view is a real constraint, so taking every view can only add edges, never drop
-        one — and a name absent from the graph is simply unconstrained.
+        Passing several forms ranks against the union of their edges. A constraint present in any view is a real constraint, so taking every view can only add edges, never drop one — and a name absent from the graph is simply unconstrained.
         """
         import networkx as nx
 
@@ -619,8 +491,4 @@ class SymbolicSystem:
                     for source in _referenced_names(equation.rhs):
                         if source != name:
                             graph.add_edge(source, name)
-        return [
-            name
-            for generation in nx.dag.topological_generations(graph)
-            for name in sorted(generation)
-        ]
+        return [name for generation in nx.dag.topological_generations(graph) for name in sorted(generation)]

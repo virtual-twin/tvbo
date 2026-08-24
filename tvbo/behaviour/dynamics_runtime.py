@@ -1,14 +1,8 @@
 """What a `Dynamics` does, on every `Dynamics` however it was built.
 
-Attached through [`DynamicsBehaviour`](dynamics.qmd), so a model loaded through LinkML,
-validated through Pydantic or resolved onto an edge answers the same questions as one
-constructed through :mod:`tvbo.classes.dynamics`. There is no runtime subclass to promote
-a record into: the methods are on the generated class itself.
+Attached through [`DynamicsBehaviour`](dynamics.qmd), so a model loaded through LinkML, validated through Pydantic or resolved onto an edge answers the same questions as one constructed through :mod:`tvbo.classes.dynamics`. There is no runtime subclass to promote a record into: the methods are on the generated class itself.
 
-Split out of [`DynamicsBehaviour`](dynamics.qmd) only to keep one file readable; the mixin
-discovery in ``hatch_build`` attaches classes whose name ends in ``Behaviour``, so this one
-adds no second attachment point. :mod:`tvbo.classes.dynamics` remains the public import
-location for the class itself.
+Split out of [`DynamicsBehaviour`](dynamics.qmd) only to keep one file readable; the mixin discovery in ``hatch_build`` attaches classes whose name ends in ``Behaviour``, so this one adds no second attachment point. :mod:`tvbo.classes.dynamics` remains the public import location for the class itself.
 """
 
 from __future__ import annotations
@@ -28,10 +22,7 @@ if TYPE_CHECKING:
 class _Lazy:
     """A module imported on first attribute access.
 
-    This mixin is a base of the generated `Dynamics`, so whatever it imports at module
-    scope is paid for by every ``import tvbo.datamodel.schema`` — including the JAX and
-    codegen processes that never plot or query the ontology. The tvbo half would also
-    close an import cycle, since the schema module is what imports this one.
+    This mixin is a base of the generated `Dynamics`, so whatever it imports at module scope is paid for by every ``import tvbo.datamodel.schema`` — including the JAX and codegen processes that never plot or query the ontology. The tvbo half would also close an import cycle, since the schema module is what imports this one.
     """
 
     def __init__(self, name: str):
@@ -79,9 +70,7 @@ class DynamicsRuntime:
     # Factory constructors
     @classmethod
     def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics):
-        """Create from a datamodel Dynamics instance by copying its
-        already-normalized state (avoids ``_as_dict`` re-init crash on
-        ``inlined_as_dict`` fields)."""
+        """Create from a datamodel Dynamics instance by copying its already-normalized state (avoids ``_as_dict`` re-init crash on ``inlined_as_dict`` fields)."""
         inst = cls.__new__(cls)
         inst.__dict__.update(model_meta.__dict__)
         return inst
@@ -100,9 +89,7 @@ class DynamicsRuntime:
             A populated instance.
         """
         if isinstance(ontoclass, str):
-            ontoclass = query.label_search(
-                ontoclass, root_class="NeuralMassModel", exact_match=["label"]
-            )[0]
+            ontoclass = query.label_search(ontoclass, root_class="NeuralMassModel", exact_match=["label"])[0]
         inst = cls(name=ontoclass.name, **kwargs)
         model_helpers.populate_from_ontology(inst, ontoclass, **kwargs)
         return inst
@@ -117,7 +104,7 @@ class DynamicsRuntime:
         Returns:
             The instance parsed from the file.
         """
-        data = yaml_loader.load_as_dict(str(path))
+        data = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str(path)))
         model_helpers._resolve_dynamics_aliases(data)
         return cls(**data)
 
@@ -131,7 +118,7 @@ class DynamicsRuntime:
         Returns:
             The instance parsed from the string.
         """
-        data = yaml_loader.load_as_dict(str) or {}
+        data = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str)) or {}
         model_helpers._resolve_dynamics_aliases(data)
         return cls(**data)
 
@@ -147,8 +134,7 @@ class DynamicsRuntime:
     ) -> "Dynamics":
         """Load a dynamics model from the tvbo platform API.
 
-        Fetches the full LinkML-valid YAML definition from the platform
-        and constructs a Dynamics instance.
+        Fetches the full LinkML-valid YAML definition from the platform and constructs a Dynamics instance.
 
         Parameters
         ----------
@@ -350,16 +336,11 @@ class DynamicsRuntime:
         """
         return ontology.search_in_model(search_str, self.ontology, **kwargs)
 
-    # -----------------------
-    # Fluent builder helpers and setters
-    # -----------------------
     @property
     def _peer(self):
         """The generated module a member of this record has to be built in.
 
-        See [`peer_module`](../datamodel/dialect.qmd#peer_module): the builders serve both
-        generated forms, and the strict Pydantic models reject a LinkML dataclass where
-        they want their own peer.
+        See [`peer_module`](../datamodel/dialect.qmd#peer_module): the builders serve both generated forms, and the strict Pydantic models reject a LinkML dataclass where they want their own peer.
         """
         from tvbo.datamodel.dialect import peer_module
 
@@ -368,10 +349,7 @@ class DynamicsRuntime:
     def _collection(self, slot: str) -> dict:
         """*slot*'s mapping, created if this form left it unset.
 
-        The LinkML dataclass defaults a keyed collection to an empty mapping and the
-        Pydantic model defaults it to ``None``, so a builder that assumed the first raised
-        ``'NoneType' object does not support item assignment`` on the second. Members are
-        added by mutating the mapping, never by reassigning the slot.
+        The LinkML dataclass defaults a keyed collection to an empty mapping and the Pydantic model defaults it to ``None``, so a builder that assumed the first raised ``'NoneType' object does not support item assignment`` on the second. Members are added by mutating the mapping, never by reassigning the slot.
         """
         if getattr(self, slot, None) is None:
             setattr(self, slot, {})
@@ -380,9 +358,7 @@ class DynamicsRuntime:
     def _sequence(self, slot: str) -> list:
         """*slot*'s list, created if this form left it unset.
 
-        The list-valued counterpart of [`_collection`](#_collection): the Pydantic model
-        defaults ``output`` to ``None``, so a builder that assumed a list raised
-        ``argument of type 'NoneType' is not iterable`` on that form.
+        The list-valued counterpart of [`_collection`](#_collection): the Pydantic model defaults ``output`` to ``None``, so a builder that assumed a list raised ``argument of type 'NoneType' is not iterable`` on that form.
         """
         if getattr(self, slot, None) is None:
             setattr(self, slot, [])
@@ -404,9 +380,7 @@ class DynamicsRuntime:
                 return self._peer.Range(lo=float(lo), hi=float(hi))
             if len(domain) == 3:
                 lo, hi, step = domain
-                return self._peer.Range(
-                    lo=float(lo), hi=float(hi), step=float(step)
-                )
+                return self._peer.Range(lo=float(lo), hi=float(hi), step=float(step))
         return domain
 
     def _coerce_equation(self, expr, lhs: str | None = None):
@@ -480,9 +454,7 @@ class DynamicsRuntime:
         )
         return self
 
-    def update_parameters_from_equations(
-        self, default_value: float = 1.0, overwrite: bool = False
-    ):
+    def update_parameters_from_equations(self, default_value: float = 1.0, overwrite: bool = False):
         """Scan all equations and add any free symbols as parameters (default value if missing).
 
         - Skips symbols that are known state variables, derived variables, or function arguments
@@ -533,9 +505,7 @@ class DynamicsRuntime:
             if s in known:
                 continue
             if overwrite or s not in self.parameters:
-                self._collection("parameters")[s] = self._peer.Parameter(
-                    name=s, value=float(default_value)
-                )
+                self._collection("parameters")[s] = self._peer.Parameter(name=s, value=float(default_value))
                 added.append(s)
 
         return added
@@ -559,10 +529,7 @@ class DynamicsRuntime:
     ):
         """Add a state variable (with its differential equation) to the model.
 
-        Any free symbols in `equation` that are not yet known are
-        auto-registered as parameters. A legacy `boundaries` clamp is folded
-        into `domain` (with the descriptive range preserved as the sampling
-        `distribution`).
+        Any free symbols in `equation` that are not yet known are auto-registered as parameters. A legacy `boundaries` clamp is folded into `domain` (with the descriptive range preserved as the sampling `distribution`).
 
         Args:
             name: State-variable name (also its dict key).
@@ -581,15 +548,8 @@ class DynamicsRuntime:
         Returns:
             `self`, to allow fluent chaining.
         """
-        eq = (
-            self._coerce_equation(equation, lhs=str(name))
-            if equation is not None
-            else None
-        )
-        # ``boundaries`` is the legacy name for a hard clamp; fold it into the
-        # unified ``domain`` with enforce='clamp'. When both are given, the clamp
-        # is the operative domain and the descriptive ``domain`` (the IC-sampling
-        # range) is preserved as the sampling ``distribution`` rather than dropped.
+        eq = self._coerce_equation(equation, lhs=str(name)) if equation is not None else None
+        # ``boundaries`` is the legacy name for a hard clamp; fold it into the unified ``domain`` with enforce='clamp'. When both are given, the clamp is the operative domain and the descriptive ``domain`` (the IC-sampling range) is preserved as the sampling ``distribution`` rather than dropped.
         _domain, _distribution = model_helpers._fold_range_boundaries(
             self._coerce_range(domain),
             self._coerce_range(boundaries) if boundaries is not None else None,
@@ -638,15 +598,10 @@ class DynamicsRuntime:
         Returns:
             `self`, to allow fluent chaining.
         """
-        eq = (
-            self._coerce_equation(expression, lhs=str(name))
-            if expression is not None
-            else self._peer.Equation(lhs=str(name))
-        )
+        eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else self._peer.Equation(lhs=str(name))
         if conditionals:
             eq.conditionals = [
-                self._peer.ConditionalBlock(condition=str(cond), expression=str(expr))
-                for expr, cond in conditionals
+                self._peer.ConditionalBlock(condition=str(cond), expression=str(expr)) for expr, cond in conditionals
             ]
         self._collection("derived_variables")[str(name)] = self._peer.DerivedVariable(
             name=str(name),
@@ -686,21 +641,13 @@ class DynamicsRuntime:
         # Normalize arguments into a dict[str, Parameter]
         if isinstance(arguments, dict):
             args_dict = {
-                str(k): (
-                    v
-                    if isinstance(v, self._peer.Parameter)
-                    else self._peer.Parameter(name=str(k))
-                )
+                str(k): (v if isinstance(v, self._peer.Parameter) else self._peer.Parameter(name=str(k)))
                 for k, v in arguments.items()
             }
         else:
             args = list(arguments) if isinstance(arguments, (list, tuple)) else []
             args_dict = {str(a): self._peer.Parameter(name=str(a)) for a in args}
-        eq = (
-            self._coerce_equation(expression, lhs=str(name))
-            if expression is not None
-            else None
-        )
+        eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else None
         self._collection("functions")[str(name)] = self._peer.Function(
             name=str(name),
             equation=eq,
@@ -721,8 +668,7 @@ class DynamicsRuntime:
     ):
         """Add a coupling input (a network-supplied term) to the model.
 
-        Any existing parameter with the same name is removed so the name
-        resolves to the coupling input.
+        Any existing parameter with the same name is removed so the name resolves to the coupling input.
 
         Args:
             name: Coupling-input name (also its dict key).
@@ -749,17 +695,6 @@ class DynamicsRuntime:
 
         return self
 
-    def add_coupling_term(self, name, description=None, unit=None):
-        """Deprecated. Use add_coupling_input() instead."""
-        import warnings
-
-        warnings.warn(
-            "add_coupling_term() is deprecated. Use add_coupling_input() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.add_coupling_input(name=name, description=description)
-
     def add_output(
         self,
         name: str,
@@ -771,11 +706,7 @@ class DynamicsRuntime:
         """Add an output variable. Creates a derived_variable and adds its name to output list."""
         name_str = str(name)
         # Create derived variable with the equation
-        eq = (
-            self._coerce_equation(expression, lhs=name_str)
-            if expression is not None
-            else None
-        )
+        eq = self._coerce_equation(expression, lhs=name_str) if expression is not None else None
         self._collection("derived_variables")[name_str] = self._peer.DerivedVariable(
             name=name_str, equation=eq, unit=unit, description=description
         )
@@ -808,11 +739,7 @@ class DynamicsRuntime:
         Returns:
             `self`, to allow fluent chaining.
         """
-        eq = (
-            self._coerce_equation(expression, lhs=str(name))
-            if expression is not None
-            else None
-        )
+        eq = self._coerce_equation(expression, lhs=str(name)) if expression is not None else None
         self._collection("derived_parameters")[str(name)] = self._peer.DerivedParameter(
             name=str(name),
             equation=eq,
@@ -871,16 +798,10 @@ class DynamicsRuntime:
     def symbolic_rhs(self, obj, evaluate: bool = True):
         """The parsed right-hand side of one of this model's elements.
 
-        Resolved through the symbolic layer, so rendering an element reuses the expression
-        already parsed for it rather than parsing its metadata again — the reason a second
-        `render_code` on the same model costs nothing. Falls back to the element's own
-        `Equation` for anything the model does not declare (a stimulus, a caller's ad-hoc
-        element); `parse_eq` accepts either, so the caller does not need to know which.
+        Resolved through the symbolic layer, so rendering an element reuses the expression already parsed for it rather than parsing its metadata again — the reason a second `render_code` on the same model costs nothing. Falls back to the element's own `Equation` for anything the model does not declare (a stimulus, a caller's ad-hoc element); `parse_eq` accepts either, so the caller does not need to know which.
 
         *evaluate* must match what the caller would have parsed with. A backend that
-        preserves authored term order needs the unevaluated form: SymPy canonicalises
-        `a + V*b + c*V**2` out of the order its author wrote it in, and the emitted source
-        is compared against a frozen reference.
+        preserves authored term order needs the unevaluated form: SymPy canonicalises `a + V*b + c*V**2` out of the order its author wrote it in, and the emitted source is compared against a frozen reference.
         """
         name = str(obj.name) if getattr(obj, "name", None) else ""
         if name:
@@ -892,9 +813,7 @@ class DynamicsRuntime:
     def render_equation(self, obj, format="latex", inline_functions=False, **kwargs):
         """Render a model element's equation to a string.
 
-        Handles conditional derived variables (converting `conditionals` to a
-        SymPy `Piecewise`) and can optionally inline the model's function
-        definitions.
+        Handles conditional derived variables (converting `conditionals` to a SymPy `Piecewise`) and can optionally inline the model's function definitions.
 
         Args:
             obj: A model element exposing an `equation` (state/derived
@@ -930,11 +849,7 @@ class DynamicsRuntime:
     def render_equation_cse(self, obj, format="numpy", inline_functions=False, **kwargs):
         """Common-subexpression-eliminated variant of :meth:`render_equation`.
 
-        Returns ``(setup, final)`` — a list of ``(name, expr)`` assignments plus the
-        return expression — so interpreted backends (TVB / numpy) evaluate each
-        shared subexpression (notably repeated model-function calls) once instead of
-        per occurrence. Builds the same symbolic scope / user-function set as
-        :meth:`render_equation`; see :func:`tvbo.codegen.code.render_equation_cse`.
+        Returns ``(setup, final)`` — a list of ``(name, expr)`` assignments plus the return expression — so interpreted backends (TVB / numpy) evaluate each shared subexpression (notably repeated model-function calls) once instead of per occurrence. Builds the same symbolic scope / user-function set as :meth:`render_equation`; see :func:`tvbo.codegen.code.render_equation_cse`.
         """
         from tvbo.codegen.code import render_equation_cse
 
@@ -957,10 +872,7 @@ class DynamicsRuntime:
     def fill_in_equations(self, **kwargs):
         """Substitute parameter values (and any overrides) into every equation.
 
-        Parameter symbols are replaced with their numeric values, then any
-        `**kwargs` overrides are applied, and finally all coupling inputs are
-        forced to `0` (for fixed-point / equilibrium analysis) — so a `kwargs`
-        entry named after a coupling input is overridden by that `0`.
+        Parameter symbols are replaced with their numeric values, then any `**kwargs` overrides are applied, and finally all coupling inputs are forced to `0` (for fixed-point / equilibrium analysis) — so a `kwargs` entry named after a coupling input is overridden by that `0`.
 
         Args:
             **kwargs: Additional symbol-name to value substitutions.
@@ -979,9 +891,7 @@ class DynamicsRuntime:
     def get_dependency_tree(self, ontomapping=False, include_state_equations=False):
         """Build the equation dependency graph for this model.
 
-        Nodes are the model's symbols; each edge points from a dependency to
-        the quantity whose equation uses it (dependencies → dependents). State
-        equations are excluded by default to avoid cycles in discrete systems.
+        Nodes are the model's symbols; each edge points from a dependency to the quantity whose equation uses it (dependencies → dependents). State equations are excluded by default to avoid cycles in discrete systems.
 
         Args:
             ontomapping: If `True`, also build an ontology-class version of
@@ -995,9 +905,7 @@ class DynamicsRuntime:
         """
         import sympy
 
-        # Build dependency graph primarily for sorting derived quantities.
-        # Exclude state-equations by default to avoid cycles in discrete systems
-        # (e.g., algebraic dv depending on states and states depending on dv at same step).
+        # State equations are excluded by default: in a discrete system an algebraic derived variable and the states read each other within one step, which is a cycle.
         eqs = self.get_equations(format="dict")
         eq_list = []
         for key in ["derived-parameters", "functions", "derived-variables"]:
@@ -1015,11 +923,7 @@ class DynamicsRuntime:
         # Coupling inputs don't have model-specific suffixes in ontology
         coupling_term_names = set(self.coupling_inputs.keys())
         for n in G.nodes:
-            suffix = (
-                ontology.get_model_suffix(self.ontology or self.name)
-                if str(n) not in coupling_term_names
-                else ""
-            )
+            suffix = ontology.get_model_suffix(self.ontology or self.name) if str(n) not in coupling_term_names else ""
             if isinstance(n, sympy.core.function.Derivative):
                 searchstr = f"{n.args[0]}dot{suffix}"
             else:
@@ -1086,20 +990,12 @@ class DynamicsRuntime:
             G = G[0]
 
         if color_nodes_by is not None:
-            G, G_onto, symbol_onto_mapping, onto_symbol_mapping = (
-                self.get_dependency_tree(ontomapping=True, include_state_equations=True)
+            G, G_onto, symbol_onto_mapping, onto_symbol_mapping = self.get_dependency_tree(
+                ontomapping=True, include_state_equations=True
             )
             edgecolor = None
-            cat_dict, categories = ontology_plot.get_node_color_mapping(
-                G_onto, color_nodes_by, return_categories=True
-            )
-            kwargs.update(
-                {
-                    "node_colors": [
-                        cat_dict[categories[symbol_onto_mapping[n]]] for n in G.nodes
-                    ]
-                }
-            )
+            cat_dict, categories = ontology_plot.get_node_color_mapping(G_onto, color_nodes_by, return_categories=True)
+            kwargs.update({"node_colors": [cat_dict[categories[symbol_onto_mapping[n]]] for n in G.nodes]})
 
         G = nx.relabel_nodes(
             G,
@@ -1117,10 +1013,7 @@ class DynamicsRuntime:
                 default=None,
             )
             if min_y is not None:
-                pos = {
-                    key: (x, min_y) if isinstance(key, sympy.Derivative) else (x, y)
-                    for key, (x, y) in pos.items()
-                }
+                pos = {key: (x, min_y) if isinstance(key, sympy.Derivative) else (x, y) for key, (x, y) in pos.items()}
         else:
             pos = nx.kamada_kawai_layout(G)
 
@@ -1155,12 +1048,7 @@ class DynamicsRuntime:
     def render_code(self, format="tvb", alt_label=None, **kwargs):
         """Generate backend source code for this model.
 
-        Dispatches to the template (or adapter) for the requested backend and returns the
-        formatted source. Reads the model and does not modify it, so the source depends on
-        the model alone and not on how often it has been rendered — nor on whether anything
-        reordered it first. The dependency order the straight-line emitters need is a view
-        the symbolic layer computes, not a state the model is put into: see
-        [`in_dependency_order`](../behaviour/dynamics.qmd#in_dependency_order).
+        Dispatches to the template (or adapter) for the requested backend and returns the formatted source. Reads the model and does not modify it, so the source depends on the model alone and not on how often it has been rendered — nor on whether anything reordered it first. The dependency order the straight-line emitters need is a view the symbolic layer computes, not a state the model is put into: see [`in_dependency_order`](../behaviour/dynamics.qmd#in_dependency_order).
 
         Args:
             format: Target backend, e.g. `"tvb"`, `"jax"`, `"numpy"`,
@@ -1189,9 +1077,7 @@ class DynamicsRuntime:
 
             continuation = kwargs.pop("continuation", None)
             ctx = BifurcationKitAdapter._prepare_context(self, continuation, **kwargs)
-            template = templates.lookup.get_template(
-                "tvbo-julia-BifurcationKit.jl.mako"
-            )
+            template = templates.lookup.get_template("tvbo-julia-BifurcationKit.jl.mako")
             rendered_code = template.render(**ctx)
             return templater.format_code(rendered_code, format=format)
         elif format.lower() in ["neuroml", "nml", "lems"]:
@@ -1207,9 +1093,7 @@ class DynamicsRuntime:
         else:
             raise ValueError(f"Format {format} not supported.")
 
-        rendered_code = template.render(
-            model=self, format=format, jax="jax" in format, **kwargs
-        )
+        rendered_code = template.render(model=self, format=format, jax="jax" in format, **kwargs)
         return templater.format_code(rendered_code, format=format)
 
     def render(self, format="yaml", **kwargs) -> str:
@@ -1265,25 +1149,15 @@ class DynamicsRuntime:
         """
         from IPython.display import Markdown
 
-        code = templater.format_code(
-            self.render_code(format=format, **kwargs), format=format
-        )
-        return Markdown(
-            f"```{templater.source_language(format) or format}\n{code}\n```"
-        )
+        code = templater.format_code(self.render_code(format=format, **kwargs), format=format)
+        return Markdown(f"```{templater.source_language(format) or format}\n{code}\n```")
 
     def execute(self, format="tvb", **kwargs):
         """Generate and execute the model code, returning a runnable object.
 
-        Dispatches on `format`: builds a configured TVB model instance, a
-        tvboptim dynamics instance, a compiled C module (`sympy2c`), a
-        bifurcation/continuation run, or a plain dfun callable.
+        Dispatches on `format`: builds a configured TVB model instance, a tvboptim dynamics instance, a compiled C module (`sympy2c`), a bifurcation/continuation run, or a plain dfun callable.
 
-        Every code format resolves its binding through
-        [`entry_point_name`](#tvbo.codegen.templater.entry_point_name), the same
-        declaration the templates emit against, so any backend that renders Python
-        hands back a usable object for a custom JAX, NumPy or SciPy workflow rather
-        than failing on a name the caller had to guess.
+        Every code format resolves its binding through [`entry_point_name`](#tvbo.codegen.templater.entry_point_name), the same declaration the templates emit against, so any backend that renders Python hands back a usable object for a custom JAX, NumPy or SciPy workflow rather than failing on a name the caller had to guess.
 
         Args:
             format: Backend to execute, e.g. `"tvb"`, `"tvboptim"`, `"c"`,
@@ -1322,33 +1196,22 @@ class DynamicsRuntime:
                 Module = getattr(_sympy2c, "Module")
                 OdeFast = getattr(_sympy2c, "OdeFast")
             except Exception as e:
-                raise RuntimeError(
-                    "sympy2c is not installed. Install it to use format='c' or 'sympy2c'."
-                ) from e
+                raise RuntimeError("sympy2c is not installed. Install it to use format='c' or 'sympy2c'.") from e
 
             params = self.keyed_parameters
-            params.update(
-                {Symbol(str(ci)): 0.0 for ci in self.coupling_inputs}
-            )
+            params.update({Symbol(str(ci)): 0.0 for ci in self.coupling_inputs})
             params.update({Symbol("local_coupling"): 0.0})
 
             scope = self.get_symbolic_elements()
             derived_variables = {
-                Symbol(k): expression.parse_eq(v.equation, local_dict=scope)
-                for k, v in self.derived_variables.items()
+                Symbol(k): expression.parse_eq(v.equation, local_dict=scope) for k, v in self.derived_variables.items()
             }
 
             lhs = list()
             rhs = list()
             for k, v in self.get_equations(format="state-equations").items():
                 lhs.append(Symbol(k))
-                expr = (
-                    v.rhs.subs(params)
-                    .subs(derived_variables)
-                    .subs(derived_variables)
-                    .subs(derived_variables)
-                    .subs(params)
-                )
+                expr = v.rhs.subs(params).subs(derived_variables).subs(derived_variables).subs(derived_variables).subs(params)
                 rhs.append(expr)
 
             module_decl = Module()
@@ -1357,16 +1220,12 @@ class DynamicsRuntime:
             return imported_module
 
         elif format in ["bifurcation-numcont", "bifurcation-auto7p"]:
-            # Standalone in-tree AUTO-07p backend (no external `numcont` package).
-            # Builds a one-off SimulationExperiment wrapping this Dynamics and
-            # delegates to NumContAdapter.
+            # In-tree AUTO-07p backend: a one-off SimulationExperiment wraps this Dynamics for NumContAdapter.
             from tvbo.adapters.numcont import NumContAdapter
             from tvbo.classes.continuation import Continuation
             from tvbo.classes.experiment import SimulationExperiment
 
-            cont = kwargs.pop("continuation", None) or Continuation(
-                name=self.name + "_eq"
-            )
+            cont = kwargs.pop("continuation", None) or Continuation(name=self.name + "_eq")
             exp = SimulationExperiment(
                 name=self.name,
                 label=getattr(self, "label", self.name),
@@ -1416,11 +1275,7 @@ class DynamicsRuntime:
 
         local_ct = lems.ComponentType(
             name=self.name,
-            description=(
-                self.ontology.description.first()
-                if self.ontology and self.ontology.description
-                else None
-            ),
+            description=(self.ontology.description.first() if self.ontology and self.ontology.description else None),
         )
         model.add(local_ct)
 
@@ -1456,9 +1311,7 @@ class DynamicsRuntime:
                         exposure=dp.name,
                     )
                     for branch in branches:
-                        condition_str = (
-                            None if branch.condition is True else str(branch.condition)
-                        )
+                        condition_str = None if branch.condition is True else str(branch.condition)
                         cv.add_case(
                             lems.Case(
                                 condition=condition_str,
@@ -1488,26 +1341,20 @@ class DynamicsRuntime:
 
         for sv in _ontology.get_model_statevariables(self.ontology).values():
             sv_name = _ontology.replace_suffix(sv)
-            dimension = unit_to_lems_dimension(
-                sv.has_unit.first().label.first() if sv.has_unit.first() else None
-            )
+            dimension = unit_to_lems_dimension(sv.has_unit.first().label.first() if sv.has_unit.first() else None)
             sv_start = sv_name + "_0"
 
             if assign_uniform:
                 init_conds[sv_start] = initial_conditions
             else:
-                init_conds[sv_start] = init_conds.get(
-                    sv_start, init_conds.get(sv_name, 0.0)
-                )
+                init_conds[sv_start] = init_conds.get(sv_start, init_conds.get(sv_name, 0.0))
 
             deriv = sv.has_derivative.first()
 
             local_ct.add(lems.Parameter(name=sv_start, dimension=dimension))
             local_ct.add(lems.Exposure(name=sv_name, dimension=dimension))
 
-            local_ct.dynamics.add(
-                lems.StateVariable(name=sv_name, dimension=dimension, exposure=sv_name)
-            )
+            local_ct.dynamics.add(lems.StateVariable(name=sv_name, dimension=dimension, exposure=sv_name))
             # Base derivative from ontology
             base_expr = str(_equation_mod.sympify_value(deriv)).replace("**", "^")
             # Do not inject extra inputs here; global coupling is represented via coupling_inputs (e.g., c_glob)
@@ -1540,9 +1387,7 @@ class DynamicsRuntime:
     def get_run_filename(self, format, **kwargs):
         """Build a deterministic cache filename for a run in the temp directory.
 
-        Non-identifying keyword arguments (e.g. `filename`, `force`,
-        `verbose`) are dropped and the rest are sorted so the same run maps to
-        the same path.
+        Non-identifying keyword arguments (e.g. `filename`, `force`, `verbose`) are dropped and the rest are sorted so the same run maps to the same path.
 
         Args:
             format: Backend format string included in the filename.
@@ -1565,9 +1410,7 @@ class DynamicsRuntime:
         kwargs = {k: kwargs[k] for k in sorted(kwargs.keys())}
         filename = join(
             tempdir,
-            self.name
-            + f"_format-{format}_"
-            + "_".join(f"{k}-{v}" for k, v in kwargs.items()),
+            self.name + f"_format-{format}_" + "_".join(f"{k}-{v}" for k, v in kwargs.items()),
         )
 
         return filename
@@ -1575,10 +1418,7 @@ class DynamicsRuntime:
     def get_initial_values(self, default=0.1, random=False, N=1, **kwargs):
         """Build the initial state vector for a simulation.
 
-        If any state variable defines a `distribution` (or `random=True`),
-        initial values are sampled from it (Gaussian or uniform over the
-        finite domain bounds); otherwise each variable's `initial_value` (or
-        `default`) is used.
+        If any state variable defines a `distribution` (or `random=True`), initial values are sampled from it (Gaussian or uniform over the finite domain bounds); otherwise each variable's `initial_value` (or `default`) is used.
 
         Args:
             default: Fallback value for variables without an initial value.
@@ -1600,37 +1440,26 @@ class DynamicsRuntime:
                 stacklevel=2,
             )
         # Auto-detect: if any SV has a distribution, sample from it
-        has_distributions = any(
-            getattr(sv, "distribution", None) for sv in self.state_variables.values()
-        )
+        has_distributions = any(getattr(sv, "distribution", None) for sv in self.state_variables.values())
         if random or has_distributions:
             init = []
             for k, sv in self.state_variables.items():
                 dist = getattr(sv, "distribution", None)
                 if dist:
                     # Use distribution.domain, fall back to sv.domain
-                    domain = getattr(dist, "domain", None) or getattr(
-                        sv, "domain", None
-                    )
-                    # Guard against non-finite / missing bounds: a distribution
-                    # without its own domain falls back to sv.domain, which may be a
-                    # half-open clamp (e.g. [0, inf)); uniform(0, inf) would overflow.
+                    domain = getattr(dist, "domain", None) or getattr(sv, "domain", None)
+                    # Guard against non-finite / missing bounds: a distribution without its own domain falls back to sv.domain, which may be a half-open clamp (e.g. [0, inf)); uniform(0, inf) would overflow.
                     _dlo = getattr(domain, "lo", None) if domain else None
                     _dhi = getattr(domain, "hi", None) if domain else None
                     lo = float(_dlo) if (isinstance(_dlo, (int, float)) and np.isfinite(_dlo)) else -10.0
                     hi = float(_dhi) if (isinstance(_dhi, (int, float)) and np.isfinite(_dhi)) else 10.0
                     dist_name = str(getattr(dist, "name", "Uniform")).lower()
                     if dist_name in ("gaussian", "normal"):
-                        sv_init = np.random.normal(
-                            loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N
-                        )
+                        sv_init = np.random.normal(loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N)
                     else:
                         sv_init = np.random.uniform(lo, hi, size=N)
                 elif random:
-                    # Legacy fallback: sample from the domain range. The domain
-                    # may carry a one-sided clamp (e.g. [0, inf) for a firing
-                    # rate), so guard against non-finite / inverted bounds —
-                    # uniform(0, inf) would yield inf/NaN initial states.
+                    # Legacy fallback: sample from the domain range. The domain may carry a one-sided clamp (e.g. [0, inf) for a firing rate), so guard against non-finite / inverted bounds — uniform(0, inf) would yield inf/NaN initial states.
                     dlo = getattr(sv.domain, "lo", None) if sv.domain else None
                     dhi = getattr(sv.domain, "hi", None) if sv.domain else None
                     lo = dlo if (isinstance(dlo, (int, float)) and np.isfinite(dlo)) else -10.0
@@ -1643,9 +1472,7 @@ class DynamicsRuntime:
                     sv_init = np.repeat(utils.initial_value(sv, default), N)
                 init.append(sv_init)
         else:
-            init = [
-                utils.initial_value(sv, default) for sv in self.state_variables.values()
-            ]
+            init = [utils.initial_value(sv, default) for sv in self.state_variables.values()]
         return np.array(init)
 
     def run(
@@ -1653,8 +1480,7 @@ class DynamicsRuntime:
     ) -> data_types.TimeSeries | analysis.BifurcationResult:
         """Generate, execute, and integrate the model, returning its output.
 
-        Supports Julia (ODE and bifurcation), Python (SciPy `odeint`, or an
-        iterated map for discrete systems), and compiled C backends.
+        Supports Julia (ODE and bifurcation), Python (SciPy `odeint`, or an iterated map for discrete systems), and compiled C backends.
 
         Args:
             format: Backend to run, e.g. `"python"`, `"julia"`,
@@ -1709,18 +1535,15 @@ class DynamicsRuntime:
                 bif_res = analysis.BifurcationResult(br=br_obj, model=self, **kwargs)
                 # Auto-detect PO branches from continuation object or explicit kwarg
                 cont = kwargs.get("continuation", None)
-                _has_branches = (
-                    "periodic_orbits" in kwargs and kwargs["periodic_orbits"]
-                ) or (cont and getattr(cont, "branches", None))
+                _has_branches = ("periodic_orbits" in kwargs and kwargs["periodic_orbits"]) or (
+                    cont and getattr(cont, "branches", None)
+                )
                 if _has_branches:
                     from tvbo.adapters.julia import eval_with_auto_install
 
                     try:
                         po = eval_with_auto_install("po_results")
-                        bif_res.periodic_orbits = [
-                            analysis.BifurcationResult(br=p, model=self, **kwargs)
-                            for p in po.branches
-                        ]
+                        bif_res.periodic_orbits = [analysis.BifurcationResult(br=p, model=self, **kwargs) for p in po.branches]
                     except Exception as e:
                         import warnings
 
@@ -1735,9 +1558,7 @@ class DynamicsRuntime:
             if getattr(self, "system_type", "continuous") == "discrete":
                 # Initial conditions
                 if "u_0" not in kwargs:
-                    u_0 = self.get_initial_values(
-                        random=kwargs.get("random_initial_conditions", False)
-                    )
+                    u_0 = self.get_initial_values(random=kwargs.get("random_initial_conditions", False))
                 else:
                     u_0 = kwargs.pop("u_0")
 
@@ -1791,9 +1612,7 @@ class DynamicsRuntime:
 
             if "u_0" not in kwargs:
                 # Initial conditions
-                u_0 = self.get_initial_values(
-                    random=kwargs.get("random_initial_conditions", False)
-                )
+                u_0 = self.get_initial_values(random=kwargs.get("random_initial_conditions", False))
             else:
                 u_0 = kwargs.pop("u_0")
 
@@ -1807,9 +1626,7 @@ class DynamicsRuntime:
             else:
                 t = kwargs.pop("t")
             # Run the simulation with the updated parameters
-            solution_slider = odeint(
-                lambda u, t: model_dfun(u, t, **run_kwargs), u_0, t
-            )
+            solution_slider = odeint(lambda u, t: model_dfun(u, t, **run_kwargs), u_0, t)
 
             return data_types.TimeSeries(
                 data=solution_slider.reshape(*solution_slider.shape, 1, 1),
@@ -1827,9 +1644,7 @@ class DynamicsRuntime:
             T = kwargs.pop("t", np.arange(0, duration, dt, dtype=np.float64))
 
             compiled_module = self.execute(format=format, **kwargs)
-            result, diagnostics = compiled_module.solve_fast_robertson(
-                u_0, T, rtol=rtol, atol=atol
-            )
+            result, diagnostics = compiled_module.solve_fast_robertson(u_0, T, rtol=rtol, atol=atol)
             return data_types.TimeSeries(
                 data=result.reshape(*result.shape, 1, 1),
                 time=T,
@@ -1843,9 +1658,7 @@ class DynamicsRuntime:
         """Attach a stimulus to the model.
 
         Warns if no state variable is marked as a stimulation target.
-        Depending on `as_derived_variable`, the stimulus is either stored on
-        `self.stimulus` or lowered into a `stim_t` derived variable plus
-        suffixed stimulus parameters.
+        Depending on `as_derived_variable`, the stimulus is either stored on `self.stimulus` or lowered into a `stim_t` derived variable plus suffixed stimulus parameters.
 
         Args:
             stimulus: A
@@ -1855,16 +1668,13 @@ class DynamicsRuntime:
                 directly.
         """
 
-        if not any(
-            [sv.stimulation_variable for sv in self.state_variables.values()]
-        ) and not any(
+        if not any([sv.stimulation_variable for sv in self.state_variables.values()]) and not any(
             ["stim_t" in sv.equation.rhs for sv in self.state_variables.values()]
         ):
             import warnings
 
             warnings.warn(
-                "No state variable with attribute `stimulation_variable=True` set. "
-                "Stimulation will have no effect.",
+                "No state variable with attribute `stimulation_variable=True` set. Stimulation will have no effect.",
                 stacklevel=2,
             )
         if isinstance(stimulus, perturbation.Stimulus) and not as_derived_variable:
@@ -1876,18 +1686,9 @@ class DynamicsRuntime:
             params = {param_map[k]: v for k, v in params.items()}
             eq = eq.subs(param_map)
             self.derived_variables.update(
-                {
-                    "stim_t": self._peer.DerivedVariable(
-                        name="stim_t", equation=self._peer.Equation(rhs=eq)
-                    )
-                }
+                {"stim_t": self._peer.DerivedVariable(name="stim_t", equation=self._peer.Equation(rhs=eq))}
             )
-            self.parameters.update(
-                {
-                    str(k): self._peer.Parameter(name=str(k), value=v)
-                    for k, v in params.items()
-                }
-            )
+            self.parameters.update({str(k): self._peer.Parameter(name=str(k), value=v) for k, v in params.items()})
 
     def find_periodic_orbits(self, f):
         """Find sibling periodic-orbit output files for a run.
@@ -1924,9 +1725,7 @@ class DynamicsRuntime:
     ):
         """Plot a bifurcation diagram alongside representative time series.
 
-        Builds two linked panels — a bifurcation diagram over `ICS` and time
-        series of `VOI` sampled at several parameter values — and either
-        returns the combined figure or draws into the supplied axes.
+        Builds two linked panels — a bifurcation diagram over `ICS` and time series of `VOI` sampled at several parameter values — and either returns the combined figure or draws into the supplied axes.
 
         Args:
             ICS: Name of the continuation/bifurcation parameter to vary.
@@ -2012,8 +1811,7 @@ class DynamicsRuntime:
     def save_python_class(self, directory="."):
         """Write the model as a standalone TVB Python class file.
 
-        Emits `<name>.py` in `directory` with the required imports followed
-        by the rendered TVB model code.
+        Emits `<name>.py` in `directory` with the required imports followed by the rendered TVB model code.
 
         Args:
             directory: Target directory for the generated `<name>.py` file.
@@ -2039,14 +1837,9 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
     ):
         """Render a human-readable report of the model.
 
-        Reads the model and does not modify it, for the same reason as
-        [`render_code`](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_code): normalisation
-        belongs to construction, and repeating it here made a report a command as well as a
-        query.
+        Reads the model and does not modify it, for the same reason as [`render_code`](#tvbo.behaviour.dynamics_runtime.DynamicsRuntime.render_code): normalisation belongs to construction, and repeating it here made a report a command as well as a query.
 
-        Refreshes metadata and renders the Markdown report template; the
-        result is optionally written to `outputfile` (as Markdown or, for
-        `format="pdf"`, a PDF).
+        Refreshes metadata and renders the Markdown report template; the result is optionally written to `outputfile` (as Markdown or, for `format="pdf"`, a PDF).
 
         Args:
             format: `"markdown"`/`"md"` or `"pdf"`.
@@ -2125,9 +1918,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
     def __copy__(self):
         """A shallow copy, through the generated form's own protocol where it has one.
 
-        Pydantic implements the copy hooks itself and ``model_copy()`` routes through them,
-        so building a clone with ``cls.__new__`` leaves ``__pydantic_extra__`` unset and the
-        first assignment raises. The LinkML dataclasses have no hook, hence the manual path.
+        Pydantic implements the copy hooks itself and ``model_copy()`` routes through them, so building a clone with ``cls.__new__`` leaves ``__pydantic_extra__`` unset and the first assignment raises. The LinkML dataclasses have no hook, hence the manual path.
         """
         inherited = getattr(super(), "__copy__", None)
         if inherited is not None:
@@ -2141,8 +1932,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
     def __deepcopy__(self, memo):
         """A deep copy, through the generated form's own protocol where it has one.
 
-        See [`__copy__`](#__copy__): reconstructing a Pydantic model by hand is what its own
-        hook exists to avoid.
+        See [`__copy__`](#__copy__): reconstructing a Pydantic model by hand is what its own hook exists to avoid.
         """
         import dataclasses
 
@@ -2151,8 +1941,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
             return inherited(memo)
 
         cls = self.__class__
-        # For dataclasses, we need to copy all fields, not just __dict__
-        # __dict__ may not include fields that are still at their default values
+        # For dataclasses, we need to copy all fields, not just __dict__ __dict__ may not include fields that are still at their default values
         data = {}
         if dataclasses.is_dataclass(self):
             for field in dataclasses.fields(self):

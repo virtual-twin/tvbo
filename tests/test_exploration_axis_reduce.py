@@ -1,20 +1,15 @@
 """Tests for the ``ExplorationAxis.reduce`` capability.
 
-An exploration axis marked ``reduce`` is collapsed by a statistic in the result
-container: the axis's named grid dimension is reduced across every observation
-that carries it (keyed by dim name, never positional), the reduced observations
-keep their names, and the collapsed axis drops out of the shape metadata.
-Observations that do not carry the dim are left untouched. Without ``reduce`` the
-result container is unchanged.
+An exploration axis marked ``reduce`` is collapsed by a statistic in the result container: the axis's named grid dimension is reduced across every observation that carries it (keyed by dim name, never positional), the reduced observations keep their names, and the collapsed axis drops out of the shape metadata.
+Observations that do not carry the dim are left untouched. Without ``reduce`` the result container is unchanged.
 """
 
 import numpy as np
-import xarray as xr
 import pytest
+import xarray as xr
 
 from tvbo.data.types import ExplorationResult
 from tvbo.utils import Bunch
-
 
 MU_VALS = np.array([0.1, 0.2, 0.3])
 SEED_VALS = np.array([0, 1, 2, 3])
@@ -102,30 +97,21 @@ def test_other_obs_and_labels_preserved():
 def test_reduce_on_internally_labelled_observations():
     """Raw stacked arrays get labelled by ``_stacked_to_dataarray`` then reduced.
 
-    Exercises the production path where ExplorationResult builds the DataArray
-    itself (grid dim named by the axis ``name``) before reducing by that dim name.
+    Exercises the production path where ExplorationResult builds the DataArray itself (grid dim named by the axis ``name``) before reducing by that dim name.
     """
     rng = np.random.default_rng(1)
     # Flat leading dim = prod(grid) = 3 * 4, followed by a node dim.
     raw = rng.standard_normal((len(MU_VALS) * len(SEED_VALS), 5))
-    res = ExplorationResult(
-        name="t", axes=_axes("mean"), observations={"decision": raw}
-    )
+    res = ExplorationResult(name="t", axes=_axes("mean"), observations={"decision": raw})
     dec = res.observations["decision"]
-    # Grid dims are named by the axis names; the reduced one is gone while the
-    # surviving grid axis stays leading. (The lone trailing spatial dim is named
-    # by _stacked_to_dataarray's own convention — not under test here.)
+    # Grid dims are named by the axis names; the reduced one is gone while the surviving grid axis stays leading. (The lone trailing spatial dim is named by _stacked_to_dataarray's own convention — not under test here.)
     assert "execution.random_seed" not in dec.dims
     assert dec.dims[0] == "MurrayWangDM.mu"
     assert "MurrayWangDM.mu" in dec.dims
 
     # Compare against the same array labelled without reduction, then meaned.
-    ref = ExplorationResult(
-        name="t", axes=_axes(None), observations={"decision": raw.copy()}
-    ).observations["decision"]
-    np.testing.assert_allclose(
-        dec.values, ref.mean(dim="execution.random_seed").values
-    )
+    ref = ExplorationResult(name="t", axes=_axes(None), observations={"decision": raw.copy()}).observations["decision"]
+    np.testing.assert_allclose(dec.values, ref.mean(dim="execution.random_seed").values)
 
 
 def test_no_reduce_leaves_observations_unchanged():

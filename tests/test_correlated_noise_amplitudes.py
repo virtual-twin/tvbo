@@ -1,12 +1,6 @@
 """The declared covariance must be realised as ``diag(sigma) C diag(sigma)``.
 
-`Noise.covariance` states correlation and `sigma` states amplitude, so the realised
-increment covariance is ``diag(sigma) C diag(sigma)``. Composing them the other way round
-(``L diag(sigma)``, i.e. scaling the draw before mixing) agrees exactly when sigma is
-uniform along the mixed axis and silently diverges when it is not — and for a
-rank-deficient covariance it does not merely distort the process, it removes it: the
-surviving eigenvector is placed by the eigendecomposition, and multiplying by a sigma that
-is zero on the states it lands on annihilates the increment.
+`Noise.covariance` states correlation and `sigma` states amplitude, so the realised increment covariance is ``diag(sigma) C diag(sigma)``. Composing them the other way round (``L diag(sigma)``, i.e. scaling the draw before mixing) agrees exactly when sigma is uniform along the mixed axis and silently diverges when it is not — and for a rank-deficient covariance it does not merely distort the process, it removes it: the surviving eigenvector is placed by the eigendecomposition, and multiplying by a sigma that is zero on the states it lands on annihilates the increment.
 """
 
 from __future__ import annotations
@@ -43,15 +37,14 @@ def test_scaling_before_mixing_would_annihilate_a_rank_deficient_process():
 def test_uniform_sigma_is_unchanged_by_the_fold():
     """Why a `node`-axis covariance with a scalar amplitude cannot be affected.
 
-    With sigma uniform along the mixed axis the two orders are bitwise identical, so the
-    wave-model path (`correlated_over: node`, scalar sigma) is safe by construction rather
-    than only by testing.
+    With sigma uniform along the mixed axis the two orders are bitwise identical, so the wave-model path (`correlated_over: node`, scalar sigma) is safe by construction rather than only by testing.
     """
     C = np.array([[1.0, 0.3, 0.1], [0.3, 1.0, 0.2], [0.1, 0.2, 1.0]])
     s = np.full(3, 0.02)
     assert np.array_equal(covariance_factor(C) @ np.diag(s), np.diag(s) @ covariance_factor(C))
-    assert np.allclose(covariance_factor(fold_amplitudes(C, s)) @ covariance_factor(fold_amplitudes(C, s)).T,
-                       np.diag(s) @ C @ np.diag(s))
+    assert np.allclose(
+        covariance_factor(fold_amplitudes(C, s)) @ covariance_factor(fold_amplitudes(C, s)).T, np.diag(s) @ C @ np.diag(s)
+    )
 
 
 def test_fold_rejects_a_length_mismatch():

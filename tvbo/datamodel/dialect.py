@@ -23,7 +23,7 @@ belongs to the caller — Pydantic already descends into members, and the datacl
 from __future__ import annotations
 
 import warnings
-from functools import lru_cache
+from functools import cache
 
 from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, SLOT_ALIASES
 
@@ -108,8 +108,7 @@ def fold_aliases(cls_name: str, data: dict) -> dict:
         value = data.pop(alias)
         if canonical in data:
             warnings.warn(
-                f"{cls_name} got both {alias!r} and its canonical slot "
-                f"{canonical!r}; ignoring {alias!r}.",
+                f"{cls_name} got both {alias!r} and its canonical slot {canonical!r}; ignoring {alias!r}.",
                 stacklevel=4,
             )
         else:
@@ -117,7 +116,7 @@ def fold_aliases(cls_name: str, data: dict) -> dict:
     return data
 
 
-@lru_cache(maxsize=None)
+@cache
 def curated_entry(cls_name: str, name: str) -> dict | None:
     """The curated *cls_name* record called *name*, alias-folded and ready to merge.
 

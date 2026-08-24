@@ -1,13 +1,9 @@
 """Freeze what TVBO serializes every database file back out as.
 
 The database is TVBO's published record. Schema validation says each file is *permitted*;
-it says nothing about what TVBO makes of it. A slot silently dropped on load, a default
-materialised where the author wrote nothing, an `inf` turned into `null` by a serializer
-setting — each leaves every file still valid and still passing, while changing the record.
+it says nothing about what TVBO makes of it. A slot silently dropped on load, a default materialised where the author wrote nothing, an `inf` turned into `null` by a serializer setting — each leaves every file still valid and still passing, while changing the record.
 
-This corpus freezes the canonical dump of all 443 files and fails on any difference, so
-such a change has to be re-baselined under ``--regenerate-golden`` in its own commit and
-reviewed as what it is: an edit to the published record.
+This corpus freezes the canonical dump of all 443 files and fails on any difference, so such a change has to be re-baselined under ``--regenerate-golden`` in its own commit and reviewed as what it is: an edit to the published record.
 
 Building it found three gaps that had nothing to do with serialization:
 
@@ -18,9 +14,7 @@ Building it found three gaps that had nothing to do with serialization:
 * ``reducers`` had no class at all, so its one recipe was read as a raw dict and validated
   by nothing.
 
-With those fixed the corpus is 443/443 with no expected failures, which is why there are
-none here: a gap that has to be written down as an ``xfail`` is a gap that could instead be
-closed.
+With those fixed the corpus is 443/443 with no expected failures, which is why there are none here: a gap that has to be written down as an ``xfail`` is a gap that could instead be closed.
 """
 
 from __future__ import annotations
@@ -49,11 +43,7 @@ def _diff(produced: str, expected: str) -> str | None:
     """A unified diff of the two dumps, or ``None`` when they are identical."""
     if produced == expected:
         return None
-    lines = list(
-        difflib.unified_diff(
-            expected.splitlines(), produced.splitlines(), "frozen", "produced", lineterm="", n=2
-        )
-    )
+    lines = list(difflib.unified_diff(expected.splitlines(), produced.splitlines(), "frozen", "produced", lineterm="", n=2))
     head = lines[:40]
     if len(lines) > 40:
         head.append(f"... and {len(lines) - 40} more diff lines")
@@ -91,8 +81,7 @@ def test_the_dump_of_a_database_file_is_unchanged(path, class_name, regenerate: 
 def test_a_dump_reloads_to_itself(path, class_name):
     """``dump(load(dump(x))) == dump(x)`` — the dump is a complete statement of the object.
 
-    Independent of the frozen corpus: that one catches a *change*, this one catches a dump
-    the loader cannot read back, which would be equally frozen and equally wrong.
+    Independent of the frozen corpus: that one catches a *change*, this one catches a dump the loader cannot read back, which would be equally frozen and equally wrong.
     """
     from tvbo.datamodel import schema
     from tvbo.utils import to_yaml, yaml_loader

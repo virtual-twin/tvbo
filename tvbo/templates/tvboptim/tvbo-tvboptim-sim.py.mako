@@ -80,11 +80,9 @@ t1_default = float(integration.duration) if hasattr(integration, 'duration') and
 from tvbo.codegen.templater import entry_point_name
 dynamics_class = entry_point_name(model, 'tvboptim')
 
-# Events metadata (stimuli and other time-dependent inputs)
-events_list = list(experiment.events.values()) if experiment.events else []
-stimulus_events = [ev for ev in events_list
-                   if ('stimul' in str(getattr(ev, 'event_type', 'stimulus')))
-                   or (str(getattr(ev, 'event_type', '')) in ('continuous', 'discrete'))]
+# Events metadata: the shared resolver drops fisher-target events and rejects class collisions.
+from tvbo.templates.tvboptim.utils import active_stimulus_events
+stimulus_events = active_stimulus_events(experiment)
 has_stimulus_events = len(stimulus_events) > 0
 
 # accelerator -> JAX_PLATFORMS (set before `import jax`); 'auto' delegates to JAX detection.

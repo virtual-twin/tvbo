@@ -72,8 +72,8 @@ generated T-box with categories that cannot be expressed in LinkML alone:
    dimensionality, and dynamical repertoire.
 
 See the [methods chapter](../Specification/index.qmd) for the full
-ontological-engineering rationale and the [restructuring plan](https://github.com/virtual-twin/tvbo/blob/dev/dev/OntologicalRestructuring/plan.md)
-for the active development roadmap.
+ontological-engineering rationale. The active restructuring roadmap is tracked
+internally.
 
 ## Citing TVB-O
 

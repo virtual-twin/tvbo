@@ -1,10 +1,6 @@
-#
-# Module: phase.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Phase-space trajectory and vector-field plots for SimulationResult."""
 
 import matplotlib.pyplot as plt
@@ -41,18 +37,16 @@ def plot_phase(result, x_var=None, y_var=None, region=0, mode=0, ax=None, colorb
 
     Parameters
     ----------
-    result : SimulationResult
-    x_var, y_var : str, optional
+    result : SimulationResult x_var, y_var : str, optional
         Variable names for x/y axes. Defaults to first two.
     region, mode : int
         Index selection when node/mode dims exist.
-    ax : matplotlib.axes.Axes, optional
-    colorbar : bool
+    ax : matplotlib.axes.Axes, optional colorbar : bool
         Show time colorbar.
     **kwargs
         Forwarded to ``ax.scatter()``.
 
-    Returns
+    Returns:
     -------
     matplotlib.figure.Figure or None
     """
@@ -100,18 +94,13 @@ def plot_vector_field(
 ):
     """Vector field (streamplot or quiver) from the dynamics RHS.
 
-    Requires ``result`` to carry a reference to the source experiment
-    (via ``ExperimentResult.source``) so the dynamics equations are available.
+    Requires ``result`` to carry a reference to the source experiment (via ``ExperimentResult.source``) so the dynamics equations are available.
 
     Parameters
     ----------
-    result : SimulationResult
-    x_var, y_var : str, optional
-    region, mode : int
-    grid_n : int
+    result : SimulationResult x_var, y_var : str, optional region, mode : int grid_n : int
         Grid resolution per axis.
-    ax : matplotlib.axes.Axes, optional
-    stream : bool
+    ax : matplotlib.axes.Axes, optional stream : bool
         If True use streamplot, otherwise quiver.
     trajectory : bool
         Overlay the simulation trajectory.
@@ -127,11 +116,7 @@ def plot_vector_field(
 
     time, traj_x, traj_y, xlabel, ylabel = _extract_2d(result, x_var, y_var, region, mode)
 
-    # Walk back to the object that owns the dynamics. A SimulationResult links to
-    # its ExperimentResult, which in turn links to the SimulationExperiment — so a
-    # single hop lands on a container that has no `.dynamics`. Follow the chain
-    # instead of falling back to the container itself, which used to surface as
-    # "'ExperimentResult' has no attribute 'state_variables'".
+    # A single hop lands on ExperimentResult, which has no `.dynamics`, so follow the whole chain.
     dynamics = None
     seen = set()
     candidate = result
@@ -173,9 +158,7 @@ def plot_vector_field(
     from tvbo.utils import initial_value, is_array_valued
 
     param_vals = {
-        pname: float(p.value)
-        for pname, p in all_params.items()
-        if p.value is not None and not is_array_valued(p.value)
+        pname: float(p.value) for pname, p in all_params.items() if p.value is not None and not is_array_valued(p.value)
     }
 
     # Substitute fixed params and non-plotted state variables at their mean
@@ -199,12 +182,7 @@ def plot_vector_field(
 
     x_sym, y_sym = sym_dict[xlabel], sym_dict[ylabel]
 
-    # Anything still free after substitution is an input the dfun expects but the
-    # phase plane does not supply — coupling inputs such as `c_glob` /
-    # `local_coupling`, which are network quantities rather than model parameters.
-    # Evaluate them at `inputs`(default 0), i.e. draw the *isolated-node* vector
-    # field. Leaving them symbolic makes lambdify return an expression, which then
-    # fails with "Cannot convert expression to float".
+    # A still-free symbol is a coupling input; at `inputs` this draws the isolated-node field.
     residual = (rhs_x_sub.free_symbols | rhs_y_sub.free_symbols) - {x_sym, y_sym}
     if residual:
         fill = {s: float(inputs.get(str(s), 0.0)) if inputs else 0.0 for s in residual}

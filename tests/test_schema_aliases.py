@@ -1,10 +1,8 @@
 """Schema-declared ``aliases:`` work at load time, and only where they apply.
 
-LinkML ``aliases:`` are metadata — its loaders key on the canonical slot name — so a
-declared alias is inert and raises ``unexpected keyword argument`` unless something
-resolves it. Resolution happens in each generated class's ``__init__``
-(``hatch_build._alias_support``), where the kwargs are known to belong to that class:
-no document traversal, and a free-form key can never be mistaken for a slot.
+LinkML ``aliases:`` are metadata — its loaders key on the canonical slot name — so a declared alias is inert and raises ``unexpected keyword argument`` unless something resolves it. Resolution happens in each generated class's ``__init__`` (``hatch_build._alias_support``), where the kwargs are known to belong to that class: no document traversal, and a free-form key can never be mistaken for a slot.
+
+The strict pydantic models (``extra='forbid'``) cannot fold in ``__init__``, so ``pydantic_loader`` folds the aliases in ``_inject`` from the same ``_SLOT_ALIASES`` table. Without that the validator rejects documents the dataclass loader accepts — the two paths must agree.
 """
 
 import pytest
@@ -38,17 +36,14 @@ def _declared_aliases():
 # ── completeness: no declared alias is silently inert ────────────────
 
 
-# `range`/`boundaries` -> `domain` carry extra semantics (clamp, distribution) and are
-# resolved by yaml_loader._fold_state_variable_domains instead.
+# `range`/`boundaries` -> `domain` carry extra semantics (clamp, distribution) and are resolved by yaml_loader._fold_state_variable_domains instead.
 _SEMANTIC = {"range", "boundaries"}
 
 
 def test_every_declared_alias_is_resolvable():
-    """Each ``(class, alias)`` pair is either folded by that class or owned by a
-    dedicated pass — never simply ignored.
+    """Each ``(class, alias)`` pair is either folded by that class or owned by a dedicated pass — never simply ignored.
 
-    Keyed on the pair, not the alias name: ``range`` is exempt on ``StateVariable``
-    but that must not silently exempt it everywhere else.
+    Keyed on the pair, not the alias name: ``range`` is exempt on ``StateVariable`` but that must not silently exempt it everywhere else.
     """
     unresolved = [
         (cls, alias)
@@ -59,14 +54,12 @@ def test_every_declared_alias_is_resolvable():
 
 
 def test_semantic_aliases_are_never_plain_renamed():
-    """``boundaries`` reaching the generic fold would strip the ``enforce: clamp``
-    that its own pass adds."""
+    """``boundaries`` reaching the generic fold would strip the ``enforce: clamp`` that its own pass adds."""
     assert not any(set(amap) & _SEMANTIC for amap in SLOT_ALIASES.values())
 
 
 def test_an_alias_is_scoped_to_the_class_that_declares_it():
-    """``target_variable`` aliases ``Edge.target_var`` but is canonical on ``Event``,
-    so it must fold for one and not the other."""
+    """``target_variable`` aliases ``Edge.target_var`` but is canonical on ``Event``, so it must fold for one and not the other."""
     assert SLOT_ALIASES["Edge"]["target_variable"] == "target_var"
     assert "target_variable" not in SLOT_ALIASES.get("Event", {})
 
@@ -77,21 +70,17 @@ def test_an_alias_is_scoped_to_the_class_that_declares_it():
 def test_a_user_key_that_collides_with_an_alias_is_left_alone():
     """The reason the fold is class-scoped rather than context-free.
 
-    ``dt`` aliases ``Integrator.step_size`` and ``components`` aliases
-    ``Dynamics.modes``, but both are ordinary strings a recipe may use as a parameter
-    name or a free-form key. A context-free rename silently rewrites those.
+    ``dt`` aliases ``Integrator.step_size`` and ``components`` aliases ``Dynamics.modes``, but both are ordinary strings a recipe may use as a parameter name or a free-form key. A context-free rename silently rewrites those.
     """
     exp = SimulationExperiment.from_string(
-        _BASE + "integration: {dt: 0.05}\n"
-        "network: {number_of_nodes: 1, nodes: [{id: 0}]}\n"
+        _BASE + "integration: {dt: 0.05}\nnetwork: {number_of_nodes: 1, nodes: [{id: 0}]}\n"
     )
     assert exp.integration.step_size == 0.05
 
 
 def test_a_model_parameter_named_dt_survives_a_real_load():
     dyn = Dynamics.from_string(
-        "name: M\nparameters: {dt: {value: 0.25}}\n"
-        "state_variables:\n  x: {equation: {rhs: '-dt*x'}, initial_value: 0.1}\n"
+        "name: M\nparameters: {dt: {value: 0.25}}\nstate_variables:\n  x: {equation: {rhs: '-dt*x'}, initial_value: 0.1}\n"
     )
     assert "dt" in dyn.parameters and dyn.parameters["dt"].value == 0.25
 
@@ -105,9 +94,7 @@ def test_dt_is_accepted_for_integrator_step_size():
 
 
 def test_righthandside_is_accepted():
-    dyn = Dynamics.from_string(
-        "name: M\nstate_variables:\n  x: {equation: {righthandside: '-x'}, initial_value: 0.1}\n"
-    )
+    dyn = Dynamics.from_string("name: M\nstate_variables:\n  x: {equation: {righthandside: '-x'}, initial_value: 0.1}\n")
     assert dyn.state_variables["x"].equation.rhs == "-x"
 
 
@@ -119,14 +106,10 @@ def test_number_of_regions_is_accepted():
 
 
 def test_scalar_shortcut_lifts_an_array_literal():
-    """``sel: {time: [0.006, 0.016]}`` is a coordinate LIST, and the slot it lifts into
-    holds arrays as well as scalars. Lifting only scalars left the list to be built as an
-    Argument positionally, where it landed in ``description`` and the selection silently
-    vanished — a sourced argument then arrived unsliced."""
+    """``sel: {time: [0.006, 0.016]}`` is a coordinate LIST, and the slot it lifts into holds arrays as well as scalars. Lifting only scalars left the list to be built as an Argument positionally, where it landed in ``description`` and the selection silently vanished — a sourced argument then arrived unsliced."""
     from tvbo.datamodel.schema import DataRef
 
-    ref = DataRef(experiment="1", output="integration",
-                  sel={"variable": "phi", "time": [0.006, 0.016]})
+    ref = DataRef(experiment="1", output="integration", sel={"variable": "phi", "time": [0.006, 0.016]})
     assert ref.sel["variable"].value == "phi"
     assert list(ref.sel["time"].value) == [0.006, 0.016]
     assert ref.sel["time"].description is None
@@ -142,11 +125,7 @@ def test_scalar_shortcut_leaves_a_collection_list_alone():
 
 
 def test_scalar_shortcut_keeps_keyed_list_scalars_as_identifiers():
-    """``arguments: [v]`` is the list spelling of a NAME-KEYED collection, so ``v`` is the
-    argument's name — not a value to wrap. Lifting it to ``{value: v}`` mislabelled ``v`` as
-    ``value`` and stranded the real name in ``description``, generating ``def Sigm(value)``
-    with a body that still referenced ``v`` (``NameError: name 'v' is not defined``). A
-    non-keyed list (``additional_equations``) still lifts each element."""
+    """``arguments: [v]`` is the list spelling of a NAME-KEYED collection, so ``v`` is the argument's name — not a value to wrap. Lifting it to ``{value: v}`` mislabelled ``v`` as ``value`` and stranded the real name in ``description``, generating ``def Sigm(value)`` with a body that still referenced ``v`` (``NameError: name 'v' is not defined``). A non-keyed list (``additional_equations``) still lifts each element."""
     from tvbo.datamodel.dialect import lift_scalar
     from tvbo.datamodel.schema import Function
 
@@ -173,21 +152,17 @@ def test_stimulus_event_target_variable_is_not_rewritten():
 
 def test_edge_source_and_target_variable_fold_to_the_edge_slots():
     net = SimulationExperiment.from_string(
-        _BASE + "network: {number_of_nodes: 2, edges: [{source: 0, target: 1, "
-        "source_variable: V, target_variable: W}]}"
+        _BASE + "network: {number_of_nodes: 2, edges: [{source: 0, target: 1, source_variable: V, target_variable: W}]}"
     ).network
     assert (net.edges[0].source_var, net.edges[0].target_var) == ("V", "W")
 
 
 def test_boundaries_still_implies_clamp_and_domain_still_does_not():
-    """Clamping is never a default: only ``enforce: clamp`` and the legacy
-    ``boundaries`` spelling (a hard clamp in TVB) constrain a trajectory."""
+    """Clamping is never a default: only ``enforce: clamp`` and the legacy ``boundaries`` spelling (a hard clamp in TVB) constrain a trajectory."""
     from tvbo.utils import domain_enforcement
 
     def enforce(spec):
-        d = Dynamics.from_string(
-            "name: M\nstate_variables:\n  x: {equation: {rhs: '-x'}, initial_value: 0.1, " + spec + "}\n"
-        )
+        d = Dynamics.from_string("name: M\nstate_variables:\n  x: {equation: {rhs: '-x'}, initial_value: 0.1, " + spec + "}\n")
         return domain_enforcement(d.state_variables["x"].domain)
 
     assert enforce("domain: {lo: 0.0, hi: 1.0}") == "none"
@@ -222,11 +197,7 @@ def test_conflicting_alias_and_canonical_keeps_the_canonical():
 def _pyd(yaml_text, target="SimulationExperiment"):
     """Load *yaml_text* through the strict pydantic models.
 
-    The dataclasses fold the dialect in ``__init__``; the pydantic models
-    (``extra='forbid'``) fold it in a ``mode="before"`` validator. Both call the one
-    implementation in ``tvbo.datamodel.dialect``, so the validator cannot reject a
-    document the dataclass loader accepts. It could before: the two paths carried
-    separate copies, and the pydantic copy had the aliases but not the scalar shortcuts.
+    The dataclasses fold the dialect in ``__init__``; the pydantic models (``extra='forbid'``) fold it in a ``mode="before"`` validator. Both call the one implementation in ``tvbo.datamodel.dialect``, so the validator cannot reject a document the dataclass loader accepts. It could before: the two paths carried separate copies, and the pydantic copy had the aliases but not the scalar shortcuts.
     """
     from tvbo.utils import pydantic_loader
 
@@ -234,17 +205,13 @@ def _pyd(yaml_text, target="SimulationExperiment"):
 
 
 def test_pydantic_loader_accepts_dt_righthandside_and_number_of_regions():
-    exp = _pyd(
-        _BASE + "integration: {dt: 0.05}\n"
-        "network: {number_of_regions: 1, nodes: [{id: 0}]}\n"
-    )
+    exp = _pyd(_BASE + "integration: {dt: 0.05}\nnetwork: {number_of_regions: 1, nodes: [{id: 0}]}\n")
     assert exp.integration.step_size == 0.05
     assert exp.network.number_of_nodes == 1
 
 
 def test_pydantic_loader_folds_are_class_scoped():
-    """Same scoping as the dataclass path: ``Edge`` folds ``source_variable`` /
-    ``target_variable``, a stimulus ``Event`` keeps ``target_variable`` canonical."""
+    """Same scoping as the dataclass path: ``Edge`` folds ``source_variable`` / ``target_variable``, a stimulus ``Event`` keeps ``target_variable`` canonical."""
     exp = _pyd(
         _BASE + "network: {number_of_nodes: 2, edges: [{source: 0, target: 1, "
         "source_variable: V, target_variable: W}]}\n"
@@ -261,8 +228,7 @@ def test_pydantic_loader_conflict_keeps_the_canonical():
 
 
 def test_pydantic_validator_folds_every_alias_the_dataclass_loader_does():
-    """Parity guard: every ``SLOT_ALIASES`` entry the dataclass path folds is also
-    folded on the pydantic path, so the validator never rejects a loader-valid key."""
+    """Parity guard: every ``SLOT_ALIASES`` entry the dataclass path folds is also folded on the pydantic path, so the validator never rejects a loader-valid key."""
     from tvbo.utils import pydantic_loader
 
     for cls, amap in SLOT_ALIASES.items():
@@ -274,9 +240,7 @@ def test_pydantic_validator_folds_every_alias_the_dataclass_loader_does():
 def test_pydantic_lifts_every_scalar_shortcut_the_dataclass_loader_does():
     """Parity guard for the other half of the dialect.
 
-    The aliases had this guard and stayed in step; the scalar shortcuts had none and
-    silently diverged — they were applied only on the dataclass path, so ``omega: 0.0628``
-    loaded through one entry point and was rejected by the other.
+    The aliases had this guard and stayed in step; the scalar shortcuts had none and silently diverged — they were applied only on the dataclass path, so ``omega: 0.0628`` loaded through one entry point and was rejected by the other.
     """
     from tvbo.datamodel import pydantic as dm
     from tvbo.utils import pydantic_loader

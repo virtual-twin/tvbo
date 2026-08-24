@@ -1,22 +1,13 @@
-#  utils.py
-#
-# Created on Mon Aug 07 2023
-# Author: Leon K. Martin
-#
-# Copyright (c) 2023 Charité Universitätsmedizin Berlin
-#
-"""
-Utilities Module for TVB-O
-==========================
+# Copyright © 2023 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
 
-Core utilities: ``Bunch`` container, PyTree formatting, YAML I/O,
-and metadata traversal helpers.
+"""Utilities Module for TVB-O.
 
-Plotting utilities (colors, colormaps, ``multiview``) have moved to
-``tvbo.plot.utils`` and are re-exported here for backward compatibility.
+Core utilities: ``Bunch`` container, PyTree formatting, YAML I/O, and metadata traversal helpers.
 
-Analysis functions (``per_window_fc``, ``ttest_correlation_strength``) have
-moved to ``tvbo.analysis``.
+Plotting utilities (colors, colormaps, ``multiview``) have moved to ``tvbo.plot.utils`` and are re-exported here for backward compatibility.
+
+Analysis functions (``per_window_fc``, ``ttest_correlation_strength``) have moved to ``tvbo.analysis``.
 """
 
 import warnings
@@ -31,13 +22,7 @@ ROOT_DIR = abspath(dirname(__file__))
 def domain_enforcement(domain) -> str:
     """Normalise a state-variable domain's enforcement mode to a plain string.
 
-    Returns one of ``'none'`` (default — descriptive metadata only), ``'clamp'``
-    (hard-clip to [lo, hi]) or ``'wrap'`` (periodic). Accepts a Range/domain
-    object (reads its ``enforce`` slot), a bare ``DomainEnforcement`` value, or
-    ``None``. Normalises across both generated representations of the enum — the
-    pydantic ``(str, Enum)`` (compare via ``.value``) and the gen-python
-    permissible value (compare via ``str()``) — so callers can simply test
-    ``domain_enforcement(sv.domain) == 'clamp'``.
+    Returns one of ``'none'`` (default — descriptive metadata only), ``'clamp'`` (hard-clip to [lo, hi]) or ``'wrap'`` (periodic). Accepts a Range/domain object (reads its ``enforce`` slot), a bare ``DomainEnforcement`` value, or ``None``. Normalises across both generated representations of the enum — the pydantic ``(str, Enum)`` (compare via ``.value``) and the gen-python permissible value (compare via ``str()``) — so callers can simply test ``domain_enforcement(sv.domain) == 'clamp'``.
     """
     enf = getattr(domain, "enforce", domain)
     if enf is None:
@@ -51,16 +36,10 @@ def domain_enforcement(domain) -> str:
 def initial_value(sv, default=0.1) -> float:
     """The initial value a state variable declares, else *default*.
 
-    ``StateVariable.initial_value`` has no schema default: undeclared is ``None`` and
-    means "the spec did not say", which is what makes the fallback the caller's to name.
-    A model state starts at the generic 0.1; an observation reduction's
-    accumulator starts at its reduction identity ``0.0``, which is a different question
-    and so is passed explicitly.
+    ``StateVariable.initial_value`` has no schema default: undeclared is ``None`` and means "the spec did not say", which is what makes the fallback the caller's to name.
+    A model state starts at the generic 0.1; an observation reduction's accumulator starts at its reduction identity ``0.0``, which is a different question and so is passed explicitly.
 
-    The slot used to carry ``ifabsent: float(0.1)``, which materialised 0.1 for every
-    state variable. That made "undeclared" unrepresentable — every consumer's own
-    ``is None`` fallback was unreachable, and a reduction observer could not distinguish
-    a declared 0.1 from a spec that said nothing.
+    The slot used to carry ``ifabsent: float(0.1)``, which materialised 0.1 for every state variable. That made "undeclared" unrepresentable — every consumer's own ``is None`` fallback was unreachable, and a reduction observer could not distinguish a declared 0.1 from a spec that said nothing.
     """
     v = getattr(sv, "initial_value", None)
     return float(v) if v is not None else float(default)
@@ -69,14 +48,9 @@ def initial_value(sv, default=0.1) -> float:
 def parameter_number(value):
     """A parameter's declared value as plain numbers, uniform sequences collapsed.
 
-    ``Parameter.value`` is scalar for most models, one entry per mode for a multi-mode
-    one, and a matrix for a mode-coupled one (``ReducedSetHindmarshRose``'s ``A_ik``),
-    so it nests to arbitrary depth. A sequence whose entries are all equal collapses to
-    the scalar it means; anything else keeps its shape, because reducing a genuinely
-    heterogeneous value to its first entry would silently change the model.
+    ``Parameter.value`` is scalar for most models, one entry per mode for a multi-mode one, and a matrix for a mode-coupled one (``ReducedSetHindmarshRose``'s ``A_ik``), so it nests to arbitrary depth. A sequence whose entries are all equal collapses to the scalar it means; anything else keeps its shape, because reducing a genuinely heterogeneous value to its first entry would silently change the model.
 
-    Backends that can only emit scalars use this to decide, rather than each deciding
-    differently — or, as the PyRates emitter did, calling ``float()`` and raising.
+    Backends that can only emit scalars use this to decide, rather than each deciding differently — or, as the PyRates emitter did, calling ``float()`` and raising.
     """
     if isinstance(value, (list, tuple)):
         items = [parameter_number(v) for v in value]
@@ -85,26 +59,18 @@ def parameter_number(value):
 
 
 def register_recipe_code_paths(source_file, code_source=None) -> list:
-    """Make a recipe's callable code importable — the ``code/`` convention, or a
-    declared :class:`CodeSource` (a local directory or a git repository).
+    """Make a recipe's callable code importable — the ``code/`` convention, or a declared :class:`CodeSource` (a local directory or a git repository).
 
-    A recipe references custom builders and analysis callables by bare module
-    name (e.g. ``module: taher2019_analysis``); their directory must be on
-    ``sys.path`` for ``import`` to resolve them. Resolution:
+    A recipe references custom builders and analysis callables by bare module name (e.g. ``module: taher2019_analysis``); their directory must be on ``sys.path`` for ``import`` to resolve them. Resolution:
 
-    1. **Explicit ``code_source``** (a ``CodeSource`` or dict on the study) —
-       decouples the specification from where its code lives:
+    1. **Explicit ``code_source``** (a ``CodeSource`` or dict on the study) — decouples the specification from where its code lives:
          * ``path`` — a directory (relative to the recipe YAML, or absolute); or
          * ``git`` — a repository shallow-cloned and cached under
            ``~/.cache/tvbo/code_sources/<url+ref hash>``, checked out at ``ref``.
        An optional ``subdir`` narrows which directory of the source is used.
-    2. **Convention** (no ``code_source``) — the ``code/`` subdir beside the
-       recipe YAML.
+    2. **Convention** (no ``code_source``) — the ``code/`` subdir beside the recipe YAML.
 
-    Registering at load time, once and left in place (callables resolve lazily
-    during a run), lets ``tvbo run`` / ``tvbo workflow`` and notebooks load a
-    recipe without a ``PYTHONPATH`` prefix. The dir goes to the front of
-    ``sys.path`` (matching ``PYTHONPATH``) and is skipped when already present.
+    Registering at load time, once and left in place (callables resolve lazily during a run), lets ``tvbo run`` / ``tvbo workflow`` and notebooks load a recipe without a ``PYTHONPATH`` prefix. The dir goes to the front of ``sys.path`` (matching ``PYTHONPATH``) and is skipped when already present.
     Returns the paths newly inserted.
     """
     import sys
@@ -129,9 +95,7 @@ def register_recipe_code_paths(source_file, code_source=None) -> list:
 
 
 def _resolve_code_source(code_source, source_file):
-    """Resolve a ``CodeSource`` (local ``path`` or ``git`` repo) to a directory on
-    disk, applying an optional ``subdir``. ``path``/``git`` are mutually exclusive.
-    """
+    """Resolve a ``CodeSource`` (local ``path`` or ``git`` repo) to a directory on disk, applying an optional ``subdir``. ``path``/``git`` are mutually exclusive."""
     from pathlib import Path
 
     get = code_source.get if isinstance(code_source, dict) else (lambda k: getattr(code_source, k, None))
@@ -157,14 +121,12 @@ def _resolve_code_source(code_source, source_file):
 def _fetch_git_code_source(url, ref=None):
     """Shallow-clone (and cache) a git code source; return the local clone dir.
 
-    Cached by ``sha1(url@ref)`` under ``$TVBO_CACHE`` (default ``~/.cache/tvbo``)
-    so a re-run reuses the clone. A branch/tag uses ``--branch``; a bare commit
-    (which ``--branch`` rejects) falls back to a full clone + ``checkout``. The
-    cache is never refreshed, so a **mutable ref (branch) is pinned to its
-    first-clone state** — pin a tag or commit for reproducibility, or delete the
-    cache dir to re-fetch.
+    Cached by ``sha1(url@ref)`` under ``$TVBO_CACHE`` (default ``~/.cache/tvbo``) so a re-run reuses the clone. A branch/tag uses ``--branch``; a bare commit (which ``--branch`` rejects) falls back to a full clone + ``checkout``. The cache is never refreshed, so a **mutable ref (branch) is pinned to its first-clone state** — pin a tag or commit for reproducibility, or delete the cache dir to re-fetch.
     """
-    import hashlib, os, shutil, subprocess
+    import hashlib
+    import os
+    import shutil
+    import subprocess
     from pathlib import Path
 
     key = hashlib.sha1(f"{url}@{ref or 'HEAD'}".encode(), usedforsecurity=False).hexdigest()[:16]
@@ -192,17 +154,30 @@ def _fetch_git_code_source(url, ref=None):
             raise RuntimeError(f"CodeSource git fetch failed ({url}@{ref}): {e2.stderr}") from e2
 
 
+def bind_function_arguments(func_name, formal, actual) -> dict:
+    """Pair a model function's declared arguments with one call site's actual arguments.
+
+    A mismatch names the function and both arities. `arguments:` is an optional slot, so a schema-legal recipe can declare a function whose declaration and calls disagree; the two failure modes either side of this are both unhelpful. Silently truncating (a bare `zip`) inlines a body with a formal symbol left unbound, which surfaces much later as a wrong equation. Raising `zip()`'s own message names neither the function nor the recipe, and in the NeuroML path it fires inside a sympy replace callback, so the traceback is all sympy internals.
+
+    Returns `{formal: actual}`, keyed by whatever the caller passed as *formal* — names or `Symbol`s alike.
+    """
+    formal, actual = list(formal), list(actual)
+    if len(formal) != len(actual):
+        declared = ", ".join(str(f) for f in formal) or "none"
+        raise ValueError(
+            f"model function {func_name!r} declares {len(formal)} argument(s) ({declared}) "
+            f"but is called with {len(actual)}. The `arguments:` list and the call in the "
+            "equation have to agree."
+        )
+    return dict(zip(formal, actual, strict=True))
+
+
 def as_list(obj) -> list:
     """Normalize a keyed-dict-or-list collection to a list of its members.
 
-    TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by
-    each member's identifier, but may also appear as plain lists. Returns the
-    member values in either case (``None`` -> ``[]``).
+    TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by each member's identifier, but may also appear as plain lists. Returns the member values in either case (``None`` -> ``[]``).
 
-    A scalar becomes a one-element list. Strings especially: they are iterable, so
-    ``list("/data")`` would silently yield one entry *per character* — which is how a
-    single ``--set container_binds=/data/cephfs-1`` turned into a bind of
-    ``/,d,a,t,a,…``. No caller ever wants a string split into characters.
+    A scalar becomes a one-element list. Strings especially: they are iterable, so ``list("/data")`` would silently yield one entry *per character* — which is how a single ``--set container_binds=/data/cephfs-1`` turned into a bind of ``/,d,a,t,a,…``. No caller ever wants a string split into characters.
     """
     if obj is None:
         return []
@@ -212,21 +187,17 @@ def as_list(obj) -> list:
         return list(obj.values())
     try:
         return list(obj)
-    except TypeError:      # a genuine scalar (int, float, LinkML leaf, …)
+    except TypeError:  # a genuine scalar (int, float, LinkML leaf, …)
         return [obj]
 
 
 def keyed_items(collection, kind: str = "collection") -> list:
     """A keyed collection's ``(key, member)`` pairs, whichever shape holds it.
 
-    The generated dataclasses wrap a keyed collection in a ``JsonObj`` when it is assigned,
-    and a ``JsonObj`` has no ``.items``; the Pydantic models keep a plain dict. The schema
-    also allows the list spelling, whose members carry their own ``name``. Anything else
-    raises: a reader that answers "nothing here" for a shape it did not recognise reports
-    an empty collection as an empty *result*, which is how an unchecked ``from_datamodel``
-    load went unchecked.
+    The generated dataclasses wrap a keyed collection in a ``JsonObj`` when it is assigned, and a ``JsonObj`` has no ``.items``; the Pydantic models keep a plain dict. The schema also allows the list spelling, whose members carry their own ``name``. Anything else raises: a reader that answers "nothing here" for a shape it did not recognise reports an empty collection as an empty *result*, which is how an unchecked ``from_datamodel`` load went unchecked.
     """
-    from jsonasobj2 import JsonObj, items as _json_items
+    from jsonasobj2 import JsonObj
+    from jsonasobj2 import items as _json_items
 
     if collection is None:
         return []
@@ -242,10 +213,7 @@ def keyed_items(collection, kind: str = "collection") -> list:
 def normalize_params(params) -> dict:
     """Normalize a ``parameters`` collection to a flat ``{name: param}`` dict.
 
-    Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or
-    plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw
-    YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node
-    and dynamics parameter collections alike.
+    Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node and dynamics parameter collections alike.
     """
     if not params:
         return {}
@@ -281,11 +249,7 @@ def network_couplings(network) -> dict:
 def edge_param(edge, name: str, default=None):
     """A named quantity off an ``Edge``: its ``parameters`` entry, else its own slot.
 
-    ``weight``/``delay``/``distance`` are both first-class ``Edge`` slots and
-    valid entries in the generic ``parameters`` collection, so a recipe may spell
-    either. ``parameters`` wins when both are set. This is the single reader every
-    backend goes through, so one recipe cannot mean different connectomes on
-    different backends. Returns the value verbatim (no coercion), or *default*.
+    ``weight``/``delay``/``distance`` are both first-class ``Edge`` slots and valid entries in the generic ``parameters`` collection, so a recipe may spell either. ``parameters`` wins when both are set. This is the single reader every backend goes through, so one recipe cannot mean different connectomes on different backends. Returns the value verbatim (no coercion), or *default*.
     """
     p = normalize_params(getattr(edge, "parameters", None)).get(name)
     if p is not None:
@@ -298,53 +262,63 @@ def edge_param(edge, name: str, default=None):
     return scalar if isinstance(scalar, (int, float)) else default
 
 
-def noise_sigma(noise, **legacy):
+_NETWORK_EDGE_ALIASES = {
+    "weight": "weight",
+    "weights": "weight",
+    "length": "length",
+    "lengths": "length",
+}
+"""Ergonomic shortcuts for the canonical ``network.edges.<label>``.
+
+Both spellings resolve to a connectome matrix through ``Network.matrix()``.
+"""
+
+
+def edge_label(ref):
+    """Canonical ``Network.matrix()`` label for a network reference, else ``None``.
+
+    The one resolver for every way a recipe can point at a connectome matrix, so a transform equation, an observation source and an exploration axis cannot mean different matrices by the same name. Accepts the fully-qualified form (``network.weight``, ``network.edges.length``), the explicit ``edges.<label>`` form (any label), and the bare ``weight(s)``/``length(s)`` shortcut. Returns ``None`` for anything that is not a connectome-matrix reference (state variables, ``network.observations.*``, ...), which callers route through their normal path.
+    """
+    if not isinstance(ref, str):
+        return None
+    r = ref[len("network.") :] if ref.startswith("network.") else ref
+    if r.startswith("edges."):
+        return r.split("edges.", 1)[1] or None
+    return _NETWORK_EDGE_ALIASES.get(r)
+
+
+def transform_target(func):
+    """The edge attribute a ``transforms:`` entry rewrites, or ``None``.
+
+    A transform's identifier *is* its target, so a recipe spells it ``target:`` — the schema declares that an alias of ``name``, which LinkML requires to stay the identifier. Reading it through here says which of the two meanings a call site wants, since ``name: weight`` beside ``rhs: weight / max(weight)`` otherwise reads as if the two were different things.
+    """
+    return getattr(func, "name", None)
+
+
+def noise_sigma(noise):
     """The noise standard deviation σ off a declared ``Noise``, or ``None``.
 
-    The one reader for every spelling the schema allows, so a recipe cannot mean a
-    different amplitude on different backends. Each spelling has exactly one meaning:
+    The one reader for every spelling the schema allows, so a recipe cannot mean a different amplitude on different backends. Each spelling has exactly one meaning:
 
     * ``parameters: {sigma: {value: s}}`` → ``s``. Wins whenever present.
-    * ``intensity: {value: s}`` → ``s``. Deprecated spelling of the same quantity;
-      reading one warns.
     * ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. The dispersion spelling
       (``D = σ²/2``) — what a TVB import writes.
 
-    Returns ``None`` when the noise declares no amplitude at all (and for a missing
-    ``Noise``), leaving "absent" distinguishable from an explicit zero.
+    Returns ``None`` when the noise declares no amplitude at all (and for a missing ``Noise``), leaving "absent" distinguishable from an explicit zero.
     """
     import math
 
-    if "intensity_means" in legacy:
-        # Emitted by scripts rendered before `intensity` was pinned to sigma; those
-        # files live in users' output/ dirs and are re-run against the installed package.
-        warnings.warn(
-            "noise_sigma(intensity_means=...) is obsolete: `intensity` is a standard "
-            "deviation, and a dispersion is declared as `parameters.nsig`.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
     if not noise:
         return None
     params = normalize_params(getattr(noise, "parameters", None))
     candidates = (
-        ("sigma", params.get("sigma"), lambda v: v),
-        ("intensity", getattr(noise, "intensity", None), lambda v: v),
-        ("nsig", params.get("nsig"), lambda v: math.sqrt(2.0 * v)),
+        (params.get("sigma"), lambda v: v),
+        (params.get("nsig"), lambda v: math.sqrt(2.0 * v)),
     )
-    for name, source, to_sigma in candidates:
+    for source, to_sigma in candidates:
         val = getattr(source, "value", source)
         if val is None:
             continue
-        if name == "intensity":
-            warnings.warn(
-                "`noise.intensity` is deprecated; declare `parameters: {sigma: ...}` for "
-                "a standard deviation or `parameters: {nsig: ...}` for a dispersion. It "
-                "is read as a standard deviation, so a recipe that meant a dispersion "
-                "is off by sqrt(2 D)/D.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         val = float(val)
         return to_sigma(val) if val > 0 else 0.0
     return None
@@ -353,17 +327,14 @@ def noise_sigma(noise, **legacy):
 def sanitize_name(name) -> str:
     """Sanitise a name into a filesystem- and rule-safe token (keep alnum, ``_``, ``-``)."""
     import re
+
     return re.sub(r"[^0-9A-Za-z_-]+", "_", str(name))
 
 
 def is_array_valued(value) -> bool:
     """Return True if a parameter value is an array constant rather than a scalar.
 
-    Array-valued parameters (e.g. mode-coupling matrices, Gaussian-quadrature
-    vectors) are stored as nested lists/tuples in YAML or as ``np.ndarray`` when
-    set programmatically. Scalar-only call sites (``float(p.value)`` substitution,
-    sympy ``subs``) must skip them. Single source of truth so list/tuple *and*
-    ndarray are treated consistently everywhere.
+    Array-valued parameters (e.g. mode-coupling matrices, Gaussian-quadrature vectors) are stored as nested lists/tuples in YAML or as ``np.ndarray`` when set programmatically. Scalar-only call sites (``float(p.value)`` substitution, sympy ``subs``) must skip them. Single source of truth so list/tuple *and* ndarray are treated consistently everywhere.
     """
     return isinstance(value, (list, tuple, np.ndarray))
 
@@ -371,15 +342,10 @@ def is_array_valued(value) -> bool:
 def deep_merge(base: dict, override: dict) -> dict:
     """Recursively merge ``override`` onto ``base``, returning a new dict.
 
-    Nested dicts are merged key-by-key, so an override can replace a single leaf
-    while inheriting its siblings from ``base`` — e.g. ``{parameters: {a: {value:
-    1}}}`` overrides only ``a.value`` and keeps every other parameter from
-    ``base``. Any key whose two sides are not both dicts is taken from
-    ``override``. Neither input is mutated.
+    Nested dicts are merged key-by-key, so an override can replace a single leaf while inheriting its siblings from ``base`` — e.g. ``{parameters: {a: {value:
+    1}}}`` overrides only ``a.value`` and keeps every other parameter from ``base``. Any key whose two sides are not both dicts is taken from ``override``. Neither input is mutated.
 
-    This is the field-level precedence used when a spec sourced by ``iri`` is
-    refined by inline metadata: the inline value supervenes and the source
-    (registry entry / ontology default) fills the gaps.
+    This is the field-level precedence used when a spec sourced by ``iri`` is refined by inline metadata: the inline value supervenes and the source (registry entry / ontology default) fills the gaps.
     """
     out = dict(base)
     if not override:
@@ -415,8 +381,7 @@ class Bunch(dict):
     """Dictionary with attribute access and optional JAX PyTree support.
 
     Extends dict to allow both ``bunch["key"]`` and ``bunch.key`` access.
-    If JAX is installed, registered as a PyTree via ``register_pytree_node_class``
-    with deterministic (sorted-key) traversal order.
+    If JAX is installed, registered as a PyTree via ``register_pytree_node_class`` with deterministic (sorted-key) traversal order.
 
     Based on scikit-learn's ``sklearn.utils.Bunch``.
 
@@ -428,7 +393,7 @@ class Bunch(dict):
         try:
             return self[key]
         except KeyError:
-            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
+            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'") from None
 
     def __setattr__(self, key, value):
         self[key] = value
@@ -437,7 +402,7 @@ class Bunch(dict):
         try:
             del self[key]
         except KeyError:
-            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
+            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'") from None
 
     def __dir__(self):
         return list(super().__dir__()) + list(self.keys())
@@ -466,7 +431,7 @@ class Bunch(dict):
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         """Reconstruct a `Bunch` from JAX pytree aux_data and children."""
-        return cls(zip(aux_data, children))
+        return cls(zip(aux_data, children, strict=True))
 
 
 try:
@@ -480,8 +445,7 @@ except ImportError:
 def numbered_print(text):
     """Print `text` with each line prefixed by a zero-padded line number.
 
-    Line numbers start at 1 and are padded to the width of the largest number
-    so the printed numbers stay aligned.
+    Line numbers start at 1 and are padded to the width of the largest number so the printed numbers stay aligned.
 
     Args:
         text: The multi-line string to print.
@@ -502,8 +466,7 @@ def format_pytree_as_string(
     hide_none: bool = False,
     show_array_values: bool = False,
 ) -> str:
-    """
-    Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters.
+    """Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters.
 
     Args:
         pytree (Any): The pytree to format.
@@ -518,9 +481,9 @@ def format_pytree_as_string(
     Returns:
         str: The formatted string representation of the pytree.
     """
+    import equinox as eqx
     import jax
     import jax.numpy as jnp
-    import equinox as eqx
 
     # Unicode box-drawing characters for the tree structure
     space = "    "
@@ -555,10 +518,7 @@ def format_pytree_as_string(
 
     # Check if the object is a JAX array
     if isinstance(pytree, (jnp.ndarray, np.ndarray)):
-        # result.append(f"{current_prefix}{name}: Array({shape_str}, {dtype_str})")
         if show_array_values:
-            # result.append(f"{current_prefix}{name}: Array({shape_str}, {dtype_str})")
-            # result.append(f"{current_prefix}{name}: No({shape_str}, {dtype_str})")
             result.append(f"{current_prefix}{name}: {pytree}")
         else:
             result.append(f"{current_prefix}{name}: {eqx.tree_pformat(pytree)}")
@@ -635,8 +595,7 @@ def format_pytree_as_string(
             result.append(f"{current_prefix}{name}: {type(pytree).__name__} (unknown structure)")
 
     except Exception:
-        # If we can't flatten it as a pytree, treat it as a leaf
-        # For strings, display the string value if not filtering
+        # Not flattenable as a pytree, so it is a leaf.
         if isinstance(pytree, str):
             if not show_numerical_only:
                 result.append(f'{current_prefix}{name}: "{pytree}"')
@@ -657,8 +616,7 @@ def pretty_print_pytree(
     show_numerical_only: bool = False,
     hide_none: bool = False,
 ) -> None:
-    """
-    Prints a pretty formatted representation of a JAX pytree structure.
+    """Prints a pretty formatted representation of a JAX pytree structure.
 
     Args:
         pytree (Any): The pytree to print.
@@ -721,11 +679,7 @@ def add_to_parameters_collection(key, value, path, parameters):
     """Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level.
 
     A Parameter may carry both a scalar ``value`` AND a nested ``distribution`` (e.g.
-    ``omega_mean_hz = 10 Hz + Normal(mean, std)``): its scalar and the distribution's
-    sub-parameters navigate through the same name. The two must coexist rather than
-    overwrite — a scalar already stored at a name is preserved under a reserved ``value``
-    key when that name has to become a sub-Bunch, and a scalar written onto a name that is
-    already a sub-Bunch is stored under ``value`` instead of clobbering the sub-tree.
+    ``omega_mean_hz = 10 Hz + Normal(mean, std)``): its scalar and the distribution's sub-parameters navigate through the same name. The two must coexist rather than overwrite — a scalar already stored at a name is preserved under a reserved ``value`` key when that name has to become a sub-Bunch, and a scalar written onto a name that is already a sub-Bunch is stored under ``value`` instead of clobbering the sub-tree.
     """
     current_level = parameters
     for part in path:

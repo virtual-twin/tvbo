@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """Base adapter for processing SimulationExperiment metadata.
 
 Extracts Python logic from Mako templates into reusable, testable methods.
-Backend-specific adapters (NetworkDynamics, PyRates, etc.) inherit from
-BaseAdapter and override or extend as needed.
+Backend-specific adapters (NetworkDynamics, PyRates, etc.) inherit from BaseAdapter and override or extend as needed.
 """
 
 from __future__ import annotations
@@ -17,7 +15,6 @@ import numpy as np
 if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
 
-from tvbo.utils import noise_sigma
 from tvbo.templates.base.utils import (
     collect_param_distributions,
     collect_sv_distributions,
@@ -25,19 +22,16 @@ from tvbo.templates.base.utils import (
     graph_generator_call,
     has_distributions,
 )
+from tvbo.utils import noise_sigma
 
 
 class BaseAdapter:
     """Base class for backend adapters.
 
     Provides shared metadata processing that all code-generation backends need:
-    dynamics library, node-dynamics mapping, coupling resolution, graph info,
-    initial state parsing, etc.
+    dynamics library, node-dynamics mapping, coupling resolution, graph info, initial state parsing, etc.
 
-    A backend states what makes it different — its `TEMPLATE`, and a `prepare_context`
-    override where the shared context will not do — rather than restating how rendering
-    works. `render_code` is inherited from here by every adapter that renders one template
-    from one context.
+    A backend states what makes it different — its `TEMPLATE`, and a `prepare_context` override where the shared context will not do — rather than restating how rendering works. `render_code` is inherited from here by every adapter that renders one template from one context.
     """
 
     TEMPLATE: str = ""
@@ -48,7 +42,7 @@ class BaseAdapter:
     that choice in its own `render_code` instead.
     """
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
 
     def render_code(self, **kwargs) -> str:
@@ -80,8 +74,7 @@ class BaseAdapter:
     def build_dynamics_dict(self) -> OrderedDict:
         """Build an ordered dict of all unique Dynamics models.
 
-        Always includes the default model first, then any additional dynamics
-        from the network's dynamics library (for heterogeneous networks).
+        Always includes the default model first, then any additional dynamics from the network's dynamics library (for heterogeneous networks).
         """
         exp = self.experiment
         model = exp.dynamics
@@ -135,10 +128,7 @@ class BaseAdapter:
     def resolve_couplings(self) -> OrderedDict:
         """The network's couplings, keyed by the role each plays in it.
 
-        The one place a backend asks what couplings an experiment has, so that a template
-        never derives it: a template that reads the model itself is a second answer to a
-        question this class already answers, and the two drift. A backend needing them
-        keyed differently overrides this and calls up — see ``TvboptimAdapter``.
+        The one place a backend asks what couplings an experiment has, so that a template never derives it: a template that reads the model itself is a second answer to a question this class already answers, and the two drift. A backend needing them keyed differently overrides this and calls up — see ``TvboptimAdapter``.
         """
         from tvbo.utils import network_couplings
 
@@ -171,8 +161,7 @@ class BaseAdapter:
     def get_outsym_names(dynamics, outdim: int, coupling=None) -> list[str]:
         """Output symbol names for the edge model.
 
-        Uses coupling.outsym if available, otherwise generates from
-        coupling variables or state variables.
+        Uses coupling.outsym if available, otherwise generates from coupling variables or state variables.
         """
         # Prefer coupling-defined outsym
         if coupling and getattr(coupling, "outsym", None):
@@ -198,8 +187,7 @@ class BaseAdapter:
     def is_stochastic_dynamics(dynamics_dict: OrderedDict) -> bool:
         """Detect a stochastic system: any state variable with a positive noise amplitude."""
         return any(
-            BaseAdapter.get_noise_sigmas(dyn) and max(BaseAdapter.get_noise_sigmas(dyn)) > 0
-            for dyn in dynamics_dict.values()
+            BaseAdapter.get_noise_sigmas(dyn) and max(BaseAdapter.get_noise_sigmas(dyn)) > 0 for dyn in dynamics_dict.values()
         )
 
     # ── Graph / network ──────────────────────────────────────────────────
@@ -328,10 +316,7 @@ class BaseAdapter:
     @staticmethod
     def get_noise_sigmas(dynamics) -> list[float]:
         """Per-state-variable noise amplitude σ, ``0.0`` where none is declared."""
-        return [
-            noise_sigma(getattr(sv, "noise", None)) or 0.0
-            for sv in (dynamics.state_variables or {}).values()
-        ]
+        return [noise_sigma(getattr(sv, "noise", None)) or 0.0 for sv in (dynamics.state_variables or {}).values()]
 
     # ── Events ────────────────────────────────────────────────────────
 
@@ -388,13 +373,9 @@ class BaseAdapter:
     def prepare_context(self) -> dict:
         """Build the full pre-computed context dict for template rendering.
 
-        This is the main entry point: templates receive this dict instead of
-        doing metadata processing themselves.
+        This is the main entry point: templates receive this dict instead of doing metadata processing themselves.
 
-        The shape below is the shared one, not a contract every adapter keeps: a backend
-        whose template needs something else entirely overrides this — `Brian2Adapter`
-        returns a spiking build description — so a caller wanting *this* shape must build
-        the adapter it belongs to rather than a bare `BaseAdapter`.
+        The shape below is the shared one, not a contract every adapter keeps: a backend whose template needs something else entirely overrides this — `Brian2Adapter` returns a spiking build description — so a caller wanting *this* shape must build the adapter it belongs to rather than a bare `BaseAdapter`.
         """
         exp = self.experiment
         model = exp.dynamics
@@ -526,10 +507,7 @@ class BaseAdapter:
 class ContinuationAdapter(BaseAdapter):
     """A backend that renders one continuation at a time.
 
-    The bifurcation backends do not render a whole experiment: they take a
-    `(dynamics, continuation)` pair, once per continuation the experiment declares. Each
-    resolved that pair the same way, in three copies of the same twelve lines — so the
-    resolution lives here and a backend states only what it does with the result.
+    The bifurcation backends do not render a whole experiment: they take a `(dynamics, continuation)` pair, once per continuation the experiment declares. Each resolved that pair the same way, in three copies of the same twelve lines — so the resolution lives here and a backend states only what it does with the result.
     """
 
     def continuations(self) -> dict:
@@ -539,8 +517,7 @@ class ContinuationAdapter(BaseAdapter):
     def resolve_continuation(self, continuation=None):
         """*continuation* if the caller named one, else the experiment's first.
 
-        `None` when the experiment declares none, which the caller reports in its own
-        terms — there is no useful default for "continue what?".
+        `None` when the experiment declares none, which the caller reports in its own terms — there is no useful default for "continue what?".
         """
         if continuation is not None:
             return continuation
@@ -549,11 +526,7 @@ class ContinuationAdapter(BaseAdapter):
     def resolve_dynamics(self, continuation):
         """The `Dynamics` *continuation* runs on.
 
-        A continuation may name its own, which is how a heterogeneous experiment picks one
-        of the several its network holds; otherwise it runs on the experiment's. Naming one
-        that resolves nowhere raises rather than silently falling back to the experiment's,
-        since continuing a different model than the one asked for is the kind of wrong
-        answer that looks like a right one.
+        A continuation may name its own, which is how a heterogeneous experiment picks one of the several its network holds; otherwise it runs on the experiment's. Naming one that resolves nowhere raises rather than silently falling back to the experiment's, since continuing a different model than the one asked for is the kind of wrong answer that looks like a right one.
         """
         experiment = self.experiment
         named = getattr(continuation, "dynamics", None)
@@ -565,8 +538,7 @@ class ContinuationAdapter(BaseAdapter):
             if isinstance(network_dynamics, dict) and name in network_dynamics:
                 return network_dynamics[name]
             raise ValueError(
-                f"Continuation names dynamics {name!r}, which is neither the experiment's "
-                "nor one of its network's."
+                f"Continuation names dynamics {name!r}, which is neither the experiment's nor one of its network's."
             )
         if experiment.dynamics is not None:
             return experiment.dynamics

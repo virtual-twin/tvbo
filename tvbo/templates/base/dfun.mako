@@ -7,7 +7,7 @@ Signatures:
 </%doc>
 <%!
 import textwrap
-from tvbo.templates.base.utils import get_coupling_terms, get_func_name, get_func_args, np_module, needs_scipy_special, referenced_parameters
+from tvbo.templates.base.utils import get_coupling_terms, get_func_name, get_func_args, gathered_state_indices, np_module, needs_scipy_special, referenced_parameters
 %>
 
 ## The special-function import is gated on the equations actually using it — emitting it
@@ -131,10 +131,14 @@ ${derived(model, fmt)}
 ${derivs(model, fmt, stim, return_aux)}\
 </%def>
 
-<%def name="full_dfun(model, fmt='jax', signature='standard', func_name=None, return_aux=False)">
+<%def name="full_dfun(model, fmt='jax', signature='standard', func_name=None, return_aux=False, coupling_as_argument=False)">
 <%
 _, global_terms, local_terms = get_coupling_terms(model)
 name = get_func_name(model, func_name)
+if coupling_as_argument:
+    gsi = gathered_state_indices(model)
+    if len(global_terms) > len(gsi):
+        raise ValueError(f"{name}: {len(global_terms)} coupling inputs but only {len(gsi)} gathered states to index the coupling vector")
 %>\
 % if signature == 'standard':
 def dfun(current_state, t, cX, _p):
@@ -143,12 +147,17 @@ ${textwrap.indent(capture(body, model, fmt, '_p', True, None, return_aux).strip(
 def ${name}(
     current_state,
     t,
+% if coupling_as_argument:
+    coupling,
+% endif
 % for p in model.parameters.values():
     ${p.name}=${p.value if p.value is not None else 0.0},
 % endfor
+% if not coupling_as_argument:
 % for ct in global_terms:
     ${ct}=0.0,
 % endfor
+% endif
     stimulus=False,
 ):
     stim_t = stimulus(t) if stimulus else 0.0

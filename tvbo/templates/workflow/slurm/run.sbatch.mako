@@ -97,7 +97,8 @@ export PYTHONPATH="code:${'$'}{PYTHONPATH:-}"
     # write there, since each produces an independent sub-<id>_…_result.h5.
     subject_axis = next((ax for ax in plan.workflow_axes if ax.kind == "subjects"), None)
     single_task = plan.n_array_tasks == 1
-    out_pat = plan.out_dir if (single_task or subject_axis) else plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
+    ## Array tasks write flat into shards/, each file carrying its own `split-` entity, so the gather globs one directory.
+    out_pat = plan.out_dir if (single_task or subject_axis) else "shards"
     # When requirements are layered onto the image (see WorkflowPlan.needs_container_layer),
     # `setup.sh` built a --system-site-packages venv; expose its site-packages to the task
     # via PYTHONPATH inside the container. The `python*` glob resolves the venv's own

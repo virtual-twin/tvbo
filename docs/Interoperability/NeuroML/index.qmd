@@ -194,7 +194,7 @@ export.
 
 ## Roadmap
 
-The current adapter covers **Goal 2** from the [full interoperability plan](../../../dev/Interoperability/Small-Scale-Simulators/NeuroML-Interoperability-Plan.md): whole-brain network models exported as LEMS.
+The current adapter covers **Goal 2** from the full interoperability plan: whole-brain network models exported as LEMS.
 
 **Goal 1** (reproduce all 27 NeuroML canonical examples in TVBO YAML) is being tracked in `database/dynamics/spiking/`, `database/dynamics/ion_channels/`, and `database/edges/synapses/`.
 

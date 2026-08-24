@@ -1,14 +1,8 @@
 """Shared small-scale network-lowering core.
 
-TVB-O's small-scale backends (NeuroML/LEMS, Brian2, later NEST/Jaxley) all turn
-the same declarative primitives — ``Network``, ``Node(size)``,
-``Edge(dynamics, coupling, events, connectivity)`` — into populations of cells and
-an explicit set of cell-to-cell connections. That lowering is backend-neutral and
-lives here **once**; each backend contributes only a role vocabulary, an
-expression printer, a template tree, and its synapse/cell rendering.
+TVB-O's small-scale backends (NeuroML/LEMS, Brian2, later NEST/Jaxley) all turn the same declarative primitives — ``Network``, ``Node(size)``, ``Edge(dynamics, coupling, events, connectivity)`` — into populations of cells and an explicit set of cell-to-cell connections. That lowering is backend-neutral and lives here **once**; each backend contributes only a role vocabulary, an expression printer, a template tree, and its synapse/cell rendering.
 
-This is a lowering *function library*, not a schema addition: no new classes enter
-the datamodel. Biological identity stays on ``Dynamics.iri``.
+This is a lowering *function library*, not a schema addition: no new classes enter the datamodel. Biological identity stays on ``Dynamics.iri``.
 """
 
 from tvbo.adapters.smallscale.lowering import (

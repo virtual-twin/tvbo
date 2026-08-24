@@ -1,9 +1,6 @@
 """Dimensional verdicts on a model's equations.
 
-Three-valued by design: `consistent`, `inconsistent`, `underdetermined`. Collapsing the
-last two is how a checker becomes noise — 24 of the 39 curated models declare no units
-at all, and calling those "wrong" would pressure fake declarations into the published
-record, which is worse than no units.
+Three-valued by design: `consistent`, `inconsistent`, `underdetermined`. Collapsing the last two is how a checker becomes noise — 24 of the 39 curated models declare no units at all, and calling those "wrong" would pressure fake declarations into the published record, which is worse than no units.
 
 Treating an undeclared quantity as dimensionless is the specific failure being excluded:
 it silently corrupts the answer rather than reporting that it cannot be computed.
@@ -64,9 +61,7 @@ def test_adding_two_different_quantities_is_inconsistent():
 def test_an_undeclared_quantity_reports_underdetermined_not_dimensionless():
     """The failure this exists to prevent: an undeclared symbol assumed dimensionless.
 
-    Treated as dimensionless, this equation would be *reported consistent* while being
-    unverified — which is how a 92%-declared model came to report `dv/dt` as
-    `1/capacitance` with no error raised.
+    Treated as dimensionless, this equation would be *reported consistent* while being unverified — which is how a 92%-declared model came to report `dv/dt` as `1/capacitance` with no error raised.
     """
     model = _model(
         state={"v": (0.0, "mV", "(-v + I) / tau")},
@@ -82,8 +77,7 @@ def test_an_undeclared_quantity_reports_underdetermined_not_dimensionless():
 def test_an_undeclared_addend_is_inferred_from_the_ones_beside_it():
     """Additive homogeneity forces the unknown, exactly, rather than giving up.
 
-    `I` added to a millivolt must be a millivolt; propagation says so without solving
-    anything, which is the bound this checker keeps to.
+    `I` added to a millivolt must be a millivolt; propagation says so without solving anything, which is the bound this checker keeps to.
     """
     model = _model(
         state={"v": (0.0, "mV", "(-v + I) / tau")},
@@ -102,10 +96,7 @@ def test_an_undeclared_addend_is_inferred_from_the_ones_beside_it():
 def test_dimensional_and_exact_disagree_where_only_the_scale_differs():
     """`V/s` and `V/ms` are the same dimension and different quantities.
 
-    The clock is `ms`, so the left side is `V/ms` while `tau` in seconds makes the right
-    `V/s`. `dimensional` accepts the pair — both are voltage over time — and `exact`
-    refuses it and reports the ratio `1/1000`. The ratio is the number that names the
-    bug; a boolean does not.
+    The clock is `ms`, so the left side is `V/ms` while `tau` in seconds makes the right `V/s`. `dimensional` accepts the pair — both are voltage over time — and `exact` refuses it and reports the ratio `1/1000`. The ratio is the number that names the bug; a boolean does not.
     """
     model = _model(
         state={"v": (0.0, "V", "-v / tau")},
@@ -155,11 +146,7 @@ class TestCuratedModels:
     def test_a_model_function_is_inlined_before_checking(self):
         """`Jansen1995` is consistent only once `Sigm(...)` is expanded.
 
-        A user function carries no unit, so a call to one is opaque to propagation and
-        the sigmoid's argument cannot be shown dimensionless. Inlining resolves it
-        exactly — `r` is `per_mV` and `v0` is `mV` — which is why no `Function.unit`
-        slot is needed. Four of the model's six equations then check out; the remaining
-        two name genuinely undeclared parameters rather than claiming a contradiction.
+        A user function carries no unit, so a call to one is opaque to propagation and the sigmoid's argument cannot be shown dimensionless. Inlining resolves it exactly — `r` is `per_mV` and `v0` is `mV` — which is why no `Function.unit` slot is needed. Four of the model's six equations then check out; the remaining two name genuinely undeclared parameters rather than claiming a contradiction.
         """
         verdicts = check_units(Dynamics.from_file("tvbo/database/models/Jansen1995.yaml"))
         statuses = [v.status for v in verdicts]
@@ -171,11 +158,7 @@ class TestCuratedModels:
     def test_a_real_declaration_error_is_found_with_its_ratio(self):
         """`CakanObermayer` adds `mu_se` (mV/ms) to `E_A` (mV).
 
-        The ratio is exactly `1000/second`, which is `mV_per_ms / mV` — so the report
-        names the discrepancy rather than only flagging one. This is a defect in the
-        curated model's declarations, not in the checker: one of the two units is wrong,
-        and which one is a modelling question. Asserted here so that fixing the model
-        fails this test deliberately.
+        The ratio is exactly `1000/second`, which is `mV_per_ms / mV` — so the report names the discrepancy rather than only flagging one. This is a defect in the curated model's declarations, not in the checker: one of the two units is wrong, and which one is a modelling question. Asserted here so that fixing the model fails this test deliberately.
         """
         verdicts = check_units(Dynamics.from_file("tvbo/database/models/CakanObermayer.yaml"))
         inconsistent = [v for v in verdicts if v.status == INCONSISTENT]
@@ -187,9 +170,7 @@ class TestCuratedModels:
     def test_every_verdict_is_one_of_the_three(self):
         """A crash is not a fourth answer.
 
-        Coverage of the whole database — all 106 registered models, including the
-        subdirectories a top-level glob misses — is frozen in
-        `test_unit_verdict_corpus.py`; this only pins the return type.
+        Coverage of the whole database — all 106 registered models, including the subdirectories a top-level glob misses — is frozen in `test_unit_verdict_corpus.py`; this only pins the return type.
         """
         verdicts = check_units(Dynamics.from_file("tvbo/database/models/ZetterbergJansen.yaml"))
 

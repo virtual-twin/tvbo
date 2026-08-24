@@ -1,13 +1,9 @@
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""
-OpenMINDS JSON-LD conversion utilities for TVBO.
+# SPDX-License-Identifier: EUPL-1.2
 
-This module provides bidirectional conversion between TVBO datamodel objects
-and openMINDS-compatible JSON-LD format.
+"""OpenMINDS JSON-LD conversion utilities for TVBO.
+
+This module provides bidirectional conversion between TVBO datamodel objects and openMINDS-compatible JSON-LD format.
 
 This module is the **single source of truth** for all openMINDS type mappings.
 Both runtime conversion and schema generation import from here.
@@ -16,7 +12,7 @@ Both runtime conversion and schema generation import from here.
 from __future__ import annotations
 
 import json
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
@@ -42,9 +38,7 @@ __all__ = [
     "load_openminds",
 ]
 
-# =============================================================================
 # OpenMINDS Context and Type Mappings
-# =============================================================================
 
 OPENMINDS_CONTEXT = {
     "@vocab": "https://openminds.ebrains.eu/vocab/",
@@ -54,12 +48,9 @@ OPENMINDS_CONTEXT = {
     "computation": "https://openminds.ebrains.eu/computation/",
 }
 
-# =============================================================================
 # Type Mappings: Single Source of Truth
-# =============================================================================
 
-# Map LinkML/TVBO class names to existing openMINDS types (namespace:Type)
-# These will NOT generate new schemas - use the existing type directly
+# Existing openMINDS types, used directly rather than generating a new schema.
 EXTERNAL_TYPE_MAPPINGS: dict[str, str] = {
     # SANDS types
     "BrainAtlas": "sands:BrainAtlas",
@@ -82,8 +73,7 @@ EXTERNAL_TYPE_MAPPINGS: dict[str, str] = {
     "SoftwareVersion": "core:SoftwareVersion",
     "QuantitativeValue": "core:QuantitativeValue",
     "QuantitativeValueRange": "core:QuantitativeValueRange",
-    # Computation types (simulation environment)
-    # Note: We generate our own SoftwareEnvironment with extended fields
+    # Computation types; SoftwareEnvironment is generated with extended fields instead.
 }
 
 # Map TVBO class names to openMINDS types (tvbo namespace)
@@ -166,8 +156,7 @@ LINKML_TO_JSON_TYPE: dict[str, str] = {
 # Fields to skip during serialization (internal/computed)
 SKIP_FIELDS = {"_as_dict", "metadata", "experiments"}
 
-# Fields that should use snake_case in openMINDS (matching LinkML)
-# openMINDS typically uses camelCase, but we preserve snake_case for TVBO extension
+# Fields that should use snake_case in openMINDS (matching LinkML) openMINDS typically uses camelCase, but we preserve snake_case for TVBO extension
 
 
 def _get_openminds_type(obj: Any) -> str | None:
@@ -288,22 +277,16 @@ def _from_openminds_value(value: Any, target_type: type | None = None) -> Any:
         # If it has @type, try to instantiate the appropriate class
         if "@type" in value:
             value["@type"]
-            # For now, just return the cleaned dict
-            # Subclasses can handle specific type instantiation
-            return {k: _from_openminds_value(v) for k, v in cleaned.items()}
-
         return {k: _from_openminds_value(v) for k, v in cleaned.items()}
 
     return value
 
 
-# =============================================================================
 # SimulationExperiment Conversion
-# =============================================================================
 
 
 def experiment_to_openminds(
-    experiment: "SimulationExperiment",
+    experiment: SimulationExperiment,
     base_id: str | None = None,
     include_context: bool = True,
 ) -> dict[str, Any]:
@@ -318,7 +301,7 @@ def experiment_to_openminds(
     include_context : bool
         Whether to include the @context in the output.
 
-    Returns
+    Returns:
     -------
     dict
         OpenMINDS-compatible JSON-LD dictionary.
@@ -356,7 +339,7 @@ def experiment_from_openminds(
     data : dict
         OpenMINDS JSON-LD dictionary.
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary that can be passed to SimulationExperiment(**dict).
@@ -381,13 +364,11 @@ def experiment_from_openminds(
     return result
 
 
-# =============================================================================
 # SimulationStudy Conversion
-# =============================================================================
 
 
 def study_to_openminds(
-    study: "SimulationStudy",
+    study: SimulationStudy,
     base_id: str | None = None,
     include_context: bool = True,
 ) -> dict[str, Any]:
@@ -402,7 +383,7 @@ def study_to_openminds(
     include_context : bool
         Whether to include the @context in the output.
 
-    Returns
+    Returns:
     -------
     dict
         OpenMINDS-compatible JSON-LD dictionary.
@@ -448,7 +429,7 @@ def study_from_openminds(
     data : dict
         OpenMINDS JSON-LD dictionary.
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary that can be passed to SimulationStudy(**dict).
@@ -475,9 +456,7 @@ def study_from_openminds(
     return result
 
 
-# =============================================================================
 # File I/O Utilities
-# =============================================================================
 
 
 def save_openminds(
@@ -523,12 +502,12 @@ def load_openminds(filepath: str) -> dict[str, Any]:
     filepath : str
         Path to JSON-LD file.
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary suitable for constructing TVBO objects.
     """
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         data = json.load(f)
 
     # Determine type and use appropriate converter

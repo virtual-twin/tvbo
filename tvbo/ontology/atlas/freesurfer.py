@@ -7,14 +7,11 @@
 #
 """FreeSurfer atlas utilities for mapping between region indices and labels.
 
-Loads the FreeSurfer color lookup table and provides helpers to translate
-between numeric FreeSurfer indices and region labels, exposes the FS86 and
-`aparc` label lists, and converts HCP-MMP1 region names to FreeSurfer label
-conventions.
+Loads the FreeSurfer color lookup table and provides helpers to translate between numeric FreeSurfer indices and region labels, exposes the FS86 and `aparc` label lists, and converts HCP-MMP1 region names to FreeSurfer label conventions.
 """
 
 from os.path import join
-from typing import Dict, List, Union, cast
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -29,7 +26,7 @@ lut = pd.read_csv(
 )
 
 
-def fs_mapper(output: str = "label") -> Dict[Union[int, str], Union[int, str]]:
+def fs_mapper(output: str = "label") -> dict[int | str, int | str]:
     """Create a mapping between FreeSurfer indices and labels.
 
     Args:
@@ -52,7 +49,7 @@ def fs_mapper(output: str = "label") -> Dict[Union[int, str], Union[int, str]]:
     mapper = dict()
 
     # Create index-name pairs.
-    for i, r in lut.iterrows():
+    for _i, r in lut.iterrows():
         if output.lower() in ["label"]:
             mapper[r.id] = r["name"]
         else:
@@ -61,7 +58,7 @@ def fs_mapper(output: str = "label") -> Dict[Union[int, str], Union[int, str]]:
     return mapper
 
 
-def idx2label(idx: Union[int, List[int]]) -> Union[str, List[str]]:
+def idx2label(idx: int | list[int]) -> str | list[str]:
     """Convert one or many FreeSurfer indices to labels.
 
     Args:
@@ -76,7 +73,7 @@ def idx2label(idx: Union[int, List[int]]) -> Union[str, List[str]]:
         return cast(str, fs_mapper(output="label")[idx])
 
 
-def label2idx(label: Union[str, List[str]]) -> Union[int, List[int]]:
+def label2idx(label: str | list[str]) -> int | list[int]:
     """Convert one or many FreeSurfer labels to indices.
 
     Args:
@@ -96,11 +93,10 @@ fs_aparcaseg86_labels = np.genfromtxt(join(constants.DATA_DIR, "freesurfer", "FS
 fs_aparc_labels = np.genfromtxt(join(constants.DATA_DIR, "freesurfer", "FS_aparc_labels.txt"), dtype="str")
 
 
-def hcp2fs_labels(hcp_labels: List[str]) -> List[str]:
+def hcp2fs_labels(hcp_labels: list[str]) -> list[str]:
     """Convert HCP-MMP1 region names to FreeSurfer cortical label conventions.
 
-    Each label is lower-cased and its hemisphere prefix rewritten, mapping
-    `l_` to `ctx-lh-` and `r_` to `ctx-rh-`.
+    Each label is lower-cased and its hemisphere prefix rewritten, mapping `l_` to `ctx-lh-` and `r_` to `ctx-rh-`.
 
     Args:
         hcp_labels: HCP-MMP1 region names to convert.
@@ -108,7 +104,7 @@ def hcp2fs_labels(hcp_labels: List[str]) -> List[str]:
     Returns:
         The region names rewritten in FreeSurfer label form.
     """
-    fs_labels: List[str] = list()
+    fs_labels: list[str] = list()
     for lbl in hcp_labels:
         lbl = lbl.lower()
         fs_labels.append(lbl.replace("l_", "ctx-lh-").replace("r_", "ctx-rh-"))

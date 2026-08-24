@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Backend adapters for SimulationExperiment.
 
 This module contains adapters for different simulation backends:
@@ -15,9 +14,9 @@ Standards adapters:
 - neuroml: NeuroML/LEMS export
 """
 
+from tvbo.adapters import julia
 from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.neuroml import NeuroMLAdapter
 from tvbo.adapters.pyrates import PyRatesAdapter
-from tvbo.adapters import julia
 
 __all__ = ["BaseAdapter", "NeuroMLAdapter", "PyRatesAdapter", "julia"]

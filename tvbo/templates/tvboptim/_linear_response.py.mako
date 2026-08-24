@@ -278,7 +278,7 @@ def ${name}(A):
 ## fixed point. Then FI(ΔI) = μ'ᵀP⁻¹μ' + ½Tr[(P'P⁻¹)²] with μ = the excitatory-mean FP block and
 ## P = the excitatory stationary covariance, by finite differences over ΔI. ${vf}/${jac} are the
 ## Fisher-specific vector field / Jacobian (the stimulated variable is heterogeneous per-node).
-<%def name="lr_fisher(ctx, name, stim_var, nodes, sigma, dI_lo, dI_hi, dI_step, vf, jac, time_scale=1.0e-3, dt=0.1, n_settle=200000, n_newton=8)">\
+<%def name="lr_fisher(ctx, name, stim_var, nodes, sigma, dI_lo, dI_hi, dI_step, vf, jac, time_scale=1.0e-3, dt=0.1, n_settle=200000, n_newton=8, profile_fn=None)">\
 def ${name}():
     _N = _lr_weights.shape[0]
     _dIs = jnp.arange(${dI_lo}, ${dI_hi} + 0.5 * ${dI_step}, ${dI_step})
@@ -299,15 +299,27 @@ def ${name}():
         _Qn = (${sigma} ** 2) * jnp.eye(_A.shape[0])
         _M = -(_Vi @ _Qn.astype(_V.dtype) @ _Vi.conj().T) / (_lam[:, None] + jnp.conj(_lam)[None, :])
         _P = (_V @ _M @ _V.conj().T).real[:_N, :_N]                      # excitatory covariance
+% if profile_fn:
+        return _fp[0], _P, ${profile_fn}(_fp, _lr_weights, _p)          # μ = S_e block, P, evoked profile
+% else:
         return _fp[0], _P                                               # μ = S_e block, P
+% endif
+% if profile_fn:
+    _mus, _Ps, _profs = jax.lax.map(_moments, _dIs)                     # each ΔI re-settles (sequential)
+% else:
     _mus, _Ps = jax.lax.map(_moments, _dIs)                             # each ΔI re-settles (sequential)
+% endif
     _step = _dIs[1] - _dIs[0]
     def _fi(_k):
         _dmu = (_mus[_k + 1] - _mus[_k]) / _step
         _dP = (_Ps[_k + 1] - _Ps[_k]) / _step
         _Pinv = jnp.linalg.pinv(_Ps[_k])
         return _dmu @ _Pinv @ _dmu + 0.5 * jnp.trace((_dP @ _Pinv) @ (_dP @ _Pinv))
+% if profile_fn:
+    return jax.vmap(_fi)(jnp.arange(_dIs.shape[0] - 1)), _profs
+% else:
     return jax.vmap(_fi)(jnp.arange(_dIs.shape[0] - 1))
+% endif
 </%def>\
 ##
 ## Orchestrator: emit the WHOLE linear-response analysis block from a resolved spec. This keeps the
@@ -341,12 +353,20 @@ obs.${o['name']} = _cov_${o['name']}(_lr_A)     # stationary ${o['return']} of $
 % elif o['type'] == 'psd':
 ${self.lr_psd(ctx, '_psd_' + o['name'], o['sigma'], o['f_lo'], o['f_hi'], o['n_freq'])}\
 obs.${o['name']} = _psd_${o['name']}(_lr_A)     # analytic power spectrum per excitatory node (Eq 28)
+% elif o['type'] == 'stability':
+obs.${o['name']} = jnp.max(jnp.linalg.eigvals(_lr_A).real)     # leading Jacobian eigenvalue at the operating point (<0 = stable branch)
 % elif o['type'] == 'fisher':
 ## Fisher needs the stimulated variable per-node -> its own vector field / Jacobian from fisher_ctx.
 ${self.lr_vf(o['fisher_ctx'], name='_fvf_' + o['name'])}\
 ${self.lr_jacobian(o['fisher_ctx'], name='_fjac_' + o['name'])}\
+% if o.get('profile_expr') is not None:
+${self.lr_constraint_fn(o['fisher_ctx'], '_prof_' + o['name'], o['profile_expr'])}\
+${self.lr_fisher(ctx, '_fisher_' + o['name'], o['stim_var'], o['nodes'], o['sigma'], o['dI_lo'], o['dI_hi'], o['dI_step'], '_fvf_' + o['name'], '_fjac_' + o['name'], dt=spec['settle_dt'], time_scale=spec['time_scale'], profile_fn='_prof_' + o['name'])}\
+obs.${o['name']}, obs.${o['name']}_profile = _fisher_${o['name']}()     # FI over the ΔI sweep (Eqs 33-34) + settled ${o['profile']} per node at each ΔI
+% else:
 ${self.lr_fisher(ctx, '_fisher_' + o['name'], o['stim_var'], o['nodes'], o['sigma'], o['dI_lo'], o['dI_hi'], o['dI_step'], '_fvf_' + o['name'], '_fjac_' + o['name'], dt=spec['settle_dt'], time_scale=spec['time_scale'])}\
 obs.${o['name']} = _fisher_${o['name']}()     # Fisher information over the ΔI sweep (Eqs 33-34)
+% endif
 % endif
 % endfor
 </%def>\

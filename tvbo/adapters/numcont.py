@@ -1,14 +1,8 @@
-# -*- coding: utf-8 -*-
 """Self-contained AUTO-07p (numcont) backend adapter for SimulationExperiment.
 
-This adapter does NOT depend on any external `numcont` package. It uses
-the `auto-07p` Python bindings directly (`auto.run`, `auto.sv`,
-`auto.loadbd`, `auto.merge`) and the Mako template at
-``tvbo/templates/numcont/tvbo-auto7p.py.mako`` to emit the model `.f90`
-file consumed by AUTO.
+This adapter does NOT depend on any external `numcont` package. It uses the `auto-07p` Python bindings directly (`auto.run`, `auto.sv`, `auto.loadbd`, `auto.merge`) and the Mako template at ``tvbo/templates/numcont/tvbo-auto7p.py.mako`` to emit the model `.f90` file consumed by AUTO.
 
-Requires the ``AUTO_DIR`` environment variable to point at an installed
-auto-07p tree (validated via :func:`tvbo.utils.auto.check_auto_dir`).
+Requires the ``AUTO_DIR`` environment variable to point at an installed auto-07p tree (validated via :func:`tvbo.utils.auto.check_auto_dir`).
 """
 
 from __future__ import annotations
@@ -19,16 +13,14 @@ import tempfile
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 
 from tvbo.adapters.base import ContinuationAdapter
 
 if TYPE_CHECKING:
-    from tvbo.analysis.bifurcation import BifurcationResult
+    pass
 
 
-# AUTO reserves PAR(11)=PERIOD and PAR(12)=ANGLE; user params occupy
-# 1..10 then 13..NPAR.
+# AUTO reserves PAR(11)=PERIOD and PAR(12)=ANGLE; user params take 1..10 then 13..NPAR.
 _RESERVED_LO = 11
 _RESERVED_HI = 12
 
@@ -55,9 +47,7 @@ def _build_unames(model) -> dict[int, str]:
 def _schema_initial_values(model) -> np.ndarray:
     """Initial state from model state-variable defaults.
 
-    Reads ``StateVariable.initial_value`` (the canonical schema field, per
-    ``schema/tvbo_datamodel.yaml:1346-1348``) with ``StateVariable.value`` as
-    a legacy fallback for older models. Defaults to 0.0 when neither is set.
+    Reads ``StateVariable.initial_value`` (the canonical schema field, per ``schema/tvbo_datamodel.yaml:1346-1348``) with ``StateVariable.value`` as a legacy fallback for older models. Defaults to 0.0 when neither is set.
     """
     n = len(model.state_variables)
     x0 = np.zeros(n)
@@ -169,8 +159,7 @@ class NumContAdapter(ContinuationAdapter):
         conts = self.continuations()
         if not conts:
             raise ValueError(
-                "No continuations defined. Add continuation specs via "
-                "exp.continuations or load from a bifurcation YAML."
+                "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
             )
 
         results = {}
@@ -187,8 +176,8 @@ class NumContAdapter(ContinuationAdapter):
     def _run_one(self, model, cont, cont_name, **kwargs):
         import contextlib
         import io
-        # AUTO-07p prints a Tkinter import warning to stdout even when
-        # plotting is unused. Suppress it.
+
+        # AUTO-07p prints a Tkinter import warning to stdout even when plotting is unused. Suppress it.
         _buf = io.StringIO()
         with contextlib.redirect_stdout(_buf):
             import auto
@@ -254,7 +243,7 @@ class NumContAdapter(ContinuationAdapter):
 
             # 4. Periodic-orbit continuation from each Hopf point
             po_results = []
-            for i, br in enumerate(R_eq):
+            for _i, br in enumerate(R_eq):
                 hbs = br.labels.by_label.get("HB", {})
                 n_hb = len(hbs) if hbs else 0
                 for k in range(n_hb):
@@ -308,25 +297,16 @@ class NumContAdapter(ContinuationAdapter):
     def _run_codim2_branches(self, *, auto, R_eq, cont, fp_name, kwargs_eq):
         """Run codim-2 fold/Hopf/BP continuations declared via ``cont.branches``.
 
-        Each :class:`~tvbo.classes.continuation.BranchSwitch` with
-        ``source_point`` of the form ``'fold:N'`` / ``'fold:all'`` /
-        ``'fold:-1'`` (or ``hopf:`` / ``bp:`` analogues) triggers a separate
-        AUTO restart from that special point with ``ISW=2`` (fold/Hopf
-        continuation) and two free parameters drawn from the sub-
-        continuation's ``free_parameters`` slot.
+        Each :class:`~tvbo.classes.continuation.BranchSwitch` with ``source_point`` of the form ``'fold:N'`` / ``'fold:all'`` / ``'fold:-1'`` (or ``hopf:`` / ``bp:`` analogues) triggers a separate AUTO restart from that special point with ``ISW=2`` (fold/Hopf continuation) and two free parameters drawn from the sub- continuation's ``free_parameters`` slot.
 
-        Returns a list of ``(name, source_type, fp1_name, fp2_name, R_c2)``
-        tuples consumed by :meth:`BifurcationResult.from_auto`.
+        Returns a list of ``(name, source_type, fp1_name, fp2_name, R_c2)`` tuples consumed by :meth:`BifurcationResult.from_auto`.
         """
         branches = getattr(cont, "branches", None) or {}
         if not branches:
             return []
         if not isinstance(branches, dict):
             # Coerce list-of-BranchSwitch → name-keyed dict
-            branches = {
-                getattr(bs, "name", f"branch_{i}"): bs
-                for i, bs in enumerate(branches)
-            }
+            branches = {getattr(bs, "name", f"branch_{i}"): bs for i, bs in enumerate(branches)}
 
         out = []
         for bname, bswitch in branches.items():
@@ -351,8 +331,7 @@ class NumContAdapter(ContinuationAdapter):
             if sub_cont is None:
                 continue
             fps_raw = getattr(sub_cont, "free_parameters", None)
-            fps = (list(fps_raw.values()) if isinstance(fps_raw, dict)
-                   else (list(fps_raw) if fps_raw else []))
+            fps = list(fps_raw.values()) if isinstance(fps_raw, dict) else (list(fps_raw) if fps_raw else [])
             if len(fps) < 2:
                 continue
             fp1_name = str(fps[0].name)
@@ -360,17 +339,15 @@ class NumContAdapter(ContinuationAdapter):
 
             def _dom(fp, default=10.0):
                 dom = getattr(fp, "domain", None)
-                lo = (float(dom.lo) if dom and dom.lo is not None else -default)
-                hi = (float(dom.hi) if dom and dom.hi is not None else  default)
+                lo = float(dom.lo) if dom and dom.lo is not None else -default
+                hi = float(dom.hi) if dom and dom.hi is not None else default
                 return lo, hi
 
             fp2_lo, fp2_hi = _dom(fps[1])
 
             # Parse 'fold:1', 'fold:all', 'fold:-1', 'fold' (default: all)
             spec = src.split(":", 1)[1].strip() if ":" in src else "all"
-            # AUTO addresses special points by ORDINAL (1-based, across all
-            # branches): R_eq("LP1") = first LP found, "LP2" = second, etc.
-            # Count total LPs to size the ordinal range.
+            # AUTO addresses special points by 1-based ordinal across all branches, so size the range.
             n_total = 0
             for br in R_eq:
                 lbls = br.labels.by_label.get(label_prefix, {}) or {}
@@ -424,9 +401,10 @@ class NumContAdapter(ContinuationAdapter):
                     out.append((c2_name, source_type, fp1_name, fp2_name, R_c2))
                 except Exception as e:
                     import warnings
+
                     warnings.warn(
-                        f"Codim-2 continuation '{bname}' from {label_prefix}{lab} "
-                        f"failed: {type(e).__name__}: {e}"
+                        f"Codim-2 continuation '{bname}' from {label_prefix}{lab} failed: {type(e).__name__}: {e}",
+                        stacklevel=2,
                     )
         return out
 

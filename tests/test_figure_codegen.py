@@ -3,21 +3,18 @@
 Covers the two figure adapters:
 
 * ``tvbo.adapters.bsplot`` — resolves a declarative :class:`Figure` into a
-  codegen context (``build_context``), emits a self-contained ``plot.py``
-  (``render_code``), and emits + execs it under matplotlib Agg (``render``),
-  plus the register/lookup API a study extends the engine through and the
-  ``_container_path`` PROV resolver.
+  codegen context (``build_context``), emits a self-contained ``plot.py`` (``render_code``), and emits + execs it under matplotlib Agg (``render``), plus the register/lookup API a study extends the engine through and the ``_container_path`` PROV resolver.
 * ``tvbo.adapters.figure_workflow`` — lowers a figure's PROV ``used`` edges into
   a Snakemake render rule (``emit_figure_rules``).
 
-Figure objects are constructed inline. Tests that need experiment result
-containers point at the Taher2019 replication study and skip when it (or a
-specific container) is absent, so the suite is robust on a fresh checkout.
+Figure objects are constructed inline. Tests that need experiment result containers point at the Taher2019 replication study and skip when it (or a specific container) is absent, so the suite is robust on a fresh checkout.
 """
+
 from __future__ import annotations
 
 import ast
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -27,10 +24,7 @@ from tvbo.adapters import figure_workflow as fw
 
 # --------------------------------------------------------------------------- fixtures / gating
 
-TAHER_BASE = Path(
-    "/Users/leonmartin_bih/projects/TVB-O/tvbo-manuscript/"
-    "use-cases/replication_studies/Taher2019"
-)
+TAHER_BASE = Path("/Users/leonmartin_bih/projects/TVB-O/tvbo-manuscript/use-cases/replication_studies/Taher2019")
 EXP3_IRI = "tvbo:exp/Taher2019/exp-3"
 MISSING_IRI = "tvbo:exp/Taher2019/exp-999"  # deliberately non-existent -> placeholder
 
@@ -66,9 +60,9 @@ def _cartesian_figure(iri=EXP3_IRI, output="delta_omega", **fig_kw):
 
 # --------------------------------------------------------------------------- public surface
 
+
 def test_public_surface():
-    """The documented adapter surface is importable and well-typed. Core ships no built-in
-    transforms/panels — the registries are filled by studies through the register API."""
+    """The documented adapter surface is importable and well-typed. Core ships no built-in transforms/panels — the registries are filled by studies through the register API."""
     assert isinstance(bsplot.TRANSFORMS, dict)
     assert isinstance(bsplot.CUSTOM_PANELS, dict)
     assert callable(bsplot.register_transform)
@@ -79,6 +73,7 @@ def test_public_surface():
 
 
 # --------------------------------------------------------------------------- _container_path
+
 
 @requires_exp3
 def test_container_path_resolves_existing():
@@ -96,100 +91,80 @@ def test_container_path_unresolved_returns_empty():
     assert bsplot._container_path(MISSING_IRI, TAHER_BASE) == ""
     assert bsplot._container_path(None, TAHER_BASE) == ""
     assert bsplot._container_path("", TAHER_BASE) == ""
-    # Even a plausible-looking IRI under a base with no output/ tree stays empty.
+    # Even a plausible-looking IRI under a base with no results directory stays empty.
     assert bsplot._container_path(EXP3_IRI, Path("/nonexistent/base/dir")) == ""
 
 
-def test_container_path_resolves_results_dir_container(tmp_path):
-    """A figure layer may bind a derived-figure container a replication study writes with
-    ``ExperimentResult.save`` under ``output/results/<name>/result.h5`` (the ``results_io``
-    convention), not only a ``tvbo run`` experiment under ``output/nc/<exp>/``. The last IRI
-    segment names the results subdirectory."""
+def _results(tmp_path):
+    """The study's results directory, where every container lives flat."""
+    from tvbo.utils.study_layout import study_path
+
+    d = study_path("results", root=tmp_path)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def test_container_path_resolves_an_analysis_container(tmp_path):
+    """A layer may bind a declared analysis's own container, which is ``ana-<name>_result.h5`` beside the experiment results rather than in a directory of its own. The last IRI segment names the analysis."""
     bsplot._container_path.cache_clear()  # the resolver is lru_cached
-    result = tmp_path / "output" / "results" / "fig3" / "result.h5"
-    result.parent.mkdir(parents=True)
+    results = _results(tmp_path)
+    result = results / "ana-fig3_result.h5"
     result.write_bytes(b"")  # existence is all the resolver checks
     assert bsplot._container_path("tvbo:result/Deco2014/fig3", tmp_path) == str(result.resolve())
-    # An unknown name under the same base stays empty (no results/ subdir for it).
     assert bsplot._container_path("tvbo:result/Deco2014/figX", tmp_path) == ""
 
 
-def test_container_path_resolves_flat_nc_container(tmp_path):
-    """A whole-study ``tvbo run`` writes BIDS-style result files FLAT inside ``output/nc/``
-    (``exp-<id>_desc-<model>_result.h5``), not in a per-experiment ``output/nc/<exp>/``
-    subdirectory. The resolver must find that layout (regression: a figure's ``used`` IRI
-    silently resolved to "" for it, so custom panels fell back to placeholder/degenerate
-    data — the Cortes2013 Fig-2/3 bug)."""
-    bsplot._container_path.cache_clear()  # the resolver is lru_cached
-    nc = tmp_path / "output" / "nc"
-    nc.mkdir(parents=True)
-    result = nc / "exp-1_desc-TsodyksMarkram_result.h5"
-    result.write_bytes(b"")  # existence is all the resolver checks
-    (nc / "exp-1_desc-TsodyksMarkram_network.h5").write_bytes(b"")  # sidecar must be skipped
+def test_container_path_resolves_an_experiment_container(tmp_path):
+    """An experiment result is ``exp-<id>[_<entities>]_result.h5`` in the results directory, and the network companion beside it is skipped by name."""
+    bsplot._container_path.cache_clear()
+    results = _results(tmp_path)
+    result = results / "exp-1_model-TsodyksMarkram_result.h5"
+    result.write_bytes(b"")
+    (results / "exp-1_model-TsodyksMarkram_network.h5").write_bytes(b"")  # companion must be skipped
     got = bsplot._container_path("tvbo:exp/Cortes2013/exp-1", tmp_path)
     assert got == str(result.resolve())
     assert "network" not in Path(got).name
 
 
-def test_container_path_flat_nc_no_exp_prefix_collision(tmp_path):
-    """The flat-in-nc glob is boundary-anchored (``exp-1_*``) so a request for ``exp-1`` never
-    grabs ``exp-10``'s container."""
+def test_container_path_no_exp_prefix_collision(tmp_path):
+    """The glob is boundary-anchored (``exp-1_*``) so a request for ``exp-1`` never grabs ``exp-10``'s container."""
     bsplot._container_path.cache_clear()
-    nc = tmp_path / "output" / "nc"
-    nc.mkdir(parents=True)
-    (nc / "exp-10_desc-Model_result.h5").write_bytes(b"")   # only exp-10 exists so far
+    results = _results(tmp_path)
+    (results / "exp-10_model-M_result.h5").write_bytes(b"")  # only exp-10 exists so far
     assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path) == ""  # must NOT match exp-10
-    (nc / "exp-1_desc-Model_result.h5").write_bytes(b"")
+    (results / "exp-1_model-M_result.h5").write_bytes(b"")
     bsplot._container_path.cache_clear()  # the "" above is memoised for these exact args
-    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path).endswith(
-        "exp-1_desc-Model_result.h5")
-
-
-def test_container_path_output_root_no_exp_prefix_collision(tmp_path):
-    """The flat OUTPUT-ROOT glob (output/<exp>_*result.h5) is boundary-anchored too, so exp-1
-    never binds exp-10's container there either."""
-    bsplot._container_path.cache_clear()
-    out = tmp_path / "output"
-    out.mkdir(parents=True)
-    (out / "exp-10_desc-Model_result.h5").write_bytes(b"")  # only exp-10 at the output root
-    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path) == ""  # must NOT match exp-10
-    (out / "exp-1_desc-Model_result.h5").write_bytes(b"")
-    bsplot._container_path.cache_clear()
-    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path).endswith(
-        "exp-1_desc-Model_result.h5")
+    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path).endswith("exp-1_model-M_result.h5")
 
 
 def test_container_path_digit_bearing_non_experiment_iri_does_not_misbind(tmp_path):
-    """A non-experiment IRI whose last segment merely CONTAINS digits (a connectome/dataset
-    ref like ``rec-avgMatrix_atlas-HCPMMP1``) must not be read as ``exp-1`` and grab exp-1's
-    container. Only a strict ``exp-N`` / ``expN`` / bare-``N`` key yields exp candidates."""
+    """A non-experiment IRI whose last segment merely CONTAINS digits (a connectome/dataset ref like ``rec-avgMatrix_atlas-HCPMMP1``) must not be read as ``exp-1`` and grab exp-1's container. Only a strict ``exp-N`` / ``expN`` / bare-``N`` key yields an exp stem."""
     bsplot._container_path.cache_clear()
-    nc = tmp_path / "output" / "nc"
-    nc.mkdir(parents=True)
-    (nc / "exp-1_desc-Model_result.h5").write_bytes(b"")   # exp-1 exists...
+    results = _results(tmp_path)
+    (results / "exp-1_model-M_result.h5").write_bytes(b"")  # exp-1 exists...
     # ...but a connectome IRI ending in HCPMMP1 must NOT resolve to it.
     assert bsplot._container_path("tvbo:dataset/rec-avgMatrix_atlas-HCPMMP1", tmp_path) == ""
     bsplot._container_path.cache_clear()
     # A genuine experiment ref still resolves.
-    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path).endswith("exp-1_desc-Model_result.h5")
+    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path).endswith("exp-1_model-M_result.h5")
 
 
 def test_used_ref_prefers_in_study_experiment_id(tmp_path):
-    """A figure layer's ``used`` may bind an in-study experiment by id (``experiment: 2``) rather
-    than a raw ``iri`` — it resolves to that experiment's container with no hardcoded study key.
-    An explicit ``iri`` still wins when both are given."""
+    """A figure layer's ``used`` may bind an in-study experiment by id (``experiment: 2``) rather than a raw ``iri`` — it resolves to that experiment's container with no hardcoded study key.
+
+    An explicit ``iri`` still wins when both are given.
+    """
     bsplot._container_path.cache_clear()
-    nc = tmp_path / "output" / "nc"
-    nc.mkdir(parents=True)
-    (nc / "exp-2_desc-Model_result.h5").write_bytes(b"")
+    results = _results(tmp_path)
+    (results / "exp-2_model-M_result.h5").write_bytes(b"")
     assert bsplot._used_ref(P.DataRef(experiment="2")) == "exp-2"
-    assert bsplot._container_path(bsplot._used_ref(P.DataRef(experiment="2")), tmp_path).endswith(
-        "exp-2_desc-Model_result.h5")
+    assert bsplot._container_path(bsplot._used_ref(P.DataRef(experiment="2")), tmp_path).endswith("exp-2_model-M_result.h5")
     assert bsplot._used_ref(P.DataRef(iri="tvbo:exp/S/exp-5", experiment="2")) == "tvbo:exp/S/exp-5"
     assert bsplot._used_ref(P.DataRef()) is None
 
 
 # --------------------------------------------------------------------------- build_context
+
 
 @requires_exp3
 def test_build_context_resolves_everything():
@@ -272,12 +247,18 @@ def test_build_context_resolves_everything():
     assert a["axopts"]["xlabel"] == "KuramotoInertia.K"
     assert a["axopts"]["ylabel"] == "delta_omega"
     # annotations -> [{text, x, y}] in axes-fraction coords
-    _centred = {"ha": "center", "va": "center"}    # the default when none is declared
+    _centred = {"ha": "center", "va": "center"}  # the default when none is declared
     assert a["annotations"] == [
-        {"text": "corner", "x": 0.03, "y": 0.95, "layer": None, "arrow": None,
-         "tail": None, "kwargs": _centred},                              # literal text
-        {"text": "xy", "x": 0.2, "y": 0.3, "layer": None, "arrow": None, "tail": None,
-         "kwargs": _centred},
+        {
+            "text": "corner",
+            "x": 0.03,
+            "y": 0.95,
+            "layer": None,
+            "arrow": None,
+            "tail": None,
+            "kwargs": _centred,
+        },  # literal text
+        {"text": "xy", "x": 0.2, "y": 0.3, "layer": None, "arrow": None, "tail": None, "kwargs": _centred},
     ]
     assert a["placeholder"] is None
 
@@ -301,9 +282,7 @@ def test_build_context_resolves_everything():
 
 
 def test_build_context_image_path_resolved_against_base_dir(tmp_path):
-    """An ``image`` panel's path is spec-relative, so the spec stays portable; the emitted
-    plot.py runs from an arbitrary cwd, so it must be resolved against base_dir (an
-    absolute path is passed through). Same contract as a study .mplstyle."""
+    """An ``image`` panel's path is spec-relative, so the spec stays portable; the emitted plot.py runs from an arbitrary cwd, so it must be resolved against base_dir (an absolute path is passed through). Same contract as a study .mplstyle."""
     figure = P.Figure(
         name="img",
         layout="ab",
@@ -324,30 +303,28 @@ def test_build_context_default_letter_format():
 
 
 def test_build_context_dataclass_flavor_kind_mark_loc():
-    """Production loads figures as the *dataclass* datamodel — both ``tvbo figure
-    render`` (``schema.Figure``) and ``SimulationStudy`` (extends
-    ``schema.SimulationStudy``) — whose enum-valued slots are NOT ``==`` a bare
-    string. The rest of this module builds pydantic objects (where the enum is a
-    ``str``), so the adapter must normalise ``kind``/``mark``/``loc`` for the
-    dataclass flavour or custom/image/heatmap dispatch and corner placement break
-    only in production.
-    """
+    """Production loads figures as the *dataclass* datamodel — both ``tvbo figure render`` (``schema.Figure``) and ``SimulationStudy`` (extends ``schema.SimulationStudy``) — whose enum-valued slots are NOT ``==`` a bare string. The rest of this module builds pydantic objects (where the enum is a ``str``), so the adapter must normalise ``kind``/``mark``/``loc`` for the dataclass flavour or custom/image/heatmap dispatch and corner placement break only in production."""
     from tvbo.datamodel import schema as D
 
     fig = D.Figure(
-        name="dc", layout="ab/cd", panel_number_loc="upper right",
+        name="dc",
+        layout="ab/cd",
+        panel_number_loc="upper right",
         panels={
             "a": D.Panel(panel_key="a", kind="custom", render="custom_panel"),
             "b": D.Panel(panel_key="b", kind="image", path="/tmp/x.png"),
             "c": D.Panel(
-                panel_key="c", kind="cartesian", number_loc="lower left",
-                layers=[D.Layer(used=D.DataRef(iri="tvbo:exp/x", output="v"),
-                                mark="scatter", encoding=D.Encoding(x="K", y="v"))],
+                panel_key="c",
+                kind="cartesian",
+                number_loc="lower left",
+                layers=[
+                    D.Layer(used=D.DataRef(iri="tvbo:exp/x", output="v"), mark="scatter", encoding=D.Encoding(x="K", y="v"))
+                ],
             ),
             "d": D.Panel(
-                panel_key="d", kind="heatmap",
-                layers=[D.Layer(used=D.DataRef(iri="tvbo:exp/x", output="m"),
-                                encoding=D.Encoding(x="K", y="n"))],
+                panel_key="d",
+                kind="heatmap",
+                layers=[D.Layer(used=D.DataRef(iri="tvbo:exp/x", output="m"), encoding=D.Encoding(x="K", y="n"))],
             ),
         },
     )
@@ -357,8 +334,8 @@ def test_build_context_dataclass_flavor_kind_mark_loc():
     # kind resolves to a plain string -> custom dispatch + image/heatmap branching
     assert by["a"]["kind"] == "custom" and by["a"]["ctx"] is not None
     assert by["b"]["kind"] == "image"
-    assert by["c"]["layers"][0]["mark"] == "scatter"    # explicit mark survives, not defaulted to line
-    assert by["d"]["layers"][0]["mark"] == "heatmap"    # implied by the heatmap panel kind
+    assert by["c"]["layers"][0]["mark"] == "scatter"  # explicit mark survives, not defaulted to line
+    assert by["d"]["layers"][0]["mark"] == "heatmap"  # implied by the heatmap panel kind
     # Corner enum -> corner placement kwargs (figure default, and per-panel override)
     assert by["a"]["number_kwargs"]["ha"] == "right"
     assert (by["c"]["number_kwargs"]["ha"], by["c"]["number_kwargs"]["va"]) == ("left", "bottom")
@@ -366,16 +343,14 @@ def test_build_context_dataclass_flavor_kind_mark_loc():
     # the emitted plot.py parses and dispatches each kind
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "_registered(_CP," in code   # custom-panel callable dispatch
-    assert "pcolormesh" in code     # heatmap
-    assert "imread" in code         # image
+    assert "_registered(_CP," in code  # custom-panel callable dispatch
+    assert "pcolormesh" in code  # heatmap
+    assert "imread" in code  # image
 
 
 def test_register_panel_and_transform():
-    """The register_* decorators populate the shared registries, so a study's
-    code_source module adds its own custom panels/transforms; the emitted plot.py
-    looks them up by name in these dicts.
-    """
+    """The register_* decorators populate the shared registries, so a study's code_source module adds its own custom panels/transforms; the emitted plot.py looks them up by name in these dicts."""
+
     @bsplot.register_panel("_test_panel")
     def _panel(fig, ax, ctx):
         return "drawn"
@@ -387,18 +362,17 @@ def test_register_panel_and_transform():
     try:
         assert bsplot.CUSTOM_PANELS["_test_panel"] is _panel
         assert bsplot.TRANSFORMS["_test_tf"] is _tf
-        assert _panel(None, None, None) == "drawn"      # decorator returns the fn unchanged
-    finally:                                            # keep the module-level registries clean for other tests
+        assert _panel(None, None, None) == "drawn"  # decorator returns the fn unchanged
+    finally:  # keep the module-level registries clean for other tests
         bsplot.CUSTOM_PANELS.pop("_test_panel", None)
         bsplot.TRANSFORMS.pop("_test_tf", None)
 
 
 def test_unregistered_name_error_points_at_code_modules():
-    """Core ships no panels/transforms, so "declared a name but never registered it" (a
-    missing or unimportable code_modules entry) is THE common failure. It must name the
-    culprit and the fix rather than surfacing a bare KeyError from a generated file."""
+    """Core ships no panels/transforms, so "declared a name but never registered it" (a missing or unimportable code_modules entry) is THE common failure. It must name the culprit and the fix rather than surfacing a bare KeyError from a generated file."""
     fig = P.Figure(
-        name="oops", layout="a",
+        name="oops",
+        layout="a",
         panels={"a": P.Panel(panel_key="a", kind="custom", render="never_registered")},
     )
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
@@ -413,13 +387,14 @@ def test_unregistered_name_error_points_at_code_modules():
 
 
 def test_render_code_emits_study_code_module_imports():
-    """A figure declaring code_modules emits an import for each, so a study's
-    code_source panels/transforms register when plot.py runs (the study load
-    puts code/ on the path; importing the module fires the @register_* decorators).
+    """A figure declaring code_modules emits an import for each, so a study's code_source panels/transforms register when plot.py runs (the study load puts code/ on the path; importing the module fires the @register_* decorators).
+
     A figure with none emits no such import.
     """
     fig = P.Figure(
-        name="withcode", layout="a", code_modules=["taher2019_figures", "myextra"],
+        name="withcode",
+        layout="a",
+        code_modules=["taher2019_figures", "myextra"],
         panels={"a": P.Panel(panel_key="a", kind="custom", render="custom_panel")},
     )
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
@@ -431,40 +406,44 @@ def test_render_code_emits_study_code_module_imports():
 
 
 def test_study_code_module_roundtrip(tmp_path, monkeypatch):
-    """End-to-end proof of the register API + code_modules + emit-wiring together:
-    a study module registers a panel core tvbo never knew about; the emitted
-    plot.py imports the module (firing the decorator), so the panel dispatches
-    and the figure draws.
+    """End-to-end proof of the register API + code_modules + emit-wiring together.
+
+    A study module registers a panel core tvbo never knew about; the emitted plot.py imports the module (firing the decorator), so the panel dispatches and the figure draws.
     """
     import sys
     import textwrap
 
-    (tmp_path / "study_demo_panels.py").write_text(textwrap.dedent('''
+    (tmp_path / "study_demo_panels.py").write_text(
+        textwrap.dedent("""
         from tvbo.adapters import bsplot
 
         @bsplot.register_panel("demo_roundtrip_panel")
         def demo(fig, ax, ctx):
             ax.text(0.5, 0.5, "study", ha="center", va="center", transform=ax.transAxes)
             ax.set_xticks([]); ax.set_yticks([])
-    '''))
-    monkeypatch.syspath_prepend(str(tmp_path))          # a study load would put its code/ dir here
-    assert "demo_roundtrip_panel" not in bsplot.CUSTOM_PANELS    # core tvbo does not know it
+    """)
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))  # a study load would put its code/ dir here
+    assert "demo_roundtrip_panel" not in bsplot.CUSTOM_PANELS  # core tvbo does not know it
 
     fig = P.Figure(
-        name="rt", layout="a", code_modules=["study_demo_panels"],
+        name="rt",
+        layout="a",
+        code_modules=["study_demo_panels"],
         panels={"a": P.Panel(panel_key="a", kind="custom", render="demo_roundtrip_panel")},
     )
     out = tmp_path / "rt.png"
     try:
-        bsplot.render(fig, str(tmp_path), str(out))     # emitted plot.py imports the module...
-        assert "demo_roundtrip_panel" in bsplot.CUSTOM_PANELS   # ...which registered the panel...
-        assert out.is_file() and out.stat().st_size > 0         # ...and it drew.
+        bsplot.render(fig, str(tmp_path), str(out))  # emitted plot.py imports the module...
+        assert "demo_roundtrip_panel" in bsplot.CUSTOM_PANELS  # ...which registered the panel...
+        assert out.is_file() and out.stat().st_size > 0  # ...and it drew.
     finally:
         bsplot.CUSTOM_PANELS.pop("demo_roundtrip_panel", None)
         sys.modules.pop("study_demo_panels", None)
 
 
 # --------------------------------------------------------------------------- render_code validity
+
 
 def _emit(**fig_kw) -> str:
     return bsplot.render_code(_cartesian_figure(**fig_kw), TAHER_BASE, "out.png")
@@ -473,7 +452,7 @@ def _emit(**fig_kw) -> str:
 def test_render_code_is_valid_python():
     """The emitted plot.py parses and compiles, and contains the core scaffold."""
     code = _emit()
-    ast.parse(code)          # syntactically valid
+    ast.parse(code)  # syntactically valid
     compile(code, "<figure>", "exec")  # and compiles
     assert "bsplot.figure.subplots" in code
     assert "savefig" in code
@@ -489,9 +468,7 @@ def test_render_code_font_size_emitted():
 def test_render_code_font_size_wins_over_mplstyle():
     """A declared ``font_size`` must be applied AFTER the study .mplstyle, not before.
 
-    A study style file that sets ``font.size`` would otherwise silently override the
-    per-figure declaration, making ``font_size:`` a no-op that is invisible in the spec and
-    only detectable by measuring glyphs in the rendered PNG.
+    A study style file that sets ``font.size`` would otherwise silently override the per-figure declaration, making ``font_size:`` a no-op that is invisible in the spec and only detectable by measuring glyphs in the rendered PNG.
     """
     code = _emit(font_size=9, style=["some/study.mplstyle"])
     assert code.index("plt.style.use(") < code.index("plt.rcParams.update({_k: 9")
@@ -500,8 +477,8 @@ def test_render_code_font_size_wins_over_mplstyle():
 def test_render_code_bar_mark():
     """``mark: bar`` emits ``ax.bar``, not the line fallback.
 
-    A spectrum read as a line implies interpolation between mode numbers that do not
-    exist, so the distinction is part of what the panel claims, not styling."""
+    A spectrum read as a line implies interpolation between mode numbers that do not exist, so the distinction is part of what the panel claims, not styling.
+    """
     fig = _cartesian_figure()
     fig.panels["a"].layers[0].mark = "bar"
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
@@ -509,14 +486,81 @@ def test_render_code_bar_mark():
     assert "ax.plot(_x," not in code
 
 
+def test_render_code_band_mark():
+    """``mark: band`` emits ``fill_between`` across two edges, not the line fallback.
+
+    The schema has offered ``band`` since the figure spec existed while the renderer had no branch for it, so a spec asking for an error band silently got a single line through the middle of its own bounds.
+    """
+    fig = _cartesian_figure()
+    fig.panels["a"].layers[0].mark = "band"
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "_b = _bounds(_da, _x," in code
+    assert "ax.fill_between(_x, _b[0], _b[1]," in code
+    assert "ax.plot(_x," not in code
+    # x is taken from the swept (non-pair) axis, not hardcoded axis 0 — else a pair-first (2, n) output with no x coord makes _x length 2 and the band collapses to two points.
+    assert "_da.shape[0] != 2" in code
+
+
+def test_render_code_rule_mark_takes_its_orientation_from_the_encoding():
+    """``mark: rule`` draws a reference line at a value the CONTAINER holds.
+
+    Same gap as `band`: the schema has always offered it and the renderer had no branch, so a layer marking a published value silently plotted it as a one-point line. An `x:` encoding means the value lives on x, so the line is vertical.
+    """
+    fig = _cartesian_figure()
+    fig.panels["a"].layers[0].mark = "rule"
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "_line = ax.axvline if True" in code
+    assert "ax.plot(_x," not in code
+    # A multi-value rule labels ONCE (not once per value -> N duplicate legend entries).
+    assert '_rule_style.pop("label"' in code and "_i == 0" in code
+
+    fig.panels["a"].layers[0].encoding = P.Encoding(y="v")
+    assert "_line = ax.axvline if False" in bsplot.render_code(fig, TAHER_BASE, "out.png")
+
+
+def test_band_and_rule_with_a_colour_encoding_keep_their_colour_and_label():
+    """Band / rule draw a SINGLE artist above the colour fan-out, so an ``encoding.color`` must not strip their style colour or drop their legend label (only a bare line fans by colour)."""
+    for mark in ("band", "rule"):
+        layer = P.Layer(
+            used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+            encoding=P.Encoding(x="KuramotoInertia.K", color="seed"),
+            style=P.Style(color="C1"),
+            label="lbl",
+        )
+        layer.mark = mark
+        d = bsplot._resolve_layer(layer, "cartesian", TAHER_BASE)
+        assert d["style"].get("color") == "C1", f"{mark} lost its style colour"
+        assert d["style"].get("label") == "lbl", f"{mark} lost its legend label"
+
+
+def test_a_band_whose_output_is_not_a_pair_of_edges_is_rejected():
+    """A band spans TWO series; one is a line drawn as if it were an interval."""
+    import re
+
+    import numpy as np
+
+    code = bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
+    source = re.search(r"^def _bounds\(.*?(?=^def |\Z)", code, re.S | re.M).group(0)
+    scope: dict = {}
+    exec(source, {"np": np}, scope)
+    x = np.arange(5.0)
+    pair = SimpleNamespace(values=np.stack([x - 1, x + 1], axis=1))
+    lo, hi = scope["_bounds"](pair, x, "r_band")
+    assert lo[0] == -1.0 and hi[0] == 1.0
+    # Transposed the other way round, the swept axis still decides which axis is which.
+    lo, hi = scope["_bounds"](SimpleNamespace(values=pair.values.T), x, "r_band")
+    assert lo[0] == -1.0 and hi[0] == 1.0
+    with pytest.raises(ValueError, match="two edges"):
+        scope["_bounds"](SimpleNamespace(values=x), x, "r_band")
+
+
 def test_render_code_annotation_text_kwargs():
     """Annotation placement/rotation reach the emitted ``ax.text`` call.
 
-    A label running up the side of a reference line is 90-degree rotated text; without
-    these the drawer has no way to say so and the label overlaps the line."""
+    A label running up the side of a reference line is 90-degree rotated text; without these the drawer has no way to say so and the label overlaps the line.
+    """
     fig = _cartesian_figure()
-    fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0,
-                                                ha="right", va="top", size=6.5)]
+    fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0, ha="right", va="top", size=6.5)]
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     assert "'rotation': 90.0" in code and "'ha': 'right'" in code
     assert "'va': 'top'" in code and "'size': 6.5" in code
@@ -525,8 +569,8 @@ def test_render_code_annotation_text_kwargs():
 def test_render_code_cell_axes_walks_insets():
     """A composite panel's inset axes must be reachable from ``_cell_axes``.
 
-    Insets carry no subplotspec, so without the child walk a grid's deliberate per-cell
-    ticks are invisible to the snapshot and the figure-wide format pass replaces them."""
+    Insets carry no subplotspec, so without the child walk a grid's deliberate per-cell ticks are invisible to the snapshot and the figure-wide format pass replaces them.
+    """
     import matplotlib.pyplot as plt
 
     ns: dict = {}
@@ -561,28 +605,26 @@ def _inset_figure(**inset_kw):
 def test_render_code_inset_draws_inside_its_host():
     """A declared inset emits its own drawer and is opened on the HOST panel's axes.
 
-    The paper convention this serves is a zoom or thumbnail over a plot; the point of
-    declaring it is that the panel keeps its grammar instead of becoming a custom callable
-    whose whole interior is opaque to the spec."""
+    The paper convention this serves is a zoom or thumbnail over a plot; the point of declaring it is that the panel keeps its grammar instead of becoming a custom callable whose whole interior is opaque to the spec.
+    """
     code = bsplot.render_code(_inset_figure(), TAHER_BASE, "out.png")
     ast.parse(code)
     assert "def _a_inset0(fig, ax):" in code
-    assert "_a_inset0(fig, ax.inset_axes([0.55, 0.55, 0.4, 0.4]))" in code
+    assert "_iax = ax.inset_axes([0.55, 0.55, 0.4, 0.4])" in code
     # ...and it is called from the host panel, not from main().
     host = code.split("def _panel_a(fig, ax):")[1].split("\ndef ")[0]
-    assert "_a_inset0(fig, ax.inset_axes(" in host
+    assert "_iax = ax.inset_axes(" in host and "_a_inset0(fig, _iax)" in host
 
 
 def test_render_code_inset_shares_the_panel_drawing_rules():
-    """An inset resolves through the same path as a panel, so a heatmap inset gets the
-    triangle/colourbar treatment a heatmap panel gets rather than a reduced copy of it."""
+    """An inset resolves through the same path as a panel, so a heatmap inset gets the triangle/colourbar treatment a heatmap panel gets rather than a reduced copy of it."""
     fig = _inset_figure(kind="heatmap", opts={"colorbar": P.Argument(name="colorbar", value=False)})
     fig.panels["a"].insets[0].layers[0].triangle = "upper"
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
     inset = code.split("def _a_inset0(fig, ax):")[1].split("\ndef ")[0]
     assert "_triangle(_C, 'upper'" in inset
-    assert "fig.colorbar" not in inset          # declared off, as on a panel
+    assert "fig.colorbar" not in inset  # declared off, as on a panel
 
 
 def test_render_code_no_insets_emits_no_inset_machinery():
@@ -591,18 +633,19 @@ def test_render_code_no_insets_emits_no_inset_machinery():
 
 
 def test_render_code_trim_margins_toggle():
-    """Trimming re-crops to content, so the saved aspect can drift from width/height;
-    ``trim_margins: false`` is the opt-out that preserves the declared proportions.
-    Default (unset) trims."""
+    """Trimming re-crops to content, so the saved aspect can drift from width/height.
+
+    ``trim_margins: false`` is the opt-out that preserves the declared proportions. Default (unset) trims.
+    """
     assert "'bbox_inches': 'tight'" in _emit()
     assert "'bbox_inches': 'tight'" in _emit(trim_margins=True)
     assert "bbox_inches" not in _emit(trim_margins=False)
 
 
 def test_render_code_panel_numbers_toggle():
-    """A ``bsplot.add_panel_number`` call is emitted iff panel numbering is on."""
-    assert "_bpanels.add_panel_number(axd[" in _emit(panel_numbers=True)
-    assert "_bpanels.add_panel_number(axd[" not in _emit(panel_numbers=False)
+    """A panel-number call is emitted iff panel numbering is on."""
+    assert "_panel_number(axd[" in _emit(panel_numbers=True)
+    assert "_panel_number(axd[" not in _emit(panel_numbers=False)
 
 
 def test_render_code_auto_format_toggle():
@@ -614,20 +657,21 @@ def test_render_code_auto_format_toggle():
 
 # --------------------------------------------------------------------------- placeholder / axes / matrix
 
+
 def _placeholder_figure(**panel_kw):
     """A one-panel figure whose panel carries a placeholder and nothing else to draw."""
     return P.Figure(
-        name="ph", layout="a",
-        panels={"a": P.Panel(panel_key="a", kind="cartesian",
-                             placeholder="needs exp-2 (resting BOLD)", **panel_kw)},
+        name="ph",
+        layout="a",
+        panels={"a": P.Panel(panel_key="a", kind="cartesian", placeholder="needs exp-2 (resting BOLD)", **panel_kw)},
     )
 
 
 def test_placeholder_only_panel_draws_the_label():
     """A panel with a placeholder and NO layers draws the label, not an empty 0-1 axes.
 
-    The guarded draw cannot catch this case: with nothing bound, the panel body raises
-    nothing and the honest placeholder would silently never appear."""
+    The guarded draw cannot catch this case: with nothing bound, the panel body raises nothing and the honest placeholder would silently never appear.
+    """
     ctx = bsplot.build_context(_placeholder_figure(), TAHER_BASE, "out.png")
     assert ctx["panels"][0]["placeholder_only"] is True
 
@@ -638,8 +682,7 @@ def test_placeholder_only_panel_draws_the_label():
 
 
 def test_placeholder_with_data_stays_a_guarded_fallback():
-    """A placeholder panel that DOES bind data keeps the try/except fallback — the label
-    is the honest stand-in for a missing container, not the panel itself."""
+    """A placeholder panel that DOES bind data keeps the try/except fallback — the label is the honest stand-in for a missing container, not the panel itself."""
     figure = _cartesian_figure(iri=MISSING_IRI)
     figure.panels["a"].placeholder = "no data"
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
@@ -650,22 +693,19 @@ def test_placeholder_with_data_stays_a_guarded_fallback():
 
 
 def test_placeholder_fallback_does_not_redraw_the_declared_frame():
-    """A panel that declares a paper frame (xticks/xlim) AND a placeholder must stay bare when
-    its data is absent: the post-format frame re-apply is guarded on ``_PLACEHOLDER_AXES`` so it
-    never draws real ticks over the honest bare box that ``_bare`` just stripped."""
+    """A panel that declares a paper frame (xticks/xlim) AND a placeholder must stay bare when its data is absent: the post-format frame re-apply is guarded on ``_PLACEHOLDER_AXES`` so it never draws real ticks over the honest bare box that ``_bare`` just stripped."""
     figure = _cartesian_figure(iri=MISSING_IRI)
     figure.panels["a"].placeholder = "no data"
     figure.panels["a"].opts = {"xticks": P.Argument(name="xticks", value=[0, 1, 2])}
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
-    assert ctx["panels"][0]["post_axopts"] == {"xticks": [0, 1, 2]}   # a real fallback keeps its declared frame
+    assert ctx["panels"][0]["post_axopts"] == {"xticks": [0, 1, 2]}  # a real fallback keeps its declared frame
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
     assert "if axd['a'] not in _PLACEHOLDER_AXES:" in code
 
 
 def test_axvline_and_axhline_accept_scalar_or_list():
-    """Reference lines are declarative axis directives: the paper's dashed verticals at
-    N = 10/100/200 are one ``axvline`` list, not three hand-drawn calls."""
+    """Reference lines are declarative axis directives: the paper's dashed verticals at N = 10/100/200 are one ``axvline`` list, not three hand-drawn calls."""
     figure = _cartesian_figure()
     figure.panels["a"].opts = {
         "axvline": P.Argument(name="axvline", value=[10, 100, 200]),
@@ -680,9 +720,7 @@ def test_axvline_and_axhline_accept_scalar_or_list():
 
 
 def test_invert_x_is_restored_after_the_format_pass():
-    """``format_fig`` re-normalises every numeric axis to ascending (``min/max`` + ``set_xlim``),
-    so a declared ``invert_x`` is re-applied afterwards — guarded like ``invert_y`` so it is
-    idempotent — or the declared x-direction silently flips back."""
+    """``format_fig`` re-normalises every numeric axis to ascending (``min/max`` + ``set_xlim``), so a declared ``invert_x`` is re-applied afterwards — guarded like ``invert_y`` so it is idempotent — or the declared x-direction silently flips back."""
     figure = _cartesian_figure()
     figure.panels["a"].opts = {"invert_x": P.Argument(name="invert_x", value=True)}
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
@@ -694,30 +732,40 @@ def test_invert_x_is_restored_after_the_format_pass():
 def _matrix_figure():
     """A heatmap panel composed of two triangles: data below, model above the diagonal."""
     return P.Figure(
-        name="fc", layout="a",
-        panels={"a": P.Panel(
-            panel_key="a", kind="heatmap",
-            opts={"invert_y": P.Argument(name="invert_y", value=True),
-                  "aspect": P.Argument(name="aspect", value="equal")},
-            layers=[
-                P.Layer(used=P.DataRef(iri=EXP3_IRI, output="fc_data"), triangle="lower",
+        name="fc",
+        layout="a",
+        panels={
+            "a": P.Panel(
+                panel_key="a",
+                kind="heatmap",
+                opts={"invert_y": P.Argument(name="invert_y", value=True), "aspect": P.Argument(name="aspect", value="equal")},
+                layers=[
+                    P.Layer(
+                        used=P.DataRef(iri=EXP3_IRI, output="fc_data"),
+                        triangle="lower",
                         encoding=P.Encoding(x="region_j", y="region_i"),
-                        style=P.Style(colormap="seismic",
-                                      opts={"vmin": P.Argument(name="vmin", value=-1.0),
-                                            "vmax": P.Argument(name="vmax", value=1.0)})),
-                P.Layer(used=P.DataRef(iri=EXP3_IRI, output="fc_model"), triangle="upper",
+                        style=P.Style(
+                            colormap="seismic",
+                            opts={"vmin": P.Argument(name="vmin", value=-1.0), "vmax": P.Argument(name="vmax", value=1.0)},
+                        ),
+                    ),
+                    P.Layer(
+                        used=P.DataRef(iri=EXP3_IRI, output="fc_model"),
+                        triangle="upper",
                         encoding=P.Encoding(x="region_j", y="region_i"),
-                        style=P.Style(colormap="seismic")),
-            ])},
+                        style=P.Style(colormap="seismic"),
+                    ),
+                ],
+            )
+        },
     )
 
 
 def test_split_triangle_matrix_layers():
-    """Two layers compose ONE matrix: each masks its half, they share a single colourbar,
-    and the panel reads with the matrix convention (row 0 at top)."""
+    """Two layers compose ONE matrix: each masks its half, they share a single colourbar, and the panel reads with the matrix convention (row 0 at top)."""
     ctx = bsplot.build_context(_matrix_figure(), TAHER_BASE, "out.png")
     panel = ctx["panels"][0]
-    assert [l["triangle"] for l in panel["layers"]] == ["lower", "upper"]
+    assert [layer["triangle"] for layer in panel["layers"]] == ["lower", "upper"]
     assert panel["colorbar"] is True
     assert panel["axopts"]["invert_y"] is True and panel["axopts"]["aspect"] == "equal"
     # A heatmap layer's Style resolves to mesh kwargs (colormap + limits), not line kwargs.
@@ -727,37 +775,51 @@ def test_split_triangle_matrix_layers():
     ast.parse(code)
     assert code.count("_triangle(_C, 'lower', 0)") == 1
     assert code.count("_triangle(_C, 'upper', 0)") == 1
-    assert code.count("fig.colorbar(") == 1          # one scale for the composed matrix
+    assert code.count("fig.colorbar(") == 1  # one scale for the composed matrix
 
 
-def test_scatter_keeps_its_declared_colour_under_a_colour_encoding():
-    """A colour-mapped LINE drops its fixed ``style.color`` (the map supplies one hue per entry),
-    but a ``scatter`` is drawn straight from ``style`` — popping its colour would silently blank
-    the declared point colour."""
-    scatter = P.Layer(mark="scatter", used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
-                      encoding=P.Encoding(x="K", y="delta_omega", color="region"),
-                      style=P.Style(color="red"))
-    assert bsplot._resolve_layer(scatter, "cartesian", TAHER_BASE)["style"].get("color") == "red"
+def test_a_colour_encoding_drops_the_layer_wide_colour():
+    """A ``color`` ENCODING supplies the colour, so the layer's fixed one is dropped — on a scatter as on a line.
 
-    line = P.Layer(used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
-                   encoding=P.Encoding(x="K", y="delta_omega", color="region"),
-                   style=P.Style(color="red"))
+    They differ in what the encoding means (a third quantity per point, versus one artist per entry) but not in who wins: a scatter shaded by ``c=`` and a fixed ``color=`` name the same keyword twice. A scatter with NO colour encoding keeps its declared colour, which is what makes a marker layer drawable.
+    """
+    scatter = P.Layer(
+        mark="scatter",
+        used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+        encoding=P.Encoding(x="K", y="delta_omega", color="region"),
+        style=P.Style(color="red"),
+    )
+    assert "color" not in bsplot._resolve_layer(scatter, "cartesian", TAHER_BASE)["style"]
+
+    marker = P.Layer(
+        mark="scatter",
+        used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+        encoding=P.Encoding(x="K", y="delta_omega"),
+        style=P.Style(color="red"),
+    )
+    assert bsplot._resolve_layer(marker, "cartesian", TAHER_BASE)["style"].get("color") == "red"
+
+    line = P.Layer(
+        used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+        encoding=P.Encoding(x="K", y="delta_omega", color="region"),
+        style=P.Style(color="red"),
+    )
     assert "color" not in bsplot._resolve_layer(line, "cartesian", TAHER_BASE)["style"]
 
 
 def test_annotations_default_base_dir_resolves_a_used_binding():
-    """``_annotations`` defaults ``base_dir`` to a ``Path``, not the str ``'.'`` — a ``used``
-    binding routes base_dir into ``_container_path``'s Path arithmetic, which a str would break."""
-    panel = P.Panel(panel_key="a", kind="cartesian",
-                    annotations=[P.Annotation(text="r = {:.2f}",
-                                              used=P.DataRef(iri="tvbo:x", output="v"))])
-    out = bsplot._annotations(panel)   # no base_dir -> the default must not raise
+    """``_annotations`` defaults ``base_dir`` to a ``Path``, not the str ``'.'`` — a ``used`` binding routes base_dir into ``_container_path``'s Path arithmetic, which a str would break."""
+    panel = P.Panel(
+        panel_key="a",
+        kind="cartesian",
+        annotations=[P.Annotation(text="r = {:.2f}", used=P.DataRef(iri="tvbo:x", output="v"))],
+    )
+    out = bsplot._annotations(panel)  # no base_dir -> the default must not raise
     assert out[0]["layer"] is not None
 
 
 def test_triangle_gap_separates_the_two_halves():
-    """`triangle_gap` slides the halves apart along the diagonal, so the two quantities do
-    not touch — without it a data/model matrix reads as one continuous field."""
+    """`triangle_gap` slides the halves apart along the diagonal, so the two quantities do not touch — without it a data/model matrix reads as one continuous field."""
     figure = _matrix_figure()
     figure.panels["a"].opts["triangle_gap"] = P.Argument(name="triangle_gap", value=7)
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
@@ -771,7 +833,7 @@ def test_triangle_gap_separates_the_two_halves():
 
     m = np.ones((4, 4))
     out = ns["_triangle"](m, "upper", 2)
-    assert out.shape == (6, 6)                      # widened by the gap
+    assert out.shape == (6, 6)  # widened by the gap
     assert np.isnan(np.diagonal(out, offset=0)).all()
     assert out[0, 3] == 1.0 and np.isnan(out[0, 2])  # band of NaN before the half starts
 
@@ -779,8 +841,7 @@ def test_triangle_gap_separates_the_two_halves():
 def test_triangle_masks_the_other_half():
     """The emitted ``_triangle`` helper keeps exactly one half and NaNs the rest."""
     ns: dict = {}
-    exec(compile(bsplot.render_code(_matrix_figure(), TAHER_BASE, "out.png"),
-                 "<figure>", "exec"), ns)
+    exec(compile(bsplot.render_code(_matrix_figure(), TAHER_BASE, "out.png"), "<figure>", "exec"), ns)
     import numpy as np
 
     m = np.arange(9.0).reshape(3, 3)
@@ -793,37 +854,61 @@ def test_triangle_masks_the_other_half():
 
 
 def test_declared_ticks_survive_the_format_pass():
-    """bsplot's format pass re-derives evenly spaced ticks; a DECLARED tick set is the
-    paper's own frame and must win, so it is re-applied afterwards."""
+    """Bsplot's format pass re-derives evenly spaced ticks; a DECLARED tick set is the paper's own frame and must win, so it is re-applied afterwards."""
     figure = _cartesian_figure()
-    figure.panels["a"].opts = {"xticks": P.Argument(name="xticks", value=[50, 100, 150, 200]),
-                               "xlabel": P.Argument(name="xlabel", value="modes")}
+    figure.panels["a"].opts = {
+        "xticks": P.Argument(name="xticks", value=[50, 100, 150, 200]),
+        "xlabel": P.Argument(name="xlabel", value="modes"),
+    }
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
     post = ctx["panels"][0]["post_axopts"]
-    assert post == {"xticks": [50, 100, 150, 200]}      # labels are not clobbered, ticks are
+    assert post == {"xticks": [50, 100, 150, 200]}  # labels are not clobbered, ticks are
 
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
     assert code.index("format_fig") < code.index("{'xticks': [50, 100, 150, 200]}")
     # A placeholder-only panel has no frame to restore.
-    assert bsplot.build_context(_placeholder_figure(), TAHER_BASE, "o.png")["panels"][0][
-        "post_axopts"] == {}
+    assert bsplot.build_context(_placeholder_figure(), TAHER_BASE, "o.png")["panels"][0]["post_axopts"] == {}
+
+
+def test_shared_scale_unifies_a_panel_group():
+    """Hidden tick labels assert a scale the panels must actually be on, so a declared group ends on the union of its limits."""
+    figure = _cartesian_figure()
+    figure.share_y = ["a,b"]
+    figure.share_x = ["a,b"]
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert bsplot.build_context(figure, TAHER_BASE, "out.png")["shared_scales"] == {"x": [["a", "b"]], "y": [["a", "b"]]}
+    assert "_share_scale(axd, ['a', 'b'], 'y')" in code
+    assert "_share_scale(axd, ['a', 'b'], 'x')" in code
+    assert code.index("format_fig") < code.index(
+        "_share_scale(axd, ['a', 'b'], 'y')"
+    )  # the union is the last word on the limits
+
+    undeclared = bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
+    assert "_share_scale(axd, [" not in undeclared  # the helper is always defined; nothing calls it
+
+
+def test_blanked_slot_survives_the_format_pass():
+    """A colour-scale slot blanks its host axes; the format pass re-derives ticks for every axes, so the blanking is re-applied after it."""
+    code = bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
+    ast.parse(code)
+    blank = code.index("_blank = [")
+    assert 'hasattr(_ax, "zaxis")' in code  # a 3-D axes reads as blanked and must be left alone
+    assert blank < code.index("format_fig") < code.index("_ax.set_axis_off()")
 
 
 def test_annotation_binds_a_computed_number():
-    """A statistic printed on a panel is READ from the container and formatted, never typed
-    into the spec — the figure-side of "nothing hardcoded"."""
+    """A statistic printed on a panel is READ from the container and formatted, never typed into the spec — the figure-side of "nothing hardcoded"."""
     figure = _cartesian_figure()
     figure.panels["a"].annotations = [
-        P.Annotation(text="r = {:.2f}", loc="lower left",
-                     used=P.DataRef(iri=EXP3_IRI, output="r")),
+        P.Annotation(text="r = {:.2f}", loc="lower left", used=P.DataRef(iri=EXP3_IRI, output="r")),
         P.Annotation(text="literal", x=0.5, y=0.5),
     ]
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
     bound, plain = ctx["panels"][0]["annotations"]
     assert bound["layer"]["output"] == "r"
-    # The container path only resolves to a real file where the Taher2019 fixture is
-    # checked out; elsewhere it is "" (the same gate the data-backed tests skip on).
+    # The container path only resolves to a real file where the Taher2019 fixture is checked out; elsewhere it is "" (the same gate the data-backed tests skip on).
     if _EXP3_CONTAINER:
         assert Path(bound["layer"]["container"]).is_file()
     assert plain["layer"] is None
@@ -835,8 +920,7 @@ def test_annotation_binds_a_computed_number():
 
 
 def test_color_encoding_draws_one_line_per_entry():
-    """`color:` on a line layer fans one line per entry of that dim — or of a NON-dim
-    coordinate, so regions are labelled by name and not by atlas number."""
+    """`color:` on a line layer fans one line per entry of that dim — or of a NON-dim coordinate, so regions are labelled by name and not by atlas number."""
     figure = _cartesian_figure()
     layer = figure.panels["a"].layers[0]
     layer.encoding = P.Encoding(x="time", color="parcel_name")
@@ -844,7 +928,7 @@ def test_color_encoding_draws_one_line_per_entry():
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
     resolved = ctx["panels"][0]["layers"][0]
     assert resolved["color"] == "parcel_name" and resolved["cmap"] == "turbo"
-    assert "color" not in resolved["style"]        # the map supplies it, one value per line
+    assert "color" not in resolved["style"]  # the map supplies it, one value per line
 
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
@@ -856,9 +940,11 @@ def test_color_encoding_draws_one_line_per_entry():
     import numpy as np
     import xarray as xr
 
-    da = xr.DataArray(np.zeros((2, 3)), dims=["parcel", "time"],
-                      coords={"parcel": [181, 186],
-                              "parcel_name": ("parcel", ["L_V1_ROI", "L_V4_ROI"])})
+    da = xr.DataArray(
+        np.zeros((2, 3)),
+        dims=["parcel", "time"],
+        coords={"parcel": [181, 186], "parcel_name": ("parcel", ["L_V1_ROI", "L_V4_ROI"])},
+    )
     assert ns["_color_dim"](da, "parcel_name") == ("parcel", ["L_V1_ROI", "L_V4_ROI"])
     assert ns["_color_dim"](da, "parcel") == ("parcel", ["181", "186"])
 
@@ -873,6 +959,7 @@ def test_colorbar_suppressed_by_opt():
 
 
 # --------------------------------------------------------------------------- render round-trip
+
 
 @requires_exp3
 def test_render_writes_png(tmp_path):
@@ -913,13 +1000,10 @@ def test_render_guarded_missing_container_does_not_raise(tmp_path):
 
 # --------------------------------------------------------------------------- figure_workflow
 
+
 def _rule_overrides():
     """A WorkflowConfig whose slurm block seeds figure render resources."""
-    return P.WorkflowConfig(
-        slurm=P.WorkflowEngineConfig(
-            cpus_per_task=4, mem="8G", time="02:00:00", partition="gpu"
-        )
-    )
+    return P.WorkflowConfig(slurm=P.WorkflowEngineConfig(cpus_per_task=4, mem="8G", time="02:00:00", partition="gpu"))
 
 
 def test_emit_figure_rules_resources():
@@ -929,8 +1013,7 @@ def test_emit_figure_rules_resources():
 
     assert "rule fig_taher_fig1:" in text
     assert "resources:" in text
-    # 8G -> 8192 MiB (Slurm sizes are binary), 02:00:00 -> 120 min, cpus_per_task
-    # passed through, partition surfaced.
+    # 8G -> 8192 MiB (Slurm sizes are binary), 02:00:00 -> 120 min, cpus_per_task passed through, partition surfaced.
     assert "cpus_per_task=4" in text
     assert "mem_mb=8192" in text
     assert "runtime=120" in text
@@ -959,8 +1042,7 @@ def test_emit_figure_rules_no_input_when_unresolved():
 
 @requires_exp3
 def test_emit_figure_rules_input_from_annotation_used():
-    """An annotation's PROV ``used`` registers the render rule's ``input:`` just like a layer's
-    does — a panel whose only binding to a run is a computed statistic still waits for it."""
+    """An annotation's PROV ``used`` registers the render rule's ``input:`` just like a layer's does — a panel whose only binding to a run is a computed statistic still waits for it."""
     figure = P.Figure(
         name="annot_only",
         layout="a",
@@ -969,10 +1051,13 @@ def test_emit_figure_rules_input_from_annotation_used():
                 panel_key="a",
                 kind="cartesian",
                 # The layer resolves nothing; the only live edge is the annotation.
-                layers=[P.Layer(used=P.DataRef(iri=MISSING_IRI, output="delta_omega"),
-                                encoding=P.Encoding(x="KuramotoInertia.K", y="delta_omega"))],
-                annotations=[P.Annotation(text="r = {:.2f}",
-                                          used=P.DataRef(iri=EXP3_IRI, output="delta_omega"))],
+                layers=[
+                    P.Layer(
+                        used=P.DataRef(iri=MISSING_IRI, output="delta_omega"),
+                        encoding=P.Encoding(x="KuramotoInertia.K", y="delta_omega"),
+                    )
+                ],
+                annotations=[P.Annotation(text="r = {:.2f}", used=P.DataRef(iri=EXP3_IRI, output="delta_omega"))],
             )
         },
     )
@@ -984,10 +1069,7 @@ def test_emit_figure_rules_input_from_annotation_used():
 def test_annotation_tail_anchors_on_a_computed_point():
     """An arrow tail declared with ``tail_x``/``tail_used`` is READ from the container.
 
-    The callout convention this serves is a paper's "this point produced that picture"
-    arrow. Its tail has to sit on a value the run computed — a curve's height at a marked
-    x — and typing that height into the spec would make the arrow drift the moment the
-    curve moved, which is the whole failure mode declarative figures exist to remove.
+    The callout convention this serves is a paper's "this point produced that picture" arrow. Its tail has to sit on a value the run computed — a curve's height at a marked x — and typing that height into the spec would make the arrow drift the moment the curve moved, which is the whole failure mode declarative figures exist to remove.
     """
     fig = _cartesian_figure()
     fig.panels["a"].annotations = [
@@ -1001,7 +1083,7 @@ def test_annotation_tail_anchors_on_a_computed_point():
     ]
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert '_ty = float(np.asarray(_load_layer(' in code
+    assert "_ty = float(np.asarray(_load_layer(" in code
     assert 'xytext=(25.0, _ty), textcoords="data"' in code
     assert 'xy=(0.4, 0.6), xycoords="axes fraction"' in code
 
@@ -1014,3 +1096,66 @@ def test_annotation_without_a_tail_keeps_the_offset_arrow():
     ast.parse(code)
     assert 'textcoords="axes fraction"' in code
     assert 'textcoords="data"' not in code
+
+
+def test_a_square_heatmap_is_oriented_by_dim_name_not_by_shape():
+    """Matplotlib's ``pcolormesh`` reads (y, x); a square grid cannot say which orientation it holds.
+
+    Deciding by shape transposes every square heatmap, so a field varying along the y parameter is drawn varying along x — a wrong figure that looks entirely plausible. The dim ORDER of the bound array is what settles it.
+    """
+    import numpy as np
+    import xarray as xr
+
+    from tvbo.adapters.bsplot import heatmap_orientation
+
+    # rows = the y parameter, cols = the x parameter: exactly how a swept container arrives.
+    C = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+    da = xr.DataArray(C, dims=["rho_ppc", "rho_pfc"])
+    out = heatmap_orientation(da, C, "rho_pfc", "rho_ppc", 3, 3)
+    np.testing.assert_allclose(out, C)  # already (y, x): must NOT transpose
+
+    da_t = xr.DataArray(C.T, dims=["rho_pfc", "rho_ppc"])
+    out_t = heatmap_orientation(da_t, C.T, "rho_pfc", "rho_ppc", 3, 3)
+    np.testing.assert_allclose(out_t, C)  # (x, y): transposed back to (y, x)
+
+
+def test_a_heatmap_whose_channels_are_not_dims_keeps_the_shape_fallback():
+    """A matrix addressed by index has no names to decide on, so the old test still applies."""
+    import numpy as np
+    import xarray as xr
+
+    from tvbo.adapters.bsplot import heatmap_orientation
+
+    C = np.arange(6.0).reshape(2, 3)
+    da = xr.DataArray(C, dims=["a", "b"])
+    np.testing.assert_allclose(heatmap_orientation(da, C, "x", "y", 2, 3), C.T)
+    np.testing.assert_allclose(heatmap_orientation(da, C, "x", "y", 3, 2), C)
+
+
+def test_the_heatmaps_coordinate_arrays_follow_the_dim_names_too():
+    """The index fallback must index each channel by ITS dim, not by axis position.
+
+    Orientation is decided by dim name, so `_x`/`_y` have to agree: on a NON-square array whose dims run (y, x) and which carries no coordinate on either, indexing x by axis 0 hands pcolormesh an x of the y axis's length and it raises — while a square array silently transposes the field instead.
+    """
+    import re
+
+    import numpy as np
+    import xarray as xr
+
+    import tvbo
+    from tvbo.adapters.bsplot import heatmap_orientation
+
+    templates = Path(tvbo.__file__).parent / "templates"
+    src = (templates / "bsplot" / "tvbo-bsplot-figure.py.mako").read_text()
+    body = re.search(r"def _coord\(da, name, axis\):.*?\n    return np\.arange\(da\.shape\[axis\]\)\n", src, re.S)
+    ns = {"np": np}
+    exec(compile(body.group(0), "<coord>", "exec"), ns)
+    _coord = ns["_coord"]
+
+    da = xr.DataArray(np.zeros((5, 3)), dims=["rho_ppc", "rho_pfc"])  # (y, x), no coords
+    _x = _coord(da, "rho_pfc", 0)
+    _y = _coord(da, "rho_ppc", 1)
+    assert (len(_x), len(_y)) == (3, 5)
+
+    C = heatmap_orientation(da, np.asarray(da.values), "rho_pfc", "rho_ppc", len(_x), len(_y))
+    assert C.shape == (len(_y), len(_x)), "pcolormesh(x, y, C) needs C shaped (len(y), len(x))"

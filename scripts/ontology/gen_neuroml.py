@@ -1,32 +1,17 @@
 """NeuroML-core ingestion generator for TVB-O.
 
-Walks the NeuroML2 core ``ComponentType`` definitions (the LEMS type system
-bundled inside the jNeuroML jar) and emits two artifacts from one pass:
+Walks the NeuroML2 core ``ComponentType`` definitions (the LEMS type system bundled inside the jNeuroML jar) and emits two artifacts from one pass:
 
 - ``ontology/tvb-o-neuroml.ttl`` — the semantic module merged into ``tvbo.owl``.
-  One ``owl:Class`` per ``ComponentType`` under the tvbo-scoped namespace
-  ``https://w3id.org/tvbo/neuroml/``; ``extends`` becomes ``rdfs:subClassOf``;
-  each class carries ``skos:exactMatch`` to its direct NeuroML IRI
-  (``http://www.neuroml.org/schema/neuroml2#<name>``) so both identifiers denote
-  the same type; local exposures / requirements / event ports / parameters are
-  recorded as annotations. This is the "tvbo.owl references NeuroML-core" link,
-  alongside the GO bridge.
+  One ``owl:Class`` per ``ComponentType`` under the tvbo-scoped namespace ``https://w3id.org/tvbo/neuroml/``; ``extends`` becomes ``rdfs:subClassOf``;
+  each class carries ``skos:exactMatch`` to its direct NeuroML IRI (``http://www.neuroml.org/schema/neuroml2#<name>``) so both identifiers denote the same type; local exposures / requirements / event ports / parameters are recorded as annotations. This is the "tvbo.owl references NeuroML-core" link, alongside the GO bridge.
 
 - ``tvbo/data/ontology/neuroml_contracts.json`` — the compiled, ``extends``-
-  accumulated contract index the NeuroML adapter loads at emit time (stdlib
-  ``json``, no owlready2/rdflib/pylems on the hot path). It is a projection of
-  the same ingested data: for each type, the full inherited set of exposures,
-  requirements, parameters, event ports, attachments, children, and on-start
-  assignments. This is what grounds the adapter's base-type contracts.
+  accumulated contract index the NeuroML adapter loads at emit time (stdlib ``json``, no owlready2/rdflib/pylems on the hot path). It is a projection of the same ingested data: for each type, the full inherited set of exposures, requirements, parameters, event ports, attachments, children, and on-start assignments. This is what grounds the adapter's base-type contracts.
 
-Both outputs are checked in and CI-guarded against drift, exactly like the other
-generated ontology artifacts. Regenerate with ``make gen-neuroml`` (or directly)
-whenever the bundled jNeuroML version changes.
+Both outputs are checked in and CI-guarded against drift, exactly like the other generated ontology artifacts. Regenerate with ``make gen-neuroml`` (or directly) whenever the bundled jNeuroML version changes.
 
-The RDF/Dublin-Core/XML metadata plumbing types that the core files pull in for
-``<notes>``/``<annotation>`` handling (``rdf_*``, ``dc_*``, ``notes``, ...) are
-not neuroscience component types and are filtered out; the count of skipped
-types is logged so the filtering is never silent.
+The RDF/Dublin-Core/XML metadata plumbing types that the core files pull in for ``<notes>``/``<annotation>`` handling (``rdf_*``, ``dc_*``, ``notes``, ...) are not neuroscience component types and are filtered out; the count of skipped types is logged so the filtering is never silent.
 """
 
 from __future__ import annotations
@@ -54,8 +39,6 @@ NML_ONT = URIRef("https://w3id.org/tvbo/neuroml")
 DEFAULT_TTL = ROOT / "ontology" / "tvb-o-neuroml.ttl"
 DEFAULT_CONTRACTS = ROOT / "tvbo" / "data" / "ontology" / "neuroml_contracts.json"
 
-# RDF / Dublin-Core / XML metadata infrastructure the core files include for
-# <notes>/<annotation> handling. These are not NeuroML neuroscience types.
 _PLUMBING_RE = re.compile(r"^(rdf|dc|dcterms|bibtex|sbml|xsd|lems)_")
 _PLUMBING_NAMES = {"notes", "annotation", "property", "baseAnnotation_without_ns"}
 
@@ -68,8 +51,7 @@ def _is_plumbing(name: str) -> bool:
 def locate_core_types(dest: str) -> str:
     """Extract ``NeuroML2CoreTypes/*.xml`` from the bundled jNeuroML jar.
 
-    Locates the jar inside the installed ``pyneuroml`` package so the version is
-    never hard-coded, and unpacks the core type XML into *dest*.
+    Locates the jar inside the installed ``pyneuroml`` package so the version is never hard-coded, and unpacks the core type XML into *dest*.
 
     Args:
         dest: Directory to extract into.
@@ -83,8 +65,7 @@ def locate_core_types(dest: str) -> str:
     jars = glob.glob(os.path.join(libdir, "jNeuroML-*-jar-with-dependencies.jar"))
     if not jars:
         raise FileNotFoundError(
-            f"No jNeuroML-*-jar-with-dependencies.jar under {libdir}. "
-            "Install the neuroml extra: pip install tvbo[neuroml]."
+            f"No jNeuroML-*-jar-with-dependencies.jar under {libdir}. Install the neuroml extra: pip install tvbo[neuroml]."
         )
 
     def _version(path):
@@ -127,8 +108,7 @@ def _chain(component_types, name):
 def _accumulate(component_types, name):
     """Accumulate every inherited slot for *name* up its ``extends`` chain.
 
-    Walks root→child so a nearer type overrides a farther one, and drops the
-    metadata-plumbing children (``notes``/``annotation``/``property``).
+    Walks root→child so a nearer type overrides a farther one, and drops the metadata-plumbing children (``notes``/``annotation``/``property``).
 
     Returns:
         A contract dict: ``extends``, ``chain``, and the accumulated
@@ -162,8 +142,8 @@ def _accumulate(component_types, name):
                 "multiple": bool(getattr(ch, "multiple", False)),
             }
         dyn = getattr(ct, "dynamics", None)
-        for os_block in (getattr(dyn, "on_starts", []) or []):
-            for sa in (getattr(os_block, "state_assignments", []) or []):
+        for os_block in getattr(dyn, "on_starts", []) or []:
+            for sa in getattr(os_block, "state_assignments", []) or []:
                 on_start[sa.variable] = sa.value
     self_ct = component_types[name]
     return {
@@ -192,9 +172,7 @@ _ANNOT = {
 def build_ttl(component_types, domain_names) -> Graph:
     """Build the ``tvb-o-neuroml.ttl`` graph (classes + subClassOf + cross-ref).
 
-    Records local (not accumulated) exposures/requirements/event-ports/parameters
-    as annotations; inheritance is carried by ``rdfs:subClassOf`` for a reasoner
-    to accumulate. The compiled JSON contract carries the accumulated form.
+    Records local (not accumulated) exposures/requirements/event-ports/parameters as annotations; inheritance is carried by ``rdfs:subClassOf`` for a reasoner to accumulate. The compiled JSON contract carries the accumulated form.
     """
     g = Graph()
     g.bind("owl", OWL)
@@ -207,10 +185,18 @@ def build_ttl(component_types, domain_names) -> Graph:
 
     g.add((NML_ONT, RDF.type, OWL.Ontology))
     g.add((NML_ONT, DCTERMS.title, Literal("TVB-O NeuroML-core reference", lang="en")))
-    g.add((NML_ONT, DCTERMS.description, Literal(
-        "OWL rendering of the NeuroML2 core LEMS ComponentType hierarchy: one class "
-        "per ComponentType, extends as rdfs:subClassOf, cross-referenced to the "
-        "canonical NeuroML type via skos:exactMatch.", lang="en")))
+    g.add(
+        (
+            NML_ONT,
+            DCTERMS.description,
+            Literal(
+                "OWL rendering of the NeuroML2 core LEMS ComponentType hierarchy: one class "
+                "per ComponentType, extends as rdfs:subClassOf, cross-referenced to the "
+                "canonical NeuroML type via skos:exactMatch.",
+                lang="en",
+            ),
+        )
+    )
     g.add((NML_ONT, DCTERMS.license, URIRef("https://creativecommons.org/licenses/by/4.0/")))
     g.add((NML_ONT, RDFS.seeAlso, URIRef("http://www.neuroml.org/schema/neuroml2")))
 
@@ -261,17 +247,18 @@ def main() -> int:
     def _is_domain(name: str) -> bool:
         """Domain type unless it or any ``extends`` ancestor is metadata plumbing.
 
-        The BioModels-qualifier and RDF annotation types (``bqbiol_*``,
-        ``bqmodel_*``, ``rdfs_seeAlso``, ...) descend from ``baseAnnotation_*``,
-        so the check must walk the chain, not just the type's own name.
+        The BioModels-qualifier and RDF annotation types (``bqbiol_*``, ``bqmodel_*``, ``rdfs_seeAlso``, ...) descend from ``baseAnnotation_*``, so the check must walk the chain, not just the type's own name.
         """
         return not any(_is_plumbing(ct.name) for ct in _chain(all_types, name))
 
     domain_names = {n for n in all_types if _is_domain(n)}
     skipped = sorted(n for n in all_types if not _is_domain(n))
-    print(f"  {len(all_types)} ComponentTypes total; {len(domain_names)} domain, "
-          f"{len(skipped)} plumbing skipped: {', '.join(skipped[:8])}"
-          f"{' …' if len(skipped) > 8 else ''}", file=sys.stderr)
+    print(
+        f"  {len(all_types)} ComponentTypes total; {len(domain_names)} domain, "
+        f"{len(skipped)} plumbing skipped: {', '.join(skipped[:8])}"
+        f"{' …' if len(skipped) > 8 else ''}",
+        file=sys.stderr,
+    )
 
     g = build_ttl(all_types, domain_names)
     out = pathlib.Path(args.output)

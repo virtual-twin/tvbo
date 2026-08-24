@@ -369,6 +369,7 @@ def run_${algo_name}(
 
     _raw_model_fn = model_fn  # un-jitted; the tuning core takes it as a STATIC arg (stable identity across stages -> jit caches the scan once)
     model_fn = jax.jit(model_fn)  # tvboptim's solve fn is un-jitted by design (its tests jit it); jit once so warmup/tuning calls fuse+cache instead of eager per-step dispatch
+    post_model_fn = None if post_model_fn is None else jax.jit(post_model_fn)  # same: the post-tuning evaluation is the longest solve in a fit, and it arrives un-jitted from prepare()
 
     def _smart_interval(n):
         """Compute smart interval: 1 for 0-10, 10 for 10-100, 100 for 100-1000, etc."""
@@ -631,6 +632,10 @@ def run_${algo_name}(
 % endif
     )
     state = _ls_final['state']
+    # Tuning ends here; the scan dispatches asynchronously, so its output must land before the split from the full-duration eval below is honest.
+    if verbose:
+        jax.block_until_ready(state)
+    _tune_t1 = time.perf_counter()
 % for src_obs in source_observations_needed:
 % if use_maxwin:
     # Return the window (last window_size rows) of the M-ring, so a chained/next-stage
@@ -750,7 +755,7 @@ def run_${algo_name}(
 % endfor
 
     if verbose:
-        logger.info(f"${algo_name} complete! (tuning {time.perf_counter() - _algo_t0:.1f}s, {n_iterations} iters)")
+        logger.info(f"${algo_name} complete! (tuning {_tune_t1 - _algo_t0:.1f}s, {n_iterations} iters; post-tuning eval {time.perf_counter() - _tune_t1:.1f}s)")
 
     if raw:
         # vmap-safe cohort return: pure jnp arrays only; no AlgorithmResult/DataArray wrapping (host-side numpy conversion breaks under jax.vmap). Wrap per-subject host-side after the vmap.
@@ -768,6 +773,36 @@ def run_${algo_name}(
 % endfor
 % endif
         )
+
+    # Fail loud on a diverged fit (host path only — the vmapped `raw` cohort
+    # returned above). Tuning update rules such as EIB carry no restoring force,
+    # so a too-hot or too-long schedule drives estimates to non-finite values;
+    # returning them would write a NaN result to disk as a "successful" run.
+    # A pure post-check: byte-identical for any finite run, a no-op when the
+    # algorithm has no update rules.
+% if all_update_rules_with_source:
+    _nonfinite_estimates = [
+        _nm for _nm, _arr in (
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<%
+    _tn = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter)
+    _gk = coupling_param_to_key.get(_tn, None)
+    _gsrc = ('state.coupling.%s.%s' % (_gk, _tn)) if _gk is not None else ('state.dynamics.%s' % _tn)
+%>
+            ('${_tn}', ${_gsrc}),
+% endfor
+        )
+        if not bool(jnp.all(jnp.isfinite(jnp.asarray(_arr))))
+    ]
+    if _nonfinite_estimates:
+        raise RuntimeError(
+            "${algo_name} tuning diverged: non-finite estimate(s) "
+            f"{_nonfinite_estimates}. The update rule has no restoring force, so "
+            "online every-TR updates over a long/hot schedule let parameters run "
+            "away — reduce eta or n_iterations (or batch weight updates). Failing "
+            "loud so a NaN fit is not recorded as a successful result."
+        )
+% endif
 
     # Build hyperparameters Bunch for AlgorithmResult
     _hyperparams = Bunch(
@@ -1312,6 +1347,10 @@ def _${algo_name}_tuning_core_impl(
             ), _wptr))
 
         # NOW compute and apply update rules (after recording)
+% if 'update_every' in hyperparam_dict:
+        # Batched-update cadence (cf. EIBalance.update_every); ue==1 -> always-True predicate -> byte-identical online path.
+        _apply_update = ((_i + 1) % jnp.maximum(jnp.asarray(update_every, jnp.int32), 1)) == 0
+% endif
 % for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
 <%
     rule_name = safe_name(rule.name)
@@ -1352,6 +1391,18 @@ def _${algo_name}_tuning_core_impl(
             eta_scale,
 % endif
         )
+% if 'update_every' in hyperparam_dict:
+        # Hold the parameter on non-cadence steps (batched-update gate).
+        new_${target_name} = jnp.where(
+            _apply_update,
+            new_${target_name},
+% if is_coupling_param:
+            state.coupling.${coupling_key}.${target_name},
+% else:
+            state.dynamics.${target_name},
+% endif
+        )
+% endif
 % if is_coupling_param:
         state = eqx.tree_at(lambda s: s.coupling.${coupling_key}.${target_name}, state, new_${target_name})
 % else:

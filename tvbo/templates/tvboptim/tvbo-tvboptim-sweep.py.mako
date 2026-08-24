@@ -27,6 +27,9 @@ experiment template's context blocks; these defs only lay out code from that cle
 metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmstart`;
 `ExplorationResult`/`Bunch`/`jnp` are already in scope.
 </%doc>\
+<%!
+from tvbo.templates.tvboptim.utils import axis_keypath
+%>
 ##
 <%def name="warmstart_sweep_body(expl, solver_class, dt, solver_kwargs='')">\
 <%
@@ -34,8 +37,7 @@ metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmst
     axis = a['axis'] if a else expl['axes'][0]
     name = axis['name']
     label = axis.get('label', name)  # dotted axis name for the ExplorationResult (== space key)
-    path = ("coupling.%s.%s" % (axis['coupling_key'], name)) if axis.get('is_coupling') \
-           else ("dynamics.%s" % name)
+    path = axis_keypath(axis)
     bothways = expl['sweep_direction'] == 'bidirectional'
     # Total scan points for the progress ticker: n per branch, doubled when bidirectional.
     # Mirrors the n resolution used in the _adiabatic_scan call (runtime n_<name> override).
@@ -156,8 +158,7 @@ the loaded branch instead of an in-process scan.
     axis = expl['axes'][0]
     name = axis['name']
     label = axis.get('label', name)
-    path = ("coupling.%s.%s" % (axis['coupling_key'], name)) if axis.get('is_coupling') \
-           else ("dynamics.%s" % name)
+    path = axis_keypath(axis)
     analyses = expl.get('warmstart_analysis') or []
     obs_pairs = []
     for a in analyses:

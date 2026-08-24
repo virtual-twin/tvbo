@@ -1,19 +1,13 @@
 """A ``--set`` override that a materialised object has already consumed must take effect.
 
-Resolution latches: a Network builds its connectivity once and caches it, which is what
-stops it rebuilding on every access. ``--set`` mutates the loaded object AFTER that, so an
-override of anything the network resolved from — a graph generator's parameters, a
-parcellation — was reported on the console and then ignored. The run completed, the FC came
-out bit-identical to the un-overridden one, and nothing anywhere said so.
+Resolution latches: a Network builds its connectivity once and caches it, which is what stops it rebuilding on every access. ``--set`` mutates the loaded object AFTER that, so an override of anything the network resolved from — a graph generator's parameters, a parcellation — was reported on the console and then ignored. The run completed, the FC came out bit-identical to the un-overridden one, and nothing anywhere said so.
 
-That is the worst shape a defect can take: a flag that says it did something, a result that
-looks right, and no way to tell from the output that the run was not the one asked for. So
-the contract pinned here is that an override invalidates what it feeds.
+That is the worst shape a defect can take: a flag that says it did something, a result that looks right, and no way to tell from the output that the run was not the one asked for. So the contract pinned here is that an override invalidates what it feeds.
 """
+
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from tvbo.classes.network import Network
 from tvbo.cli.run import _apply_metadata_overrides
@@ -75,6 +69,7 @@ def test_an_override_nowhere_near_a_network_invalidates_nothing():
 
 def test_the_innermost_materialised_object_wins():
     """Two networks side by side: overriding one must not rebuild the other."""
+
     class _Exp:
         def __init__(self, a, b):
             self.a, self.b = a, b
@@ -97,11 +92,13 @@ def test_a_graph_generator_parameter_is_reachable_and_invalidates():
     from tvbo.datamodel.schema import GraphGenerator
 
     net = _network()
-    net.graph_generator = GraphGenerator(   # attached after construction: no builder runs
-        name="G", type="G", builder={"name": "build", "module": "mod"},
-        parameters={"connectome": {"name": "connectome", "value": "a.mat"}})
+    net.graph_generator = GraphGenerator(  # attached after construction: no builder runs
+        name="G",
+        type="G",
+        builder={"name": "build", "module": "mod"},
+        parameters={"connectome": {"name": "connectome", "value": "a.mat"}},
+    )
     net._resolved = True
-    _apply_metadata_overrides(
-        _Experiment(net), ["network.graph_generator.parameters.connectome.value=b.mat"])
+    _apply_metadata_overrides(_Experiment(net), ["network.graph_generator.parameters.connectome.value=b.mat"])
     assert net.graph_generator.parameters["connectome"].value == "b.mat"
     assert net._resolved is False

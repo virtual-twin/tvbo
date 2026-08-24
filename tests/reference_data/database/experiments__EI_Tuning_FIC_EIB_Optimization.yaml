@@ -313,7 +313,7 @@ network:
   transforms:
   - name: weight
     equation:
-      rhs: W / max(W)
+      rhs: weight / max(weight)
       latex: false
   bids_dir: ../networks/bids/dk_average
   structural_measures:
@@ -487,9 +487,7 @@ observations:
     - fc_target
     reconcile: by_label
     pipeline:
-    - callable:
-        name: fc_corr
-        module: tvboptim.observations.observation
+    - function: fc_corr
       arguments:
         A:
           name: A
@@ -506,9 +504,7 @@ observations:
     - fc_target
     reconcile: by_label
     pipeline:
-    - callable:
-        name: rmse
-        module: tvboptim.observations.observation
+    - function: fc_rmse
       arguments:
         A:
           name: A
@@ -972,6 +968,7 @@ algorithms:
     n_iterations: 200
     simulation_period: 720.0
     apply_every: 1
+    evaluate: true
   fic_eib:
     name: fic_eib
     description: 'Combined FIC+EIB tuning loop. Applies both Feedback Inhibition Control
@@ -1056,6 +1053,7 @@ algorithms:
           value: fc_target
     depends_on:
     - fic
+    evaluate: true
 execution:
   n_workers: 8
   n_threads: -1
