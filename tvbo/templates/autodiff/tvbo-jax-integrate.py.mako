@@ -18,9 +18,13 @@ stochastic = integration.noise is not None
 is_delayed = experiment.horizon > 1 if 'experiment' in context.keys() else integration.delayed
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 
+from tvbo.templates.base.utils import get_coupling_terms, referenced_parameters
+_, global_coupling_terms, local_coupling_terms = get_coupling_terms(model)
+read_parameters = [str(name) for name in referenced_parameters(model)]
+
 # Identify output derived vars that depend on dfun arguments (must compute in integrate)
-dfun_args = set(model.coupling_terms.keys()) | {'t', 'noise', 'stimulus'}
-derived_var_names = list(model.derived_variables.keys())
+dfun_args = set(model.coupling_inputs.keys()) | {'t', 'noise', 'stimulus'}
+derived_var_names = list(model.in_dependency_order('derived_variables').keys())
 svars = list(model.state_variables.keys())
 output_vars = list(model.output) if model.output else svars
 G = model.get_dependency_tree()
@@ -155,16 +159,21 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
 
 % if output_derived_in_integrate:
     # Compute output derived variables that depend on dfun arguments
-    ## Unpack parameters needed for derived var computation
+    ## Only what the derived-variable and function bodies read: an empty unpack does not parse.
     _p = params_dfun
-    ${', '.join(p.name for p in model.parameters.values())} = ${', '.join('_p.' + p.name for p in model.parameters.values())}
+    % if read_parameters:
+    ${', '.join(read_parameters)} = ${', '.join('_p.' + name for name in read_parameters)}
+    % endif
     ## First unpack state variables from next_state for derived var computation
     % for i, svar in enumerate(model.state_variables.keys()):
     ${svar} = next_state[${i}]
     % endfor
-    ## Unpack coupling terms
-    % for i, cterm in enumerate(model.coupling_terms.keys()):
+    ## Unpack coupling terms: cX carries the global rows only, as in base/dfun.mako.
+    % for i, cterm in enumerate(global_coupling_terms):
     ${cterm} = cX[${i}]
+    % endfor
+    % for cterm in local_coupling_terms:
+    ${cterm} = 0
     % endfor
     ## Emit model function definitions needed by derived variables
     % for f in (model.functions or {}).values():

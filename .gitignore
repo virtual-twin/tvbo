@@ -116,8 +116,13 @@ pyrates_run.py
 pyrates_run_*.py
 tvbo/database/studies/**/*.md
 tvbo/database/studies/**/*.png
+# AUTO-07p continuation artifacts for the PyRates QIF docs.
 c.ivp
 qif.f90
+qif.exe
+qif.mod
+qif.o
+fort.[0-9]*
 docs/Interoperability/BIDS/derivatives/
 # Atlas parcellation volumes: large binaries shipped as build artifacts, not tracked.
 # Atlases are consolidated under tvbo/database/atlases (see tvbo/data/tvbo_data/__init__.py).

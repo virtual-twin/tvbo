@@ -9,5 +9,4 @@ update_expression:
   equation:
     lhs: X_{t+1}
     latex: false
-  conditional: false
 delayed: true

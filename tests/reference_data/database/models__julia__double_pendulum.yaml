@@ -37,7 +37,6 @@ derived_variables:
       rhs: theta2 - theta1
       latex: false
     record: false
-    conditional: false
   Delta:
     name: Delta
     equation:
@@ -45,7 +44,6 @@ derived_variables:
       rhs: (M1 + M2) - M2*cos(phi)**2
       latex: false
     record: false
-    conditional: false
 state_variables:
   theta1:
     name: theta1

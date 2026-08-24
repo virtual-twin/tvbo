@@ -174,14 +174,7 @@ def _brian2_const(value, unit):
 class Brian2Adapter(BaseAdapter):
     """Render/run a small-scale spiking network natively in Brian2."""
 
-    def render_code(self, **kwargs) -> str:
-        """Render the experiment as a runnable Brian2 script; *kwargs* override entries of the built template context."""
-        from tvbo import templates
-
-        ctx = self._build_context()
-        ctx.update(kwargs)
-        template = templates.lookup.get_template("brian2/tvbo-brian2-experiment.py.mako")
-        return template.render(**ctx)
+    TEMPLATE = "brian2/tvbo-brian2-experiment.py.mako"
 
     def run(self, seed=None, record_v=False, settle_ms=None, codegen_target="numpy", **kwargs):
         """Build and run the network in Brian2, returning an ExperimentResult.
@@ -199,7 +192,7 @@ class Brian2Adapter(BaseAdapter):
 
         if codegen_target:
             brian2.prefs.codegen.target = codegen_target
-        model = self._build_context()
+        model = self.prepare_context()
         # An explicit seed argument wins; otherwise fall back to the seed the build description resolved from execution.random_seed — the SAME value the rendered script emits, so run() and render() build seed-identical random connectivity from the recipe alone.
         if seed is None:
             seed = model.get("seed")
@@ -299,7 +292,7 @@ class Brian2Adapter(BaseAdapter):
 
     # ── Analysis: declarative network → Brian2 build description ────────
 
-    def _build_context(self):
+    def prepare_context(self):
         """Reduce the experiment to a backend-neutral Brian2 build description.
 
         Returns a dict the template renders and ``_instantiate`` builds:

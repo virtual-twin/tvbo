@@ -872,11 +872,14 @@ classes:
                 annotations:
                     simple_dict_value: true
             conditionals:
-                description: Conditional logic for piecewise equations.
+                description: >-
+                  Conditional logic for piecewise equations — the one place a piecewise
+                  definition is written, for a state variable, a derived variable or a
+                  derived parameter alike. When present, the branches define the equation
+                  and `rhs` may be omitted.
                 range: ConditionalBlock
                 multivalued: true
                 inlined: true
-                # alias: cases
             engine:
                 range: SoftwareRequirement
                 description: "Primary engine (must appear in environment.requirements; migration target replacing deprecated 'software')."
@@ -2633,10 +2636,6 @@ classes:
                 multivalued: true
                 range: DerivedVariable
                 inlined: true
-            coupling_terms:
-                multivalued: true
-                range: Parameter
-                inlined: true
             coupling_inputs:
                 multivalued: true
                 range: CouplingInput
@@ -3260,15 +3259,6 @@ classes:
                     Value should reference a simulation result name (e.g., 'result_init').
                 range: string
 
-    Case:
-        class_uri: tvbo:Case
-        attributes:
-            condition:
-                range: string
-            equation:
-                range: Equation
-                inlined: true
-
     DerivedParameter:
         is_a: Parameter
         class_uri: tvbo:DerivedParameter
@@ -3282,13 +3272,6 @@ classes:
     DerivedVariable:
         class_uri: tvbo:DerivedVariable
         attributes:
-            conditional:
-                range: boolean
-                ifabsent: false
-            cases:
-                multivalued: true
-                range: Case
-                inlined: true
             surrogate:
                 range: Surrogate
                 inlined: true

@@ -7,8 +7,8 @@ from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
 
 
-class Dynamics(AbstractDynamics):
-    """Dynamics neural mass model."""
+class Spring(AbstractDynamics):
+    """Spring neural mass model."""
 
     STATE_NAMES = ("x", "v")
     INITIAL_STATE = (2.0, 0.0)

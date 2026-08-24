@@ -1,4 +1,4 @@
-function ReducedWongWang!(dx, x, p, t = 0)
+function ReducedWongWangFunc!(dx, x, p, t = 0)
 
     (;I_o, J_N, a, b, d, gamma, tau_s, w, c_glob, local_coupling) = p
 
@@ -27,7 +27,7 @@ u0 = [
 # Define time span
 tspan = (0.0, 1000) # Adjust time span as needed
 
-prob = ODEProblem(ReducedWongWang!, u0, tspan, p)
+prob = ODEProblem(ReducedWongWangFunc!, u0, tspan, p)
 
 
 # Solve

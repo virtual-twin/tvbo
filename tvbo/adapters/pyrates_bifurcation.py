@@ -15,9 +15,10 @@ import tempfile
 import uuid
 from typing import TYPE_CHECKING
 
+from tvbo.adapters.base import ContinuationAdapter
+
 if TYPE_CHECKING:
     from tvbo.analysis.bifurcation import BifurcationResult
-    from tvbo.classes.experiment import SimulationExperiment
 
 # Same reserved-name mapping used by the PyRates YAML template
 PYRATES_REPL = {
@@ -40,14 +41,11 @@ def _pyrates_param_name(name):
     return PYRATES_REPL.get(name, name)
 
 
-class PyRatesBifurcationAdapter:
+class PyRatesBifurcationAdapter(ContinuationAdapter):
     """Adapter for running bifurcation analysis via PyRates + PyCoBi (AUTO-07p).
 
-    Like ``BifurcationKitAdapter``, this does not inherit from ``BaseAdapter`` — bifurcation analysis operates on individual (Dynamics, Continuation) pairs.
+    Like ``BifurcationKitAdapter``, it renders one ``(Dynamics, Continuation)`` pair at a time and takes that pair's resolution from [`ContinuationAdapter`](#tvbo.adapters.base.ContinuationAdapter).
     """
-
-    def __init__(self, experiment: SimulationExperiment):
-        self.experiment = experiment
 
     # ── Public API ───────────────────────────────────────────────────────
 
@@ -59,8 +57,7 @@ class PyRatesBifurcationAdapter:
         BifurcationResult or dict[str, BifurcationResult]
             Single result if one continuation, dict if multiple.
         """
-        exp = self.experiment
-        conts = getattr(exp, "continuations", None) or {}
+        conts = self.continuations()
         if not conts:
             raise ValueError(
                 "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
@@ -68,7 +65,7 @@ class PyRatesBifurcationAdapter:
 
         results = {}
         for name, cont in conts.items():
-            model = self._resolve_dynamics(cont)
+            model = self.resolve_dynamics(cont)
             results[name] = self._run_single(model, cont, **kwargs)
 
         if len(results) == 1:
@@ -91,10 +88,7 @@ class PyRatesBifurcationAdapter:
             Executable Python code string.
         """
         model = model or self.experiment.dynamics
-        if continuation is None:
-            conts = getattr(self.experiment, "continuations", None) or {}
-            if conts:
-                continuation = next(iter(conts.values()))
+        continuation = self.resolve_continuation(continuation)
 
         fp = self._get_free_parameter(continuation, model)
         fp_name = fp["name"]
@@ -669,23 +663,6 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
         kw.setdefault("NPR", 10)
 
         return kw
-
-    def _resolve_dynamics(self, cont):
-        """Resolve the Dynamics model for a continuation spec."""
-        exp = self.experiment
-        dyn_ref = getattr(cont, "dynamics", None)
-        if dyn_ref:
-            dyn_name = str(dyn_ref)
-            # Check primary dynamics
-            if exp.dynamics and getattr(exp.dynamics, "name", None) == dyn_name:
-                return exp.dynamics
-            # Check network dynamics dict
-            net_dyn = getattr(exp.network, "dynamics", None) if exp.network else None
-            if isinstance(net_dyn, dict) and dyn_name in net_dyn:
-                return net_dyn[dyn_name]
-        if exp.dynamics is not None:
-            return exp.dynamics
-        raise ValueError(f"Cannot resolve dynamics for continuation. dynamics='{dyn_ref}' not found.")
 
     @staticmethod
     def _format_auto_kwargs(kw):

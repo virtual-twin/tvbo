@@ -76,11 +76,11 @@ EXCLUDED = {**UNRENDERABLE, **UNSUPPORTED}
 
 
 def _model_paths() -> list[Path]:
-    """Every curated model, under either YAML spelling.
+    """Every curated model.
 
-    ``Spring.yml`` and ``ReducedWongWangFunc.yml`` use ``.yml``; globbing only ``.yaml`` drops them from the corpus with no signal.
+    One spelling, ``.yaml``, which is also the only one `tvbo.data.registry` resolves — so a model this corpus renders is a model `Dynamics.from_db` can reach.
     """
-    return sorted(p for ext in ("*.yaml", "*.yml") for p in MODEL_ROOT.rglob(ext))
+    return sorted(MODEL_ROOT.rglob("*.yaml"))
 
 
 def _case_id(path: Path, fmt: str) -> str:
@@ -166,7 +166,7 @@ def _equations_of(model) -> dict:
 def test_rendering_does_not_modify_the_model(fmt: str):
     """Rendering is a query: it reads the model and leaves it as it found it.
 
-    Guards the property every other test here depends on. `render_code` used to re-run `update_metadata`, which rewrote each equation's stored text; since that rewrite was not idempotent, a model rendered twice emitted two different files. Anything that caches on a model — the memoisation the symbolic layer is heading toward — is unsound while reading can mutate.
+    Guards the property every other test here depends on. A renderer that normalises what it reads emits a file that depends on how many times it has been called — and the symbolic layer's cache, which keys on the model's content, is unsound the moment reading can change it.
     """
     for path in _model_paths():
         if _case_id(path, fmt) in EXCLUDED:
@@ -181,7 +181,7 @@ def test_rendering_does_not_modify_the_model(fmt: str):
 def test_every_model_reports_without_modifying_itself():
     """Every curated model renders a report, and reporting leaves the model alone.
 
-    Two properties in one pass because they were found together. Reporting carried the same `update_metadata` mutation `render_code` did; and ten models could not produce a report at all, because APA formatting took a first initial from every author and BibTeX's `and others` idiom parses as an author with no first name.
+    Two properties in one pass because they were found together. Reporting mutated the model exactly as rendering once did; and ten models could not produce a report at all, because APA formatting took a first initial from every author and BibTeX's `and others` idiom parses as an author with no first name.
 
     Report output itself is not frozen, so this asserts the two properties rather than the text. Failures are not swallowed: a model that cannot report is the bug this covers.
     """
@@ -204,7 +204,7 @@ def test_excluded_pairs_still_raise(case_id: str):
     """
     name, _, fmt = case_id.rpartition(".")
     path = MODEL_ROOT / (name.replace("__", "/"))
-    model = Dynamics.from_file(str(next(iter(path.parent.glob(path.name + ".y*ml")))))
+    model = Dynamics.from_file(f"{path}.yaml")
 
     with pytest.raises(EXCLUDED[case_id]):
         _render(model, fmt)

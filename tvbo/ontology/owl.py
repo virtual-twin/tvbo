@@ -1838,15 +1838,18 @@ def import_model(
             parent_class=model_class,
         )
 
-    # Coupling terms
-    for k in model_data.coupling_terms:
+    # Coupling inputs; only the global ones are wired to the connectome.
+    from tvbo.templates.base.utils import is_local_coupling
+
+    for k, ci in model_data.coupling_inputs.items():
         c_class = _create_subclass(
             str(k),
             onto.CouplingTerm,
             {"label": str(k)},
             model_class,
         )
-        c_class.is_a.append(onto.GlobalConnectivity)
+        if not is_local_coupling(str(k), ci):
+            c_class.is_a.append(onto.GlobalConnectivity)
 
     equations.update_mathematical_relationships(model_class)
 

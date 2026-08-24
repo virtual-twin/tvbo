@@ -521,7 +521,6 @@ derived_variables:
       rhs: local_coupling*E
       latex: false
     record: false
-    conditional: false
   lc_I:
     name: lc_I
     equation:
@@ -529,7 +528,6 @@ derived_variables:
       rhs: I*local_coupling
       latex: false
     record: false
-    conditional: false
   Fe_ext:
     name: Fe_ext
     symbol: Fe_ext
@@ -537,20 +535,13 @@ derived_variables:
       lhs: Fe_ext
       rhs: Piecewise((0, K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0), (c_glob
         + lc_E + ou_drift*weight_noise, True))
+      conditionals:
+      - condition: K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0
+        expression: '0'
+      - condition: 'True'
+        expression: c_glob + lc_E + ou_drift*weight_noise
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0
-      equation:
-        lhs: Fe_ext
-        rhs: '0'
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: Fe_ext
-        rhs: c_glob + lc_E + ou_drift*weight_noise
-        latex: false
   Fi_ext:
     name: Fi_ext
     equation:
@@ -558,7 +549,6 @@ derived_variables:
       rhs: lc_I
       latex: false
     record: false
-    conditional: false
   fe_e:
     name: fe_e
     equation:
@@ -567,7 +557,6 @@ derived_variables:
         + 1/1000000)
       latex: false
     record: false
-    conditional: false
   fe_i:
     name: fe_i
     equation:
@@ -576,7 +565,6 @@ derived_variables:
         + 1/1000000)
       latex: false
     record: false
-    conditional: false
   fi_e:
     name: fi_e
     equation:
@@ -584,7 +572,6 @@ derived_variables:
       rhs: K_ext_i*(Fi_ext + external_input_ex_in) + N_tot*g*p_connect_i*(I + 1/1000000)
       latex: false
     record: false
-    conditional: false
   fi_i:
     name: fi_i
     equation:
@@ -592,7 +579,6 @@ derived_variables:
       rhs: K_ext_i*(Fi_ext + external_input_in_in) + N_tot*g*p_connect_i*(I + 1/1000000)
       latex: false
     record: false
-    conditional: false
   mu_Ge_e:
     name: mu_Ge_e
     equation:
@@ -600,7 +586,6 @@ derived_variables:
       rhs: Q_e*fe_e*tau_e
       latex: false
     record: false
-    conditional: false
   mu_Ge_i:
     name: mu_Ge_i
     equation:
@@ -608,7 +593,6 @@ derived_variables:
       rhs: Q_e*fe_i*tau_e
       latex: false
     record: false
-    conditional: false
   mu_Gi_e:
     name: mu_Gi_e
     equation:
@@ -616,7 +600,6 @@ derived_variables:
       rhs: Q_i*fi_e*tau_i
       latex: false
     record: false
-    conditional: false
   mu_Gi_i:
     name: mu_Gi_i
     equation:
@@ -624,7 +607,6 @@ derived_variables:
       rhs: Q_i*fi_i*tau_i
       latex: false
     record: false
-    conditional: false
   mu_G_e:
     name: mu_G_e
     equation:
@@ -632,7 +614,6 @@ derived_variables:
       rhs: g_L + mu_Ge_e + mu_Gi_e
       latex: false
     record: false
-    conditional: false
   mu_G_i:
     name: mu_G_i
     equation:
@@ -640,7 +621,6 @@ derived_variables:
       rhs: g_L + mu_Ge_i + mu_Gi_i
       latex: false
     record: false
-    conditional: false
   T_m_e:
     name: T_m_e
     equation:
@@ -648,7 +628,6 @@ derived_variables:
       rhs: C_m/mu_G_e
       latex: false
     record: false
-    conditional: false
   T_m_i:
     name: T_m_i
     equation:
@@ -656,7 +635,6 @@ derived_variables:
       rhs: C_m/mu_G_i
       latex: false
     record: false
-    conditional: false
   mu_V_e:
     name: mu_V_e
     equation:
@@ -664,7 +642,6 @@ derived_variables:
       rhs: (E_L_e*g_L + E_e*mu_Ge_e + E_i*mu_Gi_e - W_e)/mu_G_e
       latex: false
     record: false
-    conditional: false
   mu_V_i:
     name: mu_V_i
     equation:
@@ -672,7 +649,6 @@ derived_variables:
       rhs: (E_L_i*g_L + E_e*mu_Ge_i + E_i*mu_Gi_i - W_i)/mu_G_i
       latex: false
     record: false
-    conditional: false
   U_e_e:
     name: U_e_e
     equation:
@@ -680,7 +656,6 @@ derived_variables:
       rhs: Q_e*(E_e - mu_V_e)/mu_G_e
       latex: false
     record: false
-    conditional: false
   U_e_i:
     name: U_e_i
     equation:
@@ -688,7 +663,6 @@ derived_variables:
       rhs: Q_e*(E_e - mu_V_i)/mu_G_i
       latex: false
     record: false
-    conditional: false
   U_i_e:
     name: U_i_e
     equation:
@@ -696,7 +670,6 @@ derived_variables:
       rhs: Q_i*(E_i - mu_V_e)/mu_G_e
       latex: false
     record: false
-    conditional: false
   U_i_i:
     name: U_i_i
     equation:
@@ -704,7 +677,6 @@ derived_variables:
       rhs: Q_i*(E_i - mu_V_i)/mu_G_i
       latex: false
     record: false
-    conditional: false
   V_e:
     name: V_e
     equation:
@@ -712,7 +684,6 @@ derived_variables:
       rhs: (-muV0 + mu_V_e)/DmuV0
       latex: false
     record: false
-    conditional: false
   V_i:
     name: V_i
     equation:
@@ -720,7 +691,6 @@ derived_variables:
       rhs: (-muV0 + mu_V_i)/DmuV0
       latex: false
     record: false
-    conditional: false
   T_V_e:
     name: T_V_e
     equation:
@@ -729,7 +699,6 @@ derived_variables:
         + tau_e) + U_i_e**2*fi_e*tau_i**2/(T_m_e + tau_i))
       latex: false
     record: false
-    conditional: false
   T_V_i:
     name: T_V_i
     equation:
@@ -738,7 +707,6 @@ derived_variables:
         + tau_e) + U_i_i**2*fi_i*tau_i**2/(T_m_i + tau_i))
       latex: false
     record: false
-    conditional: false
   sigma_V_e:
     name: sigma_V_e
     equation:
@@ -747,7 +715,6 @@ derived_variables:
         + 2.0*tau_i))
       latex: false
     record: false
-    conditional: false
   sigma_V_i:
     name: sigma_V_i
     equation:
@@ -756,7 +723,6 @@ derived_variables:
         + 2.0*tau_i))
       latex: false
     record: false
-    conditional: false
   S_e:
     name: S_e
     equation:
@@ -764,7 +730,6 @@ derived_variables:
       rhs: (-sV0 + sigma_V_e)/DsV0
       latex: false
     record: false
-    conditional: false
   S_i:
     name: S_i
     description: "Scaling of the remote input for the inhibitory population with\n\
@@ -774,7 +739,6 @@ derived_variables:
       rhs: (-sV0 + sigma_V_i)/DsV0
       latex: false
     record: false
-    conditional: false
   T_e:
     name: T_e
     equation:
@@ -782,7 +746,6 @@ derived_variables:
       rhs: (-TvN0 + T_V_e*g_L/C_m)/DTvN0
       latex: false
     record: false
-    conditional: false
   T_i:
     name: T_i
     equation:
@@ -790,7 +753,6 @@ derived_variables:
       rhs: (-TvN0 + T_V_i*g_L/C_m)/DTvN0
       latex: false
     record: false
-    conditional: false
   V_thre_e:
     name: V_thre_e
     equation:
@@ -800,7 +762,6 @@ derived_variables:
         + 1000.0*P9_e*S_e*T_e
       latex: false
     record: false
-    conditional: false
   V_thre_i:
     name: V_thre_i
     equation:
@@ -810,7 +771,6 @@ derived_variables:
         + 1000.0*P9_i*S_i*T_i
       latex: false
     record: false
-    conditional: false
   f_out_e:
     name: f_out_e
     equation:
@@ -818,7 +778,6 @@ derived_variables:
       rhs: erfc(sqrt(2)*(V_thre_e - mu_V_e)/(2*sigma_V_e))/(2*T_V_e)
       latex: false
     record: false
-    conditional: false
   f_out_i:
     name: f_out_i
     equation:
@@ -826,7 +785,6 @@ derived_variables:
       rhs: erfc(sqrt(2)*(V_thre_i - mu_V_i)/(2*sigma_V_i))/(2*T_V_i)
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

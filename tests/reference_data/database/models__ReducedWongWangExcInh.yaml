@@ -283,7 +283,6 @@ derived_variables:
       rhs: J_N*S_e
       latex: false
     record: false
-    conditional: false
   coupling:
     name: coupling
     equation:
@@ -291,7 +290,6 @@ derived_variables:
       rhs: G*J_N*(S_e*local_coupling + c_glob)
       latex: false
     record: false
-    conditional: false
   x_e:
     name: x_e
     description: Input current to the excitatory population (Deco et al., 2014).
@@ -302,7 +300,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0098815
-    conditional: false
   x_i:
     name: x_i
     description: Input current to the inhibitory population (Deco et al., 2014).
@@ -313,7 +310,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060080
-    conditional: false
   H_e:
     name: H_e
     description: Sigmoid function that computes the averaged firing rate of the excitatory
@@ -326,7 +322,6 @@ derived_variables:
     grounding:
     - GO:0060079
     - GO:0099605
-    conditional: false
   H_i:
     name: H_i
     description: Sigmoid function that computes the averaged firing rate of the inhibitory
@@ -339,7 +334,6 @@ derived_variables:
     grounding:
     - GO:0060080
     - GO:0099605
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

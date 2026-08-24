@@ -80,10 +80,12 @@ exp = SimulationExperiment(
 )
 ```
 
+A coupling function acts along the edges of a network, so it is declared on the
+`network` — as a keyed collection, since a network may carry several. The key is
+the coupling's name; writing it a second time inside the entry is redundant.
+
 The IRI is the load-bearing piece — a bare name string is not semantically
-resolvable across multiple sources. (For `coupling` only, a bare string is
-accepted as a shorthand that auto-prefixes `tvbo:`, but prefer the explicit
-`iri` form so the source is unambiguous.)
+resolvable across multiple sources.
 
 See [Defining Networks](../Specification/Network.qmd),
 [Coupling Functions](../Networks/CouplingFunctions.qmd) and

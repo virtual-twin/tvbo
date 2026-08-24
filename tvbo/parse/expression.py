@@ -15,6 +15,8 @@ A sampler takes its PRNG state as the **first** argument, because JAX is functio
 Symbolic summation uses SymPy's own `Sum`, which needs explicit index variables: `Sum(x[i]*y[i], (i, 0, n-1))`. Index variables are detected from the `Sum` and `Product` limits, and the code printers handle the translation.
 """
 
+import re
+
 from sympy import Function, IndexedBase, Piecewise, Product, Sum, Symbol, parse_expr, sqrt, true
 from sympy.core.basic import Basic
 from sympy.parsing.sympy_parser import (
@@ -38,7 +40,19 @@ from sympy.parsing.latex import parse_latex
 
 from tvbo.datamodel.schema import Equation
 
-# Custom SymPy Classes for Mathematical Aggregation
+_MATHEMATICAL_CONSTANTS = frozenset({"pi", "E", "I", "oo", "zoo", "nan", "true", "false"})
+"""The bare names that mean a number rather than a model quantity."""
+
+_BARE_NAME = re.compile(r"\b([a-zA-Z_]\w*)\s*(\(?)")
+
+
+def _quantity_names(expression: str):
+    """The names *expression* uses as quantities rather than as functions.
+
+    A quantity is whatever its author named it, so an undeclared `beta` is the model's `beta` and not SymPy's Beta function — the star-imported namespace `parse_expr` falls back to would otherwise decide that for every name the caller's scope leaves out.
+    Applied names keep resolving there: `exp(x)`, `Piecewise(...)` and the `ARRAY_FUNCTIONS` are functions in the notation, not quantities.
+    """
+    return {name for name, applied in _BARE_NAME.findall(expression) if not applied and name not in _MATHEMATICAL_CONSTANTS}
 
 
 class Mean(Function):
@@ -314,7 +328,8 @@ def parse_eq(
         # parse_latex doesn't accept local_dict; it returns a SymPy Expr directly
         return parse_latex(expression, backend="lark")
 
-    import re
+    for name in _quantity_names(expression):
+        local_dict.setdefault(name, Symbol(name))
 
     indexed_pattern = re.compile(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\[")
     for match in indexed_pattern.finditer(expression):

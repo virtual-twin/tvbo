@@ -31,7 +31,6 @@ derived_variables:
       rhs: c - d/(1 + x**2 + y**2)
       latex: false
     record: false
-    conditional: false
 state_variables:
   x:
     name: x

@@ -456,7 +456,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0099605
-    conditional: false
   Q_Z:
     name: Q_Z
     description: Average firing rate of the population of IINs, Z.
@@ -467,7 +466,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0099605
-    conditional: false
   m_Ca:
     name: m_Ca
     description: "Fraction of open calcium channels (Breakspear et al., 2003b). \n\
@@ -479,7 +477,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0005262
-    conditional: false
   m_K:
     name: m_K
     description: "Fraction of open potassium channels (Breakspear et al., 2003b).\
@@ -491,7 +488,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0005267
-    conditional: false
   m_Na:
     name: m_Na
     description: "Fraction of open sodium channels (Breakspear et al., 2003b). \n\n\
@@ -503,7 +499,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0005272
-    conditional: false
   lc_0:
     name: lc_0
     equation:
@@ -511,7 +506,6 @@ derived_variables:
       rhs: Q_V*local_coupling
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

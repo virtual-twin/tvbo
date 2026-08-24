@@ -28,7 +28,6 @@ def _model(state, parameters):
         model.add_parameter(name=name, value=value, unit=unit)
     for name, (initial, unit, rhs) in state.items():
         model.add_state_variable(name, rhs, initial_value=initial, unit=unit)
-    model.update_metadata()
     return model
 
 

@@ -155,7 +155,7 @@ def _callable_text(obj):
 # ── Collect all known symbols for equation parsing ──
 all_param_names = []
 if model:
-    for coll in ('parameters', 'state_variables', 'derived_variables', 'derived_parameters', 'coupling_terms'):
+    for coll in ('parameters', 'state_variables', 'derived_variables', 'derived_parameters', 'coupling_inputs'):
         obj = getattr(model, coll, None)
         if obj:
             if isinstance(obj, dict):
@@ -267,7 +267,6 @@ mfuncs = getattr(model, 'functions', {}) or {}
 params = getattr(model, 'parameters', {}) or {}
 output = getattr(model, 'output', []) or []
 coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
-coupling_terms = getattr(model, 'coupling_terms', {}) or {}
 observed = getattr(model, 'observed', {}) or {}
 # The Dynamics carries only event names, the experiment the full declaration, so the experiment wins where both name one.
 events = dict(report.name_items(getattr(model, 'events', None)))
@@ -401,12 +400,6 @@ out_names = [n for n in out_names if n not in dvars]
 % for input_name, input_obj in _items(coupling_inputs):
 | ${input_name} | ${_p(input_obj, 'source', '—') or '—'} | ${_p(input_obj, 'dimension', 1)} | ${', '.join(_as_list(_p(input_obj, 'keys', []))) or '—'} | ${_p(input_obj, 'description', '') or ''} |
 % endfor
-
-% endif
-% if coupling_terms:
-**Coupling Terms**
-
-${report.param_table(coupling_terms, name_header='Term')}
 
 % endif
 % if observed:

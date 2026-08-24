@@ -168,7 +168,6 @@ derived_variables:
       rhs: Iext + local_coupling*x1
       latex: false
     record: false
-    conditional: false
   f1:
     name: f1
     description: Nonlinear function in the first state variable x1, piecewise on the
@@ -178,7 +177,6 @@ derived_variables:
       rhs: Piecewise((-a*x1**2 + b*x1, x1 < 0), (slope - x2 + 0.6*(z - 4.0)**2, True))
       latex: false
     record: false
-    conditional: false
   h:
     name: h
     description: 'Permittivity drive for z: sigmoidal when modification>0, else linear
@@ -189,7 +187,6 @@ derived_variables:
         - x0) + Piecewise((-0.1*z**7, z < 0), (0, True)), True))
       latex: false
     record: false
-    conditional: false
   f2:
     name: f2
     description: Nonlinear function in the fifth state variable y2, piecewise on the
@@ -199,7 +196,6 @@ derived_variables:
       rhs: Piecewise((0, x2 < -0.25), (aa*(x2 + 0.25), True))
       latex: false
     record: false
-    conditional: false
   lfp:
     name: lfp
     description: 'Local field potential proxy: TVB Epileptor observable x2 - x1.'
@@ -208,7 +204,6 @@ derived_variables:
       rhs: x2 - x1
       latex: false
     record: true
-    conditional: false
 coupling_inputs:
   c_glob0:
     name: c_glob0

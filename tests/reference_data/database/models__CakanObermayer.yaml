@@ -292,7 +292,6 @@ derived_variables:
       rhs: r_max/(1 + exp(-k_phi*(mu_se - mu_th)))
       latex: false
     record: false
-    conditional: false
   r_I:
     name: r_I
     description: Inhibitory population firing rate (sigmoid stand-in for aLN Phi).
@@ -301,7 +300,6 @@ derived_variables:
       rhs: r_max/(1 + exp(-k_phi*(mu_si - mu_th)))
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

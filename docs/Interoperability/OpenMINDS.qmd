@@ -82,7 +82,7 @@ dynamics:
       label: Coupling strength
       value: 0.05
 
-  coupling_terms:
+  coupling_inputs:
     c_in:
 
 # 3-node network with connectivity

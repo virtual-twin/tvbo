@@ -135,7 +135,6 @@ NON_RUNTIME = {
     "BidsEntities",
     "BrainRegionSeries",
     "Callable",
-    "Case",
     "ClassReference",
     "ConditionalBlock",
     "DataSource",

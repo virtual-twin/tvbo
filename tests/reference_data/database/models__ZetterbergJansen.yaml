@@ -259,7 +259,6 @@ derived_variables:
       rhs: 2*e0/(exp(rho_1*(-c_glob - local_coupling*v6 + rho_2)) + 1)
       latex: false
     record: false
-    conditional: false
   sigma_v1:
     name: sigma_v1
     symbol: sigma_v1
@@ -267,20 +266,13 @@ derived_variables:
       lhs: sigma_v1
       rhs: Piecewise((0, rho_1*(rho_2 - v1) > 709), (2*e0/(exp(rho_1*(rho_2 - v1))
         + 1), True))
+      conditionals:
+      - condition: rho_1*(rho_2 - v1) > 709
+        expression: '0'
+      - condition: 'True'
+        expression: 2*e0/(exp(rho_1*(rho_2 - v1)) + 1)
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: rho_1*(rho_2 - v1) > 709
-      equation:
-        lhs: sigma_v1
-        rhs: '0'
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: sigma_v1
-        rhs: 2*e0/(exp(rho_1*(rho_2 - v1)) + 1)
-        latex: false
   sigma_v23:
     name: sigma_v23
     symbol: sigma_v23
@@ -288,20 +280,13 @@ derived_variables:
       lhs: sigma_v23
       rhs: Piecewise((0, rho_1*(rho_2 - (v2 - v3)) > 709), (2*e0/(exp(rho_1*(rho_2
         - (v2 - v3))) + 1), True))
+      conditionals:
+      - condition: rho_1*(rho_2 - (v2 - v3)) > 709
+        expression: '0'
+      - condition: 'True'
+        expression: 2*e0/(exp(rho_1*(rho_2 - (v2 - v3))) + 1)
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: rho_1*(rho_2 - (v2 - v3)) > 709
-      equation:
-        lhs: sigma_v23
-        rhs: '0'
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: sigma_v23
-        rhs: 2*e0/(exp(rho_1*(rho_2 - (v2 - v3))) + 1)
-        latex: false
   sigma_v45:
     name: sigma_v45
     symbol: sigma_v45
@@ -309,20 +294,13 @@ derived_variables:
       lhs: sigma_v45
       rhs: Piecewise((0, rho_1*(rho_2 - (v4 - v5)) > 709), (2*e0/(exp(rho_1*(rho_2
         - (v4 - v5))) + 1), True))
+      conditionals:
+      - condition: rho_1*(rho_2 - (v4 - v5)) > 709
+        expression: '0'
+      - condition: 'True'
+        expression: 2*e0/(exp(rho_1*(rho_2 - (v4 - v5))) + 1)
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: rho_1*(rho_2 - (v4 - v5)) > 709
-      equation:
-        lhs: sigma_v45
-        rhs: '0'
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: sigma_v45
-        rhs: 2*e0/(exp(rho_1*(rho_2 - (v4 - v5))) + 1)
-        latex: false
 coupling_inputs:
   c_glob:
     name: c_glob

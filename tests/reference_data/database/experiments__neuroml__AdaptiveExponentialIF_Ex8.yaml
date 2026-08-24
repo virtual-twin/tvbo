@@ -61,7 +61,6 @@ dynamics:
         rhs: '800.0'
         latex: false
       record: false
-      conditional: false
   state_variables:
     v:
       name: v

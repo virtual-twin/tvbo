@@ -737,8 +737,9 @@ def plan(
     if _dyn is not None:
         _record_used_param_deps(getattr(_dyn, "parameters", None))
     _record_used_param_deps(getattr(experiment, "parameters", None))
-    _net = getattr(experiment, "network", None)
-    for _key, _cpl in keyed_items(getattr(_net, "coupling", None), "coupling"):
+    from tvbo.utils import network_couplings
+
+    for _cpl in network_couplings(getattr(experiment, "network", None)).values():
         _record_used_param_deps(getattr(_cpl, "parameters", None))
     # Exploration-builder arguments (ExplorationAxis.builder → Argument.used).
     _expls = getattr(experiment, "explorations", None)
@@ -897,4 +898,3 @@ def _plainify(obj):
 
 from tvbo.utils import as_list as _as_list
 from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (late-imported shared utils)
-from tvbo.utils import keyed_items

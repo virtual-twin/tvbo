@@ -57,7 +57,6 @@ derived_variables:
         - 1.0), True))
       latex: false
     record: false
-    conditional: false
   beta_ms:
     name: beta_ms
     equation:
@@ -65,28 +64,24 @@ derived_variables:
         - 1.0), True))
       latex: false
     record: false
-    conditional: false
   minf_s:
     name: minf_s
     equation:
       rhs: alpha_ms / (alpha_ms + beta_ms)
       latex: false
     record: false
-    conditional: false
   alpha_hs:
     name: alpha_hs
     equation:
       rhs: 0.128*exp((-43.0 - Vs)/18.0)
       latex: false
     record: false
-    conditional: false
   beta_hs:
     name: beta_hs
     equation:
       rhs: 4.0 / (1.0 + exp((-20.0 - Vs)/5.0))
       latex: false
     record: false
-    conditional: false
   alpha_ns:
     name: alpha_ns
     equation:
@@ -94,21 +89,18 @@ derived_variables:
         Vs)/5.0) - 1.0), True))
       latex: false
     record: false
-    conditional: false
   beta_ns:
     name: beta_ns
     equation:
       rhs: 0.25*exp(-1.0 - 0.025*Vs)
       latex: false
     record: false
-    conditional: false
   alpha_sd:
     name: alpha_sd
     equation:
       rhs: 1.6 / (1.0 + exp(-0.072*(Vd - 5.0)))
       latex: false
     record: false
-    conditional: false
   beta_sd:
     name: beta_sd
     equation:
@@ -116,7 +108,6 @@ derived_variables:
         - 1.0), True))
       latex: false
     record: false
-    conditional: false
   alpha_cd:
     name: alpha_cd
     equation:
@@ -124,35 +115,30 @@ derived_variables:
         (2.0*exp((-53.5 - Vd)/27.0), True))
       latex: false
     record: false
-    conditional: false
   beta_cd:
     name: beta_cd
     equation:
       rhs: Piecewise((2.0*exp((-53.5 - Vd)/27.0) - alpha_cd, Vd < -10.0), (0.0, True))
       latex: false
     record: false
-    conditional: false
   alpha_qd:
     name: alpha_qd
     equation:
       rhs: Min(0.00002*Cad, 0.01)
       latex: false
     record: false
-    conditional: false
   chi_d:
     name: chi_d
     equation:
       rhs: Min(Cad/250.0, 1.0)
       latex: false
     record: false
-    conditional: false
   ICa_d:
     name: ICa_d
     equation:
       rhs: gCa*sd**2*(Vd - eCa)
       latex: false
     record: false
-    conditional: false
 state_variables:
   Vs:
     name: Vs

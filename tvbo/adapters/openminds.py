@@ -132,7 +132,6 @@ SKIP_CLASSES: set[str] = {
     "Matrix",
     "BrainRegionSeries",
     "NDArray",
-    "Case",  # Internal helper for conditionals
     "ArgumentMapping",
     "DataInjection",
     "Callable",

@@ -13,7 +13,7 @@ import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.smallscale.lowering import node_dynamics_name
-from tvbo.utils import as_list, keyed_items, noise_sigma, normalize_params
+from tvbo.utils import keyed_items, network_couplings, noise_sigma, normalize_params
 
 if TYPE_CHECKING:
     from tvbo.classes.network import Network
@@ -200,11 +200,7 @@ def to_tvboptim(
     """
     # Auto-infer delays from coupling metadata if not specified
     if delays is None:
-        delays = False
-        for _key, coup_obj in keyed_items(getattr(network, "coupling", None), "coupling"):
-            if getattr(coup_obj, "delayed", False):
-                delays = True
-                break
+        delays = any(getattr(coup_obj, "delayed", False) for coup_obj in network_couplings(network).values())
 
     graph = _build_graph(network, delays=delays, max_delay=max_delay)
 
@@ -220,8 +216,8 @@ def to_tvboptim(
         dyn_obj = None
 
     # CouplingInput.source remaps function keys to CI keys, then name matching, then position.
-    if coupling is None and getattr(network, "coupling", None):
-        coup_dict = {key: coup_obj.execute("tvboptim") for key, coup_obj in keyed_items(network.coupling, "coupling")}
+    if coupling is None and network_couplings(network):
+        coup_dict = {key: coup_obj.execute("tvboptim") for key, coup_obj in network_couplings(network).items()}
         if dynamics is not None and hasattr(dynamics, "COUPLING_INPUTS"):
             ci_keys = set(dynamics.COUPLING_INPUTS.keys())
             func_keys = list(coup_dict.keys())
@@ -332,7 +328,7 @@ def _resolve_coupling(network, edge):
     ``Edge.coupling`` is a name-reference slot (``inlined: false``), so it arrives either as a bare name — resolved here against the network's declared couplings — or as an inline ``Coupling`` that ``Network.__init__`` reattached.
     An edge that names no coupling inherits the network's own, when the network declares exactly one. Returns ``(None, None)`` when nothing is declared anywhere, i.e. the default linear route.
     """
-    declared = {getattr(c, "name", None): c for c in as_list(getattr(network, "coupling", None))}
+    declared = {getattr(c, "name", None): c for c in network_couplings(network).values()}
     ref = getattr(edge, "coupling", None)
     if ref is None:
         return next(iter(declared.items())) if len(declared) == 1 else (None, None)
@@ -418,8 +414,8 @@ def to_heterogeneous_network(
         node_group.append(dname)
 
     if delays is None:
-        # Infer from network-level coupling AND edge-level coupling: `delayed` may be declared only on edges (Edge.coupling), and `coupling` can be a plain list rather than a keyed dict — `.values()` would raise AttributeError on it.
-        delays = any(getattr(c, "delayed", False) for c in as_list(getattr(network, "coupling", None))) or any(
+        # `delayed` may be declared only on edges, so both places are asked.
+        delays = any(getattr(c, "delayed", False) for c in network_couplings(network).values()) or any(
             getattr(getattr(e, "coupling", None), "delayed", False) for e in (getattr(network, "edges", None) or [])
         )
     graph = _build_graph(network, delays=delays, max_delay=max_delay)

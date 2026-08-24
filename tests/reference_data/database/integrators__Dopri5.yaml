@@ -12,6 +12,5 @@ update_expression:
     lhs: X_{t+1}
     latex: false
   record: false
-  conditional: false
 delayed: true
 coupling_evaluation: per_step

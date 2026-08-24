@@ -1,5 +1,4 @@
-name: ReducedWongWang
-iri: tvbo:ReducedWongWang
+name: ReducedWongWangFunc
 parameters:
   I_o:
     name: I_o
@@ -106,7 +105,6 @@ derived_variables:
       rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_glob
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob
@@ -136,6 +134,7 @@ state_variables:
     equation_type: differential
     equation_order: 1
     initial_value: 0.1
+derived_from_model: ReducedWongWang
 number_of_modes: 1
 functions:
   H:

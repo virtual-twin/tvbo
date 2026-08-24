@@ -115,7 +115,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060079
-    conditional: false
   Bik:
     name: Bik
     description: Inhibitory-to-excitatory mode-coupling matrix.
@@ -126,7 +125,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060079
-    conditional: false
   Cik:
     name: Cik
     description: Excitatory-to-inhibitory mode-coupling matrix.
@@ -137,7 +135,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0060080
-    conditional: false
   e_i:
     name: e_i
     description: Per-mode cubic-coefficient projection for the excitatory subnetwork.
@@ -146,7 +143,6 @@ derived_variables:
       rhs: '1.0'
       latex: false
     record: false
-    conditional: false
   f_i:
     name: f_i
     description: Per-mode cubic-coefficient projection for the inhibitory subnetwork.
@@ -155,7 +151,6 @@ derived_variables:
       rhs: '1.0'
       latex: false
     record: false
-    conditional: false
   IE_i:
     name: IE_i
     description: Per-mode constant excitatory input from the heterogeneity distribution.
@@ -166,7 +161,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0042391
-    conditional: false
   II_i:
     name: II_i
     description: Per-mode constant inhibitory input from the heterogeneity distribution.
@@ -177,7 +171,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0042391
-    conditional: false
   m_i:
     name: m_i
     description: Per-mode offset entering the eta dynamics.
@@ -186,7 +179,6 @@ derived_variables:
       rhs: a
       latex: false
     record: false
-    conditional: false
   n_i:
     name: n_i
     description: Per-mode offset entering the beta dynamics.
@@ -195,7 +187,6 @@ derived_variables:
       rhs: a
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

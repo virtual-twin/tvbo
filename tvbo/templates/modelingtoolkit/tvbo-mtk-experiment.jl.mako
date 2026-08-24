@@ -191,7 +191,7 @@ end
 % for dp_name in dp_names:
         ${dp_name}(t)
 % endfor
-% for dv_name, dv in (getattr(model, 'derived_variables', None) or {}).items():
+% for dv_name, dv in model.in_dependency_order('derived_variables').items():
 <%
     dv_desc = jl_escape(getattr(dv, 'description', '') or '')
     dv_meta = []
@@ -204,11 +204,11 @@ end
     end
     eqs = [
 ## Derived parameters (algebraic definitions that use parameters only)
-% for dp in (getattr(model, 'derived_parameters', None) or {}).values():
+% for dp in model.in_dependency_order('derived_parameters').values():
         ${dp.name} ~ ${juliacode(dp.equation)},
 % endfor
 ## Derived variables (algebraic equations involving t-dependent variables)
-% for dv in (getattr(model, 'derived_variables', None) or {}).values():
+% for dv in model.in_dependency_order('derived_variables').values():
         ${dv.name} ~ ${juliacode(dv.equation)},
 % endfor
 ## State variable equations

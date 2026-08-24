@@ -38,7 +38,6 @@ derived_variables:
         m1*g*l*(1 - cos(theta)) + (m1 + m2)*g*y
       latex: false
     record: false
-    conditional: false
 state_variables:
   theta:
     name: theta

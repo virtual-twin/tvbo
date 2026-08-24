@@ -96,7 +96,6 @@ dynamics:
         rhs: 2.0 * nu_max / (1.0 + exp(r * (v0 - (y1 - y2))))
         latex: false
       record: false
-      conditional: false
     sigm_y0_1:
       name: sigm_y0_1
       description: Sigmoid of a_1*J*y0
@@ -104,7 +103,6 @@ dynamics:
         rhs: 2.0 * nu_max / (1.0 + exp(r * (v0 - (a_1 * J * y0))))
         latex: false
       record: false
-      conditional: false
     sigm_y0_3:
       name: sigm_y0_3
       description: Sigmoid of a_3*J*y0
@@ -112,7 +110,6 @@ dynamics:
         rhs: 2.0 * nu_max / (1.0 + exp(r * (v0 - (a_3 * J * y0))))
         latex: false
       record: false
-      conditional: false
   coupling_inputs:
     DelayedSigmoidalJansenRit:
       name: DelayedSigmoidalJansenRit

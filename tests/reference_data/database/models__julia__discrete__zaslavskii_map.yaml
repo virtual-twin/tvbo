@@ -27,7 +27,6 @@ derived_variables:
       rhs: (1 - exp(-r))/r
       latex: false
     record: false
-    conditional: false
 state_variables:
   x:
     name: x

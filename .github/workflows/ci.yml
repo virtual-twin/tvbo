@@ -188,6 +188,13 @@ jobs:
               run: make gen-owl
             - name: Generate SHACL
               run: make gen-shacl
+            - name: Regeneration is reproducible
+              run: |
+                  cp ontology/tvb-o-struct.owl "${RUNNER_TEMP}/struct.first"
+                  cp ontology/tvb-o.shacl.ttl "${RUNNER_TEMP}/shacl.first"
+                  make gen-owl gen-shacl
+                  diff -u "${RUNNER_TEMP}/struct.first" ontology/tvb-o-struct.owl
+                  diff -u "${RUNNER_TEMP}/shacl.first" ontology/tvb-o.shacl.ttl
             - name: Upload schema artifacts
               uses: actions/upload-artifact@v4
               with:

@@ -247,6 +247,21 @@ def normalize_params(params) -> dict:
         return {}
 
 
+def network_couplings(network) -> dict:
+    """*network*'s couplings, keyed by the role each fills.
+
+    A coupling acts over a connectivity, so this slot is the only place one is declared and
+    every backend reads it through here. Assigning a mapping to a keyed multivalued slot
+    leaves a ``JsonObj`` on the generated dataclass — no ``.values()``, no ``.items()`` —
+    so a reader that reaches for either sees a coupling on one form of the record and an
+    ``AttributeError`` on the other.
+    """
+    return {
+        str(key): coupling
+        for key, coupling in keyed_items(getattr(network, "coupling", None), "coupling")
+    }
+
+
 def edge_param(edge, name: str, default=None):
     """A named quantity off an ``Edge``: its ``parameters`` entry, else its own slot.
 

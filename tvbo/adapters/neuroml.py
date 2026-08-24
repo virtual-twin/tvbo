@@ -532,10 +532,12 @@ def _nml_type_name(dynamics):
 
 
 def _is_custom_nml_type(dynamics):
-    """Return True if this dynamics needs a custom LEMS ComponentType definition."""
-    dvs = dynamics.derived_variables
-    svs = dynamics.state_variables
-    return bool(dvs or svs)
+    """Return True if this dynamics needs a custom LEMS ComponentType definition.
+
+    Asks the collections, not their emitted order: whether a model declares anything is
+    the question here, and settling a dependency order to answer it parses the whole model.
+    """
+    return bool(dynamics.derived_variables or dynamics.state_variables)
 
 
 # ── Unit → LEMS dimension mapping ────────────────────────────────────
@@ -739,7 +741,7 @@ def _render_custom_component_type(dynamics, role_slot=None):
         return ""
 
     params = dynamics.parameters
-    dvs = dynamics.derived_variables
+    dvs = dynamics.in_dependency_order("derived_variables")
 
     base_info = _NML_ROLE_BASES.get(role_slot)
     extends = base_info[0] if base_info else "baseComponent"
@@ -1470,7 +1472,7 @@ def _hier_build_dynamics(dyn, extends, all_params):
     # Collect all symbol names for expression conversion
     param_names = list((dyn.parameters or {}).keys())
     sv_names = list((dyn.state_variables or {}).keys())
-    dv_names = list((dyn.derived_variables or {}).keys())
+    dv_names = list(dyn.in_dependency_order("derived_variables").keys())
     all_names = param_names + sv_names + dv_names
 
     # Add any requirement names (e.g. v for rates)
@@ -1490,7 +1492,7 @@ def _hier_build_dynamics(dyn, extends, all_params):
     }
 
     # ── Derived variables ──
-    for dv_key, dv in (dyn.derived_variables or {}).items():
+    for dv_key, dv in dyn.in_dependency_order("derived_variables").items():
         dim = _UNIT_TO_DIMENSION.get(str(getattr(dv, "unit", "") or ""), "none")
         exposure = dv_key if dv_key in exposures else None
         if exposure:
@@ -1512,11 +1514,11 @@ def _hier_build_dynamics(dyn, extends, all_params):
             continue
 
         # Check for conditional derived variable
-        if getattr(dv, "conditional", False) and getattr(dv, "cases", None):
+        if getattr(dv.equation, "conditionals", None):
             cases = []
-            for case in dv.cases:
+            for case in dv.equation.conditionals:
                 cond_str = case.condition if case.condition else None
-                val_str = case.equation.rhs if case.equation else ""
+                val_str = case.expression or ""
                 # Default case (True or None) → no condition in LEMS
                 if cond_str and cond_str.strip() == "True":
                     cond_str = None
@@ -2924,7 +2926,7 @@ def build_lems_context(experiment):
 
     params = dyn.parameters or {}
     svs = dyn.state_variables or {}
-    dvs = dyn.derived_variables
+    dvs = dyn.in_dependency_order("derived_variables")
     events = dyn.events
     coupling_inputs = dyn.coupling_inputs
 
@@ -3179,7 +3181,7 @@ def build_lems_context(experiment):
         for ct_name, ct_dyn in net_ctx["cell_types"].items():
             ct_params = ct_dyn.parameters or {}
             ct_svs = ct_dyn.state_variables or {}
-            ct_dvs = ct_dyn.derived_variables
+            ct_dvs = ct_dyn.in_dependency_order("derived_variables")
             ct_events = ct_dyn.events
             ct_coupling_inputs = ct_dyn.coupling_inputs
             ct_sv_names_set = set(str(k) for k in ct_svs.keys())
@@ -3257,7 +3259,7 @@ def build_lems_context(experiment):
                         _p.unit = _pinfo["unit"]
                     ct_params[_pn] = _p
                 ct_svs = ct_dyn.state_variables or {}
-                ct_dvs = ct_dyn.derived_variables
+                ct_dvs = ct_dyn.in_dependency_order("derived_variables")
                 ct_events = ct_dyn.events
                 ct_coupling_inputs = ct_dyn.coupling_inputs
                 ct_sv_names_set = set(str(k) for k in ct_svs.keys())

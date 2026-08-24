@@ -9,9 +9,17 @@ The equations themselves live on a [`SymbolicSystem`](../parse/system.qmd), one 
 
 from __future__ import annotations
 
+from tvbo.behaviour.dynamics_runtime import DynamicsRuntime
 
-class DynamicsBehaviour:
-    """A model's SymPy view of itself: one symbol table, one parse of each equation."""
+
+class DynamicsBehaviour(DynamicsRuntime):
+    """Everything a model does, gathered where the generated class can inherit it.
+
+    The symbolic view is here; construction, code generation, simulation, plotting and
+    reporting come from [`DynamicsRuntime`](dynamics_runtime.qmd). One class because
+    ``hatch_build`` attaches behaviour by name — ``DynamicsBehaviour`` to ``Dynamics`` —
+    and splitting the source by concern is what keeps that one name readable.
+    """
 
     def _from_ontology(self, key: str) -> bool:
         """Gap-fill from the ontology neural mass model *key* labels. True when found."""
@@ -49,6 +57,17 @@ class DynamicsBehaviour:
     def _symbolic_form(self, notation: str = "symbol", evaluate: bool = True):
         """This model's parsed equations. See [`SymbolicSystem.form`](../parse/system.qmd#form)."""
         return self.symbolic_system.form(notation=notation, evaluate=evaluate)
+
+    def in_dependency_order(self, collection: str):
+        """*collection* ordered so each member follows what it reads.
+
+        What every backend emitting straight-line code iterates, in place of the collection
+        itself. See
+        [`SymbolicSystem.in_dependency_order`](../parse/system.qmd#in_dependency_order):
+        the order is settled on the parsed equations, so rendering stays a query and a
+        model does not have to be rewritten before it can be emitted.
+        """
+        return self.symbolic_system.in_dependency_order(collection)
 
     def get_equations(self, format: str = "metadata", evaluate: bool = True):
         """Collect the model's equations as SymPy `Eq` objects.

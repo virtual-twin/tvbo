@@ -55,6 +55,8 @@ class ModelingToolkitAdapter(BaseAdapter):
         adapter = ModelingToolkitAdapter(exp)            # full experiment
     """
 
+    TEMPLATE = "tvbo-mtk-experiment.jl.mako"
+
     def __init__(self, source=None):
         from tvbo.classes.dynamics import Dynamics
         from tvbo.classes.experiment import SimulationExperiment
@@ -69,15 +71,6 @@ class ModelingToolkitAdapter(BaseAdapter):
         else:
             self._input_dynamics = None
         super().__init__(source)
-
-    def render_code(self, **kwargs) -> str:
-        """Render Julia code using the standalone MTK template."""
-        from tvbo import templates
-
-        ctx = self.prepare_context()
-        ctx.update(kwargs)
-        template = templates.lookup.get_template("tvbo-mtk-experiment.jl.mako")
-        return template.render(**ctx)
 
     def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using pure ModelingToolkit.jl.

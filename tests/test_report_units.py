@@ -78,7 +78,6 @@ class TestDeclaredVersusDerived:
         model.add_parameter(name="tau", value=10.0, unit="ms")
         model.add_parameter(name="I", value=1.0)
         model.add_state_variable("v", "(-v + I) / tau", initial_value=0.0, unit="mV")
-        model.update_metadata()
 
         derived = report.derived_units(report.unit_verdicts(model))
         table = report.parameter_table(model.parameters, derived=derived)

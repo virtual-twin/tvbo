@@ -67,7 +67,6 @@ dynamics:
         rhs: w * J_N * S + I_o + J_N * FastLinearCoupling
         latex: false
       record: false
-      conditional: false
     H:
       name: H
       label: Population firing rate
@@ -76,7 +75,6 @@ dynamics:
         rhs: (a * x - b) / (1 - exp(-d * (a * x - b)))
         latex: false
       record: false
-      conditional: false
   coupling_inputs:
     FastLinearCoupling:
       name: FastLinearCoupling

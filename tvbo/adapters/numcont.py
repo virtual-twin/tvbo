@@ -14,8 +14,10 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from tvbo.adapters.base import ContinuationAdapter
+
 if TYPE_CHECKING:
-    from tvbo.classes.experiment import SimulationExperiment
+    pass
 
 
 # AUTO reserves PAR(11)=PERIOD and PAR(12)=ANGLE; user params take 1..10 then 13..NPAR.
@@ -128,11 +130,8 @@ def _cont_par(cont, key, default=None):
     return default
 
 
-class NumContAdapter:
+class NumContAdapter(ContinuationAdapter):
     """Adapter for bifurcation analysis via AUTO-07p (no external deps)."""
-
-    def __init__(self, experiment: SimulationExperiment):
-        self.experiment = experiment
 
     # ── Context for the f90 template ─────────────────────────────────────
 
@@ -145,11 +144,7 @@ class NumContAdapter:
         from tvbo import templates
 
         model = model or self.experiment.dynamics
-        if continuation is None:
-            conts = getattr(self.experiment, "continuations", None) or {}
-            if conts:
-                continuation = next(iter(conts.values()))
-        ctx = self._prepare_context(model, continuation, **kwargs)
+        ctx = self._prepare_context(model, self.resolve_continuation(continuation), **kwargs)
         template = templates.lookup.get_template("tvbo-auto7p.py.mako")
         return template.render(**ctx)
 
@@ -161,8 +156,7 @@ class NumContAdapter:
 
         check_auto_dir()
 
-        exp = self.experiment
-        conts = getattr(exp, "continuations", None) or {}
+        conts = self.continuations()
         if not conts:
             raise ValueError(
                 "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
@@ -170,7 +164,7 @@ class NumContAdapter:
 
         results = {}
         for name, cont in conts.items():
-            model = self._resolve_dynamics(cont)
+            model = self.resolve_dynamics(cont)
             results[name] = self._run_one(model, cont, name, **kwargs)
 
         if len(results) == 1:
@@ -178,20 +172,6 @@ class NumContAdapter:
         return results
 
     # ── Internals ────────────────────────────────────────────────────────
-
-    def _resolve_dynamics(self, cont):
-        exp = self.experiment
-        dyn_ref = getattr(cont, "dynamics", None)
-        if dyn_ref:
-            dyn_name = str(dyn_ref)
-            if exp.dynamics and getattr(exp.dynamics, "name", None) == dyn_name:
-                return exp.dynamics
-            net_dyn = getattr(exp.network, "dynamics", None) if exp.network else None
-            if isinstance(net_dyn, dict) and dyn_name in net_dyn:
-                return net_dyn[dyn_name]
-        if exp.dynamics is not None:
-            return exp.dynamics
-        raise ValueError(f"Cannot resolve dynamics for continuation '{cont}'.")
 
     def _run_one(self, model, cont, cont_name, **kwargs):
         import contextlib

@@ -301,12 +301,12 @@ dynamics:
                 x:
                   equation: { rhs: "(v - midpoint) / scale" }
                 r:
-                  conditional: true
-                  cases:
-                    - condition: "x != 0"
-                      equation: { rhs: "rate * x / (1 - exp(-x))" }
-                    - condition: "True"
-                      equation: { rhs: "rate" }
+                  equation:
+                    conditionals:
+                      - condition: "x != 0"
+                        expression: "rate * x / (1 - exp(-x))"
+                      - condition: "True"
+                        expression: "rate"
             reverseRate:
               name: reverseRate
               label: customHHExpRate
@@ -425,12 +425,12 @@ dynamics:
                 x:
                   equation: { rhs: "(v - midpoint) / scale" }
                 r:
-                  conditional: true
-                  cases:
-                    - condition: "x != 0"
-                      equation: { rhs: "rate * x / (1 - exp(-x))" }
-                    - condition: "True"
-                      equation: { rhs: "rate" }
+                  equation:
+                    conditionals:
+                      - condition: "x != 0"
+                        expression: "rate * x / (1 - exp(-x))"
+                      - condition: "True"
+                        expression: "rate"
             reverseRate:
               name: reverseRate
               label: customHHExpRate

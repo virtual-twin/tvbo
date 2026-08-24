@@ -48,10 +48,10 @@
 
 
   <!-- ════════════════════════════════════════════════════════════════
-       ComponentType: ReducedWongWang
-       Generated from TVBO Dynamics: ReducedWongWang
+       ComponentType: ReducedWongWangFunc
+       Generated from TVBO Dynamics: ReducedWongWangFunc
        ════════════════════════════════════════════════════════════════ -->
-  <ComponentType name="ReducedWongWang">
+  <ComponentType name="ReducedWongWangFunc">
 
     <!-- Parameters -->
     <Parameter name="I_o" dimension="current"/>
@@ -108,7 +108,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="ReducedWongWang_inst" type="ReducedWongWang" I_o="0.33 nA" J_N="0.2609 nA" a="0.27" b="0.108 per_ms" d="154.0 ms" gamma="0.641" tau_s="100.0 ms" w="0.6" c_glob="0" local_coupling="0" S_0="0.1"/>
+  <Component id="ReducedWongWangFunc_inst" type="ReducedWongWangFunc" I_o="0.33 nA" J_N="0.2609 nA" a="0.27" b="0.108 per_ms" d="154.0 ms" gamma="0.641" tau_s="100.0 ms" w="0.6" c_glob="0" local_coupling="0" S_0="0.1"/>
 
 
 

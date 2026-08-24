@@ -1,6 +1,6 @@
 """Every curated model's dimensional standing, frozen.
 
-The point of freezing it is that the numbers are *supposed* to move — as models gain declarations they should shift from `underdetermined` towards `consistent` — and a movement nobody intended is exactly what a corpus catches. Today 86 of the 106 registered models declare no unit anywhere, and 103 have no equation the checker can settle either way — which is why it reports three answers instead of two. A gate demanding consistency of all 106 would pressure invented declarations into the published record, and a unit somebody made up to satisfy a test is worse than no unit.
+The point of freezing it is that the numbers are *supposed* to move — as models gain declarations they should shift from `underdetermined` towards `consistent` — and a movement nobody intended is exactly what a corpus catches. Today 86 of the 108 registered models declare no unit anywhere, and 104 have no equation the checker can settle either way — which is why it reports three answers instead of two. A gate demanding consistency of all 108 would pressure invented declarations into the published record, and a unit somebody made up to satisfy a test is worse than no unit.
 
 Update the table in the same commit as the model change, and say why.
 """
@@ -94,6 +94,7 @@ VERDICTS = {
     "ReducedSetHindmarshRose": (0, 0, 6),
     "ReducedWongWang": (0, 0, 1),
     "ReducedWongWangExcInh": (0, 0, 2),
+    "ReducedWongWangFunc": (0, 0, 1),
     "ReducedWongWangTvboptim": (0, 0, 1),
     "RiddledBasins": (0, 0, 4),
     "Rikitake": (0, 0, 3),
@@ -101,6 +102,7 @@ VERDICTS = {
     "RulkovMap": (0, 0, 2),
     "Sakarya": (0, 0, 3),
     "Shinriki": (0, 0, 3),
+    "Spring": (2, 0, 0),
     "SprottDissipativeConservative": (0, 0, 3),
     "StandardMap": (0, 0, 2),
     "StefanescuJirsa2D": (0, 0, 4),
@@ -176,8 +178,8 @@ def test_most_models_still_declare_nothing_to_check():
     """
     nothing_to_check = [name for name, (c, i, _) in VERDICTS.items() if not c and not i]
 
-    assert len(VERDICTS) == 106
-    assert len(nothing_to_check) == 103
+    assert len(VERDICTS) == 108
+    assert len(nothing_to_check) == 104
 
 
 def test_a_model_with_no_state_equations_reaches_no_verdicts():

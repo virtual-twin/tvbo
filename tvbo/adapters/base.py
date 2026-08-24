@@ -30,10 +30,44 @@ class BaseAdapter:
 
     Provides shared metadata processing that all code-generation backends need:
     dynamics library, node-dynamics mapping, coupling resolution, graph info, initial state parsing, etc.
+
+    A backend states what makes it different — its `TEMPLATE`, and a `prepare_context` override where the shared context will not do — rather than restating how rendering works. `render_code` is inherited from here by every adapter that renders one template from one context.
+    """
+
+    TEMPLATE: str = ""
+    """The Mako template this backend renders, relative to the template lookup root.
+
+    Declaring it is what lets `render_code` be inherited. An adapter that renders more
+    than one template — NeuroML picks between four by what the dynamics declares — states
+    that choice in its own `render_code` instead.
     """
 
     def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
+
+    def render_code(self, **kwargs) -> str:
+        """This experiment as backend source.
+
+        Args:
+            **kwargs: Extra context, overriding the prepared context per key.
+
+        Returns:
+            The rendered source, unformatted — normalising is the caller's step, and the
+            backends whose output is not Python have nothing to normalise it with.
+
+        Raises:
+            NotImplementedError: If the adapter declares no `TEMPLATE`.
+        """
+        from tvbo import templates
+
+        if not self.TEMPLATE:
+            raise NotImplementedError(
+                f"{type(self).__name__} declares no TEMPLATE. Set one, or override "
+                "render_code where the backend chooses its template per experiment."
+            )
+        context = self.prepare_context()
+        context.update(kwargs)
+        return templates.lookup.get_template(self.TEMPLATE).render(**context)
 
     # ── Dynamics library ─────────────────────────────────────────────────
 
@@ -96,10 +130,9 @@ class BaseAdapter:
 
         The one place a backend asks what couplings an experiment has, so that a template never derives it: a template that reads the model itself is a second answer to a question this class already answers, and the two drift. A backend needing them keyed differently overrides this and calls up — see ``TvboptimAdapter``.
         """
-        from tvbo.utils import keyed_items
+        from tvbo.utils import network_couplings
 
-        network = getattr(self.experiment, "network", None)
-        return OrderedDict(keyed_items(getattr(network, "coupling", None), "coupling"))
+        return OrderedDict(network_couplings(getattr(self.experiment, "network", None)))
 
     def get_default_coupling(self, all_couplings: OrderedDict | None = None):
         """The coupling a backend applies where an edge names none — the first declared."""
@@ -341,6 +374,8 @@ class BaseAdapter:
         """Build the full pre-computed context dict for template rendering.
 
         This is the main entry point: templates receive this dict instead of doing metadata processing themselves.
+
+        The shape below is the shared one, not a contract every adapter keeps: a backend whose template needs something else entirely overrides this — `Brian2Adapter` returns a spiking build description — so a caller wanting *this* shape must build the adapter it belongs to rather than a bare `BaseAdapter`.
         """
         exp = self.experiment
         model = exp.dynamics
@@ -381,14 +416,10 @@ class BaseAdapter:
 
         # Vertex derived-variable names (union across all dynamics)
         vertex_dv_names = []
-        for dyn in dynamics_dict.values():
-            for dv_name in dyn.derived_variables:
+        for dyn in [*dynamics_dict.values(), model]:
+            for dv_name in dyn.in_dependency_order("derived_variables"):
                 if str(dv_name) not in vertex_dv_names:
                     vertex_dv_names.append(str(dv_name))
-        # Also from default model
-        for dv_name in model.derived_variables:
-            if str(dv_name) not in vertex_dv_names:
-                vertex_dv_names.append(str(dv_name))
 
         # Auto-extract tstops from conditional derived-variable breakpoints
         import re
@@ -398,17 +429,16 @@ class BaseAdapter:
             if not dyn:
                 continue
             for dv in (dyn.derived_variables).values():
-                if getattr(dv, "conditional", False):
-                    for case in getattr(dv, "cases", None) or []:
-                        cond = getattr(case, "condition", "") or ""
-                        # Extract numeric values from conditions like "t <= 14400"
-                        for m in re.findall(r"[\d.]+", cond):
-                            try:
-                                val = float(m)
-                                if val > 0:
-                                    tstops.add(val)
-                            except ValueError:
-                                pass
+                for branch in getattr(dv.equation, "conditionals", None) or []:
+                    cond = getattr(branch, "condition", "") or ""
+                    # Extract numeric values from conditions like "t <= 14400"
+                    for m in re.findall(r"[\d.]+", cond):
+                        try:
+                            val = float(m)
+                            if val > 0:
+                                tstops.add(val)
+                        except ValueError:
+                            pass
         tstops = sorted(tstops)
 
         # Execution config
@@ -472,3 +502,44 @@ class BaseAdapter:
             "get_noise_sigmas": self.get_noise_sigmas,
             "graph_generator_call": graph_generator_call,
         }
+
+
+class ContinuationAdapter(BaseAdapter):
+    """A backend that renders one continuation at a time.
+
+    The bifurcation backends do not render a whole experiment: they take a `(dynamics, continuation)` pair, once per continuation the experiment declares. Each resolved that pair the same way, in three copies of the same twelve lines — so the resolution lives here and a backend states only what it does with the result.
+    """
+
+    def continuations(self) -> dict:
+        """Every continuation the experiment declares; empty when it declares none."""
+        return getattr(self.experiment, "continuations", None) or {}
+
+    def resolve_continuation(self, continuation=None):
+        """*continuation* if the caller named one, else the experiment's first.
+
+        `None` when the experiment declares none, which the caller reports in its own terms — there is no useful default for "continue what?".
+        """
+        if continuation is not None:
+            return continuation
+        return next(iter(self.continuations().values()), None)
+
+    def resolve_dynamics(self, continuation):
+        """The `Dynamics` *continuation* runs on.
+
+        A continuation may name its own, which is how a heterogeneous experiment picks one of the several its network holds; otherwise it runs on the experiment's. Naming one that resolves nowhere raises rather than silently falling back to the experiment's, since continuing a different model than the one asked for is the kind of wrong answer that looks like a right one.
+        """
+        experiment = self.experiment
+        named = getattr(continuation, "dynamics", None)
+        if named:
+            name = str(named)
+            if getattr(experiment.dynamics, "name", None) == name:
+                return experiment.dynamics
+            network_dynamics = getattr(experiment.network, "dynamics", None) if experiment.network else None
+            if isinstance(network_dynamics, dict) and name in network_dynamics:
+                return network_dynamics[name]
+            raise ValueError(
+                f"Continuation names dynamics {name!r}, which is neither the experiment's nor one of its network's."
+            )
+        if experiment.dynamics is not None:
+            return experiment.dynamics
+        raise ValueError(f"Cannot resolve dynamics for continuation {continuation!r}.")

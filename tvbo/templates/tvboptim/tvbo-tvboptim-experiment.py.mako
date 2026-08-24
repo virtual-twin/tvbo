@@ -62,7 +62,7 @@ if n_modes > 1:
         stacklevel=2,
     )
 param_names = [p.name for p in model.parameters.values()]
-derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []
+derived_param_names = [p.name for p in model.in_dependency_order('derived_parameters').values()] if model.derived_parameters else []
 
 # Model output variables (from model.output attribute)
 # These are the variables the model defines as its primary output (e.g., v_pyr = y1 - y2)
@@ -105,9 +105,6 @@ if model.coupling_inputs:
         coupling_inputs_dict[ci_name] = ci.dimension or 1
         if ci.keys:
             coupling_keys[ci_name] = list(ci.keys)
-elif model.coupling_terms:
-    for ct_name in model.coupling_terms.keys():
-        coupling_inputs_dict[ct_name] = 1
 
 # First coupling input key (for parameter access) - None for uncoupled models
 first_coupling_key = list(coupling_inputs_dict.keys())[0] if coupling_inputs_dict else None
@@ -257,8 +254,9 @@ observations_dict = {n: o for n, o in experiment.observations.items()
 # Categorize observations using utils
 network_observation_names, observation_names = get_observation_refs(observations_dict)
 
-# Class name from model
-dynamics_class = model.name.replace(' ', '').replace('-', '') if model.name else 'GeneratedDynamics'
+## The class the dfun template emits, read from the one declaration so they cannot differ.
+from tvbo.codegen.templater import entry_point_name
+dynamics_class = entry_point_name(model, 'tvboptim')
 
 from tvbo.utils import initial_value as _initial_value
 
@@ -1885,7 +1883,7 @@ def _realign_state_auxiliaries(sol, network):
     % for _i, _sname in enumerate(state_names):
     ${_sname} = _ys[:, ${_i}, :]
     % endfor
-    % for _dp in (model.derived_parameters.values() if model.derived_parameters else []):
+    % for _dp in (model.in_dependency_order('derived_parameters').values() if model.derived_parameters else []):
     ${_dp.name} = ${realign_render(_dp)}
     % endfor
     ## Bound in dependency order so a recorded auxiliary can reference the intermediates it is built from.

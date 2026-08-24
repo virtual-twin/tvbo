@@ -56,7 +56,7 @@ dynamics:
             value: 0.1
             unit: "1/s"
             description: "Droop / damping coefficient"
-    coupling_terms:
+    coupling_inputs:
         c_power:
             description: "Aggregated active power flow from incident edges"
     state_variables:

@@ -46,7 +46,6 @@ derived_variables:
       rhs: Piecewise((Q10_early, t < switch_time), (Q10_late, True))
       latex: false
     record: false
-    conditional: false
   I_ext:
     name: I_ext
     description: Constant current 0.08 nA
@@ -54,7 +53,6 @@ derived_variables:
       rhs: I_amp
       latex: false
     record: false
-    conditional: false
   alpha_m:
     name: alpha_m
     equation:
@@ -62,28 +60,24 @@ derived_variables:
         True))
       latex: false
     record: false
-    conditional: false
   beta_m:
     name: beta_m
     equation:
       rhs: 4.0*exp(-(v + 65.0)/18.0)
       latex: false
     record: false
-    conditional: false
   alpha_h:
     name: alpha_h
     equation:
       rhs: 0.07*exp(-(v + 65.0)/20.0)
       latex: false
     record: false
-    conditional: false
   beta_h:
     name: beta_h
     equation:
       rhs: 1.0/(1.0 + exp(-(v + 35.0)/10.0))
       latex: false
     record: false
-    conditional: false
   alpha_n:
     name: alpha_n
     equation:
@@ -91,14 +85,12 @@ derived_variables:
         True))
       latex: false
     record: false
-    conditional: false
   beta_n:
     name: beta_n
     equation:
       rhs: 0.125*exp(-(v + 65.0)/80.0)
       latex: false
     record: false
-    conditional: false
 state_variables:
   v:
     name: v

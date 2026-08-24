@@ -28,7 +28,6 @@ derived_variables:
       rhs: sin(local_coupling*theta)
       latex: false
     record: false
-    conditional: false
   I:
     name: I
     description: Input via local and long range connectivity, passing first through
@@ -38,7 +37,6 @@ derived_variables:
       rhs: c_glob + lc_0
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

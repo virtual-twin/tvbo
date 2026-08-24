@@ -1,4 +1,4 @@
-name: Dynamics
+name: Spring
 description: |
   A mass $m$ on a spring with stiffness $k$ — a simple linear dynamical system.
   Two state variables $(x, v)$, two parameters $(k, m)$, perpetual oscillation at $\omega = \sqrt{k/m}$.

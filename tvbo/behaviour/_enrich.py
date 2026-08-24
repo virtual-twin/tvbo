@@ -30,7 +30,7 @@ def _schema_class(cls) -> str:
     """The schema class *cls* is, which is not always what Python calls it.
 
     Every table read here is keyed by the schema — the curated database's categories, the keyed collections — and a runtime subclass is still the schema class it extends:
-    ``DynamicalSystem`` is a ``Dynamics``. The dataclasses state it outright; for the Pydantic models the generated class is the one that names it.
+    a subclass is still the schema class it extends. The dataclasses state it outright; for the Pydantic models the generated class is the one that names it.
     """
     declared = getattr(cls, "class_name", None)
     if declared:

@@ -451,7 +451,6 @@ derived_variables:
       rhs: -DKi
       latex: false
     record: false
-    conditional: false
   I_Cl:
     name: I_Cl
     equation:
@@ -459,7 +458,6 @@ derived_variables:
       rhs: g_Cl*(V + 26.64*log(Cl_o0/Cl_i0))
       latex: false
     record: false
-    conditional: false
   K_i:
     name: K_i
     equation:
@@ -467,7 +465,6 @@ derived_variables:
       rhs: DKi + K_i0
       latex: false
     record: false
-    conditional: false
   beta:
     name: beta
     equation:
@@ -475,7 +472,6 @@ derived_variables:
       rhs: w_i/w_o
       latex: false
     record: false
-    conditional: false
   h:
     name: h
     equation:
@@ -483,7 +479,6 @@ derived_variables:
       rhs: 1.1 - 1.0/(1.0 + 24.5325301971094*exp(-8.0*n))
       latex: false
     record: false
-    conditional: false
   minf:
     name: minf
     equation:
@@ -491,7 +486,6 @@ derived_variables:
       rhs: 1.0/(exp((Cmna - V)/DCmna) + 1.0)
       latex: false
     record: false
-    conditional: false
   ninf:
     name: ninf
     equation:
@@ -499,7 +493,6 @@ derived_variables:
       rhs: 1.0/(exp((Cnk - V)/DCnk) + 1.0)
       latex: false
     record: false
-    conditional: false
   r:
     name: r
     equation:
@@ -507,7 +500,6 @@ derived_variables:
       rhs: R_minus*x/pi
       latex: false
     record: false
-    conditional: false
   DK_o:
     name: DK_o
     equation:
@@ -515,7 +507,6 @@ derived_variables:
       rhs: -DKi*beta
       latex: false
     record: false
-    conditional: false
   DNa_o:
     name: DNa_o
     equation:
@@ -523,7 +514,6 @@ derived_variables:
       rhs: -DNa_i*beta
       latex: false
     record: false
-    conditional: false
   Na_i:
     name: Na_i
     equation:
@@ -531,7 +521,6 @@ derived_variables:
       rhs: DNa_i + Na_i0
       latex: false
     record: false
-    conditional: false
   xcond:
     name: xcond
     symbol: xcond
@@ -539,20 +528,13 @@ derived_variables:
       lhs: xcond
       rhs: Piecewise((Delta - J*r*x + 2*R_minus*x*(V - c_minus), V <= Vstar), (Delta
         - J*r*x + 2*R_plus*x*(V - c_plus), True))
+      conditionals:
+      - condition: V <= Vstar
+        expression: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
+      - condition: 'True'
+        expression: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: V <= Vstar
-      equation:
-        lhs: xcond
-        rhs: Delta - J*r*x + 2*R_minus*x*(V - c_minus)
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: xcond
-        rhs: Delta - J*r*x + 2*R_plus*x*(V - c_plus)
-        latex: false
   K_o:
     name: K_o
     equation:
@@ -560,7 +542,6 @@ derived_variables:
       rhs: DK_o + K_o0 + Kg
       latex: false
     record: false
-    conditional: false
   Na_o:
     name: Na_o
     equation:
@@ -568,7 +549,6 @@ derived_variables:
       rhs: DNa_o + Na_o0
       latex: false
     record: false
-    conditional: false
   I_K:
     name: I_K
     equation:
@@ -576,7 +556,6 @@ derived_variables:
       rhs: (V - 26.64*log(K_o/K_i))*(g_K*n + g_Kl)
       latex: false
     record: false
-    conditional: false
   I_Na:
     name: I_Na
     equation:
@@ -584,7 +563,6 @@ derived_variables:
       rhs: (V - 26.64*log(Na_o/Na_i))*(g_Na*h*minf + g_Nal)
       latex: false
     record: false
-    conditional: false
   I_pump:
     name: I_pump
     equation:
@@ -592,7 +570,6 @@ derived_variables:
       rhs: 1.0*rho/((exp((Ckp - K_o)/DCkp) + 1.0)*(exp((Cnap - Na_i)/DCnap) + 1.0))
       latex: false
     record: false
-    conditional: false
   V_temp:
     name: V_temp
     equation:
@@ -600,7 +577,6 @@ derived_variables:
       rhs: -1.0*(I_Cl + I_K + I_Na + I_pump)/Cm
       latex: false
     record: false
-    conditional: false
   Vcond:
     name: Vcond
     symbol: Vcond
@@ -608,20 +584,13 @@ derived_variables:
       lhs: Vcond
       rhs: Piecewise((R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta, V
         <= Vstar), (R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta, True))
+      conditionals:
+      - condition: V <= Vstar
+        expression: R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta
+      - condition: 'True'
+        expression: R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta
       latex: false
     record: false
-    conditional: true
-    cases:
-    - condition: V <= Vstar
-      equation:
-        lhs: Vcond
-        rhs: R_minus*c_glob*(-V + E)/pi - R_minus*x**2 + V_temp + eta
-        latex: false
-    - condition: 'True'
-      equation:
-        lhs: Vcond
-        rhs: R_minus*c_glob*(-V + E)/pi - R_plus*x**2 + V_temp + eta
-        latex: false
 coupling_inputs:
   c_glob:
     name: c_glob

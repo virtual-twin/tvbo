@@ -342,7 +342,6 @@ derived_variables:
       rhs: local_coupling*E
       latex: false
     record: false
-    conditional: false
   lc_1:
     name: lc_1
     equation:
@@ -350,7 +349,6 @@ derived_variables:
       rhs: I*local_coupling
       latex: false
     record: false
-    conditional: false
   x_e:
     name: x_e
     description: Average level of excitation in excitatory neuron at time t. Can be
@@ -362,7 +360,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0042391
-    conditional: false
   x_i:
     name: x_i
     description: Average level of excitation in inhibitory neuron at time t. Can be
@@ -374,7 +371,6 @@ derived_variables:
     record: false
     grounding:
     - GO:0042391
-    conditional: false
   s_e:
     name: s_e
     equation:
@@ -383,7 +379,6 @@ derived_variables:
         1.0)
       latex: false
     record: false
-    conditional: false
   s_i:
     name: s_i
     equation:
@@ -392,7 +387,6 @@ derived_variables:
         1.0)
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob:
     name: c_glob

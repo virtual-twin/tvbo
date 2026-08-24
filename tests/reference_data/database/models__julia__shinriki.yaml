@@ -18,7 +18,6 @@ derived_variables:
       rhs: 0.00002295*(exp(3.0038*(v1 - v2)) - exp(-3.0038*(v1 - v2)))
       latex: false
     record: false
-    conditional: false
 state_variables:
   v1:
     name: v1

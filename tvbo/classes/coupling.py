@@ -14,6 +14,7 @@ There is no wrapper class: the coupling's own methods live in :mod:`tvbo.behavio
 """
 
 from tvbo.classes import equation as equations
+from tvbo.datamodel.dialect import peer_module
 from tvbo.datamodel.schema import Coupling
 from tvbo.ontology import owl as ontology
 
@@ -22,17 +23,8 @@ __all__ = [
     "coupling_class2metadata",
     "get_global_coupling_functions",
     "get_parameters",
+    "peer_module",
 ]
-
-
-def peer_module(instance):
-    """The generated module *instance*'s class comes from.
-
-    A coupling is filled with ``Equation`` and ``Parameter`` members, and those have to be of the same generated form as the coupling itself: the strict Pydantic models validate on assignment and reject a LinkML dataclass where they want their own peer.
-    """
-    import importlib
-
-    return importlib.import_module(type(instance).__module__)
 
 
 def _ensure_parameters(coupling) -> None:

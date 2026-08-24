@@ -64,3 +64,28 @@ def test_every_directory_of_metadata_has_a_class():
         + ". Add the class to tests/database_corpus.py (declaring it in the schema first "
         "if it has none), so validation and the golden dump both cover it."
     )
+
+
+def test_an_iri_identifies_one_record():
+    """Two records claiming one ``iri`` disagree about which of them is that entity.
+
+    ``iri`` is identity, and `enrich()` reads it as the entity to fill from — so a second
+    record claiming it is filled from the first, silently. `ReducedWongWangFunc` states the
+    sigmoid as a `function` H and once claimed `tvbo:ReducedWongWang`; enriching it added a
+    *derived variable* H from the canonical record beside its own function of that name.
+    A variant states `derived_from_model:` instead, which relates without asserting.
+    """
+    claims = {}
+    collisions = {}
+    for path, _ in CASES:
+        data = yaml.safe_load(path.read_text())
+        if not isinstance(data, dict) or not data.get("iri"):
+            continue
+        held = claims.setdefault(data["iri"], [])
+        held.append(f"{data.get('name')} ({path.relative_to(REPO)})")
+        if len(held) > 1:
+            collisions[data["iri"]] = held
+
+    assert not collisions, "one iri, several records:\n" + "\n".join(
+        f"  {iri}: " + ", ".join(held) for iri, held in sorted(collisions.items())
+    )

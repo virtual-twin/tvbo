@@ -256,29 +256,38 @@ def _fold_edge_var_aliases(obj: Any) -> Any:
     return obj
 
 
-def _lift_distribution_shortcut(obj: Any) -> Any:
-    """Allow a terse ``distribution: {lo, hi}`` as a shortcut for a Uniform.
+def _lift_one_distribution(obj: dict) -> None:
+    """Complete every terse ``*distribution`` mapping written directly on *obj*, in place.
 
-    A ``Distribution`` carries its support under ``domain``; a bare ``lo``/``hi``/``step`` on any ``*distribution`` slot is lifted into ``domain`` here, before the LinkML loader sees it, and the distribution ``name`` is materialised as ``Uniform`` (so the lifted form is a complete, valid ``{name: Uniform, domain: {lo, hi}}``). Any other keys (seed, axis, …) are preserved; if an explicit ``domain`` is already present the value is left untouched.
+    A ``Distribution`` carries its support under ``domain``; a bare ``lo``/``hi``/``step`` on any ``*distribution`` slot is lifted into ``domain``, and the distribution ``name`` is materialised as ``Uniform`` so the lifted form is a complete, valid ``{name: Uniform, domain: {lo, hi}}``. Any other keys (seed, axis, …) are preserved; a value that already states a ``domain`` is left untouched.
+
+    One level, so the dialect can apply it to each object as it is constructed;
+    :func:`_lift_distribution_shortcut` walks a whole document with it.
     """
+    for key, value in list(obj.items()):
+        if (
+            isinstance(key, str)
+            and key.endswith("distribution")
+            and isinstance(value, dict)
+            and "domain" not in value
+            and any(b in value for b in ("lo", "hi", "step"))
+        ):
+            bounds = {b: value[b] for b in ("lo", "hi", "step") if b in value}
+            lifted = {k: v for k, v in value.items() if k not in ("lo", "hi", "step")}
+            lifted["domain"] = bounds
+            lifted.setdefault("name", "Uniform")
+            obj[key] = lifted
+
+
+def _lift_distribution_shortcut(obj: Any) -> Any:
+    """Apply :func:`_lift_one_distribution` at every depth of *obj*."""
     if isinstance(obj, dict):
-        out: dict = {}
-        for k, v in obj.items():
-            if (
-                isinstance(k, str)
-                and k.endswith("distribution")
-                and isinstance(v, dict)
-                and "domain" not in v
-                and any(b in v for b in ("lo", "hi", "step"))
-            ):
-                bounds = {b: v[b] for b in ("lo", "hi", "step") if b in v}
-                rest = {kk: vv for kk, vv in v.items() if kk not in ("lo", "hi", "step")}
-                v = {**rest, "domain": bounds}
-                v.setdefault("name", "Uniform")
-            out[k] = _lift_distribution_shortcut(v)
-        return out
-    if isinstance(obj, list):
-        return [_lift_distribution_shortcut(x) for x in obj]
+        _lift_one_distribution(obj)
+        for value in obj.values():
+            _lift_distribution_shortcut(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            _lift_distribution_shortcut(item)
     return obj
 
 
@@ -289,6 +298,9 @@ def _fold_one_state_variable_domain(sv: dict) -> None:
     * ``boundaries`` (deprecated hard-clamp slot) → ``domain`` with ``enforce: clamp``;
       a co-existing descriptive ``domain`` is preserved as the sampling ``distribution`` (a terse ``{lo, hi}`` that the distribution-lift then completes) so a half-open
       clamp cannot drop a finite IC-sampling range.
+
+    A ``Range`` object or an ``(lo, hi[, step])`` sequence is accepted as well as a mapping:
+    the class carries no ``boundaries`` slot, so a value this cannot read would be popped and lost without a word.
     """
     if "range" in sv:
         if sv.get("domain") is None:
@@ -300,14 +312,31 @@ def _fold_one_state_variable_domain(sv: dict) -> None:
             )
             sv.pop("range")
     if sv.get("boundaries") is not None:
-        bnd = sv.pop("boundaries")
-        if isinstance(bnd, dict):
-            bnd = dict(bnd)
-            bnd.setdefault("enforce", "clamp")
-            prev = sv.get("domain")
-            if isinstance(prev, dict) and sv.get("distribution") is None:
-                sv["distribution"] = {k: prev[k] for k in ("lo", "hi", "step") if k in prev}
-            sv["domain"] = bnd
+        bnd = _as_bounds_mapping(sv.pop("boundaries"))
+        bnd.setdefault("enforce", "clamp")
+        prev = sv.get("domain")
+        if isinstance(prev, dict) and sv.get("distribution") is None:
+            sv["distribution"] = {k: prev[k] for k in ("lo", "hi", "step") if k in prev}
+        sv["domain"] = bnd
+
+
+def _as_bounds_mapping(bounds: Any) -> dict:
+    """*bounds* as a plain ``{lo, hi[, step, enforce]}`` mapping.
+
+    Accepts the mapping the YAML path always hands over, the ``(lo, hi[, step])`` sequence and the ``Range`` object the Python construction path may, and raises on anything else rather than dropping a hard clamp silently. Only the bounds are read off an object — ``boundaries`` means clamp, so the caller supplies ``enforce``.
+    """
+    bound_keys = ("lo", "hi", "step")
+    if isinstance(bounds, dict):
+        return dict(bounds)
+    if isinstance(bounds, (list, tuple)) and 2 <= len(bounds) <= 3:
+        return dict(zip(bound_keys, bounds, strict=False))
+    read = {k: getattr(bounds, k, None) for k in bound_keys}
+    if read["lo"] is None and read["hi"] is None:
+        raise ValueError(
+            "State variable 'boundaries' must state lo/hi as a mapping, a (lo, hi[, step]) "
+            f"sequence or a Range; got {bounds!r}."
+        )
+    return {k: v for k, v in read.items() if v is not None}
 
 
 def _fold_state_variable_domains(obj: Any) -> Any:

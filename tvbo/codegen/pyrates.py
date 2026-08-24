@@ -189,7 +189,7 @@ def operator_template(model, op_name: str | None = None) -> dict:
         return str(_pyrates_compatible(tvbo_sympify(eq_str, locals=scope)))
 
     # `local_coupling` is a TVB-ism; drop it unless this model actually declares it.
-    coupling = list((getattr(model, "coupling_inputs", None) or {}).keys()) + list((model.coupling_terms or {}).keys())
+    coupling = list((getattr(model, "coupling_inputs", None) or {}).keys())
     remove = [] if "local_coupling" in coupling else ["local_coupling"]
 
     def render(obj):
@@ -219,7 +219,7 @@ def operator_template(model, op_name: str | None = None) -> dict:
         equations.append(f"{display} = {render(dp)}")
         variables[display] = "variable"
 
-    for key in getattr(model, "coupling_inputs", None) or getattr(model, "coupling_terms", None) or {}:
+    for key in getattr(model, "coupling_inputs", None) or {}:
         variables[key] = "input"
 
     description = (model.description or f"TVBO model: {name}").replace("\\", "\\\\").replace('"', "'")

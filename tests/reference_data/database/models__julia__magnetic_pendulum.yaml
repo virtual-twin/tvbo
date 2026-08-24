@@ -39,7 +39,6 @@ derived_variables:
         - cos(4*pi/3))**2 + (y - sin(4*pi/3))**2 + d**2)**(3/2))
       latex: false
     record: false
-    conditional: false
   sum_gamma_terms_y:
     name: sum_gamma_terms_y
     description: Sum over magnetic y-forces for N magnets on unit circle (default
@@ -51,7 +50,6 @@ derived_variables:
         + (y - sin(4*pi/3))**2 + d**2)**(3/2))
       latex: false
     record: false
-    conditional: false
 state_variables:
   x:
     name: x

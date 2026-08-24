@@ -35,7 +35,6 @@ derived_variables:
         (0.0, True))
       latex: false
     record: false
-    conditional: false
 state_variables:
   v:
     name: v

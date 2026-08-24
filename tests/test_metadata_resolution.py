@@ -127,6 +127,27 @@ def test_coupling_explicit_name_preserved():
     assert len(c.parameters) == 5  # params now from Sigmoidal
 
 
+def test_a_coupling_assigned_as_a_mapping_is_still_read():
+    """`network.coupling = {...}` and `network.coupling[k] = v` mean the same network.
+
+    Assigning a mapping to a keyed multivalued slot leaves a `JsonObj` on the generated
+    dataclass, and a `JsonObj` has neither `.values()` nor `.items()` — so every reader goes
+    through `network_couplings`, which is what keeps a recipe from meaning one thing when it
+    was built and another when it was assigned.
+    """
+    from tvbo.classes.coupling import Coupling
+    from tvbo.datamodel import schema
+    from tvbo.utils import network_couplings
+
+    built = Coupling(iri="tvbo:Sigmoidal")
+    assigned = schema.Network(number_of_nodes=2)
+    assigned.coupling = {"Sigmoidal": built}
+    mutated = schema.Network(number_of_nodes=2)
+    mutated.coupling["Sigmoidal"] = built
+
+    assert list(network_couplings(assigned)) == list(network_couplings(mutated)) == ["Sigmoidal"]
+
+
 @pytest.mark.parametrize("curie", ["tvbo:Linear", "tvbo:Sigmoidal", "tvbo:SigmoidalJansenRit"])
 def test_both_generated_forms_resolve_an_iri_the_same_way(curie):
     """One YAML cannot mean two different couplings depending on which loader read it.

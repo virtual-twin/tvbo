@@ -40,7 +40,6 @@ derived_variables:
       rhs: local_coupling*x
       latex: false
     record: false
-    conditional: false
 coupling_inputs:
   c_glob0:
     name: c_glob0

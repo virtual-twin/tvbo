@@ -32,7 +32,6 @@ derived_variables:
       rhs: 1 - (X**2 + Y**2 + Z**2)/r**2
       latex: false
     record: false
-    conditional: false
 state_variables:
   X:
     name: X

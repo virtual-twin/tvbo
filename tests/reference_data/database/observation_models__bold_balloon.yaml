@@ -95,7 +95,6 @@ dynamics:
         rhs: V0 * (k1 * (1.0 - q) + k2 * (1.0 - q / v) + k3 * (1.0 - v))
         latex: false
       record: true
-      conditional: false
   state_variables:
     s:
       name: s

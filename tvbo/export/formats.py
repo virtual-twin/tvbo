@@ -112,14 +112,9 @@ def _render_julia(exp, **kw):
 
 
 def _render_networkdynamics(exp, **kw):
-    from tvbo.adapters.base import BaseAdapter
-    from tvbo.classes.experiment import templates
+    from tvbo.adapters.networkdynamics import NetworkDynamicsAdapter
 
-    adapter = BaseAdapter(exp)
-    ctx = adapter.prepare_context()
-    ctx.update(kw)
-    template = templates.lookup.get_template("tvbo-nd-experiment.jl.mako")
-    return template.render(**ctx)
+    return NetworkDynamicsAdapter(exp).render_code(**kw)
 
 
 def _render_modelingtoolkit(exp, **kw):

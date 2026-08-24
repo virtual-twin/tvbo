@@ -59,55 +59,46 @@ derived_variables:
       lhs: alpha_m
       rhs: (0.1*(V + 40))/(1 - exp(-(V + 40)/10))
       latex: false
-    conditional: false
   beta_m:
     equation:
       lhs: beta_m
       rhs: 4*exp(-(V + 65)/18)
       latex: false
-    conditional: false
   alpha_h:
     equation:
       lhs: alpha_h
       rhs: 0.07*exp(-(V + 65)/20)
       latex: false
-    conditional: false
   beta_h:
     equation:
       lhs: beta_h
       rhs: 1/(1 + exp(-(V + 35)/10))
       latex: false
-    conditional: false
   alpha_n:
     equation:
       lhs: alpha_n
       rhs: (0.01*(V + 55))/(1 - exp(-(V + 55)/10))
       latex: false
-    conditional: false
   beta_n:
     equation:
       lhs: beta_n
       rhs: 0.125*exp(-(V + 65)/80)
       latex: false
-    conditional: false
   INa:
     equation:
       lhs: INa
       rhs: gNa*m**3*h*(V - ENa)
       latex: false
-    conditional: false
   IK:
     equation:
       lhs: IK
       rhs: gK*n**4*(V - EK)
       latex: false
-    conditional: false
   IL:
     equation:
       lhs: IL
       rhs: gL*(V - EL)
       latex: false
-    conditional: false
 description: |-
   Canonical conductance-based neuron model capturing the biophysical basis of the
   action potential via voltage-gated sodium and potassium currents and a passive leak.

@@ -46,7 +46,6 @@ derived_variables:
       rhs: Piecewise((1000.0, (t >= 0.05) & (t < 0.25)), (0.0, True))
       latex: false
     record: false
-    conditional: false
 state_variables:
   v:
     name: v

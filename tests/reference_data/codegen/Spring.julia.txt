@@ -1,4 +1,4 @@
-function Dynamics!(dx, _x, p, t = 0)
+function Spring!(dx, _x, p, t = 0)
 
     (;k, m) = p
 
@@ -28,7 +28,7 @@ u0 = [
 # Define time span
 tspan = (0.0, 1000) # Adjust time span as needed
 
-prob = ODEProblem(Dynamics!, u0, tspan, p)
+prob = ODEProblem(Spring!, u0, tspan, p)
 
 
 # Solve
