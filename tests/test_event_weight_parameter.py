@@ -49,16 +49,16 @@ network:
   edges:
     - {source: 0, target: 1, weight: 0.5}
     - {source: 1, target: 0, weight: 0.5}
-coupling:
-  name: KuramotoCoupling
-  label: KuramotoCoupling
-  parameters:
-    a: {name: a, value: 0.01}
-    N: {name: N, value: 1.0}
-  pre_expression: {rhs: "sin(theta_j - theta_i)"}
-  post_expression: {rhs: "a * gx / N"}
-  incoming_states: [theta]
-  local_states: [theta]
+  coupling:
+    KuramotoCoupling:
+      label: KuramotoCoupling
+      parameters:
+        a: {value: 0.01}
+        N: {value: 1.0}
+      pre_expression: {rhs: "sin(theta_j - theta_i)"}
+      post_expression: {rhs: "a * gx / N"}
+      incoming_states: [theta]
+      local_states: [theta]
 integration:
   method: RungeKutta4thOrder
   duration: 20.0

@@ -215,16 +215,16 @@ network:
   edges:
     - {source: 0, target: 1, weight: 0.5}
     - {source: 1, target: 0, weight: 0.5}
-coupling:
-  name: KuramotoCoupling
-  label: KuramotoCoupling
-  parameters:
-    a: {name: a, value: 0.01}
-    N: {name: N, value: 1.0}
-  pre_expression: {rhs: "sin(theta_j - theta_i)"}
-  post_expression: {rhs: "a * gx / N"}
-  incoming_states: [theta]
-  local_states: [theta]
+  coupling:
+    KuramotoCoupling:
+      label: KuramotoCoupling
+      parameters:
+        a: {value: 0.01}
+        N: {value: 1.0}
+      pre_expression: {rhs: "sin(theta_j - theta_i)"}
+      post_expression: {rhs: "a * gx / N"}
+      incoming_states: [theta]
+      local_states: [theta]
 integration:
   method: RungeKutta4thOrder
   duration: 200.0
@@ -315,17 +315,17 @@ network:
       parameters:
         weight: {value: 0.5}
         distance: {value: 30.0}
-coupling:
-  name: KuramotoCoupling
-  label: KuramotoCoupling
-  delayed: true
-  parameters:
-    a: {name: a, value: 0.01}
-    N: {name: N, value: 1.0}
-  pre_expression: {rhs: "sin(theta_j - theta_i)"}
-  post_expression: {rhs: "a * gx / N"}
-  incoming_states: [theta]
-  local_states: [theta]
+  coupling:
+    KuramotoCoupling:
+      label: KuramotoCoupling
+      delayed: true
+      parameters:
+        a: {value: 0.01}
+        N: {value: 1.0}
+      pre_expression: {rhs: "sin(theta_j - theta_i)"}
+      post_expression: {rhs: "a * gx / N"}
+      incoming_states: [theta]
+      local_states: [theta]
 integration:
   method: RungeKutta4thOrder
   duration: 200.0
@@ -1137,14 +1137,14 @@ network:
   edges:
     - {source: 0, target: 1, parameters: {weight: {value: 0.5}, delay: {value: 12.0}}}
     - {source: 1, target: 0, parameters: {weight: {value: 0.5}, delay: {value: 12.0}}}
-coupling:
-  name: KuramotoCoupling
-  delayed: true
-  parameters: {a: {value: 0.05}, N: {value: 1.0}}
-  pre_expression: {rhs: "sin(theta_j - theta_i)"}
-  post_expression: {rhs: "a * gx / N"}
-  incoming_states: [theta]
-  local_states: [theta]
+  coupling:
+    KuramotoCoupling:
+      delayed: true
+      parameters: {a: {value: 0.05}, N: {value: 1.0}}
+      pre_expression: {rhs: "sin(theta_j - theta_i)"}
+      post_expression: {rhs: "a * gx / N"}
+      incoming_states: [theta]
+      local_states: [theta]
 integration: {method: Heun, duration: 100.0, step_size: 0.5, transient_time: 0.0}
 """
 """A 2-node network whose edges carry explicit ``delay`` attributes and no tract lengths. This is the DenseDelayGraph branch of graph selection: with no lengths to derive delays from a conduction speed, tvbo uses the per-edge delays directly."""

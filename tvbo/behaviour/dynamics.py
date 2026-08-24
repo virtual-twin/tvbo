@@ -13,6 +13,16 @@ from __future__ import annotations
 class DynamicsBehaviour:
     """A model's SymPy view of itself: one symbol table, one parse of each equation."""
 
+    def _from_ontology(self, key: str) -> bool:
+        """Gap-fill from the ontology neural mass model *key* labels. True when found."""
+        from tvbo.classes.dynamics import ontology_class, populate_from_ontology
+
+        ontoclass = ontology_class(key)
+        if ontoclass is None:
+            return False
+        populate_from_ontology(self, ontoclass)
+        return True
+
     @property
     def symbolic_system(self):
         """This model's [`SymbolicSystem`](../parse/system.qmd), built once and kept.

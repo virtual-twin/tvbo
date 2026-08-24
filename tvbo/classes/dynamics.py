@@ -56,6 +56,26 @@ def __getattr__(name):  # PEP 562: keep ``available_neural_mass_models`` importa
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
+def ontology_class(name):
+    """The ontology neural mass model labelled *name*, or ``None``.
+
+    Restricted to that branch on purpose: the ontology holds classes of every kind under one label space, and a model must not be filled from a coupling function or an integrator that happens to share its name.
+    """
+    if not name:
+        return None
+    found = ontology.onto.search_one(label=str(name))
+    return found if found in _available_neural_mass_models() else None
+
+
+def populate_from_ontology(model, ontoclass, **kwargs):
+    """Fill *model*'s unset schema fields from *ontoclass*.
+
+    The one implementation behind both ways in: `Dynamics.from_ontology`, which is handed the class, and `enrich(source="ontology")`, which resolves it from what the model names. Nothing runtime-only is written, so the model stays serializable.
+    """
+    class2metadata(ontoclass, model)
+    update_parameters(model, ontoclass, **kwargs)
+
+
 ## BifurcationResult moved to tvbo.analysis.bifurcation
 
 
@@ -504,19 +524,14 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
 class DynamicalSystem(tvbo_datamodel.Dynamics):
     """Enhanced base class for `Dynamics` adding Python-side behaviour.
 
-    Wraps the generated LinkML `Dynamics` datamodel with the methods that make a model usable: ontology resolution (`use_ontology=True`), equation reordering, backend code generation, YAML / JSON / Pydantic round-tripping, and matplotlib plotting hooks. The symbolic view comes from [`DynamicsBehaviour`](../behaviour/dynamics.qmd), which every `Dynamics` carries.
+    Wraps the generated LinkML `Dynamics` datamodel with the methods that make a model usable: equation reordering, backend code generation, YAML / JSON / Pydantic round-tripping, and matplotlib plotting hooks. The symbolic view comes from [`DynamicsBehaviour`](../behaviour/dynamics.qmd), which every `Dynamics` carries.
 
     Most users should construct via [`Dynamics`](#tvbo.classes.dynamics.Dynamics) or `Dynamics.from_db(name)` — this class is the implementation base.
 
-    An `iri=` is expanded by the dialect, before validation, so a model named by one arrives already carrying the curated record — see [`expand_iri`](../datamodel/dialect.qmd#expand_iri). Every path then runs `update_metadata`, which migrates the deprecated `cases:` slot into conditionals and sorts derived variables into the dependency order the straight-line JAX and NumPy emitters require; a path that skipped it rendered `cases:` models with no branches.
+    An `iri=` is expanded by the dialect, before validation, so a model named by one arrives already carrying the curated record — see [`expand_iri`](../datamodel/dialect.qmd#expand_iri). Reaching further, to the ontology, is `enrich()`. Every path then runs `update_metadata`, which migrates the deprecated `cases:` slot into conditionals and sorts derived variables into the dependency order the straight-line JAX and NumPy emitters require; a path that skipped it rendered `cases:` models with no branches.
     """
 
-    def __init__(
-        self,
-        name=None,
-        use_ontology: bool = False,
-        **kwargs,
-    ):
+    def __init__(self, name=None, **kwargs):
         if name is not None:
             kwargs["name"] = str(name)
 
@@ -526,11 +541,18 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         # Initialize datamodel (the dialect expands `iri` and folds aliases here)
         super().__init__(**kwargs)
 
-        if use_ontology:
-            self._populate_from_ontology_by_name()
-
         self.update_metadata()
         self.calculate_derived_parameters()
+
+    def enrich(self, source: str | None = None, key: str | None = None):
+        """Fill this model's gaps, then leave it where construction would have.
+
+        A model that has just gained state variables, derived variables or a ``cases:`` block is not yet in the shape the emitters read, so filling one ends in the same two calls every construction path ends in.
+        """
+        super().enrich(source=source, key=key)
+        self.update_metadata()
+        self.calculate_derived_parameters()
+        return self
 
     @property
     def components(self):
@@ -544,12 +566,10 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
     # Factory constructors
     @classmethod
-    def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics, use_ontology: bool = False):
+    def from_datamodel(cls, model_meta: tvbo_datamodel.Dynamics):
         """Create from a datamodel Dynamics instance by copying its already-normalized state (avoids ``_as_dict`` re-init crash on ``inlined_as_dict`` fields)."""
         inst = cls.__new__(cls)
         inst.__dict__.update(model_meta.__dict__)
-        if use_ontology:
-            inst._populate_from_ontology_by_name()
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
@@ -568,56 +588,41 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             A populated instance with metadata and derived parameters
             finalized.
         """
-        # Construct with name and then populate from ontology
         if isinstance(ontoclass, str):
             ontoclass = query.label_search(ontoclass, root_class="NeuralMassModel", exact_match=["label"])[0]
         inst = cls(name=ontoclass.name, **kwargs)
-        inst._populate_from_ontology(ontoclass, **kwargs)
+        populate_from_ontology(inst, ontoclass, **kwargs)
         inst.update_metadata()
         inst.calculate_derived_parameters()
         return inst
 
     @classmethod
-    def from_file(cls, path: str | os.PathLike, use_ontology: bool = False) -> "Dynamics":
+    def from_file(cls, path: str | os.PathLike) -> "Dynamics":
         """Load a model from a YAML/JSON specification file on disk.
 
         Args:
             path: Path to a TVBO model specification file.
-            use_ontology: If `True`, backfill missing fields from the
-                ontology after loading.
 
         Returns:
             The instance parsed from the file.
         """
         data = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str(path)))
         _resolve_dynamics_aliases(data)
-        inst = cls(**data)
-        if use_ontology:
-            inst._populate_from_ontology_by_name()
-        inst.update_metadata()
-        inst.calculate_derived_parameters()
-        return inst
+        return cls(**data)
 
     @classmethod
-    def from_string(cls, str: str, use_ontology: bool = False) -> "Dynamics":
+    def from_string(cls, str: str) -> "Dynamics":
         """Load a model from a YAML specification string.
 
         Args:
             str: A YAML document describing the model.
-            use_ontology: If `True`, backfill missing fields from the
-                ontology after parsing.
 
         Returns:
             The instance parsed from the string.
         """
         data = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str)) or {}
         _resolve_dynamics_aliases(data)
-        inst = cls(**data)
-        if use_ontology:
-            inst._populate_from_ontology_by_name()
-        inst.update_metadata()
-        inst.calculate_derived_parameters()
-        return inst
+        return cls(**data)
 
     # ── Platform retrieval ────────────────────────────────────────
 
@@ -775,35 +780,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         )
         return df
 
-    # -------  Ontology enrichment  -------
-
-    def enrich_from_ontology(self):
-        """Explicitly enrich this model from the ontology by name.
-
-        Looks up the model name in the TVB ontology and backfills missing parameter values, descriptions, ranges, state-variable metadata, and derived variables.  Useful when you define a partial model spec and want the ontology to fill in the gaps.
-
-        Example:
-        -------
-        >>> d = Dynamics.from_string(partial_spec)
-        >>> d.enrich_from_ontology()  # fill in defaults from the knowledge base
-        """
-        self._populate_from_ontology_by_name()
-        self.update_metadata()
-        self.calculate_derived_parameters()
-        return self
-
-    # Internal helpers
-    def _populate_from_ontology_by_name(self):
-        """Resolve the ontology class by name and populate fields from it."""
-        oc = self.ontology  # auto-discover by name (read-only property)
-        if oc is not None:
-            self._populate_from_ontology(oc)
-
-    def _populate_from_ontology(self, oc, **kwargs):
-        # Fill schema fields from ontology, without persisting runtime-only state
-        class2metadata(oc, self)
-        update_parameters(self, oc, **kwargs)
-
     def __repr__(self) -> str:
         return f"{self.name} - {len(self.parameters)} parameters and {len(self.state_variables)} state variables"
 
@@ -847,11 +823,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     @property
     def ontology(self):
         """The ontology class matching this model's name, or `None` if it is not a known neural mass model."""
-        name = getattr(self, "name", None)
-        if not name:
-            return None
-        cl = ontology.onto.search_one(label=str(name))
-        return cl if cl in _available_neural_mass_models() else None
+        return ontology_class(getattr(self, "name", None))
 
     def search_ontology(self, search_str: str, **kwargs):
         """Search this model's ontology subtree for a term.
@@ -927,11 +899,10 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         return _pdm.Dynamics.model_validate(self._as_dict)
 
     @classmethod
-    def from_pydantic(cls, pyd_obj, use_ontology: bool = False):
+    def from_pydantic(cls, pyd_obj):
         """Create a Dynamics from a tvbopydantic.Dynamics (or dict-like)."""
         data = pyd_obj.model_dump() if hasattr(pyd_obj, "model_dump") else dict(pyd_obj)
-        inst = cls(use_ontology=use_ontology, **data)
-        return inst
+        return cls(**data)
 
     # Parameters
     def add_parameter(

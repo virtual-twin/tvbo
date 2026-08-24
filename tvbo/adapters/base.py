@@ -92,23 +92,20 @@ class BaseAdapter:
     # ── Coupling ─────────────────────────────────────────────────────────
 
     def resolve_couplings(self) -> OrderedDict:
-        """Collect all unique coupling models as an OrderedDict."""
-        exp = self.experiment
-        nw_couplings = getattr(exp.network, "coupling", None) or {}
-        if isinstance(nw_couplings, dict) and nw_couplings:
-            return OrderedDict(nw_couplings)
-        coupling = exp.coupling
-        if coupling:
-            return OrderedDict({coupling.name: coupling})
-        return OrderedDict()
+        """The network's couplings, keyed by the role each plays in it.
+
+        The one place a backend asks what couplings an experiment has, so that a template never derives it: a template that reads the model itself is a second answer to a question this class already answers, and the two drift. A backend needing them keyed differently overrides this and calls up — see ``TvboptimAdapter``.
+        """
+        from tvbo.utils import keyed_items
+
+        network = getattr(self.experiment, "network", None)
+        return OrderedDict(keyed_items(getattr(network, "coupling", None), "coupling"))
 
     def get_default_coupling(self, all_couplings: OrderedDict | None = None):
-        """Return the default (first) coupling model."""
+        """The coupling a backend applies where an edge names none — the first declared."""
         if all_couplings is None:
             all_couplings = self.resolve_couplings()
-        if all_couplings:
-            return next(iter(all_couplings.values()))
-        return self.experiment.coupling
+        return next(iter(all_couplings.values()), None)
 
     # ── Coupling dimension ───────────────────────────────────────────────
 

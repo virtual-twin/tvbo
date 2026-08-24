@@ -50,17 +50,17 @@ network:
       parameters:
         weight: {value: 0.5}
         delay: {value: 2.0}
-coupling:
-  name: KuramotoCoupling
-  label: KuramotoCoupling
-  delayed: true
-  parameters:
-    a: {name: a, value: 0.05}
-    N: {name: N, value: 1.0}
-  pre_expression: {rhs: "sin(theta_j - theta_i)"}
-  post_expression: {rhs: "a * gx / N"}
-  incoming_states: [theta]
-  local_states: [theta]
+  coupling:
+    KuramotoCoupling:
+      label: KuramotoCoupling
+      delayed: true
+      parameters:
+        a: {name: a, value: 0.05}
+        N: {name: N, value: 1.0}
+      pre_expression: {rhs: "sin(theta_j - theta_i)"}
+      post_expression: {rhs: "a * gx / N"}
+      incoming_states: [theta]
+      local_states: [theta]
 integration:
   method: RungeKutta4thOrder
   duration: 200.0

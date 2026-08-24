@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.smallscale.lowering import node_dynamics_name
 from tvbo.utils import as_list, noise_sigma, normalize_params
 
@@ -28,6 +29,19 @@ SOLVER_MAP = {
     "rungekutta4": "RungeKutta4",
     "rungekutta4thorder": "RungeKutta4",
 }
+
+
+class TvboptimAdapter(BaseAdapter):
+    """What the tvboptim templates need, resolved in Python before they emit anything."""
+
+    def resolve_couplings(self):
+        """The network's couplings, one key per distinct coupling.
+
+        tvbo can reach the same coupling under more than one name — the function's, a coupling-input key, an explicit ``CouplingInput.source`` — and tvboptim wants one key per object, so the aliases are collapsed against the model that names them.
+        """
+        from tvbo.templates.tvboptim.utils import normalize_coupling_aliases
+
+        return normalize_coupling_aliases(dict(super().resolve_couplings()), getattr(self.experiment, "dynamics", None))
 
 
 def _build_graph(network: Network, delays: bool = True, max_delay: float | None = None):

@@ -3,7 +3,7 @@
 Attached to the generated classes by name (``IntegratorBehaviour`` -> ``Integrator``).
 Only schema fields are ever stored; everything derived from the ontology is a property, so an integrator can be serialized at any point without carrying runtime state.
 
-Population from the ontology is NOT done at construction. It is :meth:`IntegratorBehaviour._populate_from_ontology`, called explicitly and idempotent, so that resolving an integrator against the ontology stays an act the caller asks for rather than the cost of naming one. The wrapper this replaces called it from ``__init__``, which meant it ran for a directly constructed integrator and not for a loaded one; the loaded path compensated with its own call, and that call is now the only one.
+Population from the ontology is NOT done at construction. It is :meth:`IntegratorBehaviour.enrich`, called explicitly and idempotent, so that resolving an integrator against the ontology stays an act the caller asks for rather than the cost of naming one. The wrapper this replaces called it from ``__init__``, which meant it ran for a directly constructed integrator and not for a loaded one; the loaded path compensated with its own call, and that call is now the only one.
 
 A mixin *can* hook construction — see :mod:`tvbo.behaviour` on ``__post_init__``, which :class:`CouplingBehaviour` uses. This one deliberately does not.
 """
@@ -100,14 +100,20 @@ class IntegratorBehaviour:
         """The current integration step, a stateless default of `0`."""
         return 0
 
-    def _populate_from_ontology(self):
-        """Fill the ontology-derived fields that are still unset. Idempotent."""
+    def enrich(self, source: str | None = None):
+        """Fill the ontology-derived fields that are still unset. Idempotent.
+
+        The same verb as :meth:`IriEnrichable.enrich`, and the same gap-filling contract, but its own implementation and no *key*: an integrator names an ontology method rather than a curated entity, so there is nothing for the database to answer and nothing to redirect the lookup at.
+        """
         from tvbo.datamodel.schema import DerivedVariable, Equation
         from tvbo.ontology.owl import onto
 
+        if source not in (None, "ontology"):
+            raise ValueError(f"Integrator has no {source!r} to enrich from.")
+
         oc = self.ontoclass
         if not oc:
-            return
+            return self
         info = self.info
         try:
             if hasattr(self, "scipy_ode_base"):
@@ -129,6 +135,7 @@ class IntegratorBehaviour:
 
         if getattr(self, "update_expression", None) is None and "dX_expr" in info:
             self.update_expression = DerivedVariable(name="dX", equation=Equation(lhs="X_{t+1}", rhs=info["dX_expr"]))
+        return self
 
     def render_code(self, format="tvb", **kwargs):
         """Render the integrator as source code for the requested backend.

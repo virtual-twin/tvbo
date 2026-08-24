@@ -118,16 +118,8 @@ elif model.coupling_terms:
 first_coupling_key = list(coupling_inputs_dict.keys())[0] if coupling_inputs_dict else None
 has_coupling = bool(coupling_inputs_dict)
 
-# Build all_couplings dict from network.coupling (keyed by function name — schema convention)
-# Fall back to experiment-level coupling if network.coupling is empty.
-all_couplings = dict(network.coupling.items()) if network.coupling else {}
-if not all_couplings and getattr(experiment, 'coupling', None):
-    _exp_c = experiment.coupling
-    if hasattr(_exp_c, 'items'):
-        all_couplings = dict(_exp_c.items())
-    else:
-        all_couplings = {_exp_c.name or 'coupling': _exp_c}
-all_couplings = normalize_coupling_aliases(all_couplings, model)
+# Resolved by TvboptimAdapter.resolve_couplings, in Python — see tvbo/adapters/tvboptim.py.
+all_couplings = context['all_couplings']
 
 # Coupling-input → coupling-function mapping (+ local-term drop) resolved in the
 # tvboptim Python layer, not here — see resolve_coupling_input_map.

@@ -243,7 +243,7 @@ class OntologyAPI:
     def configure_simulation_experiment(self, metadata):
         """Build `self.experiment` from a front-end metadata dictionary.
 
-        Dynamics and coupling arrive as bare names, so they are resolved through `Dynamics.from_db` and `Coupling.from_db` — the experiment needs their equations, parameters and state variables, not just a label. The legacy `model` and `connectivity` keys are accepted as aliases for `dynamics` and `network`.
+        Dynamics and coupling arrive as bare names, so they are resolved through `Dynamics.from_db` and `Coupling.from_db` — the experiment needs their equations, parameters and state variables, not just a label. The legacy `model` and `connectivity` keys are accepted as aliases for `dynamics` and `network`. A coupling named at the top level is placed on the network it acts over, which is where the schema declares one.
 
         Args:
             metadata: The configuration, for example
@@ -251,8 +251,8 @@ class OntologyAPI:
                 ```python
                 {
                     "dynamics": "Generic2dOscillator",
-                    "coupling": "Linear",
                     "network": {
+                        "coupling": {"long_range": {"iri": "tvbo:Linear"}},
                         "parcellation": {"atlas": {"name": "DesikanKilliany"}},
                         "tractogram": {"name": "dTOR"},
                     },
@@ -275,6 +275,7 @@ class OntologyAPI:
                 dyn_name = str(dyn_raw)
             md["dynamics"] = Dynamics.from_db(dyn_name)
 
+        # --- Resolve a coupling named at the top level onto the network it acts over ---
         coup_raw = md.pop("coupling", None)
         if coup_raw is not None:
             if isinstance(coup_raw, str):
@@ -283,7 +284,8 @@ class OntologyAPI:
                 coup_name = coup_raw.get("name") or coup_raw.get("label", "Linear")
             else:
                 coup_name = str(coup_raw)
-            md["coupling"] = Coupling.from_db(coup_name)
+            network = md.setdefault("network", {})
+            network.setdefault("coupling", {})[coup_name] = Coupling.from_db(coup_name)
 
         if "connectivity" in md and "network" not in md:
             md["network"] = md.pop("connectivity")

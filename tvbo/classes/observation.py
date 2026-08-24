@@ -942,81 +942,27 @@ class ObservationModel:
 
 
 def populate_observation_from_iri(obs, functions_sink=None) -> bool:
-    """Fill an observation's missing fields from the curated model its ``iri`` names.
+    """Fill an observation from the curated model its ``iri`` names, and collect its functions.
 
-    When an observation declares ``iri: tvbo:BOLD_TVB`` (or any curated entry under ``tvbo/database/observation_models/``), its metadata — ``pipeline``, ``parameters``, ``class_reference``, ``imaging_modality``, ``label``/``description`` — is loaded from that model and merged **non-destructively**: a field the recipe set locally always wins, so ``source``/``period`` overrides stay in force while the curated hemodynamic pipeline fills in. Mirrors :func:`tvbo.classes.coupling._load_coupling_from_database`.
+    The filling itself is :meth:`IriEnrichable.enrich`, which every class the schema gives an ``iri`` carries: the curated record supervenes nowhere, so ``source``/``period`` overrides stay in force while the curated hemodynamic pipeline fills in.
 
-    When ``functions_sink`` (a mutable name→Function mapping) is given, the model's ``functions`` block is merged into it too — the helper functions a functional pipeline calls by name, which codegen reads from ``experiment.functions``.
+    What is specific to an observation is where its ``functions`` go. A curated model ships the helper functions its pipeline calls by name — an HRF kernel, a downsample, a convolution — and codegen reads those from ``experiment.functions``, not from the observation. Given a ``functions_sink`` (a mutable name -> Function mapping) they are merged there instead, a function the experiment already declares winning.
 
-    Returns True if a curated model was found and merged, False otherwise.
+    Returns True if a curated model was found, False otherwise.
     """
-    iri = getattr(obs, "iri", None)
-    if not iri:
+    if not getattr(obs, "iri", None):
         return False
-    from tvbo.data.registry import local_name, resolve
-
-    name = local_name(iri) if ":" in str(iri) else str(iri)
     try:
-        path = resolve("Observation", name)
-    except Exception:
-        return False
-    if path is None or not path.exists():
+        obs.enrich(source="database")
+    except LookupError:
         return False
 
-    import yaml as _yaml
+    if functions_sink is not None:
+        from tvbo.utils import keyed_items
 
-    data = _yaml.safe_load(path.read_text()) or {}
-
-    # Scalar fields: adopt the curated value only where the recipe left it empty.
-    for field in ("label", "description", "imaging_modality", "period", "downsample_period", "time_unit"):
-        if data.get(field) is not None and not getattr(obs, field, None):
-            setattr(obs, field, data[field])
-
-    # source: a list — take the curated one only if the recipe declared none.
-    if data.get("source") and not getattr(obs, "source", None):
-        obs.source = list(data["source"])
-
-    # pipeline: the heart of a curated observation model. Fill only if absent so a recipe that hand-declares its own pipeline is never silently overridden.
-    if data.get("pipeline") and not getattr(obs, "pipeline", None):
-        # A step is a FunctionCall, never a bare Function: as Function, `function:`/`callable:` are dropped.
-        obs.pipeline = [
-            step if isinstance(step, tvbo_datamodel.FunctionCall) else tvbo_datamodel.FunctionCall(**step)
-            for step in data["pipeline"]
-        ]
-
-    # dynamics: a co-integrated observer (the alternative to a pipeline — the observation computed online as a recurrence). Fill if absent, exactly as the pipeline is; without this an `iri`-referenced observer arrives with no dynamics and codegen emits a pass-through monitor.
-    if data.get("dynamics") is not None and not getattr(obs, "dynamics", None):
-        dyn = data["dynamics"]
-        obs.dynamics = dyn if isinstance(dyn, tvbo_datamodel.Dynamics) else tvbo_datamodel.Dynamics(**dyn)
-
-    # class_reference: a monitor/class handle (e.g. tvb Bold). Fill if absent.
-    if data.get("class_reference") is not None and not getattr(obs, "class_reference", None):
-        cr = data["class_reference"]
-        obs.class_reference = cr if isinstance(cr, tvbo_datamodel.ClassReference) else tvbo_datamodel.ClassReference(**cr)
-
-    # parameters: keyed collection — fill each missing key, keep recipe overrides.
-    if data.get("parameters"):
-        params = obs.parameters if getattr(obs, "parameters", None) else {}
-        for pname, pval in data["parameters"].items():
-            if pname in params:
-                continue
-            if isinstance(pval, dict):
-                pval = {"name": pname, **pval}
-                params[pname] = tvbo_datamodel.Parameter(**pval)
-            else:
-                params[pname] = tvbo_datamodel.Parameter(name=pname, value=pval)
-        obs.parameters = params
-
-    if data.get("functions") and functions_sink is not None:
-        for fname, fdef in data["functions"].items():
-            if fname in functions_sink:
-                continue
-            if isinstance(fdef, tvbo_datamodel.Function):
-                functions_sink[fname] = fdef
-            else:
-                # The dict key is the function's name; a redundant inner ``name`` (against the keyed-collection convention) must not double the keyword. Merge with the key winning.
-                functions_sink[fname] = tvbo_datamodel.Function(**{**fdef, "name": fname})
-
+        for name, function in keyed_items(getattr(obs, "functions", None), "functions"):
+            if name not in functions_sink:
+                functions_sink[name] = function
     return True
 
 

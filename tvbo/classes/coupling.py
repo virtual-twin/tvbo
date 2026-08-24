@@ -44,55 +44,6 @@ def _ensure_parameters(coupling) -> None:
         coupling.parameters = {}
 
 
-def _load_coupling_from_database(name, coupling):
-    """Fill coupling metadata from a curated database YAML file.
-
-    Resolves ``name`` through the database registry — the one component that knows where the database lives — and fills the ``pre_expression``, ``post_expression`` and ``parameters`` the coupling does not already carry.
-
-    Reading the curated entry is what makes population deterministic: the ontology answers with an unordered set, so the parameters it yields come back in a different order in every process, which no frozen record can be written against.
-
-    A curated ``delayed:`` is NOT applied. The slot carries a schema default of ``True``, so it is never unset by the time this runs and the guard that read it could not fire.
-    Only ``FastLinearCoupling`` declares anything else, and honouring it would change that coupling's delays — a measured change of its own, not a side effect of this one.
-
-    Parameters
-    ----------
-    name : str
-        Coupling function name (e.g. ``"KuramotoCoupling"``).
-    coupling : Coupling
-        Coupling instance to fill (modified in-place), in either generated form.
-
-    Returns:
-    -------
-    bool
-        True if a database file was found and applied.
-    """
-    import yaml as _yaml
-
-    from tvbo.data.registry import resolve
-
-    try:
-        db_file = resolve("Coupling", name)
-    except (FileNotFoundError, RuntimeError, ValueError):
-        return False
-
-    data = _yaml.safe_load(db_file.read_text(encoding="utf-8"))
-    peer = peer_module(coupling)
-    _ensure_parameters(coupling)
-
-    for slot in ("pre_expression", "post_expression"):
-        if slot in data and not getattr(coupling, slot, None):
-            written = data[slot]
-            setattr(coupling, slot, peer.Equation(**(written if isinstance(written, dict) else {"rhs": written})))
-    for pname, pval in (data.get("parameters") or {}).items():
-        if pname in coupling.parameters:
-            continue
-        coupling.parameters[pname] = (
-            peer.Parameter(**{"name": pname, **pval}) if isinstance(pval, dict) else peer.Parameter(name=pname, value=pval)
-        )
-
-    return True
-
-
 def get_parameters(CF):
     """Extract parameter metadata from a coupling function ontology class.
 

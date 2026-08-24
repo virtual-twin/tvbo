@@ -46,9 +46,9 @@ def generate_datamodel(root: str | Path) -> None:
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
     _copy_records(root)
-    shortcuts, aliases = _dialect_tables(schema)
-    mixins = _behaviour_mixins(root, schema)
-    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases))
+    shortcuts, aliases, keyed = _dialect_tables(schema)
+    mixins = _mixins(root, schema)
+    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed))
     _write(
         out_dir / "schema.py",
         _with_behaviour(PythonGenerator(str(schema)).serialize(), mixins) + _INSTALL_DIALECT,
@@ -69,12 +69,14 @@ def generate_datamodel(root: str | Path) -> None:
 _SEMANTIC_ALIASES = ("range", "boundaries")
 
 
-def _dialect_tables(schema: Path) -> tuple[dict, dict]:
-    """``(scalar shortcuts, slot aliases)`` — the TVBO dialect, read once off the schema.
+def _dialect_tables(schema: Path) -> tuple[dict, dict, dict]:
+    """``(scalar shortcuts, slot aliases, keyed collections)`` — the dialect, read off the schema.
 
     LinkML treats ``aliases:`` as documentation — its loaders key on the canonical slot name, so a declared alias is inert and raises ``unexpected keyword argument``. Each class's ``__init__`` already receives exactly its own slots, which makes it the one place where an alias can be resolved without guessing whether a mapping is an instance or a keyed collection, and without a free-form key (a parameter named ``dt``) ever being mistaken for a slot. Every construction path — the LinkML loaders, ``cls(**data)``, nested and inlined members, subclasses — goes through it.
 
     It also applies LinkML's ``simple_dict_value`` annotation, which marks the slot a bare scalar stands for: ``omega: 0.0628`` means ``{value: 0.0628}`` and ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed collections (``inlined_as_simple_dict``) but ``linkml_runtime``'s dataclass loader does not implement it, so it is applied here — and extended to single-valued inlined slots, which the spec does not cover. Reference slots are skipped: their scalar is the target's *identifier*, not a value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``). Inlined-ness is asked of the schema (``is_inlined``) rather than read off ``slot.inlined``, because a class-ranged slot whose range has an identifier is a reference by default while leaving ``inlined`` unset — six such slots were being wrapped, and since the wrapper then had to fit a string-ranged slot it landed as the literal ``"JsonObj(value='x')"``.
+
+    Last, it records each keyed collection's identifier slot, so a member written under its key can be given the name the key already states. The generated dataclasses do that themselves in ``__post_init__``; the generated Pydantic models do not, and a curated entry spelled the way this project requires — ``TR: {value: 720.0}``, no redundant inner ``name`` — was accepted by one form and rejected by the other.
     """
     from linkml_runtime.utils.schemaview import SchemaView
 
@@ -102,6 +104,19 @@ def _dialect_tables(schema: Path) -> tuple[dict, dict]:
         if slot_lifts:
             lifts[cls_name] = slot_lifts
 
+    keyed: dict[str, dict[str, str]] = {}
+    for cls_name in view.all_classes():
+        members = {}
+        for slot in view.class_induced_slots(cls_name):
+            # `inlined_as_list` is a collection whose spelling IS a list; it has no keys.
+            if not slot.multivalued or slot.inlined_as_list or not view.is_inlined(slot):
+                continue
+            identifier = view.get_identifier_slot(str(slot.range), use_key=True)
+            if identifier is not None:
+                members[slot.name] = identifier.name
+        if members:
+            keyed[cls_name] = members
+
     table: dict[str, dict[str, str]] = {}
     for cls_name in view.all_classes():
         amap = {
@@ -115,11 +130,11 @@ def _dialect_tables(schema: Path) -> tuple[dict, dict]:
         amap = {a: c for a, c in amap.items() if a not in own}
         if amap:
             table[cls_name] = amap
-    return lifts, table
+    return lifts, table, keyed
 
 
-def _render_dialect_tables(shortcuts: dict, aliases: dict) -> str:
-    """The two dialect tables as their own module.
+def _render_dialect_tables(shortcuts: dict, aliases: dict, keyed: dict) -> str:
+    """The dialect tables as their own module.
 
     Kept apart from ``schema.py`` so the Pydantic models can read them without importing the dataclasses: that import is the coupling the migration exists to remove, and it would be a cycle once ``schema.py`` installs the dialect from the same place.
     """
@@ -128,11 +143,14 @@ def _render_dialect_tables(shortcuts: dict, aliases: dict) -> str:
 ``SCALAR_SHORTCUTS`` maps ``{{class: {{slot: (slot the bare scalar stands for,
 multivalued, keyed)}}}}``, from ``annotations.simple_dict_value`` on each range class.
 ``SLOT_ALIASES`` maps ``{{class: {{alias: canonical slot}}}}`` from the schema's ``aliases:``.
+``KEYED_COLLECTIONS`` maps ``{{class: {{slot: the member slot its key states}}}}``.
 """
 
 SCALAR_SHORTCUTS = {shortcuts!r}
 
 SLOT_ALIASES = {aliases!r}
+
+KEYED_COLLECTIONS = {keyed!r}
 '''
 
 
@@ -143,6 +161,26 @@ from tvbo.datamodel.dialect import install_on_dataclasses as _install_dialect
 
 _install_dialect(globals())
 """
+
+#: Attached to every class the schema gives an ``iri``; see :mod:`tvbo.behaviour._enrich`.
+_ENRICHABLE_MIXIN = "tvbo.behaviour._enrich.IriEnrichable"
+
+
+def _mixins(root: Path, schema: Path) -> dict[str, list[str]]:
+    """``{class: dotted paths of the mixins it takes}``, most specific first.
+
+    Two rules, each derived rather than listed. A class takes its behaviour mixin because one is named after it, and it takes :class:`IriEnrichable` because the schema gives it an ``iri`` — a record that may name an entity elsewhere is a record that can be filled from one. Only the classes that declare the slot *directly* are named: a subclass inherits the base it was given, and naming it again would put the same mixin twice in one class statement.
+
+    Behaviour comes first so a behaviour mixin can refine an enrichment method and reach the generic one through ``super()``.
+    """
+    from linkml_runtime.utils.schemaview import SchemaView
+
+    view = SchemaView(str(schema))
+    mixins = {cls: [path] for cls, path in _behaviour_mixins(root, schema).items()}
+    for cls_name in view.all_classes():
+        if "iri" in view.class_slots(cls_name, direct=True):
+            mixins.setdefault(cls_name, []).append(_ENRICHABLE_MIXIN)
+    return mixins
 
 
 def _behaviour_mixins(root: Path, schema: Path) -> dict[str, str]:
@@ -220,26 +258,34 @@ class _DialectBase(BaseModel):
 '''
 
 
-def _mixin_imports(mixins: dict[str, str]) -> str:
-    """``from <module> import <Mixin>`` for each declared behaviour mixin."""
-    return "".join(f"from {path.rsplit('.', 1)[0]} import {path.rsplit('.', 1)[1]}\n" for path in sorted(set(mixins.values())))
+def _mixin_imports(mixins: dict[str, list[str]]) -> str:
+    """``from <module> import <Mixin>`` for each declared mixin."""
+    return "".join(
+        f"from {path.rsplit('.', 1)[0]} import {path.rsplit('.', 1)[1]}\n"
+        for path in sorted({path for paths in mixins.values() for path in paths})
+    )
 
 
-def _with_behaviour(code: str, mixins: dict[str, str]) -> str:
-    """Give each annotated dataclass its behaviour mixin.
+def _mixin_bases(mixins: dict[str, list[str]]) -> dict[str, list[str]]:
+    """``{class: mixin class names}`` — the dotted paths reduced to what a base is written as."""
+    return {cls: [path.rsplit(".", 1)[1] for path in paths] for cls, paths in mixins.items()}
 
-    Both generated forms take the same mixin, so behaviour reaches an object whether it came from LinkML's loader (a dataclass) or from Pydantic validation. Without this the dataclasses would lose every helper the moment it moved out of a runtime subclass, since that is still what the loaders construct.
+
+def _with_behaviour(code: str, mixins: dict[str, list[str]]) -> str:
+    """Give each annotated dataclass its mixins.
+
+    Both generated forms take the same mixins, so behaviour reaches an object whether it came from LinkML's loader (a dataclass) or from Pydantic validation. Without this the dataclasses would lose every helper the moment it moved out of a runtime subclass, since that is still what the loaders construct.
     """
     if not mixins:
         return code
     code = code.replace('metamodel_version = "', _mixin_imports(mixins) + '\nmetamodel_version = "', 1)
-    return _inject_bases(code, {cls: [path.rsplit(".", 1)[1]] for cls, path in mixins.items()})
+    return _inject_bases(code, _mixin_bases(mixins))
 
 
-def _with_dialect_and_behaviour(code: str, mixins: dict[str, str]) -> str:
-    """Give the generated models the dialect, and each annotated class its behaviour.
+def _with_dialect_and_behaviour(code: str, mixins: dict[str, list[str]]) -> str:
+    """Give the generated models the dialect, and each annotated class its mixins.
 
-    The mixins are imported beside ``_DialectBase``, above every generated class, so a behaviour module must not import the datamodel at module scope — the same discipline :mod:`tvbo.datamodel.dialect` follows.
+    The mixins are imported beside ``_DialectBase``, above every generated class, so a mixin module must not import the datamodel at module scope — the same discipline :mod:`tvbo.datamodel.dialect` follows.
     """
     code = code.replace(
         "class ConfiguredBaseModel(BaseModel):",
@@ -247,7 +293,7 @@ def _with_dialect_and_behaviour(code: str, mixins: dict[str, str]) -> str:
         1,
     )
     additions = {"ConfiguredBaseModel": ["_DialectBase"]}
-    additions.update({cls: [path.rsplit(".", 1)[1]] for cls, path in mixins.items()})
+    additions.update(_mixin_bases(mixins))
     return _inject_bases(code, additions)
 
 

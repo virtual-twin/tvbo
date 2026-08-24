@@ -25,14 +25,17 @@ from __future__ import annotations
 import warnings
 from functools import cache
 
-from tvbo.datamodel.dialect_tables import SCALAR_SHORTCUTS, SLOT_ALIASES
+from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, SLOT_ALIASES
 
 __all__ = [
+    "KEYED_COLLECTIONS",
     "SCALAR_SHORTCUTS",
     "SLOT_ALIASES",
+    "curated_entry",
     "expand_iri",
     "fold_aliases",
     "is_literal",
+    "key_members",
     "lift_scalar",
     "normalize",
     "install_on_dataclasses",
@@ -98,13 +101,17 @@ def fold_aliases(cls_name: str, data: dict) -> dict:
 
 
 @cache
-def _curated_entry(cls_name: str, iri: str) -> dict | None:
-    """The curated record *iri* names, alias-folded and ready to merge, or ``None``.
+def curated_entry(cls_name: str, name: str) -> dict | None:
+    """The curated *cls_name* record called *name*, alias-folded and ready to merge.
+
+    ``None`` when the database holds no such record — including when *cls_name* is not a
+    category it keeps at all.
 
     Cached because a recipe naming the same entity twice — every node of a homogeneous
-    network — would otherwise re-read and re-parse the same file per object. The result is
-    only ever fed to :func:`tvbo.utils.deep_merge`, which mutates neither side, so callers
-    share one instance safely.
+    network — would otherwise re-read and re-parse the same file per object. Callers must
+    not mutate the result: :func:`expand_iri` only feeds it to
+    :func:`tvbo.utils.deep_merge`, which mutates neither side, and
+    :meth:`IriEnrichable._from_database` only reads it into a constructor.
 
     The entry's own ``iri`` is dropped: keeping it would make the expanded record ask to be
     expanded again on every later construction, and a self-referential entry would not
@@ -112,10 +119,10 @@ def _curated_entry(cls_name: str, iri: str) -> dict | None:
     """
     import yaml
 
-    from tvbo.data.registry import local_name, resolve
+    from tvbo.data.registry import resolve
 
     try:
-        path = resolve(cls_name, local_name(iri))
+        path = resolve(cls_name, name)
     except (FileNotFoundError, RuntimeError, ValueError):
         return None
     entry = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -139,7 +146,7 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     Only the curated database is consulted. It is a local file read and its content is
     ordered, whereas the ontology answers with an unordered set — a different parameter
     order per process, which no frozen record can be written against. Reaching it is
-    :meth:`IriEnrichable.enrich`, which the caller asks for.
+    :meth:`tvbo.behaviour._enrich.IriEnrichable.enrich`, which the caller asks for.
 
     Only a *reference* expands. A record that also states its own ``name`` is a definition,
     and its ``iri`` is grounding — "this model is a ReducedWongWang in the ontology" — not
@@ -152,10 +159,12 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     the ontology, and this pass cannot tell that from a typo. ``tvbo validate`` is where a
     name that resolves nowhere is reported.
     """
+    from tvbo.data.registry import local_name
+
     iri = data.get("iri")
     if not isinstance(iri, str) or data.get("name") is not None:
         return data
-    entry = _curated_entry(cls_name, iri)
+    entry = curated_entry(cls_name, local_name(iri))
     if entry is None:
         return data
 
@@ -167,14 +176,59 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     return data
 
 
+def key_members(cls_name: str, data: dict) -> dict:
+    """Give a keyed collection the mapping spelling, each member named by its key.
+
+    ``parameters: {TR: {value: 720.0}}`` means a Parameter *called* ``TR``, so writing the
+    name a second time inside the member is the redundancy this project's records are
+    written without. The generated dataclasses fill it from the key in ``__post_init__``;
+    the generated Pydantic models leave it missing and reject the member as incomplete, so
+    a record that loaded on one form failed on the other.
+
+    The same collection may equally be written as a LIST — of bare identifiers
+    (``arguments: [v]``) or of whole members — which the dataclasses key and the Pydantic
+    models reject outright as not a mapping. Both spellings arrive as the mapping here, so
+    which one a record uses stops being a question of which form is loading it. A list
+    whose members state no identifier is left alone: there is nothing to key it by, and
+    that is a record to reject rather than to guess at.
+
+    Members are rebuilt rather than mutated: the mapping may be a cached curated entry,
+    shared by every object that names it.
+    """
+    for slot, identifier in KEYED_COLLECTIONS.get(cls_name, {}).items():
+        members = data.get(slot)
+        if isinstance(members, list):
+            members = _as_mapping(members, identifier)
+        if not isinstance(members, dict):
+            continue
+        data[slot] = {
+            key: ({identifier: key, **member} if isinstance(member, dict) and identifier not in member else member)
+            for key, member in members.items()
+        }
+    return data
+
+
+def _as_mapping(members: list, identifier: str) -> list | dict:
+    """A list-spelled keyed collection as its mapping, or unchanged if it cannot be keyed."""
+    keyed = {}
+    for member in members:
+        if isinstance(member, str):
+            keyed[member] = {identifier: member}
+        elif isinstance(member, dict) and isinstance(member.get(identifier), str):
+            keyed[member[identifier]] = member
+        else:
+            return members
+    return keyed
+
+
 def normalize(cls_name: str, data: dict) -> dict:
-    """Fold *cls_name*'s dialect into *data*, in place: aliases, ``iri``, shortcuts.
+    """Fold *cls_name*'s dialect into *data*, in place: aliases, ``iri``, shortcuts, keys.
 
     Aliases fold first, so the recipe and the curated record are keyed alike before they
     are merged and the shortcut pass can see every value under the name it looks for.
     Lifting first left ``BoundaryCondition(value="0")`` — the older spelling of
     ``equation`` — a bare string where the generated ``__post_init__`` wanted a mapping,
-    and it raised.
+    and it raised. Keying comes last, once every member is a mapping that can carry a name.
     """
     fold_aliases(cls_name, data)
     expand_iri(cls_name, data)
@@ -182,7 +236,7 @@ def normalize(cls_name: str, data: dict) -> dict:
     for slot, (target, multivalued, keyed) in SCALAR_SHORTCUTS.get(cls_name, {}).items():
         if data.get(slot) is not None:
             data[slot] = lift_scalar(data[slot], target, multivalued, keyed)
-    return data
+    return key_members(cls_name, data)
 
 
 def install_on_dataclasses(namespace: dict) -> None:

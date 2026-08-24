@@ -44,20 +44,20 @@ network:
   edges:
     - {source: 0, target: 1, weight: 0.5}
     - {source: 1, target: 0, weight: 0.5}
-coupling:
-  name: LinearCoupling
-  label: LinearCoupling
-  parameters:
-    g: {name: g, value: 0.01}
-    w:
-      name: w
-      heterogeneous: true
-      shape: "(n_nodes, n_nodes)"
-      # W_BINDING
-  pre_expression: {rhs: "x_j * w"}
-  post_expression: {rhs: "g * gx"}
-  incoming_states: [x]
-  local_states: [x]
+  coupling:
+    LinearCoupling:
+      label: LinearCoupling
+      parameters:
+        g: {name: g, value: 0.01}
+        w:
+          name: w
+          heterogeneous: true
+          shape: "(n_nodes, n_nodes)"
+          # W_BINDING
+      pre_expression: {rhs: "x_j * w"}
+      post_expression: {rhs: "g * gx"}
+      incoming_states: [x]
+      local_states: [x]
 integration:
   method: Heun
   duration: 20.0
@@ -73,14 +73,14 @@ def _render(tmp_path, w_binding):
     with h5py.File(tmp_path / "store.h5", "w") as f:
         f.create_dataset("w_edge", data=PUBLISHED)
     spec = tmp_path / "spec.yaml"
-    spec.write_text(_SPEC.replace("      # W_BINDING\n", w_binding))
+    spec.write_text(_SPEC.replace("          # W_BINDING\n", w_binding))
     exp = SimulationExperiment.from_file(str(spec))
     exp.configure()
     return exp.render_code("tvboptim")
 
 
-SOURCED = "      source: store.h5\n      measure: w_edge\n"
-LITERAL = "      value: 1.0\n"
+SOURCED = "          source: store.h5\n          measure: w_edge\n"
+LITERAL = "          value: 1.0\n"
 
 
 def _binding(code, name="w"):

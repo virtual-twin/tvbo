@@ -101,22 +101,7 @@ network:
           name: G
           value: 0.0
           description: No inter-node coupling (single node)
-        b:
-          name: b
-          value: 0.0
-          description: Shifts the base of the connection strength while maintaining
-            the absolute difference between different values.
-        a:
-          name: a
-          value: 0.00390625
-          description: Linear scaling factor of the coupled (delayed) input.
       sparse: false
-      pre_expression:
-        rhs: x_j
-        latex: false
-      post_expression:
-        rhs: a*gx + b
-        latex: false
       incoming_states:
       - V
       delayed: false

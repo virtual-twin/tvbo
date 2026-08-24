@@ -950,12 +950,13 @@ def from_tvb_simulator(
 
     dynamics = _extract_dynamics(sim)
     network = from_tvb(sim.connectivity)
+    coupling = _extract_coupling(sim)
+    network.coupling[str(coupling.name)] = coupling
 
     exp = tvbo_datamodel.SimulationExperiment(
         id=experiment_id,
         model=dynamics.name,
         dynamics=dynamics,
-        coupling=_extract_coupling(sim),
         integration=_extract_integration(sim, dynamics),
         network=network,
         stimulation=_extract_stimulus(sim),

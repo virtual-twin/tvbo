@@ -16,8 +16,8 @@ def test_simulation_experiment(model):
 
     metadata = {
         "dynamics": model,
-        "coupling": "Linear",
         "network": {
+            "coupling": {"long_range": {"iri": "tvbo:Linear"}},
             "parcellation": {
                 "atlas": {
                     "name": "DesikanKilliany",

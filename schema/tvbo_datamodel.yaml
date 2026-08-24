@@ -1661,8 +1661,15 @@ classes:
             coupling:
                 multivalued: true
                 range: Coupling
-                description: "Reusable coupling configurations referenced by edges (e.g., 'instant', 'delayed', 'inhibitory')"
                 inlined: true
+                description: >-
+                    How activity travels along this network's connections — the one
+                    place a coupling function is declared, because a coupling acts
+                    over a connectivity and has no meaning without one.
+                    Keyed by the role each plays in the network ('excitatory',
+                    'delayed', 'inhibitory'), so a network may carry several and an
+                    edge names the one it uses. A network with a single coupling
+                    applies it to every edge.
             graph_representation:
                 range: GraphRepresentation
                 ifabsent: string(auto)
@@ -2186,7 +2193,7 @@ classes:
             coupling:
                 range: Coupling
                 required: false
-                description: "Coupling function for this edge. Can be a reference (by name) to coupling or inline definition. If not provided, uses experiment's default coupling."
+                description: "Coupling function for this edge, named by reference into 'network.coupling' or defined inline. If not provided, the edge takes the network's coupling."
                 inlined: false
             directed:
                 range: boolean
@@ -4793,6 +4800,15 @@ classes:
         slot_usage:
             name:
                 ifabsent: "Linear"
+            iri:
+                aliases:
+                    - type
+                description: >-
+                    The coupling function this record is an instance of. A
+                    ``network.coupling`` entry is keyed by its role in the network
+                    ('excitatory', 'delayed'), so naming the function it instantiates
+                    is what ``iri`` is for; ``type`` is accepted as the older spelling
+                    of the same thing.
         attributes:
             # Standard coupling attributes
             coupling_function:
@@ -5348,9 +5364,6 @@ classes:
                 deprecated: "Use 'network' instead. 'connectivity' is kept for backward compatibility only and will be removed in a future version."
             network:
                 range: Network
-                inlined: true
-            coupling:
-                range: Coupling
                 inlined: true
             observations:
                 multivalued: true

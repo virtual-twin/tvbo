@@ -112,83 +112,46 @@ def _sync_network_node_count(net):
         net.nodes = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(net.number_of_nodes)]
 
 
-def _upgrade_network_couplings(network, coupling_types=None):
-    """Populate each ``network.coupling`` entry from the ontology and apply ``type``-based database fill.
+def _hoist_coupling_parameters(parameters) -> None:
+    """Address a coupling's parameters as ``coupling.*``, whatever holds the coupling.
 
-    A coupling that already states its ``pre_expression`` is left alone, so the call is idempotent. Only the two shapes the schema keys — a mapping and a list — carry entries to populate; a single ``Coupling`` assigned straight to the slot has nothing to iterate and is returned untouched.
-
-    Parameters
-    ----------
-    network : Network
-        The network whose coupling entries should be populated.
-    coupling_types : dict, optional
-        Mapping ``{coupling_key: type_ref}`` extracted from the raw YAML
-        before LinkML deserialization.  ``type_ref`` is a coupling function
-        name or CURIE (e.g. ``"KuramotoCoupling"`` or
-        ``"tvbo:KuramotoCoupling"``).
+    The parameter collection is the flat namespace generated code addresses — the JAX backend emits ``state.parameters.coupling`` — so it is a view for codegen, not the record's shape. A coupling is declared on the network, and this is what keeps that from being something every backend has to know: one coupling flattens to ``coupling.<param>``, several stay keyed by role as ``coupling.<role>.<param>``.
     """
-    coupling_types = coupling_types or {}
-    coup_raw = getattr(network, "coupling", None)
-    if not coup_raw:
-        return
+    network = parameters.get("network")
+    couplings = network.pop("coupling", None) if isinstance(network, dict) else None
+    if couplings:
+        parameters["coupling"] = next(iter(couplings.values())) if len(couplings) == 1 else couplings
 
-    # Schema allows dict (keyed by name), list, or a single Coupling object.
-    if isinstance(coup_raw, dict):
-        items = coup_raw.items()
-    elif isinstance(coup_raw, list):
-        items = enumerate(coup_raw)
-    else:
-        return
 
-    for key, coup in items:
+def _fill_network_couplings(network):
+    """Fill each of *network*'s couplings from the function it names.
+
+    An entry is keyed by its role in the network ('excitatory', 'delayed'), so the function it instantiates is what its ``iri`` states — written ``iri:`` or under the older spelling ``type:``, which the schema declares as an alias of it. One that already carries its expressions names nothing to fill.
+    """
+    from tvbo.utils import keyed_items
+
+    for _key, coup in keyed_items(getattr(network, "coupling", None), "coupling"):
         if not getattr(coup, "pre_expression", None):
-            coup._populate_from_ontology()
-        if key in coupling_types:
-            coup.populate_from_type(coupling_types[key])
+            coup.enrich()
 
 
 def _resolve_coupling(experiment):
-    """Reconcile coupling declarations across experiment / network / dynamics.
+    """Give a network that needs a coupling one, and tell each coupling what it reads.
 
     Single source of truth for both ``__init__`` and ``from_datamodel`` paths.
 
-    Rules:
-      1. If ``network.coupling`` is populated, mirror its first entry to
-         ``experiment.coupling``.
-      2. Else, if ``dynamics.coupling_inputs`` declares coupling targets,
-         seed ``network.coupling`` from ``experiment.coupling`` (or a default
-         ``Linear`` if absent) so a single canonical container exists.
-      3. Auto-populate ``incoming_states`` on each coupling from the dynamics'
-         ``state_variables[*].coupling_variable == True`` flag — but only when
-         the coupling declares neither incoming nor local states. Couplings
-         that explicitly declare ``local_states`` (e.g. vectorized matmul
-         flavors) are left untouched.
+    A coupling acts over a connectivity, so ``network.coupling`` is the only place one is declared and there is nothing to reconcile it against. What is left is supplying the default: a model whose ``coupling_inputs`` declare coupling targets needs a coupling to compute them, and a network that names none gets ``Linear``.
+
+    Each coupling is then told which states it reads, from the dynamics' ``state_variables[*].coupling_variable`` flag — but only when it declares neither incoming nor local states, so a vectorized flavour that states its own is left alone.
     """
     dyn = getattr(experiment, "dynamics", None)
     network = getattr(experiment, "network", None)
     if network is None:
         return
 
-    dyn_ci = getattr(dyn, "coupling_inputs", None)
-    has_coupling_inputs = bool(dyn_ci)
-    net_coup = getattr(network, "coupling", None)
-    exp_coup = getattr(experiment, "coupling", None)
-
-    if net_coup:
-        if isinstance(net_coup, dict) and net_coup:
-            experiment.coupling = next(iter(net_coup.values()))
-    elif has_coupling_inputs:
-        func = exp_coup
-        if not func or not isinstance(func, Coupling):
-            func = Coupling(name="Linear", iri="tvbo:Linear")
-            experiment.coupling = func
-        elif not getattr(func, "iri", None):
-            func.iri = "tvbo:Linear"
-        # Ensure ontology-derived fields (pre/post expressions, parameters) are populated — backends require them at codegen time.
-        if not getattr(func, "pre_expression", None):
-            func._populate_from_ontology()
-        coup_name = str(getattr(func, "name", "Linear"))
-        network.coupling[coup_name] = func
+    if getattr(dyn, "coupling_inputs", None) and not getattr(network, "coupling", None):
+        # Backends need the expressions and parameters at codegen time, not just the name.
+        network.coupling["Linear"] = Coupling(iri="tvbo:Linear").enrich()
 
     if dyn:
         cvars = [str(sv.name) for sv in dyn.state_variables.values() if getattr(sv, "coupling_variable", False)]
@@ -219,24 +182,13 @@ def _reject_unnamed(kind: str, entries) -> None:
 
     Every spelling an entry can be emitted under is checked, not just the key it is filed under. ``_resolve_events`` replaces an event's name with its ``target_variable`` when one is given, so checking the key alone let a recipe keyed ``drive`` reach codegen carrying the name ``flash burst``.
 
-    Both shapes the schema allows are read — the keyed mapping and the list — and a third would raise rather than pass. A guard that answers "nothing wrong" for input it never looked at is worse than no guard: LinkML hands these over as ``JsonObj``, which has no ``.items``, so skipping the unrecognised shape meant every ``from_datamodel`` load — that is, every load from a file — went unchecked.
+    Every shape the schema allows is read, and a shape it does not allow raises rather than passing — see :func:`tvbo.utils.keyed_items`.
     """
-    from jsonasobj2 import JsonObj
-    from jsonasobj2 import items as _json_items
-
     from tvbo.templates.base.utils import is_name
-
-    if isinstance(entries, JsonObj):
-        items = list(_json_items(entries))
-    elif hasattr(entries, "items"):
-        items = list(entries.items())
-    elif isinstance(entries, (list, tuple)):
-        items = [(getattr(entry, "name", None), entry) for entry in entries]
-    else:
-        raise TypeError(f"cannot read {kind} names from {type(entries).__name__}")
+    from tvbo.utils import keyed_items
 
     lines = []
-    for key, entry in items:
+    for key, entry in keyed_items(entries, kind):
         spellings = dict.fromkeys(
             str(value)
             for value in (key, getattr(entry, "name", None), getattr(entry, "target_variable", None))
@@ -312,7 +264,7 @@ def _merge_from_registry(d, category: str):
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     """The central runnable object in TVBO: a complete brain-network simulation spec.
 
-    Bundles `dynamics`, `coupling`, `network`, `integration`, `observations`, and any analysis layers (stimulation, algorithms, explorations, …) into one declarative specification. The same instance can be:
+    Bundles `dynamics`, `network` (with its `coupling`), `integration`, `observations`, and any analysis layers (stimulation, algorithms, explorations, …) into one declarative specification. The same instance can be:
 
     - **executed** in any registered backend (`run("jax")`, `run("tvb")`, …)
     - **serialized** to YAML, BIDS, openMINDS, or LEMS
@@ -331,9 +283,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Or fully declarative
         exp = SimulationExperiment(
             dynamics={"iri": "tvbo:ReducedWongWangExcInh"},
-            coupling={"iri": "tvbo:Linear"},
             network={"parcellation": {"atlas": {"iri": "tvbo:DesikanKilliany"}},
-                     "tractogram":   {"iri": "tvbo:dTOR"}},
+                     "tractogram":   {"iri": "tvbo:dTOR"},
+                     "coupling":     {"long_range": {"iri": "tvbo:Linear"}}},
             integration={"method": "Heun", "duration": 10_000, "noise": None},
         )
         ```
@@ -370,19 +322,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             elif hasattr(net, "dict") and not isinstance(net, dict):
                 # Pydantic v1
                 kwargs["network"] = net.dict(exclude_none=True)
-
-        _coupling_types = {}
-        net_kw = kwargs.get("network")
-        if isinstance(net_kw, dict):
-            coup_dict = net_kw.get("coupling")
-            if isinstance(coup_dict, dict):
-                for key, val in coup_dict.items():
-                    if isinstance(val, dict) and "type" in val:
-                        _coupling_types[key] = val.pop("type")
-
-        if "coupling" in kwargs and isinstance(kwargs["coupling"], str):
-            _cname = kwargs["coupling"]
-            kwargs["coupling"] = {"name": _cname, "iri": f"tvbo:{_cname}"}
 
         # Resolve Dynamics slot aliases (e.g. components → modes) before the parent __post_init__ constructs the base-class Dynamics.
         dyn_kw = kwargs.get("dynamics")
@@ -468,9 +407,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "dynamics", None):
             self.model = self.dynamics.name
 
-        if getattr(self, "coupling", None) and not isinstance(self.coupling, Coupling):
-            self.coupling = _coerce(Coupling, self.coupling)
-
         if getattr(self, "integration", None) and not isinstance(self.integration, Integrator):
             self.integration = _coerce(Integrator, self.integration)
 
@@ -512,7 +448,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 )
 
         # Upgrade network.coupling entries to runtime Coupling + apply type fills
-        _upgrade_network_couplings(self.network, _coupling_types)
+        _fill_network_couplings(self.network)
         # NOTE: coupling resolution (incoming_states / network.coupling seeding) is intentionally deferred to ``configure()`` so it runs lazily at the execution boundary across all backends and so the resolved state is observable in the spec only after the user explicitly prepared the experiment. See ``configure()``.
 
         # Get source file path if loading from file (set by from_file classmethod)
@@ -525,7 +461,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
-        self.integration._populate_from_ontology()
+        self.integration.enrich()
 
     def _load_network_from_data_file(self):
         """Load network matrices from a companion data file (h5/zarr/yaml sidecar).
@@ -624,7 +560,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if isinstance(v, tvbo_datamodel.Dynamics) and not isinstance(v, Dynamics):
                     v.__class__ = Dynamics
                     if getattr(v, "iri", None):
-                        v.enrich_from_ontology()
+                        v.enrich()
             first = next(iter(dyn.values()))
             obj.__dict__["dynamics"] = first
             obj.__dict__["model"] = first.name
@@ -632,13 +568,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if not isinstance(dyn, Dynamics):
                 dyn.__class__ = Dynamics
                 if getattr(dyn, "iri", None):
-                    dyn.enrich_from_ontology()
+                    dyn.enrich()
             obj.__dict__["model"] = dyn.name
         else:
             obj.__dict__.setdefault("dynamics", None)
 
         integ = getattr(obj, "integration", None) or Integrator(method="Heun")
-        integ._populate_from_ontology()
+        integ.enrich()
         obj.__dict__["integration"] = integ
 
         stim = getattr(obj, "stimulation", None)
@@ -647,7 +583,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         coup = getattr(obj, "coupling", None)
         if coup is not None and not getattr(coup, "pre_expression", None):
-            coup._populate_from_ontology()
+            coup.enrich()
         if not getattr(obj, "coupling", None):
             obj.__dict__["coupling"] = Coupling(name="Linear")
 
@@ -667,7 +603,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             obj.__dict__["network"] = Network()
 
         # Upgrade network coupling entries (no type refs in from_datamodel path)
-        _upgrade_network_couplings(obj.network)
+        _fill_network_couplings(obj.network)
         # Coupling resolution deferred to ``configure()`` (see __post_init__).
 
         obj.__dict__["_source_file"] = getattr(cls, "_pending_source_file", None)
@@ -911,6 +847,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """The experiment itself, exposed as its own metadata container."""
         return self
 
+    @property
+    def coupling(self):
+        """The network's default coupling — the first it declares. Read-only.
+
+        A coupling acts over a connectivity, so ``network.coupling`` is where one is declared and an experiment has none of its own; this is a read of the network's, not a second place to put one.
+
+        *Default* is what a backend that expresses a single coupling asks for — JAX,
+        LEMS, RateML and the pure-Python network each render one. A network declaring several is written for a backend that routes per coupling, and reading it through here silently answers with one of them; those backends read ``network.coupling`` directly and should be the ones to say a network they cannot express is one they cannot express.
+        """
+        couplings = getattr(self.network, "coupling", None) if self.network else None
+        return next(iter((couplings or {}).values()), None)
+
     def symbolic(self, integrate=False, indexed=False, delays=False):
         """Symbolic representation of the full experiment equations.
 
@@ -969,12 +917,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         net_coup = getattr(self.network, "coupling", {}) or {}
         dyn_ci = getattr(self.dynamics, "coupling_inputs", {}) or {}
 
+        # A network's one coupling serves every input; several must be named to be used.
+        only = next(iter(net_coup.values())) if len(net_coup) == 1 else None
         for ci_name in dyn_ci:
             if ci_name in net_coup:
                 coupling_map[ci_name] = net_coup[ci_name]
-            elif self.coupling and str(getattr(self.coupling, "name", "")) != "Linear":
-                # Fallback: single experiment-level coupling for any input
-                coupling_map[ci_name] = self.coupling
+            elif only is not None and str(getattr(only, "name", "")) != "Linear":
+                coupling_map[ci_name] = only
 
         # If no coupling to resolve, return dynamics as-is
         if not coupling_map:
@@ -1242,8 +1191,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if delays is None or np.allclose(np.nan_to_num(delays, nan=0.0), 0):
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False
-                if getattr(self, "coupling", None) is not None:
-                    self.coupling.delayed = False
+                # A network with no delays has none for any of its couplings.
+                for coup in (getattr(self.network, "coupling", None) or {}).values():
+                    coup.delayed = False
         except Exception as e:
             # Best-effort; keep defaults if anything goes wrong
             import warnings
@@ -1318,11 +1268,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         N = self.network.number_of_nodes
         coupling_params = parameters.coupling
 
-        # Get the coupling parameter definitions with shape info
-        if self.coupling is None:
-            return
-
-        for param_name, param_obj in (self.coupling.parameters or {}).items():
+        # Every coupling the network declares, not just the first: each states its own shapes.
+        declared = {
+            name: param
+            for coup in (getattr(self.network, "coupling", None) or {}).values()
+            for name, param in (getattr(coup, "parameters", None) or {}).items()
+        }
+        for param_name, param_obj in declared.items():
             if param_name not in coupling_params:
                 continue
 
@@ -1865,7 +1817,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Build node labels from network.nodes (used as xarray 'node' coord)
             node_labels = [n.label for n in self.network.nodes] if self.network.nodes else None
 
-            delay_matrix = self.network.calculate_delays() if getattr(self.coupling, "delayed", False) else None
+            # One delayed coupling is enough to need the matrix, however many there are.
+            any_delayed = any(
+                getattr(coup, "delayed", False) for coup in (getattr(self.network, "coupling", None) or {}).values()
+            )
+            delay_matrix = self.network.calculate_delays() if any_delayed else None
 
             net_obs = self.resolve_network_observations()
             if getattr(self, "_active_subject", None):
@@ -3191,6 +3147,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             callback_kwargs={"parameters": parameters},
             keys_to_exclude=keys_to_exclude,
         )
+        _hoist_coupling_parameters(parameters)
         return parameters
 
     @property
