@@ -84,6 +84,8 @@ integration:
   step_size: 0.2
   duration: 150.0
   transient_time: 0.0
+  block_size: 1000
+  noise_draw: blocked
   scipy_ode_base: false
   number_of_stages: 1
   delayed: true

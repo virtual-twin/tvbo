@@ -4,6 +4,8 @@ rel_tol: 1.0e-10
 step_size: 0.01220703125
 duration: 1000.0
 transient_time: 0.0
+block_size: 1000
+noise_draw: blocked
 scipy_ode_base: true
 number_of_stages: 1
 update_expression:
