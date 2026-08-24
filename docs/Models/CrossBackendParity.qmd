@@ -112,7 +112,7 @@ without trial-based explorations or strip the SV `distribution` similarly.
 
 ### 4. Settling window (`integration.transient_time`)
 
-Every backend now reads this the same way: `duration` is the **measured** window, `transient_time` is prepended to it, and total integrated time is `transient_time + duration`. The settle is the head of one integration — never a separate pre-simulation — and it is cut where the run is consumed, so `t = 0` is the first measured step on every backend and the settle carries negative timestamps.
+Every backend now reads this the same way: `duration` is the **measured** window, `transient_time` is prepended to it, and total integrated time is `transient_time + duration`. The settle is the head of one integration — never a separate pre-simulation — and it is cut where the run is consumed, so on every backend the settle carries non-positive timestamps, ends at `t = 0`, and the measured window opens one step later.
 
 That makes a run with a settle directly comparable across backends. It does not make it comparable to a run *without* one: a settle changes the state the measured window opens from, and on a stochastic model it also consumes noise. Compare like for like.
 

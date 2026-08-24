@@ -27,8 +27,7 @@ def _syn_ns(ns):
     return "{" + ", ".join(f"'{k}': {_brian2_const(v, u)}" for k, (v, u) in ns.items()) + "}"
 %>\
 <%
-    # A declared settle is prepended to the measured window; with none declared, a fifth of the run
-    # (capped at 1 s) is discarded as before. `duration_ms` is always what gets measured.
+    # A declared settle is prepended to the measured window; with none declared, a fifth of the run (capped at 1 s) is discarded as before. `duration_ms` is always what gets measured.
     settle = transient_ms or min(1000.0, 0.2 * duration_ms)
     total_ms = duration_ms + settle if transient_ms else duration_ms
     measured_ms = duration_ms if transient_ms else duration_ms - settle

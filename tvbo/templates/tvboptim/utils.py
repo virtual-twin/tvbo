@@ -1190,7 +1190,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
 def _assert_transient_on_sample_grid(experiment: Any, name: str, period_steps: int, kind: str) -> None:
     """Require the settle to be a whole number of an observation's output samples.
 
-    The transient is integrated in-band and its leading OUTPUT samples are dropped at finalize, so the observation's sample grid is anchored to the scan while the reported one is anchored to measurement (t=0 is the start of the measured window). The two coincide only when the settle spans whole output periods; otherwise every reported timestamp carries a fractional-period offset that silently changes whenever ``transient_time`` does. Raising here keeps one grid instead of two.
+    The transient is integrated in-band and its leading OUTPUT samples are dropped at finalize, so the observation's sample grid is anchored to the scan while the reported one is anchored to measurement (t=0 is the settle's last step, the boundary the window opens after). The two coincide only when the settle spans whole output periods; otherwise every reported timestamp carries a fractional-period offset that silently changes whenever ``transient_time`` does. Raising here keeps one grid instead of two.
     """
     integ = get_attr(experiment, "integration")
     _dt = _integration_dt(experiment)

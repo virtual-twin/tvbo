@@ -226,13 +226,11 @@ assert integration.duration, "integration.duration required in YAML"
 t1_default = float(integration.duration)
 transient_time = float(integration.transient_time) if integration.transient_time else 0.0
 has_transient = transient_time > 0
-# The scan opens at -transient_time and t=0 is the first measured step, so the settle carries negative timestamps and a declared onset needs no shift.
+# The scan opens at -transient_time and the settle ends at t=0, so it carries non-positive timestamps and a declared onset needs no shift.
 scan_t0 = -transient_time
 n_transient = int(round(transient_time / dt)) if has_transient else 0
 block_size = int(integration.block_size) if getattr(integration, 'block_size', None) else 1000
-# `noise_draw` selects the realization, and blocking is what selects it in tvboptim: a block grain
-# regenerates each block's noise from (key, block_idx), no grain draws the whole tensor at once. A
-# reduction has to fold block by block, so a streamed observable and `fused` cannot both be had.
+# `noise_draw` selects the realization, and blocking is what selects it in tvboptim: a block grain regenerates each block's noise from (key, block_idx), no grain draws the whole tensor at once. A reduction has to fold block by block, so a streamed observable and `fused` cannot both be had.
 noise_draw = str(getattr(integration, 'noise_draw', 'blocked') or 'blocked')
 if noise_draw == 'fused' and has_noise and any(str(getattr(_o, 'reduce', '')) == 'streaming' for _o in (experiment.observations or {}).values()):
     raise ValueError(
@@ -1936,8 +1934,7 @@ def _realign_state_auxiliaries(sol, network):
 %>
 # observation name -> the axis names its reduction declares (utils.reduction_dims).
 _OBSERVATION_DIMS = ${repr(_obs_dims)}
-# Steps of settle at the head of the scan. t=0 is the first measured step, so this is both
-# the cut index on the trajectory and the `skip` every observer folds past.
+# Steps of settle at the head of the scan, the last of them at t=0. Both the cut index on the trajectory and the `skip` every observer folds past.
 _N_TRANSIENT = ${n_transient}
 
 
@@ -1971,9 +1968,7 @@ def run_simulation(
     _noise_key = jax.random.key(jnp.asarray(${random_seed} if _rs is None else _rs, dtype=jnp.uint32))
     % endif
 
-    # One scan over (t0 - t_transient, t0 + t1]: the settle is the head of this same
-    # integration, so the delay history and the noise stream run through it unbroken and
-    # t=0 is the first measured step. `t1` stays the MEASURED duration.
+    # One scan over (t0 - t_transient, t0 + t1]: the settle is the head of this same integration, so the delay history and the noise stream run through it unbroken and it ends at t=0. `t1` stays the MEASURED duration.
     model_fn, state = prepare(network, solver, t0=t0 - t_transient, t1=t0 + t1, dt=dt)
     % if sv_distribution_info:
     # Sample initial conditions from state variable distributions
@@ -2810,8 +2805,7 @@ def ${expl['name']}(state, model_fn, **kwargs):
 % endif
     if _network is not None:
         _solver = get_solver(block_size=${solver_block})
-        # The same one-scan window a bare run integrates: each cell settles its own head over
-        # (-${transient_time}, ${t1_default}], so a swept cell and a bare run are one computation.
+        # The same one-scan window a bare run integrates: each cell settles its own head over (-${transient_time}, ${t1_default}], so a swept cell and a bare run are one computation.
         _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=${scan_t0}, t1=${t1_default}, dt=${dt})
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
         # The main run's IC construction, so the sweep starts from the declared state rather than cold.
@@ -2819,17 +2813,8 @@ def ${expl['name']}(state, model_fn, **kwargs):
         % if stochastic_param_info:
         _inject_stochastic_trajectories(_expl_state, ${transient_time + t1_default}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
-% if has_transient:
-        # The settle is measured, not reported: downstream observable code sees the t>0 window.
-        def _expl_model_fn(s):
-            result = _expl_model_fn_raw(s)
-            return NativeSolution(
-                result.ts[${n_transient}:], result.data[${n_transient}:],
-                dt=${dt}, variable_names=getattr(result, 'variable_names', None),
-            )
-% else:
+        # The whole window, settle included: every observable drops the settle itself, so trimming here too would cut it twice and make a swept cell a different computation from a bare run.
         _expl_model_fn = _expl_model_fn_raw
-% endif
     else:
         _expl_model_fn = model_fn
         _expl_state = state
@@ -3744,8 +3729,7 @@ def run_experiment(
     network = create_network(weights, ${weight_transform_distances_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
-    # Whether the base forward-sim is materialised at all. Algorithm/optimization/exploration
-    # modes run their own simulations, so the base trajectory is prepared but never integrated.
+    # Whether the base forward-sim is materialised at all. Algorithm/optimization/exploration modes run their own simulations, so the base trajectory is prepared but never integrated.
 <%doc>
     ## An algorithm (e.g. FIC/EIB tuning) runs its own simulations and IS the
     ## experiment's deliverable, so a full-length base forward-sim before it is
@@ -3876,9 +3860,7 @@ def run_experiment(
     _output_idx, _output_names, _record_subset = get_output_channels(model, experiment)
 %>
     % if _record_subset:
-    # sv.record filters the presented channels; the scan's full channel set is kept intact
-    # above for observations. Rebuild the NativeSolution on the record=True channels
-    # (preserving its time axis), or slice a raw array.
+    # sv.record filters the presented channels; the scan's full channel set is kept intact above for observations. Rebuild the NativeSolution on the record=True channels (preserving its time axis), or slice a raw array.
     _record_idx = ${_output_idx}
     def _select_channels(_res):
         if _res is None:
@@ -4530,8 +4512,7 @@ def run_experiment(
 % endif
 
 % if has_refine:
-            # Refine reuses the base run's own model_fn — the same window, settle included —
-            # so the loss is byte-identical to the one Stage 0 evaluated.
+            # Refine reuses the base run's own model_fn — the same window, settle included — so the loss is byte-identical to the one Stage 0 evaluated.
             _opt_model_fn = model_fn
 % else:
 % if opt_has_custom_integration:

@@ -15,8 +15,7 @@ state_names = list(model.state_variables.keys()) if model else ['x']
 # produced by tvboptim >= 0.2.7 and the dfun's VARIABLES_OF_INTEREST tuple.
 _, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if model else ([], [], ['x'])
 dt = experiment.integration.step_size if experiment.integration else 0.1
-# Steps of settle at the head of the scan. Computed here rather than inherited: an <%include>
-# carries the render context, not the including template's local bindings.
+# Steps of settle at the head of the scan. Computed here rather than inherited: an <%include> carries the render context, not the including template's local bindings.
 _transient_time = float(getattr(experiment.integration, 'transient_time', 0.0) or 0.0) if experiment.integration else 0.0
 n_transient = int(round(_transient_time / dt)) if dt else 0
 
@@ -747,7 +746,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
     # progress is accepted and ignored, so every reducer factory shares one call site.
     _ds = ${red['ds_steps']}           # decimation stride (integration steps per kept sample)
-    # The sweep folds transient and main run into one window, so without this a swept cell keeps extra leading samples and is not the same computation as the run alone.
+    # `skip` integration steps of settle at the head of the window: this is how many of them survive the stride, and they go no further.
     _skip_n = max(0, -(-(skip + 1) // _ds) - 1) if skip else 0
     def _init(template, n_steps):
         n = template.shape[-1]
@@ -1199,6 +1198,16 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
     call_args = class_ref['call_args']
     if class_ref.get('accepts_voi') and 'voi' not in constructor_arg_codes:
         constructor_arg_codes['voi'] = 'voi'
+    # The settle's share of THIS monitor's output grid, counted where the grid is known rather than from a traced time axis.
+    _ext_period = to_numeric(obs['period']) if obs.get('period') else None
+    _ext_grid = int(round(float(_ext_period) / dt)) if _ext_period else 1
+    if n_transient and n_transient % _ext_grid:
+        raise ValueError(
+            f"observation {obs_name!r} reports through {class_ref['name']} every {_ext_grid} steps, but the "
+            f"{n_transient}-step settle is not a whole number of them, so its output grid and the measured "
+            f"one cannot be made to coincide. Set integration.transient_time to a multiple of the sample period."
+        )
+    _ext_cut = (n_transient // _ext_grid) if n_transient else 0
 
     # Build constructor kwargs string
     init_kwargs = []
@@ -1244,16 +1253,17 @@ class ${class_name}(eqx.Module):
     def __call__(self, result):
         """Process the run, reporting only its measured part.
 
-        The settle is the head of the same window, so the monitor's own warm-up is real signal; its output samples before t=0 are the settle's and are dropped here.
+        The settle is the head of the same window, so the monitor's own warm-up is real signal; the ${_ext_cut} output samples it produced over the settle are dropped here.
         """
         _out = self._monitor(result)
+% if _ext_cut:
         _ts = getattr(_out, "ts", None)
         if _ts is None:
             return _out
-        _keep = int(jnp.count_nonzero(jnp.asarray(_ts) <= 0.0))
-        if _keep == 0:
-            return _out
-        return type(_out)(_out.ts[_keep:], _out.ys[_keep:], dt=getattr(_out, "dt", None), variable_names=getattr(_out, "variable_names", None))
+        return type(_out)(_out.ts[${_ext_cut}:], _out.ys[${_ext_cut}:], dt=getattr(_out, "dt", None), variable_names=getattr(_out, "variable_names", None))
+% else:
+        return _out
+% endif
 
 % elif obs['reduction'] is not None:
 ## A host monitor backed by `_reduction_${obs_name}`: the observer is the definition, so the whole-trajectory fold equals the value the grid streams.
@@ -1325,6 +1335,19 @@ class ${class_name}(AbstractMonitor):
             static_steps.append(step)
         else:
             dynamic_steps.append(step)
+
+    # A kernel convolves against its own history, so it must see the settle and lose it afterwards on its declared output grid; without one the settle never enters, which is what keeps a time-collapsing statistic from averaging over it.
+    _has_kernel = any(is_kernel_generator(st['name']) for st in pipeline)
+    _obs_period = to_numeric(obs['period']) if obs.get('period') else None
+    _grid_steps = int(round(float(_obs_period) / dt)) if _obs_period else 1
+    if n_transient and needs_result_from_pipeline and _has_kernel and not _obs_period:
+        raise ValueError(
+            f"observation '{obs_name}' convolves against a kernel and emits on a grid it never declares, "
+            f"so the {n_transient} settle steps cannot be counted on its output. Declare `period:` on the "
+            f"observation (the interval between its output samples), or drop the kernel step."
+        )
+    _cut_input = n_transient if (n_transient and needs_result_from_pipeline and not _has_kernel) else 0
+    _cut_output = (n_transient // _grid_steps) if (n_transient and needs_result_from_pipeline and _has_kernel and pipeline) else 0
 
     # Determine final output key - must match the actual variable name generated
     if pipeline:
@@ -1415,6 +1438,11 @@ class ${class_name}(AbstractMonitor):
 % else:
         _data = result.data
         _time = result.time
+% endif
+% if _cut_input:
+        # No kernel here needs warm-up, so the settle never enters the pipeline at all.
+        _data = _data[${_cut_input}:]
+        _time = None if _time is None else _time[${_cut_input}:]
 % endif
 
 
@@ -1583,25 +1611,14 @@ class ${class_name}(AbstractMonitor):
         ${prefixed_output} = ${input_var}
 % endif
 % endfor
+% if _cut_output:
 <%
-    # Samples of settle on THIS observation's output grid. A pipeline reading `integration.result`
-    # turns the scan onto its own grid, so the settle's share of it is dropped once, here; one whose
-    # source is another observation inherits an already-cut input and must not cut twice.
-    _obs_period = to_numeric(obs['period']) if obs.get('period') else None
-    _grid_steps = int(round(float(_obs_period) / dt)) if _obs_period else 1
-    _cut = (n_transient // _grid_steps) if (n_transient and needs_result_from_pipeline) else 0
+    _last = pipeline[-1]
+    _lo = _last.get('output') or _last['name']
+    _cut_var = f"_{[o.strip() for o in _lo.split(',')][-1]}"
 %>\
-% if _cut:
-<%
-    if pipeline:
-        _last = pipeline[-1]
-        _lo = _last.get('output') or _last['name']
-        _cut_var = f"_{[o.strip() for o in _lo.split(',')][-1]}"
-    else:
-        _cut_var = '_data'
-%>\
-        # The settle warmed this pipeline's kernels in-band; its own ${_cut} output samples go no further.
-        ${_cut_var} = ${_cut_var}[${_cut}:]
+        # The settle warmed this pipeline's kernel in-band; its own ${_cut_output} output samples go no further.
+        ${_cut_var} = ${_cut_var}[${_cut_output}:]
 % endif
 
 % if tail_samples or aggregation:

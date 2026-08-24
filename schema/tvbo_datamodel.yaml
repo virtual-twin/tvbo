@@ -3462,7 +3462,7 @@ classes:
                 range: float
                 ifabsent: float(0)
                 description: >-
-                    Length of the leading settling window, prepended to `duration`. It marks part of ONE integration — never a separate simulation: the backend integrates `transient_time + duration` in a single scan and the marked head is cut where the run is consumed (observations, analyses, plots, saved data), so the settle is in-band for any observation kernel that needs warm-up. Time is measured from the START of the measured window: the settle carries negative timestamps (-transient_time .. 0) and a declared event `t0` is relative to measurement, never to the scan. A settle that a fit reuses across many candidate evaluations is NOT this slot — that is a seed, declared as `initial_state.method: time_integration` with its own `duration`.
+                    Length of the leading settling window, prepended to `duration`. It marks part of ONE integration — never a separate simulation: the backend integrates `transient_time + duration` in a single scan and the marked head is cut where the run is consumed (observations, analyses, plots, saved data), so the settle is in-band for any observation kernel that needs warm-up. Time is measured from the START of the measured window: the settle carries non-positive timestamps, ending at 0, and the measured window opens one step later and a declared event `t0` is relative to measurement, never to the scan. A settle that a fit reuses across many candidate evaluations is NOT this slot — that is a seed, declared as `initial_state.method: time_integration` with its own `duration`.
             block_size:
                 range: integer
                 ifabsent: integer(1000)

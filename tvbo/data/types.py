@@ -572,8 +572,7 @@ class SimulationResult:
         elif data is not None and not isinstance(data, xr.DataArray):
             data = _to_dataarray(data, None, state_names, nodes)
 
-        # One buffer, cut by the marker: `.data` is the measured window, `.transient` its settling
-        # head, `.full` both. The slices are taken on access, so nothing is duplicated to hold them.
+        # One buffer, cut by the marker: `.data` is the measured window, `.transient` its settling head, `.full` both. The slices are taken on access, so nothing is duplicated to hold them.
         self._n_transient = int(n_transient or 0)
         self._full = data
         self.data = data if self._n_transient <= 0 or data is None else data.isel(time=slice(self._n_transient, None))
@@ -2998,11 +2997,10 @@ class ExperimentResult:
         }
         if "mode" in dims:
             coords["mode"] = list(range(data_np.shape[3]))
-        # t=0 is the first measured step: the settle carries negative timestamps, so a TVB run and
-        # a tvboptim run of the same recipe report the same window on the same clock.
+        # The settle ends at t=0 and carries non-positive timestamps, so a TVB run and a tvboptim run of the same recipe report the same window on the same clock.
         _tv = np.asarray(primary_tv)
         _n_transient = int(np.count_nonzero(_tv < float(transient_time))) if transient_time else 0
-        if _n_transient:
+        if transient_time:
             coords["time"] = _tv - float(transient_time)
         da = xr.DataArray(data=data_np, dims=dims, coords=coords)
 

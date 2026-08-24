@@ -51,9 +51,7 @@ if hasattr(_exp_functions, 'keys'):
 
 n_nodes = getattr(experiment.network, 'number_of_nodes', None) or getattr(experiment.network, 'number_of_regions', 1)
 
-# Integration timing — needed to size pre-generated per-step input arrays and to map a time t
-# to an integer step index. The scan runs from -transient to +duration on the measurement clock,
-# so t spans [-transient, duration] and the step index counts from the scan start, not from t=0.
+# Integration timing — needed to size pre-generated per-step input arrays and to map a time t to an integer step index. The scan runs from -transient to +duration on the measurement clock, so t spans [-transient, duration] and the step index counts from the scan start, not from t=0.
 _dt = float(experiment.integration.step_size)
 _inv_dt = 1.0 / _dt
 _duration = float(experiment.integration.duration) if experiment.integration.duration else 0.0
@@ -372,8 +370,7 @@ class ${class_name}(AbstractExternalInput):
         ${pname} = params.${pname}
         % endfor
         % if is_stochastic:
-        # Per-step iid sample: index the pre-generated sequence by step number, counted from the
-        # scan start so the settle draws its own samples rather than repeating the first.
+        # Per-step iid sample: index the pre-generated sequence by step number, counted from the scan start so the settle draws its own samples rather than repeating the first.
         _step = jnp.int32(jnp.clip((t - self.SCAN_T0) * self.INV_DT, 0, input_data.u.shape[0] - 1))
         ${_stoch_pname} = input_data.u[_step]
         % endif
