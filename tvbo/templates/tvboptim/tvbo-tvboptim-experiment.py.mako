@@ -1658,15 +1658,16 @@ def _sample_initial_conditions(state, key=None):
 
     Each state variable with a ``distribution`` is redrawn per-node from it, keyed by that
     distribution's OWN resolved seed (``distribution.seed`` overriding ``execution.random_seed``)
-    — so every distributed variable honours its own seed, not just the first. An explicit ``key``
-    overrides the per-distribution seeds (folded per variable so the variables stay decorrelated).
+    with the variable's index folded in — so variables that share a seed still draw independently,
+    which is the same key construction the trial ensemble uses. An explicit ``key`` overrides the
+    per-distribution seeds and is folded the same way.
     """
     ic = state.initial_state.dynamics  # (n_states,) broadcast or (n_states, n_nodes)
     # Ensure per-node shape so sampling produces independent values per node
     if ic.ndim == 1:
         ic = jnp.broadcast_to(ic[:, None], (ic.shape[0], n_nodes)).copy()
 % for _si, (_sv_name, _sv_info) in enumerate(sv_distribution_info.items()):
-    _k${_si} = jax.random.fold_in(key, ${_si}) if key is not None else jax.random.key(${_sv_info['seed']})
+    _k${_si} = jax.random.fold_in(key if key is not None else jax.random.key(${_sv_info['seed']}), ${_si})
 % if _sv_info['dist'] in ('gaussian', 'normal'):
     ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(_k${_si}, (n_nodes,)))
 % else:
@@ -1868,14 +1869,43 @@ def _apply_seed_params(state):
     return state
 % endif
 
+% if has_transient:
+def _window_reducer(n_skip, n_keep):
+    """Fold a rollout down to its analysed window, so the settle is never stacked.
+
+    The settle and the window are one continuous integration: the carry advances through every
+    step, and only the rows at or past ``n_skip`` are written into a fixed ``(n_keep, ...)``
+    buffer. Rows outside the window go to a scratch row that ``finalize`` drops, so per-cell
+    memory is the window rather than the whole rollout -- which is what lets a long settle vmap
+    at any useful width.
+    """
+    def _init(template, n_steps):
+        return (jnp.zeros((n_keep + 1,) + template.shape, template.dtype), jnp.array(0))
+
+    def _update(acc, block):
+        _buf, _gstep = acc
+        _idx = _gstep + jnp.arange(block.shape[0]) - n_skip
+        _dest = jnp.where((_idx >= 0) & (_idx < n_keep), _idx, n_keep)
+        return (_buf.at[_dest].set(block), _gstep + block.shape[0])
+
+    def _finalize(acc):
+        return acc[0][:n_keep]
+
+    return (_init, _update, _finalize)
+
+
+% endif
 % if _state_only_aux:
-def _realign_state_auxiliaries(sol, network):
+def _realign_state_auxiliaries(sol, params):
     """Recompute recorded state-only derived variables from the recorded post-step
     state so they no longer lag it by one step. Coupling-dependent auxiliaries are
     left to the solver.
+
+    ``params`` is the dynamics parameter bunch the run integrated, so a swept cell passes its
+    own config and gets its own values rather than the base network's.
     """
     _ys = sol.ys
-    _p = network.params.dynamics
+    _p = params
     t = sol.ts.reshape(-1, 1)
     % for _name in dyn_param_names:
     ${_name} = _p.${_name}
@@ -2055,7 +2085,7 @@ def run_simulation(
 % else:
         result = _run_compiled(model_fn, state)
         % if _state_only_aux:
-        result = _realign_state_auxiliaries(result, network)
+        result = _realign_state_auxiliaries(result, network.params.dynamics)
         % endif
         observations = Bunch()
 % for obs_name in observation_names:
@@ -2739,6 +2769,8 @@ def run_optimization(
     _stream_names = _rec_stream
     _stream_bs = expl.get('block_size') or 1000
     _stream_skip = int(round(transient_time / dt)) if has_transient else 0
+    # reduce= rides the native block scan, so a Diffrax solver keeps the stack-and-cut path.
+    _window_native = str(solver_class) in ('Euler', 'Heun', 'RungeKutta4')
     _stream_t1 = (transient_time + t1_default) if has_transient else t1_default
     # An exploration bundling every declared observation streams only when all of them are trajectory-free; one that needs the raw trajectory keeps the whole set on the materialise path.
     _bundle_plan = streaming_post_eval_plan(experiment) if bundles_observations else {'names': [], 'deliverables': [], 'period_in_steps': None}
@@ -2838,10 +2870,26 @@ def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
         # This ensures each parameter combination settles to its own steady state.
         _t_transient = ${transient_time}
         _t_total = _t_transient + ${t1_default}
-        _n_transient = int(_t_transient / ${dt})
+        _n_transient = int(round(_t_transient / ${dt}))
+        _n_window = int(round(${t1_default} / ${dt}))
+% if _window_native:
+        # One scan over settle + window, with only the window stacked: the reducer writes the
+        # post-settle rows into a fixed buffer, so a cell costs the window it reports rather than
+        # the whole rollout.
+        _expl_model_fn_raw, _expl_state = prepare(
+            _network, get_solver(block_size=${_stream_bs}), t0=0.0, t1=_t_total, dt=${dt},
+            reduce=_window_reducer(_n_transient, _n_window),
+        )
+        _expl_ts = (jnp.arange(_n_transient, _n_transient + _n_window) + 1) * ${dt}
+% else:
+        # ${solver_class} is not a native block-scan solver, so the settle is stacked and cut.
         _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=0.0, t1=_t_total, dt=${dt})
+% endif
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
         # The main run's IC construction, so the sweep starts from the declared state rather than cold.
+        % if sv_distribution_info:
+        _expl_state = _sample_initial_conditions(_expl_state)
+        % endif
         _expl_state = _apply_seed_params(_apply_seed_dynamics(_apply_node_overrides(_expl_state)))
         % if stochastic_param_info:
         _inject_stochastic_trajectories(_expl_state, _t_total, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
@@ -2852,17 +2900,36 @@ def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
             if hasattr(_expl_state.external[_ext_key], 't0'):
                 _expl_state.external[_ext_key].t0 = _expl_state.external[_ext_key].t0 + _t_transient
         % endif
-        # Wrap model_fn to trim transient — downstream observable code sees main sim only
+        # The settle is integrated, not reported: downstream observable code sees the window only.
         def _expl_model_fn(s):
+% if _window_native:
+            # Axis 1 is the solver's own variable order, which every observation indexes
+            # positionally; the reduced return carries no names to pass on.
+            _sol = NativeSolution(_expl_ts, _expl_model_fn_raw(s), dt=${dt}, variable_names=None)
+% else:
             result = _expl_model_fn_raw(s)
-            return NativeSolution(
+            _sol = NativeSolution(
                 result.ts[_n_transient:], result.data[_n_transient:],
                 dt=${dt}, variable_names=getattr(result, 'variable_names', None),
             )
+% endif
+% if _state_only_aux:
+            _sol = _realign_state_auxiliaries(_sol, s.dynamics)
+% endif
+            return _sol
 % else:
-        _expl_model_fn, _expl_state = prepare(_network, _solver, t0=0.0, t1=${t1_default}, dt=${dt})
+        _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=0.0, t1=${t1_default}, dt=${dt})
+% if _state_only_aux:
+        def _expl_model_fn(s):
+            return _realign_state_auxiliaries(_expl_model_fn_raw(s), s.dynamics)
+% else:
+        _expl_model_fn = _expl_model_fn_raw
+% endif
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
         # The main run's IC construction, so the sweep starts from the declared state rather than cold.
+        % if sv_distribution_info:
+        _expl_state = _sample_initial_conditions(_expl_state)
+        % endif
         _expl_state = _apply_seed_params(_apply_seed_dynamics(_apply_node_overrides(_expl_state)))
         % if stochastic_param_info:
         _inject_stochastic_trajectories(_expl_state, ${t1_default}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
