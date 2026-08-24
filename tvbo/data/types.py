@@ -542,7 +542,7 @@ class SimulationResult:
     observations : dict
         Computed observations from this simulation (BOLD, FC, etc.).
     transient : SimulationResult or None
-        Warm-up simulation result that preceded this one.
+        The run's own settling window, as a view on the same buffer — never a second run.
     """
 
     def __init__(
@@ -556,6 +556,7 @@ class SimulationResult:
         nodes=None,
         observation_dims=None,
         units=None,
+        n_transient=0,
         **kwargs,
     ):
         self._extras = {}
@@ -571,14 +572,19 @@ class SimulationResult:
         elif data is not None and not isinstance(data, xr.DataArray):
             data = _to_dataarray(data, None, state_names, nodes)
 
-        self.data = data
+        # One buffer, cut by the marker: `.data` is the measured window, `.transient` its settling
+        # head, `.full` both. The slices are taken on access, so nothing is duplicated to hold them.
+        self._n_transient = int(n_transient or 0)
+        self._full = data
+        self.data = data if self._n_transient <= 0 or data is None else data.isel(time=slice(self._n_transient, None))
         # Normalize observations to Bunch so both JAX and tvboptim results have dot-access: result.observations.BOLD_TVB  (not just dict indexing). Observations carry the axis names their reduction declared at codegen, bound to the SAME node labels the trajectory just got — the one place holding both.
         _odims = observation_dims or {}
         if observations:
             self.observations = Bunch({k: _observation_dataarray(v, _odims.get(k), nodes) for k, v in observations.items()})
         else:
             self.observations = Bunch()
-        self.transient = transient
+        # A backend that settles separately still hands its window over; it is reported as-is.
+        self._explicit_transient = transient
         self._extras.update(kwargs)
         # Store state_names separately for cases with no data yet
         if state_names and not (data is not None and "variable" in getattr(data, "coords", {})):
@@ -588,6 +594,25 @@ class SimulationResult:
     def units(self):
         """Unit mapping {variable_name: unit_string} for state/derived variables."""
         return self._units
+
+    @property
+    def full(self):
+        """The whole integrated window, settle included, on the measurement clock (t <= 0 is the settle)."""
+        return self._full
+
+    @property
+    def transient(self):
+        """This run's settling window, or None when none was declared.
+
+        A view on the same buffer `.data` reads, not a second simulation: `transient_time` marks part of ONE integration, and the marked head is cut here rather than integrated separately.
+        """
+        if self._explicit_transient is not None:
+            return self._explicit_transient
+        if self._n_transient <= 0 or self._full is None:
+            return None
+        out = SimulationResult(data=self._full.isel(time=slice(None, self._n_transient)), units=self._units)
+        out._source = self._source
+        return out
 
     # ── xarray delegation ─────────────────────────
 
@@ -2904,7 +2929,7 @@ class ExperimentResult:
         )
 
     @classmethod
-    def from_tvb(cls, simulator, result=None):
+    def from_tvb(cls, simulator, result=None, transient_time=0.0):
         """Create an ExperimentResult from a TVB simulator and its run output.
 
         Wraps TVB simulation output into the standard TVBO result structure:
@@ -2920,6 +2945,10 @@ class ExperimentResult:
         result : list of (time_array, data_array) tuples, optional
             Output of ``simulator.run()``. If *None*, the simulator is
             run using its ``simulation_length``.
+        transient_time : float
+            Length of the leading settle inside the run, in the simulator's time unit. TVB
+            integrates it as part of one simulation; it is marked here so the result cuts it at
+            t=0 exactly as every other backend does.
 
         Returns:
         -------
@@ -2969,11 +2998,18 @@ class ExperimentResult:
         }
         if "mode" in dims:
             coords["mode"] = list(range(data_np.shape[3]))
+        # t=0 is the first measured step: the settle carries negative timestamps, so a TVB run and
+        # a tvboptim run of the same recipe report the same window on the same clock.
+        _tv = np.asarray(primary_tv)
+        _n_transient = int(np.count_nonzero(_tv < float(transient_time))) if transient_time else 0
+        if _n_transient:
+            coords["time"] = _tv - float(transient_time)
         da = xr.DataArray(data=data_np, dims=dims, coords=coords)
 
         sim_result = SimulationResult(
             data=da,
             observations=observations,
+            n_transient=_n_transient,
         )
         sim_result._timeseries = primary_ts
 

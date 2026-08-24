@@ -821,7 +821,6 @@ obs_voi = _p(obs, 'voi', None)
 obs_skip = _p(obs, 'skip_t', None)
 obs_tail = _p(obs, 'tail_samples', None)
 obs_window = _p(obs, 'window_size', None)
-obs_warmup = _p(obs, 'warmup_source', None)
 obs_data = _p(obs, 'data_source', None)
 pipeline = _p(obs, 'pipeline', [])
 sampling_bits = []

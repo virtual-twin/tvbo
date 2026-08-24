@@ -110,12 +110,11 @@ A state variable with a `distribution:` block samples a fresh IC per trial
 when an `Exploration(n_trials=N)` with $N > 1$ is active. For parity, run
 without trial-based explorations or strip the SV `distribution` similarly.
 
-### 4. Transient warm-up (`integration.transient_time`)
+### 4. Settling window (`integration.transient_time`)
 
-tvboptim handles the transient by running a separate pre-simulation and
-overwriting `state.dynamics.<sv>` with its final state. The other backends
-implement transient discarding differently. For bit-exact comparison, set
-`integration.transient_time = 0.0` and compare the raw trajectory.
+Every backend now reads this the same way: `duration` is the **measured** window, `transient_time` is prepended to it, and total integrated time is `transient_time + duration`. The settle is the head of one integration — never a separate pre-simulation — and it is cut where the run is consumed, so `t = 0` is the first measured step on every backend and the settle carries negative timestamps.
+
+That makes a run with a settle directly comparable across backends. It does not make it comparable to a run *without* one: a settle changes the state the measured window opens from, and on a stochastic model it also consumes noise. Compare like for like.
 
 ## Backend sample-0 convention
 

@@ -1183,7 +1183,34 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
         _vpar = get_attr(get_attr(_vstep, "equation"), "parameters") if _vstep is not None else None
     red["k_1"] = float(to_numeric(parameter_value(_vpar, "k_1", 5.6)))
     red["V_0"] = float(to_numeric(parameter_value(_vpar, "V_0", 0.02)))
+    _assert_transient_on_sample_grid(experiment, name, red["ds_steps"] * red["tr_stride"], "BOLD")
     return red
+
+
+def _assert_transient_on_sample_grid(experiment: Any, name: str, period_steps: int, kind: str) -> None:
+    """Require the settle to be a whole number of an observation's output samples.
+
+    The transient is integrated in-band and its leading OUTPUT samples are dropped at finalize, so the observation's sample grid is anchored to the scan while the reported one is anchored to measurement (t=0 is the start of the measured window). The two coincide only when the settle spans whole output periods; otherwise every reported timestamp carries a fractional-period offset that silently changes whenever ``transient_time`` does. Raising here keeps one grid instead of two.
+    """
+    integ = get_attr(experiment, "integration")
+    _dt = _integration_dt(experiment)
+    _tt = get_attr(integ, "transient_time")
+    _tt = float(to_numeric(_tt)) if _tt else 0.0
+    if not _tt or not _dt or period_steps <= 0:
+        return
+    n_transient = int(round(_tt / _dt))
+    if n_transient % period_steps == 0:
+        return
+    _period_time = period_steps * _dt
+    _lo = (n_transient // period_steps) * _period_time
+    _hi = _lo + _period_time
+    raise ValueError(
+        f"Observation {name!r}: transient_time {_tt:g} is {n_transient / period_steps:.4g} "
+        f"{kind} samples, not a whole number. The settle is integrated in-band and its leading "
+        f"{kind} samples are dropped, so an unaligned settle offsets every reported timestamp by "
+        f"a fraction of a sample. Set integration.transient_time to a multiple of the "
+        f"{_period_time:g} sample period — nearest are {_lo:g} and {_hi:g}."
+    )
 
 
 def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
@@ -2005,9 +2032,7 @@ def _base_class_info(module: str, name: str, source_info: dict[str, Any]) -> dic
         "constructor_args": {},
         "constructor_arg_codes": {},
         "call_args": source_info.get("call_args", {}),
-        "warmup_source": source_info.get("warmup_source"),
         "accepts_voi": False,
-        "accepts_history": bool(source_info.get("warmup_source")),
         "extra_imports": [],
     }
 
@@ -2022,7 +2047,6 @@ def adapt_class_reference_for_tvboptim(class_info: dict[str, Any], obs: Any, dt:
         {name: _literal_code(value) for name, value in class_info.get("constructor_args", {}).items() if value is not None},
     )
     class_info.setdefault("accepts_voi", False)
-    class_info.setdefault("accepts_history", bool(class_info.get("warmup_source")))
     class_info.setdefault("extra_imports", [])
 
     module = str(class_info.get("module") or "")
@@ -2069,7 +2093,6 @@ def _adapt_tvb_bold_reference(class_info: dict[str, Any], obs: Any, dt: float) -
         class_info,
     )
     adapted["accepts_voi"] = True
-    adapted["accepts_history"] = True
 
     equation_parameters = pipeline_equation_parameters(getattr(obs, "pipeline", None))
     period = constructor_args.get("period", getattr(obs, "period", None))
@@ -2335,7 +2358,7 @@ def render_analysis_observations(
                 f"_asolve_{name}, _ = prepare(network, {solver_class}({solver_kwargs}), {window})",
                 f"def _grad_of_{name}(_p):",
                 f"    _gs = eqx.tree_at(lambda _s: _s.{access}, state, _p)",
-                f"    return compute_all_observations(_asolve_{name}(_gs), _gs, result_transient).{target}",
+                f"    return compute_all_observations(_asolve_{name}(_gs), _gs).{target}",
                 f"_, obs.{name} = jax.value_and_grad(_grad_of_{name})(state.{access})",
             ]
         elif atype == "finite_difference":
@@ -2356,7 +2379,7 @@ def render_analysis_observations(
                     f"_g0_{gid} = state.{access}",
                     f"def _fd_{gid}(_key):",
                     "    _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)",
-                    f"    _loss_at = lambda _g: compute_all_observations(_asolve_{gid}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, result_transient).{target}",
+                    f"    _loss_at = lambda _g: compute_all_observations(_asolve_{gid}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs).{target}",
                     f"    return (_loss_at(_g0_{gid} + _delta_{gid}) - _loss_at(_g0_{gid} - _delta_{gid})) / (2.0 * _delta_{gid})",
                     f"{arr} = jax.lax.map(_fd_{gid}, _keys_{gid})",
                 ]
@@ -2410,11 +2433,11 @@ def render_recorded_observable(
             _only = [n for n in only_obs if n not in channel]
             # An empty closure must emit an empty *set* literal — "{}" is an empty dict, which would change compute_all_observations' `only=` semantics.
             _only_lit = ("{{{}}}".format(", ".join(repr(n) for n in sorted(_only)))) if _only else "set()"
-            lines.append(f"_all_obs = compute_all_observations(result, s, result_transient, only={_only_lit})")
+            lines.append(f"_all_obs = compute_all_observations(result, s, only={_only_lit})")
         else:
-            lines.append("_all_obs = compute_all_observations(result, s, result_transient)")
+            lines.append("_all_obs = compute_all_observations(result, s)")
     if any(n in analysis_set for n in record_names):
-        lines.append("_an_obs = compute_analysis_observations(s, _network, result_transient)")
+        lines.append("_an_obs = compute_analysis_observations(s, _network)")
     entries = []
     for n in record_names:
         if n in analysis_set:
@@ -2497,7 +2520,7 @@ def render_inference(
         if source in network_obs_names:
             return [f"{indent}{target} = {source}"]
         tmp = f"_oa{target}"
-        acc = f"compute_all_observations(model_fn({cfg}), {cfg}, transient).{source}"
+        acc = f"compute_all_observations(model_fn({cfg}), {cfg}).{source}"
         if source in derived_names:
             return [f"{indent}{target} = {acc}"]
         return [f"{indent}{tmp} = {acc}", f"{indent}{target} = {tmp}.data if hasattr({tmp}, 'data') else {tmp}"]

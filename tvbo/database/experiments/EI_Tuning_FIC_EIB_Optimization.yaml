@@ -302,19 +302,6 @@ functions:
         value: 1
         description: "Samples per window = round(downsample_period / dt)"
 
-  prepend_history:
-    description: >
-      Fit the (downsampled) transient history to one kernel length and prepend it,
-      zero-padding at the front when shorter — matches HRFBold._process_history.
-    source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
-    arguments:
-      data:
-        description: "Downsampled input time series"
-      history:
-        description: "Downsampled transient history data"
-      kernel_samples:
-        value: 5000
-        description: "Kernel support = ceil(kernel_duration / downsample_period)"
 
   volterra_transform:
     description: |
@@ -537,26 +524,6 @@ observations:
             value: integration.result
           period_samples:
             value: 1
-      - output: downsampled_history
-        function: temporal_average
-        arguments:
-          data:
-            value: integration.transient
-          period_samples:
-            value: 1
-
-            # Prepend transient history (zero-padded to one kernel length)
-      - function: prepend_history
-        arguments:
-          data:
-            value: downsampled_data
-          history:
-            value: downsampled_history
-          kernel_samples:
-            value: 5000
-
-            # Convolve with HRF kernel
-            # Original: jax.vmap(jax.vmap(fftconvolve))(ys_with_history)
       - output: bold_convolve
         callable:
           module: jax.scipy.signal
@@ -564,7 +531,7 @@ observations:
         apply_on_dimension: node
         arguments:
           in1:
-            value: prepend_history
+            value: downsampled_data
           in2:
             value: hrf_kernel
           mode:
@@ -620,11 +587,11 @@ observations:
             value: bold
           skip_t:
             value: 20
-            description: "Skip first 20 TRs for transient removal in post-tuning"
+            description: "Skip 20 TRs beyond the settle, which is already cut, for the post-tuning evaluation"
 
   fc_inloop:
     label: "Simulated Functional Connectivity (In-Loop)"
-    description: "FC computed on sliding window without transient skip (for algorithm in-loop)"
+    description: "FC over the sliding window, with no skip beyond the settle (algorithm in-loop)"
     source:
       - bold
     pipeline:
@@ -636,7 +603,7 @@ observations:
             value: bold
           skip_t:
             value: 0
-            description: "No skip for in-loop FC (sliding window already handles transient)"
+            description: "No extra skip in-loop: the settle is cut and the sliding window carries its own warm-up"
 
   fc_gradient:
     label: "Simulated FC for Gradient Optimization"

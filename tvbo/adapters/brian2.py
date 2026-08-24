@@ -197,18 +197,26 @@ class Brian2Adapter(BaseAdapter):
         if seed is None:
             seed = model.get("seed")
         net, meta = _instantiate(model, seed=seed, record_v=record_v)
-        duration = model["duration_ms"]  # milliseconds
+        duration = model["duration_ms"]  # the MEASURED window, milliseconds
         if model.get("ramp"):
             return self._run_ramp(net, meta, model)
-        net.run(duration * ms)
+        # A declared settle is PREPENDED to the measured window, so raising it never shortens the
+        # data. Absent one, the run is unchanged: a leading slice of it is discarded instead, either
+        # the caller's `settle_ms` or a fifth of the run capped at 1 s.
+        settle = model.get("transient_ms") or 0.0
+        if settle:
+            total, measured = settle + duration, duration
+        else:
+            settle = settle_ms if settle_ms is not None else min(1000.0, 0.2 * duration)
+            total, measured = duration, duration - settle
+        net.run(total * ms)
 
-        settle = settle_ms if settle_ms is not None else min(1000.0, 0.2 * duration)
         rates, spikes = {}, {}
         for name, mon in meta["spike_monitors"].items():
             n = model["populations"][name]["size"]
             t = np.asarray(mon.t / ms)
             counts = int((t >= settle).sum())
-            window_s = (duration - settle) / 1000.0
+            window_s = measured / 1000.0
             rates[name] = counts / (window_s * n) if window_s > 0 and n else 0.0
             spikes[name] = {"i": np.asarray(mon.i), "t_ms": t}
 
@@ -243,7 +251,7 @@ class Brian2Adapter(BaseAdapter):
     def _run_ramp(self, net, meta, model):
         """Run the declared continuation ramp and return its per-step population rates.
 
-        The state is never re-initialised: each declared value is written into the namespace constant that carries the labelled projection's weight, the transient settles the network quasi-statically, and the spikes of the remaining window give that step's rate. Listing the parameter up and back down therefore traces both branches of a hysteresis loop in one run, which is what makes the loop evidence of bistability rather than of two different runs.
+        The state is never re-initialised: each declared value is written into the namespace constant that carries the labelled projection's weight, the declared settle lets the network relax quasi-statically, and the spikes of the measured window that follows give that step's rate. Listing the parameter up and back down therefore traces both branches of a hysteresis loop in one run, which is what makes the loop evidence of bistability rather than of two different runs. A point costs `transient_time + duration`, of which `duration` is measured — the same split every other backend uses.
         """
         import numpy as np
         from brian2 import ms
@@ -252,22 +260,17 @@ class Brian2Adapter(BaseAdapter):
 
         ramp = model["ramp"]
         step, settle = model["duration_ms"], model.get("transient_ms") or 0.0
-        if settle >= step:
-            raise ValueError(
-                f"Ramp step is {step} ms and its transient {settle} ms: the settled window a step's "
-                f"rate is measured over would be empty."
-            )
         groups = {o.name: o for o in net.objects if hasattr(o, "namespace")}
         keep = {r[len("firing_rate_") :] for r in ramp["record"] if r.startswith("firing_rate_")}
         mons = {n: m for n, m in meta["spike_monitors"].items() if not keep or n in keep}
-        window_s, rates = (step - settle) / 1000.0, {n: [] for n in mons}
+        window_s, rates = step / 1000.0, {n: [] for n in mons}
         for value in ramp["values"]:
             for pop, key in ramp["handles"]:
                 groups[pop].namespace[key] = float(value)
             if settle:
                 net.run(settle * ms)
             counted = {n: int(m.num_spikes) for n, m in mons.items()}
-            net.run((step - settle) * ms)
+            net.run(step * ms)
             for n, mon in mons.items():
                 size = model["populations"][n]["size"]
                 rates[n].append((int(mon.num_spikes) - counted[n]) / (window_s * size))

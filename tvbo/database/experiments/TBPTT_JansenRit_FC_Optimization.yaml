@@ -141,13 +141,6 @@ functions:
     arguments:
       data: {}
       period_samples: {value: 4}
-  prepend_history:
-    description: "Zero-pad transient history to one kernel length and prepend"
-    source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
-    arguments:
-      data: {}
-      history: {}
-      kernel_samples: {value: 5000}
   volterra_transform:
     description: "Volterra BOLD nonlinearity"
     equation:
@@ -186,21 +179,11 @@ observations:
         arguments:
           data: {value: integration.result}
           period_samples: {value: 4}
-      - output: downsampled_history
-        function: temporal_average
-        arguments:
-          data: {value: integration.transient}
-          period_samples: {value: 4}
-      - function: prepend_history
-        arguments:
-          data: {value: downsampled_data}
-          history: {value: downsampled_history}
-          kernel_samples: {value: 5000}
       - output: bold_convolve
         callable: {module: jax.scipy.signal, name: fftconvolve}
         apply_on_dimension: node
         arguments:
-          in1: {value: prepend_history}
+          in1: {value: downsampled_data}
           in2: {value: hrf_kernel}
           mode: {value: valid}
       - function: volterra_transform

@@ -55,7 +55,7 @@ def axis_value(expr, transform, col):
         _space = Space(_batch, mode='zip')
         @jax.jit
         def _obj_fn(_s):
-            _oa = compute_all_observations(model_fn(_s), _s, result_transient)
+            _oa = compute_all_observations(model_fn(_s), _s)
             return Bunch(${obj_bunch})
         _results = list(ParallelExecution(_obj_fn, _space, n_pmap=${expl['n_workers']}).run())
         _F = _np.empty((len(_results), ${len(objs)}))
@@ -120,7 +120,7 @@ def axis_value(expr, transform, col):
 % endif
 % endfor
                 _final, _ = _refine_opt.run(_s, max_steps=${refine['max_steps']}, chunk_size=${refine['max_steps']}, mode='${refine['opt_mode']}')
-                _oa = compute_all_observations(model_fn(_final), _final, transient)
+                _oa = compute_all_observations(model_fn(_final), _final)
                 return Bunch(${', '.join(rets)})
             _refine_rows = list(ParallelExecution(_optimize_from_seed, Space(_seed, mode='zip'), n_pmap=${refine['n_workers']}).run())
             stage_results['${refine['name']}'] = Bunch(seeds=_refine_rows, pareto=_pareto, pareto_X=_pareto_X)
