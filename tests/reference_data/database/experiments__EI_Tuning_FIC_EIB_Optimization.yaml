@@ -976,6 +976,7 @@ algorithms:
     n_iterations: 200
     simulation_period: 720.0
     apply_every: 1
+    evaluate: true
   fic_eib:
     name: fic_eib
     description: 'Combined FIC+EIB tuning loop. Applies both Feedback Inhibition Control
@@ -1060,6 +1061,7 @@ algorithms:
           value: fc_target
     depends_on:
     - fic
+    evaluate: true
 execution:
   n_workers: 8
   n_threads: -1
