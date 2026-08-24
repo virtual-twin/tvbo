@@ -1,0 +1,63 @@
+id: 901
+part: main
+description: 'Reproduces NeuroML2 LEMS canonical example 9 (LEMS_NML2_Ex9_FN.xml).
+  Single FitzHugh-Nagumo cell with external input I=0.8, simulated for 200s at 0.01s
+  step size. Initial conditions V=0, W=0 match the NeuroML2 default (no OnStart block).
+
+  '
+label: 'NeuroML Ex9: FitzHugh-Nagumo'
+dynamics:
+  name: FitzHughNagumo
+  iri: neuroml:fitzHughNagumoCell
+  parameters:
+    I:
+      name: I
+      value: 0.8
+      description: External stimulus current
+  description: 'Classic FitzHugh-Nagumo model as defined in the NeuroML2 built-in
+    fitzHughNagumoCell ComponentType.
+
+    '
+  state_variables:
+    V:
+      name: V
+      equation:
+        rhs: V - V**3/3 - W + I
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+    W:
+      name: W
+      equation:
+        rhs: 0.08*(V + 0.7 - 0.8*W)
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+  number_of_modes: 1
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: euler
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.01
+  time_unit: s
+  duration: 200.0
+  transient_time: 0.0
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  graph_representation: auto
+  number_of_nodes: 1
+  distance_unit: mm

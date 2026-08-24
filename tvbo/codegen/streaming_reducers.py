@@ -103,32 +103,36 @@ def is_windowed_reducer(reducer_module: str | None, reducer_name: str, backend: 
 _REDUCERS_DIR = pathlib.Path(__file__).resolve().parents[1] / "database" / "reducers"
 
 
-def _spec_from_metadata(meta: dict) -> StreamingReducerSpec:
-    """Build a :class:`StreamingReducerSpec` from a parsed reducer YAML."""
+def _spec_from_metadata(recipe) -> StreamingReducerSpec:
+    """Build a :class:`StreamingReducerSpec` from a loaded ``Reducer``."""
 
     def _assigns(key):
-        return tuple((str(lhs), str(rhs)) for lhs, rhs in meta.get(key, []))
+        return tuple((str(step.target), str(step.expression)) for step in getattr(recipe, key))
 
     return StreamingReducerSpec(
-        state=tuple(str(s) for s in meta["state"]),
+        state=tuple(str(s) for s in recipe.state),
         add=_assigns("add"),
         evict=_assigns("evict"),
         resync=_assigns("resync"),
         resync_masked=_assigns("resync_masked"),
-        emit=str(meta["emit"]),
-        emit_kind=str(meta.get("emit_kind", "window")),
+        emit=str(recipe.emit),
+        emit_kind=str(recipe.emit_kind),
     )
 
 
 def _load_reducer_recipes() -> None:
-    """Register every ``database/reducers/*.yaml`` recipe for its declared backends."""
-    import yaml
+    """Register every ``database/reducers/*.yaml`` recipe for its declared backends.
+
+    Loaded as a schema ``Reducer`` rather than a raw dict, so a typo in a recipe is a validation error where every other database file reports one, not a ``KeyError`` at import time.
+    """
+    from tvbo.datamodel.schema import Reducer
+    from tvbo.utils import yaml_loader
 
     for yf in sorted(_REDUCERS_DIR.glob("*.yaml")):
-        meta = yaml.safe_load(yf.read_text())
-        spec = _spec_from_metadata(meta)
-        for backend in meta.get("backends", []):
-            for reducer_ref in meta.get("replaces", []):
+        recipe = yaml_loader.load(yf, target_class=Reducer)
+        spec = _spec_from_metadata(recipe)
+        for backend in recipe.backends:
+            for reducer_ref in recipe.replaces:
                 register_streaming_reducer(str(backend), str(reducer_ref), spec)
 
 

@@ -146,12 +146,19 @@ graphify-out
 tvbo/datamodel/schema.py
 tvbo/datamodel/pydantic.py
 tvbo/datamodel/tvbo_datamodel.schema.json
+tvbo/datamodel/dialect_tables.py
 # Copy of schema/study_layout.yaml, materialized by the same hook so a wheel can read it.
 tvbo/rules/
 
 # Build artifacts
 dist/
 *.egg-info/
+
+# Compiled modules a doc builds for itself: platform- and interpreter-specific, so a committed one is wrong for everyone else.
+docs/**/*.so
+
+# Animations `PDESimulation.qmd` rewrites on every render; `docs/Models/_output/anim1.gif` is still tracked.
+docs/Networks/_output/*.gif
 
 # Local Claude Code state, including the GENERATED `.claude/skills/` tree. The two
 # skill sources of truth are tracked: `tvbo/skills/canonical/` (ships in the wheel)

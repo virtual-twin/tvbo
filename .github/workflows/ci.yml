@@ -3,8 +3,8 @@ name: Lint & Test
 on:
     push:
         branches: ["main", "dev"]
+    # No branch filter: a PR stacked on another PR's branch must be tested too.
     pull_request:
-        branches: ["main", "dev"]
     workflow_dispatch:
 
 # Cancel redundant runs: same branch/PR triggers supersede previous runs
@@ -59,10 +59,9 @@ jobs:
             - name: Prose — comments and docstrings
               run: python scripts/check_prose.py
 
-            # Blocking on dev-targeted PRs only: elsewhere the merge-base is main's, which measures the standing backlog rather than what the PR adds.
+            # `HEAD^1` is the base side of the merge ref CI checks out — the base as it is NOW, so the diff stays this PR's own work however far the base has moved. A branch ref would blame the PR for whatever the base gained meanwhile.
             - name: Prose — no stacked '#' blocks added
-              if: github.event_name == 'pull_request' && github.base_ref != 'main'
-              run: python scripts/check_prose.py --diff "origin/${{ github.base_ref || 'dev' }}"
+              run: python scripts/check_prose.py --diff "$(git rev-parse HEAD^1 2>/dev/null || echo origin/${{ github.base_ref || 'dev' }})"
 
             # mypy: type-check the source tree, non-blocking.
             - uses: astral-sh/setup-uv@v8.1.0
@@ -317,7 +316,7 @@ jobs:
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
             || github.event_name == 'workflow_dispatch'
         runs-on: ubuntu-latest
-        timeout-minutes: 45
+        timeout-minutes: ${{ matrix.timeout || 45 }}
         strategy:
             fail-fast: false
             matrix:
@@ -333,16 +332,25 @@ jobs:
                           tests/functional/test_simulation_experiment_basic.py
                           tests/functional/test_timeseries_utils.py
                           tests/functional/test_simulation_backends_core.py
+                          tests/test_citation_formatting.py
+                          tests/test_numerical_golden_corpus.py
+                          tests/test_codegen_golden_corpus.py
+                          tests/test_symbol_context.py
+                          tests/test_symbolic_layer.py
+                          tests/test_piecewise_lowering.py
+                          tests/test_branches_only_equations.py
                     - shard: tvboptim
                       paths: >-
                           tests/test_tvboptim_experiments.py
                           tests/functional/test_simulation_backends_tvboptim.py
                           tests/test_full_workflow_comparison.py
                           tests/test_tvboptim_byte_identity.py
+                          tests/functional/test_observation_backend_consistency.py
                     - shard: tvb
                       paths: >-
                           tests/test_tvb_comparison.py
                           tests/test_tvb_interop.py
+                          tests/test_stimulus_rendering.py
                           tests/functional/test_simulation_backends_tvb.py
                     - shard: pyrates
                       paths: >-
@@ -351,9 +359,11 @@ jobs:
                     - shard: neuroml
                       paths: >-
                           tests/functional/test_simulation_backends_neuroml.py
+                          tests/functional/test_brian2_backend.py
                     - shard: extras
                       paths: >-
                           tests/test_units.py
+                          tests/test_database_golden_dump.py
                           tests/test_yaml_loader.py
                           tests/test_pydantic_loader.py
                           tests/test_linkml_compatibility.py
@@ -367,6 +377,57 @@ jobs:
                           tests/functional/test_plot_layouts.py
                           tests/test_panel_group_axis.py
                           tests/test_exploration_result_labelling.py
+                    # The complement of the shards above: a file they name is ignored here, so it runs once, under its own shard's concurrency.
+                    - shard: rest
+                      paths: >-
+                          tests/
+                          --ignore=tests/test_docs.py
+                          --ignore=tests/test_database_validation.py
+                          --ignore=tests/test_model_loading.py
+                          --ignore=tests/test_graph.py
+                          --ignore=tests/test_package_structure.py
+                          --ignore=tests/test_network_io.py
+                          --ignore=tests/functional/test_dynamics_basic.py
+                          --ignore=tests/functional/test_metadata_import.py
+                          --ignore=tests/functional/test_simulation_experiment_basic.py
+                          --ignore=tests/functional/test_timeseries_utils.py
+                          --ignore=tests/functional/test_simulation_backends_core.py
+                          --ignore=tests/test_citation_formatting.py
+                          --ignore=tests/test_numerical_golden_corpus.py
+                          --ignore=tests/test_codegen_golden_corpus.py
+                          --ignore=tests/test_symbol_context.py
+                          --ignore=tests/test_symbolic_layer.py
+                          --ignore=tests/test_piecewise_lowering.py
+                          --ignore=tests/test_branches_only_equations.py
+                          --ignore=tests/test_tvboptim_experiments.py
+                          --ignore=tests/functional/test_simulation_backends_tvboptim.py
+                          --ignore=tests/test_full_workflow_comparison.py
+                          --ignore=tests/test_tvboptim_byte_identity.py
+                          --ignore=tests/functional/test_observation_backend_consistency.py
+                          --ignore=tests/test_tvb_comparison.py
+                          --ignore=tests/test_tvb_interop.py
+                          --ignore=tests/test_stimulus_rendering.py
+                          --ignore=tests/functional/test_simulation_backends_tvb.py
+                          --ignore=tests/functional/test_pyrates_integration.py
+                          --ignore=tests/functional/test_simulation_backends_pyrates.py
+                          --ignore=tests/functional/test_simulation_backends_neuroml.py
+                          --ignore=tests/functional/test_brian2_backend.py
+                          --ignore=tests/test_units.py
+                          --ignore=tests/test_database_golden_dump.py
+                          --ignore=tests/test_yaml_loader.py
+                          --ignore=tests/test_pydantic_loader.py
+                          --ignore=tests/test_linkml_compatibility.py
+                          --ignore=tests/test_experiment_api.py
+                          --ignore=tests/test_cli.py
+                          --ignore=tests/test_cli_workflow.py
+                          --ignore=tests/test_run_models.py
+                          --ignore=tests/test_tvboptim_observation_codegen.py
+                          --ignore=tests/test_weight_transform_codegen.py
+                          --ignore=tests/test_exploration_result_labelling.py
+                          --ignore=tests/functional/test_plot_layouts.py
+                          --ignore=tests/test_panel_group_axis.py
+                      pytest_args: -n auto -m "not julia"
+                      timeout: 60
         steps:
             - uses: actions/checkout@v6
             - uses: astral-sh/setup-uv@v8.1.0
@@ -398,7 +459,7 @@ jobs:
                   pytest -x -v --tb=short \
                       --timeout=600 --timeout-method=thread \
                       --override-ini="addopts=" \
-                      ${{ matrix.paths }}
+                      ${{ matrix.pytest_args }} ${{ matrix.paths }}
 
     # Own job, not a shard, because it needs the depot cache and pre-warm — see "CI notes" in CONTRIBUTING.md.
     test-julia:
@@ -452,13 +513,15 @@ jobs:
                   # Reconciles a Manifest restored against an older depot — see "CI notes" in CONTRIBUTING.md.
                   python -c "import juliapkg; juliapkg.resolve(force=True)"
                   python -c "import tvbo, juliacall; juliacall.Main.seval('using NetworkDynamics, OrdinaryDiffEq'); print('Julia depot ready')"
+            # Selects by the same marker the `rest` shard deselects, so neither list drifts.
             - name: Run Julia backend tests
               run: |
                   pytest -x -v --tb=short \
                       --timeout=1200 --timeout-method=thread \
                       --override-ini="addopts=" \
-                      tests/functional/test_simulation_backends_julia.py \
-                      tests/test_networkdynamics_comparison.py
+                      -m julia tests/ \
+                      --ignore=tests/test_docs.py \
+                      --ignore=tests/test_database_validation.py
             - name: Save Julia depot (Julia + precompiled packages)
               # Only on success and only on an exact-key miss, so a half-built depot can never be written back.
               if: success() && steps.cache-julia-depot.outputs.cache-hit != 'true'

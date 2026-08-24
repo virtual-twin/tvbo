@@ -1,0 +1,35 @@
+function Dynamics!(dx, _x, p, t = 0)
+
+    (;k, m) = p
+
+    x, v = _x
+
+
+    omega = sqrt(k ./ m)
+
+
+    dx[1] = v
+    dx[2] = -x .* omega .^ 2
+    dx
+end
+
+# Parameter values
+p = (k = 0.0001, m = 1.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        2.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Dynamics!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

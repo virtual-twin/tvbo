@@ -1,0 +1,22 @@
+name: Cycle
+description: Cycle graph C_n — nodes arranged in a ring, each connected to its 2 neighbours.
+iri: tvbo:Cycle
+directed: false
+parameters:
+  n:
+    name: n
+    description: Number of nodes
+    datatype: integer
+bindings:
+  julia:
+    name: julia
+    library: Graphs
+    callable: cycle_graph
+    args:
+    - n
+  networkx:
+    name: networkx
+    library: networkx
+    callable: cycle_graph
+    args:
+    - n

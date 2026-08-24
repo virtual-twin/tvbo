@@ -32,6 +32,7 @@ from tvbo.adapters.smallscale.lowering import (
 )
 from tvbo.codegen.code import render_expression
 from tvbo.utils import edge_param, noise_sigma, normalize_params
+from tvbo.utils.units import time_unit_factor
 
 # ── Brian2 role vocabulary ────────────────────────────────────────────
 _POISSON_TYPES = frozenset({"poissonFiringSynapse", "transientPoissonFiringSynapse"})
@@ -80,8 +81,8 @@ def _sample_indices(n, k):
     return sorted({int(round(i * (n - 1) / (k - 1))) for i in range(k)})
 
 
-# TVBO time-scale → factor to convert a time value into milliseconds.
-_TIME_SCALE_TO_MS = {"s": 1000.0, "ms": 1.0, "us": 0.001}
+# A generated Brian2 script states every duration in ms, so declared times convert onto it.
+_BRIAN2_CLOCK = {"time_unit": "ms"}
 
 # TVBO unit name -> Brian2 unit name (as it appears in a generated script). A unit absent here is rejected (fail loud) rather than silently dropped.
 _UNIT_TO_BRIAN2 = {
@@ -311,8 +312,7 @@ class Brian2Adapter(BaseAdapter):
         edges = getattr(network, "edges", None) or []
 
         integration = getattr(exp, "integration", None)
-        raw_ts = str(getattr(integration, "time_scale", "ms") or "ms") if integration else "ms"
-        ts_factor = _TIME_SCALE_TO_MS.get(raw_ts, 1.0)  # model time unit → ms
+        ts_factor = float(time_unit_factor((network, integration, exp), _BRIAN2_CLOCK))
         dt_ms = float(getattr(integration, "step_size", 0.02) or 0.02) * ts_factor
         duration_ms = float(getattr(integration, "duration", 1000.0) or 1000.0) * ts_factor
         transient_ms = float(getattr(integration, "transient_time", 0.0) or 0.0) * ts_factor
@@ -348,7 +348,7 @@ class Brian2Adapter(BaseAdapter):
                     pulse_of_node[getattr(node, "id", 0)] = (dyn_name, dyn_obj)
                 continue
             # A cell population — ONE per node, so same-dynamics nodes in different areas stay separate (a two-area network keeps its two E pools distinct and its long-range projection connects only the right pair). The clean dynamics name is kept when a single node uses that dynamics; when several do, the node id disambiguates (ExcitatoryCell_2 / ExcitatoryCell_6) so the single-column output keys are unchanged.
-            v_sv = (getattr(dyn_obj, "state_variables", None) or {}).get("v")
+            v_sv = (dyn_obj.state_variables).get("v")
             if v_sv is None:
                 raise NotImplementedError(
                     f"Cell dynamics {dyn_name!r} declares no membrane variable 'v'; cannot build a NeuronGroup."
@@ -627,9 +627,9 @@ class Brian2Adapter(BaseAdapter):
         """
         import sympy as sp
 
-        svs = getattr(syn, "state_variables", None) or {}
-        dvs = getattr(syn, "derived_variables", None) or {}
-        events = getattr(syn, "events", None) or {}
+        svs = syn.state_variables
+        dvs = syn.derived_variables
+        events = syn.events
         if not svs:
             raise NotImplementedError(f"Synapse {getattr(syn, 'name', syn)!r}: no state variables to render.")
         if "i" not in dvs:
@@ -765,7 +765,7 @@ class Brian2Adapter(BaseAdapter):
             )
             return
 
-        if "i" not in (getattr(syn, "derived_variables", None) or {}):
+        if "i" not in (syn.derived_variables):
             # Instantaneous (delta) PSC: the spike event jumps v_post directly; no conductance.
             r = self._reduce_delta_sparse(syn, sparams, float(weight), edge_idx)
             synapses.append(
@@ -807,7 +807,7 @@ class Brian2Adapter(BaseAdapter):
 
         A synapse state variable with ``record: true`` (e.g. the STP ``u``/``x``) is monitored by a clock-driven, zero-delivery copy of the projection: a representative sample of the source population's neurons carry the same STP dynamics, driven by the same presynaptic spikes, so their ``u``/``x`` equal what the real (event-driven) synapses use — and, being clock-driven, are recordable as the continuous trace (an event-driven StateMonitor would freeze the value between spikes). The probe delivers nothing (its ``_post +=`` line is dropped), so the network's results are byte-identical; only the observation is added.
         """
-        svs = getattr(syn, "state_variables", None) or {}
+        svs = syn.state_variables
         recorded = [n for n, sv in svs.items() if bool(getattr(sv, "record", False))]
         if not recorded:
             return
@@ -844,8 +844,8 @@ class Brian2Adapter(BaseAdapter):
         """
         import sympy as sp
 
-        svs = getattr(syn, "state_variables", None) or {}
-        events = getattr(syn, "events", None) or {}
+        svs = syn.state_variables
+        events = syn.events
         syms = {n: sp.Symbol(n) for n in list(svs) + list(sparams) + ["v"]}
 
         def parse(rhs):
@@ -911,9 +911,9 @@ class Brian2Adapter(BaseAdapter):
         """
         import sympy as sp
 
-        svs = getattr(syn, "state_variables", None) or {}
-        dvs = getattr(syn, "derived_variables", None) or {}
-        events = getattr(syn, "events", None) or {}
+        svs = syn.state_variables
+        dvs = syn.derived_variables
+        events = syn.events
         if "i" not in dvs:
             raise NotImplementedError(f"Sparse synapse (edge {edge_idx}): no current derived variable 'i'.")
         syms = {n: sp.Symbol(n) for n in list(svs) + list(dvs) + list(sparams) + ["v"]}

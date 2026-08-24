@@ -1,14 +1,8 @@
 """Whether an algorithm's post-tuning evaluation is materialised.
 
-An algorithm that another one depends on contributes only its tuned state — the algorithm
-that follows re-tunes from it and supersedes its observations. Its post-tuning evaluation
-runs anyway, and it is not a diagnostic-sized run: it simulates the experiment's full
-declared duration. On Schirner2023's per-subject cohort that is a 50 000-TR fold costing
-about 10 h on each of 1096 subject jobs, producing `algorithm__fic__*` observations that
-only the group experiment's Fig 3b panel reads.
+An algorithm that another one depends on contributes only its tuned state — the algorithm that follows re-tunes from it and supersedes its observations. Its post-tuning evaluation runs anyway, and it is not a diagnostic-sized run: it simulates the experiment's full declared duration. On Schirner2023's per-subject cohort that is a 50 000-TR fold costing about 10 h on each of 1096 subject jobs, producing `algorithm__fic__*` observations that only the group experiment's Fig 3b panel reads.
 
-`Algorithm.evaluate` is where that is declared. It defaults to True, so an experiment that
-does not set it renders exactly as before.
+`Algorithm.evaluate` is where that is declared. It defaults to True, so an experiment that does not set it renders exactly as before.
 """
 
 import re

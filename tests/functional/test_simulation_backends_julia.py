@@ -25,6 +25,7 @@ _ND_UNSUPPORTED = {
 }
 
 
+@pytest.mark.julia
 @pytest.mark.backend_julia
 @pytest.mark.xdist_group("julia")
 @pytest.mark.skipif(not _HAVE_JULIACALL, reason="juliacall not installed")

@@ -26,13 +26,13 @@ from __future__ import annotations
 
 import copy
 import re
-import warnings
 from functools import cache
 from typing import Any, Union, get_args, get_origin
 
 import yaml
 from pydantic import BaseModel
 
+from tvbo.datamodel import dialect
 from tvbo.datamodel import pydantic as _dm
 from tvbo.utils import yaml_loader
 
@@ -41,7 +41,8 @@ __all__ = ["load", "loads", "validate", "normalize", "dump", "DEFAULT_TARGET"]
 #: Default datamodel class used when a caller does not specify ``target_class``.
 DEFAULT_TARGET = "SimulationExperiment"
 
-# : File-envelope metadata keys that annotate a serialized object's class and : schema version but are not datamodel slots. TVBO strips these at construction : (see ``tvbo.classes.phenotype``), so we drop them before validation too.
+#: Document-envelope keys, defined once in ``yaml_loader`` and dropped here too because
+#: this path constructs models from an already-parsed dict rather than through it.
 _ENVELOPE_KEYS = yaml_loader.ENVELOPE_KEYS
 
 
@@ -100,20 +101,12 @@ def _identifier_field(model_cls: type[BaseModel]) -> str | None:
     return None
 
 
-@cache
-def _slot_alias_map(model_cls: type[BaseModel]) -> dict[str, str]:
-    """This class's ``{alias: canonical}`` slot-alias map.
-
-    Reused verbatim from the LinkML dataclass path (``schema._SLOT_ALIASES``) so this validator accepts exactly the keys that loader does. The dataclasses fold these aliases in ``__init__``; the Pydantic models cannot, so :func:`_inject` folds them here, class-scoped — the same context that keeps ``target_variable`` (an ``Edge`` alias, but the canonical slot on a stimulus ``Event``) from being renamed where it must not be.
-    """
-    from tvbo.datamodel.schema import _SLOT_ALIASES
-
-    return _SLOT_ALIASES.get(model_cls.__name__, {})
-
-
 # Key -> identifier injection
 def _inject(model_cls: type[BaseModel], data: Any) -> Any:
-    """Recursively inject keyed-dict keys into each member's identifier slot."""
+    """Recursively inject keyed-dict keys into each member's identifier slot.
+
+    The TVBO dialect — declared aliases and bare-scalar shortcuts — is folded through the one shared implementation the dataclasses and the model validator also use, and it is folded before the field walk for two reasons: an aliased collection slot has to be seen under its canonical name to be recognised as a keyed collection at all, and a member written bare (``omega: 0.0628``) has to become a mapping before there is anywhere to inject its key. Re-folding an already-folded dict is a no-op, so the model validator repeating this is harmless.
+    """
     if not isinstance(data, dict) or not hasattr(model_cls, "model_fields"):
         return data
 
@@ -121,18 +114,7 @@ def _inject(model_cls: type[BaseModel], data: Any) -> Any:
     for envelope_key in _ENVELOPE_KEYS:
         data.pop(envelope_key, None)
 
-    # Fold this class's slot aliases (``dt``->``step_size``, ``righthandside``->``rhs``, ...), class-scoped, exactly as the generated dataclasses fold them in ``__init__``. The Pydantic models cannot, so a raw alias key would otherwise be rejected by ``extra='forbid'``. Runs before the field walk so an aliased key is seen under its canonical name.
-    for alias, canonical in _slot_alias_map(model_cls).items():
-        if alias not in data:
-            continue
-        if canonical in data:
-            warnings.warn(
-                f"{model_cls.__name__} got both {alias!r} and its canonical slot {canonical!r}; ignoring {alias!r}.",
-                stacklevel=2,
-            )
-            data.pop(alias)
-        else:
-            data[canonical] = data.pop(alias)
+    dialect.normalize(model_cls.__name__, data)
 
     for fname, info in model_cls.model_fields.items():
         key = fname if fname in data else (info.alias if info.alias and info.alias in data else None)

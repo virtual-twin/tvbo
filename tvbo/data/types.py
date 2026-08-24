@@ -17,7 +17,6 @@ from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 
 import tvbo.jax.xarray_pytrees  # noqa: F401 – registers xr types as JAX pytrees
-from tvbo.classes import equation as equations
 from tvbo.classes.network import Network
 from tvbo.utils import Bunch, format_pytree_as_string
 
@@ -100,9 +99,7 @@ def _observation_dataarray(raw_data, dims=None, nodes=None):
 def _jax_array(value):
     """*value* unwrapped to its array when it implements the JAX array protocol, else *value* itself.
 
-    tvboptim's ``Parameter``/``BoundedParameter`` expose their value only through
-    ``__jax_array__``: their ``__array__`` takes no ``dtype``, so ``np.asarray(p, dtype=float)``
-    raises and a fitted parameter would be dropped as non-numeric rather than saved.
+    tvboptim's ``Parameter``/``BoundedParameter`` expose their value only through ``__jax_array__``: their ``__array__`` takes no ``dtype``, so ``np.asarray(p, dtype=float)`` raises and a fitted parameter would be dropped as non-numeric rather than saved.
     """
     unwrap = getattr(value, "__jax_array__", None)
     return unwrap() if unwrap is not None else value
@@ -2186,6 +2183,8 @@ class ExperimentResult:
 
         Writes ``<prefix>_result.h5`` — a single xarray ``Dataset`` where every output is a data-variable and the sweep parameters are shared coordinates (a full run is gridded; a sharded run keeps the flat, self-describing ``point`` dim that reassembles by value) — and ``<prefix>_result.yaml``, the frozen experiment spec. ``<prefix>`` is the experiment's BIDS-style key-value name (``ses-<id>_desc-<label>``). The **same** artifact is produced by a local run and by the HPC gather pass, so they are interchangeable. Returns the written paths.
 
+        The sidecar carries the frozen spec plus a connectome companion (``<stem>_network.h5``), so the result reloads without its original data sources. Writing it is not guarded: it is half of what this method promises, and a swallowed failure returned an ``.h5`` with no ``.yaml``, which the caller met much later as an unrelated error.
+
         An on-device cohort run fans here into one per-subject result (see :meth:`_save_per_subject`), mirroring the per-subject workflow fan-out.
         """
         import os
@@ -2512,25 +2511,45 @@ class ExperimentResult:
             written.append(h5)
 
         if not is_shard and written and self.source is not None and hasattr(self.source, "freeze_yaml"):
+            written += self._write_provenance(out_dir, stem, results=written)
+        return written
+
+    def _write_provenance(self, out_dir, stem, results) -> list:
+        """Write the re-run recipe and the BIDS sidecars, reporting whatever failed.
+
+        The results are on disk by the time this runs, so one metadata step failing must not skip the others — and must not pass unremarked either, which is how a result set that lost its recipe came to look like a complete one. Every step is attempted and the failures are raised together, naming the results that were written.
+        """
+        import os
+
+        def _recipe():
+            """The spec plus its frozen connectome companion, reproducible on reload with no data sources present."""
+            network_stem = (
+                self.source.get_network_stem()
+                if hasattr(self.source, "get_network_stem")
+                else f"{stem.rsplit('_', 1)[0]}_network"
+            )
+            yaml_text = self.source.freeze_yaml(out_dir, network_stem=network_stem)
+            yaml_path = os.path.join(out_dir, f"{stem}.yaml")
+            with open(yaml_path, "w", encoding="utf-8") as fh:
+                fh.write(yaml_text)
+            return [yaml_path]
+
+        written, failures = [], []
+        for label, write in (
+            ("re-run recipe", _recipe),
+            ("BIDS dataset_description", lambda: self._write_dataset_description(out_dir)),
+        ):
             try:
-                # Self-contained provenance: the spec plus its frozen connectome companion, reproducible on reload with no data sources present.
-                network_stem = (
-                    self.source.get_network_stem()
-                    if hasattr(self.source, "get_network_stem")
-                    else f"{stem.rsplit('_', 1)[0]}_network"
-                )
-                yaml_text = self.source.freeze_yaml(out_dir, network_stem=network_stem)
-                yaml_path = os.path.join(out_dir, f"{stem}.yaml")
-                with open(yaml_path, "w", encoding="utf-8") as fh:
-                    fh.write(yaml_text)
-                written.append(yaml_path)
-            except Exception:
-                logger.warning("provenance sidecar %s.yaml not written", stem, exc_info=True)
-            # The YAML above IS the sidecar: the whole re-runnable recipe, so nothing here writes a second curated copy of a few of its fields in JSON. What this adds is the dataset_description.json that marks out_dir as a BIDS derivative dataset when a run writes outside a scaffolded study.
-            try:
-                written += self._write_dataset_description(out_dir)
-            except Exception:
-                logger.warning("dataset_description.json for %s not written", out_dir, exc_info=True)
+                written += write()
+            except Exception as exc:
+                failures.append(f"  {label}: {type(exc).__name__}: {exc}")
+        if failures:
+            raise RuntimeError(
+                "the results were written but their provenance was not:\n"
+                + "\n".join(failures)
+                + "\nresults on disk:\n"
+                + "\n".join(f"  {path}" for path in results + written)
+            )
         return written
 
     def _write_dataset_description(self, out_dir) -> list:
@@ -3315,7 +3334,9 @@ class TimeSeries:
 
         import sympy as sp
 
-        exp = sp.parse_expr(sv_label, equations._clash1, evaluate=False)
+        from tvbo.parse.symbols import BUILTIN_SHADOW
+
+        exp = BUILTIN_SHADOW.parse(sv_label, evaluate=False)
         data = {}
         for s in exp.free_symbols:
             data[str(s)] = self.data[:, self._get_index_of_state_variable(str(s)), :, :]

@@ -1,0 +1,178 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    C_m = _p.C_m
+    DTvN0 = _p.DTvN0
+    DmuV0 = _p.DmuV0
+    DsV0 = _p.DsV0
+    E_L_e = _p.E_L_e
+    E_L_i = _p.E_L_i
+    E_e = _p.E_e
+    E_i = _p.E_i
+    K_ext_e = _p.K_ext_e
+    K_ext_i = _p.K_ext_i
+    N_tot = _p.N_tot
+    P0_e = _p.P0_e
+    P0_i = _p.P0_i
+    P1_e = _p.P1_e
+    P1_i = _p.P1_i
+    P2_e = _p.P2_e
+    P2_i = _p.P2_i
+    P3_e = _p.P3_e
+    P3_i = _p.P3_i
+    P4_e = _p.P4_e
+    P4_i = _p.P4_i
+    P5_e = _p.P5_e
+    P5_i = _p.P5_i
+    P6_e = _p.P6_e
+    P6_i = _p.P6_i
+    P7_e = _p.P7_e
+    P7_i = _p.P7_i
+    P8_e = _p.P8_e
+    P8_i = _p.P8_i
+    P9_e = _p.P9_e
+    P9_i = _p.P9_i
+    Q_e = _p.Q_e
+    Q_i = _p.Q_i
+    S_i = _p.S_i
+    T = _p.T
+    TvN0 = _p.TvN0
+    a_e = _p.a_e
+    a_i = _p.a_i
+    b_e = _p.b_e
+    b_i = _p.b_i
+    external_input_ex_ex = _p.external_input_ex_ex
+    external_input_ex_in = _p.external_input_ex_in
+    external_input_in_ex = _p.external_input_in_ex
+    external_input_in_in = _p.external_input_in_in
+    g_L = _p.g_L
+    g = _p.g
+    muV0 = _p.muV0
+    p_connect_e = _p.p_connect_e
+    p_connect_i = _p.p_connect_i
+    sV0 = _p.sV0
+    tau_OU = _p.tau_OU
+    tau_e = _p.tau_e
+    tau_i = _p.tau_i
+    tau_w_e = _p.tau_w_e
+    tau_w_i = _p.tau_w_i
+    weight_noise = _p.weight_noise
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    E = current_state[0]
+    I = current_state[1]
+    W_e = current_state[2]
+    W_i = current_state[3]
+    ou_drift = current_state[4]
+
+    # Derived variables
+    lc_E = E * local_coupling
+    lc_I = I * local_coupling
+    Fe_ext = np.where(
+        np.less(K_ext_e * (c_glob + lc_E + ou_drift * weight_noise), 0),
+        0,
+        c_glob + lc_E + ou_drift * weight_noise,
+    )
+    Fi_ext = lc_I
+    fe_e = K_ext_e * (Fe_ext + external_input_ex_ex) + N_tot * p_connect_e * (
+        1 / 1000000 + E
+    ) * (1.0 - g)
+    fe_i = K_ext_e * (Fe_ext + external_input_in_ex) + N_tot * p_connect_e * (
+        1 / 1000000 + E
+    ) * (1.0 - g)
+    fi_e = K_ext_i * (Fi_ext + external_input_ex_in) + N_tot * g * p_connect_i * (
+        1 / 1000000 + I
+    )
+    fi_i = K_ext_i * (Fi_ext + external_input_in_in) + N_tot * g * p_connect_i * (
+        1 / 1000000 + I
+    )
+    mu_Ge_e = Q_e * fe_e * tau_e
+    mu_Ge_i = Q_e * fe_i * tau_e
+    mu_Gi_e = Q_i * fi_e * tau_i
+    mu_Gi_i = Q_i * fi_i * tau_i
+    mu_G_e = g_L + mu_Ge_e + mu_Gi_e
+    mu_G_i = g_L + mu_Ge_i + mu_Gi_i
+    T_m_e = C_m / mu_G_e
+    T_m_i = C_m / mu_G_i
+    mu_V_e = (-W_e + E_L_e * g_L + E_e * mu_Ge_e + E_i * mu_Gi_e) / mu_G_e
+    mu_V_i = (-W_i + E_L_i * g_L + E_e * mu_Ge_i + E_i * mu_Gi_i) / mu_G_i
+    U_e_e = Q_e * (E_e - mu_V_e) / mu_G_e
+    U_e_i = Q_e * (E_e - mu_V_i) / mu_G_i
+    U_i_e = Q_i * (E_i - mu_V_e) / mu_G_e
+    U_i_i = Q_i * (E_i - mu_V_i) / mu_G_i
+    V_e = (mu_V_e - muV0) / DmuV0
+    V_i = (mu_V_i - muV0) / DmuV0
+    T_V_e = (fe_e * U_e_e**2 * tau_e**2 + fi_e * U_i_e**2 * tau_i**2) / (
+        fe_e * U_e_e**2 * tau_e**2 / (T_m_e + tau_e)
+        + fi_e * U_i_e**2 * tau_i**2 / (T_m_e + tau_i)
+    )
+    T_V_i = (fe_i * U_e_i**2 * tau_e**2 + fi_i * U_i_i**2 * tau_i**2) / (
+        fe_i * U_e_i**2 * tau_e**2 / (T_m_i + tau_e)
+        + fi_i * U_i_i**2 * tau_i**2 / (T_m_i + tau_i)
+    )
+    sigma_V_e = np.sqrt(
+        fe_e * U_e_e**2 * tau_e**2 / (2.0 * T_m_e + 2.0 * tau_e)
+        + fi_e * U_i_e**2 * tau_i**2 / (2.0 * T_m_e + 2.0 * tau_i)
+    )
+    sigma_V_i = np.sqrt(
+        fe_i * U_e_i**2 * tau_e**2 / (2.0 * T_m_i + 2.0 * tau_e)
+        + fi_i * U_i_i**2 * tau_i**2 / (2.0 * T_m_i + 2.0 * tau_i)
+    )
+    S_e = (sigma_V_e - sV0) / DsV0
+    S_i = (sigma_V_i - sV0) / DsV0
+    T_e = (-TvN0 + T_V_e * g_L / C_m) / DTvN0
+    T_i = (-TvN0 + T_V_i * g_L / C_m) / DTvN0
+    V_thre_e = (
+        1000.0 * P0_e
+        + 1000.0 * P1_e * V_e
+        + 1000.0 * P2_e * S_e
+        + 1000.0 * P3_e * T_e
+        + 1000.0 * P4_e * V_e**2
+        + 1000.0 * P5_e * S_e**2
+        + 1000.0 * P6_e * T_e**2
+        + 1000.0 * P7_e * S_e * V_e
+        + 1000.0 * P8_e * T_e * V_e
+        + 1000.0 * P9_e * S_e * T_e
+    )
+    V_thre_i = (
+        1000.0 * P0_i
+        + 1000.0 * P1_i * V_i
+        + 1000.0 * P2_i * S_i
+        + 1000.0 * P3_i * T_i
+        + 1000.0 * P4_i * V_i**2
+        + 1000.0 * P5_i * S_i**2
+        + 1000.0 * P6_i * T_i**2
+        + 1000.0 * P7_i * S_i * V_i
+        + 1000.0 * P8_i * T_i * V_i
+        + 1000.0 * P9_i * S_i * T_i
+    )
+    f_out_e = (
+        (1 / 2)
+        * scipy.special.erfc((1 / 2) * np.sqrt(2) * (V_thre_e - mu_V_e) / sigma_V_e)
+        / T_V_e
+    )
+    f_out_i = (
+        (1 / 2)
+        * scipy.special.erfc((1 / 2) * np.sqrt(2) * (V_thre_i - mu_V_i) / sigma_V_i)
+        / T_V_i
+    )
+
+    # Derivatives
+    dE_dt = (f_out_e - E) / T
+    dI_dt = (f_out_i - I) / T
+    dW_e_dt = E * b_e - W_e / tau_w_e + a_e * (mu_V_e - E_L_e) / tau_w_e
+    dW_i_dt = I * b_i - W_i / tau_w_i + a_i * (mu_V_i - E_L_i) / tau_w_i
+    dou_drift_dt = -ou_drift / tau_OU
+
+    derivatives = np.array(
+        np.broadcast_arrays(dE_dt, dI_dt, dW_e_dt, dW_i_dt, dou_drift_dt)
+    )
+
+    return derivatives

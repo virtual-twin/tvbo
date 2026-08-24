@@ -1,0 +1,36 @@
+function LorenzBounded!(dx, x, p, t = 0)
+
+    (;beta, r, rho, sigma) = p
+
+    X, Y, Z = x
+
+
+    f = 1 .- (X .^ 2 .+ Y .^ 2 .+ Z .^ 2) ./ r .^ 2
+
+    dx[1] = f .* sigma .* (Y .- X)
+    dx[2] = f .* (-Y .+ X .* (rho .- Z))
+    dx[3] = f .* (X .* Y .- Z .* beta)
+    dx
+end
+
+# Parameter values
+p = (beta = 2.667, r = 64.0, rho = 28.0, sigma = 10.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -13.284881,
+        -12.444334,
+        34.188198,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(LorenzBounded!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

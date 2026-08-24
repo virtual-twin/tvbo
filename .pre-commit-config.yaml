@@ -38,3 +38,18 @@ repos:
         pass_filenames: false
         files: '^(tvbo/database/.*\.ya?ml|schema/tvbo_datamodel\.yaml|tests/test_database_validation\.py)$'
         stages: [pre-commit]
+
+      - id: style-contracts
+        name: Style contracts — generated code, and the comment convention
+        entry: pytest tests/test_codegen_style_contract.py tests/test_comment_style.py -q --no-header -p no:randomly
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      # A folded alias read as an attribute returns its default forever, and silently.
+      - id: no-folded-alias-reads
+        name: No source reads a slot alias the dialect folds away
+        entry: pytest tests/test_no_folded_alias_reads.py -q --no-header -p no:randomly
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

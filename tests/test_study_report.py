@@ -431,7 +431,7 @@ def test_a_pipeline_step_is_named_by_what_the_recipe_calls_it():
 
 
 def test_a_setting_every_observation_shares_is_stated_once(study):
-    """`time_scale` defaults to `ms` in the schema, so it was printed on all 34 rows of one study's table and all 29 of another — a default nobody chose, on every line."""
+    """A study declares its clock once, so `time_unit` was printed on all 34 rows of one study's table and all 29 of another — the same value, on every line."""
     from tvbo.utils import report
 
     exps = [study.get_experiment(i) for i in study.experiment_ids()]

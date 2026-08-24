@@ -1,7 +1,6 @@
 """TVB-O command-line interface.
 
-The CLI is Typer-based, registry-driven and transport-aware. This module assembles the
-top-level :class:`typer.Typer` ``app`` from per-verb sub-modules.
+The CLI is Typer-based, registry-driven and transport-aware. This module assembles the top-level :class:`typer.Typer` ``app`` from per-verb sub-modules.
 """
 
 from __future__ import annotations
@@ -54,6 +53,9 @@ from . import (
 )
 from . import (
     study as _study_cmd,
+)
+from . import (
+    units as _units_cmd,
 )
 from . import (
     validate as _validate_cmd,
@@ -127,6 +129,7 @@ app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeli
 app.add_typer(
     _skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally."
 )
+app.add_typer(_units_cmd.app, name="units", help="Inspect the QUDT-vendored unit vocabulary, and curate a new unit into it.")
 app.add_typer(_study_cmd.app, name="study", help="Scaffold and inspect a BIDS study dataset from the layout record.")
 app.add_typer(_install_cmd.app, name="install", help="Provision optional native components pip cannot place (e.g. AUTO-07p).")
 

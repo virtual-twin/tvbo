@@ -1,0 +1,57 @@
+name: ThomasCyclical
+parameters:
+  b:
+    name: b
+    value: 0.2
+    description: Linear damping parameter b.
+description: 'Thomas'' cyclically symmetric attractor: a smooth three-dimensional
+  system with
+
+  rotational symmetry across cyclic permutations (x,y,z). Reduces to the labyrinth
+
+  system when b = 0. Displays a strange attractor with intertwined scroll-like lobes.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- Thomas1999
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: sin(y) - b*x
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 1.0
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: sin(z) - b*y
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: sin(x) - b*z
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: generic
+autonomous: true
+cse: false
+compile: false

@@ -1,0 +1,8 @@
+name: Raw
+label: Raw State Recording
+description: Records all state variables at every integration step without any transformation.
+  Identity passthrough of the full simulation state.
+reconcile: by_label
+class_reference:
+  name: Raw
+  module: tvb.simulator.monitors

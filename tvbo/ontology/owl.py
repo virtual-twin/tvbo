@@ -317,24 +317,71 @@ def hangident(text, indent=4) -> str:
     return splitted[0] + "\n" + "\n".join(" " * indent + line for line in splitted[1:])
 
 
+_CLASS_INDEX = None
+"""``(by IRI fragment, by label)``, built on the first miss. Traversing every class forces
+the metadata-only ontology to load, so it is done once rather than per lookup."""
+
+
+def resolve_class(name: str):
+    """The ontology class *name* refers to, by IRI fragment or by label.
+
+    ``onto[...]`` resolves a fragment only within the ontology's own IRI, so every class reached through an import — ``Annotation``, ``Space``, the UBERON and NCBITaxon terms — is invisible to it. The imported classes are searched here too.
+
+    Both lookups are exact. The ontology's own ``label_search`` matches loosely, which is right for a search box and wrong for resolving a name: it answers ``'Annotation'`` with ``'annotation criteria application'``, a different class, with no sign that it guessed. A name that matches nothing raises rather than yielding ``None`` for the caller to fail on later.
+
+    Raises:
+        KeyError: If no class carries that IRI fragment or that exact label.
+    """
+    found = onto[name]
+    if found is not None:
+        return found
+
+    global _CLASS_INDEX
+    if _CLASS_INDEX is None:
+        by_label, by_fragment = {}, {}
+        for cls in onto.classes():
+            by_fragment.setdefault(cls.name, cls)
+            label = cls.label.first()
+            if label:
+                by_label.setdefault(label, cls)
+        _CLASS_INDEX = (by_fragment, by_label)
+
+    by_fragment, by_label = _CLASS_INDEX
+    found = by_fragment.get(name) or by_label.get(name)
+    if found is None:
+        raise KeyError(f"no ontology class with the IRI fragment or label {name!r}")
+    return found
+
+
 def get_info(cls) -> str:
     """Build a formatted text summary of an ontology class with its definition and references.
 
+    A class states as much of itself as it carries. 776 of the ontology's 1516 classes have no ``definition`` and 13 have no ``label``; reading either unconditionally is what made this raise ``AttributeError`` on more than half of them. The IRI fragment stands in for a missing label, and a missing definition simply leaves that section out. ``definition`` and ``has_reference`` are annotation properties TVB-O declares, so a class from an imported ontology — ``owl:Thing`` among them — does not carry the properties at all, let alone empty ones.
+
     Args:
-        cls: The ontology class, or its label string to look up in the ontology.
+        cls: The ontology class, or a string naming it by IRI fragment or by label.
 
     Returns:
         A multi-line string with the class label as a heading, its wrapped
-        definition, and a formatted references section when references exist.
+        definition when it has one, and a references section when it has references.
+
+    Raises:
+        KeyError: If a string names no class in the ontology.
     """
     from tvbo.utils.report import render_citation
 
     if isinstance(cls, str):
-        cls = onto[cls]
-    info = cls.label.first() + "\n"
-    info += "=" * len(cls.label.first()) + "\n\n"
-    info += wrap_text(cls.definition.first())
-    references = cls.has_reference
+        cls = resolve_class(cls)
+
+    heading = cls.label.first() or cls.name
+    info = heading + "\n" + "=" * len(heading) + "\n\n"
+
+    definition = getattr(cls, "definition", None)
+    definition = definition.first() if definition else None
+    if definition:
+        info += wrap_text(definition)
+
+    references = getattr(cls, "has_reference", None) or []
     if len(references) > 0:
         info += "\n\n"
         info += "References\n"

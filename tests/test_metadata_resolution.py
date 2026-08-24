@@ -117,3 +117,22 @@ def test_coupling_explicit_name_preserved():
     c = Coupling(name="MyCustom", iri="tvbo:Sigmoidal")
     assert c.name == "MyCustom"  # explicit name wins
     assert len(c.parameters) == 5  # but params from Sigmoidal
+
+
+@pytest.mark.parametrize("curie", ["tvbo:Linear", "tvbo:Sigmoidal", "tvbo:SigmoidalJansenRit"])
+def test_both_generated_forms_resolve_an_iri_the_same_way(curie):
+    """One YAML cannot mean two different couplings depending on which loader read it.
+
+    The behaviour is attached to both generated forms, but they do not share a construction hook — the dataclasses call ``__post_init__``, the Pydantic models ``model_post_init``. With only the first, everything loaded through ``tvbo.utils.pydantic_loader`` came back as a bare default ``Linear``, unpopulated, with no error to say so.
+    """
+    from tvbo.datamodel import pydantic as pdm
+    from tvbo.datamodel import schema
+
+    dataclass_form = schema.Coupling(iri=curie)
+    pydantic_form = pdm.Coupling(iri=curie)
+
+    assert dataclass_form.name == pydantic_form.name
+    assert str(dataclass_form.pre_expression.rhs) == str(pydantic_form.pre_expression.rhs)
+    assert str(dataclass_form.post_expression.rhs) == str(pydantic_form.post_expression.rhs)
+    assert list(dataclass_form.parameters) == list(pydantic_form.parameters)
+    assert [p.value for p in dataclass_form.parameters.values()] == [p.value for p in pydantic_form.parameters.values()]

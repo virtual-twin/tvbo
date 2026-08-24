@@ -1,0 +1,566 @@
+id: 1
+references:
+- Mahjoory et al. (2020) eLife 9:e53715 - MEG frequency gradient
+- Jansen & Rit (1995) Biol Cybern 73:357-366 - Neural mass model
+part: main
+description: 'Reproducing MEG Resting-State Frequency Gradients with Network Dynamics.
+  This experiment fits region-specific Jansen-Rit parameters to reproduce the empirical
+  frequency gradient from visual cortex (11 Hz) to association areas (7 Hz).
+
+  '
+label: JR Peak Frequency Optimization
+dynamics:
+  name: JansenRit
+  label: Jansen-Rit Neural Mass Model
+  parameters:
+    A:
+      name: A
+      value: 3.25
+      description: Maximum amplitude of EPSP [mV]
+      unit: mV
+    B:
+      name: B
+      value: 22.0
+      description: Maximum amplitude of IPSP [mV]
+      unit: mV
+    a:
+      name: a
+      value: 0.065
+      domain:
+        enforce: none
+        lo: 0.001
+        hi: 0.2
+        log_scale: false
+      description: Reciprocal of membrane time constant (excitatory)
+      unit: per_ms
+    b:
+      name: b
+      value: 0.065
+      domain:
+        enforce: none
+        lo: 0.001
+        hi: 0.2
+        log_scale: false
+      description: Reciprocal of membrane time constant (inhibitory)
+      unit: per_ms
+    v0:
+      name: v0
+      value: 5.52
+      description: Firing threshold [mV]
+      unit: mV
+    nu_max:
+      name: nu_max
+      value: 0.0025
+      description: Maximum firing rate
+      unit: per_ms
+    r:
+      name: r
+      value: 0.56
+      description: Steepness of sigmoid
+      unit: per_mV
+    J:
+      name: J
+      value: 135.0
+      description: Average number of synapses
+    a_1:
+      name: a_1
+      value: 1.0
+      description: Excitatory feedback probability
+    a_2:
+      name: a_2
+      value: 0.8
+      description: Slow excitatory feedback probability
+    a_3:
+      name: a_3
+      value: 0.25
+      description: Inhibitory feedback probability
+    a_4:
+      name: a_4
+      value: 0.25
+      description: Slow inhibitory feedback probability
+    mu:
+      name: mu
+      value: 0.15
+      description: Mean input firing rate
+  description: 'Neural mass model with three populations (pyramidal, excitatory interneurons,
+    inhibitory interneurons). Produces characteristic alpha-band oscillations.
+
+    # --- PARAMETERS (from JansenRit.DEFAULT_PARAMS in JR.qmd) ---
+
+    '
+  derived_variables:
+    sigm_y1_y2:
+      name: sigm_y1_y2
+      description: Sigmoid of y1-y2
+      equation:
+        rhs: 2.0 * nu_max / (1.0 + exp(r * (v0 - (y1 - y2))))
+        latex: false
+      record: false
+      conditional: false
+    sigm_y0_1:
+      name: sigm_y0_1
+      description: Sigmoid of a_1*J*y0
+      equation:
+        rhs: 2.0 * nu_max / (1.0 + exp(r * (v0 - (a_1 * J * y0))))
+        latex: false
+      record: false
+      conditional: false
+    sigm_y0_3:
+      name: sigm_y0_3
+      description: Sigmoid of a_3*J*y0
+      equation:
+        rhs: 2.0 * nu_max / (1.0 + exp(r * (v0 - (a_3 * J * y0))))
+        latex: false
+      record: false
+      conditional: false
+  coupling_inputs:
+    DelayedSigmoidalJansenRit:
+      name: DelayedSigmoidalJansenRit
+      dimension: 1
+      local: false
+  state_variables:
+    y0:
+      name: y0
+      equation:
+        rhs: y3
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+    y1:
+      name: y1
+      equation:
+        rhs: y4
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 5.0
+    y2:
+      name: y2
+      equation:
+        rhs: y5
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 5.0
+    y3:
+      name: y3
+      equation:
+        rhs: A * a * sigm_y1_y2 - 2.0 * a * y3 - a**2 * y0
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+    y4:
+      name: y4
+      equation:
+        rhs: A * a * (mu + a_2 * J * sigm_y0_1 + DelayedSigmoidalJansenRit) - 2.0
+          * a * y4 - a**2 * y1
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: true
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+    y5:
+      name: y5
+      equation:
+        rhs: B * b * (a_4 * J * sigm_y0_3) - 2.0 * b * y5 - b**2 * y2
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+  number_of_modes: 1
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: Heun
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 1.0
+  duration: 1000.0
+  noise:
+    parameters:
+      sigma:
+        name: sigma
+        value: 0.0001
+    noise_type: gaussian
+    gaussian: false
+    additive: true
+    seed: 42
+  transient_time: 20000.0
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  label: Desikan-Killiany
+  description: Structural connectivity from dk_average dataset
+  parameters:
+    conduction_speed:
+      name: conduction_speed
+      value: 3.0
+      unit: mm_per_ms
+  coupling:
+    DelayedSigmoidalJansenRit:
+      name: DelayedSigmoidalJansenRit
+      label: Delayed Sigmoidal Jansen-Rit Coupling
+      parameters:
+        G:
+          name: G
+          value: 15.0
+          description: Global coupling strength
+          free: true
+        cmin:
+          name: cmin
+          value: 0.0
+        cmax:
+          name: cmax
+          value: 0.005
+          description: 2 * nu_max from TVB default
+        midpoint:
+          name: midpoint
+          value: 6.0
+        r:
+          name: r
+          value: 0.56
+      description: Sigmoidal Jansen-Rit coupling function with delays
+      sparse: false
+      pre_expression:
+        rhs: cmin + (cmax - cmin) / (1.0 + exp(r * (midpoint - (y1 - y2))))
+        latex: false
+      post_expression:
+        rhs: G * gx
+        latex: false
+      incoming_states:
+      - y1
+      - y2
+      delayed: true
+      interpolate_delays: false
+      vectorized: false
+      symmetry: directed
+  graph_representation: auto
+  transforms:
+  - name: weight
+    equation:
+      rhs: weight / max(weight)
+      latex: false
+  bids_dir: ../networks/bids/dk_average
+  structural_measures:
+  - streamlineCount
+  - tractLength
+  distance_unit: mm
+observations:
+  simulated_psd:
+    name: simulated_psd
+    label: Simulated Power Spectral Density
+    description: Power spectral density using Welch's method on simulated y0
+    source:
+    - y0
+    reconcile: by_label
+    pipeline:
+    - function: subsample
+      arguments:
+        data:
+          name: data
+          description: Input time series from simulation
+          value: integration.result
+    - callable:
+        name: transpose
+        module: jax.numpy
+      output: transposed
+      arguments:
+        a:
+          name: a
+          description: Subsampled time series
+          value: subsample
+    - callable:
+        name: welch
+        module: jax.scipy.signal
+      output: frequencies, psd
+      arguments:
+        x:
+          name: x
+          description: Transposed time series (nodes, time)
+          value: transposed
+        fs:
+          name: fs
+          description: Sampling frequency (Hz)
+          value: 100.0
+        nperseg:
+          name: nperseg
+          description: Segment length for Welch
+          value: 256
+  avg_spectrum:
+    name: avg_spectrum
+    label: Average Spectrum
+    description: Mean power spectrum across all regions
+    source:
+    - simulated_psd
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: mean
+        module: jax.numpy
+      output: avg_psd
+      arguments:
+        a:
+          name: a
+          description: Power spectrum from simulated_psd observation
+          value: simulated_psd.psd
+        axis:
+          name: axis
+          description: Average over regions dimension
+          value: 0
+  peak_frequencies:
+    name: peak_frequencies
+    label: Peak Frequencies per Region
+    description: Peak frequency for each brain region from its PSD
+    source:
+    - simulated_psd
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: argmax
+        module: jax.numpy
+      output: peak_indices
+      arguments:
+        a:
+          name: a
+          description: PSD array (regions, 1, frequencies)
+          value: simulated_psd.psd
+        axis:
+          name: axis
+          description: Find max along frequency axis
+          value: -1
+    - callable:
+        name: squeeze
+        module: jax.numpy
+      output: peak_indices_squeezed
+      arguments:
+        a:
+          name: a
+          value: peak_indices
+    - function: index_at
+      output: peak_frequencies
+      arguments:
+        arr:
+          name: arr
+          description: Frequency array from PSD
+          value: simulated_psd.frequencies
+        idx:
+          name: idx
+          description: Indices of peak frequencies per region
+          value: peak_indices_squeezed
+  peak_frequency:
+    name: peak_frequency
+    label: Peak Frequency
+    description: Extract peak frequency from average spectrum
+    source:
+    - avg_spectrum
+    - simulated_psd
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: argmax
+        module: jax.numpy
+      output: peak_idx
+      arguments:
+        a:
+          name: a
+          description: Average power spectrum (output of jnp.mean)
+          value: avg_spectrum
+    - function: index_at
+      arguments:
+        arr:
+          name: arr
+          description: Frequency array from PSD
+          value: simulated_psd.frequencies
+        idx:
+          name: idx
+          description: Index of peak frequency
+          value: peak_idx
+functions:
+  subsample:
+    name: subsample
+    description: Downsample array by step factor
+    arguments:
+      data:
+        name: data
+        description: Input array
+      step:
+        name: step
+        description: Downsample factor (1ms * 10 = 10ms period = 100 Hz)
+        value: 10
+    source_code: data[::step]
+  index_at:
+    name: index_at
+    description: Index into array at given position
+    arguments:
+      arr:
+        name: arr
+        description: Input array
+      idx:
+        name: idx
+        description: Index position
+    source_code: arr[idx]
+  compute_target_frequencies:
+    name: compute_target_frequencies
+    equation:
+      definition: 'Linear mapping from distance to frequency: f_max at visual cortex,
+        f_min at maximum distance'
+      rhs: f_max - (f_max - f_min) * (d - min(d)) / (max(d) - min(d))
+      latex: false
+    description: Compute target frequencies from tract lengths to visual cortex
+    arguments:
+      d:
+        name: d
+        description: Distance array from visual cortex for each region
+      f_min:
+        name: f_min
+        description: Minimum frequency at max distance [Hz]
+        value: 7.0
+      f_max:
+        name: f_max
+        description: Maximum frequency at visual cortex [Hz]
+        value: 11.0
+  cauchy_pdf:
+    name: cauchy_pdf
+    equation:
+      definition: Cauchy-Lorentz distribution centered at x0 with scale gamma
+      rhs: 1 / (pi * gamma * (1 + ((x - x0) / gamma)**2))
+      latex: false
+    description: Cauchy-Lorentz probability density function
+    arguments:
+      x:
+        name: x
+        description: Input values (frequency axis)
+      x0:
+        name: x0
+        description: Peak location for each region (target frequencies)
+      gamma:
+        name: gamma
+        description: Scale parameter (half-width at half-maximum)
+        value: 1.0
+  correlation:
+    name: correlation
+    equation:
+      definition: Pearson product-moment correlation coefficient
+      rhs: Sum((x[i] - mean(x)) * (y[i] - mean(y)), (i, 0, n-1)) / sqrt(Sum((x[i]
+        - mean(x))**2, (i, 0, n-1)) * Sum((y[i] - mean(y))**2, (i, 0, n-1)))
+      latex: false
+    description: Pearson correlation coefficient
+    arguments:
+      x:
+        name: x
+        description: First array
+      y:
+        name: y
+        description: Second array
+  spectral_loss:
+    name: spectral_loss
+    equation:
+      rhs: 1 - correlation(simulated, target)
+      latex: false
+    description: 1 - correlation between simulated and target spectra (per-element)
+    arguments:
+      simulated:
+        name: simulated
+        description: Simulated power spectrum for one region
+      target:
+        name: target
+        description: Target power spectrum for one region
+optimizations:
+  spectral_gradient_fit:
+    name: spectral_gradient_fit
+    label: Spectral Gradient Fitting
+    description: 'Fit region-specific a and b parameters to reproduce the MEG frequency
+      gradient. Target frequencies range from 11 Hz (visual cortex) to 7 Hz (most
+      distant regions from lateral occipital gyrus).
+
+      # Free parameters to optimize (references to dynamics.parameters by name)
+
+      '
+    free_parameters:
+    - parameter: JansenRit.a
+      heterogeneous: true
+    - parameter: JansenRit.b
+      heterogeneous: true
+    algorithm: adamaxw
+    learning_rate: 0.001
+    max_iterations: 151
+    loss:
+      function: spectral_loss
+      aggregate:
+        over: node
+        type: mean
+      arguments:
+        simulated:
+          name: simulated
+          description: Simulated power spectrum from observation (n_regions, n_freqs)
+          value: observations.simulated_psd.psd
+        target:
+          name: target
+          description: Target power spectrum (passed to optimizer at runtime)
+explorations:
+  frequency_landscape:
+    name: frequency_landscape
+    label: Frequency Landscape Exploration
+    description: 'Grid search over a and b parameters to map the relationship between
+      time constants and peak oscillation frequency. Used to understand the parameter
+      landscape before optimization.
+
+      # Parameters with grid specifications (use domain with n for grid points)
+
+      '
+    space:
+      JansenRit.a:
+        parameter: JansenRit.a
+        domain:
+          enforce: none
+          lo: 0.001
+          hi: 0.2
+          n: 32
+          log_scale: false
+        transform: none
+      JansenRit.b:
+        parameter: JansenRit.b
+        domain:
+          enforce: none
+          lo: 0.001
+          hi: 0.2
+          n: 32
+          log_scale: false
+        transform: none
+    mode: product
+    strategy: grid
+    observable:
+      function: peak_frequency
+    n_parallel: '1'
+    n_trials: 1
+    sweep_seeding: independent
+    sweep_direction: up
+execution:
+  n_workers: 8
+  n_threads: -1
+  precision: float64
+  accelerator: auto
+  random_seed: 0
+  find_fixpoint: false

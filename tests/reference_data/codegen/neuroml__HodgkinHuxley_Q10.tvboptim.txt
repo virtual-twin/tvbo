@@ -1,0 +1,132 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class HodgkinHuxley_Q10(AbstractDynamics):
+    """HodgkinHuxley_Q10 neural mass model."""
+
+    STATE_NAMES = ("v", "m", "h", "n")
+    INITIAL_STATE = (-65.0, 0.052932, 0.596121, 0.317677)
+    AUXILIARY_NAMES = (
+        "I_ext",
+        "alpha_h",
+        "alpha_m",
+        "alpha_n",
+        "beta_h",
+        "beta_m",
+        "beta_n",
+    )
+
+    DEFAULT_PARAMS = Bunch(
+        C=10.0,
+        E_K=-77.0,
+        E_L=-54.3,
+        E_Na=50.0,
+        I_amp=0.08,
+        Q10=0.333333,
+        g_K=360.0,
+        g_L=3.0,
+        g_Na=1200.0,
+        pulse_delay=100.0,
+        pulse_duration=100.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        C = params.C
+        E_K = params.E_K
+        E_L = params.E_L
+        E_Na = params.E_Na
+        I_amp = params.I_amp
+        Q10 = params.Q10
+        g_K = params.g_K
+        g_L = params.g_L
+        g_Na = params.g_Na
+        pulse_delay = params.pulse_delay
+        pulse_duration = params.pulse_duration
+
+        v = state[0]
+        m = state[1]
+        h = state[2]
+        n = state[3]
+
+        I_ext = jnp.where(
+            jnp.all(
+                jnp.asarray(
+                    [
+                        jnp.less_equal(pulse_delay, t),
+                        jnp.less(t, pulse_delay + pulse_duration),
+                    ]
+                ),
+                axis=0,
+            ),
+            I_amp,
+            0.0,
+        )
+        alpha_h = Q10 * 0.07 * jnp.exp((-65.0 - v) / 20.0)
+        alpha_m = Q10 * jnp.where(
+            jnp.equal(v, -40.0),
+            1.0,
+            0.1 * (v + 40.0) / (1.0 - jnp.exp((-40.0 - v) / 10.0)),
+        )
+        alpha_n = Q10 * jnp.where(
+            jnp.equal(v, -55.0),
+            0.1,
+            0.01 * (v + 55.0) / (1.0 - jnp.exp((-55.0 - v) / 10.0)),
+        )
+        beta_h = Q10 * 1.0 / (1.0 + jnp.exp((-35.0 - v) / 10.0))
+        beta_m = Q10 * 4.0 * jnp.exp((-65.0 - v) / 18.0)
+        beta_n = Q10 * 0.125 * jnp.exp((-65.0 - v) / 80.0)
+
+        dv_dt = (
+            (-g_Na) * m**3 * h * (v - E_Na)
+            - g_K * n**4 * (v - E_K)
+            - g_L * (v - E_L)
+            + I_ext * 1000
+        ) / C
+        dm_dt = alpha_m * (1 - m) - beta_m * m
+        dh_dt = alpha_h * (1 - h) - beta_h * h
+        dn_dt = alpha_n * (1 - n) - beta_n * n
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dv_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dv_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dm_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dh_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dn_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(I_ext), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_h), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_m), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_n), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_h), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_m), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_n), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

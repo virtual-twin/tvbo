@@ -1,0 +1,32 @@
+function FitzHughNagumo!(dx, x, p, t = 0)
+
+    (;a, b, epsilon, I) = p
+
+    v, w = x
+
+
+    dx[1] = I .- w .+ a .* v .* (1 .- v) .* (v .- b)
+    dx[2] = epsilon .* (v .- w)
+    dx
+end
+
+# Parameter values
+p = (a = 3.0, b = 0.2, epsilon = 0.01, I = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.5,
+        0.5,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(FitzHughNagumo!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

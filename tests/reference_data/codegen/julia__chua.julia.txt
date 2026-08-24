@@ -1,0 +1,36 @@
+function Chua!(dx, _x, p, t = 0)
+
+    (;a, b, m0, m1) = p
+
+    x, y, z = _x
+
+
+    h_x = m1 .* x .+ (-abs(-1 .+ x) .+ abs(1 .+ x)) .* (0.5 * m0 .- 0.5 * m1)
+
+    dx[1] = a .* (y .- h_x .- x)
+    dx[2] = x .+ z .- y
+    dx[3] = -b .* y
+    dx
+end
+
+# Parameter values
+p = (a = 15.6, b = 25.58, m0 = -1.1428571428571428, m1 = -0.7142857142857143)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.7,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Chua!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

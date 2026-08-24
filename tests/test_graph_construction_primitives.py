@@ -9,8 +9,7 @@ Two things are pinned here:
 
 The samplers are the exception, and deliberately so: by contract a fixed seed is reproducible
 *within* a backend and statistically equivalent *across* backends, but never bit-identical
-(numpy PCG64 is not jax Threefry). They are therefore checked for shape, support, distributional
-moments and within-backend reproducibility — never for cross-backend equality.
+(numpy PCG64 is not jax Threefry). They are therefore checked for shape, support, distributional moments and within-backend reproducibility — never for cross-backend equality.
 """
 
 import numpy as np

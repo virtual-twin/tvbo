@@ -507,7 +507,7 @@ def _declared_covariance(dyn_obj, context=None):
     from tvbo.data import param_io
 
     found = None
-    for sv_name, sv in (getattr(dyn_obj, "state_variables", None) or {}).items():
+    for sv_name, sv in (dyn_obj.state_variables).items():
         noise = getattr(sv, "noise", None)
         cov = getattr(noise, "covariance", None) if noise is not None else None
         if cov is None:

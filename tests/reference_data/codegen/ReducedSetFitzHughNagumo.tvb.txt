@@ -1,0 +1,251 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class ReducedSetFitzHughNagumo(Model):
+
+    tau = NArray(
+        label=r":math:`tau`",
+        default=np.array([3.0]),
+        domain=Range(lo=1.5, hi=4.5, step=1.0),
+    )
+    a = NArray(
+        label=r":math:`a`",
+        default=np.array([0.45]),
+        domain=Range(lo=0.0, hi=1.0, step=1.0),
+    )
+    b = NArray(
+        label=r":math:`b`",
+        default=np.array([0.9]),
+        domain=Range(lo=0.0, hi=1.0, step=1.0),
+    )
+    K11 = NArray(
+        label=r":math:`K11`",
+        default=np.array([0.5]),
+        domain=Range(lo=0.0, hi=1.0, step=1.0),
+    )
+    K12 = NArray(
+        label=r":math:`K12`",
+        default=np.array([0.15]),
+        domain=Range(lo=0.0, hi=1.0, step=1.0),
+    )
+    K21 = NArray(
+        label=r":math:`K21`",
+        default=np.array([0.15]),
+        domain=Range(lo=0.0, hi=1.0, step=1.0),
+    )
+    mu = NArray(
+        label=r":math:`mu`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=1.0, step=1.0),
+    )
+    sigma = NArray(
+        label=r":math:`sigma`",
+        default=np.array([0.35]),
+        domain=Range(lo=0.0, hi=1.0, step=1.0),
+    )
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    Aik = np.array(
+        [
+            [0.3328165811190223, 0.18525241779532714, 0.3328165811190241],
+            [0.5984537933538554, 0.3331114447027479, 0.5984537933538587],
+            [0.33281658111902046, 0.18525241779532614, 0.33281658111902235],
+        ]
+    )
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    Bik = np.array(
+        [
+            [0.3328165811190223, 0.5984537933538554, 0.33281658111902046],
+            [0.18525241779532714, 0.3331114447027479, 0.18525241779532614],
+            [0.3328165811190241, 0.5984537933538587, 0.33281658111902235],
+        ]
+    )
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    Cik = np.array(
+        [
+            [0.3328165811190223, 0.18525241779532714, 0.3328165811190241],
+            [0.5984537933538554, 0.3331114447027479, 0.5984537933538587],
+            [0.33281658111902046, 0.18525241779532614, 0.33281658111902235],
+        ]
+    )
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    iV0 = np.array([1.6668762461300366, 0.9278169186250886, 1.666876246130046])
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    iU0 = np.array([1.6668762461300366, 0.9278169186250886, 1.666876246130046])
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    iV4 = np.array([0.35990947874643836, 1.1616503426964113, 0.3599094787464342])
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    iU4 = np.array([0.35990947874643836, 1.1616503426964113, 0.3599094787464342])
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    iZV = np.array([-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998])
+    # Array-valued model constant (e.g. mode-coupling matrix); a fixed class
+    # attribute rather than a per-region NArray.
+    iZU = np.array([-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998])
+
+    _nvar = 4
+    state_variables = ["xi", "eta", "alpha", "beta"]
+    number_of_modes = 3
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "xi": np.array([-4.0, 4.0]),
+            "eta": np.array([-3.0, 3.0]),
+            "alpha": np.array([-4.0, 4.0]),
+            "beta": np.array([-3.0, 3.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("xi", "eta", "alpha", "beta"),
+        default=("xi", "alpha"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "tau",
+            "a",
+            "b",
+            "K11",
+            "K12",
+            "K21",
+            "mu",
+            "sigma",
+            "Aik",
+            "Bik",
+            "Cik",
+            "iV0",
+            "iU0",
+            "iV4",
+            "iU4",
+            "iZV",
+            "iZU",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "xi": "K11*(-xi + np.dot(xi, Aik)) + tau*(IE_i + local_coupling*xi + np.sum(c_glob0, axis=-1, keepdims=True)) + tau*(xi - eta - 1/3*e_i*xi**3) - K12*(-xi + np.dot(alpha, Bik))",
+            "eta": "(m_i + xi - b*eta)/tau",
+            "alpha": "K21*(-alpha + np.dot(xi, Cik)) + tau*(II_i + local_coupling*xi + np.sum(c_glob0, axis=-1, keepdims=True)) + tau*(alpha - beta - 1/3*f_i*alpha**3)",
+            "beta": "(alpha + n_i - b*beta)/tau",
+        },
+    )
+
+    cvar = np.array([0, 2], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_glob0", "c_glob1"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def update_derived_parameters(self):
+
+        tau = self.tau
+        a = self.a
+        b = self.b
+        K11 = self.K11
+        K12 = self.K12
+        K21 = self.K21
+        mu = self.mu
+        sigma = self.sigma
+        Aik = self.Aik
+        Bik = self.Bik
+        Cik = self.Cik
+        iV0 = self.iV0
+        iU0 = self.iU0
+        iV4 = self.iV4
+        iU4 = self.iU4
+        iZV = self.iZV
+        iZU = self.iZU
+
+        self.IE_i = IE_i = np.sqrt(sigma) * (iV0 * mu + iZV * sigma)
+        self.II_i = II_i = np.sqrt(sigma) * (iU0 * mu + iZU * sigma)
+        self.e_i = e_i = iV4 / sigma
+        self.f_i = f_i = iU4 / sigma
+        self.m_i = m_i = a * iV0 * np.sqrt(sigma)
+        self.n_i = n_i = a * iU0 * np.sqrt(sigma)
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        xi = state_variables[0, :]
+        eta = state_variables[1, :]
+        alpha = state_variables[2, :]
+        beta = state_variables[3, :]
+
+        tau = self.tau
+        a = self.a
+        b = self.b
+        K11 = self.K11
+        K12 = self.K12
+        K21 = self.K21
+        mu = self.mu
+        sigma = self.sigma
+        Aik = self.Aik
+        Bik = self.Bik
+        Cik = self.Cik
+        iV0 = self.iV0
+        iU0 = self.iU0
+        iV4 = self.iV4
+        iU4 = self.iU4
+        iZV = self.iZV
+        iZU = self.iZU
+
+        IE_i = self.IE_i
+        II_i = self.II_i
+        e_i = self.e_i
+        f_i = self.f_i
+        m_i = self.m_i
+        n_i = self.n_i
+
+        # Coupling Terms (from coupling array)
+        c_glob0 = coupling[0, :]
+        c_glob1 = coupling[1, :]
+
+        # Derived Variables
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(
+                K11 * (-xi + np.dot(xi, Aik))
+                + tau
+                * (IE_i + local_coupling * xi + np.sum(c_glob0, axis=-1, keepdims=True))
+                + tau * (xi - eta - 1 / 3 * e_i * xi**3)
+                - K12 * (-xi + np.dot(alpha, Bik))
+            ),  # xi
+            np.asarray((m_i + xi - b * eta) / tau),  # eta
+            np.asarray(
+                K21 * (-alpha + np.dot(xi, Cik))
+                + tau
+                * (II_i + local_coupling * xi + np.sum(c_glob0, axis=-1, keepdims=True))
+                + tau * (alpha - beta - 1 / 3 * f_i * alpha**3)
+            ),  # alpha
+            np.asarray((alpha + n_i - b * beta) / tau),  # beta
+        )
+        return np.array(_derivs)

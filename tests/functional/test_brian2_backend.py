@@ -7,23 +7,61 @@ The column is declared inline (no external recipe) so the test is self-contained
 
 from __future__ import annotations
 
-import re
+import ast
 
 import pytest
 
 from tvbo.classes.experiment import SimulationExperiment
 
-
-def squashed(script: str) -> str:
-    """The script with all whitespace removed, for asserting on call structure.
-
-    Generated Python is formatted before it is returned, so a long call is wrapped across lines. Assertions about which arguments a call receives must therefore not depend on where the formatter chose to break it.
-    """
-    return re.sub(r"\s+", "", script)
-
-
 pytest.importorskip("brian2")
 
+
+def synapses_call(script, target):
+    """The ``Synapses(...)`` call assigned to *target*, as an AST node.
+
+    Generated Python is formatted before it is emitted, so a long call wraps across lines and its string literals are re-quoted. Reading the AST asserts what the statement means rather than how it happens to be laid out.
+    """
+    for node in ast.walk(ast.parse(script)):
+        if (
+            isinstance(node, ast.Assign)
+            and isinstance(node.value, ast.Call)
+            and getattr(node.value.func, "id", None) == "Synapses"
+            and any(getattr(t, "id", None) == target for t in node.targets)
+        ):
+            return node.value
+    raise AssertionError(f"no `{target} = Synapses(...)` in the generated script")
+
+
+def method_call(script, target, method):
+    """The ``target.method(...)`` call in *script*, as an AST node."""
+    for node in ast.walk(ast.parse(script)):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == method
+            and getattr(node.func.value, "id", None) == target
+        ):
+            return node
+    raise AssertionError(f"no `{target}.{method}(...)` in the generated script")
+
+
+def endpoints(call):
+    """The (source, target) group names a ``Synapses`` call connects."""
+    return tuple(getattr(arg, "id", None) for arg in call.args[:2])
+
+
+def keywords(call):
+    """Literal keyword arguments of *call*, as ``{name: value}``."""
+    out = {}
+    for kw in call.keywords:
+        try:
+            out[kw.arg] = ast.literal_eval(kw.value)
+        except (ValueError, SyntaxError):
+            pass
+    return out
+
+
+# A self-contained Deco 2014 cortical column: 160 E + 40 I, all-to-all recurrent AMPA (rec) + saturating NMDA (Mg block) + GABA-A, independent 2.4 kHz Poisson background per neuron. Constants from Deco (2014) Table 2.
 DECO_COLUMN_YAML = """
 label: "Deco 2014 column (Brian2 backend test)"
 network:
@@ -148,6 +186,19 @@ def column(tmp_path_factory) -> SimulationExperiment:
     return SimulationExperiment.from_file(str(path))
 
 
+def test_a_declared_time_unit_scales_the_emitted_clock(tmp_path):
+    """`s` in the recipe means seconds, and a generated script states ms.
+
+    The adapter read `time_scale`, which the schema folds into `time_unit` at construction, so the attribute was always absent and every declared unit scaled by 1: this column in `s` ran for a thousandth of its duration at a thousandth of its step, with nothing in the output to say so.
+    """
+    path = tmp_path / "column_seconds.yaml"
+    path.write_text(DECO_COLUMN_YAML.replace("time_scale: ms", "time_scale: s"))
+    script = SimulationExperiment.from_file(str(path)).render("brian2")
+
+    assert "defaultclock.dt = 20.0 * ms" in script
+    assert "net.run(1500000.0 * ms)" in script
+
+
 class TestBrian2Render:
     """`render("brian2")` emits a valid, self-contained, runnable Brian2 script."""
 
@@ -270,8 +321,9 @@ class TestBrian2SparseConnectivity:
 
     def test_random_emits_sparse_synapses(self, script):
         # Real Synapses with connect(p=...) excluding autapses — not a (summed) hub.
-        assert "Synapses(ExcitatoryCell,ExcitatoryCell" in squashed(script)
-        assert 'connect(p=0.12,condition="i!=j")' in squashed(script)
+        syn = "syn_STP_fac_E_from_ExcitatoryCell_to_ExcitatoryCell"
+        assert endpoints(synapses_call(script, syn)) == ("ExcitatoryCell", "ExcitatoryCell")
+        assert keywords(method_call(script, syn, "connect")) == {"p": 0.12, "condition": "i != j"}
 
     def test_conductance_delivered_postsynaptically(self, script):
         """The conductance decays on the post-synaptic cell and is incremented event-driven by `on_pre`.
@@ -797,12 +849,13 @@ class TestBrian2RecordedSynapseState:
 
     def test_emits_zero_delivery_clock_driven_probe(self, script):
         pname = "probe_STP_E_from_ExcitatoryCell_to_ExcitatoryCell"
-        assert f"{pname}=Synapses(ExcitatoryCell,_probe_sink" in squashed(script)
-        assert f"{pname}.connect(i=[" in squashed(script) and ",j=0" in squashed(script)
+        probe = synapses_call(script, pname)
+        assert endpoints(probe) == ("ExcitatoryCell", "_probe_sink")
+        connect = keywords(method_call(script, pname, "connect"))
+        assert connect["i"] and connect["j"] == 0
         # clock-driven (recordable continuous trace), and it delivers NOTHING to the sink.
         assert "(clock-driven)" in script
-        probe_on_pre = script.split(pname + " = Synapses")[1].split(")")[0]
-        assert "v_post +=" not in probe_on_pre
+        assert "v_post +=" not in keywords(probe).get("on_pre", "")
         # the generated script exposes the same shape as the in-process path: a time axis + means.
         assert "SYNAPSE_STATE[" in script and '"t_ms":' in script
 

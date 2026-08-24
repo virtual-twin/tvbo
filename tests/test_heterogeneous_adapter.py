@@ -2,25 +2,18 @@
 
 Covers the P1 interoperability path: a network with different dynamics per node is lowered to a tvboptim ``HeterogeneousNetwork`` (nodes partitioned into ``NodeGroup``s, edges collapsed into a ``SignalRoute``) and run in process via ``exp.run("tvboptim")``.
 
-The module skips only when the installed tvboptim ships no ``network_dynamics`` module at all. Presence is decided by ``find_spec``, which does not execute the module, so every other import failure — a renamed member, a broken upstream import — raises here instead of reading as "API absent"; that silent skip is what left the adapter broken until a doc notebook hit the same import. The names imported below are exactly the ones the adapter imports.
+The module runs only where the installed tvboptim ships the engine it exercises; :func:`tests.tvboptim_capabilities.require_heterogeneous_engine` owns that judgement and names in the skip reason whatever is missing, and the names it checks are exactly the ones ``tvbo.adapters.tvboptim`` imports.
 """
-
-import importlib.util
 
 import numpy as np
 import pytest
 import yaml
 
+from .tvboptim_capabilities import require_heterogeneous_engine
+
 pytest.importorskip("jax")
 pytest.importorskip("tvboptim")
-if importlib.util.find_spec("tvboptim.experimental.network_dynamics") is None:
-    pytest.skip("tvboptim has no heterogeneous network-dynamics API", allow_module_level=True)
-
-from tvboptim.experimental.network_dynamics import (  # noqa: E402, F401
-    HeterogeneousNetwork,
-    NodeGroup,
-    SignalRoute,
-)
+require_heterogeneous_engine()
 
 from tvbo import Dynamics, Network, SimulationExperiment  # noqa: E402
 from tvbo.adapters.tvboptim import (  # noqa: E402

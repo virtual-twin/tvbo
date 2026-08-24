@@ -2,6 +2,8 @@
 
 Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw string) into a SymPy expression, along with the custom aggregation symbols and the `ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`, `slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to backend-specific calls.
 
+`parse_eq` is the only parser in TVBO. An `Equation` states its right-hand side either directly or as a list of conditional branches, and `parse_eq` resolves both, so callers never have to ask which form they were given — the branch that used to be written out at each call site now lives here once. The namespace to parse against is supplied by the caller, normally as a [`SymbolContext`](symbols.qmd#SymbolContext).
+
 `ARRAY_FUNCTIONS` is the single source of truth for parsing. Each entry is an undefined SymPy `Function` — that is what makes `mean(x)` parse as a call rather than being split by implicit multiplication into `m*e*a*n*(x)`. The names are lowercase to keep them distinct from SymPy's own symbolic `Sum` and `Product`, which need explicit index variables where these reduce over whole arrays, numpy-style. Printer mappings live in `tvbo.codegen.code`.
 
 **Every argument is positional.** SymPy's parser forwards `f(x, axis=0)` into `Basic`'s options and raises `ValueError: Unknown options`, so a primitive can never carry a keyword. Anything that would be one — a metric, an axis, a target range, a distribution, a seed — is a schema field on the DAG step and is lowered into a positional argument, which is why the `Procedural` graph-generator DAG is typed rather than free-form.
@@ -13,7 +15,8 @@ A sampler takes its PRNG state as the **first** argument, because JAX is functio
 Symbolic summation uses SymPy's own `Sum`, which needs explicit index variables: `Sum(x[i]*y[i], (i, 0, n-1))`. Index variables are detected from the `Sum` and `Product` limits, and the code printers handle the translation.
 """
 
-from sympy import Function, IndexedBase, Product, Sum, Symbol, parse_expr, sqrt
+from sympy import Function, IndexedBase, Piecewise, Product, Sum, Symbol, parse_expr, sqrt, true
+from sympy.core.basic import Basic
 from sympy.parsing.sympy_parser import (
     convert_xor,
     function_exponentiation,
@@ -133,6 +136,85 @@ ARRAY_FUNCTIONS = {
 }
 
 
+def function_bodies(model, parameters=None):
+    """A model's function definitions as ``{name: (arg_names, body)}``.
+
+    The table [`inline_functions`](../codegen/code.qmd#inline_functions) consumes, for the backends that have no user-function mechanism and must expand every call before printing.
+
+    Read from the model's symbolic layer when it has one, so a body is parsed once however many backends inline it. A free function rather than a `Dynamics` method because both flavours of model need it: the runtime `Dynamics` in `tvbo.classes`, which carries that layer, and the generated `Dynamics` in `tvbo.datamodel.schema` that an edge's `resolved_dyn` is, which has the collections but no layer and is parsed against
+    *parameters* instead.
+
+    On that second path every function name is registered as a function while parsing, so a call to one inside another's body parses as an application rather than a product — Zerlaut's `sigmaV` calls `muV`. Functions with no arguments or no equation are skipped on both: there is nothing to substitute into, and a call to one is left for the printer to emit verbatim.
+    """
+    symbolic_form = getattr(model, "_symbolic_form", None)
+    if symbolic_form is not None:
+        return {
+            name: ([str(argument) for argument in equation.lhs.args], equation.rhs)
+            for name, equation in symbolic_form()["functions"].items()
+        }
+
+    functions = model.functions
+    if not functions:
+        return {}
+    names = list(functions)
+    bodies = {}
+    for name, fn in functions.items():
+        arg_names = [str(arg) for arg in fn.arguments]
+        if not arg_names or not fn.equation:
+            continue
+        bodies[str(name)] = (
+            arg_names,
+            parse_eq(
+                fn.equation,
+                parameters=list(parameters or []) + arg_names,
+                functions=names,
+            ),
+        )
+    return bodies
+
+
+def states_an_expression(equation) -> bool:
+    """Whether `equation` states anything to parse — a right-hand side, or branches.
+
+    An `Equation` carries its expression in either slot, so a caller that guards with `if eq.rhs:` silently skips every equation written purely as conditional branches.
+    Guard with this instead and hand the whole `Equation` to [`parse_eq`](#parse_eq), which resolves both spellings.
+    """
+    if isinstance(equation, str):
+        return bool(equation)
+    if equation is None:
+        return False
+    return bool(equation.rhs or equation.conditionals)
+
+
+def _has_unfolded_conditionals(equation: Equation) -> bool:
+    """Whether `equation`'s branches still need folding into its right-hand side.
+
+    `rhs` means two different things depending on how a model was authored. Written out as branches, `rhs` is the Piecewise's *default* — the value when no condition holds — and the branches fold in around it. But 42 curated equations instead state the whole `Piecewise(...)` in `rhs` directly while still populating `conditionals`; folding those again would nest the expression inside its own default branch.
+
+    Sniffing the string is how TVBO tells the two spellings apart. It was previously written out at two of the five call sites and omitted at the other three, which is why those sites could disagree; stating it once is what lets them agree.
+    """
+    conditionals = getattr(equation, "conditionals", None)
+    if not conditionals:
+        return False
+    return "Piecewise" not in str(equation.rhs or "")
+
+
+def _piecewise_from_conditionals(equation: Equation, local_dict):
+    """Assemble an equation's conditional branches into one `Piecewise`.
+
+    Parsed unevaluated so the authored term order reaches the printers intact. The final branch is the equation's own `rhs` — the value when no condition holds — or zero when it has none; it is unreachable whenever the last conditional is itself unconditional, and SymPy drops it then.
+    """
+    branches = [
+        (
+            parse_eq(conditional.expression, local_dict=local_dict, evaluate=False),
+            parse_eq(conditional.condition, local_dict=local_dict, evaluate=False),
+        )
+        for conditional in equation.conditionals
+    ]
+    default = parse_eq(equation.rhs, local_dict=local_dict, evaluate=False) if equation.rhs else 0
+    return Piecewise(*branches, (default, true))
+
+
 def parse_eq(
     equation: Equation,
     parameters=None,
@@ -229,10 +311,21 @@ def parse_eq(
         local_dict.update(objs)
 
     # Determine expression string to parse
+    if isinstance(equation, Basic):
+        return equation  # already parsed; accepted so callers need not test for it
     if isinstance(equation, str):
         expression = equation
+    elif _has_unfolded_conditionals(equation):
+        return _piecewise_from_conditionals(equation, local_dict)
     else:
         expression = equation.rhs
+
+    if expression is None:
+        raise ValueError(
+            f"{equation!r} states no right-hand side and no conditionals, so there is "
+            "nothing to parse. Callers that tolerate an element stating nothing should "
+            "ask `states_an_expression` first rather than parse and test the result."
+        )
 
     # If it's already an Expr, return it directly
     if not isinstance(expression, str):

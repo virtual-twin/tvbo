@@ -1,0 +1,330 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class ZetterbergJansen(Model):
+
+    He = NArray(
+        label=r":math:`He`",
+        default=np.array([3.25]),
+        domain=Range(lo=2.6, hi=9.75, step=0.05),
+        doc="""Maximum amplitude of EPSP [mV]""",
+    )
+    Hi = NArray(
+        label=r":math:`Hi`",
+        default=np.array([22.0]),
+        domain=Range(lo=17.6, hi=110.0, step=0.2),
+        doc="""Maximum amplitude of IPSP [mV]""",
+    )
+    P = NArray(
+        label=r":math:`P`",
+        default=np.array([0.12]),
+        domain=Range(lo=0.0, hi=0.35, step=0.01),
+        doc="""Maximum firing rate to the pyramidal population [ms^-1]""",
+    )
+    Q = NArray(
+        label=r":math:`Q`",
+        default=np.array([0.12]),
+        domain=Range(lo=0.0, hi=0.35, step=0.01),
+        doc="""Maximum firing rate to the interneurons population [ms^-1]""",
+    )
+    U = NArray(
+        label=r":math:`U`",
+        default=np.array([0.12]),
+        domain=Range(lo=0.0, hi=0.35, step=0.01),
+        doc="""Maximum firing rate to the stellate population [ms^-1]""",
+    )
+    e0 = NArray(
+        label=r":math:`e0`",
+        default=np.array([0.0025]),
+        domain=Range(lo=0.00125, hi=0.00375, step=1e-05),
+        doc="""Half of the maximum population mean firing rate [ms^-1]""",
+    )
+    gamma_1T = NArray(
+        label=r":math:`gamma_1T`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.0, hi=1000.0, step=5.0),
+        doc="""Coupling factor from the extrinisic input to the spiny stellate population""",
+    )
+    gamma_1 = NArray(
+        label=r":math:`gamma_1`",
+        default=np.array([135.0]),
+        domain=Range(lo=65.0, hi=1350.0, step=5.0),
+        doc="""Average number of synapses between populations (pyramidal to stellate)""",
+    )
+    gamma_2T = NArray(
+        label=r":math:`gamma_2T`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.0, hi=1000.0, step=5.0),
+        doc="""Coupling factor from the extrinisic input to the pyramidal population""",
+    )
+    gamma_2 = NArray(
+        label=r":math:`gamma_2`",
+        default=np.array([108.0]),
+        domain=Range(lo=0.0, hi=200.0, step=10.0),
+        doc="""Average number of synapses between populations (stellate to pyramidal)""",
+    )
+    gamma_3T = NArray(
+        label=r":math:`gamma_3T`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.0, hi=1000.0, step=5.0),
+        doc="""Coupling factor from the extrinisic input to the inhibitory population""",
+    )
+    gamma_3 = NArray(
+        label=r":math:`gamma_3`",
+        default=np.array([33.75]),
+        domain=Range(lo=0.0, hi=200.0, step=10.0),
+        doc="""Connectivity constant (pyramidal to interneurons)""",
+    )
+    gamma_4 = NArray(
+        label=r":math:`gamma_4`",
+        default=np.array([33.75]),
+        domain=Range(lo=0.0, hi=200.0, step=10.0),
+        doc="""Connectivity constant (interneurons to pyramidal)""",
+    )
+    gamma_5 = NArray(
+        label=r":math:`gamma_5`",
+        default=np.array([15.0]),
+        domain=Range(lo=0.0, hi=100.0, step=10.0),
+        doc="""Connectivity constant (interneurons to interneurons)""",
+    )
+    ke = NArray(
+        label=r":math:`ke`",
+        default=np.array([0.1]),
+        domain=Range(lo=0.05, hi=0.15, step=0.01),
+        doc="""Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1]""",
+    )
+    ki = NArray(
+        label=r":math:`ki`",
+        default=np.array([0.05]),
+        domain=Range(lo=0.025, hi=0.075, step=0.005),
+        doc="""Reciprocal of the time constant of passive membrane and all         other spatially distributed delays in the dendritic network [ms^-1]""",
+    )
+    rho_1 = NArray(
+        label=r":math:`rho_1`",
+        default=np.array([0.56]),
+        domain=Range(lo=0.28, hi=0.84, step=0.01),
+        doc="""Steepness of the sigmoidal transformation [mV^-1]""",
+    )
+    rho_2 = NArray(
+        label=r":math:`rho_2`",
+        default=np.array([6.0]),
+        domain=Range(lo=3.12, hi=10.0, step=0.02),
+        doc="""Firing threshold (PSP) for which a 50% firing rate is achieved""",
+    )
+
+    _nvar = 12
+    state_variables = [
+        "v1",
+        "v2",
+        "v3",
+        "v4",
+        "v5",
+        "v6",
+        "v7",
+        "y1",
+        "y2",
+        "y3",
+        "y4",
+        "y5",
+    ]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "v1": np.array([-100.0, 100.0]),
+            "v2": np.array([-100.0, 50.0]),
+            "v3": np.array([-100.0, 6.0]),
+            "v4": np.array([-100.0, 20.0]),
+            "v5": np.array([-100.0, 20.0]),
+            "v6": np.array([-100.0, 20.0]),
+            "v7": np.array([-100.0, 20.0]),
+            "y1": np.array([-500.0, 500.0]),
+            "y2": np.array([-100.0, 6.0]),
+            "y3": np.array([-100.0, 6.0]),
+            "y4": np.array([-100.0, 20.0]),
+            "y5": np.array([-500.0, 500.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=(
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "y1",
+            "y2",
+            "y3",
+            "y4",
+            "y5",
+        ),
+        default=(
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "y1",
+            "y2",
+            "y3",
+            "y4",
+            "y5",
+        ),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "He",
+            "Hi",
+            "P",
+            "Q",
+            "U",
+            "e0",
+            "gamma_1T",
+            "gamma_1",
+            "gamma_2T",
+            "gamma_2",
+            "gamma_3T",
+            "gamma_3",
+            "gamma_4",
+            "gamma_5",
+            "ke",
+            "ki",
+            "rho_1",
+            "rho_2",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "v1": "y1",
+            "v2": "y2",
+            "v3": "y3",
+            "v4": "y4",
+            "v5": "y5",
+            "v6": "y2 - y3",
+            "v7": "y4 - y5",
+            "y1": "-v1*ke**2 - 2*ke*y1 + He*ke*(gamma_1*sigma_v23 + gamma_1T*(U + coupled_input))",
+            "y2": "-v2*ke**2 - 2*ke*y2 + He*ke*(gamma_2*sigma_v1 + gamma_2T*(P + coupled_input))",
+            "y3": "-v3*ki**2 - 2*ki*y3 + Hi*gamma_4*ki*sigma_v45",
+            "y4": "-v4*ke**2 - 2*ke*y4 + He*ke*(gamma_3*sigma_v23 + gamma_3T*(Q + coupled_input))",
+            "y5": "-v5*ke**2 - 2*ki*y5 + Hi*gamma_5*ki*sigma_v45",
+        },
+    )
+
+    cvar = np.array([5], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_glob"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        v1 = state_variables[0, :]
+        v2 = state_variables[1, :]
+        v3 = state_variables[2, :]
+        v4 = state_variables[3, :]
+        v5 = state_variables[4, :]
+        v6 = state_variables[5, :]
+        v7 = state_variables[6, :]
+        y1 = state_variables[7, :]
+        y2 = state_variables[8, :]
+        y3 = state_variables[9, :]
+        y4 = state_variables[10, :]
+        y5 = state_variables[11, :]
+
+        He = self.He
+        Hi = self.Hi
+        P = self.P
+        Q = self.Q
+        U = self.U
+        e0 = self.e0
+        gamma_1T = self.gamma_1T
+        gamma_1 = self.gamma_1
+        gamma_2T = self.gamma_2T
+        gamma_2 = self.gamma_2
+        gamma_3T = self.gamma_3T
+        gamma_3 = self.gamma_3
+        gamma_4 = self.gamma_4
+        gamma_5 = self.gamma_5
+        ke = self.ke
+        ki = self.ki
+        rho_1 = self.rho_1
+        rho_2 = self.rho_2
+
+        # Coupling Terms (from coupling array)
+        c_glob = coupling[0, :]
+
+        # Derived Variables
+        self.coupled_input = coupled_input = (
+            2 * e0 / (1 + np.exp(rho_1 * (rho_2 - c_glob - local_coupling * v6)))
+        )
+        self.sigma_v1 = sigma_v1 = np.where(
+            np.greater(rho_1 * (rho_2 - v1), 709),
+            0,
+            2 * e0 / (1 + np.exp(rho_1 * (rho_2 - v1))),
+        )
+        self.sigma_v23 = sigma_v23 = np.where(
+            np.greater(rho_1 * (rho_2 + v3 - v2), 709),
+            0,
+            2 * e0 / (1 + np.exp(rho_1 * (rho_2 + v3 - v2))),
+        )
+        self.sigma_v45 = sigma_v45 = np.where(
+            np.greater(rho_1 * (rho_2 + v5 - v4), 709),
+            0,
+            2 * e0 / (1 + np.exp(rho_1 * (rho_2 + v5 - v4))),
+        )
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(y1),  # v1
+            np.asarray(y2),  # v2
+            np.asarray(y3),  # v3
+            np.asarray(y4),  # v4
+            np.asarray(y5),  # v5
+            np.asarray(y2 - y3),  # v6
+            np.asarray(y4 - y5),  # v7
+            np.asarray(
+                -v1 * ke**2
+                - 2 * ke * y1
+                + He * ke * (gamma_1 * sigma_v23 + gamma_1T * (U + coupled_input))
+            ),  # y1
+            np.asarray(
+                -v2 * ke**2
+                - 2 * ke * y2
+                + He * ke * (gamma_2 * sigma_v1 + gamma_2T * (P + coupled_input))
+            ),  # y2
+            np.asarray(-v3 * ki**2 - 2 * ki * y3 + Hi * gamma_4 * ki * sigma_v45),  # y3
+            np.asarray(
+                -v4 * ke**2
+                - 2 * ke * y4
+                + He * ke * (gamma_3 * sigma_v23 + gamma_3T * (Q + coupled_input))
+            ),  # y4
+            np.asarray(-v5 * ke**2 - 2 * ki * y5 + Hi * gamma_5 * ki * sigma_v45),  # y5
+        )
+        return np.array(_derivs)

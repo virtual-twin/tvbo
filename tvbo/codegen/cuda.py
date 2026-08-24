@@ -23,6 +23,8 @@ if TYPE_CHECKING:
 def compile_cuda(experiment: SimulationExperiment) -> tuple[Any, Any]:
     """Compile CUDA kernel for experiment.
 
+    Compiled with `no_extern_c=True`. The kernel includes `<curand_kernel.h>` for its noise, and the block `SourceModule` otherwise wraps a whole source in gives those headers C linkage — which their templates may not have, so every compile failed with 33 errors out of curand rather than anything to do with the model. The kernels declare `extern "C"` themselves instead, which is what keeps `get_function` able to find them under their unmangled names.
+
     Args:
         experiment: SimulationExperiment instance
 
@@ -38,11 +40,10 @@ def compile_cuda(experiment: SimulationExperiment) -> tuple[Any, Any]:
         ) from exc
 
     cuda_source = experiment.render_code("cuda")
-    module = SourceModule(cuda_source)
+    module = SourceModule(cuda_source, no_extern_c=True)
 
-    # Get kernel function from model name
-    dynamics = experiment.network.dynamics
-    model_name = dynamics.name.replace(" ", "").replace("-", "")
+    # The kernel is named for the model it integrates, which is what the template renders.
+    model_name = experiment.dynamics.name.replace(" ", "").replace("-", "")
     kernel = module.get_function(model_name)
 
     return module, kernel
@@ -62,10 +63,12 @@ def run_cuda(
 
     All configuration comes from experiment metadata.
 
+    The kernel integrates in the model's own time unit — it multiplies *dt* straight into the model's equations — while indexing the delay ring as ``length / speed / dt``, which is millimetres over metres-per-second and so is milliseconds. The two agree only for a model whose time unit is ``ms``; anything else gets the right trajectory on the wrong delays, so *dt* is passed through in model units rather than converted onto either.
+
     Args:
         experiment: SimulationExperiment instance
         n_steps: Number of integration steps (default from experiment.integration)
-        dt: Integration time step in ms (default from experiment.integration)
+        dt: Integration time step in the model's own time unit (default: its `step_size`)
         n_work_items: Number of parallel parameter configurations
         global_speed: Conduction speed (m/s)
         global_coupling: Global coupling strength
@@ -83,20 +86,21 @@ def run_cuda(
 
     # Get from experiment metadata
     if dt is None:
-        dt = getattr(experiment.integration, "dt", 0.1)
+        dt = float(experiment.integration.step_size)
     if n_steps is None:
-        duration = getattr(experiment.integration, "duration", 1000.0)
-        n_steps = int(duration / dt)
+        n_steps = int(float(experiment.integration.duration) / dt)
 
     # Network data from experiment
     weights = np.asarray(experiment.network.matrix("weight"), dtype=np.float32)
     lengths = np.asarray(experiment.network.lengths, dtype=np.float32)
     n_node = weights.shape[0]
-    n_states = len(experiment.network.dynamics.state_variables)
+    n_states = len(experiment.dynamics.state_variables)
 
-    # Calculate buffer length from max delay
+    # The ring must hold the LONGEST delay any work item sees, so the slowest speed sizes it.
     if buffer_length is None:
-        max_delay = np.max(lengths) / global_speed / dt
+        swept_speed = (swept_params or {}).get("global_speed")
+        slowest = float(np.min(swept_speed)) if swept_speed is not None else float(global_speed)
+        max_delay = np.max(lengths) / slowest / dt
         buffer_length = max(int(max_delay) + 10, 100)
     nh = np.uint32(buffer_length)
 

@@ -536,8 +536,13 @@ class TestYAMLSpecs:
 
 
 # Test 3: Live execution + numerical comparison (requires pyjulia + HDF5)
+@pytest.mark.julia
 class TestNumericalComparison:
-    """Run TVBO-generated code in Julia and compare with reference data."""
+    """Run TVBO-generated code in Julia and compare with reference data.
+
+    Marked so that the one job holding a Julia depot is the only one that runs it.
+    Starting Julia inside a forked xdist worker kills the worker rather than failing the test, and the classes above it here need no Julia at all — so the fact has to live on this class, where it is true, rather than as a path in a CI shard's ignore list.
+    """
 
     @pytest.fixture(autouse=True)
     def _require_julia(self):

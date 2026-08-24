@@ -1,8 +1,7 @@
 """Canonical database registry — resolves short names to YAML file paths.
 
 Works both from pip-installed packages and editable/dev installs.
-Searches recursively within each category directory so that models in subfolders
-(e.g. database/models/julia/) are automatically discovered.
+Searches recursively within each category directory so that models in subfolders (e.g. database/models/julia/) are automatically discovered.
 """
 
 import re

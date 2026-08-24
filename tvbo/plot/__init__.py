@@ -18,7 +18,6 @@ from . import (
     dynamics,
     dynamics_layout,
     experiment_layout,
-    functions,
     layout_mosaic,
     network,
     ontology,

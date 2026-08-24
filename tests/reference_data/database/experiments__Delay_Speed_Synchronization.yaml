@@ -1,0 +1,171 @@
+id: 20
+references:
+- Petkoski & Jirsa (2019) Phil Trans R Soc A 377:20180132 - delays organize brain
+  network synchronization
+- Yeung & Strogatz (1999) Phys Rev Lett 82:648 - time delay in the Kuramoto model
+- Kuramoto (1975) - coupled phase oscillators
+part: main
+description: 'Coupled Kuramoto phase oscillators on the Desikan-Killiany connectome.
+  A sweep over the conduction speed varies the transmission delays (delays = tract
+  length / speed) and measures the Kuramoto order parameter, reproducing the non-monotonic
+  delay-organised synchronization of Petkoski & Jirsa (2019).
+
+  '
+label: Delays Shape Synchronization
+dynamics:
+  name: Kuramoto
+  label: Kuramoto phase oscillator
+  parameters:
+    omega:
+      name: omega
+      value: 0.06283185307179587
+      description: Intrinsic angular frequency.
+      unit: rad_per_ms
+  description: Single phase variable theta with intrinsic frequency omega.
+  coupling_inputs:
+    c:
+      name: c
+      description: Delayed network coupling input.
+      dimension: 1
+      local: false
+  state_variables:
+    theta:
+      name: theta
+      equation:
+        rhs: omega + c
+        latex: false
+      unit: rad
+      record: true
+      variable_of_interest: true
+      coupling_variable: true
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.1
+  output:
+  - theta
+  number_of_modes: 1
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: Heun
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.5
+  duration: 800.0
+  transient_time: 0.0
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  label: Desikan-Killiany
+  description: Structural connectivity from the dk_average dataset.
+  parameters:
+    conduction_speed:
+      name: conduction_speed
+      value: 3.0
+      description: Conduction speed; delays = tract length / conduction_speed.
+      unit: mm_per_ms
+  coupling:
+    DelayedKuramotoCoupling:
+      name: DelayedKuramotoCoupling
+      label: Delayed Kuramoto coupling
+      parameters:
+        G:
+          name: G
+          value: 0.0011904761904761906
+          description: Global coupling strength (scaled by network size).
+      description: Phase-difference coupling with transmission delays.
+      sparse: false
+      pre_expression:
+        rhs: sin(theta_j - theta_i)
+        latex: false
+      post_expression:
+        rhs: G * gx
+        latex: false
+      incoming_states:
+      - theta
+      local_states:
+      - theta
+      delayed: true
+      interpolate_delays: false
+      vectorized: false
+      symmetry: directed
+  graph_representation: auto
+  transforms:
+  - name: weight
+    equation:
+      rhs: weight / mean(weight[weight > 0])
+      latex: false
+  bids_dir: ../networks/bids/dk_average
+  structural_measures:
+  - streamlineCount
+  - tractLength
+  distance_unit: mm
+observations:
+  order_parameter:
+    name: order_parameter
+    label: Kuramoto order parameter
+    description: Global phase coherence R in [0, 1].
+    source:
+    - theta
+    reconcile: by_label
+    pipeline:
+    - function: kuramoto_order
+      arguments:
+        data:
+          name: data
+          description: Simulated phase trajectory.
+          value: integration.result
+functions:
+  kuramoto_order:
+    name: kuramoto_order
+    description: 'Kuramoto order parameter R = <| <exp(i*theta)>_nodes |>_time, averaged
+      over the last `tail` fraction of the run (the settled window).
+
+      '
+    arguments:
+      data:
+        name: data
+        description: Trajectory (time, states, nodes).
+      tail:
+        name: tail
+        description: Fraction of the run averaged (settled window).
+        value: 0.2
+    source_code: jnp.mean(jnp.abs(jnp.mean(jnp.exp(1j * data[-int(tail * data.shape[0]):,
+      0, :]), axis=1)))
+explorations:
+  speed_sweep:
+    name: speed_sweep
+    label: Conduction-speed sweep
+    description: 'Sweep the conduction speed from 0.5 to 6.0 mm/ms. Each speed rebuilds
+      the transmission delays (delays = lengths / speed) and the order parameter traces
+      out a non-monotonic synchronization resonance.
+
+      '
+    space:
+      network.conduction_speed:
+        parameter: network.conduction_speed
+        domain:
+          enforce: none
+          lo: 0.5
+          hi: 6.0
+          n: 50
+          log_scale: false
+        transform: none
+    mode: product
+    strategy: grid
+    observable:
+      function: order_parameter
+    n_parallel: '1'
+    n_trials: 1
+    sweep_seeding: independent
+    sweep_direction: up
+execution:
+  n_workers: 8
+  n_threads: -1
+  precision: float64
+  accelerator: auto
+  random_seed: 0
+  find_fixpoint: false

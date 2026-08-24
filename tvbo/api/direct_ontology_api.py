@@ -21,8 +21,7 @@ _GENERATED_ONTO_PATH = os.path.join(ontology.ONTO_DIR, "tvbo.owl")
 def _load_generated_ontology():
     """Load the generated, individual-based ontology into a dedicated owlready2 World.
 
-    The World is isolated from ``owl.py``'s global class-based ``onto`` that the tvbo core
-    depends on; that high-level API stays on the deprecated ontology until the Phase B rewrite.
+    The World is isolated from ``owl.py``'s global class-based ``onto`` that the tvbo core depends on; that high-level API stays on the deprecated ontology until the Phase B rewrite.
     No reasoning is run — ROBOT already materialised the ELK inferences at build time.
     """
     world = owl.World()

@@ -3,9 +3,8 @@
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%
 import numpy as np
-from tvbo.classes.equation import _clash1
 from tvbo.codegen.templater import time_dependent_equations
-from tvbo.templates.base.utils import model_expressions, referenced
+from tvbo.templates.base.utils import referenced_parameters
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics
     standalone = False
@@ -213,7 +212,7 @@ sv_boundaries = tvb_state_variable_boundaries(model)
         ${sv} = state_variables[${list(model.state_variables.keys()).index(sv)}, :]
 % endfor
 
-% for p in referenced(model.parameters, model_expressions(model)):
+% for p in referenced_parameters(model):
         ${p} = self.${p}
 % endfor
 

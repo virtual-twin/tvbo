@@ -1,0 +1,57 @@
+name: IaFCell
+parameters:
+  tau:
+    name: tau
+    value: 20.0
+    description: C/gL = 1nF/50nS = 0.02s = 20ms
+  leakReversal:
+    name: leakReversal
+    value: -60.0
+    description: mV
+  thresh:
+    name: thresh
+    value: -55.0
+    description: mV
+  reset:
+    name: reset
+    value: -62.0
+    description: mV
+source: 'NeuroML2 example: Ex13_Instances'
+derived_variables:
+  I_ext:
+    name: I_ext
+    description: 'pulseGen1: 0.3nA / (1.0nF) = 0.3 mV/ms (times in SI seconds)'
+    equation:
+      rhs: Piecewise((0.3, (t >= 0.1) & (t < 0.2)), (0.0, True))
+      latex: false
+    record: false
+    conditional: false
+state_variables:
+  v:
+    name: v
+    equation:
+      rhs: (leakReversal - v) / tau + I_ext
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -60.0
+number_of_modes: 1
+model_type: spiking
+autonomous: false
+events:
+  spike:
+    name: spike
+    event_type: stimulus
+    condition:
+      rhs: v > thresh
+      latex: false
+    affect:
+      rhs: v = reset
+      latex: false
+    sampling_rate: 1.0
+    interpolation: linear
+cse: false
+compile: false

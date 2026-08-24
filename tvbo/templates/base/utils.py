@@ -3,6 +3,38 @@
 Extracts Python logic from Mako templates for cleaner, testable code.
 """
 
+import keyword
+
+
+def is_name(text: str) -> bool:
+    """Whether *text* can stand as an identifier: Python's own rule, minus its keywords.
+
+    The one definition of the question, so the boundary that rewrites a string to satisfy it and the boundary that refuses a string for failing it cannot drift apart.
+    """
+    return bool(text) and text.isidentifier() and not keyword.iskeyword(text)
+
+
+def safe_name(name: str, fallback: str = "item") -> str:
+    r"""A spec string as a valid Python identifier, preserving case.
+
+    For the free-prose slots — a stimulus ``label`` above all — which carry a human title and are rightly unconstrained. A generator that concatenates one straight into a ``class`` or ``def`` emits a module that will not parse, and the failure surfaces at import of the generated file rather than at the spelling that caused it. That constraint belongs to Python, so it is applied here where Python is emitted.
+
+    A slot the rest of the spec *addresses* something by is the other case and not this one: it is a name in TVBO's own grammar, is held to being one where it is authored, and arrives here already an identifier — see `_reject_unnamed`. Explorations, algorithms and optimizations are addressed that way (``res.explorations.<name>``) but are still only sanitized here, so a title with a space is silently a different key on the result than in the recipe.
+
+    Each character is tested against Python's own rule rather than against ``\W``. The two disagree — ``²`` is ``isalnum`` and so a word character, but is not valid in an identifier — and a name that survived the regex only to fail the check had to be discarded whole. Discarding is what collides: ``sweep²`` and ``run²`` both became the fallback, and two entries then share one key. Per character, they stay distinct.
+
+    The result is still checked rather than assumed, and a name with nothing left in it falls back.
+    """
+    text = str(name or "")
+    cleaned = "".join(char if ("a" + char).isidentifier() else "_" for char in text)
+    if cleaned and cleaned[0].isdigit():
+        cleaned = f"_{cleaned}"
+    if keyword.iskeyword(cleaned):
+        cleaned = f"{cleaned}_"
+    if not is_name(cleaned) or not cleaned.strip("_"):
+        return fallback
+    return cleaned
+
 
 def get_coupling_terms(model):
     """Extract coupling inputs from model, separating global from local.
@@ -109,18 +141,26 @@ def get_source_code(func):
     return None
 
 
-def model_expressions(model):
-    """Every right-hand side a generated dfun body will contain, as one searchable string.
+def model_reads(model):
+    """Every symbol a generated dfun body will read, by name.
 
-    Pair with :func:`referenced` to unpack only the parameters a model actually uses. The four groups must all be included: a parameter can reach the derivatives indirectly, through a derived parameter (``C1 = C``), a derived variable, or a function body (``Sigm`` reads ``e0``, ``r`` and ``v0`` and nothing else does), and dropping its unpack on the strength of the state equations alone would emit an unbound name.
+    Taken from the free symbols of the model's symbolic form, which is what makes it an answer rather than a guess: whether an expression refers to a quantity is a property of the expression, and only the expression can be asked. Searching printed source for the name instead finds it in a substring, in a comment, in a function's name — the compare-by-spelling mistake the symbolic layer exists to remove.
+
+    All four groups come in one pass, which the caller needs: a parameter can reach the derivatives through a derived parameter (``C1 = C``), a derived variable, or a function body — ``Sigm`` reads ``e0``, ``r`` and ``v0`` and nothing else does — and a conditional equation holds its branches in ``conditionals`` with an empty ``rhs``, so a scan of the stored right-hand sides sees nothing at all.
     """
-    parts = []
-    for group in ("state_variables", "derived_variables", "derived_parameters", "functions"):
-        for obj in (getattr(model, group, None) or {}).values():
-            rhs = getattr(getattr(obj, "equation", None), "rhs", None)
-            if rhs is not None:
-                parts.append(str(rhs))
-    return "\n".join(parts)
+    return {str(symbol) for equation in model.get_equations().values() for symbol in equation.rhs.free_symbols}
+
+
+def referenced_parameters(model, names=None):
+    """Which of *names* the model's equations read, in the order given.
+
+    Emitting an unpack for the rest leaves dead bindings; emitting one for too few leaves the body naming something nothing binds. `tent_map` reads `mu` twice from inside a conditional branch, so it is exactly the case a scan of the stored ``rhs`` gets wrong.
+
+    *names* defaults to the model's own parameters. A caller that has already put them in
+    the order it emits — the tvboptim dfun sorts trained parameters ahead of the rest — passes that order in and gets the same order back, minus what nothing reads.
+    """
+    reading = model_reads(model)
+    return [name for name in (model.parameters if names is None else names) if str(name) in reading]
 
 
 def coupling_bindings(model, coupling, incoming=(), local=()):
@@ -225,26 +265,18 @@ SCIPY_SPECIAL_FUNCTIONS = {"erfc", "erf", "gamma", "gammaln", "bessel", "beta"}
 
 
 def needs_scipy_special(model, fmt):
-    """Check if model equations use scipy.special functions.
+    """Whether the emitted body will contain a ``scipy.special`` / ``jsp.special`` call.
 
-    Renders derived variables and state equations to detect scipy.special usage.
-    Returns True if any equation contains scipy.special (for numpy) or jsp.special (for jax).
+    Unlike :func:`model_reads`, this is a question about the *printer's* output rather than about the expression: which sympy function lands on ``scipy.special.erfc`` is the printer's dispatch to decide, so the only honest answer comes from rendering.
+
+    Every group the body will contain is searched. Checking the state and derived equations alone missed `ZerlautAdaptationSecondOrder`, which calls `erfc` only from inside a model function, and emitted a module that used `scipy` without importing it.
     """
-    search_str = "scipy.special" if fmt in ("numpy", "scipy") else "jsp.special"
-
-    # Check derived variables
-    for dv in (model.derived_variables or {}).values():
-        code = model.render_equation(dv, format=fmt)
-        if search_str in code:
-            return True
-
-    # Check state variable equations
-    for sv in model.state_variables.values():
-        code = model.render_equation(sv, format=fmt)
-        if search_str in code:
-            return True
-
-    return False
+    token = "scipy.special" if fmt in ("numpy", "scipy") else "jsp.special"
+    return any(
+        token in model.render_equation(element, format=fmt)
+        for group in ("state_variables", "derived_variables", "derived_parameters", "functions")
+        for element in (getattr(model, group, None) or {}).values()
+    )
 
 
 # ── Distribution utilities, reusable across every backend ──

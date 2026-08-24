@@ -1,0 +1,329 @@
+id: 1
+part: main
+label: RateML rwongwang ground truth
+dynamics:
+  name: rwongwang
+  parameters:
+    a_E:
+      name: a_E
+      value: 310.0
+      description: '[n/C]. Excitatory population input gain parameter'
+    b_E:
+      name: b_E
+      value: 125.0
+      description: '[Hz]. Excitatory population input shift parameter'
+    d_E:
+      name: d_E
+      value: 0.16
+      description: '[s]. Excitatory population input scaling parameter'
+    a_I:
+      name: a_I
+      value: 615.0
+      description: '[n/C]. Inhibitory population input gain parameter'
+    b_I:
+      name: b_I
+      value: 177.0
+      description: '[Hz]. Inhibitory population input shift parameter'
+    d_I:
+      name: d_I
+      value: 0.087
+      description: '[s]. Inhibitory population input scaling parameter'
+    gamma_E:
+      name: gamma_E
+      value: 0.000641
+      description: Excitatory population kinetic parameter
+    tau_E:
+      name: tau_E
+      value: 100.0
+      description: '[ms]. Excitatory population NMDA decay time constant'
+    w_plus:
+      name: w_plus
+      value: 1.4
+      description: Excitatory population recurrence weight
+    w_E:
+      name: w_E
+      value: 1.0
+      description: Excitatory population external input scaling weight
+    gamma_I:
+      name: gamma_I
+      value: 0.001
+      description: Inhibitory population kinetic parameter
+    tau_I:
+      name: tau_I
+      value: 10.0
+      description: '[ms]. Inhibitory population NMDA decay time constant'
+    w_I:
+      name: w_I
+      value: 0.7
+      description: Inhibitory population external input scaling weight
+    I_0:
+      name: I_0
+      value: 0.382
+      description: '[nA]. Effective external input'
+    J_NMDA:
+      name: J_NMDA
+      value: 0.15
+      description: NMDA synaptic coupling
+    JI:
+      name: JI
+      value: 1.0
+      description: Inhibitory synaptic coupling
+  derived_variables:
+    tmp_I_E:
+      name: tmp_I_E
+      equation:
+        rhs: a_E * ((w_E * I_0) + (w_plus * J_NMDA) * V + c_glob - JI*W) - b_E
+        latex: false
+      record: false
+      conditional: false
+    tmp_H_E:
+      name: tmp_H_E
+      equation:
+        rhs: tmp_I_E / (1.0 - exp((-1.0 * d_E) * tmp_I_E))
+        latex: false
+      record: false
+      conditional: false
+    tmp_I_I:
+      name: tmp_I_I
+      equation:
+        rhs: (a_I * (((w_I * I_0) + (J_NMDA * V)) - W)) - b_I
+        latex: false
+      record: false
+      conditional: false
+    tmp_H_I:
+      name: tmp_H_I
+      equation:
+        rhs: tmp_I_I / (1.0 - exp((-1.0 * d_I) * tmp_I_I))
+        latex: false
+      record: false
+      conditional: false
+  coupling_inputs:
+    c_glob:
+      name: c_glob
+      dimension: 1
+      local: false
+  state_variables:
+    V:
+      name: V
+      domain:
+        enforce: clamp
+        lo: 0.0
+        hi: 1.0
+        log_scale: false
+      equation:
+        rhs: ((-1.0 / tau_E) * V) + (tmp_H_E * (1 - V) * gamma_E)
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: true
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.998307465821013
+    W:
+      name: W
+      domain:
+        enforce: clamp
+        lo: 0.0
+        hi: 1.0
+        log_scale: false
+      equation:
+        rhs: ((-1.0 / tau_I) * W) + (tmp_H_I * gamma_I)
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.12069886682928
+  number_of_modes: 1
+  system_type: continuous
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: euler
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.1
+  duration: 1000.0
+  transient_time: 0.0
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  graph_representation: auto
+  dynamics:
+    BalloonWindkessel:
+      name: BalloonWindkessel
+      parameters:
+        tau_s:
+          name: tau_s
+          value: 0.65
+          description: Signal decay time constant [s]
+        tau_f:
+          name: tau_f
+          value: 0.41
+          description: Feedback time constant [s]
+        tau_o:
+          name: tau_o
+          value: 0.98
+          description: Volume time constant [s]
+        alpha:
+          name: alpha
+          value: 0.32
+          description: Grubb exponent (stiffness)
+        TE:
+          name: TE
+          value: 0.04
+          description: Echo time [s]
+        V0:
+          name: V0
+          value: 4.0
+          description: Resting blood volume fraction
+        E0:
+          name: E0
+          value: 0.4
+          description: Resting oxygen extraction fraction
+        epsilon:
+          name: epsilon
+          value: 0.5
+          description: Ratio of intra- to extra-vascular signal
+        nu_0:
+          name: nu_0
+          value: 40.3
+          description: Frequency offset [Hz]
+        r_0:
+          name: r_0
+          value: 25.0
+          description: Slope of intravascular relaxation rate [Hz]
+      description: Balloon-Windkessel hemodynamic model for BOLD fMRI
+      derived_parameters:
+        recip_tau_s:
+          name: recip_tau_s
+          equation:
+            rhs: 1.0 / tau_s
+            latex: false
+        recip_tau_f:
+          name: recip_tau_f
+          equation:
+            rhs: 1.0 / tau_f
+            latex: false
+        recip_tau_o:
+          name: recip_tau_o
+          equation:
+            rhs: 1.0 / tau_o
+            latex: false
+        recip_alpha:
+          name: recip_alpha
+          equation:
+            rhs: 1.0 / alpha
+            latex: false
+        recip_E0:
+          name: recip_E0
+          equation:
+            rhs: 1.0 / E0
+            latex: false
+        k1:
+          name: k1
+          equation:
+            rhs: 4.3 * nu_0 * E0 * TE
+            latex: false
+        k2:
+          name: k2
+          equation:
+            rhs: epsilon * r_0 * E0 * TE
+            latex: false
+        k3:
+          name: k3
+          equation:
+            rhs: 1.0 - epsilon
+            latex: false
+      derived_variables:
+        bold_signal:
+          name: bold_signal
+          description: BOLD signal output
+          equation:
+            rhs: V0 * (k1 * (1.0 - q) + k2 * (1.0 - q / v) + k3 * (1.0 - v))
+            latex: false
+          record: false
+          conditional: false
+      state_variables:
+        s:
+          name: s
+          description: Vasodilatory signal
+          equation:
+            rhs: x - recip_tau_s * s - recip_tau_f * (f - 1.0)
+            latex: false
+          record: true
+          variable_of_interest: true
+          coupling_variable: false
+          equation_type: differential
+          equation_order: 1
+          initial_value: 0.0
+        f:
+          name: f
+          description: Blood inflow
+          equation:
+            rhs: s
+            latex: false
+          record: true
+          variable_of_interest: true
+          coupling_variable: false
+          equation_type: differential
+          equation_order: 1
+          initial_value: 1.0
+        v:
+          name: v
+          description: Blood volume
+          equation:
+            rhs: recip_tau_o * (f - pow(v, recip_alpha))
+            latex: false
+          record: true
+          variable_of_interest: true
+          coupling_variable: false
+          equation_type: differential
+          equation_order: 1
+          initial_value: 1.0
+        q:
+          name: q
+          description: Deoxyhemoglobin content
+          equation:
+            rhs: recip_tau_o * (f * (1.0 - pow(1.0 - E0, 1.0 / f)) * recip_E0 - pow(v,
+              recip_alpha) * (q / v))
+            latex: false
+          record: true
+          variable_of_interest: true
+          coupling_variable: false
+          equation_type: differential
+          equation_order: 1
+          initial_value: 1.0
+      number_of_modes: 1
+      system_type: continuous
+      autonomous: true
+      cse: false
+      compile: false
+  number_of_nodes: 4
+  distance_unit: mm
+coupling:
+  name: LinearCoupling
+  sparse: false
+  pre_expression:
+    rhs: V_j
+    latex: false
+  post_expression:
+    rhs: '1'
+    latex: false
+  incoming_states:
+  - V
+  delayed: true
+  interpolate_delays: false
+  vectorized: false
+  symmetry: directed
+observations:
+  bold:
+    name: bold
+    description: BOLD fMRI observation using BalloonWindkessel dynamics
+    voi: 0
+    imaging_modality: BOLD
+    reconcile: by_label

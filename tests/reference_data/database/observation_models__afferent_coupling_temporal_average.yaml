@@ -1,0 +1,22 @@
+name: AfferentCouplingTemporalAverage
+label: Afferent Coupling Temporal Average
+description: Temporally averaged afferent coupling input at each node. Combines coupling
+  input recording with temporal averaging.
+source:
+- coupling
+period: 0.9765625
+reconcile: by_label
+pipeline:
+- equation:
+    rhs: window_mean(X, window_size)
+    latex: false
+  name: temporal_average
+  output: averaged_coupling
+  apply_on_dimension: time
+  arguments:
+    window_size:
+      name: window_size
+      description: Number of integration steps per averaging window = period / dt
+class_reference:
+  name: AfferentCouplingTemporalAverage
+  module: tvb.simulator.monitors

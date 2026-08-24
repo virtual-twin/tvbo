@@ -56,7 +56,7 @@ def define_simulation(connectivity, simulation_length=${experiment.integration.d
         initial_conditions=initial_conditions,
         %if experiment.stimulation:
         stimulus=StimuliRegion(
-                    temporal=${experiment.stimulation.label+'Equation'}(),
+                    temporal=${experiment.stimulation.identifier + 'Equation'}(),
                     connectivity=connectivity,
                     weight=weight,
                     **stimulus_kwargs

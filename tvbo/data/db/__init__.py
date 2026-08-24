@@ -9,13 +9,16 @@ Every `*.yaml` file in this package is discovered at import time and exposed bot
 import glob
 import os
 from collections import namedtuple
+from functools import lru_cache
 
 from linkml_runtime.loaders import yaml_loader
 
 try:
-    from pybtex.database import parse_file
+    from pybtex.database import Person, parse_file
 except ImportError:
-    parse_file = None  # pybtex is optional (docs extra)
+    Person = parse_file = None  # pybtex is optional (docs extra)
+
+PYBTEX_MISSING = "pybtex is required for bibliography support. Install it with: pip install tvbo[docs]"
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -96,8 +99,11 @@ def load_study(citationkey: str):
     return SimulationStudy.from_file(getattr(study_metadata_files, citationkey))
 
 
+@lru_cache(maxsize=1)
 def load_bibliography():
     """Parse the bundled BibTeX literature database.
+
+    Cached: the file ships with the package and cannot change within a process, while `get_citation` is called once per reference from inside template comprehensions — an eight-reference report re-read the same 45 KiB, 115-entry file eight times at ~30 ms each.
 
     Returns:
         The parsed `pybtex` bibliography for `tvbo/database/references.bib`.
@@ -106,5 +112,5 @@ def load_bibliography():
         ImportError: If the optional `pybtex` dependency is not installed.
     """
     if parse_file is None:
-        raise ImportError("pybtex is required for bibliography support. Install it with: pip install tvbo[docs]")
+        raise ImportError(PYBTEX_MISSING)
     return parse_file(bib_file)

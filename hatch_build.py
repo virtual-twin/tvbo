@@ -14,6 +14,7 @@ Determinism: the Python generator emits a ``# Generation date:`` header line —
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 _NONDETERMINISTIC_PREFIX = "# Generation date:"
@@ -45,8 +46,17 @@ def generate_datamodel(root: str | Path) -> None:
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
     _copy_records(root)
-    _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize() + _alias_support(schema))
-    _write(out_dir / "pydantic.py", PydanticGenerator(str(schema)).serialize())
+    shortcuts, aliases = _dialect_tables(schema)
+    mixins = _behaviour_mixins(root, schema)
+    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases))
+    _write(
+        out_dir / "schema.py",
+        _with_behaviour(PythonGenerator(str(schema)).serialize(), mixins) + _INSTALL_DIALECT,
+    )
+    _write(
+        out_dir / "pydantic.py",
+        _with_dialect_and_behaviour(PydanticGenerator(str(schema)).serialize(), mixins),
+    )
 
     # JSON Schema — relax `additionalProperties: false → true` everywhere so validation stays lenient, mirroring the previous `JsonschemaValidationPlugin(closed=False)`. `sort_keys` keeps it reproducible.
     js = json.loads(JsonSchemaGenerator(str(schema)).serialize())
@@ -59,12 +69,12 @@ def generate_datamodel(root: str | Path) -> None:
 _SEMANTIC_ALIASES = ("range", "boundaries")
 
 
-def _alias_support(schema: Path) -> str:
-    """Python appended to the generated ``schema.py`` so classes accept their aliases.
+def _dialect_tables(schema: Path) -> tuple[dict, dict]:
+    """``(scalar shortcuts, slot aliases)`` — the TVBO dialect, read once off the schema.
 
     LinkML treats ``aliases:`` as documentation — its loaders key on the canonical slot name, so a declared alias is inert and raises ``unexpected keyword argument``. Each class's ``__init__`` already receives exactly its own slots, which makes it the one place where an alias can be resolved without guessing whether a mapping is an instance or a keyed collection, and without a free-form key (a parameter named ``dt``) ever being mistaken for a slot. Every construction path — the LinkML loaders, ``cls(**data)``, nested and inlined members, subclasses — goes through it.
 
-    It also applies LinkML's ``simple_dict_value`` annotation, which marks the slot a bare scalar stands for: ``omega: 0.0628`` means ``{value: 0.0628}`` and ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed collections (``inlined_as_simple_dict``) but ``linkml_runtime``'s dataclass loader does not implement it, so it is applied here — and extended to single-valued inlined slots, which the spec does not cover. Slots explicitly marked ``inlined: false`` are references: their scalar is the target's *identifier*, not a value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``), so they are skipped.
+    It also applies LinkML's ``simple_dict_value`` annotation, which marks the slot a bare scalar stands for: ``omega: 0.0628`` means ``{value: 0.0628}`` and ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed collections (``inlined_as_simple_dict``) but ``linkml_runtime``'s dataclass loader does not implement it, so it is applied here — and extended to single-valued inlined slots, which the spec does not cover. Reference slots are skipped: their scalar is the target's *identifier*, not a value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``). Inlined-ness is asked of the schema (``is_inlined``) rather than read off ``slot.inlined``, because a class-ranged slot whose range has an identifier is a reference by default while leaving ``inlined`` unset — six such slots were being wrapped, and since the wrapper then had to fit a string-ranged slot it landed as the literal ``"JsonObj(value='x')"``.
     """
     from linkml_runtime.utils.schemaview import SchemaView
 
@@ -87,7 +97,7 @@ def _alias_support(schema: Path) -> str:
                 view.get_identifier_slot(str(slot.range), use_key=True) is not None,
             )
             for slot in view.class_induced_slots(cls_name)
-            if str(slot.range) in shortcut_of and slot.inlined is not False
+            if str(slot.range) in shortcut_of and view.is_inlined(slot)
         }
         if slot_lifts:
             lifts[cls_name] = slot_lifts
@@ -105,86 +115,140 @@ def _alias_support(schema: Path) -> str:
         amap = {a: c for a, c in amap.items() if a not in own}
         if amap:
             table[cls_name] = amap
-    return f"""
-
-# {{class: {{slot: slot the scalar stands for}}}}, from `annotations.scalar_shortcut`: lets a value be written bare where the object has one obvious field.
-_SCALAR_SHORTCUTS = {lifts!r}
+    return lifts, table
 
 
-_SCALARS = (str, int, float, bool)
+def _render_dialect_tables(shortcuts: dict, aliases: dict) -> str:
+    """The two dialect tables as their own module.
 
+    Kept apart from ``schema.py`` so the Pydantic models can read them without importing the dataclasses: that import is the coupling the migration exists to remove, and it would be a cycle once ``schema.py`` installs the dialect from the same place.
+    """
+    return f'''"""Generated dialect tables — see :mod:`tvbo.datamodel.dialect`.
 
-def _is_literal(value):
-    \"\"\"A bare value the shortcut may lift: a scalar, or a (nested) list of scalars.
-
-    An array literal counts — a coordinate list to select, a coefficient matrix — because
-    the slot it lifts into holds arrays as well as scalars. A list of MAPPINGS does not:
-    that is the list spelling of a keyed collection, whose members lift individually.
-    \"\"\"
-    if isinstance(value, _SCALARS):
-        return True
-    if isinstance(value, (list, tuple)):
-        return bool(value) and all(_is_literal(v) for v in value)
-    return False
-
-
-def _lift_scalar(value, target, multivalued, keyed=False):
-    \"\"\"`0.0628` -> `{{'value': 0.0628}}`, leaving an already-written mapping alone.
-
-    On a multivalued slot the members are lifted, not the collection: `{{omega: 0.0628}}`
-    is a keyed collection of one Parameter, not a Parameter. A `keyed` collection's LIST
-    spelling (`arguments: [v]`) is a list of member identifiers, not values, so its bare
-    scalars are left for the loader to key on; only a non-keyed list (`additional_equations:
-    ["x = -x"]` -> `[{{rhs: "x = -x"}}]`) lifts its elements.
-    \"\"\"
-    if not multivalued:
-        return {{target: value}} if _is_literal(value) else value
-    if isinstance(value, dict):
-        return {{k: ({{target: v}} if _is_literal(v) else v) for k, v in value.items()}}
-    if isinstance(value, list):
-        if keyed:
-            return value
-        return [({{target: v}} if _is_literal(v) else v) for v in value]
-    return value
-
-
-# {{class: {{alias: canonical slot}}}} from the schema's `aliases:`, folded in __init__ where the kwargs are known to belong to this class.
-_SLOT_ALIASES = {table!r}
-
-
-def _install_slot_aliases() -> None:
-    import warnings
-
-    def _wrap(cls, amap):
-        original = cls.__init__
-
-        def __init__(self, *args, **kwargs):
-            for slot, (target, mv, keyed) in _SCALAR_SHORTCUTS.get(cls.__name__, {{}}).items():
-                if slot in kwargs and kwargs[slot] is not None:
-                    kwargs[slot] = _lift_scalar(kwargs[slot], target, mv, keyed)
-            for alias, canonical in amap.items():
-                if alias in kwargs:
-                    value = kwargs.pop(alias)
-                    if canonical in kwargs:
-                        warnings.warn(
-                            f"{{cls.__name__}} got both {{alias!r}} and its canonical "
-                            f"slot {{canonical!r}}; ignoring {{alias!r}}.",
-                            stacklevel=2,
-                        )
-                    else:
-                        kwargs[canonical] = value
-            original(self, *args, **kwargs)
-
-        cls.__init__ = __init__
-
-    for name in set(_SLOT_ALIASES) | set(_SCALAR_SHORTCUTS):
-        cls = globals().get(name)
-        if cls is not None:
-            _wrap(cls, _SLOT_ALIASES.get(name, {{}}))
-
-
-_install_slot_aliases()
+``SCALAR_SHORTCUTS`` maps ``{{class: {{slot: (slot the bare scalar stands for,
+multivalued, keyed)}}}}``, from ``annotations.simple_dict_value`` on each range class.
+``SLOT_ALIASES`` maps ``{{class: {{alias: canonical slot}}}}`` from the schema's ``aliases:``.
 """
+
+SCALAR_SHORTCUTS = {shortcuts!r}
+
+SLOT_ALIASES = {aliases!r}
+'''
+
+
+#: Appended to the generated ``schema.py``; the dataclasses fold the dialect in ``__init__``.
+_INSTALL_DIALECT = """
+
+from tvbo.datamodel.dialect import install_on_dataclasses as _install_dialect
+
+_install_dialect(globals())
+"""
+
+
+def _behaviour_mixins(root: Path, schema: Path) -> dict[str, str]:
+    """``{class: dotted path of its behaviour mixin}``, discovered from ``tvbo/behaviour``.
+
+    Behaviour is attached where the class is generated rather than in a runtime subclass, so it reaches every object from every construction path — loaded, nested, or built by hand — instead of only the ones some call site remembered to wrap.
+
+    Which class a mixin belongs to is read from its own name: ``EventBehaviour`` attaches to ``Event``. Deliberately NOT declared in the schema, which is language-neutral and is also what the OWL export is generated from; a Python import path there would be one language's mechanism stated as if it were a fact about the model.
+
+    Discovery parses the modules rather than importing them, so the build hook stays free of the package's runtime dependencies. A mixin naming a class the schema does not define is an error, since it would otherwise attach to nothing and fail silently.
+    """
+    import ast
+
+    from linkml_runtime.utils.schemaview import SchemaView
+
+    known = set(SchemaView(str(schema)).all_classes())
+    mixins: dict[str, str] = {}
+    for module in sorted((root / "tvbo" / "behaviour").glob("*.py")):
+        if module.stem.startswith("_"):
+            continue
+        for node in ast.parse(module.read_text(encoding="utf-8")).body:
+            if not isinstance(node, ast.ClassDef) or not node.name.endswith("Behaviour"):
+                continue
+            target = node.name[: -len("Behaviour")]
+            if target not in known:
+                raise RuntimeError(
+                    f"{module.name} defines {node.name}, but the schema has no class {target!r} for it to attach to."
+                )
+            mixins[target] = f"tvbo.behaviour.{module.stem}.{node.name}"
+    return mixins
+
+
+def _inject_bases(code: str, additions: dict[str, list[str]]) -> str:
+    """Prepend bases to generated class statements.
+
+    LinkML emits these classes from its own template and no generator hook reaches inside them, so the class statement is rewritten directly. Each anchor must match exactly once: a template change then fails the build here, loudly, rather than silently producing classes that have quietly lost their dialect or their behaviour.
+    """
+    for cls_name, bases in additions.items():
+        pattern = re.compile(rf"^class {re.escape(cls_name)}\((?P<bases>[^)]*)\):", re.M)
+        matches = pattern.findall(code)
+        if len(matches) != 1:
+            raise RuntimeError(
+                f"expected exactly one generated `class {cls_name}(...)`, found "
+                f"{len(matches)} — the LinkML template or the schema changed shape."
+            )
+        code = pattern.sub(
+            lambda m, cls_name=cls_name, bases=bases: f"class {cls_name}({', '.join(bases)}, {m.group('bases')}):",
+            code,
+            count=1,
+        )
+    return code
+
+
+#: Prepended to ``pydantic.py`` as ``ConfiguredBaseModel``'s base, folding before validation.
+_DIALECT_BASE = '''from pydantic import model_validator as _model_validator
+
+from tvbo.datamodel.dialect import normalize as _normalize_dialect
+
+
+class _DialectBase(BaseModel):
+    """Accepts the TVBO dialect — declared aliases and bare-scalar shortcuts.
+
+    Runs before validation, once per constructed model, so Pydantic's own recursion
+    reaches every nested member; the validator only ever handles its own level.
+    """
+
+    @_model_validator(mode="before")
+    @classmethod
+    def _fold_tvbo_dialect(cls, data):
+        if isinstance(data, dict):
+            return _normalize_dialect(cls.__name__, dict(data))
+        return data
+
+
+'''
+
+
+def _mixin_imports(mixins: dict[str, str]) -> str:
+    """``from <module> import <Mixin>`` for each declared behaviour mixin."""
+    return "".join(f"from {path.rsplit('.', 1)[0]} import {path.rsplit('.', 1)[1]}\n" for path in sorted(set(mixins.values())))
+
+
+def _with_behaviour(code: str, mixins: dict[str, str]) -> str:
+    """Give each annotated dataclass its behaviour mixin.
+
+    Both generated forms take the same mixin, so behaviour reaches an object whether it came from LinkML's loader (a dataclass) or from Pydantic validation. Without this the dataclasses would lose every helper the moment it moved out of a runtime subclass, since that is still what the loaders construct.
+    """
+    if not mixins:
+        return code
+    code = code.replace('metamodel_version = "', _mixin_imports(mixins) + '\nmetamodel_version = "', 1)
+    return _inject_bases(code, {cls: [path.rsplit(".", 1)[1]] for cls, path in mixins.items()})
+
+
+def _with_dialect_and_behaviour(code: str, mixins: dict[str, str]) -> str:
+    """Give the generated models the dialect, and each annotated class its behaviour.
+
+    The mixins are imported beside ``_DialectBase``, above every generated class, so a behaviour module must not import the datamodel at module scope — the same discipline :mod:`tvbo.datamodel.dialect` follows.
+    """
+    code = code.replace(
+        "class ConfiguredBaseModel(BaseModel):",
+        _mixin_imports(mixins) + _DIALECT_BASE + "class ConfiguredBaseModel(BaseModel):",
+        1,
+    )
+    additions = {"ConfiguredBaseModel": ["_DialectBase"]}
+    additions.update({cls: [path.rsplit(".", 1)[1]] for cls, path in mixins.items()})
+    return _inject_bases(code, additions)
 
 
 def _relax_additional_properties(node) -> None:

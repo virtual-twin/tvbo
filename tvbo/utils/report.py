@@ -942,17 +942,65 @@ def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=
         symbol_names: ``{Symbol: latex}`` display overrides (``Dynamics.symbol_map()``).
         mul_symbol: Passed through to ``sympy.latex``.
     """
-    from sympy import Derivative, Eq, Symbol, latex
+    from sympy import Derivative, Eq, latex
 
     symbol_names = symbol_names or {}
     if derivative_notation == "dot" and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
         deriv = eq.lhs
-        order = sum(1 for v in deriv.variables if v == Symbol("t"))
         base = latex(deriv.expr, mul_symbol=mul_symbol, symbol_names=symbol_names)
-        dots = {1: "dot", 2: "ddot", 3: "dddot"}.get(order)
-        lhs = f"\\{dots}{{{base}}}" if dots else f"\\frac{{d^{order}}}{{d t^{order}}} {base}"
+        lhs = derivative_latex(base, time_order(deriv))
         return f"{lhs} = {latex(eq.rhs, mul_symbol=mul_symbol, symbol_names=symbol_names)}"
     return latex(eq, mul_symbol=mul_symbol, symbol_names=symbol_names)
+
+
+def time_order(derivative):
+    r"""How many times *derivative* differentiates with respect to time.
+
+    By name: ``Symbol("t")`` and ``Symbol("t", real=True)`` are different objects that print identically, so an identity test reads order 0 for a first derivative taken in a scope that carries assumptions — and prints ``\frac{d^0}{d t^0}``.
+    """
+    return sum(1 for variable in derivative.variables if str(variable) == "t")
+
+
+def derivative_latex(base, order):
+    """``base`` under ``order`` time derivatives, dotted where dots exist."""
+    dots = {1: "dot", 2: "ddot", 3: "dddot"}.get(order)
+    return f"\\{dots}{{{base}}}" if dots else f"\\frac{{d^{order}}}{{d t^{order}}} {base}"
+
+
+EQUATION_GROUPS = {
+    "state": "state-equations",
+    "derived": "derived-variables",
+    "derived_parameters": "derived-parameters",
+    "functions": "functions",
+    "output": "output-transformations",
+}
+"""Display group → the key :meth:`Dynamics.get_equations` files it under."""
+
+
+def equation_name(eq):
+    """The name an equation defines: ``x`` for ``Eq(Derivative(x, t), …)``, ``Sigm`` for ``Eq(Sigm(v), …)``."""
+    from sympy import Derivative, Symbol
+
+    lhs = eq.lhs.expr if isinstance(eq.lhs, Derivative) else eq.lhs
+    return lhs.name if isinstance(lhs, Symbol) else type(lhs).__name__
+
+
+def model_equation_groups(model, delta=None):
+    """Every equation a model states, grouped for display and already parsed.
+
+    One call to :meth:`Dynamics.get_equations`, which resolves each equation against the model's own scope and folds conditional branches into a ``Piecewise``. A template that rebuilds any of these groups from ``equation.rhs`` instead re-parses without that scope — the mistake :func:`equation_latex` exists to prevent — and drops outright every equation written purely as branches, whose ``rhs`` is ``None``.
+
+    Args:
+        model: The `Dynamics` to read.
+        delta: Optional `model_delta` result; state and derived variables are narrowed to
+            the ones it reports as changed, so a derived model shows only its own additions.
+    """
+    groups = model.get_equations(format="dict")
+    equations = {name: list(groups.get(key, [])) for name, key in EQUATION_GROUPS.items()}
+    if delta is not None:
+        equations["state"] = [eq for eq in equations["state"] if equation_name(eq) in delta.eq_svars]
+        equations["derived"] = [eq for eq in equations["derived"] if equation_name(eq) in delta.dvars]
+    return equations
 
 
 def model_equations(model, kind="state", derivative_notation="dot", mul_symbol=None):
@@ -1158,7 +1206,7 @@ def state_variable_table(svars):
     return md_table(["Variable", "Initial Value", "Unit", "Equation", "Domain / Sampling", "Flags", "Description"], rows)
 
 
-def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
+def param_table(collection, name_header="Parameter", symbolic=True, flags=None, derived=None):
     """Markdown table for any parameter-like collection, empty columns dropped.
 
     Renders the full column set (name, value, default, unit, domain/sampling, flags, description) and lets :func:`md_table` drop every column that is empty across all rows, so each collection shows only the columns that carry data.
@@ -1170,6 +1218,9 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
         symbolic: Render the name as inline-LaTeX ``$symbol$`` when true, else plain.
         flags: ``(attr, label)`` pairs for :func:`flag_text`; defaults to the
             standard parameter flags.
+        derived: ``name -> unit`` the dimensional check *forced* rather than read,
+            from :func:`derived_units`. Such a unit renders parenthesised, so a
+            reader can tell what the model states from what its equations imply.
     """
 
     def _name(name, p):
@@ -1180,7 +1231,7 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
             _name(name, p),
             format_number(slot(p, "value", "")),
             format_number(slot(p, "default", "")),
-            unit_text(slot(p, "unit")),
+            unit_text(slot(p, "unit")) or derived_unit_text(derived, name),
             metadata_text(p),
             flag_text(p, flags),
             slot(p, "description", "") or slot(p, "definition", "") or "",
@@ -1194,9 +1245,96 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
     )
 
 
-def parameter_table(params):
+def derived_unit_text(derived, name):
+    """A propagation-derived unit in parentheses, or nothing.
+
+    Parenthesised because it is not a claim the model makes: additive homogeneity forces it from the quantities beside it. Printing it bare would put a unit nobody wrote into the published record.
+    """
+    latex = (derived or {}).get(str(name))
+    return f"(${latex}$)" if latex else ""
+
+
+def unit_latex(unit):
+    """A propagated unit expression as inline LaTeX, named where it has a name.
+
+    Propagation yields `kilogram*meter**2/(1000*ampere*second**3)`; that is `mV`, and reads far better said that way. Only where no curated unit matches does the base-unit product itself get typeset. Upright roman either way — a unit is not a variable, and italic `mV` reads as `m` times `V`.
+    """
+    from sympy import latex
+
+    from tvbo.utils.units import unit_named, unit_to_latex
+
+    if unit is None:
+        return ""
+    named = unit_named(unit)
+    return unit_to_latex(named) if named else latex(unit)
+
+
+def derived_units(verdicts):
+    """Units the dimensional check *forced*, keyed by quantity name, as LaTeX.
+
+    A quantity beside declared ones in a sum is not free: additive homogeneity fixes it exactly. That is worth showing — it is the difference between a model whose units are unstated and one whose units are unstatable — but it has to be shown as *derived*, never merged into what the model declares.
+    """
+    from tvbo.analysis.units import quantity_name
+
+    return {
+        quantity_name(symbol): unit_latex(unit)
+        for verdict in verdicts
+        for symbol, unit in verdict.inferred.items()
+        if unit is not None
+    }
+
+
+def unit_verdict_table(verdicts):
+    """Markdown table of each equation's dimensional standing.
+
+    Three-valued, because two of the three answers are not failures.
+    `underdetermined` says the model does not declare enough to check, which is the honest answer for the 24 of 39 curated models that declare no units at all; reporting those as inconsistent would pressure invented declarations into the published record.
+    """
+    from tvbo.analysis.units import CONSISTENT, INCONSISTENT
+
+    labels = {CONSISTENT: "consistent", INCONSISTENT: "**inconsistent**"}
+    rows = [
+        [
+            _inline(_verdict_symbol(verdict)),
+            _inline(unit_latex(verdict.unit)),
+            labels.get(verdict.status, verdict.status),
+            verdict.detail,
+        ]
+        for verdict in verdicts
+    ]
+    return md_table(["Equation", "Unit", "Dimensional check", "Detail"], rows)
+
+
+def _verdict_symbol(verdict):
+    r"""The equation's left-hand side in the report's own notation.
+
+    Built from the quantity's name rather than the SymPy left-hand side: the analysis view holds state variables as functions of `t`, and `\dot{y_0(t)}` says the same thing as `\dot{y_0}` twice.
+    """
+    from sympy import Derivative
+
+    lhs = getattr(verdict.equation, "lhs", None)
+    base = display_symbol(None, verdict.name)
+    return derivative_latex(base, time_order(lhs)) if isinstance(lhs, Derivative) else base
+
+
+def _inline(latex):
+    """Wrap already-rendered LaTeX for inline display, or nothing."""
+    return f"${latex}$" if latex else ""
+
+
+def unit_verdicts(model, strictness="dimensional"):
+    """Every equation's dimensional verdict, for the tables above.
+
+    Resolved once per report: the check inlines every model function each time it runs, and both the verdict table and the derived-unit marking read it.
+    """
+    from tvbo.analysis.units import check_units
+
+    return check_units(model, strictness=strictness)
+
+
+def parameter_table(params, derived=None):
     """Markdown model Parameters table (empty columns dropped) from a name->obj map."""
-    return param_table(params, name_header="Parameter")
+    return param_table(params, name_header="Parameter", derived=derived)
 
 
 def _scalar(value):
@@ -1568,9 +1706,11 @@ def sweep_axes(experiment):
 def _integration_unit(integ):
     """The integrator's time unit, from whichever slot the recipe declared.
 
-    `Integrator` carries both `unit` and `time_scale`, and `time_scale` is the one the schema defaults (to `ms`). Reading `unit` alone left every recipe that omits it falling back to seconds, so a 0.5 ms step over 800 ms was reported as 0.5 s over 800 s — the same 1000x error the hardcoded `ms` used to make, with the recipes swapped.
+    `Integrator` carries both `unit` and `time_unit`, and a recipe spelling the latter `time_scale` has it folded onto the canonical slot at construction, so the alias is never what is read here. An explicit `unit` still wins. Everything else defers to :func:`tvbo.utils.units.time_unit_of`, which is the one place the `ms` fallback is stated now that the schema deliberately carries no default — reading the slots directly returns `None` for the common recipe that declares neither, and the caller then prints seconds for a millisecond clock.
     """
-    return slot(integ, "unit", None) or slot(integ, "time_scale", None)
+    from tvbo.utils.units import time_unit_of
+
+    return slot(integ, "unit", None) or time_unit_of(integ)
 
 
 def time_text(value, unit=None, decimals=4):
@@ -1728,7 +1868,7 @@ _SAMPLING_SLOTS = (
     ("downsample_period", "downsample"),
     ("aggregation", "aggregation"),
     ("imaging_modality", "modality"),
-    ("time_scale", "scale"),
+    ("time_unit", "scale"),
     ("voi", "VOI"),
     ("skip_t", "skip"),
     ("tail_samples", "tail"),
@@ -1814,8 +1954,7 @@ def observation_table(experiments):
     Three things keep the grid dense, measured across the studies that have the widest ones (Deco2014's 29 observations, Schirner2023's 34):
 
     - **Shared settings are lifted out.** A sampling setting every observation agrees on
-      is stated once instead of per row. The one that matters is ``time_scale``, which the schema defaults to ``ms`` — nobody chose it, and it was printed on every one
-      of those 63 rows.
+      is stated once instead of per row. The one that matters is ``time_unit``: a study declares its clock once, so the same value repeated on every one of those 63 rows said nothing that the line above the table could not.
     - **Sampling and pipeline are one column.** Each was under half full and they are
       complementary: both answer *how the raw state becomes the reported quantity*.
       Apart they left a 34 %-empty grid; merged, ``Reduction`` fills 66–91 %.
@@ -2097,6 +2236,48 @@ def save_latex(conf, fpath):
 # References #
 
 
+_ET_AL_MARKERS = frozenset({"others", "et al.", "al."})
+
+
+def _format_person(person) -> str:
+    """One author as `Last, F.`, using only the name parts the entry actually carries.
+
+    BibTeX truncates an author list by ending it with `and others`, which pybtex parses as a person whose sole name is `others` and who has no first name; the same idiom appears in the wild as `et al.`. Taking a first initial unconditionally raised `IndexError` on every entry written that way.
+
+    A surname particle is a name part in its own right: pybtex files `van der` under `prelast_names` and only `Pol` under `last_names`, so reading the latter alone cites a different person entirely.
+    """
+    last = " ".join([*person.prelast_names, *person.last_names]).strip()
+    if last.strip("{}").lower() in _ET_AL_MARKERS:
+        return "et al."
+    initials = " ".join(f"{name[0]}." for name in person.first_names if name)
+    return f"{last}, {initials}" if initials else last
+
+
+def _format_authors(persons) -> str:
+    """An APA author list: `A`, `A & B`, `A, B, & C` — with a trailing `et al.` absorbed."""
+    names = [_format_person(p) for p in persons]
+    if not names:
+        return ""
+    if names[-1] == "et al.":
+        others = names[:-1]
+        return f"{', '.join(others)} et al." if others else "et al."
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return f"{names[0]} & {names[1]}"
+    return f"{', '.join(names[:-1])}, & {names[-1]}"
+
+
+def _parse_authors(author_fields: Sequence[str]) -> list:
+    """BibTeX author strings — `Wilson, Hugh R. and Cowan, Jack D.` — as pybtex `Person`s.
+
+    A BibTeX name is written either `First Last` or `Last, First`, and the ontology's citations carry both. Splitting on whitespace and calling the last word the surname therefore garbled every comma-ordered entry — `Wilson, Hugh R. and Cowan, Jack D.` rendered as `R., W. H., D., C. J.` — besides dropping particles and treating the `and others` truncation idiom as a person. Parsing is pybtex's job.
+    """
+    if db.Person is None:
+        raise ImportError(db.PYBTEX_MISSING)
+    return [db.Person(name) for field in author_fields for name in field.split(" and ")]
+
+
 def render_citation(citation: Any, style: str = "apa") -> str:
     """Render an ontology citation instance as formatted text.
 
@@ -2107,15 +2288,7 @@ def render_citation(citation: Any, style: str = "apa") -> str:
     Returns:
         str: The formatted citation.
     """
-    authors_list = citation.author
-    formatted_authors = []
-    for author_str in authors_list:
-        for author in author_str.split(" and "):
-            parts = author.split()
-            if len(parts) >= 2:
-                formatted_authors.append(f"{parts[-1]}, {' '.join([p[0] + '.' for p in parts[:-1]])}")
-            else:
-                formatted_authors.append(author)
+    persons = _parse_authors(citation.author)
 
     year = citation.year[0] if citation.year else "Unknown Year"
     title = citation.title[0] if citation.title else "Unknown Title"
@@ -2125,13 +2298,14 @@ def render_citation(citation: Any, style: str = "apa") -> str:
     label = citation.label[0] if citation.label else "UnknownLabel"
 
     if style.lower() == "bibtex":
+        authors = " and ".join(_format_person(person) for person in persons)
         return (
-            f"@article{{{label},\n    author = {{{' and '.join(formatted_authors)}}},\n    title = {{{title}}},\n    "
+            f"@article{{{label},\n    author = {{{authors}}},\n    title = {{{title}}},\n    "
             f"journal = {{{journal}}},\n    year = {{{year}}},\n    volume = {{{volume}}},\n    "
             f"pages = {{{pages}}}\n}}"
         )
     elif style.lower() == "apa":
-        return f"{', '.join(formatted_authors)} ({year}). {title}. *{journal}*, {volume}, {pages}."
+        return f"{_format_authors(persons)} ({year}). {title}. *{journal}*, {volume}, {pages}."
     else:
         return "Unsupported citation style."
 
@@ -2148,18 +2322,7 @@ def get_citation(citation_key) -> str:
     bib_data = db.load_bibliography()
     if citation_key in bib_data.entries:
         entry = bib_data.entries[citation_key]
-        # Format authors
-        authors = entry.persons.get("author", [])
-        author_str = ""
-        if len(authors) == 1:
-            author_str = f"{authors[0].last_names[0]}, {authors[0].first_names[0][0]}."
-        elif len(authors) == 2:
-            author_str = f"{authors[0].last_names[0]}, {authors[0].first_names[0][0]}. & {authors[1].last_names[0]}, {authors[1].first_names[0][0]}."
-        elif len(authors) > 2:
-            author_str = (
-                ", ".join([f"{a.last_names[0]}, {a.first_names[0][0]}." for a in authors[:-1]])
-                + f", & {authors[-1].last_names[0]}, {authors[-1].first_names[0][0]}."
-            )
+        author_str = _format_authors(entry.persons.get("author", []))
 
         # Format title
         title = entry.fields.get("title", "").capitalize()

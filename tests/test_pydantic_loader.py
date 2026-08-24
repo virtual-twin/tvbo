@@ -9,8 +9,7 @@ The loader normalizes TVBO's human-friendly keyed-dict YAML (where a dict key is
 * genuinely invalid input is rejected (it is a real validator, not a coercer),
 * keyed-dict key-injection and file-envelope stripping behave as designed.
 
-A small number of fringe classes whose generated Pydantic models lag the LinkML schema are
-tracked as ``xfail``.
+A small number of fringe classes whose generated Pydantic models lag the LinkML schema are tracked as ``xfail``.
 """
 
 from pathlib import Path

@@ -33,7 +33,9 @@ from tvbo.adapters.smallscale.lowering import (
 from tvbo.adapters.smallscale.lowering import (
     unique_component_id as _unique_component_id,
 )
-from tvbo.utils import bind_function_arguments, initial_value, normalize_params
+from tvbo.codegen.code import inline_functions
+from tvbo.parse.expression import function_bodies, states_an_expression
+from tvbo.utils import initial_value, normalize_params
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult
@@ -202,64 +204,6 @@ def sympy_to_lems(expr_str, parameters=None):
     return render_expression(expr_str, format="lems", parameters=parameters)
 
 
-def inline_model_functions(expr, dynamics, all_names):
-    """Inline model-defined functions into a SymPy expression.
-
-    LEMS has no user-defined function mechanism, so calls like ``Sigm(y1 - y2)`` must be expanded to their body (e.g. ``2*e0/(1 + exp(r*(v0 - (y1-y2))))``) before the expression is printed.
-
-    Parameters
-    ----------
-    expr : sympy.Basic
-        Already-parsed SymPy expression that may contain calls to model functions.
-    dynamics : Dynamics
-        The model whose ``functions`` dict holds body + formal arguments.
-    all_names : list of str
-        All symbol names in scope (parameters, state variables, …) so the body
-        is parsed with the correct local dict.
-    """
-    from sympy import Function, Symbol
-
-    from tvbo.parse.expression import parse_eq
-
-    functions = getattr(dynamics, "functions", None) or {}
-    if not functions:
-        return expr
-
-    # All model-function names, so that a call to one function inside another's body (e.g. ``muV(...)`` inside ``sigmaV``'s body) parses as a function application rather than ``Symbol('muV') * (fe, fi, ...)``.
-    fn_names = list(functions.keys())
-
-    # Pre-parse every function body once, registering the model function names.
-    bodies = {}
-    for fname, fn_obj in functions.items():
-        arguments = getattr(fn_obj, "arguments", None) or {}
-        # Function arguments are keyed by name (dict); tolerate a legacy list too.
-        arg_iter = arguments.values() if hasattr(arguments, "values") else arguments
-        arg_names = [getattr(a, "name", str(a)) for a in arg_iter]
-        rhs_str = getattr(getattr(fn_obj, "equation", None), "rhs", None)
-        if not rhs_str or not arg_names:
-            continue
-        arg_syms = [Symbol(n) for n in arg_names]
-        body = parse_eq(str(rhs_str), parameters=list(all_names) + arg_names, functions=fn_names)
-        bodies[fname] = (arg_syms, body)
-
-    # Inline to a fixpoint: substituting one body can introduce calls to functions already visited (the call graph is a DAG, e.g. TF_e → sigmaV → muV), so repeat until no model-function calls remain.
-    for _ in range(len(bodies) + 1):
-        replaced = False
-        for fname, (arg_syms, body) in bodies.items():
-            fn_cls = Function(fname)
-            if expr.has(fn_cls):
-                expr = expr.replace(
-                    fn_cls,
-                    lambda *actual, _body=body, _syms=arg_syms, _fn=fname: _body.xreplace(
-                        bind_function_arguments(_fn, _syms, actual)
-                    ),
-                )
-                replaced = True
-        if not replaced:
-            break
-    return expr
-
-
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
@@ -284,6 +228,17 @@ def _dynamics_has_physical_units(params, svs, td_param_names=None):
         if dim != "none":
             return True
     return False
+
+
+def _lems_time_unit(*scopes):
+    """The LEMS spelling of *integration*'s time unit.
+
+    LEMS names only `s`, `ms` and `us`, so a scope declaring anything else falls back to `ms` here — a backend limitation, stated once. The unit itself comes from `time_unit_of`, which is the only reader of the declaration: six call sites in this adapter each used to re-derive it, and their fallbacks had drifted apart, one emitter defaulting to `s` where the rest defaulted to `ms`.
+    """
+    from tvbo.utils.units import time_unit_of
+
+    unit = time_unit_of(*scopes)
+    return unit if unit in ("s", "ms", "us") else "ms"
 
 
 def _dynamics_has_time_units(params, svs, dvs):
@@ -404,17 +359,6 @@ def _uses_neuroml_types(dynamics):
     return iri.startswith("neuroml:")
 
 
-_TVBO_TO_NML_UNIT = {
-    "mmol_per_m3": "mM",
-}
-"""Map TVBO canonical unit names to NeuroML/LEMS unit symbols where they differ.
-
-Most TVBO UnitEnum names already match NeuroML symbols exactly (mV, ms, pS, …).
-Only add entries here for genuine mismatches.  The authoritative NeuroML unit list
-lives in ``NeuroML2CoreTypes/NeuroMLCoreDimensions.xml``.
-"""
-
-
 def _nml_attr(param, default=""):
     """Extract a NeuroML XML attribute value from a TVBO Parameter.
 
@@ -439,7 +383,7 @@ def _nml_attr(param, default=""):
         else:
             formatted = str(val)
         if unit:
-            nml_unit = _TVBO_TO_NML_UNIT.get(unit, unit)
+            nml_unit = unit
             return f"{formatted} {nml_unit}"
         return formatted
 
@@ -589,8 +533,8 @@ def _nml_type_name(dynamics):
 
 def _is_custom_nml_type(dynamics):
     """Return True if this dynamics needs a custom LEMS ComponentType definition."""
-    dvs = getattr(dynamics, "derived_variables", None) or {}
-    svs = getattr(dynamics, "state_variables", None) or {}
+    dvs = dynamics.derived_variables
+    svs = dynamics.state_variables
     return bool(dvs or svs)
 
 
@@ -794,8 +738,8 @@ def _render_custom_component_type(dynamics, role_slot=None):
     if not type_name:
         return ""
 
-    params = getattr(dynamics, "parameters", None) or {}
-    dvs = getattr(dynamics, "derived_variables", None) or {}
+    params = dynamics.parameters
+    dvs = dynamics.derived_variables
 
     base_info = _NML_ROLE_BASES.get(role_slot)
     extends = base_info[0] if base_info else "baseComponent"
@@ -894,8 +838,8 @@ def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude
         return []
 
     pad = " " * indent
-    params = getattr(dynamics, "parameters", None) or {}
-    children = getattr(dynamics, "modes", None) or {}
+    params = dynamics.parameters
+    children = dynamics.modes
     is_role = key_name in _NML_ROLE_SLOTS
     is_custom = _is_custom_nml_type(dynamics)
 
@@ -1300,7 +1244,7 @@ def _render_compound_input_children(dyn_obj, indent=8):
 
     Each child component (pulseGenerator, sineGenerator, etc.) is rendered as a self-closing XML element with its parameters as attributes.
     """
-    components = getattr(dyn_obj, "components", None) or getattr(dyn_obj, "modes", None) or {}
+    components = getattr(dyn_obj, "components", None) or dyn_obj.modes
     if not components:
         return ""
     pad = " " * indent
@@ -1325,11 +1269,11 @@ def _render_event_children(dyn_obj, time_scale="ms", indent=8):
     """
     if dyn_obj is None:
         return ""
-    events = getattr(dyn_obj, "events", None) or {}
+    events = dyn_obj.events
     if not events:
         return ""
     pad = " " * indent
-    nml_unit = _TVBO_TO_NML_UNIT.get(str(time_scale), str(time_scale))
+    nml_unit = str(time_scale)
     children = []
     spike_idx = 0
     for ev in events.values():
@@ -1478,7 +1422,7 @@ def _hier_format_attr_value(param):
     else:
         formatted = str(val)
     if unit:
-        nml_unit = _TVBO_TO_NML_UNIT.get(unit, unit)
+        nml_unit = unit
         return f"{formatted}{nml_unit}"
     return formatted
 
@@ -1646,7 +1590,7 @@ def _hier_build_dynamics(dyn, extends, all_params):
             )
 
     # ── Events → OnCondition ──
-    for ev_key, ev in (getattr(dyn, "events", None) or {}).items():
+    for ev_key, ev in (dyn.events).items():
         cond = getattr(getattr(ev, "condition", None), "rhs", None)
         if cond:
             cond_lems = _python_cond_to_lems(str(cond), all_names)
@@ -1692,8 +1636,7 @@ def _build_hier_custom_context(experiment):
     # ── Integration settings ──
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 1000.0
-    raw_ts = str(getattr(integration, "time_scale", None) or "ms")
-    time_unit = raw_ts if raw_ts in ("s", "ms", "us") else "ms"
+    time_unit = _lems_time_unit(integration)
 
     label = getattr(experiment, "label", None)
     dyn_id = safe_id(dyn.name or "dynamics")
@@ -1977,8 +1920,7 @@ def _build_std_fhn_context(experiment, cell_type):
     integration = getattr(experiment, "integration", None)
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 200.0
-    raw_ts = (getattr(integration, "time_scale", None) or "s") if integration else "s"
-    time_scale = str(raw_ts) if str(raw_ts) in ("s", "ms", "us") else "s"
+    time_scale = _lems_time_unit(integration)
 
     dyn_id = safe_id(dyn.name or "fhn")
     label = getattr(experiment, "label", None)
@@ -2032,8 +1974,7 @@ def _build_std_cell_context(experiment):
     integration = getattr(experiment, "integration", None)
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 1000.0
-    raw_ts = (getattr(integration, "time_scale", None) or "ms") if integration else "ms"
-    time_scale = str(raw_ts) if str(raw_ts) in ("s", "ms", "us") else "ms"
+    time_scale = _lems_time_unit(integration)
 
     label = getattr(experiment, "label", None)
     sim_id = "sim_" + (safe_id(label) if label else dyn_id)
@@ -2099,8 +2040,7 @@ def _build_std_network_context(experiment):
     integration = getattr(experiment, "integration", None)
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 1000.0
-    raw_ts = (getattr(integration, "time_scale", None) or "ms") if integration else "ms"
-    time_scale = str(raw_ts) if str(raw_ts) in ("s", "ms", "us") else "ms"
+    time_scale = _lems_time_unit(integration)
 
     label = getattr(experiment, "label", None)
     dyn_id = safe_id((experiment.dynamics.name if experiment.dynamics else None) or "network")
@@ -2144,7 +2084,7 @@ def _build_std_network_context(experiment):
                     if val is None:
                         continue
                     if unit:
-                        nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                        nml_unit = str(unit)
                         param_strs[str(pn)] = f"{val} {nml_unit}"
                     else:
                         param_strs[str(pn)] = str(val)
@@ -2189,7 +2129,7 @@ def _build_std_network_context(experiment):
                     unit = getattr(pv, "unit", None) or ""
                     if val is not None:
                         if unit:
-                            nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                            nml_unit = str(unit)
                             param_strs[str(pn)] = f"{val} {nml_unit}"
                         else:
                             param_strs[str(pn)] = str(val)
@@ -2369,7 +2309,7 @@ def _build_std_network_context(experiment):
                         _seg_targeting[pname] = float(val)
             else:
                 if unit:
-                    nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                    nml_unit = str(unit)
                     syn_params[pname] = f"{val} {nml_unit}"
                 else:
                     syn_params[pname] = str(val)
@@ -2653,7 +2593,7 @@ def _build_network_context(experiment):
                     if val is None:
                         continue
                     unit = getattr(pv, "unit", None) or ""
-                    nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit)) if unit else ""
+                    nml_unit = str(unit) if unit else ""
                     param_strs[str(pn)] = f"{val} {nml_unit}" if nml_unit else str(val)
                 input_key = (dyn_name, tuple(sorted(param_strs.items())))
                 input_id = input_ids.get(input_key)
@@ -2670,7 +2610,7 @@ def _build_network_context(experiment):
         if is_event_source:
             dyn_obj = dynamics_lib.get(dyn_name)
             integration = getattr(experiment, "integration", None)
-            ts = str(getattr(integration, "time_scale", "ms") or "ms") if integration else "ms"
+            ts = _lems_time_unit(integration)
             for sub_idx, node in enumerate(group_nodes):
                 nid = getattr(node, "id", sub_idx)
                 dyn_params = normalize_params(getattr(dyn_obj, "parameters", None))
@@ -2680,7 +2620,7 @@ def _build_network_context(experiment):
                     val = getattr(pv, "value", pv)
                     if val is not None:
                         unit = getattr(pv, "unit", None) or ""
-                        nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit)) if unit else ""
+                        nml_unit = str(unit) if unit else ""
                         param_strs[str(pn)] = f"{val} {nml_unit}" if nml_unit else str(val)
                 comp_id = safe_id(dyn_name)
                 pop_id = f"{safe_id(dyn_name)}_pop"
@@ -2960,7 +2900,6 @@ def build_lems_context(experiment):
     from sympy import Eq as sympy_Eq
     from sympy import Piecewise
     from sympy import S as sympy_S
-    from sympy.core.basic import Basic as _SympyBasic
     from sympy.functions.elementary.piecewise import piecewise_fold
 
     from tvbo.parse.expression import parse_eq
@@ -2985,9 +2924,9 @@ def build_lems_context(experiment):
 
     params = dyn.parameters or {}
     svs = dyn.state_variables or {}
-    dvs = getattr(dyn, "derived_variables", None) or {}
-    events = getattr(dyn, "events", None) or {}
-    coupling_inputs = getattr(dyn, "coupling_inputs", None) or []
+    dvs = dyn.derived_variables
+    events = dyn.events
+    coupling_inputs = dyn.coupling_inputs
 
     # Name of the global coupling output the dynamics consumes.  Use the model's own global coupling-input name (e.g. c_glob) rather than a hard-coded literal, so the Coupling ComponentType matches the dynamics ComponentType.
     _ci_items = coupling_inputs.items() if hasattr(coupling_inputs, "items") else []
@@ -3023,9 +2962,9 @@ def build_lems_context(experiment):
     n_nodes = int(network.number_of_nodes) if network and hasattr(network, "number_of_nodes") else 1
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 1000.0
-    raw_ts = (getattr(integration, "time_scale", None) or "ms") if integration else "ms"
-    from tvbo.utils.units import normalize_unit
+    from tvbo.utils.units import normalize_unit, time_unit_of
 
+    raw_ts = time_unit_of(getattr(experiment, "network", None), integration, experiment)
     ts_enum = normalize_unit(str(raw_ts)) or str(raw_ts)
     # With abbreviation-based enum, ts_enum is already "s", "ms", "us" etc.
     time_scale = ts_enum if ts_enum in ("s", "ms", "us") else "ms"
@@ -3049,7 +2988,7 @@ def build_lems_context(experiment):
         + [f"{sv}_j" for sv in svs.keys()]  # pre-synaptic symbols
         + [str(k) for k in coupling_params.keys()]  # coupling parameters
     )
-    fn_names = list((getattr(dyn, "functions", None) or {}).keys())
+    fn_names = list((dyn.functions).keys())
 
     # Hard-coded in PyLEMS's ExprParser, so a model symbol of the same name has to be renamed.
     _PYLEMS_RESERVED = {
@@ -3083,28 +3022,38 @@ def build_lems_context(experiment):
     else:
         _lems_subs = {}
 
+    _bodies = function_bodies(dyn, parameters=all_names)
+
     def lems_expr(e):
-        """Parse (if needed), inline model functions, then print as LEMS."""
-        if not isinstance(e, _SympyBasic):
-            # Parse with ORIGINAL names so SymPy recognises the symbols
-            parse_names = all_names[:]
-            for old in _lems_rename:
-                if old not in parse_names:
-                    parse_names.append(old)
-            e = parse_eq(str(e), parameters=parse_names, functions=fn_names)
-        e = inline_model_functions(e, dyn, all_names)
+        """Parse (if needed), inline model functions, then print as LEMS.
+
+        LEMS has no user-defined function mechanism, so every call must be expanded to its body before printing.
+
+        Accepts an `Equation` as readily as an expression or a string, so a caller need not know whether the equation states itself as a right-hand side or as conditional branches. Reaching for `.rhs` yields `None` for the second kind, and the templates skipped such an element entirely — emitting a LEMS component with no dynamics rather than failing.
+        """
+        # Parse with ORIGINAL names so SymPy recognises the symbols
+        parse_names = all_names[:]
+        for old in _lems_rename:
+            if old not in parse_names:
+                parse_names.append(old)
+        e = parse_eq(e, parameters=parse_names, functions=fn_names)
+        e = inline_functions(e, _bodies)
         if _lems_subs:
             e = e.subs(_lems_subs)
         return sympy_to_lems(e, parameters=all_names)
 
-    def _parse_piecewise(rhs_str):
-        """Return [(condition_str, value_str)] if rhs is Piecewise, else None."""
+    def _parse_piecewise(equation):
+        """Return [(condition_str, value_str)] if the equation is a Piecewise, else None.
+
+        Takes an `Equation` as readily as a string, for the same reason `lems_expr` does:
+        an equation stated purely as conditional branches has no `rhs` to stringify, and that is exactly the shape this function exists to recognise.
+        """
         try:
             parse_names = all_names[:]
             for old in _lems_rename:
                 if old not in parse_names:
                     parse_names.append(old)
-            expr = parse_eq(str(rhs_str), parameters=parse_names, functions=fn_names)
+            expr = parse_eq(equation, parameters=parse_names, functions=fn_names)
             # Rewrite Min/Max and similar forms to Piecewise when possible.
             expr = expr.rewrite(Piecewise)
             # Support wrapped forms like Q10*Piecewise(...) by folding to a top-level Piecewise expression first.
@@ -3167,6 +3116,7 @@ def build_lems_context(experiment):
         dt=dt,
         duration=duration,
         lems_expr=lems_expr,
+        states_an_expression=states_an_expression,
         _parse_piecewise=_parse_piecewise,
         lems_dim=_lems_dim,
         lems_sym=_lems_sym,
@@ -3185,25 +3135,26 @@ def build_lems_context(experiment):
     )
 
     def _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names):
-        """A `lems_expr` bound to one cell type's names, for the per-population contexts below."""
+        ct_bodies = function_bodies(ct_dyn, parameters=ct_all_names)
 
-        def _expr(e):
-            e_str = str(e)
-            if _LEMS_CMP_RE.search(e_str):
-                return e_str
-            if not isinstance(e, _SympyBasic):
-                e = parse_eq(e_str, parameters=ct_all_names, functions=ct_fn_names)
-            e = inline_model_functions(e, ct_dyn, ct_all_names)
+        def ct_lems_expr(e):
+            """Render *e* as LEMS, passing through text already written in it.
+
+            LEMS comparison operators (`.gt.`, `.lt.`, …) are not SymPy-parseable, so a right-hand side already written in LEMS — one round-tripped from a LEMS import — is emitted verbatim. The test and the passthrough both use the stated *text*: matching on `str(e)` would also match an `Equation` whose repr merely contains the operator, and then emit that repr into the document.
+            """
+            text = e if isinstance(e, str) else getattr(e, "rhs", None)
+            if isinstance(text, str) and _LEMS_CMP_RE.search(text):
+                return text
+            e = parse_eq(e, parameters=ct_all_names, functions=ct_fn_names)
+            e = inline_functions(e, ct_bodies)
             return sympy_to_lems(e, parameters=ct_all_names)
 
-        return _expr
+        return ct_lems_expr
 
     def _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr_fn):
-        """A `_parse_piecewise` bound to one cell type's names, for the per-population contexts below."""
-
-        def _parse_pw(rhs_str):
+        def ct_parse_pw(equation):
             try:
-                expr = parse_eq(str(rhs_str), parameters=ct_all_names, functions=ct_fn_names)
+                expr = parse_eq(equation, parameters=ct_all_names, functions=ct_fn_names)
                 expr = expr.rewrite(Piecewise)
                 if not isinstance(expr, Piecewise) and expr.has(Piecewise):
                     expr = piecewise_fold(expr)
@@ -3220,7 +3171,7 @@ def build_lems_context(experiment):
             except Exception:
                 return None
 
-        return _parse_pw
+        return ct_parse_pw
 
     # When multi-population network exists, build per-cell-type contexts
     if net_ctx:
@@ -3228,9 +3179,9 @@ def build_lems_context(experiment):
         for ct_name, ct_dyn in net_ctx["cell_types"].items():
             ct_params = ct_dyn.parameters or {}
             ct_svs = ct_dyn.state_variables or {}
-            ct_dvs = getattr(ct_dyn, "derived_variables", None) or {}
-            ct_events = getattr(ct_dyn, "events", None) or {}
-            ct_coupling_inputs = getattr(ct_dyn, "coupling_inputs", None) or []
+            ct_dvs = ct_dyn.derived_variables
+            ct_events = ct_dyn.events
+            ct_coupling_inputs = ct_dyn.coupling_inputs
             ct_sv_names_set = set(str(k) for k in ct_svs.keys())
 
             ct_all_names = (
@@ -3239,7 +3190,7 @@ def build_lems_context(experiment):
                 + [str(k) for k in ct_dvs.keys()]
                 + [str(ci) for ci in ct_coupling_inputs]
             )
-            ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
+            ct_fn_names = list((ct_dyn.functions).keys())
 
             _svs_have_physical_units(ct_svs)
 
@@ -3251,9 +3202,9 @@ def build_lems_context(experiment):
                 k for k, v in ct_events.items() if getattr(getattr(v, "condition", None), "rhs", None) is not None
             ]
 
-            # Use real LEMS dimensions so jNeuroML outputs SI.
-            ct_time_scale = str(getattr(getattr(ct_dyn, "time_scale", None), "value", time_scale) or time_scale)
-            # SEC supplies the time scale only for purely numeric equations; with dimensioned time constants it double-counts.
+            # `Dynamics` declares no clock of its own, so every ComponentType uses the scope's.
+            ct_time_scale = str(time_scale)
+            # SEC supplies the time scale only for purely numeric equations; against dimensioned time constants it double-counts.
             ct_needs_sec = ct_time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs)
 
             def ct_lems_dim(u):
@@ -3275,6 +3226,7 @@ def build_lems_context(experiment):
                 "sv_names_set": ct_sv_names_set,
                 "needs_sec": ct_needs_sec,
                 "lems_expr": ct_lems_expr,
+                "states_an_expression": states_an_expression,
                 "_parse_piecewise": ct_parse_pw,
                 "lems_dim": ct_lems_dim,
                 "lems_sym": ct_lems_sym_fn,
@@ -3305,11 +3257,11 @@ def build_lems_context(experiment):
                         _p.unit = _pinfo["unit"]
                     ct_params[_pn] = _p
                 ct_svs = ct_dyn.state_variables or {}
-                ct_dvs = getattr(ct_dyn, "derived_variables", None) or {}
-                ct_events = getattr(ct_dyn, "events", None) or {}
-                ct_coupling_inputs = getattr(ct_dyn, "coupling_inputs", None) or []
+                ct_dvs = ct_dyn.derived_variables
+                ct_events = ct_dyn.events
+                ct_coupling_inputs = ct_dyn.coupling_inputs
                 ct_sv_names_set = set(str(k) for k in ct_svs.keys())
-                ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
+                ct_fn_names = list((ct_dyn.functions).keys())
                 _svs_have_physical_units(ct_svs)
                 ct_all_names = (
                     [str(k) for k in ct_params.keys()]
@@ -3359,6 +3311,7 @@ def build_lems_context(experiment):
                     "sv_names_set": ct_sv_names_set,
                     "needs_sec": syn_needs_sec,
                     "lems_expr": ct_lems_expr,
+                    "states_an_expression": states_an_expression,
                     "_parse_piecewise": ct_parse_pw,
                     "lems_dim": syn_lems_dim,
                     "lems_sym": syn_lems_sym_fn,

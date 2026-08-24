@@ -1,0 +1,75 @@
+id: 902
+part: main
+description: 'FitzHugh-Nagumo 1969 model matching NeuroML2 fitzHughNagumo1969Cell.
+  Parameters from canonical NML2_AbstractCells.nml example. Uses TS=1ms (time_scale:
+  ms) as defined in the ComponentType.
+
+  '
+label: 'NeuroML: FitzHugh-Nagumo 1969'
+dynamics:
+  name: FitzHughNagumo1969
+  iri: neuroml:fitzHughNagumo1969Cell
+  parameters:
+    a:
+      name: a
+      value: 0.7
+      description: a parameter
+    b:
+      name: b
+      value: 0.08
+      description: b parameter
+    I:
+      name: I
+      value: 1.0
+      description: External stimulus current
+    phi:
+      name: phi
+      value: 0.08
+      description: Time-scale parameter
+  description: 'FitzHugh-Nagumo 1969 model (Scholarpedia variant). NeuroML2 defines
+    this as fitzHughNagumo1969Cell in Cells.xml.
+
+    '
+  state_variables:
+    V:
+      name: V
+      equation:
+        rhs: V - V**3/3 - W + I
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+    W:
+      name: W
+      equation:
+        rhs: phi*(V + a - b*W)
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+  number_of_modes: 1
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: euler
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.01
+  time_unit: ms
+  duration: 200.0
+  transient_time: 0.0
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  graph_representation: auto
+  number_of_nodes: 1
+  distance_unit: mm

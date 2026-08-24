@@ -80,6 +80,7 @@ COUPLING_TTL = ontology/tvb-o-coupling.ttl
 NEUROML_TTL = ontology/tvb-o-neuroml.ttl
 NEUROML_MAPPINGS = ontology/tvb-o-neuroml-mappings.ttl
 NEUROML_CONTRACTS = tvbo/data/ontology/neuroml_contracts.json
+UNITS_TTL = ontology/tvb-o-units.ttl
 CLINICAL_TTL = ontology/tvb-o-clinical.ttl
 CLINICAL_NMM = ontology/tvb-o-clinical-nmm.ttl
 MERGED_OUT = ontology/tvbo.owl
@@ -131,6 +132,11 @@ crosswalk:
 	@python scripts/ontology/backfill_crosswalk.py
 	@echo "✓ {crosswalk,boundary-matrix}.md updated in $${TVBO_CROSSWALK_DIR:-dev/OntologicalRestructuring}"
 
+# Vendor the QUDT records for every UnitEnum value. Needs network access, so it is
+# not part of gen-all; CI checks freshness instead of regenerating.
+gen-units:
+	@python scripts/ontology/gen_units.py
+
 gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox gen-neuroml gen-merged
 	@echo "✓ All schemas generated"
 
@@ -144,6 +150,7 @@ gen-merged: gen-owl gen-abox
 		--input $(COUPLING_TTL) \
 		--input $(NEUROML_TTL) \
 		--input $(NEUROML_MAPPINGS) \
+		--input $(UNITS_TTL) \
 		--input $(ABOX_OUT) \
 		--input $(BIOLOGY_OUT) \
 		--input $(CLINICAL_TTL) \

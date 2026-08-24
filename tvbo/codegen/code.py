@@ -6,17 +6,17 @@ Array-manipulation primitives are the ones SymPy cannot represent natively. Each
 """
 
 import logging
+from functools import lru_cache
 
 import sympy.printing.fortran as spf
 import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
-from sympy import Function, S, Symbol, latex, preorder_traversal
+from sympy import S, Symbol, latex
 from sympy.printing import StrPrinter
 from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
 
 from tvbo.datamodel.schema import Equation
 from tvbo.parse.expression import parse_eq
-from tvbo.utils import bind_function_arguments
 
 logger = logging.getLogger(__name__)
 
@@ -138,20 +138,22 @@ ARRAY_FUNCTION_MAPPINGS = {
 
 
 def inline_functions(expr, func_defs):
-    """Inline all function applications in an expression.
+    """Replace every call to a model-defined function with that function's body.
 
-    Each call's body is bound with a single `xreplace`, so binding is simultaneous: substituting one formal at a time lets an actual argument that names a later formal be captured by that later substitution, and `H(x, y) = x - y` called as `H(y, 2)` would inline to `0` rather than `y - 2`.
+    The one inliner in TVBO. Backends with no user-function mechanism (LEMS, PyRates) must expand every call before printing, and the generic printers expand on request;
+    all of them arrive here. Build *func_defs* with [`Dynamics.function_bodies`](../classes/dynamics.qmd#Dynamics.function_bodies), which parses each body once against the model's own scope.
 
-    Inlining runs to a fixpoint because a body may call another model function (the call graph is a DAG, e.g. `TF_e` -> `sigmaV` -> `muV`); a single pass in dict order would leave such a call behind, and which equations came out clean would depend on the order the recipe happened to declare them.
+    A body may itself call a function — the call graph is a DAG, e.g. Zerlaut's ``TF_e`` calls ``sigmaV`` calls ``muV`` — so the bodies are first expanded into *each other*, once, and only then substituted into *expr* in a single pass.
+
+    Reaching the fixed point on *expr* instead re-probes every body against an expression that grows as it is inlined: Zerlaut's NeuroML render spent 5.6 s of 10 s here, walking a 12 000-node expression four times over to find nothing on the last pass. Flattening the bodies costs the same work once, over expressions that are small, and the result is memoised because every equation in a model inlines against the same table.
 
     Parameters
     ----------
     expr : sympy.Expr
         The expression containing function calls to inline.
     func_defs : dict
-        Dictionary mapping function name -> (arg_names, body_expr)
-        where arg_names is a list of argument names and body_expr is the
-        sympy expression for the function body.
+        Maps function name -> (arg_names, body_expr). *arg_names* are the formal
+        arguments, as strings or as Symbols; *body_expr* is the parsed body.
 
     Returns:
     -------
@@ -160,28 +162,72 @@ def inline_functions(expr, func_defs):
 
     Example:
     -------
-    >>> from sympy import symbols, Function
-    >>> x, y, v = symbols('x y v')
-    >>> # Define Sigm(v) = 2*e0/(1 + exp(r*(v0 - v)))
-    >>> func_defs = {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - v))))}
-    >>> expr = A*Sigm(x - y)
-    >>> inline_functions(expr, func_defs)
+    >>> from sympy import symbols, Function, exp
+    >>> A, x, y, e0, r, v0 = symbols('A x y e0 r v0')
+    >>> func_defs = {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - symbols('v')))))}
+    >>> inline_functions(A*Function('Sigm')(x - y), func_defs)
     2*A*e0/(1 + exp(r*(v0 - x + y)))
     """
-    result = expr
-    for _ in range(len(func_defs) + 1):
-        replaced = False
-        for func_name, (arg_names, body) in func_defs.items():
-            F = Function(func_name)
-            for sub_expr in list(preorder_traversal(result)):
-                if hasattr(sub_expr, "func") and sub_expr.func == F:
-                    bound = bind_function_arguments(func_name, arg_names, sub_expr.args)
-                    inlined = body.xreplace({Symbol(name): arg for name, arg in bound.items()})
-                    result = result.subs(sub_expr, inlined)
-                    replaced = True
-        if not replaced:
+    if not func_defs:
+        return expr
+    definitions = tuple(
+        (
+            str(name),
+            tuple(a if isinstance(a, Symbol) else Symbol(str(a)) for a in arg_names),
+            body,
+        )
+        for name, (arg_names, body) in func_defs.items()
+    )
+    for name, formals, body in _flattened_bodies(definitions):
+        expr = _replace_calls(expr, name, formals, body)
+    return expr
+
+
+def _replace_calls(expr, name, formals, body):
+    """Substitute every call to *name* in *expr* with *body*.
+
+    The head is matched by name rather than by rebuilding `Function(name)`. An `UndefinedFunction` carrying assumptions is a *different class* from a bare one, so a reconstructed head silently matches nothing wherever the scope built its heads with `real=True`: the expression visibly contains `Sigm(...)` while `expr.has(Function("Sigm"))` is False. A model function is identified by its name;
+    its assumptions are not part of that identity.
+    """
+    return expr.replace(
+        lambda e: e.is_Function and getattr(e.func, "__name__", None) == name,
+        lambda e: _substitute(name, formals, body, *e.args),
+    )
+
+
+def _substitute(name, formals, body, *actual):
+    """Bind *actual* to *formals*, refusing a call whose arity does not match.
+
+    `zip` would truncate silently: an extra argument is dropped and a missing one leaves its formal free, so the surplus symbol prints into the emitted source as an undeclared name and fails at run time in whichever backend consumed it.
+    """
+    if len(actual) != len(formals):
+        raise ValueError(
+            f"{name}() takes {len(formals)} argument(s) "
+            f"({', '.join(str(f) for f in formals) or 'none'}) but is called with {len(actual)}"
+        )
+    return body.xreplace(dict(zip(formals, actual, strict=True)))
+
+
+@lru_cache(maxsize=64)
+def _flattened_bodies(definitions):
+    """Function bodies with every nested call already expanded, so one pass inlines them all.
+
+    Keyed on the definitions themselves — SymPy expressions are hashable — because every equation in a model inlines against the same table, and flattening it once is what turns a fixed point over the growing target expression into a single pass over small ones.
+    """
+    bodies = {name: (formals, body) for name, formals, body in definitions}
+    for _ in range(len(bodies) + 1):
+        expanded = False
+        for name, (formals, body) in bodies.items():
+            for other, (other_formals, other_body) in bodies.items():
+                if other == name:
+                    continue
+                replaced = _replace_calls(body, other, other_formals, other_body)
+                if replaced != body:
+                    body, expanded = replaced, True
+            bodies[name] = (formals, body)
+        if not expanded:
             break
-    return result
+    return tuple((name, formals, body) for name, (formals, body) in bodies.items())
 
 
 def print_Piecewise(Printer, expr, verbose=False):
@@ -477,8 +523,11 @@ class _ArrayFunctionPrinterMixin:
 
     # --- backend-abstracted array primitives (numpy/jax defaults) ---
     def _afn(self, name):
-        """Module-qualify an array function, e.g. ``jnp.take``."""
-        return f"{self._module}.{name}"
+        """Module-qualify an array function, e.g. ``jnp.take``.
+
+        A printer with no module prefix emits the bare name, for the targets that resolve the array vocabulary themselves rather than through an import — TVB's `numexpr`-evaluated equation DSL, and Brian2's.
+        """
+        return f"{self._module}.{name}" if self._module else name
 
     def _minmax(self, name, args):
         """Fold ``Min``/``Max`` into nested elementwise calls.
@@ -595,7 +644,7 @@ class _ArrayFunctionPrinterMixin:
 
     def _linalg(self, name):
         """Module path for a linear-algebra routine (``np.linalg.eigvals``)."""
-        return f"{self._module}.linalg.{name}"
+        return self._afn(f"linalg.{name}")
 
     def _sample(self, distribution, key, substream, params, shape):
         """A draw from ``distribution`` given explicit PRNG state and a sub-stream index.
@@ -603,7 +652,7 @@ class _ArrayFunctionPrinterMixin:
         ``substream`` selects an independent stream derived from the generator's base seed, so two draws in one procedure are independent *and* every backend derives them the same structural way (here a freshly-seeded Generator; under jax a folded key). Without it, backends would differ in how draws decorrelate — the silent cross-backend divergence the RNG contract exists to prevent.
         """
         shape_arg = f", size=({', '.join(shape)},)" if shape else ""
-        rng = f"{self._module}.random.default_rng({key} + {substream})"
+        rng = f"{self._afn('random.default_rng')}({key} + {substream})"
         return f"{rng}.{distribution}({', '.join(params)}{shape_arg})"
 
     def _pearson(self, x, y):
@@ -653,6 +702,15 @@ class _ArrayFunctionPrinterMixin:
         return f"{self._afn('take')}({base}, {rng}, axis={axis})"
 
 
+def _qualify(module, names):
+    """Prefix a SymPy name table with a printer's module, or leave it bare without one.
+
+    An empty module is how a printer says its target resolves the array vocabulary itself — see [`_ArrayFunctionPrinterMixin._afn`](#_ArrayFunctionPrinterMixin).
+    """
+    prefix = f"{module}." if module else ""
+    return {name: prefix + target for name, target in names.items()}
+
+
 class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
     """NumPy code printer for TVBO symbolic expressions.
 
@@ -665,15 +723,24 @@ class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
 
     def __init__(self, settings=None, module="np"):
         self._module = module
-        m = module + "."
-        self._kf = {k: m + v for k, v in spn._known_functions_numpy.items()}
-        self._kc = {k: m + v for k, v in spn._known_constants_numpy.items()}
+        self._kf = _qualify(module, spn._known_functions_numpy)
+        self._kc = _qualify(module, spn._known_constants_numpy)
 
         self._kf.update({"erfc": "scipy.special.erfc"})
         self._kf.update({"erf": "scipy.special.erf"})
         super().__init__(settings=settings)
-        # Add array function mappings
-        self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["numpy"])
+        # The table is authored `np.`-prefixed, so a module-less printer would emit `np.sum`.
+        self.known_functions.update(
+            _qualify(module, {name: target.removeprefix("np.") for name, target in ARRAY_FUNCTION_MAPPINGS["numpy"].items()})
+        )
+
+    def _module_format(self, fqn, register=True):
+        """Drop the separator SymPy leaves behind when this printer has no module.
+
+        SymPy builds some of its own names as ``self._module + ".sqrt"``, which for a module-less printer is the unparseable ``.sqrt``. Declared here rather than on ``_ArrayFunctionPrinterMixin``: that mixin also serves the Julia printers, whose base has no ``_module_format`` to delegate to, so the override would be a latent ``AttributeError`` there. A no-op for any printer that does have a module.
+        """
+        formatted = super()._module_format(fqn, register)
+        return formatted[1:] if not self._module and formatted.startswith(".") else formatted
 
 
 class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
@@ -688,9 +755,8 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
 
     def __init__(self, settings=None, module="jnp"):
         self._module = module
-        m = module + "."
-        self._kf = {k: m + v for k, v in spn._known_functions_numpy.items()}
-        self._kc = {k: m + v for k, v in spn._known_constants_numpy.items()}
+        self._kf = _qualify(module, spn._known_functions_numpy)
+        self._kc = _qualify(module, spn._known_constants_numpy)
 
         self._kf.update({"erfc": "jsp.special.erfc"})
         self._kf.update({"erf": "jsp.special.erf"})
@@ -1322,16 +1388,50 @@ class LEMSPrinter(StrPrinter):
     # ── Piecewise → Heaviside product ─────────────────────────────────
 
     def _print_Piecewise(self, expr):
-        # LEMS has no ternary, so this is a H(cond)*val sum with the otherwise-branch last.
-        from sympy import S as sympy_S
+        """Lower an ordered `Piecewise` to a sum of Heaviside-gated terms.
 
-        terms = []
+        LEMS has no ternary and no `Piecewise`, so each branch becomes `H(cond) * value` and the branches are summed. `Piecewise` is *first match wins*, so a term is only reached when no earlier condition held — hence the `(1 - H(earlier))` factors. The final `True` branch is gated by all of them and nothing else.
+
+        Summing the terms un-gated is correct only when the default is zero and the conditions are mutually exclusive. Otherwise the else-branch is added to whichever branch was taken: `tent_map` evaluated to `mu*x + mu*(1 - x)` on its whole lower arm, and `Hopfield` added its entire un-thresholded term to the thresholded one.
+
+        A zero default is dropped: it contributes nothing to a sum, and emitting it would append a `(1 - H(…)) * 0` tail to every single-branch expression.
+
+        Bracketing is not decided here — see `parenthesize`, which tells an enclosing operator that this output binds like the sum it is.
+        """
+        from sympy import S as sympy_S
+        from sympy.printing.precedence import PRECEDENCE
+
+        terms, taken = [], []
         for val, cond in expr.args:
+            unreached = "".join(f"(1 - H({c})) * " for c in taken)
+            value = self.parenthesize(val, PRECEDENCE["Mul"])
             if cond == sympy_S.true:
-                terms.append(self._print(val))
-            else:
-                terms.append(f"H({self._print(cond)}) * {self._print(val)}")
-        return " + ".join(terms)
+                if not val.is_zero:
+                    terms.append(f"{unreached}{value}" if unreached else value)
+                break
+            condition = self._print(cond)
+            if not val.is_zero:
+                terms.append(f"{unreached}H({condition}) * {value}")
+            taken.append(condition)
+        return " + ".join(terms) if terms else "0"
+
+    def parenthesize(self, item, level, strict=False):
+        """Bracket a `Piecewise` operand as the sum this printer renders it into.
+
+        SymPy gives `Piecewise` `Func` precedence — right for the printers that emit `np.where(...)` or `ifelse(...)`, which really are atoms, and wrong here, where the output is `H(c) * a + (1 - H(c)) * b`. Without this an enclosing `Mul`, `Pow` or negation binds to the first arm alone.
+
+        Declaring the precedence rather than wrapping in `_print_Piecewise` keeps the brackets to the contexts that need them: `parenthesize` is only ever called by an enclosing operator, so a top-level equation stays unwrapped.
+        """
+        from sympy import Piecewise
+        from sympy.printing.precedence import PRECEDENCE
+
+        if isinstance(item, Piecewise):
+            printed = self._print(item)
+            as_sum = PRECEDENCE["Add"]
+            if as_sum < level or (not strict and as_sum <= level):
+                return f"({printed})"
+            return printed
+        return super().parenthesize(item, level, strict)
 
 
 class PythonCodePrinter(_PythonCodePrinter):
@@ -1417,12 +1517,30 @@ class Brian2Printer(PythonCodePrinter):
         return f"sign({self._print(expr.args[0])})"
 
 
+class TVBEquationPrinter(NumPyPrinter):
+    """Print an expression for TVB's ``Equation.equation`` DSL.
+
+    TVB evaluates that string with `numexpr` (falling back to `eval` against ``numpy.__dict__``), a vocabulary narrower than NumPy's in three ways: names are unqualified, comparisons are operators rather than ``numpy.greater`` calls, and boolean connectives are bitwise. Everything else is NumPy — in particular a `Piecewise` still lowers to ``where(...)`` through the one shared [`print_Piecewise`](#print_Piecewise), which is what makes a conditional stimulus array-safe. Rendering one as a Python ``a if c else b`` instead, as TVBO did before, produces a string `numexpr` refuses outright.
+
+    The relational and boolean methods come from `StrPrinter`, whose operator spelling is already exactly the accepted one, so this printer states only which vocabulary it borrows rather than restating how to print a comparison.
+    """
+
+    _print_Relational = StrPrinter._print_Relational
+    _print_And = StrPrinter._print_And
+    _print_Or = StrPrinter._print_Or
+    _print_Not = StrPrinter._print_Not
+
+    def __init__(self, settings=None):
+        super().__init__(settings=settings, module="")
+
+
 def get_printer(format, parameters=None, order=None):
     """Return a code printer instance for the given target format.
 
     Args:
         format: Target output format. One of `numpy`, `jax`, `julia`, `mtk`,
-            `fortran`, `python`, `lems`, or `sympy`/`symbolic`/`pyrates`.
+            `fortran`, `python`, `brian2`, `tvb`, `lems`, or
+            `sympy`/`symbolic`/`pyrates`.
         parameters: Parameter names passed to `LEMSPrinter`; used only for the
             `lems` format.
         order: Term ordering passed to the printer; `none` preserves source term
@@ -1451,6 +1569,8 @@ def get_printer(format, parameters=None, order=None):
         return PythonCodePrinter(settings=extra) if extra else PythonCodePrinter()
     elif format == "brian2":
         return Brian2Printer(settings=extra) if extra else Brian2Printer()
+    elif format == "tvb":
+        return TVBEquationPrinter(settings=extra) if extra else TVBEquationPrinter()
     elif format == "lems":
         return LEMSPrinter(settings={"parameters": parameters or [], **extra})
     elif format in ["sympy", "symbolic", "pyrates"]:

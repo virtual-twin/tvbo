@@ -1,0 +1,35 @@
+import NaNMath
+function IzhikevichBurst!(dx, x, p, t = 0)
+
+    (;a, b, c, d, thresh, I_amp, pulse_delay, pulse_duration) = p
+
+    v, U = x
+
+
+    I_ext = ifelse(pulse_delay <= t && t < pulse_delay .+ pulse_duration, I_amp, 0.0)
+
+    dx[1] = 140 .+ I_ext .- U .+ 5 * v .+ 0.04 * v .^ 2
+    dx[2] = a .* (-U .+ b .* v)
+    dx
+end
+
+# Parameter values
+p = (a = 0.02, b = 0.2, c = -50.0, d = 2.0, thresh = 30.0, I_amp = 15.0, pulse_delay = 22.0, pulse_duration = 2000.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -70.0,
+        -14.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(IzhikevichBurst!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

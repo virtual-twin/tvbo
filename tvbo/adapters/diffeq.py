@@ -41,12 +41,14 @@ class DiffEqAdapter:
         self.experiment = experiment
 
     def render_code(self, **kwargs) -> str:
-        """Render Julia code for this experiment."""
+        """Render Julia code for this experiment.
+
+        Reads the experiment and does not modify it, like every other renderer: a model is normalised when it is built, and re-normalising here made the emitted source depend on how many times it had already been rendered.
+        """
         from tvbo import templates
 
         exp = self.experiment
         model = exp.dynamics
-        model.update_metadata()
 
         ctx = {
             "experiment": exp,

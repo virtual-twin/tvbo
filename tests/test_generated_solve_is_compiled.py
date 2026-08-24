@@ -1,19 +1,10 @@
 """Every host-side solve a generated module executes goes through ``jax.jit``.
 
-``prepare()`` hands back an UN-jitted callable. Invoked directly it dispatches op by op for
-every step of the solve, which costs about 4.5x what the same call costs compiled: measured on
-a 379-node network, one prepared solve ran at 1023 us per integration step raw against 229 us
-under ``jax.jit``. Nothing failed and nothing warned — the run simply took four and a half
-times longer, which reads as "this model is expensive" rather than as a defect.
+``prepare()`` hands back an UN-jitted callable. Invoked directly it dispatches op by op for every step of the solve, which costs about 4.5x what the same call costs compiled: measured on a 379-node network, one prepared solve ran at 1023 us per integration step raw against 229 us under ``jax.jit``. Nothing failed and nothing warned — the run simply took four and a half times longer, which reads as "this model is expensive" rather than as a defect.
 
-Two templates emit these calls and they compile at different levels, so the invariant is
-checked at the level each one uses. ``run_<algo>`` rebinds its prepared callables to jitted
-ones on receipt, so its bare calls are already compiled; the experiment template cannot, since
-the same ``model_fn`` also reaches a loss function the optimizer traces and an exploration that
-builds its own vmap — there, every host-side evaluation is wrapped at the call.
+Two templates emit these calls and they compile at different levels, so the invariant is checked at the level each one uses. ``run_<algo>`` rebinds its prepared callables to jitted ones on receipt, so its bare calls are already compiled; the experiment template cannot, since the same ``model_fn`` also reaches a loss function the optimizer traces and an exploration that builds its own vmap — there, every host-side evaluation is wrapped at the call.
 
-These assert on the emitted source and on the templates because a run cannot tell compiled from
-interpreted: both compute the same numbers.
+These assert on the emitted source and on the templates because a run cannot tell compiled from interpreted: both compute the same numbers.
 """
 
 import re
@@ -55,11 +46,7 @@ def test_the_compiled_runner_is_emitted(code):
 def test_no_prepared_callable_is_invoked_raw_in_the_experiment_template():
     """The experiment template has no jit-on-receipt to fall back on, so every call must be wrapped.
 
-    This is the guard against an eighth call site being added raw: it sweeps every line of the
-    template for a call on any name that holds a prepared callable, attribute spelling included,
-    rather than naming the sites that were fixed. The exploration and loss paths bind their own
-    aliases (`_expl_model_fn`, `_opt_model_fn`, ...) and call them from inside a `@jax.jit`, which
-    is why those names are deliberately not on the list.
+    This is the guard against an eighth call site being added raw: it sweeps every line of the template for a call on any name that holds a prepared callable, attribute spelling included, rather than naming the sites that were fixed. The exploration and loss paths bind their own aliases (`_expl_model_fn`, `_opt_model_fn`, ...) and call them from inside a `@jax.jit`, which is why those names are deliberately not on the list.
     """
     raw = [f"{n}: {c.strip()}" for n, c in _code_lines(TEMPLATES / "tvbo-tvboptim-experiment.py.mako") if _CALL.search(c)]
     assert raw == [], "prepared solve invoked without _run_compiled:\n" + "\n".join(raw)

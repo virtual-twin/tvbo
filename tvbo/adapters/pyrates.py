@@ -16,10 +16,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
+from tvbo.codegen.code import inline_functions
 
 # Single source of truth (forward map + derived reverse) lives in tvbo/codegen/pyrates.py; re-imported here and used by the model template so the rename mapping is defined exactly once. See PYRATES_REPL there.
 from tvbo.codegen.pyrates import PYRATES_REPL  # noqa: F401
-from tvbo.utils import as_list, bind_function_arguments, is_array_valued
+from tvbo.parse.expression import function_bodies, parse_eq, states_an_expression
+from tvbo.utils import as_list, is_array_valued
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -165,37 +167,17 @@ def _patch_pyrates_missing_funcs():
         _pr_parser.ExpressionParser.parse_expr = _patched_parse_expr
 
 
-def _inline_model_functions(expr, dyn):
-    """Inline model-defined functions (e.g. H(x)) into a SymPy expression.
+def _legacy_input_variable(dynamics):
+    """``I_ext`` where *dynamics* actually declares it, else nothing.
 
-    Replaces function calls like H(x) with the function body from dyn.functions, substituting formal arguments with actual arguments.
-
-    Matches are taken in sorted order rather than the set order `atoms` returns: `expr` is reassigned inside the loop, so substituting an inner `H(x)` before the outer `H(H(x))` would leave the outer match pointing at a node the mutated expression no longer holds, and the call would survive into the generated model. sympy hashes derive from randomised string hashing, so which order occurred varied between processes and the same recipe generated different code on different runs.
-
-    Binding is one simultaneous `xreplace`, since substituting formals one at a time lets an actual argument that names a later formal be captured by that later substitution.
+    The historic default for a stimulus with no event to name its target. Checked against the model rather than assumed, so a model that calls its drive anything else fails loudly instead of being handed an input key for a variable it does not have.
     """
-    import sympy as sp
-
-    functions = getattr(dyn, "functions", None)
-    if not functions:
-        return expr
-
-    for func_name, func_def in functions.items():
-        func_eq = getattr(func_def, "equation", None)
-        if not func_eq or not func_eq.rhs:
-            continue
-        args = getattr(func_def, "arguments", None) or {}
-        # Function arguments are keyed by name (dict); tolerate a legacy list too.
-        arg_iter = args.values() if hasattr(args, "values") else args
-        arg_names = [str(getattr(a, "name", a)) for a in arg_iter]
-        sym_func = sp.Function(func_name)
-        for match in sorted(expr.atoms(sp.Function(func_name)), key=sp.default_sort_key, reverse=True):
-            if match.func == sym_func:
-                body = sp.sympify(func_eq.rhs)
-                bound = bind_function_arguments(func_name, arg_names, match.args)
-                body = body.xreplace({sp.Symbol(f): a for f, a in bound.items()})
-                expr = expr.subs(match, body)
-    return expr
+    if dynamics is None:
+        return None
+    declared = set()
+    for collection in ("state_variables", "parameters", "coupling_inputs", "derived_variables"):
+        declared |= set(getattr(dynamics, collection, None) or {})
+    return "I_ext" if "I_ext" in declared else None
 
 
 class PyRatesAdapter(BaseAdapter):
@@ -872,15 +854,17 @@ class PyRatesAdapter(BaseAdapter):
         """Compute algebraic outputs for a single node."""
         import sympy as sp
 
+        scope = dyn.get_symbolic_elements()
+        bodies = function_bodies(dyn)
         for out_name in dyn.output:
             out_var = dyn.derived_variables.get(out_name)
             if out_var is None:
                 continue
             eq = out_var.equation
-            if not (eq and eq.rhs):
+            if not states_an_expression(eq):
                 continue
 
-            expr = _inline_model_functions(sp.sympify(eq.rhs), dyn)
+            expr = inline_functions(parse_eq(eq, local_dict=scope), bodies)
             subs = {}
 
             for sym in expr.free_symbols:
@@ -911,15 +895,17 @@ class PyRatesAdapter(BaseAdapter):
         """Compute algebraic outputs for single dynamics case."""
         import sympy as sp
 
+        scope = dyn.get_symbolic_elements()
+        bodies = function_bodies(dyn)
         for out_name in dyn.output:
             out_var = dyn.derived_variables.get(out_name)
             if out_var is None:
                 continue
             eq = out_var.equation
-            if not (eq and eq.rhs):
+            if not states_an_expression(eq):
                 continue
 
-            expr = _inline_model_functions(sp.sympify(eq.rhs), dyn)
+            expr = inline_functions(parse_eq(eq, local_dict=scope), bodies)
             subs = {}
 
             for sym in expr.free_symbols:
@@ -956,14 +942,16 @@ class PyRatesAdapter(BaseAdapter):
             return inputs
 
         stim_values = stim_func(time)
-        target_var = getattr(stimulation, "target_variable", None) or "I_ext"
+        target_var = self._stimulus_target_variable()
         regions = getattr(stimulation, "regions", None) or []
         weighting = getattr(stimulation, "weighting", None) or []
 
         network = getattr(exp, "network", None)
-        dynamics = exp.dynamics
-        if not isinstance(dynamics, dict):
-            dynamics = {d.name: d for d in (dynamics or [])}
+        # `node.dynamics` keys the network's library; a single-model experiment holds it itself.
+        dynamics = dict(getattr(network, "dynamics", None) or {})
+        single = getattr(exp, "dynamics", None)
+        if getattr(single, "name", None):
+            dynamics.setdefault(single.name, single)
 
         if network is not None and hasattr(network, "nodes") and network.nodes:
             nodes = list(network.nodes)
@@ -978,15 +966,36 @@ class PyRatesAdapter(BaseAdapter):
                 node_label = getattr(node, "label", None) or f"node_{node.id}"
                 safe_label = str(node_label).replace(" ", "_").replace("-", "_")
 
-                dyn_name = node.dynamics if isinstance(node.dynamics, str) else getattr(node.dynamics, "name", None)
+                inline = None if isinstance(node.dynamics, str) else node.dynamics
+                dyn_name = node.dynamics if inline is None else getattr(inline, "name", None)
 
                 if dyn_name:
+                    var = target_var or _legacy_input_variable(inline or dynamics.get(dyn_name))
+                    if var is None:
+                        raise ValueError(
+                            f"No stimulus event names the variable to drive, and {dyn_name!r} "
+                            "declares no 'I_ext' to fall back on. Name the target by giving the "
+                            "stimulus an event whose name is the driven variable."
+                        )
                     op_name = f"{dyn_name}_op"
-                    key = f"{safe_label}/{op_name}/{target_var}"
+                    key = f"{safe_label}/{op_name}/{var}"
                     weight = weighting[i] if i < len(weighting) else 1.0
                     inputs[key] = stim_values * weight
 
         return inputs
+
+    def _stimulus_target_variable(self):
+        """The dfun variable a stimulus drives, named by its event.
+
+        TVBO expresses the target as the stimulus event's own *name*: `SimulationExperiment._resolve_events` lowers a declarative `target_variable` onto it, and that is where every other backend reads it. A `Stimulus` carries no target of its own, so asking one for `target_variable` yielded the `I_ext` default for every experiment ever run — addressing a variable the model need not have.
+        """
+        events = getattr(self.experiment, "events", None) or {}
+        for key, event in events.items() if hasattr(events, "items") else []:
+            if "stimul" in str(getattr(event, "event_type", "") or "").lower():
+                name = getattr(event, "name", None) or key
+                if name:
+                    return str(name)
+        return None
 
     def _df_to_simulation_result(self, result: pd.DataFrame) -> SimulationResult:
         """Convert PyRates pandas DataFrame result to SimulationResult."""

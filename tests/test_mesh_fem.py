@@ -5,6 +5,7 @@ A cortical mesh is a 2-manifold carrying three coordinates, which the general-pu
 
 import numpy as np
 import pytest
+from scipy.linalg import eigh
 from scipy.sparse.linalg import eigsh
 
 from tvbo.data.mesh_fem import (
@@ -55,6 +56,8 @@ def test_the_sphere_spectrum_converges_to_the_analytic_one(icosphere):
     """``l(l+1)/R**2`` with multiplicity ``2l+1``, at second order in the mesh spacing.
 
     The eigenvalue test is the one that would catch a plausible-but-wrong operator: a stiffness matrix can be symmetric, positive semi-definite and have the right nullspace while still discretising the wrong metric.
+
+    Solved densely. These meshes reach 2562 vertices, so a direct solve costs about a second, and it is the only way the assertion is deterministic: the spectrum is degenerate in blocks of ``2l+1``, and an Arnoldi solve started from the random vector ``eigsh`` draws by default returns the ``l=3`` eigenvalue in place of an ``l=2`` one on roughly one run in sixty.
     """
     radius = 2.0
     exact = np.concatenate([[deg * (deg + 1) / radius**2] * (2 * deg + 1) for deg in range(4)])[:10]
@@ -63,7 +66,7 @@ def test_the_sphere_spectrum_converges_to_the_analytic_one(icosphere):
     for subdivisions in (2, 3, 4):
         vertices, faces = icosphere(subdivisions, radius)
         M, K = p1_mass(vertices, faces), p1_stiffness(vertices, faces)
-        found = np.sort(eigsh(K.tocsc(), k=10, M=M.tocsc(), sigma=-1e-8, which="LM")[0])
+        found = np.sort(eigh(K.toarray(), M.toarray(), eigvals_only=True, subset_by_index=[0, 9]))
         assert abs(found[0]) < 1e-12, "a closed surface has exactly one zero mode"
         errors.append(np.abs(found[1:] - exact[1:]).max() / exact[-1])
 

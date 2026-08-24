@@ -1,0 +1,137 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: CakanObermayer
+       Generated from TVBO Dynamics: CakanObermayer
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="CakanObermayer">
+
+    <!-- Parameters -->
+    <Parameter name="C" dimension="capacitance"/>
+    <Parameter name="E_L" dimension="voltage"/>
+    <Parameter name="E_A" dimension="voltage"/>
+    <Parameter name="I_A" dimension="conductance"/>
+    <Parameter name="J_EE" dimension="none"/>
+    <Parameter name="J_EI" dimension="none"/>
+    <Parameter name="J_IE" dimension="none"/>
+    <Parameter name="J_II" dimension="none"/>
+    <Parameter name="mu_E" dimension="none"/>
+    <Parameter name="mu_I" dimension="none"/>
+    <Parameter name="s_EE" dimension="none"/>
+    <Parameter name="s_EI" dimension="none"/>
+    <Parameter name="s_IE" dimension="none"/>
+    <Parameter name="s_II" dimension="none"/>
+    <Parameter name="tau_se" dimension="time"/>
+    <Parameter name="tau_si" dimension="time"/>
+    <Parameter name="tau_A" dimension="time"/>
+    <Parameter name="r_max" dimension="per_time"/>
+    <Parameter name="mu_th" dimension="none"/>
+    <Parameter name="k_phi" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="mu_se_0" dimension="none"/>
+    <Parameter name="mu_si_0" dimension="none"/>
+    <Parameter name="I_A_var_0" dimension="current"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="mu_se" dimension="none"/>
+    <Exposure name="mu_si" dimension="none"/>
+    <Exposure name="I_A_var" dimension="current"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="mu_se" dimension="none" exposure="mu_se"/>
+      <StateVariable name="mu_si" dimension="none" exposure="mu_si"/>
+      <StateVariable name="I_A_var" dimension="current" exposure="I_A_var"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="r_E" dimension="none" value="r_max/(1 + exp(-k_phi*(mu_se - mu_th)))"/>
+      <DerivedVariable name="r_I" dimension="none" value="r_max/(1 + exp(-k_phi*(mu_si - mu_th)))"/>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="mu_se" value="((c_glob + mu_E - mu_se + J_EE*r_E + J_EI*r_I - I_A_var/C)/tau_se) / SEC"/>
+      <TimeDerivative variable="mu_si" value="((mu_I - mu_si + J_IE*r_E + J_II*r_I)/tau_si) / SEC"/>
+      <TimeDerivative variable="I_A_var" value="((-I_A_var + I_A*(mu_se - E_A))/tau_A) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="mu_se" value="mu_se_0"/>
+        <StateAssignment variable="mu_si" value="mu_si_0"/>
+        <StateAssignment variable="I_A_var" value="I_A_var_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="CakanObermayer_inst" type="CakanObermayer" C="200.0 pF" E_L="-65.0 mV" E_A="-80.0 mV" I_A="0.0 nS" J_EE="2.43" J_EI="-3.3" J_IE="2.6" J_II="-1.64" mu_E="0.4" mu_I="0.3" s_EE="1.5" s_EI="1.5" s_IE="1.5" s_II="1.5" tau_se="2.0 ms" tau_si="5.0 ms" tau_A="200.0 ms" r_max="0.2 per_ms" mu_th="1.0" k_phi="1.0" c_glob="0" mu_se_0="0.0" mu_si_0="0.0" I_A_var_0="0.0 pA"/>
+
+
+
+</Lems>

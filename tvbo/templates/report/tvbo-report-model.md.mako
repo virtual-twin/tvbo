@@ -18,7 +18,7 @@ Order (mirrors a typical "Model" methods sub-section):
   8. References
 </%doc>
 <%
-from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
+from sympy import latex, Eq, sympify, Symbol, Derivative
 from tvbo.utils import report
 
 derivative_notation = context.get('derivative_notation', 'd')
@@ -82,27 +82,11 @@ symbol_names.update(model.symbol_map())
 _baseline = context.get('baseline', None)
 _delta = report.model_delta(model, _baseline) if _baseline is not None else None
 
-state_equations = [eq for k, eq in model.get_equations().items()
-                   if k in model.state_variables and (_delta is None or k in _delta.eq_svars)]
-
-derived_variables = [eq for k, eq in model.get_equations().items()
-                     if k in model.derived_variables and (_delta is None or k in _delta.dvars)]
-
-derived_parameters = [
-    Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.derived_parameters.values()
-]
-
-functions = [
-    Eq(
-        Function(f.name)(*[
-            Symbol(arg.name if hasattr(arg, 'name') else str(arg))
-            for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)
-        ]),
-        sympify(f.equation.rhs, strict=False),
-    )
-    for f in model.functions.values()
-]
+_equations = report.model_equation_groups(model, delta=_delta)
+state_equations = _equations['state']
+derived_variables = _equations['derived']
+derived_parameters = _equations['derived_parameters']
+functions = _equations['functions']
 
 outputs = list(model.output or [])
 

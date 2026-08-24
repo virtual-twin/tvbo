@@ -26,7 +26,7 @@ tstops, \
 from tvbo.codegen import render_expression
 from sympy.parsing.sympy_parser import parse_expr as _parse_expr
 from tvbo.adapters.julia_model import (
-    julia_ode_package, build_ifelse, needs_special_functions, symbol_names,
+    julia_ode_package, make_renderer, needs_special_functions, symbol_names,
 )
 %>
 <%
@@ -91,7 +91,7 @@ def _expand_func_calls(code):
         code = ''.join(result)
     return code
 
-juliacode_raw = lambda expr: render_expression(expr, format='mtk', parameters=all_symbols, user_functions=func_names)
+juliacode_raw = make_renderer(model, fmt='mtk')
 juliacode = lambda expr: _expand_func_calls(juliacode_raw(expr))
 
 # Output variables: those marked coupling_variable=true
@@ -146,7 +146,7 @@ using SpecialFunctions
     all_fargs = fargs + extras
 %>\
 function ${f.name}(${', '.join(all_fargs)})
-    return ${juliacode_raw(f.equation.rhs)}
+    return ${juliacode_raw(f.equation)}
 end
 @register_symbolic ${f.name}(${', '.join(all_fargs)})
 % endfor
@@ -205,21 +205,11 @@ end
     eqs = [
 ## Derived parameters (algebraic definitions that use parameters only)
 % for dp in (getattr(model, 'derived_parameters', None) or {}).values():
-        ${dp.name} ~ ${juliacode(dp.equation.rhs)},
+        ${dp.name} ~ ${juliacode(dp.equation)},
 % endfor
 ## Derived variables (algebraic equations involving t-dependent variables)
 % for dv in (getattr(model, 'derived_variables', None) or {}).values():
-<%
-    is_conditional = getattr(dv, 'conditional', False) and getattr(dv, 'cases', None)
-%>\
-% if is_conditional:
-<%
-    ifelse_expr = build_ifelse(list(dv.cases), juliacode)
-%>\
-        ${dv.name} ~ ${ifelse_expr},
-% else:
-        ${dv.name} ~ ${juliacode(dv.equation.rhs)},
-% endif
+        ${dv.name} ~ ${juliacode(dv.equation)},
 % endfor
 ## State variable equations
 % for sv_name, sv in model.state_variables.items():
@@ -229,7 +219,7 @@ end
     order = higher_order_svs.get(sv_name, 1)
 %>\
 % if is_algebraic:
-        ${sv_name} ~ ${juliacode(sv.equation.rhs)},
+        ${sv_name} ~ ${juliacode(sv.equation)},
 % elif order > 1:
 <%
     # Build nested Dt: D(D(x)) for order 2, D(D(D(x))) for order 3, etc.
@@ -237,9 +227,9 @@ end
     for _ in range(order):
         dt_chain = f'Dt({dt_chain})'
 %>\
-        ${dt_chain} ~ ${juliacode(sv.equation.rhs)},
+        ${dt_chain} ~ ${juliacode(sv.equation)},
 % else:
-        Dt(${sv_name}) ~ ${juliacode(sv.equation.rhs)},
+        Dt(${sv_name}) ~ ${juliacode(sv.equation)},
 % endif
 % endfor
     ]

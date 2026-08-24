@@ -22,6 +22,7 @@ __all__ = [
     "Noise",
     "SimulationExperiment",
     "SimulationStudy",
+    "SimulationTool",
 ]
 
 
@@ -63,6 +64,11 @@ def __getattr__(name):
 
         globals()["SimulationStudy"] = SimulationStudy
         return SimulationStudy
+    if name == "SimulationTool":
+        from tvbo.classes.software import SimulationTool
+
+        globals()["SimulationTool"] = SimulationTool
+        return SimulationTool
     if name == "Network":
         from tvbo.classes.network import Network
 

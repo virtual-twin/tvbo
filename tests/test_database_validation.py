@@ -7,41 +7,16 @@ Using the shipped artifact rather than re-running LinkML's runtime validator kee
 """
 
 import json
-from pathlib import Path
 
 import jsonschema
 import pytest
 import yaml
 
-REPO = Path(__file__).resolve().parents[1]
+from .database_corpus import REPO, TARGETS, collect, uncovered
+
 SCHEMA_JSON = REPO / "tvbo" / "datamodel" / "tvbo_datamodel.schema.json"
-DB = REPO / "tvbo" / "database"
 
-# Map subdirectory -> target LinkML class
-TARGETS = {
-    "models": "Dynamics",
-    "coupling_functions": "Coupling",
-    "integrators": "Integrator",
-    "observation_models": "Observation",
-    "experiments": "SimulationExperiment",
-    "studies": "SimulationStudy",
-    "networks": "Network",
-    "atlases": "BrainAtlas",
-    "software": "SimulationTool",
-    "continuations": "Continuation",
-    "graph_generators": "GraphGenerator",
-}
-
-
-def _collect():
-    cases = []
-    for sub, cls in TARGETS.items():
-        for path in sorted((DB / sub).rglob("*.y*ml")):
-            cases.append((path, cls))
-    return cases
-
-
-CASES = _collect()
+CASES = collect()
 IDS = [str(p.relative_to(REPO)) for p, _ in CASES]
 
 
@@ -76,3 +51,16 @@ def test_database_yaml_validates(validators, path, target_class):
         f"{e.message} in /{'/'.join(str(p) for p in e.absolute_path)}" for e in validators[target_class].iter_errors(data)
     ]
     assert not messages, f"{path.relative_to(REPO)} failed validation as {target_class}:\n  - " + "\n  - ".join(messages)
+
+
+def test_every_directory_of_metadata_has_a_class():
+    """No corner of the database may be authored metadata that nothing validates.
+
+    ``coordinate_spaces`` and ``reducers`` each sat outside `TARGETS` for as long as they existed, so nothing checked them — one had a `description` its class did not declare, the other had no class at all.
+    """
+    assert not uncovered(), (
+        "database directories no entry of TARGETS claims: "
+        + ", ".join(uncovered())
+        + ". Add the class to tests/database_corpus.py (declaring it in the schema first "
+        "if it has none), so validation and the golden dump both cover it."
+    )

@@ -22,14 +22,13 @@ from sympy import (
     Symbol,
     lambdify,
     latex,
-    parse_expr,
 )
 
-from tvbo.classes.equation import _clash1
 from tvbo.codegen.code import render_expression
 from tvbo.data.types import TimeSeries
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.ontology import owl as ontology
+from tvbo.parse.symbols import BUILTIN_SHADOW
 from tvbo.plot.ontology import draw_custom_nodes
 
 logger = logging.getLogger(__name__)
@@ -341,6 +340,16 @@ class Function(tvbo_datamodel.Function):
         parameters = {Symbol(k) if key_as_symbol else k: v.value for k, v in self.equation.parameters.items()}
         return parameters
 
+    def symbol_scope(self):
+        """The namespace this function's equation is parsed against.
+
+        Its own parameters, plus its arguments as `IndexedBase` so an argument can be indexed in the body. Shared by every caller that parses this equation, so a function's rendered graph cannot resolve a name differently from its equation.
+        """
+        return BUILTIN_SHADOW.extend(
+            {str(p): p for p in self.get_parameters(key_as_symbol=True)},
+            {str(a): IndexedBase(a) for a in self.arguments},
+        )
+
     def get_equation(self):
         """Build the function as a SymPy equation.
 
@@ -349,10 +358,7 @@ class Function(tvbo_datamodel.Function):
         Returns:
             A SymPy `Eq` relating the function call to its parsed expression.
         """
-        parameters = self.get_parameters(key_as_symbol=True)
-        clash = {str(p): p for p in parameters.keys()}
-        clash.update({str(a): IndexedBase(a) for a in self.arguments})
-        expression = parse_expr(self.equation.rhs, clash)
+        expression = self.symbol_scope().parse(self.equation.rhs)
         function = sympy.Function(self.acronym or self.name)(*(Symbol(a) for a in self.arguments))
         return Eq(function, expression)
 
@@ -493,7 +499,7 @@ class Function(tvbo_datamodel.Function):
         func_name = self.acronym or self.name
         G.add_node(func_name, label=f"{func_name}")
         if self.equation and self.equation.rhs:
-            expression = parse_expr(self.equation.rhs, _clash1)
+            expression = self.symbol_scope().parse(self.equation.rhs)
             rounded_expression = expression.xreplace({n: Float(round(float(n), 4)) for n in expression.atoms(Float)})
             expression = rounded_expression.subs(0.3333, Rational(1, 3))
 
@@ -962,7 +968,7 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
     data = _yaml.safe_load(path.read_text()) or {}
 
     # Scalar fields: adopt the curated value only where the recipe left it empty.
-    for field in ("label", "description", "imaging_modality", "period", "downsample_period", "time_scale"):
+    for field in ("label", "description", "imaging_modality", "period", "downsample_period", "time_unit"):
         if data.get(field) is not None and not getattr(obs, field, None):
             setattr(obs, field, data[field])
 

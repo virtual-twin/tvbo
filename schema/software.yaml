@@ -419,6 +419,45 @@ classes:
                 slot_uri: schema:isAccessibleForFree
                 ifabsent: true
                 description: "Whether the tool is free/open-source."
+            # ── What TVBO can emit for this tool ──
+            codegen_format:
+                range: string
+                description: >-
+                    Export-registry key of the format TVBO emits for this tool
+                    (`tvbo formats`). Present only on tools TVBO generates code for.
+            units:
+                range: ToolUnit
+                multivalued: true
+                inlined: true
+                description: >-
+                    How this tool spells the units TVBO declares. Only units the tool
+                    has its own name for appear; anything absent is emitted unitless.
+
+    ToolUnit:
+        description: >-
+            One TVBO unit as a single tool writes it.
+
+            A tool's unit vocabulary is a fact about that tool, not about the unit —
+            LEMS calls `Hz` a `per_time` quantity and writes it `per_s`, and no other
+            backend need agree. Keyed by the `UnitEnum` value so a record states only
+            the units its tool knows.
+        attributes:
+            unit:
+                range: string
+                key: true
+                annotations:
+                    collection_key: true
+                description: "The `UnitEnum` value this entry translates."
+            dimension:
+                range: string
+                description: >-
+                    The tool's name for the physical dimension of this unit. Absent
+                    where the tool has no dimension for it.
+            symbol:
+                range: string
+                description: >-
+                    The tool's spelling of the unit itself, appended to numeric
+                    values. Absent where the tool writes the value bare.
 
     SoftwareRequirement:
         description: >-

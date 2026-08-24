@@ -58,10 +58,9 @@ _MERGE_TAG = "tag:yaml.org,2002:merge"
 _INCLUDE_TAG = "!include"
 
 ENVELOPE_KEYS = ("tvbo_class", "schema_version")
-"""Keys that annotate a serialized FILE's class and schema version rather than the
-object's slots. They are dropped on every route into a class constructor — a document
-root, a plain ``!include``, and a fragment merged with ``<<: !include`` — and kept by
-:func:`load_as_dict`, whose callers dispatch on them."""
+"""Keys that annotate a serialized FILE's class and schema version rather than the object's slots. TVBO writes them itself — every one of the 121 network sidecars in the
+database opens with ``tvbo_class: tvbo:Network`` — so its own loader has to accept them. They are dropped on every route into a class constructor — a document root, a plain
+``!include``, and a fragment merged with ``<<: !include`` — and kept by :func:`load_as_dict`, whose callers dispatch on them."""
 
 
 def _flatten_map_constructor(loader: yaml.Loader, node: yaml.MappingNode, deep: bool = False) -> dict:
@@ -412,7 +411,7 @@ def load_as_dict(source: Any, **kwargs: Any) -> dict:
         data = yaml.load(source, LoaderCls)
     else:
         data = source
-    # Route through the same normalisation as the string path (fold slot aliases + lift the terse `distribution: {lo, hi}` shortcut) so the dict path used by from_file/from_db cannot diverge from the LinkML string path.
+    # Same normalisation as the string path, so the dict path used by from_file/from_db cannot diverge from the LinkML one; the envelope survives, for the caller to dispatch on.
     return _normalize_loaded(data)
 
 

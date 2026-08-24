@@ -24,6 +24,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from tvbo.templates.base.utils import safe_name as _base_safe_name
 from tvbo.utils import _NETWORK_EDGE_ALIASES, as_list, edge_label  # noqa: F401  re-exported for the mako templates
 
 # Basic Helpers
@@ -82,12 +83,8 @@ def active_stimulus_events(experiment: Any) -> list:
     return active
 
 
-def safe_name(name: str) -> str:
-    """Convert name to valid Python identifier (preserves case).
-
-    Python identifiers are case-sensitive, and result keys must match the user's YAML keys verbatim so that ``res.explorations.C_sweep_fig3`` works for a YAML entry named ``C_sweep_fig3``. Only characters that are invalid in identifiers (spaces, hyphens) are replaced.
-    """
-    return str(name).replace(" ", "_").replace("-", "_")
+#: One definition, shared with every other backend that has to emit an identifier.
+safe_name = _base_safe_name
 
 
 def get_attr(obj: Any, name: str, default: Any = None) -> Any:
@@ -188,7 +185,7 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> tuple[lis
     _, state_names, _ = get_mode_layout(model) if model and model.state_variables else (1, [], {})
     aux_names = list(model.derived_variables.keys()) if model and getattr(model, "derived_variables", None) else []
 
-    output_vars = getattr(model, "output", None) or []
+    output_vars = model.output
     if isinstance(output_vars, str):
         output_vars = [output_vars]
     requested_aux = [v for v in output_vars if v in aux_names]
@@ -228,8 +225,8 @@ def _state_recomputable_derived(model: Any) -> set[str]:
     dvars = model.derived_variables or {}
     if not dvars:
         return set()
-    dparams = getattr(model, "derived_parameters", None) or {}
-    params = getattr(model, "parameters", None) or {}
+    dparams = model.derived_parameters
+    params = model.parameters
     state_vars = model.state_variables or {}
 
     def _is_time_stochastic(p):
@@ -329,7 +326,7 @@ def resolve_model_output_indices(model: Any, experiment: Any = None) -> tuple[li
     n_modes, _, _ = get_mode_layout(model)
     state_vars = (model.state_variables or {}) if model else {}
 
-    output_vars = getattr(model, "output", None) or []
+    output_vars = model.output
     if isinstance(output_vars, str):
         output_vars = [output_vars]
 

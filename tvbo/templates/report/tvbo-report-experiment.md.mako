@@ -274,6 +274,8 @@ observed = getattr(model, 'observed', {}) or {}
 # lives on the experiment, so the experiment's definition wins where both name an event.
 events = dict(report.name_items(getattr(model, 'events', None)))
 events.update(dict(report.name_items(getattr(exp, 'events', None))))
+unit_verdicts = report.unit_verdicts(model) if model else []
+derived_units = report.derived_units(unit_verdicts)
 model_summary = []
 if _p(model, 'model_type', None):
     model_summary.append(f"type: {_p(model, 'model_type')}")
@@ -353,17 +355,23 @@ ${report.state_variable_table(svars)}
 % if params:
 **Parameters**
 
-${report.parameter_table(params)}
+${report.parameter_table(params, derived=derived_units)}
+
+% endif
+% if unit_verdicts:
+**Dimensional Check**
+
+${report.unit_verdict_table(unit_verdicts)}
 
 % endif
 % if dparams:
 **Derived Parameters**
 
-| Parameter | Expression | Description |
-|:----------|:-----------|:------------|
+| Parameter | Expression | Unit | Description |
+|:----------|:-----------|:-----|:------------|
 % for name, dp in dparams.items():
 <% dp_eq = getattr(dp, 'equation', None); dp_rhs = getattr(dp_eq, 'rhs', '') if dp_eq else ''; dp_desc = _p(dp, 'description', '') or 'Derived' %>\
-| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | ${dp_desc} |
+| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | ${_unit_text(_p(dp, 'unit', None)) or report.derived_unit_text(derived_units, name)} | ${dp_desc} |
 % endfor
 % endif
 
@@ -817,7 +825,7 @@ obs_period = _p(obs, 'period', None)
 obs_downsample = _p(obs, 'downsample_period', None)
 obs_agg = _p(obs, 'aggregation', None)
 obs_modality = _p(obs, 'imaging_modality', None)
-obs_time_scale = _p(obs, 'time_scale', None)
+obs_time_scale = _p(obs, 'time_unit', None)
 obs_voi = _p(obs, 'voi', None)
 obs_skip = _p(obs, 'skip_t', None)
 obs_tail = _p(obs, 'tail_samples', None)
@@ -872,7 +880,7 @@ for s in _dobs_sources:
         src_obs.append(n)
 d_pipeline = _p(dobs, 'pipeline', [])
 d_sampling = []
-for attr, label in (('aggregation', 'aggregation'), ('skip_t', 'skip'), ('tail_samples', 'tail'), ('window_size', 'window'), ('time_scale', 'scale')):
+for attr, label in (('aggregation', 'aggregation'), ('skip_t', 'skip'), ('tail_samples', 'tail'), ('window_size', 'window'), ('time_unit', 'scale')):
     value = _p(dobs, attr, None)
     if value is not None:
         d_sampling.append(f"{label}={value}")

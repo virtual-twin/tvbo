@@ -28,6 +28,16 @@ def pytest_addoption(parser):
         default=False,
         help="Run slow tests (e.g. tvboptim interop docs)",
     )
+    parser.addoption(
+        "--regenerate-golden",
+        action="store_true",
+        default=False,
+        help=(
+            "Re-baseline the golden corpora instead of asserting against them. "
+            "Re-baselining changes what TVBO promises to emit — review the diff and "
+            "commit it on its own."
+        ),
+    )
 
 
 def pytest_collection_modifyitems(config, items):
@@ -36,6 +46,34 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
+
+
+@pytest.fixture(scope="session")
+def regenerate(pytestconfig) -> bool:
+    """Whether the golden corpora are being re-baselined rather than asserted."""
+    return bool(pytestconfig.getoption("--regenerate-golden"))
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Never let a re-baselining run report success.
+
+    Regeneration asserts nothing — it overwrites every reference with whatever the current code produces. A green run would be indistinguishable from a suite that passed, which is exactly how an unreviewed re-baseline reaches main.
+
+    A run that actually failed keeps its own status. Overriding that too would hide the case that matters most: if a model raised while regenerating, its reference was never written, and reporting that identically to a clean regeneration is how a corpus with a hole in it gets committed.
+    """
+    if not session.config.getoption("--regenerate-golden", default=False):
+        return
+    if exitstatus not in (pytest.ExitCode.OK, pytest.ExitCode.NO_TESTS_COLLECTED):
+        return
+
+    session.exitstatus = pytest.ExitCode.USAGE_ERROR
+    reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+    if reporter is not None:
+        reporter.write_sep(
+            "=",
+            "golden corpora REGENERATED — nothing was asserted; review the diff and commit it on its own",
+            red=True,
+        )
 
 
 @pytest.fixture(autouse=True)

@@ -1,0 +1,39 @@
+name: PomeauMannevilleMap
+parameters:
+  z:
+    name: z
+    value: 2.5
+    description: Intermittency exponent z.
+description: 'Intermittent map with laminar phases and chaotic bursts; here given
+  in the symmetric
+
+  piecewise form commonly used in the literature.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+references:
+- MannevillePomeau1980
+- Meyer2019
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: x_next
+      conditionals:
+      - condition: x > 0.5
+        expression: -4*x + 3
+      - condition: x < -0.5
+        expression: -4*x - 3
+      - condition: abs(x) <= 0.5
+        expression: x*(1 + abs(2*x)**(z - 1))
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.2
+number_of_modes: 1
+model_type: generic
+system_type: discrete
+autonomous: true
+cse: false
+compile: false
