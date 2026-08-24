@@ -67,16 +67,9 @@ def symbol_names(model):
 def parse_namespace(model) -> dict:
     """How this model's equations parse, as keyword arguments for `parse_eq`.
 
-    Both flavours of model reach this adapter: the runtime `Dynamics` in `tvbo.classes`, which carries the symbolic layer, and the generated `tvbo.datamodel.schema.Dynamics` that a heterogeneous node's inline dynamics is, which has the collections but no layer and must be parsed against its own names. Mirrors the dispatch in `function_bodies`.
+    Both flavours of model reach this adapter, the runtime `Dynamics` in `tvbo.classes` and the generated one a heterogeneous node's inline dynamics is, and both carry the symbolic layer, so each is parsed against the table its own equations were.
     """
-    elements = getattr(model, "get_symbolic_elements", None)
-    if elements is not None:
-        return {"local_dict": elements()}
-    sv, params, coupling, dvars, dparams = symbol_names(model)
-    return {
-        "parameters": sv + params + coupling + dvars + dparams,
-        "functions": [str(f) for f in model.functions],
-    }
+    return {"local_dict": model.get_symbolic_elements()}
 
 
 def equation_rhs_text(model) -> str:

@@ -136,41 +136,19 @@ ARRAY_FUNCTIONS = {
 }
 
 
-def function_bodies(model, parameters=None):
+def function_bodies(model):
     """A model's function definitions as ``{name: (arg_names, body)}``.
 
     The table [`inline_functions`](../codegen/code.qmd#inline_functions) consumes, for the backends that have no user-function mechanism and must expand every call before printing.
 
-    Read from the model's symbolic layer when it has one, so a body is parsed once however many backends inline it. A free function rather than a `Dynamics` method because both flavours of model need it: the runtime `Dynamics` in `tvbo.classes`, which carries that layer, and the generated `Dynamics` in `tvbo.datamodel.schema` that an edge's `resolved_dyn` is, which has the collections but no layer and is parsed against
-    *parameters* instead.
+    Read from the model's symbolic layer, so a body is parsed once however many backends inline it. A free function rather than a `Dynamics` method because both flavours of model need it: the runtime `Dynamics` in `tvbo.classes` and the generated one an edge's `resolved_dyn` is. Both carry the layer, so both answer from the same parse, and the caller no longer supplies a namespace of its own, which is what let a body be parsed against names the model does not declare.
 
-    On that second path every function name is registered as a function while parsing, so a call to one inside another's body parses as an application rather than a product — Zerlaut's `sigmaV` calls `muV`. Functions with no arguments or no equation are skipped on both: there is nothing to substitute into, and a call to one is left for the printer to emit verbatim.
+    The layer's scope registers every function name as a function, so a call to one inside another's body parses as an application rather than a product — Zerlaut's `sigmaV` calls `muV`. Functions with no arguments or no equation are skipped: there is nothing to substitute into, and a call to one is left for the printer to emit verbatim.
     """
-    symbolic_form = getattr(model, "_symbolic_form", None)
-    if symbolic_form is not None:
-        return {
-            name: ([str(argument) for argument in equation.lhs.args], equation.rhs)
-            for name, equation in symbolic_form()["functions"].items()
-        }
-
-    functions = model.functions
-    if not functions:
-        return {}
-    names = list(functions)
-    bodies = {}
-    for name, fn in functions.items():
-        arg_names = [str(arg) for arg in fn.arguments]
-        if not arg_names or not fn.equation:
-            continue
-        bodies[str(name)] = (
-            arg_names,
-            parse_eq(
-                fn.equation,
-                parameters=list(parameters or []) + arg_names,
-                functions=names,
-            ),
-        )
-    return bodies
+    return {
+        name: ([str(argument) for argument in equation.lhs.args], equation.rhs)
+        for name, equation in model.symbolic_system.form()["functions"].items()
+    }
 
 
 def states_an_expression(equation) -> bool:

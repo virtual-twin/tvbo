@@ -1472,11 +1472,11 @@ def experiment_models(experiment):
 
 
 def _equations_of(model):
-    """A model's symbolic equations, resolving a bare declaration into a real model first.
+    """A model's symbolic equations, however it was built.
 
-    A per-node model on a heterogeneous network arrives as the plain datamodel object, which carries the declaration but not ``Dynamics``'s symbolic machinery. Treating that as "no equations" printed a Methods section with **no mathematics at all** for every heterogeneous study: Mongillo2008's twenty-nine experiments got symbol tables and nothing else, and Deco2014 lost both of its spiking families.
+    Every ``Dynamics`` answers ``get_equations`` — the generated forms carry it from ``DynamicsBehaviour`` — so a per-node model on a heterogeneous network is read where it stands, against the same parse the backend integrates. Treating it as "no equations" printed a Methods section with **no mathematics at all** for every heterogeneous study: Mongillo2008's twenty-nine experiments got symbol tables and nothing else, and Deco2014 lost both of its spiking families.
 
-    So promote it. ``Dynamics.from_datamodel`` copies the already-normalised state and gives back the same resolution the backend uses — which is the point, because the authored right-hand sides must not be re-parsed here against a hand-assembled vocabulary (see :func:`equation_latex`). A model that still cannot resolve is a legitimate miss, not a crash.
+    The promotion below is for something that is not a ``Dynamics`` at all: the authored right-hand sides must not be re-parsed here against a hand-assembled vocabulary (see :func:`equation_latex`), so ``Dynamics.from_datamodel`` gives back the same resolution instead. A model that still cannot resolve is a legitimate miss, not a crash.
     """
     if hasattr(model, "get_equations"):
         return model.get_equations() or {}

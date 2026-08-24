@@ -3,7 +3,9 @@
 
 """Python behaviour layer for `Dynamics` models.
 
-Defines [`DynamicalSystem`](#tvbo.classes.dynamics.DynamicalSystem) — the base class that augments the generated LinkML `Dynamics` datamodel with model construction and ontology resolution, a symbolic (SymPy) representation, equation normalization and dependency-ordered sorting, multi-backend code generation, simulation and bifurcation runs, plotting, and report export — together with the `Model` and `Dynamics` convenience subclasses.
+Defines [`DynamicalSystem`](#tvbo.classes.dynamics.DynamicalSystem) — the base class that augments the generated LinkML `Dynamics` datamodel with model construction and ontology resolution, equation normalization and dependency-ordered sorting, multi-backend code generation, simulation and bifurcation runs, plotting, and report export — together with the `Model` and `Dynamics` convenience subclasses.
+
+The SymPy view of a model is not here. It is attached to the generated classes by [`DynamicsBehaviour`](../behaviour/dynamics.qmd), so a model answers symbolically however it was built, and the equations themselves live on a [`SymbolicSystem`](../parse/system.qmd).
 """
 
 import copy as _copy
@@ -18,7 +20,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import owlready2
-from sympy import Derivative, Eq, Function, Symbol, latex
+from sympy import Eq, Symbol
 
 from tvbo import templates
 from tvbo.analysis import BifurcationResult
@@ -31,8 +33,7 @@ from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.datamodel.schema import Case, ConditionalBlock, DerivedVariable, Equation
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
-from tvbo.parse.expression import function_bodies, parse_eq, states_an_expression
-from tvbo.parse.symbols import assumptions_of, symbol_in
+from tvbo.parse.expression import function_bodies, parse_eq
 from tvbo.utils import initial_value, report, yaml_loader
 
 logger = logging.getLogger(__name__)
@@ -529,7 +530,7 @@ def _validate_dynamics_kwargs(kwargs: dict) -> None:
 class DynamicalSystem(tvbo_datamodel.Dynamics):
     """Enhanced base class for `Dynamics` adding Python-side behaviour.
 
-    Wraps the generated LinkML `Dynamics` datamodel with the methods that make a model usable: ontology resolution (`use_ontology=True`), symbolic representation via SymPy, equation reordering, backend code generation, YAML / JSON / Pydantic round-tripping, and matplotlib plotting hooks.
+    Wraps the generated LinkML `Dynamics` datamodel with the methods that make a model usable: ontology resolution (`use_ontology=True`), equation reordering, backend code generation, YAML / JSON / Pydantic round-tripping, and matplotlib plotting hooks. The symbolic view comes from [`DynamicsBehaviour`](../behaviour/dynamics.qmd), which every `Dynamics` carries.
 
     Most users should construct via [`Dynamics`](#tvbo.classes.dynamics.Dynamics) or `Dynamics.from_db(name)` — this class is the implementation base.
 
@@ -917,368 +918,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             The ontology search matches for `search_str` within this model.
         """
         return ontology.search_in_model(search_str, self.ontology, **kwargs)
-
-    @property
-    def keyed_parameters(self):
-        """Mapping of each parameter as a SymPy `Symbol` to its numeric value."""
-        return {Symbol(p.name): p.value for p in self.parameters.values()}
-
-    @property
-    def symbolic(self):
-        """Full symbolic ODE system using proper SymPy conventions.
-
-        State variables are represented as ``Function(name)(t)`` so that ``Derivative(theta(t), t)`` stays unevaluated.  Derived variables and derived parameters are included as algebraic equations.
-
-        Returns:
-        -------
-        dict
-            ``{'state': [...], 'derived': [...], 'parameters': {...}}``
-            where each list contains ``sympy.Eq`` objects and parameters
-            maps ``Symbol → value``. That map is keyed by the scope's own
-            symbols: rebuilt keys look identical, compare unequal, and make
-            substituting it into these equations silently replace nothing.
-
-        Example:
-        -------
-        >>> model.symbolic['state']
-        [Eq(Derivative(theta(t), t), I + omega)]
-        >>> model.symbolic['derived']
-        [Eq(signal(t), sin(theta(t)))]
-        >>> model.symbolic['units']
-        {omega: 'per_ms', I: None}
-        """
-        from tvbo.analysis.units import declared_units
-
-        form = self._symbolic_form(notation="function")
-        scope = self.get_symbolic_elements(time_dependent=True)
-        return {
-            "state": list(form["state-equations"].values()),
-            "functions": list(form["functions"].values()),
-            "derived_parameters": list(form["derived-parameters"].values()),
-            "derived": list(form["derived-variables"].values()),
-            "parameters": {scope[str(p.name)]: p.value for p in self.parameters.values() if str(p.name) in scope},
-            "units": declared_units(self),
-        }
-
-    def check_units(self, strictness: str = "dimensional", time_unit: str | None = None):
-        """Per-equation dimensional verdicts for this model.
-
-        See [`tvbo.analysis.units.check_units`](../analysis/units.qmd#check_units). Each verdict is `consistent`, `inconsistent` or `underdetermined`; the third is a distinct answer, not a soft failure, because 24 of the 39 curated models declare no units and calling those wrong would pressure fake declarations into the published record.
-        """
-        from tvbo.analysis.units import check_units
-
-        return check_units(self, strictness=strictness, time_unit=time_unit)
-
-    def get_symbolic_elements(self, include_time_symbol: bool = True, time_dependent: bool = False):
-        """Build a unified local_dict for parsing model expressions.
-
-        Includes symbols for parameters, coupling terms, derived parameters, derived variables, output transforms, state variables, event names, function names, and (optionally) the time symbol 't'.
-
-        Every declared name must appear here so it shadows SymPy's own global namespace:
-        `Q` is SymPy's assumptions object, `S` its sympify shortcut, `O` big-O, `N` numeric evaluation and `I` the imaginary unit, so a model that names a quantity after any of them would otherwise fail to parse.
-
-        Args:
-            include_time_symbol: Bind `t` to `Symbol("t")`.
-            time_dependent: Bind state and derived variables to `Function(name)(t)` rather than `Symbol(name)`, so `Derivative(x(t), t)` stays unevaluated and the result reads as a system of ODEs. This is the only difference between the two symbolic views of a model — everything downstream of the scope is shared, which is why it is a parameter here and not a second builder.
-
-        Returns:
-        -------
-        dict
-            Mapping of names to SymPy objects suitable for parse_eq(local_dict=...).
-            A copy, so a caller may keep or adapt it; the model's own is cached.
-        """
-        key = (bool(include_time_symbol), bool(time_dependent))
-        scopes = self._symbolic_state()["scopes"]
-        if key not in scopes:
-            scopes[key] = self._build_symbolic_elements(include_time_symbol, time_dependent)
-        return dict(scopes[key])
-
-    def _build_symbolic_elements(self, include_time_symbol: bool, time_dependent: bool):
-        """Assemble the symbol table. See `get_symbolic_elements`.
-
-        Holds only the names the *model* declares. A function's formal arguments are bound by that function, exactly as a lambda binds its parameters, and are supplied as an overlay while its body is parsed — see `_assemble_equations`. Registering them here let a formal shadow a variable of the same name: `ReducedWongWangTvboptim` declares both `H(x)` and a derived variable `x`, and the formal won, so the analysis view held `x` constant and dropped the chain-rule term from every Jacobian through `H`.
-
-        Assumptions ride on the time-dependent view only. They are what SymPy's analysis machinery needs — without `real=True` the fixed points of a two-variable model do not come back inside a minute — but they also enter `Symbol.sort_key`, so the same product prints as `q*alpha` instead of `alpha*q`. That is no gain for a backend that parses, inlines and prints without ever simplifying, and every emitted file is compared against a frozen reference. The codegen view therefore stays plain, and the two are never mixed: a `Symbol` from one does not compare equal to the same name from the other, so nothing can substitute across them by accident.
-
-        Function heads are the exception, and carry `assumptions_of()` in both views: a head is notation-independent — `Sigm` is the same function whether the variables around it are Symbols or Functions of `t`. Building it per view made `Function("Sigm", real=True)` and `Function("Sigm")`, which print identically, compare unequal, and make `expr.has(Sigm)` False on an expression that visibly calls it, so every inliner matched nothing, silently.
-        """
-
-        def _assume(element=None):
-            return assumptions_of(element) if time_dependent else {}
-
-        def _symbol(name, element=None):
-            return Symbol(str(name), **_assume(element))
-
-        t = _symbol("t")
-        scope: dict[str, object] = {}
-
-        def _variable(name, element=None):
-            if time_dependent:
-                return Function(str(name), **_assume(element))(t)
-            return _symbol(name, element)
-
-        if include_time_symbol:
-            scope["t"] = t
-
-        for p in self.parameters.values():
-            scope[str(p.name)] = _symbol(p.name, p)
-
-        # Coupling inputs (named inputs from coupling function)
-        for ci in self.coupling_inputs.keys():
-            scope[str(ci)] = _symbol(ci)
-
-        # A derived parameter is constant in time, so it stays a Symbol in both views.
-        for name in self.derived_parameters.keys():
-            scope[str(name)] = _symbol(name)
-        for name, dv in self.derived_variables.items():
-            scope[str(name)] = _variable(name, dv)
-
-        # Output is a list of string references
-        for name in self.output:
-            scope[str(name)] = _variable(name, self.derived_variables.get(str(name)))
-
-        for name, sv in self.state_variables.items():
-            scope[str(name)] = _variable(name, sv)
-
-        for fname in self.functions:
-            scope[str(fname)] = Function(str(fname), **assumptions_of())
-
-        for name in self.events:
-            scope[str(name)] = _symbol(name)
-
-        if "e" not in scope:
-            from sympy import E
-
-            scope["e"] = E
-
-        return scope
-
-    _GROUP_COLLECTIONS = {
-        "derived-parameters": "derived_parameters",
-        "functions": "functions",
-        "derived-variables": "derived_variables",
-        "state-equations": "state_variables",
-        "output-transformations": "output",
-    }
-    """Which collection each equation group is built from, and takes its order from."""
-
-    def _equation_inputs(self):
-        """What `_build_symbolic_form` reads, split into content and order.
-
-        The cache is sound only if *content* changes whenever a built equation would, so it walks the same collections the builder walks rather than a hand-listed subset: a slot the builder starts reading without being added here would serve a stale equation forever. Content is compared as dicts, which ignore key order.
-
-        *order* is tracked separately because `sort_equations` reorders collections into
-        dependency order without changing a single equation — five times over one load.
-        Treating that as a content change would re-parse everything to produce the same expressions in a different sequence.
-        """
-
-        def _equation(element):
-            equation = getattr(element, "equation", None)
-            if equation is None:
-                return None
-            return (
-                equation.rhs,
-                tuple((c.condition, c.expression) for c in equation.conditionals),
-                bool(equation.latex),
-            )
-
-        def _assumed(element):
-            """Keyed on `assumptions_of` itself, so the key cannot drift from what it reads.
-
-            A `domain` is not an equation, but it decides whether a symbol is `positive` or merely `real`, and `Symbol('a', positive=True) != Symbol('a', real=True)`. Naming the fields here instead would leave the key stale the day `assumptions_of` starts reading one more of them.
-            """
-            return tuple(sorted(assumptions_of(element).items()))
-
-        content = (
-            self.system_type,
-            {str(name): _assumed(p) for name, p in self.parameters.items()},
-            frozenset(str(name) for name in self.coupling_inputs),
-            frozenset(str(name) for name in self.events),
-            frozenset(str(name) for name in self.output),
-            {str(k): _equation(v) for k, v in self.derived_parameters.items()},
-            {str(k): (_equation(v), _assumed(v)) for k, v in self.derived_variables.items()},
-            {
-                str(k): (
-                    _equation(v),
-                    int(v.equation_order or 1) if v.equation_order else 1,
-                    _assumed(v),
-                )
-                for k, v in self.state_variables.items()
-            },
-            {str(k): (tuple(str(a) for a in v.arguments), _equation(v)) for k, v in self.functions.items()},
-        )
-        order = tuple(
-            tuple(str(name) for name in getattr(self, collection)) for collection in self._GROUP_COLLECTIONS.values()
-        )
-        return content, order
-
-    def _reordered(self, form):
-        """The same equations, re-keyed into their collections' current order."""
-        return {
-            group: {
-                name: equations[name]
-                for name in (str(n) for n in getattr(self, self._GROUP_COLLECTIONS[group]))
-                if name in equations
-            }
-            for group, equations in form.items()
-        }
-
-    def _symbolic_form(self, notation: str = "symbol", evaluate: bool = True):
-        """The model's equations, parsed once per (notation, evaluate) and remembered.
-
-        The single symbolic layer between a model's metadata and everything rendered from it. Both public views — [`get_equations`](#tvbo.classes.dynamics.Dynamics.get_equations) and [`symbolic`](#tvbo.classes.dynamics.Dynamics.symbolic) — are projections of this, as is the function-body table the inliner consumes, so an equation is parsed once no matter how many consumers ask for it.
-
-        Before this existed each caller re-derived from metadata: loading `ZerlautAdaptationSecondOrder` parsed its 27 equations 264 times, and every `render_code` and `generate_report` parsed all 27 again because nothing was kept.
-
-        The cache is discarded whole whenever `_equation_inputs` changes, which is what makes it safe on a mutable model. Rendering is a query — `render_code` no longer runs `update_metadata` — so no consumer can invalidate it mid-use.
-
-        Args:
-            notation: `"symbol"` binds variables to `Symbol(name)`; `"function"` binds
-                them to `Function(name)(t)`.
-            evaluate: Let SymPy evaluate right-hand sides, or preserve authored term order.
-
-        Returns:
-            `{group: {name: Eq}}` over the five groups, each keyed by the variable it
-            defines so no consumer has to recover a name from an `Eq`'s left-hand side.
-        """
-        forms = self._symbolic_state()["forms"]
-        key = (notation, bool(evaluate))
-        if key not in forms:
-            forms[key] = self._build_symbolic_form(notation, evaluate)
-        return forms[key]
-
-    def _symbolic_state(self):
-        """The per-content cache the symbol table and the equations share.
-
-        One invalidation point for both, because they have to agree: a scope built from one set of names and equations parsed against another is precisely the drift this layer exists to remove.
-
-        A reorder keeps the parsed equations and re-keys them; the scopes are dropped instead, since rebuilding a symbol table is a few hundred `Symbol` constructions while reparsing is the expensive half.
-        """
-        content, order = self._equation_inputs()
-        cache = self.__dict__.get("_symbolic_cache")
-        if cache is None or cache[0] != content:
-            cache = (content, order, {"scopes": {}, "forms": {}})
-        elif cache[1] != order:
-            reordered = {key: self._reordered(form) for key, form in cache[2]["forms"].items()}
-            cache = (content, order, {"scopes": {}, "forms": reordered})
-        else:
-            return cache[2]
-        object.__setattr__(self, "_symbolic_cache", cache)
-        return cache[2]
-
-    def _build_symbolic_form(self, notation: str, evaluate: bool):
-        """Parse every equation the model states, once. See `_symbolic_form`.
-
-        The two views differ in what they are for, and the evaluation policy follows from that rather than the other way round.
-
-        `"symbol"` feeds codegen, which parses, inlines and prints. It honours the caller's
-        *evaluate* so a backend can keep the term order its author wrote.
-
-        `"function"` is the analysis view — the one `Matrix.jacobian`, `solve` and `dsolve` act on — so it is canonical. It used to suppress evaluation globally, which kept `Derivative(theta(t), t)` from collapsing but also left the right-hand sides in a nested unevaluated form that SymPy's solvers cannot make progress on: asked for the fixed points of `Generic2dOscillator` in that form, `solve` returns nothing in 45 s;
-        canonical and with real symbols it answers in under one. `Derivative` is built explicitly here, so nothing needs the global suppression to survive.
-        """
-        time_dependent = notation == "function"
-        return self._assemble_equations(
-            time_dependent=time_dependent,
-            evaluate=True if time_dependent else evaluate,
-        )
-
-    def _assemble_equations(self, time_dependent: bool, evaluate: bool):
-        """Build the five equation groups against one scope. See `_build_symbolic_form`.
-
-        Every symbol an equation's left-hand side names is resolved through `scope` — the same table the right-hand sides were parsed against. Minting one here instead produces a name that prints identically and compares unequal once the analysis view attaches assumptions, and `subs` across that mismatch replaces nothing rather than raising: a derivative taken w.r.t. a freshly built `t` leaves `doit()` returning 0, and a derived parameter's definition substitutes into none of its own equations.
-        """
-        scope = self.get_symbolic_elements(time_dependent=time_dependent)
-        t = symbol_in(scope, "t")
-        discrete = self.system_type == "discrete"
-
-        def _lhs(name):
-            return symbol_in(scope, name)
-
-        def _states(element):
-            """Whether the element has anything to parse — see `states_an_expression`.
-
-            An element declared with no `rhs` and no conditionals is skipped rather than parsed. Every rendering path now funnels through here, so one such element used to break all of them at once instead of only `get_equations`.
-            """
-            return states_an_expression(getattr(element, "equation", None))
-
-        def _parse(element, namespace=None):
-            return parse_eq(element.equation, local_dict=namespace or scope, evaluate=evaluate)
-
-        def _formal(name):
-            """A function's bound argument — a quantity, never a state, so never `name(t)`."""
-            return Symbol(str(name), **(assumptions_of() if time_dependent else {}))
-
-        def _function_scope(function):
-            """The model's names with this function's formals bound over them."""
-            return {**scope, **{str(a): _formal(a) for a in function.arguments}}
-
-        form = {
-            "derived-parameters": {
-                str(k): Eq(lhs=_lhs(k), rhs=_parse(dp)) for k, dp in self.derived_parameters.items() if _states(dp)
-            },
-            "functions": {
-                str(k): Eq(
-                    lhs=_lhs(k)(*[_formal(a) for a in f.arguments]),
-                    rhs=_parse(f, _function_scope(f)),
-                )
-                for k, f in self.functions.items()
-                if _states(f) and f.arguments
-            },
-            "derived-variables": {
-                str(k): Eq(lhs=_lhs(k), rhs=_parse(dv)) for k, dv in self.derived_variables.items() if _states(dv)
-            },
-            "state-equations": {},
-            "output-transformations": {},
-        }
-
-        for k, sv in self.state_variables.items():
-            if not _states(sv):
-                continue
-            order = int(sv.equation_order or 1)
-            lhs = _lhs(k) if discrete else Derivative(_lhs(k), *([t] * order))
-            form["state-equations"][str(k)] = Eq(lhs=lhs, rhs=_parse(sv))
-
-        # An identity equation for an output that IS a state variable overwrites its real one.
-        for name in self.output:
-            name = str(name)
-            if name in self.derived_variables:
-                if _states(self.derived_variables[name]):
-                    form["output-transformations"][name] = Eq(lhs=_lhs(name), rhs=_parse(self.derived_variables[name]))
-            elif name not in self.state_variables:
-                raise ValueError(f"Output variable '{name}' not found in derived_variables or state_variables")
-
-        return form
-
-    def _items(self):
-        """What the LinkML dumpers see: schema slots only.
-
-        Mirrors the guard on `Network`. `_symbolic_cache` holds SymPy objects that `yaml.SafeDumper` cannot represent, and LinkML slot names are never underscore-prefixed, so excluding every leading-underscore key keeps this correct as further caches are added rather than depending on a maintained denylist.
-        """
-        for k, v in super()._items():
-            if not str(k).startswith("_"):
-                yield k, v
-
-    def symbol_map(self):
-        """Display-symbol overrides for report rendering: ``{identifier Symbol: LaTeX str}``.
-
-        For each element that declares a ``symbol`` (e.g. ``w_+`` for the identifier ``w_plus``, or ``S^{(E)}`` for ``S_e``), map its identifier Symbol to the LaTeX of that override, so ``sympy.latex(expr, symbol_names=model.symbol_map())`` renders the source's own notation. Elements without an override are omitted (they render from their identifier). Fully sympy-native: the override is itself rendered through ``sympy.latex(Symbol(...))``, inheriting Greek/sub/superscript handling.
-
-        Keyed by the canonical collection keys (the identifiers used in the equations), over the same element collections as [`get_symbolic_elements`](#tvbo.classes.dynamics.Dynamics.get_symbolic_elements).
-        """
-        collections = (
-            self.parameters,
-            self.state_variables,
-            self.derived_variables,
-            self.derived_parameters,
-            self.coupling_inputs,
-        )
-        return {
-            Symbol(str(key)): latex(Symbol(str(el.symbol)))
-            for coll in collections
-            for key, el in (coll or {}).items()
-            if getattr(el, "symbol", None)
-        }
 
     def update_metadata(self):
         """Normalize the model's equation metadata in place.
@@ -1794,34 +1433,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         from tvbo.codegen.code import render_equation_cse
 
         return render_equation_cse(format=format, **self._printer_arguments(obj, inline_functions, kwargs), **kwargs)
-
-    def get_equations(self, format="metadata", evaluate=True):
-        """Collect the model's equations as SymPy `Eq` objects.
-
-        Builds equations for derived parameters, functions, derived variables, state equations (as time derivatives, or plain maps for discrete systems), and output transformations.
-
-        Args:
-            format: Shape of the result. `"dict"` groups equations by
-                category; `"state-equations"` returns only state equations
-                keyed by variable name; any other value (e.g. `"metadata"`)
-                returns a single flat mapping of variable name to `Eq`.
-            evaluate: If `True`, let SymPy evaluate/simplify parsed
-                right-hand sides; if `False`, preserve authored term order.
-
-        Returns:
-            A mapping of equations whose structure depends on `format`.
-
-        Raises:
-            ValueError: If an entry in `output` names neither a derived nor a
-                state variable.
-        """
-        form = self._symbolic_form(notation="symbol", evaluate=evaluate)
-
-        if format == "state-equations":
-            return dict(form["state-equations"])
-        if format == "dict":
-            return {group: list(equations.values()) for group, equations in form.items()}
-        return {name: equation for group in form.values() for name, equation in group.items()}
 
     def fill_in_equations(self, **kwargs):
         """Substitute parameter values (and any overrides) into every equation.

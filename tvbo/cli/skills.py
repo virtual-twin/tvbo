@@ -212,7 +212,9 @@ def _find_bad_extras(skills: list[Skill], repo_root: Path) -> list[str]:
     ]
 
 
-def _lint(skills: list[Skill], claude_dir: Path, copilot_dir: Path, cursor_dir: Path, repo_root: Path) -> list[tuple[str, list[str], str]]:
+def _lint(
+    skills: list[Skill], claude_dir: Path, copilot_dir: Path, cursor_dir: Path, repo_root: Path
+) -> list[tuple[str, list[str], str]]:
     """Content problems that re-rendering cannot fix, as (title, items, hint).
 
     Distinct from drift: these live in the canonical sources, or in what surrounds the rendered output, so they are reported for a human to resolve rather than silently repaired.
@@ -284,11 +286,7 @@ def _find_orphans(skills: list[Skill], claude_dir: Path, copilot_dir: Path, curs
         for inst in sorted(copilot_dir.glob("*.instructions.md"))
         if inst.name.removesuffix(".instructions.md") not in copilot_known
     ]
-    stray += [
-        f".cursor/rules/{rule.name}"
-        for rule in sorted(cursor_dir.glob("*.mdc"))
-        if rule.stem not in claude_known
-    ]
+    stray += [f".cursor/rules/{rule.name}" for rule in sorted(cursor_dir.glob("*.mdc")) if rule.stem not in claude_known]
     return stray
 
 

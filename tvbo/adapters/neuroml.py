@@ -3022,7 +3022,7 @@ def build_lems_context(experiment):
     else:
         _lems_subs = {}
 
-    _bodies = function_bodies(dyn, parameters=all_names)
+    _bodies = function_bodies(dyn)
 
     def lems_expr(e):
         """Parse (if needed), inline model functions, then print as LEMS.
@@ -3135,7 +3135,7 @@ def build_lems_context(experiment):
     )
 
     def _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names):
-        ct_bodies = function_bodies(ct_dyn, parameters=ct_all_names)
+        ct_bodies = function_bodies(ct_dyn)
 
         def ct_lems_expr(e):
             """Render *e* as LEMS, passing through text already written in it.

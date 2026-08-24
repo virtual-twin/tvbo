@@ -140,8 +140,7 @@ ARRAY_FUNCTION_MAPPINGS = {
 def inline_functions(expr, func_defs):
     """Replace every call to a model-defined function with that function's body.
 
-    The one inliner in TVBO. Backends with no user-function mechanism (LEMS, PyRates) must expand every call before printing, and the generic printers expand on request;
-    all of them arrive here. Build *func_defs* with [`Dynamics.function_bodies`](../classes/dynamics.qmd#Dynamics.function_bodies), which parses each body once against the model's own scope.
+    The one inliner in TVBO. Backends with no user-function mechanism (LEMS, PyRates) must expand every call before printing, and the generic printers expand on request; all of them arrive here. Build *func_defs* with [`function_bodies`](../parse/expression.qmd#function_bodies), which reads each body from the model's symbolic layer, parsed once against the model's own scope.
 
     A body may itself call a function — the call graph is a DAG, e.g. Zerlaut's ``TF_e`` calls ``sigmaV`` calls ``muV`` — so the bodies are first expanded into *each other*, once, and only then substituted into *expr* in a single pass.
 
