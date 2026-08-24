@@ -130,10 +130,7 @@ def test_coupling_explicit_name_preserved():
 def test_a_coupling_assigned_as_a_mapping_is_still_read():
     """`network.coupling = {...}` and `network.coupling[k] = v` mean the same network.
 
-    Assigning a mapping to a keyed multivalued slot leaves a `JsonObj` on the generated
-    dataclass, and a `JsonObj` has neither `.values()` nor `.items()` — so every reader goes
-    through `network_couplings`, which is what keeps a recipe from meaning one thing when it
-    was built and another when it was assigned.
+    Assigning a mapping to a keyed multivalued slot leaves a `JsonObj` on the generated dataclass, and a `JsonObj` has neither `.values()` nor `.items()` — so every reader goes through `network_couplings`, which is what keeps a recipe from meaning one thing when it was built and another when it was assigned.
     """
     from tvbo.classes.coupling import Coupling
     from tvbo.datamodel import schema

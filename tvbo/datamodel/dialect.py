@@ -289,9 +289,7 @@ def _reject_unknown_output(data: dict) -> None:
     declared = set(data.get("derived_variables") or ()) | set(data.get("state_variables") or ())
     for name in data.get("output") or ():
         if isinstance(name, str) and name not in declared:
-            raise ValueError(
-                f"Output variable '{name}' not found in derived_variables or state_variables"
-            )
+            raise ValueError(f"Output variable '{name}' not found in derived_variables or state_variables")
 
 
 def _fold_dynamics(data: dict) -> None:

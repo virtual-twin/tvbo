@@ -95,7 +95,7 @@ class DynamicsRuntime:
         return inst
 
     @classmethod
-    def from_file(cls, path: str | os.PathLike) -> "Dynamics":
+    def from_file(cls, path: str | os.PathLike) -> Dynamics:
         """Load a model from a YAML/JSON specification file on disk.
 
         Args:
@@ -109,7 +109,7 @@ class DynamicsRuntime:
         return cls(**data)
 
     @classmethod
-    def from_string(cls, str: str) -> "Dynamics":
+    def from_string(cls, str: str) -> Dynamics:
         """Load a model from a YAML specification string.
 
         Args:
@@ -131,7 +131,7 @@ class DynamicsRuntime:
         cls,
         name: str,
         base_url: str = TVBO_PLATFORM_URL,
-    ) -> "Dynamics":
+    ) -> Dynamics:
         """Load a dynamics model from the tvbo platform API.
 
         Fetches the full LinkML-valid YAML definition from the platform and constructs a Dynamics instance.
@@ -143,7 +143,7 @@ class DynamicsRuntime:
         base_url : str
             Platform base URL.
 
-        Returns
+        Returns:
         -------
         Dynamics
             Dynamics instance loaded from the platform.
@@ -166,7 +166,7 @@ class DynamicsRuntime:
         **filters
             Filtering parameters (e.g., system_type="continuous").
 
-        Returns
+        Returns:
         -------
         list[dict]
             List of model summaries.
@@ -179,7 +179,7 @@ class DynamicsRuntime:
         return resp.json()
 
     @classmethod
-    def from_pyrates(cls, path: str, operator_key: str | None = None) -> "Dynamics":
+    def from_pyrates(cls, path: str, operator_key: str | None = None) -> Dynamics:
         """Load a Dynamics model from a PyRates YAML template file.
 
         Parameters
@@ -191,12 +191,12 @@ class DynamicsRuntime:
             If None, loads the first OperatorTemplate found.
             Use SimulationExperiment.from_pyrates() to load all operators.
 
-        Returns
+        Returns:
         -------
         Dynamics
             New Dynamics instance populated from the PyRates template.
 
-        Example
+        Example:
         -------
         >>> model = Dynamics.from_pyrates("jansen_rit.yaml")
         >>> # Load specific operator from multi-operator file
@@ -208,7 +208,7 @@ class DynamicsRuntime:
         return cls(**data)
 
     @classmethod
-    def from_db(cls, name: str) -> "Dynamics":
+    def from_db(cls, name: str) -> Dynamics:
         """Load a Dynamics model by name from the tvbo database."""
         from tvbo.data.registry import resolve
 
@@ -225,7 +225,7 @@ class DynamicsRuntime:
             ``neural_mass``, ``phase_oscillator``, ``phenomenological``,
             ``spiking``, ``generic``, ``field``.
 
-        Examples
+        Examples:
         --------
         >>> Dynamics.list_db()                           # all models
         >>> Dynamics.list_db(model_type='mean_field')    # mean-field only
@@ -249,7 +249,7 @@ class DynamicsRuntime:
         model_type : str, optional
             If given, only show models of that category.
 
-        Examples
+        Examples:
         --------
         >>> Dynamics.db_overview()
         >>> Dynamics.db_overview(model_type='neural_mass')
@@ -292,12 +292,12 @@ class DynamicsRuntime:
             Output format: "tvbo" (default) or "pyrates".
             PyRates format generates a complete experiment YAML (model + network).
 
-        Returns
+        Returns:
         -------
         str
             YAML string or filepath if written to file.
 
-        Example
+        Example:
         -------
         >>> model.to_yaml("model.yaml")  # TVBO format
         >>> model.to_yaml("model.yaml", format="pyrates")  # PyRates experiment format
@@ -955,7 +955,7 @@ class DynamicsRuntime:
         edgecolor="#426665",
         color_nodes_by=None,
         pos="graphviz",
-        edgekwargs={"connectionstyle": "arc3,rad=0", "edge_color": "grey"},
+        edgekwargs=None,
         **kwargs,
     ):
         """Plot the model's equation dependency graph.
@@ -974,7 +974,6 @@ class DynamicsRuntime:
         Returns:
             The created figure when `ax` was not supplied, otherwise `None`.
         """
-
         import sympy
 
         from tvbo.plot import ontology as ontology_plot
@@ -1028,6 +1027,7 @@ class DynamicsRuntime:
             **kwargs,
         )
 
+        edgekwargs = edgekwargs if edgekwargs is not None else {"connectionstyle": "arc3,rad=0", "edge_color": "grey"}
         edges = nx.draw_networkx_edges(G, pos, ax=ax, width=0.5, **edgekwargs)
         for e in edges:
             e.set_zorder(0)
@@ -1116,7 +1116,7 @@ class DynamicsRuntime:
         **kwargs
             Forwarded to the underlying renderer.
 
-        Returns
+        Returns:
         -------
         str
         """
@@ -1172,7 +1172,6 @@ class DynamicsRuntime:
             ValueError: If `format` declares no entry point, so nothing can be
                 re-entered from the rendered source.
         """
-
         if format == "tvb":
             rendered_code = model_helpers.clean_code(self.render_code(format=format, **kwargs))
             namespace = {}
@@ -1193,8 +1192,8 @@ class DynamicsRuntime:
                 import importlib
 
                 _sympy2c = importlib.import_module("sympy2c")
-                Module = getattr(_sympy2c, "Module")
-                OdeFast = getattr(_sympy2c, "OdeFast")
+                Module = _sympy2c.Module
+                OdeFast = _sympy2c.OdeFast
             except Exception as e:
                 raise RuntimeError("sympy2c is not installed. Install it to use format='c' or 'sympy2c'.") from e
 
@@ -1293,7 +1292,7 @@ class DynamicsRuntime:
         # Coupling parameters as exposed Parameters
         cterms = _ontology.get_model_coupling_terms(self.ontology)
         p_coup_defaults = {}
-        for k, cterm in cterms.items():
+        for k in cterms:
             p_coup_defaults[k] = 0.0
             local_ct.add(lems.Parameter(name=k, dimension="none"))
         if "local_coupling" not in cterms.keys():
@@ -1443,7 +1442,7 @@ class DynamicsRuntime:
         has_distributions = any(getattr(sv, "distribution", None) for sv in self.state_variables.values())
         if random or has_distributions:
             init = []
-            for k, sv in self.state_variables.items():
+            for sv in self.state_variables.values():
                 dist = getattr(sv, "distribution", None)
                 if dist:
                     # Use distribution.domain, fall back to sv.domain
@@ -1476,7 +1475,7 @@ class DynamicsRuntime:
         return np.array(init)
 
     def run(
-        self, format="python", verbose=0, save=True, run_kwargs={}, **kwargs
+        self, format="python", verbose=0, save=True, run_kwargs=None, **kwargs
     ) -> data_types.TimeSeries | analysis.BifurcationResult:
         """Generate, execute, and integrate the model, returning its output.
 
@@ -1499,6 +1498,7 @@ class DynamicsRuntime:
         Raises:
             ValueError: If `format` is not supported.
         """
+        run_kwargs = dict(run_kwargs or {})
         if save:
             kwargs.update({"filename": self.get_run_filename(format=format, **kwargs)})
 
@@ -1547,7 +1547,7 @@ class DynamicsRuntime:
                     except Exception as e:
                         import warnings
 
-                        warnings.warn(f"Periodic orbit extraction failed: {e}")
+                        warnings.warn(f"Periodic orbit extraction failed: {e}", stacklevel=2)
                         bif_res.periodic_orbits = []
                 return bif_res
 
@@ -1591,7 +1591,7 @@ class DynamicsRuntime:
                 for i in range(1, steps):
                     # Substitute previous state and parameter numeric values
                     sub = param_subs.copy()
-                    sub.update({sym: val for sym, val in zip(ssyms, data[i - 1, :])})
+                    sub.update({sym: val for sym, val in zip(ssyms, data[i - 1, :], strict=True)})
                     next_vals = [float(expr.subs(sub)) for expr in rhs_exprs]
 
                     data[i, :] = next_vals
@@ -1667,7 +1667,6 @@ class DynamicsRuntime:
                 derived variable; if `False`, store the `Stimulus` object
                 directly.
         """
-
         if not any([sv.stimulation_variable for sv in self.state_variables.values()]) and not any(
             ["stim_t" in sv.equation.rhs for sv in self.state_variables.values()]
         ):
@@ -1903,7 +1902,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
         with open(join(opath, f"{self.name}." + extension), "w") as f:
             f.write(self.generate_report(format=format))
 
-    def copy(self, **overrides) -> "Dynamics":
+    def copy(self, **overrides) -> Dynamics:
         """Return a deep copy of this experiment.
 
         Use keyword overrides to set attributes on the returned copy.
