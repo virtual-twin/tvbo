@@ -712,11 +712,10 @@ that alone NaN'd the entire task column.
 ## Phase 5 — Figures: declare them in the study's `figures:` block
 
 Figures are **metadata**, rendered by codegen — not a hand-written plotting script. Each
-paper figure is a `Figure` in `<Study>.yaml`'s `figures:` list (schema `schema/figure.yaml`;
-design `dev/figure-spec-design.md`). `tvbo figure render <Study>.yaml` — run automatically by
-`tvbo run <Study>.yaml` — emits a self-contained, editable `docs/figures/scripts/plot_<name>.py`
-**and** runs it,
-producing `<name>.png` beside it. Iterate one figure fast with `tvbo figure render` (the
+paper figure is a `Figure` in `<Study>.yaml`'s `figures:` list (schema `schema/figure.yaml`).
+`tvbo figure render <Study>.yaml` — run automatically by `tvbo run <Study>.yaml` — emits a
+self-contained, editable `docs/figures/scripts/plot_<name>.py` **and** runs it, producing
+`<name>.png` beside it. Iterate one figure fast with `tvbo figure render` (the
 results stay put; only the plot re-runs). Copy `assets/figures.snippet.yaml` for the block and
 `assets/figures.py.tmpl` for the panel module.
 

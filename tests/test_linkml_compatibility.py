@@ -1,6 +1,8 @@
 """LinkML compatibility-contract smoke tests.
 
-Per `dev/OntologicalRestructuring/plan.md` §2.8 (Phase 0 governance baseline): these tests guard the 13 generated LinkML classes that are subclassed by runtime knowledge classes. Removing or renaming any of these (or their critical fields) silently breaks YAML loading and the tvbo-platform Pydantic contract.
+These tests are the Phase 0 governance baseline: they guard the 13 generated LinkML classes
+that are subclassed by runtime knowledge classes. Removing or renaming any of these (or their
+critical fields) silently breaks YAML loading and the tvbo-platform Pydantic contract.
 
 Run:
 

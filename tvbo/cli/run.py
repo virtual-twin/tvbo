@@ -1,6 +1,6 @@
 """``tvbo run`` — execute a Study or Experiment.
 
-Implements the cardinal HPC contract from §5.1 of ``dev/tvbo-cli.md``:
+Implements the cardinal HPC contract:
 
 * ``--engine slurm`` re-emits via :mod:`tvbo.cli.workflow` and submits
   through ``sbatch`` rather than running locally.

@@ -9,7 +9,8 @@ The loader normalizes TVBO's human-friendly keyed-dict YAML (where a dict key is
 * genuinely invalid input is rejected (it is a real validator, not a coercer),
 * keyed-dict key-injection and file-envelope stripping behave as designed.
 
-A small number of fringe classes whose generated Pydantic models lag the LinkML schema are tracked as ``xfail`` (see ``todo.md`` in the platform repo).
+A small number of fringe classes whose generated Pydantic models lag the LinkML schema are
+tracked as ``xfail``.
 """
 
 from pathlib import Path
@@ -33,7 +34,7 @@ CORE_TARGETS = {
     "continuations": "Continuation",
 }
 
-# The NeuroML import staging area (database/models/neuroml/) holds raw auto-converted NeuroML files that are not yet mapped onto the tvbo schema (e.g. null coupling_inputs, a NeuroML-only `components` slot). They are not curated building blocks and are not used to assemble experiments, so they are out of scope for strict schema validation. See the platform todo.md.
+# Raw auto-converted NeuroML files are not curated building blocks, so strict validation skips them.
 EXCLUDE_DIRS = ("/neuroml/",)
 
 EXPERIMENTS_DIR = DB / "experiments"

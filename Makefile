@@ -86,8 +86,7 @@ MERGED_OUT = ontology/tvbo.owl
 # Packaged copy of the generated ontology that the runtime actually loads
 # (tvbo/ontology/owl.py). Shipped in the wheel via MANIFEST.in.
 RUNTIME_GEN = tvbo/data/ontology/tvbo.owl
-# Deprecated class-based ontology — preserved as a parity reference, no longer
-# loaded. See dev/runtime_ontology_migration.md.
+# Deprecated class-based ontology — preserved as a parity reference, no longer loaded.
 RUNTIME_ONTO = tvbo/data/ontology/tvb-o.owl
 WIDOCO_OUT = docs/ontology/spec
 ROBOT ?= robot
@@ -130,7 +129,7 @@ gen-neuroml:
 crosswalk:
 	@echo "Refreshing crosswalk + boundary-matrix from schema/api/odoo..."
 	@python scripts/ontology/backfill_crosswalk.py
-	@echo "✓ dev/OntologicalRestructuring/{crosswalk,boundary-matrix}.md updated"
+	@echo "✓ {crosswalk,boundary-matrix}.md updated in $${TVBO_CROSSWALK_DIR:-dev/OntologicalRestructuring}"
 
 gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox gen-neuroml gen-merged
 	@echo "✓ All schemas generated"

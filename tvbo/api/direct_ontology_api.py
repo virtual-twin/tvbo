@@ -15,12 +15,16 @@ from sympy import latex, symbols
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
 
-# The platform serves the generated, individual-based ontology (tvbo/data/ontology/tvbo.owl). It is loaded into a DEDICATED owlready2 World, isolated from owl.py's global class-based `onto` that the tvbo core depends on (see dev/runtime_ontology_migration.md). owl.py's class-based high-level API stays on the deprecated ontology until the Phase B rewrite.
 _GENERATED_ONTO_PATH = os.path.join(ontology.ONTO_DIR, "tvbo.owl")
 
 
 def _load_generated_ontology():
-    """Load the generated ontology into its own World (no reasoning; ROBOT already materialised the ELK inferences at build time)."""
+    """Load the generated, individual-based ontology into a dedicated owlready2 World.
+
+    The World is isolated from ``owl.py``'s global class-based ``onto`` that the tvbo core
+    depends on; that high-level API stays on the deprecated ontology until the Phase B rewrite.
+    No reasoning is run — ROBOT already materialised the ELK inferences at build time.
+    """
     world = owl.World()
     return world.get_ontology("file://" + _GENERATED_ONTO_PATH).load()
 

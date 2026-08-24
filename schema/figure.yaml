@@ -1,7 +1,7 @@
 id: https://w3id.org/tvbo/figure
 name: figure
 title: TVB-O Figure Spec (DRAFT)
-description: "Declarative, backend-independent specification of a publication figure rendered from TVBO result containers. A Figure is a mosaic of Panels; grammar panels (cartesian/heatmap) bind container fields to visual channels via mark + encoding, while custom and image panels are peer escape-hatch kinds. Data binding (Layer.used) is a DataRef — the shared cross-container reference primitive (defined in common, reused here and by Argument.used / Parameter.used) — and doubles as the PROV provenance edge. It reuses shared slots/classes (name, description, label, iri, Provenance, Argument, DataRef); those resolve in the merged schema because this file is generated only as part of tvbo_datamodel.yaml, which imports it (so it does not import tvbo_datamodel back, avoiding a cycle). Design write-up: dev/figure-spec-design.md."
+description: "Declarative, backend-independent specification of a publication figure rendered from TVBO result containers. A Figure is a mosaic of Panels; grammar panels (cartesian/heatmap) bind container fields to visual channels via mark + encoding, while custom and image panels are peer escape-hatch kinds. Data binding (Layer.used) is a DataRef — the shared cross-container reference primitive (defined in common, reused here and by Argument.used / Parameter.used) — and doubles as the PROV provenance edge. It reuses shared slots/classes (name, description, label, iri, Provenance, Argument, DataRef); those resolve in the merged schema because this file is generated only as part of tvbo_datamodel.yaml, which imports it (so it does not import tvbo_datamodel back, avoiding a cycle)."
 
 prefixes:
   linkml: https://w3id.org/linkml/

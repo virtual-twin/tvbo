@@ -3597,7 +3597,7 @@ classes:
                     runs batched-parallel — one gradient refinement per Pareto seed —
                     reusing `parallel_mode`/`n_parallel`. If absent, optimization
                     starts from the initial simulation state. Forward-compatible with
-                    the unified `Search.depends_on` (see dev/unified_search.md).
+                    the unified `Search.depends_on`.
 
     # =============================================================================
     # Parameter Exploration
@@ -3667,7 +3667,7 @@ classes:
                     hyper-parameters (population_size, num_generations, seed,
                     reference_point) live in `parameters`. Extensible later to
                     'random' / 'sobol' / 'cmaes'. Forward-compatible with the
-                    planned unified `Search.strategy` (see dev/unified_search.md).
+                    planned unified `Search.strategy`.
             objectives:
                 multivalued: true
                 range: string
@@ -3834,7 +3834,7 @@ classes:
                     the raw bounds in log10 units — e.g. sigma searched over
                     domain {lo: -2.0, hi: -0.5}). Distinct from a logarithmic grid
                     *spacing*; this is an evaluation-time decode. Forward-compatible
-                    with the harmonised `Axis` (see dev/tvboptim_harmonization.md).
+                    with the harmonised `Axis`.
             explored_values:
                 multivalued: true
                 range: float
