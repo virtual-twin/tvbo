@@ -4,15 +4,13 @@ import numpy as np
 import networkx as nx
 from sympy import Symbol
 
+coupling = context.get('coupling')
 if 'experiment' in context.keys():
     integration = experiment.integration
     model = experiment.dynamics
-    from tvbo.templates.base.utils import experiment_coupling
-    coupling = experiment_coupling(experiment)
 elif 'integration' in context.keys():
     integration = context['integration']
     model = context['model']
-    coupling = context.get('coupling', None)
 else:
     raise ValueError("No integration metadata found")
 

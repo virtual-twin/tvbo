@@ -3215,6 +3215,19 @@ classes:
             software:
                 range: SoftwareRequirement
                 inlined: true
+            traceable:
+                range: boolean
+                description: >-
+                    Whether this callable can be traced by an array-programming backend
+                    (jit/vmap under JAX), asserted by the recipe rather than inferred
+                    from the module name. A backend that batches a parameter grid must
+                    know whether an observation's callable survives tracing; without
+                    this it can only guess from the import root, which makes every
+                    study-local callable untraceable however it is written. Set it true
+                    only for a callable written against the backend's array API -- a
+                    host NumPy/SciPy callable declared traceable fails inside the trace,
+                    with the tracer error naming this claim as its cause. Unset means
+                    "infer", preserving the import-root default.
 
     ClassReference:
         class_uri: tvbo:ClassReference

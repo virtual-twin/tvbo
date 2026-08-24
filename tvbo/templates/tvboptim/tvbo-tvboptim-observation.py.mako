@@ -64,6 +64,9 @@ def parse_reference(val, step_names=None, current_obs_name=None):
     - 'observation' : another observation's output
     - 'network'     : network property (e.g., network.observations.BoldCorrelation)
     - 'source_data' : data from source_observation (used when value matches source_observation name)
+    - 'data_source' : an array the observation declares through `data_source` (e.g. an EEG
+                      gain matrix), bound once at run time so a traced pipeline never opens
+                      a file
     - 'literal'     : direct value
     """
     if not isinstance(val, str):
@@ -80,6 +83,8 @@ def parse_reference(val, step_names=None, current_obs_name=None):
         if prefix == 'network':
             # network.observations.BoldCorrelation → ('network', 'observations.BoldCorrelation')
             return ('network', key)
+        if prefix == 'data_source':
+            return ('data_source', key)
         # Self-referential: bold.hrf_kernel within bold observation
         if current_obs_name and prefix == current_obs_name:
             return ('step', key)
@@ -109,6 +114,8 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
     """Convert reference to Python code expression."""
     if ref_type == 'step':
         return f"_outputs['{ref_val}']"
+    if ref_type == 'data_source':
+        return f"_DATA_SOURCES['{ref_val}']"
     if ref_type == 'input':
         return f"_outputs['{ref_val}']"
     if ref_type == 'source_data':
@@ -1512,6 +1519,9 @@ class ${class_name}(AbstractMonitor):
             elif _edge_label(arg_val):
                 # network.weight(s)/length(s)/edges.<label> → the embedded connectome matrix.
                 call_parts.append(f"{arg_name}={_edge_const(_edge_label(arg_val))}")
+            elif arg_val.startswith('data_source.'):
+                # data_source.<key> → the array bound at run time from the declared `data_source`.
+                call_parts.append(f"{arg_name}=_DATA_SOURCES['{arg_val.split('.', 1)[1]}']")
             elif '.' in arg_val and not arg_val.replace('.', '').replace('-', '').isdigit():
                 # Dotted reference: check for observation.attribute pattern (e.g., simulated_psd.psd)
                 prefix, attr = arg_val.split('.', 1)

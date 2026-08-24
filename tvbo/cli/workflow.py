@@ -133,6 +133,7 @@ def _build_plan(spec: str, *, engine: str, backend: str, experiment: str | None,
 
 
 from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (shared recursive merge)
+from tvbo.utils import keyed_items  # noqa: E402  (every keyed collection is read through it)
 
 
 def _build_plans(spec: str, *, engine: str, backend: str, experiment: str | None, overrides: list[str]):
@@ -254,6 +255,47 @@ def _network_has_matrices(net) -> bool:
         return False
 
 
+def _freeze_referenced_networks(experiment, spec_dir: Path, restore: list[tuple[object, str]]) -> None:
+    """Freeze every Network an observation reaches through ``data_source`` into *spec_dir*.
+
+    A kit is self-contained only if EVERY network the run reads travels with it, not just the experiment's own connectome. An EEG/MEG/iEEG observation names its sensor array — and the gain matrix projecting regions onto it — through ``data_source.path``, which resolves on the author's machine against the curated database or the study's own ``spec/`` and against neither on a compute node. Each such network is resolved (running its ``graph_generator``, so a gain built from inputs the study may not redistribute is baked as numbers rather than as a path into ``sourcedata/``), saved beside the frozen spec, and its ``path`` rewritten to the bundled copy.
+
+    Each ``(data_source, original_path)`` pair is appended to *restore* as it is rewritten — the caller owns that list and undoes it in a ``finally``, so a network that fails to resolve halfway through leaves no half-rewritten spec behind. A path that does not resolve is fatal (:func:`_common.die`), like an unresolvable ``--bundle-dataset``: silently keeping the author's path ships a kit that fails on every node.
+    """
+    from tvbo.classes.network import Network
+    from tvbo.data.registry import database_dir
+
+    source_file = getattr(experiment, "_source_file", None)
+    for _name, obs in keyed_items(getattr(experiment, "observations", None), "observations"):
+        ds = getattr(obs, "data_source", None)
+        original = str(getattr(ds, "path", "") or "") if ds is not None else ""
+        # Only a YAML reference is a Network; a `.mat`/`.npy` data_source is an array the dataset bundling handles, and rewriting its path here would break that.
+        if not original or not original.endswith((".yaml", ".yml")):
+            continue
+        resolved = Path(original)
+        if not resolved.is_absolute():
+            for base in (
+                Path(source_file).parent if source_file else None,
+                Path.cwd() / "spec",
+                database_dir("Network"),
+            ):
+                if base and (Path(base) / original).exists():
+                    resolved = Path(base) / original
+                    break
+        if not resolved.exists():
+            _common.die(
+                f"observation {getattr(obs, 'name', '?')!r} names data_source {original!r}, which "
+                "does not resolve; a kit cannot bake a network it cannot find."
+            )
+        net = Network.from_file(str(resolved))
+        stem = resolved.stem
+        spec_dir.mkdir(parents=True, exist_ok=True)
+        net.save(spec_dir / f"{stem}.yaml", binary_format="h5")
+        _common.info(f"wrote spec/{stem}.yaml + spec/{stem}.h5")
+        restore.append((ds, original))
+        ds.path = f"{stem}.yaml"
+
+
 def _freeze_spec_yaml(
     experiment, spec_dir: Path, *, workflow_spec: dict | None = None, dataset_bids_root: str | None = None
 ) -> str:
@@ -284,7 +326,9 @@ def _freeze_spec_yaml(
         effective = _wf.workflow_config_from_spec(workflow_spec)
         if effective is not None:
             experiment.workflow = effective
+    restore_ds: list[tuple[object, str]] = []
     try:
+        _freeze_referenced_networks(experiment, spec_dir, restore_ds)
         if not has_net:
             return experiment.render(format="yaml")
 
@@ -303,6 +347,8 @@ def _freeze_spec_yaml(
         return experiment.to_yaml()
     finally:
         experiment.network = original_net
+        for _ds, _orig in restore_ds:
+            _ds.path = _orig
         if workflow_spec:
             experiment.workflow = original_wf
         if dataset_bids_root is not None and ds is not None:
@@ -506,6 +552,8 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
         spec_path.write_text(yaml_text, encoding="utf-8")
         spec_relpath = str(spec_path.relative_to(out_dir))
         bundled_code = _bundle_callable_modules(yaml_text, out_dir)
+    except typer.Exit:
+        raise  # a deliberate abort (an unresolvable data_source network) is fatal, not a skipped snapshot
     except Exception as exc:
         _common.info(f"(could not snapshot YAML spec: {exc})")
 

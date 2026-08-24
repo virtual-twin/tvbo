@@ -192,15 +192,18 @@ def _suffix_problems(path: Path) -> list[str]:
 
     A file named ``*_dynamics.yaml`` whose envelope says ``tvbo:Network`` is a rename that went wrong, and nothing else notices: both halves are individually valid.
     """
-    import yaml
-
     from tvbo.adapters.bids import SPEC_SUFFIXES
+    from tvbo.utils import yaml_loader
 
     suffix = path.name.split(".")[0].rsplit("_", 1)[-1]
     expected = SPEC_SUFFIXES.get(suffix)
     if expected is None:
         return [f"suffix {suffix!r} is not in the tvbo suffix vocabulary ({', '.join(sorted(SPEC_SUFFIXES))})"]
-    declared = _declared_class(yaml.safe_load(path.read_text(encoding="utf-8")))
+    # The include-aware loader, because a fragment may itself `!include` a sibling (a network naming its coupling), which a plain safe_load rejects as an unknown tag. A fragment that will not parse at all is one of this command's problems to report, not a traceback out of it.
+    try:
+        declared = _declared_class(yaml_loader.load_as_dict(str(path)))
+    except Exception as exc:
+        return [f"cannot be parsed ({type(exc).__name__}: {exc})"]
     if declared is None:
         return [f"named `_{suffix}` but carries no `tvbo_class` envelope to check it against"]
     if declared != expected:

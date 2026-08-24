@@ -44,26 +44,41 @@ def _render_pdf(exp, **kw) -> str:
 # Code generation (delegates to existing render_code branches via templates)
 
 
+def _codegen_context(exp, **kw) -> dict:
+    """The model and coupling every code template renders, resolved once by the adapter.
+
+    ``BaseAdapter`` reads ``network.coupling`` — where a coupling is declared — and names the default. A template deriving its own is a second answer to a question the adapter already answers, and the two drift.
+    """
+    from tvbo.adapters.base import BaseAdapter
+
+    kw.setdefault("model", exp.dynamics)
+    kw.setdefault("coupling", BaseAdapter(exp).get_default_coupling())
+    return kw
+
+
 def _render_tvb(exp, **kw):
     from tvbo.classes.experiment import templates
 
     template = templates.lookup.get_template("tvbo-tvb-SimulationExperiment.py.mako")
-    return template.render(experiment=exp, **kw)
+    return template.render(experiment=exp, **_codegen_context(exp, **kw))
 
 
 def _render_jax(exp, **kw):
     from tvbo.adapters.observation_sampling import resolve_observation_sampling
     from tvbo.classes.experiment import templates
+    from tvbo.utils import keyed_items
 
     template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
     # The same shared resolver the tvboptim runtime uses, so every Python backend agrees.
-    observations = getattr(exp, "observations", None) or {}
     dt = exp.integration.step_size
     kw.setdefault(
         "obs_sampling",
-        {name: resolve_observation_sampling(obs, dt) for name, obs in observations.items()},
+        {
+            name: resolve_observation_sampling(obs, dt)
+            for name, obs in keyed_items(getattr(exp, "observations", None), "observations")
+        },
     )
-    return template.render(experiment=exp, **kw)
+    return template.render(experiment=exp, **_codegen_context(exp, **kw))
 
 
 def _render_tvboptim(exp, **kw):

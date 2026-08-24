@@ -82,6 +82,14 @@ path, and the callers in `tvbo/`, `tests/` and `docs/` are migrated to it.
   node to link to.
 
 ### Breaking
+- `coupling:` on a simulation experiment is gone as a *declaration*. Declare it
+  under `network:`, where a coupling function has a connectivity to act over.
+  `network.coupling` is keyed by name, so a recipe moves the block one level down
+  and names it: `network: {coupling: {Linear: {...}}}`. An edge still names one by
+  reference. `SimulationExperiment(coupling=...)` raises rather than being ignored.
+  Reading is unaffected: `experiment.coupling` is a read-only property answering the
+  network's first coupling, which is the one a backend expressing a single coupling
+  renders — codegen asks `BaseAdapter` for it instead, so no template derives its own.
 - A key repeated in one YAML mapping is now an error rather than a silent
   last-one-wins override.
 - A serialized entity's `requires` is a list of labels. It used to be a list of

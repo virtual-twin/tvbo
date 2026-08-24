@@ -5,13 +5,8 @@ from tvbo.codegen import render_expression
 # Generic jaxcode - pass parameters on each call
 jaxcode = lambda expr, parameters=None: render_expression(expr, format='jax', parameters=parameters)
 
-if 'coupling' not in context.keys():
-    from tvbo.templates.base.utils import experiment_coupling
-    coupling = experiment_coupling(experiment)
-    model = experiment.dynamics
-else:
-    coupling = context['coupling']
-    model = context.get('model', None)
+coupling = context['coupling']
+model = context.get('model')
 
 _has_coupling = coupling is not None
 

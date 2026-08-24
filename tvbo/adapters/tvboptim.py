@@ -13,7 +13,7 @@ import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.smallscale.lowering import node_dynamics_name
-from tvbo.utils import as_list, noise_sigma, normalize_params
+from tvbo.utils import as_list, keyed_items, noise_sigma, normalize_params
 
 if TYPE_CHECKING:
     from tvbo.classes.network import Network
@@ -201,11 +201,10 @@ def to_tvboptim(
     # Auto-infer delays from coupling metadata if not specified
     if delays is None:
         delays = False
-        if hasattr(network, "coupling") and network.coupling:
-            for coup_obj in network.coupling.values():
-                if getattr(coup_obj, "delayed", False):
-                    delays = True
-                    break
+        for _key, coup_obj in keyed_items(getattr(network, "coupling", None), "coupling"):
+            if getattr(coup_obj, "delayed", False):
+                delays = True
+                break
 
     graph = _build_graph(network, delays=delays, max_delay=max_delay)
 
@@ -221,8 +220,8 @@ def to_tvboptim(
         dyn_obj = None
 
     # CouplingInput.source remaps function keys to CI keys, then name matching, then position.
-    if coupling is None and hasattr(network, "coupling") and network.coupling:
-        coup_dict = {key: coup_obj.execute("tvboptim") for key, coup_obj in network.coupling.items()}
+    if coupling is None and getattr(network, "coupling", None):
+        coup_dict = {key: coup_obj.execute("tvboptim") for key, coup_obj in keyed_items(network.coupling, "coupling")}
         if dynamics is not None and hasattr(dynamics, "COUPLING_INPUTS"):
             ci_keys = set(dynamics.COUPLING_INPUTS.keys())
             func_keys = list(coup_dict.keys())
@@ -263,12 +262,9 @@ def to_tvboptim(
 
     # Linear history interpolation makes d(state)/d(delay) informative, so speed is optimisable.
     if interpolate_delays:
-        if isinstance(coupling, dict):
-            _coups = coupling.values()
-        elif isinstance(coupling, (list, tuple)):
-            _coups = coupling
-        else:
-            _coups = [coupling]
+        # Not `JsonObj`: every LinkML entity subclasses it, so a lone Coupling would read as its own field list.
+        _is_collection = isinstance(coupling, (dict, list, tuple))
+        _coups = [c for _, c in keyed_items(coupling, "coupling")] if _is_collection else [coupling]
         for _c in _coups:
             if hasattr(_c, "history_interpolation"):
                 _c.history_interpolation = "linear"

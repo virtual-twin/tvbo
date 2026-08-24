@@ -22,13 +22,16 @@ Mako templates for generating tvboptim network dynamics code from TVBO models.
 From a TVBO `SimulationExperiment`:
 ```python
 from tvbo import SimulationExperiment
+from tvbo.adapters.base import BaseAdapter
 from tvbo.templates import lookup
 
 experiment = SimulationExperiment.from_file("my_experiment.yaml")
+# The adapter resolves what the templates render — coupling comes from `network.coupling`.
+context = BaseAdapter(experiment).prepare_context()
 
 # Generate full workflow
 template = lookup.get_template("tvboptim/tvbo-tvboptim-sim.py.mako")
-code = template.render(experiment=experiment)
+code = template.render(**context)
 
 # Generate individual components
 dfun_template = lookup.get_template("tvboptim/tvbo-tvboptim-dfun.py.mako")
@@ -40,16 +43,17 @@ expl_code = expl_template.render(experiment=experiment)
 
 # Generate optimization workflow
 optim_template = lookup.get_template("tvboptim/tvbo-tvboptim-optim.py.mako")
-optim_code = optim_template.render(experiment=experiment)
+optim_code = optim_template.render(**context)
 ```
 ## Template Context Variables:
 
-All templates accept:
+The workflow templates (sim, optim) accept:
 - experiment: SimulationExperiment instance
+- coupling: the default Coupling, resolved from `network.coupling` by `BaseAdapter`
 
 Individual component templates also accept:
 - model: Dynamics instance (for dfun)
-- coupling: Coupling instance (for cfun)
+- coupling: a standalone Coupling (for cfun, when no experiment is given)
 - integration: Integration instance (for solver, noise)
 - monitors: List of Monitor instances (for observation)
 - fitting: ModelFitting instance (for target, loss, optim)

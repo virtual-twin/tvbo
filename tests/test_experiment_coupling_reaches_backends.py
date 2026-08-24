@@ -1,6 +1,6 @@
 """A coupling the network declares must reach every backend that renders one.
 
-Coupling belongs to the network, so ``SimulationExperiment`` has no coupling slot, and reading the removed one back returns ``None`` rather than raising. A template that asks for it therefore emits code with no coupling at all, and the TVB export substitutes ``Linear`` for whatever was declared. These tests pin the resolution to the place coupling actually lives.
+Coupling belongs to the network, so ``SimulationExperiment`` has no coupling slot and ``experiment.coupling`` is a read of ``network.coupling`` — the first member, which is what a backend expressing a single coupling renders. The collection arrives as a plain dict when the experiment is constructed and as a ``JsonObj`` once the slot is assigned, so the read goes through ``keyed_items``; reading the assigned shape with ``.values()`` raised, and a backend that lost its coupling emits code with none at all while the TVB export substitutes ``Linear``.
 """
 
 from __future__ import annotations
@@ -8,7 +8,6 @@ from __future__ import annotations
 import pytest
 
 from tvbo import Coupling, Dynamics, Network, SimulationExperiment
-from tvbo.templates.base.utils import experiment_coupling
 
 
 def _experiment(with_coupling: bool) -> SimulationExperiment:
@@ -19,14 +18,22 @@ def _experiment(with_coupling: bool) -> SimulationExperiment:
     return exp
 
 
-def test_the_resolver_reads_the_network():
-    assert experiment_coupling(_experiment(False)) is None
-    assert experiment_coupling(_experiment(True)).name == "Sigmoidal"
+def test_the_property_reads_the_network():
+    assert _experiment(False).coupling is None
+    assert _experiment(True).coupling.name == "Sigmoidal"
+
+
+def test_an_assigned_coupling_collection_is_still_readable():
+    """Assigning the slot rewraps it as a ``JsonObj``, which has no ``.values()``."""
+    exp = _experiment(True)
+    exp.network.coupling = exp.network.coupling
+
+    assert exp.coupling.name == "Sigmoidal"
 
 
 def test_a_bare_experiment_resolves_to_no_coupling():
     """No network at all is the degenerate case, and it must answer rather than raise."""
-    assert experiment_coupling(SimulationExperiment(dynamics=Dynamics.from_db("Generic2dOscillator"))) is None
+    assert SimulationExperiment(dynamics=Dynamics.from_db("Generic2dOscillator")).coupling is None
 
 
 def test_the_tvb_export_names_the_declared_coupling():

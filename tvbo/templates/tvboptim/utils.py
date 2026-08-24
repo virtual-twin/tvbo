@@ -25,7 +25,12 @@ from pathlib import Path
 from typing import Any
 
 from tvbo.templates.base.utils import safe_name as _base_safe_name
-from tvbo.utils import _NETWORK_EDGE_ALIASES, as_list, edge_label  # noqa: F401  re-exported for the mako templates
+from tvbo.utils import (  # noqa: F401  re-exported for the mako templates
+    _NETWORK_EDGE_ALIASES,
+    as_list,
+    edge_label,
+    keyed_items,
+)
 
 # Basic Helpers
 
@@ -36,19 +41,54 @@ _JAX_TRACEABLE_MODULE_ROOTS = ("jax", "jnp", "jaxlib", "tvboptim", "tvbo", "equi
 def pipeline_stage_is_host(stage: Any) -> bool:
     """True when an observation pipeline stage calls code that cannot trace under ``jit``.
 
-    A stage's ``callable`` is emitted as ``<module>.<name>(...)`` inside the observation monitor, so whether the whole observable can be jitted/vmapped is decided by the module it names: a JAX-native one (``jax.scipy.signal.fftconvolve``, ``tvboptim.observations.observation.compute_fc``) traces, a host one (``scipy.signal``, ``numpy``) does not. A stage with no ``callable`` is a rendered equation and always traces.
+    A stage's ``callable`` is emitted as ``<module>.<name>(...)`` inside the observation monitor, so whether the whole observable can be jitted/vmapped is decided by the code it names. ``Callable.traceable`` states that outright and wins when set; otherwise the import root decides, a JAX-native one (``jax.scipy.signal.fftconvolve``, ``tvboptim.observations.observation.compute_fc``) tracing and a host one (``scipy.signal``, ``numpy``) not. Inference by import root cannot see a study-local module written against the backend's array API — ``code/`` is never a library root — so a study that writes its observations in ``jax.numpy`` must say ``traceable: true`` to be believed. A wrong claim is not caught here: a host NumPy/SciPy callable declared traceable fails inside the trace instead. A stage with no ``callable`` is a rendered equation and always traces.
     """
     call = getattr(stage, "callable", None)
+    declared = getattr(call, "traceable", None) if call is not None else None
+    if declared is not None:
+        return not bool(declared)
     module = str(getattr(call, "module", "") or "") if call is not None else ""
     if not module:
         return False
     return module.split(".", 1)[0] not in _JAX_TRACEABLE_MODULE_ROOTS
 
 
+def data_source_arrays(experiment: Any) -> dict:
+    """Every array an observation declares through ``data_source``, keyed by the name a pipeline argument uses to reach it (``data_source.<key>``).
+
+    A ``data_source`` naming a Network YAML is a projection: an EEG/MEG gain, a sensor array, any matrix that links the simulated nodes to something else. Each entry records the path and the edge to read, never the numbers -- the generated module loads them once at run time, so the array is a traced constant inside the observable instead of a file the pipeline opens per cell. Paths stay as declared and are resolved against the spec directory at run time, which is what lets the same module run from the study and from an emitted kit whose ``spec/`` holds the frozen companion.
+
+    Returns ``{key: {"path": str, "edge": str, "observation": str}}``. Keyed by edge label, so two observations projecting through the same gain share one bound array; two naming the same edge of *different* networks are a name collision the pipeline reference ``data_source.<key>`` cannot resolve, and raise here rather than binding whichever came last. The collection is read through :func:`tvbo.utils.keyed_items`, since an assigned ``observations`` slot is a ``JsonObj`` whose plain iteration yields its keys, not its members.
+    """
+    out: dict[str, dict] = {}
+    for name, obs in keyed_items(getattr(experiment, "observations", None), "observations"):
+        ds = getattr(obs, "data_source", None)
+        path = str(getattr(ds, "path", "") or "") if ds is not None else ""
+        if not path or not path.endswith((".yaml", ".yml")):
+            continue
+        edge = str(getattr(ds, "key", "") or "gain")
+        entry = {"path": path, "edge": edge, "observation": str(name or getattr(obs, "name", ""))}
+        prior = out.get(edge)
+        if prior is not None and prior["path"] != path:
+            raise ValueError(
+                f"observations {prior['observation']!r} and {entry['observation']!r} both declare "
+                f"data_source key {edge!r} but name different networks ({prior['path']!r} vs {path!r}); "
+                f"`data_source.{edge}` would be ambiguous — give one of them its own `key`."
+            )
+        out[edge] = entry
+    return out
+
+
 def has_host_pipeline(observations: Any) -> bool:
-    """True when any of *observations* reaches a host callable in its pipeline."""
-    values = observations.values() if hasattr(observations, "values") else observations
-    return any(pipeline_stage_is_host(stage) for obs in values for stage in (getattr(obs, "pipeline", None) or []))
+    """True when any of *observations* reaches a host callable in its pipeline.
+
+    The collection is read through :func:`tvbo.utils.keyed_items`, which knows every shape a keyed slot takes: a ``JsonObj`` (what an assigned slot holds) has no ``.values()`` and iterates its *keys*, so reading it directly answered "no host stage" for a pipeline full of them and the observable was jitted.
+    """
+    return any(
+        pipeline_stage_is_host(stage)
+        for _name, obs in keyed_items(observations, "observations")
+        for stage in (getattr(obs, "pipeline", None) or [])
+    )
 
 
 def active_stimulus_events(experiment: Any) -> list:
@@ -197,7 +237,7 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> tuple[lis
                 requested_aux.append(dv_name)
 
     if experiment is not None and getattr(experiment, "observations", None):
-        for obs in experiment.observations.values():
+        for _, obs in keyed_items(experiment.observations, "observations"):
             # `source` is multivalued (a list) and its entries may be objects with `.name` or plain strings; unwrap each so an auxiliary read by an observation is recorded even when it is record: false (its trajectory is streamed, not a user output) and not listed in model.output. A raw str(src) would stringify the whole list and never match a derived-variable name.
             for src in as_list(getattr(obs, "source", None)):
                 src_name = str(getattr(src, "name", src))

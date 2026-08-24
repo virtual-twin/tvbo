@@ -52,6 +52,7 @@ subagent doing that phase alone.
 | `assets/sweeps.md` | the paper's sweep is a branch / continuation / IC ensemble, not a product grid (Phase 3) |
 | `assets/figures.md` | writing the `figures:` block — layout keys, the size/aspect/type-size protocol, panel binding (Phase 5) |
 | `assets/verification.md` | building the oracle — identity harness, assumption labelling, free conventions, linear inversion (Phase 7) |
+| `assets/replication-pairs.md` | stating the study's published-vs-reproduced numbers, or migrating an existing study onto the contract (Phase 4) |
 | `assets/published-artifacts.md` | **you are about to implement a derived quantity the authors also compute (Phase 4)**, or a number of yours disagrees with a published one and the authors published their own arrays (Phase 7) |
 | `assets/cluster.md` | packing and submitting a cluster kit (Phase 8) |
 | `assets/traps.md` | something returns plausible-but-wrong numbers, costs far more than it should, or a setting you declared did not take — indexed by symptom at the end of this file |
@@ -708,6 +709,30 @@ test, and carry the surviving N into the prose. (`xarray`'s `.mean(dim=)` alread
 float dtypes; the trap is the raw-NumPy path beside it, which is why the two must be checked
 separately.) Pang2023's T32 lost one subject's EMOTION and RELATIONAL contrasts out of 255, and
 that alone NaN'd the entire task column.
+
+### The replication-pairs contract (REQUIRED)
+
+Every study states its findings as **pairs**: a number the paper published beside the number
+this study reproduced. One analysis, one schema, portfolio-wide — so a consumer joins on numbers
+and never parses prose or per-study naming. Two tracked artifacts:
+
+1. **`docs/analysis/published-values.md`** — the one transcription of the numbers the paper
+   printed. Published values are read from here and **never typed in code**.
+2. **A `replication_pairs` analysis** joining that transcription against this study's own
+   containers, built with `tvbo.analysis.replication.pairs_payload`, which validates the
+   vocabularies and computes the deviations so no two studies compute them differently.
+
+Required per row: `quantity`, `published`, `reproduced`, `kind`, `published_provenance`,
+`join_sound`. `kind` is what **our** side is; `published_provenance` is where the **paper's**
+side came from and bounds how far a deviation may be read; `join_sound` is false where the two
+sides are not established to denote the same object. `deviation` is **relative** and
+portfolio-wide — never emit a field of that name meaning an absolute difference.
+
+`tvbo.analysis.replication.conforms(container)` reports what a written container lacks, so a
+study is onboarded by satisfying the contract and no consumer needs a per-study adapter.
+
+**Schema, migration recipes by container shape, traps and the per-study runbook:
+`assets/replication-pairs.md`.**
 
 ## Phase 5 — Figures: declare them in the study's `figures:` block
 

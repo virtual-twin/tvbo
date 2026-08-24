@@ -682,13 +682,19 @@ def _container_path(iri, base_dir: Path) -> str:
     """
     if not iri:
         return ""
+    from tvbo.adapters.bids import entity_value
     from tvbo.data.dataref import experiment_id as _experiment_id
     from tvbo.utils.study_layout import study_path
 
     key = re.split(r"[:/#]", str(iri))[-1]  # last IRI segment (e.g. "exp-3" or "fig3")
     # Only an experiment reference (exp-N / expN / bare N) yields an exp-<id> stem. A digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
     eid = _experiment_id(iri)
-    stems = [f"exp-{eid}"] if eid else [f"ana-{key}", key]
+    if eid:
+        stems = [f"exp-{eid}"]
+    else:
+        # The writer's own stem comes first, built by the same `entity_value` the analysis container name is: an analysis named `abeta_transfer` is WRITTEN as `ana-abetatransfer_result.h5`, so a literal `ana-<name>` glob would never find it. The literal forms stay behind it for an IRI that is already a stem, and a key with no alphanumeric character names no container rather than raising.
+        written = entity_value(key)
+        stems = ([f"ana-{written}"] if written else []) + [f"ana-{key}", key]
     results = study_path("results", root=base_dir)
     for stem in stems:
         files = [f for f in sorted(results.glob(f"{stem}_*result.h5")) if "network" not in f.name]

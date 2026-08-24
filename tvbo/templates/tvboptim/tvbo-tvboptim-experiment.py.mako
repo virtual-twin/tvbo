@@ -17,7 +17,7 @@ from tvbo.templates.tvboptim.utils import (
     get_all_observations_from_algo, network_axis_leaf, network_leaf_is_matrix,
     initial_conditions_axis_sv, noise_axis_param,
     graph_selection, observation_dims, parameter_keypath,
-    has_host_pipeline, pipeline_stage_is_host,
+    has_host_pipeline, pipeline_stage_is_host, data_source_arrays,
 )
 import numpy as np
 import re
@@ -1742,6 +1742,61 @@ _DATASET_RECON_IDX = {
 def _gather2d(matrix, idx):
     """Select the shared nodes on both axes of a (node, node) matrix by index."""
     return matrix[jnp.ix_(idx, idx)]
+% endif
+<% _ds_arrays = data_source_arrays(experiment) %>
+% if _ds_arrays:
+# What each `data_source.<key>` pipeline argument points at; `_bind_data_sources` turns it into numbers.
+_DATA_SOURCE_SPECS = {
+% for _k, _spec in _ds_arrays.items():
+    ${repr(_k)}: {'path': ${repr(_spec["path"])}, 'edge': ${repr(_spec["edge"])}},
+% endfor
+}
+_DATA_SOURCES = {}
+
+
+def _bind_data_sources(spec_dir=None):
+    """Load every declared `data_source` array into `_DATA_SOURCES`.
+
+    Bound once, so each array is a traced constant inside the observable and no pipeline step
+    opens a file per grid cell. `spec_dir` overrides where the companion networks are looked
+    for; by default the `spec/` directory beside this module is used, which is where an emitted
+    kit puts them.
+
+    A kit puts the companions in `spec/` beside the script, while a study run execs this module
+    with no `__file__` at all and the spec sits under the working directory, so every base is
+    tried rather than making the caller know which shape it is in. The declared path is tried
+    first, then its bare file name: a spec frozen into a kit carries the bundled name while the
+    module beside it may still carry the path the recipe declared.
+    """
+    import pathlib
+
+    from tvbo.classes.network import Network
+
+    _f = globals().get('__file__')
+    _here = pathlib.Path(_f).resolve().parent if _f else pathlib.Path.cwd()
+    bases = [pathlib.Path(spec_dir)] if spec_dir else [
+        _here / 'spec', pathlib.Path.cwd() / 'spec', _here.parent / 'spec', pathlib.Path.cwd(),
+    ]
+    for _key, _spec in _DATA_SOURCE_SPECS.items():
+        _declared = pathlib.Path(_spec['path'])
+        _candidates = [_declared] if _declared.is_absolute() else [
+            b / rel for rel in (_declared, pathlib.Path(_declared.name)) for b in bases
+        ]
+        _path = next((c for c in _candidates if c.exists()), _candidates[0])
+        if not _path.exists():
+            raise FileNotFoundError(
+                f"data_source {_spec['path']!r} for '{_key}' was not found "
+                f"(looked in {', '.join(str(b) for b in bases)}); re-emit the kit so the "
+                "network travels with it, or pass spec_dir."
+            )
+        _matrix = Network.from_file(str(_path)).matrix(_spec['edge'])
+        if _matrix is None:
+            raise KeyError(f"{_spec['path']!r} carries no {_spec['edge']!r} edge.")
+        _DATA_SOURCES[_key] = jnp.asarray(_matrix)
+
+
+_bind_data_sources()
+
 % endif
 # Every IC site builds the same way — sampled defaults, declared per-node overrides, then an optional supplied operating point — applied by name through _STATE_INDEX.
 _STATE_INDEX = {${', '.join("'%s': %d" % (n, i) for i, n in enumerate(state_names))}}

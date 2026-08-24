@@ -30,7 +30,7 @@ _cfg_jax()
 
 from tvbo.data.registry import database_dir
 from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.utils import edge_param, transform_target
+from tvbo.utils import edge_param, keyed_items, transform_target
 from tvbo.utils.yaml_loader import resolve_edge_var_aliases
 
 # HDF5+YAML network files — resolved via registry (works for pip & editable installs)
@@ -867,6 +867,10 @@ class Network(tvbo_datamodel.Network):
                 v = getattr(result, cache, None)
                 if v is not None:
                     setattr(self, cache, v)
+            # Named edge matrices live in `_arrays`, not in the caches above, so a builder that returns a non-square projection (a gain matrix set with `set_matrix`) would hand back a network whose edge is declared and whose data is gone.
+            produced = result._get_arrays()
+            if produced:
+                self._get_arrays().update(produced)
         else:
             # Two shapes accepted: dict with `weights` (and optional `lengths`, `node_parameters`, `node_labels`), or tuple `(weights, lengths[, node_params])`.
             node_labels = None
@@ -2616,9 +2620,8 @@ class Network(tvbo_datamodel.Network):
         from tvbo import datamodel as dm
 
         ref = dm.Network(data_file=data_file)
-        if getattr(self, "coupling", None):
-            for key, value in dict(self.coupling).items():
-                ref.coupling[key] = value
+        for key, value in keyed_items(getattr(self, "coupling", None), "coupling"):
+            ref.coupling[key] = value
         if getattr(self, "transforms", None):
             ref.transforms = list(self.transforms)
         if getattr(self, "parameters", None):

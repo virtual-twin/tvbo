@@ -44,7 +44,7 @@ from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.log import ensure_configured
 from tvbo.parse.symbols import assumptions_of, symbol_in
 from tvbo.run.graph import GraphRunner as _Network
-from tvbo.utils import Bunch, as_list, initial_value, traverse_metadata
+from tvbo.utils import Bunch, as_list, initial_value, keyed_items, normalize_params, traverse_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -128,8 +128,6 @@ def _fill_network_couplings(network):
 
     An entry is keyed by its role in the network ('excitatory', 'delayed'), so the function it instantiates is what its ``iri`` states — written ``iri:`` or under the older spelling ``type:``, which the schema declares as an alias of it. One that already carries its expressions names nothing to fill.
     """
-    from tvbo.utils import keyed_items
-
     for _key, coup in keyed_items(getattr(network, "coupling", None), "coupling"):
         if not getattr(coup, "pre_expression", None):
             coup.enrich()
@@ -156,7 +154,7 @@ def _resolve_coupling(experiment):
     if dyn:
         cvars = [str(sv.name) for sv in dyn.state_variables.values() if getattr(sv, "coupling_variable", False)]
         if cvars:
-            for coup in (getattr(network, "coupling", None) or {}).values():
+            for _key, coup in keyed_items(getattr(network, "coupling", None), "coupling"):
                 if not getattr(coup, "incoming_states", None) and not getattr(coup, "local_states", None):
                     coup.incoming_states = list(cvars)
 
@@ -185,7 +183,6 @@ def _reject_unnamed(kind: str, entries) -> None:
     Every shape the schema allows is read, and a shape it does not allow raises rather than passing — see :func:`tvbo.utils.keyed_items`.
     """
     from tvbo.templates.base.utils import is_name
-    from tvbo.utils import keyed_items
 
     lines = []
     for key, entry in keyed_items(entries, kind):
@@ -490,16 +487,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         loaded = _Network.from_file(sidecar)
 
-        inline_coupling = dict(self.network.coupling) if self.network.coupling else {}
+        inline_coupling = dict(keyed_items(self.network.coupling, "coupling"))
         inline_transforms = list(self.network.transforms) if self.network.transforms else []
 
         self.network = loaded
         self.network.__class__ = Network
 
         if inline_coupling:
-            # Clear loaded network's coupling, then insert inline entries using indexing on the existing LinkML container.
-            if hasattr(self.network.coupling, "clear"):
-                self.network.coupling.clear()
+            # Replace the loaded network's coupling wholesale: an inline block is the recipe's own answer, not an addition to the companion's.
+            for k, _v in keyed_items(self.network.coupling, "coupling"):
+                del self.network.coupling[k]
             for k, v in inline_coupling.items():
                 self.network.coupling[k] = v
 
@@ -580,12 +577,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         stim = getattr(obj, "stimulation", None)
         if isinstance(stim, dict):
             obj.__dict__["stimulation"] = tvbo_datamodel.Stimulus(**stim)
-
-        coup = getattr(obj, "coupling", None)
-        if coup is not None and not getattr(coup, "pre_expression", None):
-            coup.enrich()
-        if not getattr(obj, "coupling", None):
-            obj.__dict__["coupling"] = Coupling(name="Linear")
 
         # -- Upgrade Network via __class__ reassignment --
         net = getattr(obj, "network", None)
@@ -857,7 +848,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         LEMS, RateML and the pure-Python network each render one. A network declaring several is written for a backend that routes per coupling, and reading it through here silently answers with one of them; those backends read ``network.coupling`` directly and should be the ones to say a network they cannot express is one they cannot express.
         """
         couplings = getattr(self.network, "coupling", None) if self.network else None
-        return next(iter((couplings or {}).values()), None)
+        return next((member for _, member in keyed_items(couplings, "coupling")), None)
 
     def symbolic(self, integrate=False, indexed=False, delays=False):
         """Symbolic representation of the full experiment equations.
@@ -914,7 +905,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Collect coupling input → Coupling object mapping
         coupling_map = {}
-        net_coup = getattr(self.network, "coupling", {}) or {}
+        net_coup = dict(keyed_items(getattr(self.network, "coupling", None), "coupling"))
         dyn_ci = getattr(self.dynamics, "coupling_inputs", {}) or {}
 
         # A network's one coupling serves every input; several must be named to be used.
@@ -1192,7 +1183,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if getattr(self, "integration", None) is not None:
                     self.integration.delayed = False
                 # A network with no delays has none for any of its couplings.
-                for coup in (getattr(self.network, "coupling", None) or {}).values():
+                for _key, coup in keyed_items(getattr(self.network, "coupling", None), "coupling"):
                     coup.delayed = False
         except Exception as e:
             # Best-effort; keep defaults if anything goes wrong
@@ -1271,8 +1262,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Every coupling the network declares, not just the first: each states its own shapes.
         declared = {
             name: param
-            for coup in (getattr(self.network, "coupling", None) or {}).values()
-            for name, param in (getattr(coup, "parameters", None) or {}).items()
+            for _key, coup in keyed_items(getattr(self.network, "coupling", None), "coupling")
+            for name, param in normalize_params(getattr(coup, "parameters", None)).items()
         }
         for param_name, param_obj in declared.items():
             if param_name not in coupling_params:
@@ -1819,7 +1810,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # One delayed coupling is enough to need the matrix, however many there are.
             any_delayed = any(
-                getattr(coup, "delayed", False) for coup in (getattr(self.network, "coupling", None) or {}).values()
+                getattr(coup, "delayed", False)
+                for _key, coup in keyed_items(getattr(self.network, "coupling", None), "coupling")
             )
             delay_matrix = self.network.calculate_delays() if any_delayed else None
 
@@ -2395,7 +2387,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ``{'fc_target': 'BoldCorrelation'}``; empty when no observation is network-sourced.
         """
         out: dict = {}
-        for name, obs in (self.observations or {}).items():
+        for name, obs in keyed_items(self.observations, "observations"):
             src = getattr(obs, "source", None)
             if isinstance(src, (list, tuple)):
                 src = src[0] if src else None
@@ -2496,7 +2488,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         empty when no observation is dataset-sourced.
         """
         out: dict = {}
-        for name, obs in (self.observations or {}).items():
+        for name, obs in keyed_items(self.observations, "observations"):
             src = getattr(obs, "source", None)
             if isinstance(src, (list, tuple)):
                 src = src[0] if src else None

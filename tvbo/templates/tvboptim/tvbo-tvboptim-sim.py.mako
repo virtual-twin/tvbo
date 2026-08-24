@@ -18,10 +18,10 @@ import numpy as np
 
 # Must have experiment
 assert 'experiment' in context.keys(), "experiment required for simulation template"
+assert 'coupling' in context.keys(), "coupling required — render with BaseAdapter(experiment).prepare_context()"
 
 model = experiment.dynamics
-from tvbo.templates.base.utils import experiment_coupling
-coupling = experiment_coupling(experiment)
+coupling = context['coupling']
 integration = experiment.integration
 network = experiment.network
 

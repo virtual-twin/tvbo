@@ -9,10 +9,7 @@
     pycode = lambda expr, parameters=None: render_expression(expr, format='numpy', parameters=parameters)
 %>
 <%
-if 'experiment' in context.keys():
-    coupling = context['experiment'].coupling
-else:
-    coupling = context['coupling']
+coupling = context['coupling']
 
 _has_coupling = coupling is not None
 

@@ -81,8 +81,11 @@ from tvbo import SimulationExperiment
 
 exp = SimulationExperiment(
     dynamics={"name": "ReducedWongWangExcInh", "iri": "tvbo:ReducedWongWangExcInh"},
-    coupling={"name": "Linear", "iri": "tvbo:Linear"},
-    network={"iri": "network:example_3node_network"},  # or any list_entries("Network") name
+    # Coupling is declared on the network, keyed by name — it acts over a connectivity.
+    network={
+        "iri": "network:example_3node_network",  # or any list_entries("Network") name
+        "coupling": {"Linear": {"name": "Linear", "iri": "tvbo:Linear"}},
+    },
     integration={"method": "Heun", "duration": 500, "noise": None},
 )
 result = exp.run("jax")  # ExperimentResult

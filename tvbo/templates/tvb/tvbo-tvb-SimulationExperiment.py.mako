@@ -15,10 +15,9 @@ _TVBO_MODEL_CLS = ${context['experiment'].dynamics.name}
 <%
 experiment = context['experiment']
 
-from tvbo.templates.base.utils import experiment_coupling as _experiment_coupling
 from tvbo.utils import initial_value as _initial_value
 
-_tvb_coupling = _experiment_coupling(experiment)
+_tvb_coupling = context['coupling']
 
 _n_reg = getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions
 initial_conditions = np.array([

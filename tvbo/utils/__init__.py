@@ -177,17 +177,24 @@ def as_list(obj) -> list:
 
     TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by each member's identifier, but may also appear as plain lists. Returns the member values in either case (``None`` -> ``[]``).
 
-    A scalar becomes a one-element list. Strings especially: they are iterable, so ``list("/data")`` would silently yield one entry *per character* — which is how a single ``--set container_binds=/data/cephfs-1`` turned into a bind of ``/,d,a,t,a,…``. No caller ever wants a string split into characters.
+    A scalar becomes a one-element list. Strings especially: they are iterable, so ``list("/data")`` would silently yield one entry *per character* — which is how a single ``--set container_binds=/data/cephfs-1`` turned into a bind of ``/,d,a,t,a,…``. No caller ever wants a string split into characters. A bare ``JsonObj`` — the shape an assigned collection slot takes — is iterable over its *keys* for the same reason, and is read through :mod:`jsonasobj2` instead; the test is on the exact type, since every LinkML entity subclasses ``JsonObj`` and a lone one is a scalar here.
     """
+    from jsonasobj2 import JsonObj
+    from jsonasobj2 import values as _json_values
+
     if obj is None:
         return []
     if isinstance(obj, (str, bytes)):
         return [obj]
+    if type(obj) is JsonObj:
+        return list(_json_values(obj))
     if hasattr(obj, "values"):
         return list(obj.values())
+    if isinstance(obj, JsonObj):  # a LinkML entity: one member, not its field list
+        return [obj]
     try:
         return list(obj)
-    except TypeError:  # a genuine scalar (int, float, LinkML leaf, …)
+    except TypeError:  # a genuine scalar (int, float, …)
         return [obj]
 
 
@@ -195,13 +202,15 @@ def keyed_items(collection, kind: str = "collection") -> list:
     """A keyed collection's ``(key, member)`` pairs, whichever shape holds it.
 
     The generated dataclasses wrap a keyed collection in a ``JsonObj`` when it is assigned, and a ``JsonObj`` has no ``.items``; the Pydantic models keep a plain dict. The schema also allows the list spelling, whose members carry their own ``name``. Anything else raises: a reader that answers "nothing here" for a shape it did not recognise reports an empty collection as an empty *result*, which is how an unchecked ``from_datamodel`` load went unchecked.
+
+    The ``JsonObj`` test is on the exact type, because every LinkML entity subclasses it: a lone ``Coupling`` read as a collection would answer with its own 22 field names, which is a shape mismatch reported as data rather than as an error.
     """
     from jsonasobj2 import JsonObj
     from jsonasobj2 import items as _json_items
 
     if collection is None:
         return []
-    if isinstance(collection, JsonObj):
+    if type(collection) is JsonObj:
         return list(_json_items(collection))
     if hasattr(collection, "items"):
         return list(collection.items())
@@ -214,7 +223,12 @@ def normalize_params(params) -> dict:
     """Normalize a ``parameters`` collection to a flat ``{name: param}`` dict.
 
     Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node and dynamics parameter collections alike.
+
+    A bare ``JsonObj`` — what an assigned collection slot holds — has no ``.items``, and iterating it yields its *keys*; it is read through :mod:`jsonasobj2` instead. The test is on the exact type, because every LinkML entity subclasses ``JsonObj`` and a single ``Parameter`` read that way would answer with its own field names.
     """
+    from jsonasobj2 import JsonObj
+    from jsonasobj2 import items as _json_items
+
     if not params:
         return {}
     if isinstance(params, (list, tuple)):
@@ -225,6 +239,8 @@ def normalize_params(params) -> dict:
             elif getattr(item, "name", None) is not None:
                 out[str(item.name)] = item
         return out
+    if type(params) is JsonObj:
+        return {str(k): v for k, v in _json_items(params)}
     try:
         return {str(k): v for k, v in params.items()}
     except AttributeError:
