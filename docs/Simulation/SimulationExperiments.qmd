@@ -71,10 +71,10 @@ in an experiment is either:
 from tvbo import SimulationExperiment
 exp = SimulationExperiment(
     dynamics={"name": "ReducedWongWang", "iri": "tvbo:ReducedWongWangExcInh"},
-    coupling={"name": "Linear", "iri": "tvbo:Linear"},
     network={
         "parcellation": {"iri": "tvbo:DesikanKilliany"},
         "tractogram": {"iri": "tvbo:dTOR"},
+        "coupling": {"Linear": {"iri": "tvbo:Linear"}},
     },
     integration={"method": "Heun", "duration": 10_000, "noise": None},
 )

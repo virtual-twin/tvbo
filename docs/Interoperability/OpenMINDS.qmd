@@ -120,6 +120,9 @@ network:
       target: 0
       parameters:
         weight: {value: 0.2}
+  coupling:
+    Linear:
+      label: Linear Diffusive Coupling
 
 # Integration settings
 integration:
@@ -127,11 +130,6 @@ integration:
   step_size: 0.1
   duration: 100.0
   time_scale: s
-
-# Coupling function
-coupling:
-  name: Linear
-  label: Linear Diffusive Coupling
 """
 
 # Step 1: Create experiment from YAML string
