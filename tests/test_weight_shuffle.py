@@ -1,6 +1,10 @@
 """``WeightShuffle`` — the documented Callable exception to the pure-YAML rule.
 
-A masked extract, a permutation and a scatter are not expressible in the backend-independent primitive set: ``M[M != 0]`` cannot survive expression parsing at all, because the comparison evaluates to a plain Python ``True`` before a tree is built. Rather than invent a contorted primitive that only this generator would use, the algorithm stays as Python — which ``dev/GenericProcedureEngine.md`` §5 explicitly preserves for exactly this case.
+A masked extract, a permutation and a scatter are not expressible in the backend-independent
+primitive set: ``M[M != 0]`` cannot survive expression parsing at all, because the comparison
+evaluates to a plain Python ``True`` before a tree is built. Rather than invent a contorted
+primitive that only this generator would use, the algorithm stays as Python — the documented
+exception to the typed-DAG rule, kept for exactly this case.
 
 These pin the null model's actual guarantees (pattern preserved, weight multiset preserved, topology rerandomised) and the semantics inherited from the procedure it replaces, so the swap is behaviour-preserving rather than merely plausible.
 """

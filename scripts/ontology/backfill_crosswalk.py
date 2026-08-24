@@ -1,45 +1,61 @@
 #!/usr/bin/env python3
 """Backfill `crosswalk.md` and `boundary-matrix.md` from authoritative sources.
 
-Closes plan.md row 15 (`dev_ontology-l0-crosswalk-backfill`, §2.8). Both tables must list one row per LinkML class so contributors can trace a concept across the five surfaces (YAML / LinkML / OWL / API / Odoo). Until now the structural section of each table was a placeholder full of `TODO`s; this script regenerates the structural rows from the same inputs that the runtime already trusts.
+Both tables must list one row per LinkML class so contributors can trace a concept across the
+five surfaces (YAML / LinkML / OWL / API / Odoo). This script regenerates the structural rows
+from the same inputs that the runtime already trusts.
 
 Inputs
 ------
-- LinkML schemas in `schema/*.yaml` and `schema/openMINDS_tvbo/*.yaml` give the
-  authoritative class list (the same files `gen-linkml`, `gen-owl`, `gen-shacl`, and `tests/test_database_validation.py` consume).
-- FastAPI routers under `tvbo/api/` are scanned for `@router`/`@app` decorators
-  to discover which classes are exposed over HTTP. The script captures the router prefix from the `APIRouter(prefix=...)` constructor or the Makefile- installed `app.include_router(..., prefix=...)` call so the resulting paths match the running service.
-- The Odoo model registry lives in
-  `tvbo-platform/odoo-addons/tvbo/models/schema_models.py`, which is generated upstream by `tvbo-platform/scripts/generate_odoo_models.py`. We read its `_name = 'tvbo.<snake_case>'` declarations directly so the crosswalk tracks whatever the Odoo generator emits without a parallel mapping table.
-- The frozen Appendix A core (Dynamics, Coupling, Integrator, Noise, Function,
-  LossFunction, Stimulus, Continuation, SimulationExperiment, SimulationStudy,
-  Network, BrainAtlas) is preserved verbatim above the structural section in both files; this script touches only the structural section delimited by the `<!-- BEGIN auto-generated -->` / `<!-- END auto-generated -->` markers.
+- LinkML schemas in `schema/*.yaml` and `schema/openMINDS_tvbo/*.yaml` give the authoritative
+  class list (the same files `gen-linkml`, `gen-owl`, `gen-shacl` and
+  `tests/test_database_validation.py` consume).
+- FastAPI routers under `tvbo/api/` are scanned for `@router`/`@app` decorators to discover
+  which classes are exposed over HTTP. The script captures the router prefix from the
+  `APIRouter(prefix=...)` constructor or the installed `app.include_router(..., prefix=...)`
+  call so the resulting paths match the running service.
+- The Odoo model registry lives in `tvbo-platform/odoo-addons/tvbo/models/schema_models.py`,
+  generated upstream by `tvbo-platform/scripts/generate_odoo_models.py`. We read its
+  `_name = 'tvbo.<snake_case>'` declarations directly so the crosswalk tracks whatever the Odoo
+  generator emits without a parallel mapping table.
+- The frozen Appendix A core (Dynamics, Coupling, Integrator, Noise, Function, LossFunction,
+  Stimulus, Continuation, SimulationExperiment, SimulationStudy, Network, BrainAtlas) is
+  preserved verbatim above the structural section in both files; this script touches only the
+  section delimited by the `<!-- BEGIN auto-generated -->` / `<!-- END auto-generated -->`
+  markers.
 
 Outputs
 -------
-- `dev/OntologicalRestructuring/crosswalk.md` (structural section).
-- `dev/OntologicalRestructuring/boundary-matrix.md` (structural section).
+- `crosswalk.md` (structural section).
+- `boundary-matrix.md` (structural section).
+
+Both documents live outside the repo. Point `TVBO_CROSSWALK_DIR` at the directory that holds
+them; without it the script falls back to `dev/OntologicalRestructuring/` inside the repo.
 
 Boundary-matrix classification rules (mirroring the file's own §"Decision rules")
 - `LinkML+OWL` is the default surface for every schema class.
-- `Required for run` is `yes` if removing the class from the schema would break
-  parsing or rendering of an existing `tvbo/database/` record (i.e. it appears as a top-level YAML key, or as the range of a required slot on Dynamics /
-  SimulationExperiment / SimulationStudy / Network / BrainAtlas), `conditional` if it is required only for a particular workflow (optimisation, continuation,
-  PDE, stimulation), and `no` for purely structural data containers.
-- External mappings are seeded from `class_uri:` declarations in the schema
-  where the LinkML author already chose a CURIE; otherwise `TODO`.
+- `Required for run` is `yes` if removing the class from the schema would break parsing or
+  rendering of an existing `tvbo/database/` record (i.e. it appears as a top-level YAML key, or
+  as the range of a required slot on Dynamics / SimulationExperiment / SimulationStudy /
+  Network / BrainAtlas), `conditional` if it is required only for a particular workflow
+  (optimisation, continuation, PDE, stimulation), and `no` for purely structural data
+  containers.
+- External mappings are seeded from `class_uri:` declarations in the schema where the LinkML
+  author already chose a CURIE; otherwise `TODO`.
 
 Usage
 -----
     python scripts/ontology/backfill_crosswalk.py             # write both files
     python scripts/ontology/backfill_crosswalk.py --check     # diff only
 
-The Makefile target `make crosswalk` invokes the writing form; CI may invoke the `--check` form once it is wired in (tracked in plan.md §2.8).
+The Makefile target `make crosswalk` invokes the writing form; CI may invoke the `--check` form
+once it is wired in.
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
 import re
 import sys
@@ -51,8 +67,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 SCHEMA_DIR = ROOT / "schema"
 API_DIR = ROOT / "tvbo" / "api"
 PLATFORM_ODOO = pathlib.Path("/Users/leonmartin_bih/projects/TVB-O/tvbo-platform/odoo-addons/tvbo/models/schema_models.py")
-CROSSWALK = ROOT / "dev" / "OntologicalRestructuring" / "crosswalk.md"
-BOUNDARY = ROOT / "dev" / "OntologicalRestructuring" / "boundary-matrix.md"
+DOCS_DIR = pathlib.Path(os.environ.get("TVBO_CROSSWALK_DIR") or ROOT / "dev" / "OntologicalRestructuring")
+CROSSWALK = DOCS_DIR / "crosswalk.md"
+BOUNDARY = DOCS_DIR / "boundary-matrix.md"
 
 BEGIN = "<!-- BEGIN auto-generated -->"
 END = "<!-- END auto-generated -->"
@@ -274,18 +291,31 @@ def splice(text: str, body: str) -> str:
     return text.rstrip() + "\n\n" + BEGIN + "\n" + body + "\n" + END + "\n"
 
 
+def display(path: pathlib.Path) -> pathlib.Path:
+    """Path relative to the repo root, or absolute when it lies outside the repo."""
+    try:
+        return path.relative_to(ROOT)
+    except ValueError:
+        return path
+
+
 def write_section(path: pathlib.Path, rows: Iterable[str], check_only: bool) -> bool:
     body = "\n".join(rows)
+    if not path.exists():
+        raise SystemExit(
+            f"{path} not found. Set TVBO_CROSSWALK_DIR to the folder holding crosswalk.md "
+            "and boundary-matrix.md."
+        )
     current = path.read_text()
     new = splice(current, body)
     if new == current:
-        print(f"  = {path.relative_to(ROOT)} unchanged")
+        print(f"  = {display(path)} unchanged")
         return False
     if check_only:
-        print(f"  ! {path.relative_to(ROOT)} would change")
+        print(f"  ! {display(path)} would change")
         return True
     path.write_text(new)
-    print(f"  ✓ {path.relative_to(ROOT)} updated")
+    print(f"  ✓ {display(path)} updated")
     return True
 
 

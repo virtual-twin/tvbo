@@ -127,7 +127,7 @@ ARRAY_FUNCTIONS = {
         "minmax_rescale"
     ),  # minmax_rescale(x, lo, hi) → x affinely rescaled from its own min/max onto [lo, hi]
     "eigvals": Function("eigvals"),  # eigvals(M) → eigenvalues of M (e.g. spectral-radius rescaling)
-    # One head per distribution, mirroring the backend sampler table in dev/GenericProcedureEngine.md §2.3.
+    # One head per distribution; each backend's printer supplies the matching sampler.
     "sample_normal": Function("sample_normal"),  # sample_normal(key, mean, std, *shape)
     "sample_uniform": Function("sample_uniform"),  # sample_uniform(key, lo, hi, *shape)
     "sample_lognormal": Function("sample_lognormal"),  # sample_lognormal(key, mu, sigma, *shape)

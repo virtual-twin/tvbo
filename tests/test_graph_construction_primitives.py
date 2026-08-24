@@ -7,7 +7,10 @@ Two things are pinned here:
 * **Numerical agreement with the reference implementation.** Each deterministic primitive is checked against the scipy/numpy routine a hand-written generator would have called, so "expressible in the primitive set" also means "computes the same thing".
 * **numpy/jax agreement.** The same expression must produce the same array on both, to float tolerance — that is what makes a generator backend-independent rather than merely re-implemented twice.
 
-The samplers are the exception, and deliberately so: per the RNG contract in ``dev/GenericProcedureEngine.md`` §4, a fixed seed is reproducible *within* a backend and statistically equivalent *across* backends, but never bit-identical (numpy PCG64 is not jax Threefry). They are therefore checked for shape, support, distributional moments and within-backend reproducibility — never for cross-backend equality.
+The samplers are the exception, and deliberately so: by contract a fixed seed is reproducible
+*within* a backend and statistically equivalent *across* backends, but never bit-identical
+(numpy PCG64 is not jax Threefry). They are therefore checked for shape, support, distributional
+moments and within-backend reproducibility — never for cross-backend equality.
 """
 
 import numpy as np

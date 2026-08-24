@@ -300,7 +300,7 @@ def _source_readout(source_var, state_names, group_name):
         f"source_var {source_var!r} on group {group_name!r} is not a state "
         f"variable {states}. Derived/output readouts (whose value depends on the "
         f"node's coupling input) need the upstream SignalRoute readout-signature "
-        f"change; see _dev/knowledge/tvboptim-heterogeneous-adapter.md (problem #2)."
+        f"change."
     )
 
 

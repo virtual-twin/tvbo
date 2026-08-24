@@ -1,6 +1,7 @@
 """TVB-O command-line interface.
 
-See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based, registry-driven, and transport-aware. This module assembles the top-level :class:`typer.Typer` ``app`` from per-verb sub-modules.
+The CLI is Typer-based, registry-driven and transport-aware. This module assembles the
+top-level :class:`typer.Typer` ``app`` from per-verb sub-modules.
 """
 
 from __future__ import annotations
