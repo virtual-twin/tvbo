@@ -424,12 +424,6 @@ def sort_equations(model: Any, variable_type: str, graph=None):
     model[variable_type].update(sorted_variables_metadata)
 
 
-# Readable YAML keys (`components:`) over the datamodel's single canonical attribute (`modes`).
-_DYNAMICS_SLOT_ALIASES = {
-    "components": "modes",
-}
-
-
 def _clamp_domain(rng):
     """Mark a bounds Range as a hard clamp (``enforce='clamp'``) and return it.
 
@@ -460,35 +454,15 @@ def _fold_range_boundaries(rng, boundaries):
     return domain, distribution
 
 
-def _fold_component_alias(d: dict) -> None:
-    """Recursively rename the Dynamics-only ``components`` → ``modes`` slot alias.
-
-    ``components`` is a ``modes`` alias only inside a Dynamics, so it is folded here (and by the class-scoped fold in the loader) rather than anywhere a ``components`` key appears. Mutates ``d`` in place at every nesting level.
-    """
-    for alias, canonical in _DYNAMICS_SLOT_ALIASES.items():
-        if alias in d:
-            if canonical in d:
-                raise ValueError(f"Cannot specify both '{alias}' and '{canonical}' — '{alias}' is an alias for '{canonical}'.")
-            d[canonical] = d.pop(alias)
-    modes = d.get("modes")
-    if isinstance(modes, dict):
-        for v in modes.values():
-            if isinstance(v, dict):
-                _fold_component_alias(v)
-
-
 def _resolve_dynamics_aliases(d: dict) -> dict:
     """Normalize a Dynamics kwargs/metadata dict through the SINGLE shared route.
 
-    Every construction path — ``Dynamics(**dict)``, ``from_file``, ``from_string``, the ``iri`` backfill, and the network/experiment coercion helpers — funnels through here, so they apply identical conveniences and cannot drift:
+    Every construction path — ``Dynamics(**dict)``, ``from_file``, ``from_string`` and the network/experiment coercion helpers — funnels through here, so they apply identical conveniences and cannot drift.
 
-    * the Dynamics-specific ``components`` → ``modes`` alias (recursively), then
-    * :func:`tvbo.utils.yaml_loader._normalize_loaded` — the one implementation
-      shared with the LinkML ``load``/``loads``/``load_as_dict`` path: the aliases ``Dynamics`` declares, the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries`` gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}`` lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``), so clamping stays opt-in.
+    It applies only what a class cannot: the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries`` gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}`` lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``), so clamping stays opt-in. Declared slot aliases — ``components`` → ``modes`` among them — are folded by the dialect at construction, at every nesting level, from the schema's own ``aliases:``.
 
     ``_normalize_loaded`` rebuilds mappings, so the normalized content is written back into ``d`` in place (``clear`` + ``update``) to honour the in-place contract the coercion callers rely on; ``d`` is also returned for convenience.
     """
-    _fold_component_alias(d)
     normalized = yaml_loader._normalize_loaded(d)
     if normalized is not d:
         d.clear()
@@ -534,51 +508,29 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
     Most users should construct via [`Dynamics`](#tvbo.classes.dynamics.Dynamics) or `Dynamics.from_db(name)` — this class is the implementation base.
 
-    `_skip_ontology` says the model arrives fully specified — an `iri=` registry entry, a PyRates import — so the slow ontology lookup is pointless. It does **not** mean the record needs no normalising: every path runs `update_metadata`, which migrates the deprecated `cases:` slot into conditionals and sorts derived variables into the dependency order the straight-line JAX and NumPy emitters require. Returning early on this flag left `cases:` models rendering with no branches at all.
+    An `iri=` is expanded by the dialect, before validation, so a model named by one arrives already carrying the curated record — see [`expand_iri`](../datamodel/dialect.qmd#expand_iri). Every path then runs `update_metadata`, which migrates the deprecated `cases:` slot into conditionals and sorts derived variables into the dependency order the straight-line JAX and NumPy emitters require; a path that skipped it rendered `cases:` models with no branches.
     """
 
     def __init__(
         self,
-        name="Dynamics",
-        _skip_ontology: bool = False,
+        name=None,
         use_ontology: bool = False,
         **kwargs,
     ):
-        iri = kwargs.get("iri")
-        if iri and (name is None or name == "Dynamics"):
-            from tvbo.data.registry import local_name, resolve
-            from tvbo.utils import deep_merge
-
-            local = local_name(iri)
-            try:
-                # Merged into constructor kwargs, so the entry's file envelope has to go: `load_as_dict` keeps it for callers that dispatch on it.
-                loaded = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str(resolve("Dynamics", local))))
-                _resolve_dynamics_aliases(loaded)
-                # Registry entry is the base; inline kwargs override at the leaf (e.g. parameters.a.value wins, siblings kept from the entry).
-                merged = deep_merge(loaded, kwargs)
-                kwargs.clear()
-                kwargs.update(merged)
-                name = kwargs.pop("name", local)
-                _skip_ontology = True
-            except (FileNotFoundError, RuntimeError):
-                pass
-
         if name is not None:
             kwargs["name"] = str(name)
 
         # Validate common schema mistakes before LinkML processing
         _validate_dynamics_kwargs(kwargs)
 
-        # Initialize datamodel (base class sets up empty containers)
+        # Initialize datamodel (the dialect expands `iri` and folds aliases here)
         super().__init__(**kwargs)
 
-        # Auto-populate only when a name was provided; keep default Dynamics() empty
-        if name != "Dynamics":
-            if use_ontology and not _skip_ontology:
-                self._populate_from_ontology_by_name()
+        if use_ontology:
+            self._populate_from_ontology_by_name()
 
-            self.update_metadata()
-            self.calculate_derived_parameters()
+        self.update_metadata()
+        self.calculate_derived_parameters()
 
     @property
     def components(self):
@@ -750,12 +702,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         from tvbo.codegen.pyrates import from_pyrates_yaml
 
         data = from_pyrates_yaml(path, operator_key=operator_key)
-        # Skip ontology lookup - PyRates YAML provides complete model definition
-        inst = cls(_skip_ontology=True, **data)
-        # Only calculate derived parameters if needed
-        if inst.derived_parameters:
-            inst.calculate_derived_parameters()
-        return inst
+        return cls(**data)
 
     @classmethod
     def from_db(cls, name: str) -> "Dynamics":

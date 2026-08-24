@@ -717,8 +717,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Convert dicts to Dynamics instances using lightweight construction
         dynamics = {}
         for name, dyn_dict in dynamics_dicts.items():
-            # Create instance with _skip_ontology=True to avoid slow lookups
-            dyn = Dynamics(_skip_ontology=True, **dyn_dict)
+            dyn = Dynamics(**dyn_dict)
             dynamics[name] = dyn
 
         # Use the first dynamics as the primary model
