@@ -99,9 +99,7 @@ def _observation_dataarray(raw_data, dims=None, nodes=None):
 def _jax_array(value):
     """*value* unwrapped to its array when it implements the JAX array protocol, else *value* itself.
 
-    tvboptim's ``Parameter``/``BoundedParameter`` expose their value only through
-    ``__jax_array__``: their ``__array__`` takes no ``dtype``, so ``np.asarray(p, dtype=float)``
-    raises and a fitted parameter would be dropped as non-numeric rather than saved.
+    tvboptim's ``Parameter``/``BoundedParameter`` expose their value only through ``__jax_array__``: their ``__array__`` takes no ``dtype``, so ``np.asarray(p, dtype=float)`` raises and a fitted parameter would be dropped as non-numeric rather than saved.
     """
     unwrap = getattr(value, "__jax_array__", None)
     return unwrap() if unwrap is not None else value
