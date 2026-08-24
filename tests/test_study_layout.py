@@ -329,8 +329,8 @@ RETIRED = ("output", "input", "report", "results", "figures", "docs/_figures")
 _RETIRED = re.compile(r"(?<![\w/.-])(" + "|".join(re.escape(r) for r in RETIRED) + r")/")
 """Anchored at a path boundary, so `docs/figures/` is not read as the retired top-level `figures/`."""
 
-NOT_A_STUDY_PATH = ("docs/Interoperability/", "docs/CLI/", "docs/Replication/")
-"""Paths into THIS repository's own documentation, which collide with the study's `docs/` by name only."""
+NOT_A_STUDY_PATH = ("docs/Interoperability/", "docs/CLI/", "docs/Replication/", "spec/<")
+"""Paths that collide with a study path by name only: this repository's own documentation, and the nested `spec/<experiment>/experiment.yaml` an emitted kit carries. A study's own `spec/` holds flat entity-named fragments, so a placeholder directly after `spec/` can only be a kit's."""
 
 
 def _skill_prose() -> list[tuple[str, int, str]]:
