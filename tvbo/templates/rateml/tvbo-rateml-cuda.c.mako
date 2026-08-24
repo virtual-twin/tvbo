@@ -10,7 +10,6 @@
 Context Variables:
 - model: Dynamics instance (required)
 - experiment: SimulationExperiment (optional)
-- coupling: Coupling instance (optional)
 - swept_params: list of parameter names to sweep (optional, defaults to global_speed, global_coupling)
 
 Output:

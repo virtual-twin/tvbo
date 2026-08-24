@@ -23,7 +23,8 @@
     except TypeError:
         monitors_seq = _mon.values() if hasattr(_mon, 'values') else (_mon or [])
     model = experiment.dynamics
-    coupling = experiment.coupling
+    from tvbo.templates.base.utils import experiment_coupling
+    coupling = experiment_coupling(experiment)
     integration = experiment.integration
 
     dt = integration.step_size if integration is not None else 0.1

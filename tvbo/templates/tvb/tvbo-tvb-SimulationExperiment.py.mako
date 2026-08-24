@@ -15,7 +15,10 @@ _TVBO_MODEL_CLS = ${context['experiment'].dynamics.name}
 <%
 experiment = context['experiment']
 
+from tvbo.templates.base.utils import experiment_coupling as _experiment_coupling
 from tvbo.utils import initial_value as _initial_value
+
+_tvb_coupling = _experiment_coupling(experiment)
 
 _n_reg = getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions
 initial_conditions = np.array([
@@ -48,7 +51,7 @@ def define_simulation(connectivity, simulation_length=${experiment.integration.d
     simulator = Simulator(
         model=_TVBO_MODEL_CLS(**model_kwargs),
         connectivity=connectivity,
-        coupling=${'%s(**coupling_kwargs)' % experiment.coupling.name if experiment.coupling else 'Linear(**coupling_kwargs)'},
+        coupling=${'%s(**coupling_kwargs)' % _tvb_coupling.name if _tvb_coupling else 'Linear(**coupling_kwargs)'},
         conduction_speed=${experiment.network.conduction_speed.value},
         integrator=${experiment.integration.method + ('Stochastic' if (experiment.integration.noise or np.any(np.asarray(context['experiment'].noise_sigma_array)>0)) else '')}(${'noise=noise,' if (experiment.integration.noise or np.any(np.asarray(context['experiment'].noise_sigma_array)>0)) else ''}**integration_kwargs),
         monitors=monitors,

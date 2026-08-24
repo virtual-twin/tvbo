@@ -36,6 +36,18 @@ def safe_name(name: str, fallback: str = "item") -> str:
     return cleaned
 
 
+def experiment_coupling(experiment):
+    """The single coupling an experiment declares, which its network carries.
+
+    Coupling belongs to the network, keyed by name, so ``SimulationExperiment`` has no coupling slot of its own; reading one back returns ``None`` rather than raising, and a template that asked for it emitted code with no coupling at all. These single-coupling templates render the one the experiment declares, so the first keyed member is it. ``None`` when the network declares none, which every caller already reads as "no coupling".
+    """
+    from tvbo.utils import keyed_items
+
+    network = getattr(experiment, "network", None)
+    pairs = keyed_items(getattr(network, "coupling", None), "coupling") if network is not None else []
+    return pairs[0][1] if pairs else None
+
+
 def get_coupling_terms(model):
     """Extract coupling inputs from model, separating global from local.
 

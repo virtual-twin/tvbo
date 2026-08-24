@@ -20,7 +20,8 @@ import numpy as np
 assert 'experiment' in context.keys(), "experiment required for simulation template"
 
 model = experiment.dynamics
-coupling = experiment.coupling
+from tvbo.templates.base.utils import experiment_coupling
+coupling = experiment_coupling(experiment)
 integration = experiment.integration
 network = experiment.network
 
