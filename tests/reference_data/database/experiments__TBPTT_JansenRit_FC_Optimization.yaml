@@ -175,6 +175,8 @@ integration:
   step_size: 1.0
   duration: 60000.0
   transient_time: 20000.0
+  block_size: 1000
+  noise_draw: fused
   scipy_ode_base: false
   number_of_stages: 1
   delayed: true
@@ -260,26 +262,6 @@ observations:
         period_samples:
           name: period_samples
           value: 4
-    - function: temporal_average
-      output: downsampled_history
-      arguments:
-        data:
-          name: data
-          value: integration.transient
-        period_samples:
-          name: period_samples
-          value: 4
-    - function: prepend_history
-      arguments:
-        data:
-          name: data
-          value: downsampled_data
-        history:
-          name: history
-          value: downsampled_history
-        kernel_samples:
-          name: kernel_samples
-          value: 5000
     - callable:
         name: fftconvolve
         module: jax.scipy.signal
@@ -288,7 +270,7 @@ observations:
       arguments:
         in1:
           name: in1
-          value: prepend_history
+          value: downsampled_data
         in2:
           name: in2
           value: hrf_kernel
@@ -467,20 +449,6 @@ functions:
       (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0])
       + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0],
       period_samples).shape[0]]'
-  prepend_history:
-    name: prepend_history
-    description: Zero-pad transient history to one kernel length and prepend
-    arguments:
-      data:
-        name: data
-      history:
-        name: history
-      kernel_samples:
-        name: kernel_samples
-        value: 5000
-    source_code: jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],)
-      + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples
-      else history[-kernel_samples:]), data], axis=0)
   volterra_transform:
     name: volterra_transform
     equation:

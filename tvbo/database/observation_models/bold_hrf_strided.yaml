@@ -89,19 +89,6 @@ functions:
                 value: 1
                 description: "Decimation stride = round(downsample_period / dt)"
 
-    prepend_history:
-        description: >-
-            Fit the (downsampled) transient history to one kernel length and prepend
-            it, zero-padding at the front when shorter — matches HRFBold._process_history.
-        source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
-        arguments:
-            data:
-                description: "Downsampled input time series"
-            history:
-                description: "Downsampled transient history data"
-            kernel_samples:
-                value: 5000
-                description: "Kernel support = ceil(kernel_duration / downsample_period)"
 
     strided_hrf:
         description: >-
@@ -114,7 +101,7 @@ functions:
             rhs: "strided_convolve(data, kernel, stride)"
         arguments:
             data:
-                description: "Prepended neural signal (time, 1, node)"
+                description: "Neural signal (time, 1, node), its head the settle this convolution warms on"
             kernel:
                 description: "HRF kernel"
             stride:
@@ -129,7 +116,7 @@ pipeline:
     # HRF kernel (precomputed once)
     - function: hrf_kernel
 
-    # Downsample neural activity (and transient history) to the BOLD grid
+    # Downsample neural activity to the BOLD grid
     - output: downsampled_data
       function: subsample
       arguments:
@@ -137,30 +124,14 @@ pipeline:
               value: integration.result
           step:
               value: 1
-    - output: downsampled_history
-      function: subsample
-      arguments:
-          data:
-              value: integration.transient
-          step:
-              value: 1
 
-    # Prepend transient history (zero-padded to one kernel length)
-    - function: prepend_history
-      arguments:
-          data:
-              value: downsampled_data
-          history:
-              value: downsampled_history
-          kernel_samples:
-              value: 5000
 
     # Fused 'valid' HRF convolution + TR subsample — a single windowed matmul, no FFT.
     - output: bold_convolve
       function: strided_hrf
       arguments:
           data:
-              value: prepend_history
+              value: downsampled_data
           kernel:
               value: hrf_kernel
 

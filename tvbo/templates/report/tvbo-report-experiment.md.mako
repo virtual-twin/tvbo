@@ -821,7 +821,6 @@ obs_voi = _p(obs, 'voi', None)
 obs_skip = _p(obs, 'skip_t', None)
 obs_tail = _p(obs, 'tail_samples', None)
 obs_window = _p(obs, 'window_size', None)
-obs_warmup = _p(obs, 'warmup_source', None)
 obs_data = _p(obs, 'data_source', None)
 pipeline = _p(obs, 'pipeline', [])
 sampling_bits = []
@@ -843,8 +842,6 @@ if obs_tail is not None:
     sampling_bits.append(f"tail={obs_tail}")
 if obs_window is not None:
     sampling_bits.append(f"window={obs_window}")
-if obs_warmup:
-    sampling_bits.append(f"warm-up={obs_warmup}")
 if obs_data:
     sampling_bits.append(f"data={_name_text(obs_data)}")
 period_str = ', '.join(sampling_bits) or '—'

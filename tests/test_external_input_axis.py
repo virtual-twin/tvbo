@@ -1,6 +1,6 @@
 """An external input's own parameter is a sweepable axis, on the clock the recipe declares it in.
 
-A `<event>.<param>` axis writes to ``state.external.<event>.<param>``, where the emitted ExternalInput reads it. A fixed ``t0`` is declared relative to the MAIN simulation and shifted onto the padded clock before the run; a swept one means the same thing, so the axis carries the same shift and the exploration's coordinate carries the declared time back. Without the shift every cell fired one transient early -- inside the window the run discards -- and the sweep looked inert rather than wrong.
+A `<event>.<param>` axis writes to ``state.external.<event>.<param>``, where the emitted ExternalInput reads it. A declared ``t0`` is on the measurement clock, which is also the clock the one scan integrates on -- it opens at ``-transient_time`` and the settle ends at 0 -- so neither a fixed onset nor a swept one is shifted anywhere. The exploration's coordinate is that same declared time, and so is the time axis its recorded trajectory comes back on.
 """
 
 import numpy as np
@@ -68,7 +68,7 @@ explorations:
 """
 """A quiescent single node pulsed once, sweeping the onset across a 50 ms transient.
 
-The two onsets straddle the transient: unshifted, the first fires inside the discarded window and never reaches the recorded trace at all.
+The two onsets straddle the settle's own length, so a stray shift by it lands the first pulse where the second belongs and cannot be read as noise.
 """
 
 
@@ -95,19 +95,42 @@ def test_the_axis_writes_the_external_input_slot(tmp_path):
     assert BINDING in _squeeze(code)
 
 
-def test_a_swept_onset_carries_the_transient_shift(tmp_path):
-    """The axis is written on the padded clock, exactly as a fixed onset is."""
+def test_a_swept_onset_is_written_as_declared(tmp_path):
+    """The axis carries the declared times, unshifted, exactly as a fixed onset does.
+
+    The scan opens at ``-transient_time``, so the solver's own clock IS the measurement clock and an onset means what it says. A shift here would fire every cell one settle late.
+    """
     squeezed = _squeeze(_experiment(tmp_path).render_code("tvboptim"))
     axis = squeezed.split(BINDING)[1].split("grid=Space(")[0]
-    assert "+50.0" in axis, axis
+    assert "jnp.asarray([10.0,60.0]" in axis, axis
+    assert "+50.0" not in axis, axis
 
 
 @needs_axis_wrap
 def test_every_cell_fires_at_the_onset_it_declares(tmp_path):
-    """The pulse lands where the recipe puts it, and the coordinate is that same declared time."""
+    """The pulse lands where the recipe puts it, and the coordinate and the time axis are that same declared time.
+
+    Read as the first step where V departs, not as the largest one: the pulse runs for a millisecond and V is slow, so the steepest step sits somewhere inside it and says only which millisecond, where the departure names the sample.
+    """
     sweep = _experiment(tmp_path).run("tvboptim").explorations["onset_sweep"]
     np.testing.assert_allclose(sweep.cell_coords["stimulus.t0"], [10.0, 60.0])
     V = sweep.results.isel(variable=0, node=0)
     t = np.asarray(sweep.results.coords["time"])
-    onsets = [t[int(np.argmax(np.abs(np.diff(np.asarray(V[i]))))) + 1] for i in range(2)]
+    onsets = []
+    for i in range(2):
+        step = np.abs(np.diff(np.asarray(V[i])))
+        onsets.append(t[int(np.argmax(step > 0.5 * step.max()))])
     np.testing.assert_allclose(onsets, [10.0, 60.0])
+
+
+@needs_axis_wrap
+def test_the_recorded_sweep_is_on_the_measurement_clock(tmp_path):
+    """A cell's recorded trajectory spans the settle, and says so: the settle carries non-positive timestamps.
+
+    A sweep records the window it integrated, so `results` is the analogue of `SimulationResult.full` rather than of `.data` — but on the same clock, which is what lets a declared onset be found at the time it declares.
+    """
+    result = _experiment(tmp_path).run("tvboptim")
+    t = np.asarray(result.explorations["onset_sweep"].results.coords["time"])
+    assert t[0] == pytest.approx(-49.8), t[0]
+    assert t[-1] == pytest.approx(150.0), t[-1]
+    np.testing.assert_allclose(t[t > 0], np.asarray(result.integration.data.coords["time"]))

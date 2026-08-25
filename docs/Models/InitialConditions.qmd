@@ -6,12 +6,13 @@ aliases:
   - /Usage/InitialConditions.html
 ---
 
-The **initial state** of a simulation is the value of every state variable on every node at $t = 0$. TVBO resolves it from four layered sources, each overriding the previous:
+The **initial state** of a simulation is the value of every state variable on every node where the integration opens. TVBO resolves it from three layered sources, each overriding the previous:
 
 1. **Model defaults** — `state_variables.<name>.initial_value` in the dynamics YAML.
 2. **Per-node overrides** — `state:` blocks on individual nodes.
 3. **Random sampling** — `distribution` on a state variable, activated for trial-based explorations.
-4. **Transient warm-up** — when `integration.transient > 0`, a pre-simulation is run and its final state replaces the IC.
+
+A declared `integration.transient_time` is **not** one of these. It does not replace the initial condition: the run opens from the IC resolved above at $t = -\text{transient\_time}$ and settles in-band, so $t = 0$ is simply where the settle ends and the *measured* window begins. To start from a state some other run already settled, see [Seeding from a settled state](#seeding-from-a-settled-state).
 
 The shape of `state.initial_state.dynamics` in the generated tvboptim code is `(n_states, n_nodes)`.
 
@@ -111,31 +112,41 @@ Each trial draws an independent IC of shape `(n_states, n_nodes)` and runs the s
 A plain `exp.run()` without an exploration ignores the `distribution`. Sampling only happens when at least one `Exploration` requests `n_trials > 1`. To add a `random_initial_conditions` flag for single runs, open an issue.
 :::
 
-## 4. Transient warm-up
+## Settling in-band {#settling-in-band}
 
-Set `integration.transient` to discard a settling period. The transient simulation honours the IC rules above, and its **final** state replaces the IC of the main run.
+`integration.transient_time` marks a settling window at the head of **one** integration. It is not a second simulation and it does not touch the initial condition — the scan simply opens earlier:
 
 ```python
-exp.integration.transient = 2000  # ms
+exp.integration.transient_time = 2000  # ms
 res = exp.run()
+
+res.integration.data       # the measured window, t in (0, duration]
+res.integration.transient  # the settle,        t in (-2000, 0]
+res.integration.full       # both, one buffer
 ```
 
-In the generated code:
+Because the settle is part of the same window, an observation kernel that needs warm-up (a BOLD HRF, a phase memory, a running correlation) gets it from real signal, and its own settle-side output samples are dropped for you. Nothing needs to be declared for that to happen.
 
-```python
-result_transient = model_fn_init(state_init)
-# ...
-state.dynamics.<sv> = result_transient.data[-1][<idx>]
+## Seeding from a settled state {#seeding-from-a-settled-state}
+
+A settle that many runs *reuse* — the shared operating point a fit evaluates hundreds of candidates from — is a different thing, and it is declared as one:
+
+```yaml
+initial_state:
+  method: time_integration   # integrate forward to a settled start
+  duration: 120000           # how long to settle for
 ```
+
+That state is computed once and reused, where `transient_time` is re-integrated by every run that declares it. `from_working_point` and `from_experiment` are the other two ways to say "start from a state something else reached".
 
 ## Resolution order at a glance
 
-| Source                         | Scope         | Triggered by                                |
-| ------------------------------ | ------------- | ------------------------------------------- |
-| `state_variables.initial_value` | global        | always (default)                            |
-| `network.nodes[i].state`        | per-node      | `state:` block on a node                    |
-| `state_variables.distribution`  | per-trial     | `Exploration(n_trials=N)` with $N > 1$      |
-| `integration.transient`         | global        | `integration.transient > 0`                 |
+| Source                          | Scope         | Triggered by                           |
+| ------------------------------- | ------------- | -------------------------------------- |
+| `state_variables.initial_value` | global        | always (default)                       |
+| `network.nodes[i].state`        | per-node      | `state:` block on a node               |
+| `state_variables.distribution`  | per-trial     | `Exploration(n_trials=N)` with $N > 1$ |
+| `initial_state.method`          | global        | a declared seed (see above)            |
 
 ## Inspecting the generated code
 

@@ -28,9 +28,10 @@ ExperimentResult
 ├── name                    # Experiment label
 ├── source                  # Back-reference to SimulationExperiment
 ├── integration             # SimulationResult — main simulation
-│   ├── data                #   xr.DataArray (time × variable × node [× mode])
+│   ├── data                #   xr.DataArray, the MEASURED window (time × variable × node [× mode])
 │   ├── observations        #   dict of observation outputs (BOLD, FC, …)
-│   └── transient           #   SimulationResult — warm-up (if any)
+│   ├── transient           #   SimulationResult — the settling head, t <= 0 (if any)
+│   └── full                #   xr.DataArray — settle and measurement, one buffer
 ├── algorithms              # dict[str, AlgorithmResult]
 │   └── fic                 #   e.g. FIC tuning result
 │       ├── state           #     Final tuned state
