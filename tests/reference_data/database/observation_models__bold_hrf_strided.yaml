@@ -77,7 +77,8 @@ functions:
     arguments:
       data:
         name: data
-        description: Prepended neural signal (time, 1, node)
+        description: Neural signal (time, 1, node), its head the settle this convolution
+          warms on
       kernel:
         name: kernel
         description: HRF kernel

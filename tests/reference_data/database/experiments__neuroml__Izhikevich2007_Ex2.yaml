@@ -89,7 +89,7 @@ integration:
   duration: 200.0
   transient_time: 0.0
   block_size: 1000
-  noise_draw: blocked
+  noise_draw: fused
   scipy_ode_base: false
   number_of_stages: 1
   delayed: true
