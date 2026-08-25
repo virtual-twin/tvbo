@@ -21,7 +21,6 @@ Usage in templates:
 
 import ast
 import re
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -1227,31 +1226,6 @@ def kernel_support_steps(step_name: str, step_arguments: Any, fns: dict[str, Any
             "warm-up its convolution consumes cannot be counted. Give it a literal, or an argument with a value."
         )
     return int(round((hi - lo) / dt))
-
-
-def max_observation_warmup_steps(experiment: Any, dt: float) -> int:
-    """Steps of settle the widest kernel in this experiment's observations convolves against.
-
-    A kernel keeps its own support in front of t=0 and eats it, so a settle folded down to this many steps still hands every observation the warm-up it would have had from the whole one. Observations reading an embedded network constant rather than the trajectory are skipped, since no settle reaches them.
-
-    An observation that reduces in-band — a co-integrated observer, or a pipeline opted into ``reduce: streaming`` — warms its recurrence over the settle step by step and drops the settle's own output at finalize, so it reads all of it. Returning ``inf`` for those leaves the caller no head to fold away, which is the answer that keeps the recurrence warming on real signal.
-    """
-    fns = functions_by_name(experiment)
-    widest = 0
-    for obs in (get_attr(experiment, "observations", {}) or {}).values():
-        source = get_attr(obs, "source")
-        if source is not None and str(source).startswith("network."):
-            continue
-        if resolve_reduction(obs, experiment):
-            return sys.maxsize
-        for step in get_attr(obs, "pipeline") or []:
-            ref = get_attr(step, "function")
-            if ref is None:
-                continue
-            name = str(ref) if isinstance(ref, str) else get_attr(ref, "name", str(ref))
-            args = {str(n): get_attr(a, "value") for n, a in (get_attr(step, "arguments") or {}).items()}
-            widest = max(widest, kernel_support_steps(name, args, fns, dt))
-    return widest
 
 
 def _assert_transient_on_sample_grid(experiment: Any, name: str, period_steps: int, kind: str) -> None:

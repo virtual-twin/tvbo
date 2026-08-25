@@ -18,7 +18,6 @@ from tvbo.templates.tvboptim.utils import (
     initial_conditions_axis_sv, noise_axis_param,
     graph_selection, observation_dims, parameter_keypath,
     has_host_pipeline, pipeline_stage_is_host, data_source_arrays,
-    max_observation_warmup_steps,
 )
 import numpy as np
 import re
@@ -229,9 +228,6 @@ has_transient = transient_time > 0
 # The scan opens at -transient_time and the settle ends at t=0, so it carries non-positive timestamps and a declared onset needs no shift.
 scan_t0 = -transient_time
 n_transient = int(round(transient_time / dt)) if has_transient else 0
-# Steps of settle a folded window still has to carry: the widest kernel keeps its own support in front of t=0 and eats it, so anything past that is never read and need not be stacked.
-n_warmup = min(max_observation_warmup_steps(experiment, dt), n_transient) if has_transient else 0
-n_measured = int(round(t1_default / dt))
 block_size = int(integration.block_size) if getattr(integration, 'block_size', None) else 1000
 # `noise_draw` selects the realization, because blocking is what selects it in tvboptim: a block grain regenerates each block's noise from (key, block_idx), no grain draws the whole tensor at once. A streamed observable folds block by block whatever this says; `blocked` is how a recipe puts the whole run on that same grain.
 noise_draw = str(getattr(integration, 'noise_draw', 'fused') or 'fused')
@@ -1872,28 +1868,6 @@ def _apply_seed_params(state):
     return state
 % endif
 
-% if has_transient:
-def _window_reducer(n_skip, n_keep):
-    """Fold a rollout down to the window that is read, so the settle is never stacked.
-
-    The settle and the window are one continuous integration: the carry advances through every step, and only the rows at or past ``n_skip`` are written into a fixed ``(n_keep, ...)`` buffer. Rows outside it go to a scratch row that ``finalize`` drops, so per-cell memory is the window rather than the whole rollout -- which is what lets a long settle vmap at any useful width. ``n_skip`` stops short of t=0 by whatever warm-up the widest kernel convolves against, so an observation still receives the settle it reads and cuts its own share exactly as it would from the whole scan.
-    """
-    def _init(template, n_steps):
-        return (jnp.zeros((n_keep + 1,) + template.shape, template.dtype), jnp.array(0))
-
-    def _update(acc, block):
-        _buf, _gstep = acc
-        _idx = _gstep + jnp.arange(block.shape[0]) - n_skip
-        _dest = jnp.where((_idx >= 0) & (_idx < n_keep), _idx, n_keep)
-        return (_buf.at[_dest].set(block), _gstep + block.shape[0])
-
-    def _finalize(acc):
-        return acc[0][:n_keep]
-
-    return (_init, _update, _finalize)
-
-
-% endif
 % if _state_only_aux:
 def _realign_state_auxiliaries(sol, params):
     """Recompute recorded state-only derived variables from the recorded post-step
@@ -2728,14 +2702,6 @@ def run_optimization(
     _stream_names = _rec_stream
     _stream_bs = expl.get('block_size') or 1000
     _stream_skip = n_transient
-    # Folding the settle away rides the native block scan, so a Diffrax solver keeps stack-and-cut; so does a fused draw, but only where noise exists to be drawn.
-    _window_native = str(solver_class) in ('Euler', 'Heun', 'RungeKutta4') and not (has_noise and noise_draw == 'fused')
-    # The fold rides the block scan, so its grain has to be the run's own: under `blocked` the grain IS the realization, and a cell that blocked differently from the bare run is a different computation. Only a noise-free `fused` reaches the exploration's own grain, where none of that applies.
-    _window_bs = block_size if noise_draw != 'fused' else _stream_bs
-    # What the fold keeps: the head the widest kernel reads, then the measured window.
-    _window_skip = n_transient - n_warmup
-    _window_keep = n_warmup + n_measured
-    _window_folds = has_transient and _window_native and _window_skip > 0
     # An exploration bundling every declared observation streams only when all of them are trajectory-free; one that needs the raw trajectory keeps the whole set on the materialise path.
     _bundle_plan = streaming_post_eval_plan(experiment) if bundles_observations else {'names': [], 'deliverables': [], 'period_in_steps': None}
     _bundle_stream_names = _bundle_plan['names']
@@ -2829,25 +2795,8 @@ def ${expl['name']}(state, model_fn, **kwargs):
 % endif
     if _network is not None:
         # The same one-scan window a bare run integrates: each cell settles its own head over (-${transient_time}, ${t1_default}], so a swept cell and a bare run are one computation.
-% if _window_folds:
-        # The settle is integrated but never stacked past the ${n_warmup} steps the widest kernel reads, so a cell costs the window it reports rather than the whole rollout.
-        _expl_model_fn_raw, _expl_state = prepare(
-            _network, get_solver(block_size=${_window_bs}), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
-            reduce=_window_reducer(${_window_skip}, ${_window_keep}),
-        )
-        # The clock the fold drops: post-step samples from the kept head through the measured window, so t=0 still ends the settle.
-        _expl_ts = jnp.arange(${1 - n_warmup}, ${n_measured + 1}) * ${dt}
-% else:
         _solver = get_solver(block_size=${solver_block})
-% if has_transient:
-        logger.info(
-            "settle of %s ${time_unit} is materialised, not folded: %s",
-            ${transient_time},
-            "${'noise_draw: fused draws one unblocked tensor, and blocking it would move the realization. Declare integration.noise_draw: blocked to fold it' if has_noise and noise_draw == 'fused' else 'the widest kernel reads the whole settle, so none of it goes unread' if _window_native else 'this solver has no native block scan'}",
-        )
-% endif
         _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=${scan_t0}, t1=${t1_default}, dt=${dt})
-% endif
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
         # The main run's IC construction, so the sweep starts from the declared state rather than cold.
         % if sv_distribution_info:
@@ -2858,18 +2807,11 @@ def ${expl['name']}(state, model_fn, **kwargs):
         _inject_stochastic_trajectories(_expl_state, ${transient_time + t1_default}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
         # The whole window, settle included: every observable drops the settle itself, so trimming here too would cut it twice and make a swept cell a different computation from a bare run.
-% if _window_folds:
-        # Axis 1 is the solver's own variable order, which every observation indexes positionally; the reduced return carries no names to pass on.
-        def _expl_window(s):
-            return NativeSolution(_expl_ts, _expl_model_fn_raw(s), dt=${dt}, variable_names=None)
-% else:
-        _expl_window = _expl_model_fn_raw
-% endif
 % if _state_only_aux:
         def _expl_model_fn(s):
-            return _realign_state_auxiliaries(_expl_window(s), s.dynamics)
+            return _realign_state_auxiliaries(_expl_model_fn_raw(s), s.dynamics)
 % else:
-        _expl_model_fn = _expl_window
+        _expl_model_fn = _expl_model_fn_raw
 % endif
     else:
         _expl_model_fn = model_fn
