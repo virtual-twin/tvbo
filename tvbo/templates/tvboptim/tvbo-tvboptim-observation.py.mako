@@ -7,6 +7,7 @@ from tvbo.templates.tvboptim.utils import (
     adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values, resolve_tail_samples,
     edge_label as _edge_label, edge_const as _edge_const, collect_network_edge_arrays,
     node_label as _node_label, node_const as _node_const, collect_network_node_arrays,
+    functions_by_name as _functions_by_name, kernel_support_steps as _kernel_support_steps,
 )
 
 model = experiment.dynamics
@@ -167,12 +168,7 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
 
 # =============================================================================
 
-# Build function lookup from experiment.functions
-_exp_functions = get_attr(experiment, 'functions', {})
-if hasattr(_exp_functions, 'items'):
-    functions_by_name = {str(k): v for k, v in _exp_functions.items()}
-else:
-    functions_by_name = {str(get_attr(f, 'name', '')): f for f in (_exp_functions or [])}
+functions_by_name = _functions_by_name(experiment)
 
 # User-defined function names for expression rendering
 user_functions = {name: name for name in functions_by_name.keys()}
@@ -308,36 +304,6 @@ def is_kernel_generator(step_name):
     """Check if function is a kernel generator (has time_range)."""
     fn_def = functions_by_name.get(step_name)
     return fn_def and get_attr(fn_def, 'time_range')
-
-def kernel_support_steps(step, dt):
-    """Integration steps the kernel's own support spans — what a 'valid' convolution eats off the front.
-
-    Read from the generator's ``time_range`` in time, not in samples, so it is right whatever grid the kernel is sampled on: a kernel decimated to n points over the same span consumes the same span of signal.
-    """
-    fn_def = functions_by_name.get(step['name'])
-    time_range = get_attr(fn_def, 'time_range')
-    step_args = step.get('arguments') or {}
-    fn_args = get_attr(fn_def, 'arguments') or {}
-
-    def _bound(expr, default=None):
-        val = to_numeric(expr) if expr is not None else None
-        if isinstance(val, (int, float)):
-            return float(val)
-        for source in (step_args, fn_args):
-            entry = source.get(str(expr)) if hasattr(source, 'get') else None
-            bound = get_attr(entry, 'value', None) if entry is not None else None
-            if bound is not None:
-                return float(to_numeric(bound))
-        return default
-
-    lo = _bound(get_attr(time_range, 'lo'), 0.0)
-    hi = _bound(get_attr(time_range, 'hi'), None)
-    if hi is None:
-        raise ValueError(
-            f"kernel generator {step['name']!r}: time_range.hi does not resolve to a number, so the "
-            "warm-up its convolution consumes cannot be counted. Give it a literal, or an argument with a value."
-        )
-    return int(round((hi - lo) / dt))
 
 def can_precompute(step):
     """Check if a pipeline step can be precomputed (no data dependency).
@@ -1367,7 +1333,7 @@ class ${class_name}(AbstractMonitor):
 
     # A kernel convolves against its own history, so it must see the settle and lose it afterwards on its declared output grid; without one the settle never enters, which is what keeps a time-collapsing statistic from averaging over it.
     _kernel_step = next((st for st in pipeline if is_kernel_generator(st['name'])), None)
-    _warmup_steps = kernel_support_steps(_kernel_step, dt) if _kernel_step is not None else 0
+    _warmup_steps = _kernel_support_steps(_kernel_step['name'], _kernel_step.get('arguments'), functions_by_name, dt) if _kernel_step is not None else 0
     # The settle's own share, taken at the input: a kernel keeps its support in front of t=0 and eats it, so its output already lands on the measured window; a pipeline without one needs no warm-up and never sees the settle at all. An observation with NO pipeline — a bare `aggregation` or `tail_samples` over the source — reads the trajectory directly, so it takes the settle too rather than averaging across it.
     _feeds_from_result = bool(not network_edge_label and (needs_result_from_pipeline or not pipeline))
     _takes_settle = bool(_feeds_from_result and (n_transient or _warmup_steps))

@@ -21,6 +21,7 @@ Usage in templates:
 
 import ast
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -1185,6 +1186,72 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
     red["V_0"] = float(to_numeric(parameter_value(_vpar, "V_0", 0.02)))
     _assert_transient_on_sample_grid(experiment, name, red["ds_steps"] * red["tr_stride"], "BOLD")
     return red
+
+
+def functions_by_name(experiment: Any) -> dict[str, Any]:
+    """The experiment's functions keyed by name, whichever form the slot holds."""
+    fns = get_attr(experiment, "functions", {})
+    if hasattr(fns, "items"):
+        return {str(k): v for k, v in fns.items()}
+    return {str(get_attr(f, "name", "")): f for f in (fns or [])}
+
+
+def kernel_support_steps(step_name: str, step_arguments: Any, fns: dict[str, Any], dt: float) -> int:
+    """Integration steps the kernel's own support spans — what a 'valid' convolution eats off the front.
+
+    Read from the generator's ``time_range`` in time, not in samples, so it is right whatever grid the kernel is sampled on: a kernel decimated to n points over the same span consumes the same span of signal. A bound naming an argument is resolved against the call's own arguments first, then the function's defaults. Returns 0 for a step that is not a kernel generator.
+    """
+    fn_def = fns.get(str(step_name))
+    time_range = get_attr(fn_def, "time_range") if fn_def is not None else None
+    if not time_range:
+        return 0
+    step_args = step_arguments or {}
+    fn_args = get_attr(fn_def, "arguments") or {}
+
+    def _bound(expr, default=None):
+        val = to_numeric(expr) if expr is not None else None
+        if isinstance(val, (int, float)):
+            return float(val)
+        for source in (step_args, fn_args):
+            entry = source.get(str(expr)) if hasattr(source, "get") else None
+            bound = get_attr(entry, "value", entry) if entry is not None else None
+            if bound is not None and not isinstance(bound, str):
+                return float(to_numeric(bound))
+        return default
+
+    lo = _bound(get_attr(time_range, "lo"), 0.0)
+    hi = _bound(get_attr(time_range, "hi"), None)
+    if hi is None:
+        raise ValueError(
+            f"kernel generator {step_name!r}: time_range.hi does not resolve to a number, so the "
+            "warm-up its convolution consumes cannot be counted. Give it a literal, or an argument with a value."
+        )
+    return int(round((hi - lo) / dt))
+
+
+def max_observation_warmup_steps(experiment: Any, dt: float) -> int:
+    """Steps of settle the widest kernel in this experiment's observations convolves against.
+
+    A kernel keeps its own support in front of t=0 and eats it, so a settle folded down to this many steps still hands every observation the warm-up it would have had from the whole one. Observations reading an embedded network constant rather than the trajectory are skipped, since no settle reaches them.
+
+    An observation that reduces in-band — a co-integrated observer, or a pipeline opted into ``reduce: streaming`` — warms its recurrence over the settle step by step and drops the settle's own output at finalize, so it reads all of it. Returning ``inf`` for those leaves the caller no head to fold away, which is the answer that keeps the recurrence warming on real signal.
+    """
+    fns = functions_by_name(experiment)
+    widest = 0
+    for obs in (get_attr(experiment, "observations", {}) or {}).values():
+        source = get_attr(obs, "source")
+        if source is not None and str(source).startswith("network."):
+            continue
+        if resolve_reduction(obs, experiment):
+            return sys.maxsize
+        for step in get_attr(obs, "pipeline") or []:
+            ref = get_attr(step, "function")
+            if ref is None:
+                continue
+            name = str(ref) if isinstance(ref, str) else get_attr(ref, "name", str(ref))
+            args = {str(n): get_attr(a, "value") for n, a in (get_attr(step, "arguments") or {}).items()}
+            widest = max(widest, kernel_support_steps(name, args, fns, dt))
+    return widest
 
 
 def _assert_transient_on_sample_grid(experiment: Any, name: str, period_steps: int, kind: str) -> None:
