@@ -507,7 +507,7 @@ enums:
         permissible_values:
             blocked:
                 description: >-
-                    Regenerate each block's noise from the key and the block index (default). The realization never depends on the total step count, so a run measured by folding an observable in-carry and the same run materialized in full agree sample for sample. Holds no O(n_steps) noise tensor, and regenerates rather than stores on the backward pass. Keyed by Integrator.block_size.
+                    Regenerate each block's noise from the key and the block index. The realization never depends on the total step count, so a run measured by folding an observable in-carry and the same run materialized in full agree sample for sample. Holds no O(n_steps) noise tensor, and regenerates rather than stores on the backward pass. Keyed by Integrator.block_size.
             fused:
                 description: >-
                     Draw the whole [n_steps, n_noise_states, n_nodes] tensor once from the key. Fuses with the scan, but the realization is a function of the step count, so the same recipe measured two ways gives two trajectories, and the tensor costs as much memory as the trajectory it drives.
@@ -3462,7 +3462,7 @@ classes:
                 range: float
                 ifabsent: float(0)
                 description: >-
-                    Length of the leading settling window, prepended to `duration`. It marks part of ONE integration — never a separate simulation: the backend integrates `transient_time + duration` in a single scan and the marked head is cut where the run is consumed (observations, analyses, plots, saved data), so the settle is in-band for any observation kernel that needs warm-up. Time is measured from the START of the measured window: the settle carries non-positive timestamps, ending at 0, and the measured window opens one step later and a declared event `t0` is relative to measurement, never to the scan. A settle that a fit reuses across many candidate evaluations is NOT this slot — that is a seed, declared as `initial_state.method: time_integration` with its own `duration`.
+                    Length of the leading settling window, prepended to `duration`. It marks part of ONE integration — never a separate simulation: the backend integrates `transient_time + duration` in a single scan and the marked head is cut where the run is consumed (observations, analyses, plots, saved data), so the settle is in-band for any observation kernel that needs warm-up. Time is measured from the START of the measured window: the settle carries non-positive timestamps and ends at 0, the measured window opens one step later, and a declared event `t0` is relative to measurement, never to the scan. A settle that a fit reuses across many candidate evaluations is NOT this slot — that is a seed, declared as `initial_state.method: time_integration` with its own `duration`.
             block_size:
                 range: integer
                 ifabsent: integer(1000)
@@ -3470,9 +3470,9 @@ classes:
                     Granularity of the nested block scan, in integration steps. Bounds the per-block memory so a streaming reduction folds an observable in-carry instead of materializing the trajectory. On a STOCHASTIC network this value is not a free tuning knob: with `noise_draw: blocked` the realization is a pure function of the noise key and the block index, so changing it changes the trajectory. Declare it and leave it alone.
             noise_draw:
                 range: NoiseDraw
-                ifabsent: string(blocked)
+                ifabsent: string(fused)
                 description: >-
-                    How the noise realization is drawn. Declared, never inferred from whether an observable happens to be streamable — the same recipe and seed must not yield two different trajectories depending on how it is consumed.
+                    How the base solve draws its noise realization, and therefore WHICH realization it is: `fused` draws the whole [n_steps, ...] tensor in one call, `blocked` regenerates each block of `block_size` steps from (key, block_index). Those are different draws from the same seed, so the grain is a declared property of the integration rather than something inferred from how the run is consumed. An observable declared `reduce: streaming` folds block by block whatever this says, because a reduction has no trajectory to fold otherwise; declare `blocked` to put the whole run on that same grain.
             scipy_ode_base:
                 range: boolean
                 ifabsent: false

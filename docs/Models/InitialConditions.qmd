@@ -12,7 +12,7 @@ The **initial state** of a simulation is the value of every state variable on ev
 2. **Per-node overrides** — `state:` blocks on individual nodes.
 3. **Random sampling** — `distribution` on a state variable, activated for trial-based explorations.
 
-A declared `integration.transient_time` is **not** one of these. It does not replace the initial condition: the run opens from the IC resolved above at $t = -\text{transient\_time}$ and settles in-band, so $t = 0$ is simply the first *measured* step. To start from a state some other run already settled, see [Seeding from a settled state](#seeding-from-a-settled-state).
+A declared `integration.transient_time` is **not** one of these. It does not replace the initial condition: the run opens from the IC resolved above at $t = -\text{transient\_time}$ and settles in-band, so $t = 0$ is simply where the settle ends and the *measured* window begins. To start from a state some other run already settled, see [Seeding from a settled state](#seeding-from-a-settled-state).
 
 The shape of `state.initial_state.dynamics` in the generated tvboptim code is `(n_states, n_nodes)`.
 

@@ -6,8 +6,7 @@ An observation declared ``aggregation: mean`` (or ``std`` / ``variance``) AND ``
 * the declared axes reach the container for the stream and for anything derived from it, so a per-node scalar is keyed ``node`` rather than falling back to the positional template;
 * the emitted reducer is byte-identical (to f64 rounding) to the host ``jnp.mean`` /
   ``jnp.std`` / ``jnp.var`` (ddof=0) of the materialised trajectory — the values the post-scan ``aggregation`` path computes — both as one block and across ANY block decomposition (the ``prepare(reduce=...)`` grid path feeds blocks, not one trajectory);
-* the recurrence factory accepts-and-ignores ``warm_history`` / ``progress`` so the post-
-  tuning eval shares ONE call site with the BOLD convolution reducer;
+* the recurrence factory accepts-and-ignores ``progress`` so the post-tuning eval shares ONE call site with the BOLD convolution reducer;
 * the streaming post-eval plan folds the stat stream (defaulting the block to 1000 when no
   TR-aligned convolution reducer is present).
 
@@ -152,13 +151,13 @@ def test_reducer_is_block_decomposition_invariant(aggregation, block_size):
     assert float(jnp.max(jnp.abs(multi - single))) == 0.0
 
 
-def test_factory_accepts_warm_history_and_progress_kwargs():
-    """Edit 3: the recurrence factory accepts-and-ignores the BOLD-only warm_history / progress kwargs so the post-tuning eval has ONE reducer call site."""
+def test_factory_accepts_the_progress_kwarg():
+    """The recurrence factory accepts-and-ignores the BOLD-only progress kwarg so the post-tuning eval has ONE reducer call site."""
     red = resolve_reduction(_stat_observation("mean"))
     factory = _emit_reducer(red)
     data = _trajectory(seed=3, T=128)
 
-    init, update, finalize = factory(s_var=0, dt=1.0, warm_history=None, progress=True)
+    init, update, finalize = factory(s_var=0, dt=1.0, progress=True)
     got = finalize(update(init(data[0], data.shape[0]), data))
     np.testing.assert_allclose(np.asarray(got), np.asarray(jnp.mean(data[:, 0, :], axis=0)), rtol=1e-9, atol=1e-12)
 

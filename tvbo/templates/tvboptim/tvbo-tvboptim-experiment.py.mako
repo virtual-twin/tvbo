@@ -230,22 +230,9 @@ has_transient = transient_time > 0
 scan_t0 = -transient_time
 n_transient = int(round(transient_time / dt)) if has_transient else 0
 block_size = int(integration.block_size) if getattr(integration, 'block_size', None) else 1000
-# `noise_draw` selects the realization, and blocking is what selects it in tvboptim: a block grain regenerates each block's noise from (key, block_idx), no grain draws the whole tensor at once. A reduction has to fold block by block, so a streamed observable and `fused` cannot both be had.
-noise_draw = str(getattr(integration, 'noise_draw', 'blocked') or 'blocked')
-if noise_draw == 'fused' and has_noise and any(str(getattr(_o, 'reduce', '')) == 'streaming' for _o in (experiment.observations or {}).values()):
-    raise ValueError(
-        "integration.noise_draw: fused draws the whole [n_steps, ...] noise tensor in one call, but this "
-        "experiment streams an observation, which folds the run block by block. Use noise_draw: blocked "
-        "(the default) or drop `reduce: streaming`."
-    )
-solver_block = 'None' if noise_draw == 'fused' else repr(block_size)
-
-def event_clock_wrap(ax):
-    """No offset: a swept onset means what it says.
-
-    Event onsets are declared on the measurement clock, and the run integrates on that same clock, so the value substituted into the leaf is the value the recipe wrote.
-    """
-    return ""
+# `noise_draw` selects the realization, because blocking is what selects it in tvboptim: a block grain regenerates each block's noise from (key, block_idx), no grain draws the whole tensor at once. A streamed observable folds block by block whatever this says; `blocked` is how a recipe puts the whole run on that same grain.
+noise_draw = str(getattr(integration, 'noise_draw', 'fused') or 'fused')
+solver_block = repr(block_size) if noise_draw == 'blocked' else 'None'
 
 # Execution config
 exec_config = experiment.execution
@@ -1934,7 +1921,7 @@ def _realign_state_auxiliaries(sol, network):
 %>
 # observation name -> the axis names its reduction declares (utils.reduction_dims).
 _OBSERVATION_DIMS = ${repr(_obs_dims)}
-# Steps of settle at the head of the scan, the last of them at t=0. Both the cut index on the trajectory and the `skip` every observer folds past.
+# Steps of settle at the head of the scan, the last of them at t=0 — the cut index on the trajectory, and what a caller needs to read the window this module integrated.
 _N_TRANSIENT = ${n_transient}
 
 
@@ -2860,7 +2847,7 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     _grp_${ax['name']} = "${ax['name']}" if _axisvals_${ax['name']}.ndim > 1 else None
     _array_axis_points["${_lbl}"] = _axisvals_${ax['name']}
     % if ax.get('is_external'):
-    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}${event_clock_wrap(ax)}))
+    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % elif ax.get('is_coupling'):
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % elif ax.get('is_network'):
@@ -2905,9 +2892,9 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     % elif ax.get('is_external'):
     ## A `t0` is declared against the main simulation, so it rides the padded clock as a wrap and the coordinate stays the time the recipe wrote.
     % if 'values' in ax:
-    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']}, dtype=float)${event_clock_wrap(ax)}))
+    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']}, dtype=float)))
     % else:
-    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})${event_clock_wrap(ax)}))
+    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % elif ax.get('is_coupling'):
     % if 'values' in ax:
@@ -3082,10 +3069,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
 % if not obs_name:
-<%
-    # A sweep naming its outputs takes the `record:` branch above, where render_recorded_observable already evaluates the `analysis` diagnostics per cell; reaching here means `record:` is empty, so no analysis list is threaded.
-    _an_arg = ""
-%>
+<%doc>
+    A sweep naming its outputs takes the `record:` branch above, where render_recorded_observable already evaluates the `analysis` diagnostics per cell; reaching here means `record:` is empty, so no analysis list is threaded.
+</%doc>
 % if bundles_observations and _bundle_fully_stream:
     # Every bundled observation is trajectory-free, so the streamable ones fold into the carry and the deliverables come from the streamed values; a passed-in model_fn falls back to the materialise path.
     if _network is not None:
@@ -3101,19 +3087,19 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         def observable_fn(s):
             _vals = _bundle_model_fn(s)
             _pre = {_n: _v for _n, _v in zip(${repr(_bundle_stream_names)}, _vals)}
-            return keep_recorded(compute_all_observations(None, s, precomputed=_pre${_an_arg}))
+            return keep_recorded(compute_all_observations(None, s, precomputed=_pre))
     else:
 % if has_host_pipeline_obs or _rec_host:
         # Host pipeline callables cannot trace under jit: jit only the solve.
         _expl_model_fn_jit = jax.jit(_expl_model_fn)
         def observable_fn(s):
             result = _expl_model_fn_jit(s)
-            return keep_recorded(compute_all_observations(result, s, ${_an_arg}))
+            return keep_recorded(compute_all_observations(result, s))
 % else:
         @jax.jit
         def observable_fn(s):
             result = _expl_model_fn(s)
-            return keep_recorded(compute_all_observations(result, s, ${_an_arg}))
+            return keep_recorded(compute_all_observations(result, s))
 % endif
 % elif bundles_observations:
     # Observations declared: observable_fn returns only the reduced
@@ -3126,12 +3112,12 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _expl_model_fn_jit = jax.jit(_expl_model_fn)
     def observable_fn(s):
         result = _expl_model_fn_jit(s)
-        return keep_recorded(compute_all_observations(result, s, ${_an_arg}))
+        return keep_recorded(compute_all_observations(result, s))
 % else:
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
-        return keep_recorded(compute_all_observations(result, s, ${_an_arg}))
+        return keep_recorded(compute_all_observations(result, s))
 % endif
 % elif has_model_output and model_output_indices:
     # ``model_output_channel_index`` is a scalar for one output, dropping the variable dim, or a slice for several.
@@ -3224,11 +3210,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # Each trial uses a different random noise realization for stochastic parameters.
     # vmap maps the observable over all trials in parallel on the same device.
     _n_trials = ${expl['n_trials']}
-    % if has_transient:
-    _n_steps_stoch = int(_t_total / ${dt}) + 2
-    % else:
-    _n_steps_stoch = int(${t1_default} / ${dt}) + 2
-    % endif
+    # The whole scanned window, settle included, since the cell integrates it in one go.
+    _n_steps_stoch = int(${transient_time + t1_default} / ${dt}) + 2
     _trial_keys = jax.random.split(jax.random.key(${stochastic_param_info[_sp_names[0]]['seed']}), _n_trials)
     % for _sp_idx, _sp_name in enumerate(_sp_names):
 <%
@@ -3649,6 +3632,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
+        transient_time=${transient_time},
         output_names=${model_output_names if has_model_output and not obs_name else []},
         observations=_observations_xr,
 % if expl.get('n_trials', 1) > 1:
@@ -4362,7 +4346,7 @@ def run_experiment(
 % endfor
                         post_model_fn=post_model_fn,
                         post_state=post_state,
-                        % if algo_needs_buffers:
+% if algo_needs_buffers:
 % for src_obs in algo_source_obs_needed:
                         ${src_obs}_buffer=_stage_${src_obs}_buffer,
 % endfor
@@ -4420,7 +4404,7 @@ def run_experiment(
 % endfor
                     post_model_fn=post_model_fn,
                     post_state=post_state,
-                    % if algo_needs_buffers:
+% if algo_needs_buffers:
 % for src_obs in algo_source_obs_needed:
 % if has_deps:
                     # Pass buffer from dependency if available

@@ -24,6 +24,11 @@ ACCESSORS = ("getattr", "slot", "_p")
 EXEMPT = {
     ("adapters/tvb.py", "sim.integrator", "dt"): "a TVB Simulator being imported FROM; its integrator owns `dt`",
     ("templates/tvboptim/tvbo-tvboptim-experiment.py.mako", "_res", "dt"): "a tvboptim solution object, which owns `dt`",
+    (
+        "templates/tvboptim/tvbo-tvboptim-observation.py.mako",
+        "_out",
+        "dt",
+    ): "what an external-class monitor returned, which owns `dt`",
 }
 """``(path, object, alias) -> why THAT object is not a TVBO one``, so the alias is its name.
 
