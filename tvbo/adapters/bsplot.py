@@ -834,7 +834,7 @@ def _resolve_layer(layer, panel_kind, base_dir):
         "color": color,
         "cmap": getattr(style, "colormap", None),
         "transform": getattr(layer, "transform", None),
-        "ref_transform": getattr(used[0] if isinstance(used, list) else used, "transform", None),
+        "ref_transform": getattr(used, "transform", None),
         "sel": sel,
         "sel_method": method,
         "triangle": str(triangle) if triangle else None,

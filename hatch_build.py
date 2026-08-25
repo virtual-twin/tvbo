@@ -58,12 +58,12 @@ def generate_datamodel(root: str | Path) -> None:
         _with_dialect_and_behaviour(PydanticGenerator(str(schema)).serialize(), mixins),
     )
 
-    # JSON Schema — relax `additionalProperties: false → true` everywhere so validation stays lenient, mirroring the previous `JsonschemaValidationPlugin(closed=False)`. `sort_keys` keeps it reproducible.
     _write(
         out_dir / "_stamp.py",
         f'"""Schema the generated modules beside this file were built from."""\n\nSCHEMA_DIGEST = "{_schema_digest(root)}"\n',
     )
 
+    # JSON Schema — relax `additionalProperties: false → true` everywhere so validation stays lenient, mirroring the previous `JsonschemaValidationPlugin(closed=False)`. `sort_keys` keeps it reproducible.
     js = json.loads(JsonSchemaGenerator(str(schema)).serialize())
     _relax_additional_properties(js)
     _drop_redundant_anyof_type(js)

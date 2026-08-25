@@ -229,6 +229,7 @@ def _canonical_figure(prefix: str | None, number) -> str:
     kind = (prefix or "").upper()[:1]
     return f"{'EDF' if kind == 'E' else 'S' if kind == 'S' else ''}{int(number)}"
 
+
 _MISSING = "—"
 
 
@@ -486,9 +487,7 @@ DIVERGENCE_CLASSES = {
 }
 
 
-# The two spellings the corpus uses for a register's materiality column; anything else leaves its rows unscored.
-# An id annotated "(ours)" is a fault of the replication, not a divergence in the published study.
-_OURS_RE = re.compile(r"\(\s*ours\s*\)", re.IGNORECASE)
+_OURS_RE = re.compile(r"\(\s*ours\s*\)", re.IGNORECASE)  # a fault of the replication, not of the published study
 
 _MATERIALITY_RE = re.compile(r"[*_]*(material|changes a number)", re.IGNORECASE)
 
@@ -515,7 +514,9 @@ def divergence_register(source) -> dict:
         m = re.match(r"^\|\s*[*_`]*([A-Z])(\d+)[*_`]*[^|]*\|", line)
         if not m:
             continue
-        entry = classes.setdefault(m.group(1), {"ids": [], "material": None, "scored": 0, "rows": [], "ours": 0, "ours_material": 0})
+        entry = classes.setdefault(
+            m.group(1), {"ids": [], "material": None, "scored": 0, "rows": [], "ours": 0, "ours_material": 0}
+        )
         entry["ids"].append(f"{m.group(1)}{m.group(2)}")
         entry["rows"].append(cells)
         ours = _OURS_RE.search(cells[0]) is not None
@@ -654,6 +655,8 @@ class Scorecard:
         self.tiers = list(tiers)
         self.rows = [r for t in tables if "Status" in t.headers for r in t.rows]
         self.reasons = {r["ID"]: r[self.WHY] for t in tables if self.WHY in t.headers for r in t.rows}
+        # Whether a short form names its row alone is a question about the whole table, so the table answers it once.
+        self._short_forms = [self._shorten(r["Target"].strip()) for r in self.rows if "Target" in r]
 
     WHY = "Why it falls short"
 
@@ -697,8 +700,7 @@ class Scorecard:
         """
         full = row["Target"].strip()
         short = self._shorten(full)
-        clash = any(other is not row and self._shorten(other["Target"].strip()) == short for other in self.rows)
-        return full if clash else short
+        return full if self._short_forms.count(short) > 1 else short
 
     def reason(self, row) -> str:
         """The recorded reason for a row's outcome, or a note that none was given."""

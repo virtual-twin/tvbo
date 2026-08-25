@@ -19,8 +19,7 @@ dt = experiment.integration.step_size if experiment.integration else 0.1
 # carries the render context, not the including template's local bindings.
 _transient_time = float(getattr(experiment.integration, 'transient_time', 0.0) or 0.0) if experiment.integration else 0.0
 n_transient = int(round(_transient_time / dt)) if dt else 0
-# Steps of the measured window, which is what a monitor is handed when the grid already cut the
-# settle away; the whole scan is n_transient longer.
+# Steps of the measured window, which is what a monitor is handed when the grid already cut the settle away; the whole scan is n_transient longer.
 _duration = float(getattr(experiment.integration, 'duration', 0.0) or 0.0) if experiment.integration else 0.0
 n_window = int(round(_duration / dt)) if dt else 0
 
@@ -1204,6 +1203,11 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
     if class_ref.get('accepts_voi') and 'voi' not in constructor_arg_codes:
         constructor_arg_codes['voi'] = 'voi'
 
+    # The settle's share of THIS monitor's output grid, counted from the declared reporting period rather than from a time axis that is a tracer under jit. A period below one step, or one that is not a number, reports on the integration grid.
+    _ext_period = to_numeric(constructor_args.get('period') or obs.get('period'))
+    _ext_grid = max(1, int(round(float(_ext_period) / dt))) if isinstance(_ext_period, (int, float)) else 1
+    _ext_cut = (n_transient // _ext_grid) if n_transient else 0
+
     # Build constructor kwargs string
     init_kwargs = []
     for arg_name, arg_val in constructor_args.items():
@@ -1248,16 +1252,17 @@ class ${class_name}(eqx.Module):
     def __call__(self, result):
         """Process the run, reporting only its measured part.
 
-        The settle is the head of the same window, so the monitor's own warm-up is real signal; its output samples before t=0 are the settle's and are dropped here.
+        The settle is the head of the same window, so the monitor's own warm-up is real signal; the ${_ext_cut} output samples it produced over the settle are dropped here. A swept cell is handed the window alone, whose settle the grid already cut, so the input length decides whether there is anything to drop.
         """
         _out = self._monitor(result)
-        _ts = getattr(_out, "ts", None)
-        if _ts is None:
+% if _ext_cut:
+        _data = result.data if hasattr(result, 'data') else result
+        if getattr(_out, "ts", None) is None or _data.shape[0] <= ${n_window}:
             return _out
-        _keep = int(jnp.count_nonzero(jnp.asarray(_ts) <= 0.0))
-        if _keep == 0:
-            return _out
-        return type(_out)(_out.ts[_keep:], _out.ys[_keep:], dt=getattr(_out, "dt", None), variable_names=getattr(_out, "variable_names", None))
+        return type(_out)(_out.ts[${_ext_cut}:], _out.ys[${_ext_cut}:], dt=getattr(_out, "dt", None), variable_names=getattr(_out, "variable_names", None))
+% else:
+        return _out
+% endif
 
 % elif obs['reduction'] is not None:
 ## A host monitor backed by `_reduction_${obs_name}`: the observer is the definition, so the whole-trajectory fold equals the value the grid streams.
@@ -1271,9 +1276,10 @@ class ${class_name}(AbstractMonitor):
         self.dt = dt
 
     def __call__(self, result):
-        # One block over the whole window equals the value the grid streams: the settle warms the HRF ring in-band and its BOLD samples are dropped at finalize.
-        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, skip=_N_TRANSIENT)
+        # One block over the whole window equals the value the grid streams: the settle warms the HRF ring in-band and its BOLD samples are dropped at finalize. A swept cell is handed the window alone, whose settle the grid already cut, so the input length decides whether there is one to drop.
         _data = result.data if hasattr(result, 'data') else result
+        _init, _update, _finalize = _reduction_${obs_name}(
+            s_var=${state_idx}, dt=self.dt, skip=_N_TRANSIENT if _data.shape[0] > ${n_window} else 0)
         _acc = _init(_data[0], _data.shape[0])
         _acc = _update(_acc, _data)
         return _finalize(_acc)
@@ -1289,9 +1295,10 @@ class ${class_name}(AbstractMonitor):
         self.dt = dt
 
     def __call__(self, result):
-        # One big block over the whole window == the post-scan reduction, less the settle.
-        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, skip=_N_TRANSIENT)
+        # One big block over the whole window == the post-scan reduction, less the settle. A swept cell is handed the window alone, whose settle the grid already cut, so the input length decides whether there is one to drop.
         _data = result.data if hasattr(result, 'data') else result
+        _init, _update, _finalize = _reduction_${obs_name}(
+            s_var=${state_idx}, dt=self.dt, skip=_N_TRANSIENT if _data.shape[0] > ${n_window} else 0)
         _acc = _init(_data[0], _data.shape[0])
         _acc = _update(_acc, _data)
         return _finalize(_acc)
@@ -1421,17 +1428,16 @@ class ${class_name}(AbstractMonitor):
         _time = result.time
 % endif
 <%
-    # Whether the trajectory handed in still carries the settle. A swept cell is handed the window
-    # alone (the grid folds or slices the settle away before the monitor sees it); a bare run is
-    # handed the whole scan. The shapes are static under trace, so this resolves at trace time.
+    # Whether the trajectory handed in still carries the settle. A swept cell is handed the window alone (the grid folds or slices the settle away before the monitor sees it); a bare run is handed the whole scan. The shapes are static under trace, so this resolves at trace time.
 %>
-% if n_transient and needs_result_from_pipeline and not (obs.get('period')):
-        if _data.shape[0] > ${n_window}:
-            # A pipeline that reduces the time axis has to be denied the settle rather than trimmed
-            # after the fact: fed the whole scan, its window would start at the settle's first
-            # sample and the number it reports would be of the wrong stretch of the run.
+% if n_transient and needs_result_from_pipeline and not network_edge_label:
+        _has_settle = _data.shape[0] > ${n_window}   # the whole scan, not the window a swept cell is handed
+% if not obs.get('period'):
+        if _has_settle:
+            # A pipeline that reduces the time axis has to be denied the settle rather than trimmed after the fact: fed the whole scan, its window would start at the settle's first sample and the number it reports would be of the wrong stretch of the run.
             _data = _data[${n_transient}:]
             _time = None if _time is None else _time[${n_transient}:]
+% endif
 % endif
 
 
@@ -1606,9 +1612,8 @@ class ${class_name}(AbstractMonitor):
     # source is another observation inherits an already-cut input and must not cut twice.
     _obs_period = to_numeric(obs['period']) if obs.get('period') else None
     _grid_steps = int(round(float(_obs_period) / dt)) if _obs_period else 1
-    # Only a pipeline emitting on its OWN grid still holds settle samples on its output; one that
-    # reduces the time axis was denied the settle at its input above and has nothing to cut.
-    _cut = (n_transient // _grid_steps) if (n_transient and needs_result_from_pipeline and _obs_period) else 0
+    # Only a pipeline emitting on its OWN grid still holds settle samples on its output: one that reduces the time axis was denied the settle at its input above, and one fed an embedded edge constant rather than the trajectory never saw it at all.
+    _cut = (n_transient // _grid_steps) if (n_transient and needs_result_from_pipeline and _obs_period and not network_edge_label) else 0
 %>\
 % if _cut:
 <%
@@ -1619,9 +1624,8 @@ class ${class_name}(AbstractMonitor):
     else:
         _cut_var = '_data'
 %>\
-        if ${_cut_var}.shape[0] > ${_cut}:
-            # The settle warmed this pipeline's kernels in-band; its own ${_cut} output samples go
-            # no further. A cell handed the window alone never saw them and skips this.
+        if _has_settle:
+            # The settle warmed this pipeline's kernels in-band; its own ${_cut} output samples go no further. A cell handed the window alone never saw them, so the INPUT decides -- this output's own length cannot, being longer than ${_cut} either way once the window is long.
             ${_cut_var} = ${_cut_var}[${_cut}:]
 % endif
 

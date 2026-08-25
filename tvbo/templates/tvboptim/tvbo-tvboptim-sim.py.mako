@@ -62,9 +62,9 @@ from tvbo.templates.tvboptim.utils import get_state_bounds
 state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
 
 # Integration metadata
-SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4', 'rungekutta4thorder': 'RungeKutta4', 'runge_kutta': 'RungeKutta4', 'rungekutta': 'RungeKutta4'}
-method = (integration.method or 'euler').lower()
-solver_class = SOLVER_MAP.get(method, 'Euler')
+from tvbo.adapters.tvboptim import solver_class as _solver_class
+method = integration.method or 'euler'
+solver_class = _solver_class(method)
 dt = float(integration.step_size) if integration.step_size else 0.1
 has_noise = integration.noise is not None
 noise_sigma = np.asarray(experiment.noise_sigma_array).flatten().tolist() if hasattr(experiment, 'noise_sigma_array') else [0.1]

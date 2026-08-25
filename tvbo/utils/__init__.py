@@ -333,6 +333,43 @@ def noise_sigma(noise):
     return None
 
 
+INTEGRATION_METHODS = {
+    "Euler": ("eulerdeterministic", "eulerstochastic"),
+    "Heun": ("heundeterministic", "heunstochastic"),
+    "RungeKutta4thOrder": ("rk4", "runge_kutta", "rungekutta", "rungekutta4", "rungekutta4thorderdeterministic"),
+    "Dopri5": (),
+    "Dopri853": (),
+    "VODE": (),
+    "Identity": (),
+    "Tsit5": (),
+}
+"""Every integration method tvbo accepts, and the extra spellings that name it.
+
+The canonical key is the entry in ``tvbo/database/integrators/`` and the label of the ontology class carrying the method's symbolic form; the tuple holds the spellings a recipe may write instead. The key itself and its lowercase form are always accepted, so only genuinely different spellings are listed — ``rk4`` for ``RungeKutta4thOrder``, the ``Deterministic``/``Stochastic`` suffixes a TVB import writes (in tvbo a method is stochastic because noise is declared, not because it is spelled so).
+
+``Tsit5`` has no entry in the database and no ontology class: it is an adaptive solver a backend supplies, with no closed-form update expression to render.
+"""
+
+_INTEGRATION_ALIASES = {
+    spelling: canonical for canonical, spellings in INTEGRATION_METHODS.items() for spelling in (canonical.lower(), *spellings)
+}
+
+
+def integration_method(method, *, strict: bool = True) -> str | None:
+    """The canonical name of a declared integration method. Raises on a spelling tvbo does not know.
+
+    A recipe writes ``rk4``, ``RungeKutta4thOrder`` or ``runge_kutta`` and means one method; the ontology that holds its update expression and the adapter that picks a backend solver each need the one name. Reading the spelling through here is what stops the two from answering differently — the failure this replaces was a recipe that ran correctly on tvboptim, which knew ``rk4``, and died in the tvb template on ``'NoneType' object has no attribute 'equation'``, because the ontology did not and left the update expression unfilled.
+
+    An unrecognised spelling raises rather than resolving to a default: silently integrating by a scheme the recipe did not ask for changes the numbers it reports. ``strict=False`` answers ``None`` for it instead, which is what a caller that only wants to look the method up needs: ``Integrator.method`` is an open vocabulary for a backend that supplies its own solver — a NetworkDynamics.jl recipe naming ``AutoTsit5`` hands that string to Julia's ``solve`` and is not a mistake — so failing to recognise a spelling may not be an error at the point of the lookup.
+    """
+    key = str(method or "").strip().lower()
+    if key in _INTEGRATION_ALIASES:
+        return _INTEGRATION_ALIASES[key]
+    if not strict:
+        return None
+    raise ValueError(f"unknown integration method {method!r}; tvbo integrates by one of {sorted(INTEGRATION_METHODS)}")
+
+
 def sanitize_name(name) -> str:
     """Sanitise a name into a filesystem- and rule-safe token (keep alnum, ``_``, ``-``)."""
     import re

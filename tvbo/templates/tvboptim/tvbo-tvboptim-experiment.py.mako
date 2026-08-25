@@ -157,10 +157,9 @@ for ck, cobj in all_couplings.items():
                 all_coupling_param_shapes[(_to_ci_key(ck), p.name)] = str(p.shape)
 
 # Integration metadata
-SOLVER_MAP = {'euler': 'Euler', 'heun': 'Heun', 'heunstochastic': 'Heun', 'rk4': 'RungeKutta4', 'rungekutta4thorder': 'RungeKutta4', 'runge_kutta': 'RungeKutta4', 'rungekutta': 'RungeKutta4'}
-method = (integration.method or 'euler').lower()
-solver_class = SOLVER_MAP.get(method)
-assert solver_class, f"Unknown solver method: {method}. Valid: {list(SOLVER_MAP.keys())}"
+from tvbo.adapters.tvboptim import solver_class as _solver_class
+method = integration.method or 'euler'
+solver_class = _solver_class(method)
 dt = float(integration.step_size)
 # Seconds per model time unit, which puts analytic-frequency diagnostics on a physical Hz axis.
 from tvbo.utils.units import time_unit_of, unit_to_si_factor
@@ -241,13 +240,6 @@ if noise_draw == 'fused' and has_noise and any(str(getattr(_o, 'reduce', '')) ==
         "(the default) or drop `reduce: streaming`."
     )
 solver_block = 'None' if noise_draw == 'fused' else repr(block_size)
-
-def event_clock_wrap(ax):
-    """No offset: a swept onset means what it says.
-
-    Event onsets are declared on the measurement clock, and the run integrates on that same clock, so the value substituted into the leaf is the value the recipe wrote.
-    """
-    return ""
 
 # Execution config
 exec_config = experiment.execution
@@ -559,8 +551,8 @@ if optim_list and optim_list[0].integration:
     opt_integration = optim_list[0].integration
     opt_has_custom_integration = True
     # Override integration settings from optimization.integration
-    opt_method = (opt_integration.method or method).lower()
-    opt_solver_class = SOLVER_MAP.get(opt_method, solver_class)
+    opt_method = opt_integration.method or method
+    opt_solver_class = _solver_class(opt_method)
     opt_dt = float(opt_integration.step_size) if opt_integration.step_size else dt
     opt_t1 = float(opt_integration.duration) if opt_integration.duration else t1_default
 
@@ -2747,9 +2739,10 @@ def run_optimization(
     _stream_names = _rec_stream
     _stream_bs = expl.get('block_size') or 1000
     _stream_skip = n_transient
-    # Folding the settle away instead of stacking it rides the native block scan, so a Diffrax
-    # solver, or a fused noise draw that needs one unblocked scan, keeps the stack-and-cut path.
-    _window_native = str(solver_class) in ('Euler', 'Heun', 'RungeKutta4') and noise_draw != 'fused'
+    # Folding the settle away rides the native block scan, so a Diffrax solver keeps stack-and-cut; so does a fused draw, but only where noise exists to be drawn.
+    _window_native = str(solver_class) in ('Euler', 'Heun', 'RungeKutta4') and not (has_noise and noise_draw == 'fused')
+    # The fold rides the block scan, so its grain has to be the run's own: under `blocked` the grain IS the realization, and a cell that blocked differently from the bare run is a different computation. Only a noise-free `fused` reaches the exploration's own grain, where none of that applies.
+    _window_bs = block_size if noise_draw != 'fused' else _stream_bs
     # An exploration bundling every declared observation streams only when all of them are trajectory-free; one that needs the raw trajectory keeps the whole set on the materialise path.
     _bundle_plan = streaming_post_eval_plan(experiment) if bundles_observations else {'names': [], 'deliverables': [], 'period_in_steps': None}
     _bundle_stream_names = _bundle_plan['names']
@@ -2842,19 +2835,24 @@ def ${expl['name']}(state, model_fn, **kwargs):
         _network = _rebuilt_on(_network, _delay_graph)
 % endif
     if _network is not None:
-        _solver = get_solver(block_size=${solver_block})
-        # The same one-scan window a bare run integrates: each cell settles its own head over
-        # (-${transient_time}, ${t1_default}], so a swept cell and a bare run are one computation.
+        # The same one-scan window a bare run integrates: each cell settles its own head over (-${transient_time}, ${t1_default}], so a swept cell and a bare run are one computation.
 % if has_transient and _window_native:
-        # The settle is integrated but never stacked: the reducer writes only the rows past it
-        # into a fixed buffer, so a cell costs the window it reports rather than the whole
-        # rollout -- which is what lets a long settle vmap at any useful width.
+        # The settle is integrated but never stacked, so a cell costs the window it reports.
         _expl_model_fn_raw, _expl_state = prepare(
-            _network, get_solver(block_size=${_stream_bs}), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
+            _network, get_solver(block_size=${_window_bs}), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
             reduce=_window_reducer(${n_transient}, ${int(round(t1_default / dt))}),
         )
         _expl_ts = jnp.arange(1, ${int(round(t1_default / dt))} + 1) * ${dt}
 % else:
+        _solver = get_solver(block_size=${solver_block})
+% if has_transient:
+        # Folding needs a block grain and a block grain selects a fused realization, so this settle is stacked and cut. Said out loud because it costs memory in proportion to the settle.
+        logger.info(
+            "settle of %s ${time_unit} is materialised, not folded: %s",
+            ${transient_time},
+            "${'noise_draw: fused draws one unblocked tensor, and blocking it would move the realization. Declare integration.noise_draw: blocked to fold it' if has_noise and noise_draw == 'fused' else 'this solver has no native block scan'}",
+        )
+% endif
         _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=${scan_t0}, t1=${t1_default}, dt=${dt})
 % endif
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
@@ -2871,8 +2869,7 @@ def ${expl['name']}(state, model_fn, **kwargs):
 
         def _expl_model_fn(s):
 % if _window_native:
-            # Axis 1 is the solver's own variable order, which every observation indexes
-            # positionally; the reduced return carries no names to pass on.
+            # Axis 1 is the solver's own variable order, which every observation indexes positionally; the reduced return carries no names to pass on.
             _sol = NativeSolution(_expl_ts, _expl_model_fn_raw(s), dt=${dt}, variable_names=None)
 % else:
             result = _expl_model_fn_raw(s)
@@ -2938,7 +2935,7 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     _grp_${ax['name']} = "${ax['name']}" if _axisvals_${ax['name']}.ndim > 1 else None
     _array_axis_points["${_lbl}"] = _axisvals_${ax['name']}
     % if ax.get('is_external'):
-    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}${event_clock_wrap(ax)}))
+    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % elif ax.get('is_coupling'):
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']}))
     % elif ax.get('is_network'):
@@ -2983,9 +2980,9 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     % elif ax.get('is_external'):
     ## A `t0` is declared against the main simulation, so it rides the padded clock as a wrap and the coordinate stays the time the recipe wrote.
     % if 'values' in ax:
-    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']}, dtype=float)${event_clock_wrap(ax)}))
+    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', DataAxis(jnp.asarray(${ax['values']}, dtype=float)))
     % else:
-    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})${event_clock_wrap(ax)}))
+    grid_state.external.${ax['external_key']}.${ax['name']} = _ax('${_lbl}', GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']})))
     % endif
     % elif ax.get('is_coupling'):
     % if 'values' in ax:
@@ -3160,10 +3157,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
 % if not obs_name:
-<%
-    # A sweep naming its outputs takes the `record:` branch above, where render_recorded_observable already evaluates the `analysis` diagnostics per cell; reaching here means `record:` is empty, so no analysis list is threaded.
-    _an_arg = ""
-%>
+<%doc>
+    A sweep naming its outputs takes the `record:` branch above, where render_recorded_observable already evaluates the `analysis` diagnostics per cell; reaching here means `record:` is empty, so no analysis list is threaded.
+</%doc>
 % if bundles_observations and _bundle_fully_stream:
     # Every bundled observation is trajectory-free, so the streamable ones fold into the carry and the deliverables come from the streamed values; a passed-in model_fn falls back to the materialise path.
     if _network is not None:
@@ -3179,19 +3175,19 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         def observable_fn(s):
             _vals = _bundle_model_fn(s)
             _pre = {_n: _v for _n, _v in zip(${repr(_bundle_stream_names)}, _vals)}
-            return keep_recorded(compute_all_observations(None, s, precomputed=_pre${_an_arg}))
+            return keep_recorded(compute_all_observations(None, s, precomputed=_pre))
     else:
 % if has_host_pipeline_obs or _rec_host:
         # Host pipeline callables cannot trace under jit: jit only the solve.
         _expl_model_fn_jit = jax.jit(_expl_model_fn)
         def observable_fn(s):
             result = _expl_model_fn_jit(s)
-            return keep_recorded(compute_all_observations(result, s, ${_an_arg}))
+            return keep_recorded(compute_all_observations(result, s))
 % else:
         @jax.jit
         def observable_fn(s):
             result = _expl_model_fn(s)
-            return keep_recorded(compute_all_observations(result, s, ${_an_arg}))
+            return keep_recorded(compute_all_observations(result, s))
 % endif
 % elif bundles_observations:
     # Observations declared: observable_fn returns only the reduced
@@ -3204,12 +3200,12 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _expl_model_fn_jit = jax.jit(_expl_model_fn)
     def observable_fn(s):
         result = _expl_model_fn_jit(s)
-        return keep_recorded(compute_all_observations(result, s, ${_an_arg}))
+        return keep_recorded(compute_all_observations(result, s))
 % else:
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
-        return keep_recorded(compute_all_observations(result, s, ${_an_arg}))
+        return keep_recorded(compute_all_observations(result, s))
 % endif
 % elif has_model_output and model_output_indices:
     # ``model_output_channel_index`` is a scalar for one output, dropping the variable dim, or a slice for several.
@@ -3302,11 +3298,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # Each trial uses a different random noise realization for stochastic parameters.
     # vmap maps the observable over all trials in parallel on the same device.
     _n_trials = ${expl['n_trials']}
-    % if has_transient:
-    _n_steps_stoch = int(_t_total / ${dt}) + 2
-    % else:
-    _n_steps_stoch = int(${t1_default} / ${dt}) + 2
-    % endif
+    # The draw has to cover the settle as well as the window, because the scan opens at -transient_time.
+    _n_steps_stoch = int(${transient_time + t1_default} / ${dt}) + 2
     _trial_keys = jax.random.split(jax.random.key(${stochastic_param_info[_sp_names[0]]['seed']}), _n_trials)
     % for _sp_idx, _sp_name in enumerate(_sp_names):
 <%

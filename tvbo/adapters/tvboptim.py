@@ -18,17 +18,29 @@ from tvbo.utils import keyed_items, network_couplings, noise_sigma, normalize_pa
 if TYPE_CHECKING:
     from tvbo.classes.network import Network
 
-# Integration method -> tvboptim native solver. Shared with the codegen templates (which render `SOLVER_MAP[method]`) so a recipe that runs through the experiment template also runs on the in-process heterogeneous path, on the same spellings.
+# Canonical integration method -> tvboptim native solver. Keyed by the name `tvbo.utils.integration_method` resolves a recipe's spelling to, so the accepted spellings are written down once, for every backend, rather than once per template.
 SOLVER_MAP = {
-    "euler": "Euler",
-    "heun": "Heun",
-    "heunstochastic": "Heun",
-    "rk4": "RungeKutta4",
-    "runge_kutta": "RungeKutta4",
-    "rungekutta": "RungeKutta4",
-    "rungekutta4": "RungeKutta4",
-    "rungekutta4thorder": "RungeKutta4",
+    "Euler": "Euler",
+    "Heun": "Heun",
+    "RungeKutta4thOrder": "RungeKutta4",
+    "Dopri5": "DiffraxSolver",
+    "Tsit5": "DiffraxSolver",
 }
+
+
+def solver_class(method) -> str:
+    """The tvboptim solver class that integrates by *method*.
+
+    Raises for a method tvboptim has no solver for. Falling back to ``Euler`` — which the templates this centralises each did — silently integrates a fourth-order recipe by a first-order scheme and reports the result as the recipe's own.
+    """
+    from tvbo.utils import integration_method
+
+    canonical = integration_method(method)
+    if canonical not in SOLVER_MAP:
+        raise NotImplementedError(
+            f"integration method {method!r} ({canonical}) has no tvboptim solver; it integrates by one of {sorted(SOLVER_MAP)}"
+        )
+    return SOLVER_MAP[canonical]
 
 
 class TvboptimAdapter(BaseAdapter):
@@ -609,13 +621,15 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
     dur = 1000.0 if dur is None else float(dur)
     dt = 0.1 if dt is None else float(dt)
     method = getattr(integ, "method", None)
-    method = "heun" if method is None else str(getattr(method, "text", method)).lower()
-    if method not in SOLVER_MAP:
-        raise NotImplementedError(
-            f"integration method {method!r} has no heterogeneous tvboptim solver; declared one of {sorted(SOLVER_MAP)}"
-        )
+    method = "Heun" if method is None else str(getattr(method, "text", method))
     n_steps = max(1, int(round(dur / dt)))
-    solver = getattr(solvers, SOLVER_MAP[method])(block_size=min(100, n_steps))
+    _cls = solver_class(method)
+    if _cls == "DiffraxSolver":  # takes the diffrax solver to wrap, not a block size, so it is not buildable here
+        raise NotImplementedError(
+            f"integration method {method!r} is integrated by an adaptive Diffrax solver, which the heterogeneous "
+            "path does not construct; declare a fixed-step method (Euler, Heun, RungeKutta4thOrder)"
+        )
+    solver = getattr(solvers, _cls)(block_size=min(100, n_steps))
     _factors, _axis = _correlated_noise_factors(lib, het, context=experiment)
     if _factors is not None:
         from tvbo.classes.correlated_noise import CorrelatedNoiseSolver

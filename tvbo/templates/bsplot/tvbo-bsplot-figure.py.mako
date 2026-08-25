@@ -557,7 +557,9 @@ def _restore_fixed_axes(snap):
     if hasattr(_drawn, "xaxis"):
         _SCALE_AXES[${repr(p['key'])}] = _drawn   # the bar, not the slot: a declared frame belongs on it, the panel letter on the slot behind it
 % elif p['kind'] in ('custom', 'surface'):
-    _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
+    _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
+    if hasattr(_drawn, "get_subplotspec"):
+        ax = _drawn        # the drawer replaced its axes (e.g. swapped the 2-D cell for a 3-D projection); everything downstream styles the replacement
 % elif p['kind'] == 'line3d':
     _spec = ax.get_subplotspec(); ax.remove()           # swap the 2-D cell for a 3-D axis
     ax = fig.add_subplot(_spec, projection="3d")

@@ -21,19 +21,7 @@ Output:
 <%
 import jax.numpy as jnp
 
-# Map method names to tvboptim solver classes
-SOLVER_MAP = {
-    'euler': 'Euler',
-    'heun': 'Heun',
-    'heunstochastic': 'Heun',
-    'runge_kutta': 'RungeKutta4',
-    'rungekutta': 'RungeKutta4',
-    'rk4': 'RungeKutta4',
-    'rungekutta4thorder': 'RungeKutta4',
-    'dopri5': 'DiffraxSolver',
-    'tsit5': 'DiffraxSolver',
-    'adaptive': 'DiffraxSolver',
-}
+from tvbo.adapters.tvboptim import solver_class as _solver_class
 
 # Get integration and model from context
 if 'experiment' in context.keys():
@@ -43,8 +31,9 @@ else:
     integration = context.get('integration')
     model = context.get('model', None)
 
-method = (integration.method or 'euler').lower() if integration else 'euler'
-solver_class = SOLVER_MAP.get(method, 'Euler')
+from tvbo.utils import integration_method
+method = integration_method(integration.method if integration and integration.method else 'euler')
+solver_class = _solver_class(method)
 is_diffrax = solver_class == 'DiffraxSolver'
 dt = float(integration.step_size) if integration and integration.step_size else 0.1
 
@@ -111,9 +100,9 @@ def get_solver(block_size=None):
 % endif
     """
 % if is_diffrax:
-    % if method == 'dopri5':
+    % if method == 'Dopri5':
     base_solver = DiffraxSolver(diffrax.Dopri5())
-    % elif method == 'tsit5':
+    % elif method == 'Tsit5':
     base_solver = DiffraxSolver(diffrax.Tsit5())
     % else:
     base_solver = DiffraxSolver(diffrax.Dopri5())

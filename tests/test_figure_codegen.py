@@ -1198,13 +1198,14 @@ def test_an_x_encoding_naming_a_variable_plots_against_that_variable(tmp_path):
     code = bsplot.render_code(fig, base_dir=tmp_path)
 
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     ns = {}
     exec(compile(code, "<emitted>", "exec"), ns)
     mpl_fig, ax = plt.subplots()
-    ns["_panel_a"](mpl_fig, ax)          # the emitted panel, drawing through whatever it resolves x with
+    ns["_panel_a"](mpl_fig, ax)  # the emitted panel, drawing through whatever it resolves x with
     got = np.asarray(ax.lines[0].get_xdata())
     plt.close(mpl_fig)
 
@@ -1275,6 +1276,6 @@ def test_a_layer_transform_runs_before_the_selection_and_a_ref_transform_after_i
     layer.used.sel = {"row": P.Argument(name="row", value=0)}
     code = bsplot.render_code(fig, base_dir=TAHER_BASE)
 
-    body = code[code.index("def _panel_a") :]          # `.sel(` also appears in the shared preamble
+    body = code[code.index("def _panel_a") :]  # `.sel(` also appears in the shared preamble
     before, sel, after = (body.index(x) for x in ("'_before'", "_da.sel(", "'_after'"))
     assert before < sel < after

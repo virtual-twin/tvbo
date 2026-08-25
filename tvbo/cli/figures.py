@@ -48,7 +48,7 @@ def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
 
     The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the study root each layer's ``used`` IRI resolves against, whose results directory holds the containers.
 
-Every figure is attempted before anything is raised, so one broken declaration reports itself alongside the others rather than hiding the thirteen behind it; the run still fails, naming all of them.
+    Every figure is attempted before anything is raised, so one broken declaration reports itself alongside the others rather than hiding the thirteen behind it; the run still fails, naming all of them.
 
     The image lands directly in ``out_dir`` — the one place the report and every other consumer reads a figure from — while its self-contained, editable ``plot_<name>.py`` goes to ``out_dir/scripts/``. Both are regenerable and gitignored together; separating them just keeps a study with many figures from interleaving twice as many files in the directory people actually browse. The subdirectory is deliberately NOT called ``code``: in a study that name means the authored, tracked, importable code the recipe references by bare module name, which this is not.
     """
@@ -59,7 +59,9 @@ Every figure is attempted before anything is raised, so one broken declaration r
     script_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     failed: list[str] = []
+    attempted = 0
     for figure in figures:
+        attempted += 1  # counted here, not re-derived: `figures` may be an iterator the loop has consumed
         name = getattr(figure, "name", None) or "figure"
         fmt = (getattr(figure, "format", None) or "png").lstrip(".")
         outfile = out_dir / f"{name}.{fmt}"
@@ -81,7 +83,7 @@ Every figure is attempted before anything is raised, so one broken declaration r
         except Exception as e:  # noqa: BLE001 — a caption must never lose a rendered figure
             _common.info(f"caption for {name} not written ({type(e).__name__}: {e})")
     if failed:
-        raise RuntimeError("{} of {} figures did not render:\n  {}".format(len(failed), len(list(figures)), "\n  ".join(failed)))
+        raise RuntimeError("{} of {} figures did not render:\n  {}".format(len(failed), attempted, "\n  ".join(failed)))
     return written
 
 

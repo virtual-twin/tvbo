@@ -130,10 +130,7 @@ def timeout_for(doc_name: str) -> int:
 def _run(cmd, doc_name: str, timeout: int, **kwargs):
     """Run *cmd*, failing the test rather than the run when it outlives *timeout*.
 
-    Without a ceiling here a single wedged notebook stops the whole suite indefinitely, and it does
-    so invisibly: the main thread blocks inside `subprocess.run`, so pytest-timeout cannot fire in
-    either of its modes and the run reports no test, no failure and no name -- just silence at
-    whatever percentage it had reached. Diagnosing that costs far more than the ceiling does.
+    Without a ceiling here a single wedged notebook stops the whole suite indefinitely, and it does so invisibly: the main thread blocks inside `subprocess.run`, so pytest-timeout cannot fire in either of its modes and the run reports no test, no failure and no name -- just silence at whatever percentage it had reached. Diagnosing that costs far more than the ceiling does.
     """
     try:
         return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, **kwargs)

@@ -327,7 +327,6 @@ def run_${algo_name}(
 % endfor
     post_model_fn: Callable = None,
     post_state: Any = None,
-    history: Any = None,
     run_post_tuning: bool = True,  # set False when called as a nested inner loop
     raw: bool = False,  # vmap-safe: skip pre_tuning sim + AlgorithmResult wrapping, return a Bunch of raw JAX arrays (for jax.vmap over a subject cohort)
 % if use_sliding_window:
@@ -431,17 +430,17 @@ def run_${algo_name}(
     if monitors is None:
         monitors = {}
 % for obs, obs_class in pipeline_observations:
-    _${obs}_monitor = monitors.get('${obs}') if monitors.get('${obs}') is not None else ${obs_class}(history=history)
+    _${obs}_monitor = monitors.get('${obs}') if monitors.get('${obs}') is not None else ${obs_class}()
 % endfor
 % for src_obs, src_class in source_monitors:
 % if src_obs not in [o[0] for o in pipeline_observations]:
-    _${src_obs}_monitor = monitors.get('${src_obs}') if monitors.get('${src_obs}') is not None else ${src_class}(history=history)
+    _${src_obs}_monitor = monitors.get('${src_obs}') if monitors.get('${src_obs}') is not None else ${src_class}()
 % endif
 % endfor
     history_accessor = lambda tree: tree._history
 
 % if use_sliding_window:
-    n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else history.data.shape[2] if history is not None else N_NODES
+    n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else N_NODES
 % if use_maxwin:
     _M = int(max_window_size) if max_window_size is not None else int(window_size)  # physical ring size (== window_size on the contiguous path)
 % endif
@@ -657,7 +656,7 @@ def run_${algo_name}(
                 ${repr(_pp_names)}, _streamed if isinstance(_streamed, (tuple, list)) else (_streamed,))}
             post_tuning = None
             post_tuning_observations = compute_all_observations(
-                None, state, history,
+                None, state,
                 only=${repr(set(_pp_names) | set(_pp_deliverables))}, precomputed=_stream_vals,
 % if external_inputs:
                 network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
@@ -676,14 +675,13 @@ def run_${algo_name}(
         else:
             post_tuning = model_fn(state)
 
-        # History is passed as result_transient so the BOLD pipeline continues across the boundary.
 % if external_inputs:
         # Scores against this call's `${', '.join(external_inputs)}`, since the module-level default would score a per-subject run against the wrong target.
         post_tuning_observations = compute_all_observations(
-            post_tuning, state, history,
+            post_tuning, state,
             network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}})
 % else:
-        post_tuning_observations = compute_all_observations(post_tuning, state, history)
+        post_tuning_observations = compute_all_observations(post_tuning, state)
 % endif
 % endif
     else:
@@ -1011,7 +1009,7 @@ def _${algo_name}_tuning_core_impl(
 % for ext in ni['external_inputs']:
             ${ext},
 % endfor
-            history=history, run_post_tuning=False, verbose=False,
+            run_post_tuning=False, verbose=False,
         ).state
 % endfor
         result = model_fn(state)

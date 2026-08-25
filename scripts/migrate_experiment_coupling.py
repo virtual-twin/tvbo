@@ -52,11 +52,14 @@ def _block_end(lines: list[str], start: int, indent: int) -> int:
 
 ALIAS = re.compile(r"^(?P<indent> *)network:\s*\*(?P<anchor>\S+)\s*$")
 
+INCLUDE = re.compile(r"^(?P<indent> *)network:.*!include\s+(?P<path>\S+)")
+"""A `network:` whose mapping lives in another file, which this rewrite will not reach into."""
 
-def _network_insert(lines: list[str], before: int, indent: int) -> int | None:
-    """Where to insert inside the sibling `network:` nearest above *before*.
 
-    A `network: *anchor` alias is expanded in place to a block that merges the anchor, so the experiment keeps the shared network while gaining a coupling of its own.
+def _network_insert(lines: list[str], before: int, indent: int) -> tuple[int, int] | None:
+    """Where to insert inside the sibling `network:` nearest above *before*, and how far that moved *before*.
+
+    A `network: *anchor` alias is expanded in place to a block that merges the anchor, so the experiment keeps the shared network while gaining a coupling of its own. That expansion grows the list above the coupling, so the second element is the number of lines added and every index the caller still holds shifts by it. Getting that wrong leaves one line of the coupling behind at the experiment level, where it is still valid YAML and quietly means something else.
     """
     opener = re.compile(rf"^ {{{indent}}}network:\s*(&\S+)?\s*$")
     for i in range(before - 1, -1, -1):
@@ -64,12 +67,30 @@ def _network_insert(lines: list[str], before: int, indent: int) -> int | None:
         if line.strip() and (len(line) - len(line.lstrip())) < indent:
             return None
         if opener.match(line):
-            return _block_end(lines, i, indent)
+            return _block_end(lines, i, indent), 0
         alias = ALIAS.match(line)
         if alias and len(alias.group("indent")) == indent:
-            lines[i : i + 1] = [f"{alias.group('indent')}network:\n", f"{alias.group('indent')}  <<: *{alias.group('anchor')}\n"]
-            return i + 2
+            lines[i : i + 1] = [
+                f"{alias.group('indent')}network:\n",
+                f"{alias.group('indent')}  <<: *{alias.group('anchor')}\n",
+            ]
+            return i + 2, 1
     return None
+
+
+def _no_network(lines: list[str], before: int, indent: int) -> str:
+    """Why the coupling at *before* has no `network:` mapping to move into.
+
+    A network pulled in by `!include` is the case worth naming: the mapping exists, it is just in another file, and that file is where the coupling belongs. Saying only "no sibling network" sends the reader looking for something that is right there.
+    """
+    for i in range(before - 1, -1, -1):
+        line = lines[i]
+        if line.strip() and (len(line) - len(line.lstrip())) < indent:
+            break
+        found = INCLUDE.match(line)
+        if found and len(found.group("indent")) == indent:
+            return f"its `network:` is `!include {found.group('path')}` - declare the coupling in that file"
+    return "no sibling `network:` mapping to move it into"
 
 
 def _already_declared(lines: list[str], insert: int, indent: int) -> bool:
@@ -159,28 +180,33 @@ def _migrate_text(text: str) -> tuple[str, list[str]]:
     """Relocate every removed-spelling coupling in *text*, and say what happened.
 
     One move per pass, then a full rescan: a move shifts every index below it, so walking the list while mutating it processes shifted content and can migrate one site twice. `skip` steps past the sites already found unmigratable, which is what makes the loop terminate.
+
+    An anchor on the `coupling:` line moves with it onto the re-keyed line. Dropping it leaves every later `*alias` pointing at a definition that no longer exists, and the file stops parsing.
     """
     lines = text.splitlines(keepends=True)
     notes: list[str] = []
     skip = 0
     while (site := _one_site(lines, skip)) is not None:
         i, indent, end, body, name, block, flow, ref, match = site
-        insert = None if name is None else _network_insert(lines, i, indent)
+        found = None if name is None else _network_insert(lines, i, indent)
+        insert, shift = found if found else (None, 0)
+        at = i + 1  # the site as the reader sees it, before the expansion moved the lines below it
+        i, end = i + shift, end + shift
 
         if name is None:
-            notes.append(f"line {i + 1}: SKIPPED - no `name:` to key it by")
+            notes.append(f"line {at}: SKIPPED - no `name:` to key it by")
             skip += 1
         elif insert is None:
-            notes.append(f"line {i + 1}: SKIPPED - no sibling `network:` mapping to move it into")
+            notes.append(f"line {at}: SKIPPED - {_no_network(lines, i, indent)}")
             skip += 1
         elif _already_declared(lines, insert, indent):
-            notes.append(f"line {i + 1}: SKIPPED - `network.coupling` already declared; merge by hand")
+            notes.append(f"line {at}: SKIPPED - `network.coupling` already declared; merge by hand")
             skip += 1
         else:
             pad = " " * (indent + 2)
-            # The anchor rides along on the re-keyed line: dropping it leaves every later
-            # `*alias` pointing at a definition that no longer exists.
-            tag = f" {match.group('anchor')}" if block and match.group("anchor") else ""
+            tag = (
+                f" {match.group('anchor')}" if block and match.group("anchor") else ""
+            )  # rides along; else every later `*alias` is undefined
             if ref:
                 nested = [f"{pad}coupling:\n", f"{pad}  {name}: *{ref.group('ref')}\n"]
             elif block:
@@ -188,7 +214,7 @@ def _migrate_text(text: str) -> tuple[str, list[str]]:
             else:
                 nested = [f"{pad}coupling:\n", f"{pad}  {name}: {match.group('body')}\n"]
             lines = lines[:insert] + nested + lines[insert:i] + lines[end:]
-            notes.append(f"line {i + 1}: moved into `network.coupling`, keyed as {name!r}")
+            notes.append(f"line {at}: moved into `network.coupling`, keyed as {name!r}")
     return "".join(lines), list(reversed(notes))
 
 

@@ -1,5 +1,7 @@
 <%!
     import numpy as np
+
+    from tvbo.utils import integration_method
 %>
 <%
 if 'experiment' in context.keys():
@@ -28,7 +30,8 @@ else:
         base_class = 'Integrator'
 
 # Define the time step variables
-dt = 1 if integration.method == 'Identity' else integration.step_size
+# `strict=False`: a backend-supplied solver name is not a spelling mistake, and this only asks whether it is `Identity`.
+dt = 1 if integration_method(integration.method, strict=False) == 'Identity' else integration.step_size
 
 # Set noise expressions based on the stochastic parameter
 if stochastic:

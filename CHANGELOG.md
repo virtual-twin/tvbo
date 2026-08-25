@@ -60,6 +60,18 @@ path, and the callers in `tvbo/`, `tests/` and `docs/` are migrated to it.
   condition — so neither could have had a working caller.
 
 ### Fixed
+- One integration method, one canonical name, whatever the recipe spells it.
+  `rk4` is a method the schema advertises and the tvboptim adapter accepted, but
+  the ontology holding the method's symbolic update expression knew only
+  `RungeKutta4thOrder` — so a recipe spelling it `rk4` ran on tvboptim and died in
+  the tvb and jax templates on `'NoneType' object has no attribute 'equation'`.
+  `tvbo.utils.integration_method` now resolves every spelling to the one name, and
+  an unknown one raises instead of falling back. The spellings had been written out
+  five times (the adapter and four templates), disagreeing about which they
+  accepted, and two of the templates resolved an unknown method to `Euler` —
+  silently integrating a fourth-order recipe by a first-order scheme. There is one
+  table now, and `tvbo.adapters.tvboptim.solver_class` raises for a method tvboptim
+  has no solver for.
 - Heterogeneous tvboptim runs: `Node.id` is resolved as an identifier rather than
   a row index (weights, lengths and delays alike), `execution.random_seed` reaches
   each group's noise, routes are keyed by coupling name so two edges naming one
@@ -90,6 +102,12 @@ path, and the callers in `tvbo/`, `tests/` and `docs/` are migrated to it.
   Reading is unaffected: `experiment.coupling` is a read-only property answering the
   network's first coupling, which is the one a backend expressing a single coupling
   renders — codegen asks `BaseAdapter` for it instead, so no template derives its own.
+  `scripts/migrate_experiment_coupling.py` performs the move: it reports by default
+  and rewrites under `--apply`, moving only the coupling's own lines so the rest of a
+  hand-authored recipe is left byte for byte as written. It carries anchors onto the
+  re-keyed line, expands a `network: *alias` into a `<<:` merge, and names the file
+  to edit when the network arrives by `!include`. A site it cannot place
+  unambiguously is reported and left alone.
 - A key repeated in one YAML mapping is now an error rather than a silent
   last-one-wins override.
 - A serialized entity's `requires` is a list of labels. It used to be a list of

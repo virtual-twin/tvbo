@@ -49,8 +49,12 @@ MATERIALISED = "is materialised, not folded"
 
 @pytest.mark.parametrize(
     "name,noise_draw,folds",
-    [(DETERMINISTIC, "blocked", True), (DETERMINISTIC, "fused", True),
-     (STOCHASTIC, "blocked", True), (STOCHASTIC, "fused", False)],
+    [
+        (DETERMINISTIC, "blocked", True),
+        (DETERMINISTIC, "fused", True),
+        (STOCHASTIC, "blocked", True),
+        (STOCHASTIC, "fused", False),
+    ],
 )
 def test_a_materialised_settle_says_so(name, noise_draw, folds):
     """The expensive branch announces itself, because its cost is otherwise invisible.

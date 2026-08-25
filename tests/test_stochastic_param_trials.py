@@ -1,11 +1,6 @@
 """A time-varying stochastic parameter under a trial ensemble draws noise for the settle too.
 
-The emitter pre-draws one noise vector per stochastic parameter per trial, and its length has to
-cover the whole scan. The scan opens at ``-transient_time``, so a settle is part of that length --
-and the branch that was supposed to add it referenced a name the template never defined, so every
-experiment combining a settle, ``n_trials`` and a time-varying parameter distribution died at run
-time with ``NameError: name '_t_total' is not defined``. Nothing caught it because the combination
-appears in no other test and only a documentation notebook exercised it.
+The emitter pre-draws one noise vector per stochastic parameter per trial, and its length has to cover the whole scan. The scan opens at ``-transient_time``, so a settle is part of that length -- and the branch that was supposed to add it referenced a name the template never defined, so every experiment combining a settle, ``n_trials`` and a time-varying parameter distribution died at run time with ``NameError: name '_t_total' is not defined``. Nothing caught it because the combination appears in no other test and only a documentation notebook exercised it.
 """
 
 from __future__ import annotations

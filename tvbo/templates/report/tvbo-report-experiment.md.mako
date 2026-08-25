@@ -842,8 +842,6 @@ if obs_tail is not None:
     sampling_bits.append(f"tail={obs_tail}")
 if obs_window is not None:
     sampling_bits.append(f"window={obs_window}")
-if obs_warmup:
-    sampling_bits.append(f"warm-up={obs_warmup}")
 if obs_data:
     sampling_bits.append(f"data={_name_text(obs_data)}")
 period_str = ', '.join(sampling_bits) or '—'

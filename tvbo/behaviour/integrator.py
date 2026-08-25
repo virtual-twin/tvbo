@@ -44,17 +44,17 @@ class IntegratorBehaviour:
     def ontoclass(self):
         """The ontology class for this integrator, resolved from `method`.
 
-        Resolves a string `method` via the ontology, passes through an existing ontology `ThingClass`, and yields `None` otherwise.
+        Resolves a string `method` via the ontology, passes through an existing ontology `ThingClass`, and yields `None` otherwise. The spelling is canonicalised first, so the ontology is asked under the one name its label carries however the recipe wrote it, and a spelling tvbo has no symbolic form for yields `None` rather than raising — `Integrator.method` is an open vocabulary for a backend that supplies its own solver, and this property is asked at construction, where a Julia recipe naming `AutoTsit5` must still load.
         """
         import owlready2
 
         from tvbo.ontology import owl as ontology
+        from tvbo.utils import integration_method
 
-        return (
-            ontology.get_integrator(self.method)
-            if isinstance(getattr(self, "method", None), str)
-            else (self.method if isinstance(self.method, owlready2.entity.ThingClass) else None)
-        )
+        if not isinstance(getattr(self, "method", None), str):
+            return self.method if isinstance(self.method, owlready2.entity.ThingClass) else None
+        canonical = integration_method(self.method, strict=False)
+        return ontology.get_integrator(canonical) if canonical else None
 
     @property
     def info(self):

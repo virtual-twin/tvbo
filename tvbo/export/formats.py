@@ -48,8 +48,22 @@ def _codegen_context(exp, **kw) -> dict:
     """The model and coupling every code template renders, resolved once by the adapter.
 
     ``BaseAdapter`` reads ``network.coupling`` — where a coupling is declared — and names the default. A template deriving its own is a second answer to a question the adapter already answers, and the two drift.
+
+    Both callers write the integrator's update step out symbolically, so the integration is checked here too: a method with no closed form reaches the template as an unset ``update_expression`` and fails there on ``'NoneType' object has no attribute 'equation'``, which names neither the method nor the reason.
     """
     from tvbo.adapters.base import BaseAdapter
+    from tvbo.utils import integration_method
+
+    integration = getattr(exp, "integration", None)
+    if integration is not None:
+        integration.enrich()
+        if getattr(integration, "update_expression", None) is None:
+            canonical = integration_method(integration.method, strict=False)
+            raise ValueError(
+                f"integration method {integration.method!r} ({canonical or 'a spelling tvbo does not know'}) has no "
+                "symbolic update expression, and this backend renders the update step. Declare a fixed-step method, or "
+                "run it on a backend that supplies its own solver."
+            )
 
     kw.setdefault("model", exp.dynamics)
     kw.setdefault("coupling", BaseAdapter(exp).get_default_coupling())
