@@ -1780,10 +1780,8 @@ class ${class_name}(AbstractMonitor):
 %>
 % if _decl_period and _decl_period > float(dt):
         elif _time is not None and len(_time) > len(_final) > 1:
-            # The pipeline subsampled to the declared output period (e.g. BOLD TR):
-            # place samples at that exact period from the recording start, so the
-            # time axis is not stretched across the full integration span.
-            _ts = _time[0] + jnp.arange(len(_final)) * ${_decl_period}
+            # A sample that reports a period covers it, so it is stamped at the END of the period it covers: the first lands one whole period into the measured window, not on its first step. Verified against where a delta actually moves the output, not read off the emitting code.
+            _ts = _time[0] - self.dt + (jnp.arange(len(_final)) + 1) * ${_decl_period}
             _out_dt = ${_decl_period}
 % else:
         elif _time is not None and len(_time) > len(_final) > 1:

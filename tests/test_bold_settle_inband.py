@@ -81,21 +81,57 @@ def test_reports_one_sample_per_tr_of_the_measured_window(transient_ms, duration
     assert np.isfinite(out).all()
 
 
+def _responding_outputs(monitor, settle_steps, measured_steps, measured_step):
+    """Which reported samples a unit delta at `measured_step` (1-based) moves."""
+    n = settle_steps + measured_steps
+    ts = jnp.arange(1, n + 1) * DT - settle_steps * DT
+    base = jnp.zeros((n, 1, N_NODES))
+    quiet = np.asarray(monitor(_Trajectory(base, ts)).data)
+    struck = np.asarray(monitor(_Trajectory(base.at[settle_steps + measured_step - 1].set(1.0), ts)).data)
+    moved = np.abs(struck - quiet).max(axis=tuple(range(1, quiet.ndim))) > 1e-12
+    return np.nonzero(moved)[0]
+
+
 @pytest.mark.parametrize("transient_ms,duration_ms", [(40000.0, 4000.0), (60000.0, 8000.0), (8000.0, 4000.0)])
 def test_the_report_is_stamped_on_the_measured_window(transient_ms, duration_ms):
     """The whole settle comes off the time axis, however much of it the kernel kept as signal.
 
     The kernel deliberately leaves its own support in front of `t = 0` so the convolution warms on real data — but what the observation *reports* is the measured window, so that is the clock it reports on. Cutting the axis by what the data was cut by instead would stamp a measured sample with a settle timestamp.
+
+    The expected values are NOT read off the emitting expression — see `test_each_sample_is_stamped_where_it_actually_sits`, which locates the samples by perturbation and is what makes this parametrisation meaningful rather than circular.
     """
     monitor = _bold_monitor(transient_ms, duration_ms)
     settle_steps = int(round(transient_ms / DT))
     measured_steps = int(round(duration_ms / DT))
     ts = np.asarray(monitor(_window(settle_steps, measured_steps, seed=1)).ts)
 
-    expected = DT + np.arange(int(duration_ms // TR_MS)) * TR_MS
+    expected = (np.arange(int(duration_ms // TR_MS)) + 1) * TR_MS
     assert ts.shape == expected.shape
     np.testing.assert_allclose(ts, expected)
     assert ts[0] > 0, "the first reported sample is stamped inside the settle"
+
+
+def test_each_sample_is_stamped_where_it_actually_sits():
+    """A reported sample's timestamp must name the last measured step that can still move it.
+
+    This is the only assertion here that does not take the emitting code's word for the time axis. A sample reports a whole TR, so it covers the steps up to its own timestamp and none after: perturbing the step AT `ts[m]` must move sample `m`, and perturbing the very next step must not. A phase error of one period — stamping the first sample at the window's opening step rather than at the end of the period it integrates — shows up here and nowhere else, which is how it survived the rest of this module.
+    """
+    transient_ms, duration_ms = 40000.0, 8000.0
+    settle_steps = int(round(transient_ms / DT))
+    measured_steps = int(round(duration_ms / DT))
+    monitor = _bold_monitor(transient_ms, duration_ms)
+    ts = np.asarray(monitor(_window(settle_steps, measured_steps, seed=0)).ts)
+    tr_steps = int(round(TR_MS / DT))
+
+    for m in (0, 1, len(ts) - 1):
+        at = int(round(ts[m] / DT))
+        assert m in _responding_outputs(monitor, settle_steps, measured_steps, at), (
+            f"sample {m} is stamped {ts[m]:g}ms but the step at that time does not move it"
+        )
+        if at + 1 <= measured_steps:
+            assert m not in _responding_outputs(monitor, settle_steps, measured_steps, at + 1), (
+                f"sample {m} is stamped {ts[m]:g}ms but a later step still moves it"
+            )
 
 
 def test_the_settle_reaches_the_report_only_through_the_kernels_support():
