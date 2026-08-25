@@ -121,7 +121,6 @@ def test_each_sample_is_stamped_where_it_actually_sits():
     measured_steps = int(round(duration_ms / DT))
     monitor = _bold_monitor(transient_ms, duration_ms)
     ts = np.asarray(monitor(_window(settle_steps, measured_steps, seed=0)).ts)
-    tr_steps = int(round(TR_MS / DT))
 
     for m in (0, 1, len(ts) - 1):
         at = int(round(ts[m] / DT))
