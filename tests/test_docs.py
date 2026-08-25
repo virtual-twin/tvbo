@@ -113,6 +113,38 @@ for path in qmd_files:
     test_params.append(pytest.param(path, doc_name, marks=marks))
 
 
+CONVERT_TIMEOUT_S = 120
+"""A `quarto convert` is a format translation and never legitimately takes minutes."""
+
+EXECUTE_TIMEOUT_S = 600
+SLOW_EXECUTE_TIMEOUT_S = 3600
+"""Wall-clock ceilings on executing one notebook. Generous, because a doc that runs a simulation is
+allowed to be slow; finite, because one that hangs must not be allowed to stall the run."""
+
+
+def timeout_for(doc_name: str) -> int:
+    """The execution ceiling for one doc: longer where the doc is marked slow."""
+    return SLOW_EXECUTE_TIMEOUT_S if any(d in doc_name for d in SLOW_DIRS) else EXECUTE_TIMEOUT_S
+
+
+def _run(cmd, doc_name: str, timeout: int, **kwargs):
+    """Run *cmd*, failing the test rather than the run when it outlives *timeout*.
+
+    Without a ceiling here a single wedged notebook stops the whole suite indefinitely, and it does
+    so invisibly: the main thread blocks inside `subprocess.run`, so pytest-timeout cannot fire in
+    either of its modes and the run reports no test, no failure and no name -- just silence at
+    whatever percentage it had reached. Diagnosing that costs far more than the ceiling does.
+    """
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, **kwargs)
+    except subprocess.TimeoutExpired:
+        pytest.fail(
+            f"{doc_name}: `{Path(cmd[0]).name}` did not finish within {timeout} s and was killed. "
+            "Either the doc has become slower than its ceiling, or it is wedged -- a notebook that "
+            "runs a simulation can park its whole thread pool and never return."
+        )
+
+
 @pytest.mark.docs
 @pytest.mark.parametrize("qmd_path,doc_name", test_params, ids=lambda x: x if isinstance(x, str) else Path(x).stem)
 def test_doc_executes(qmd_path, doc_name, docs_kernel):
@@ -123,8 +155,8 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
     # Beside the doc for relative paths; pid-tagged so concurrent runs don't delete each other's.
     ipynb_path = doc_dir / f"{qmd_path.stem}.{os.getpid()}.ipynb"
     try:
-        result = subprocess.run(
-            ["quarto", "convert", str(qmd_path), "--output", str(ipynb_path)], capture_output=True, text=True, cwd=str(doc_dir)
+        result = _run(
+            ["quarto", "convert", str(qmd_path), "--output", str(ipynb_path)], doc_name, CONVERT_TIMEOUT_S, cwd=str(doc_dir)
         )
         assert result.returncode == 0, f"quarto convert failed: {result.stderr}"
         assert ipynb_path.exists(), f"Notebook not created: {ipynb_path}"
@@ -161,10 +193,10 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
         # Console scripts the docs shell out to (meson, ninja, jnml) live beside the interpreter.
         env["PATH"] = os.pathsep.join([str(Path(sys.executable).parent), env.get("PATH", "")])
 
-        result = subprocess.run(
+        result = _run(
             [jupyter_executable(), "execute", "--kernel_name", KERNEL_NAME, str(ipynb_path)],
-            capture_output=True,
-            text=True,
+            doc_name,
+            timeout_for(doc_name),
             cwd=str(doc_dir),  # Run from doc's directory for correct relative paths
             env=env,
         )

@@ -559,12 +559,49 @@ def _panel_opts(panel) -> dict:
     return _arg_dict(getattr(panel, "opts", None))
 
 
+# Axis directives whose only sensible value is a number, so a numeric-looking string is a parse accident rather than an intent. `aspect: equal` and the tick-format words are deliberately absent.
+_NUMERIC_AXIS_OPTS = {
+    "xlim",
+    "ylim",
+    "zlim",
+    "region",
+    "axhline",
+    "axvline",
+    "nbins",
+    "tick_size",
+    "tick_length",
+    "xtick_rotation",
+    "ytick_rotation",
+    "xlabel_pad",
+    "ylabel_pad",
+    "zlabel_pad",
+    "elev",
+    "azim",
+    "zoom",
+}
+
+
+def _as_number(v):
+    """A numeric-looking string as a number, recursively through lists; anything else unchanged.
+
+    YAML 1.1 needs a signed exponent to read a float, so ``[1.0e-4, 1.0e4]`` parses as one float and one string and matplotlib turns that axis categorical -- a declared limit then fails several layers down as "Failed to convert value(s) to axis units", naming neither the figure nor the key.
+    """
+    if isinstance(v, (list, tuple)):
+        return type(v)(_as_number(x) for x in v)
+    if isinstance(v, str):
+        try:
+            return float(v)
+        except ValueError:
+            return v
+    return v
+
+
 def _axopts(panel) -> dict:
     """Axis-level directives for a grammar panel (labels, limits, ticks, legend).
 
     Draws from ``Panel.opts`` (the recognised ``_AXIS_OPTS`` keys) plus the boolean ``Panel.legend`` slot. This is the minimal per-panel label/limit override: the paper's LaTeX axis labels and shared ranges live here rather than defaulting to the bare variable name.
     """
-    o = {k: v for k, v in _panel_opts(panel).items() if k in _AXIS_OPTS}
+    o = {k: (_as_number(v) if k in _NUMERIC_AXIS_OPTS else v) for k, v in _panel_opts(panel).items() if k in _AXIS_OPTS}
     if getattr(panel, "legend", None):
         o.setdefault("legend", "best")
     return o
@@ -710,10 +747,11 @@ def load_layer(layer: dict):
     """Open a custom panel's resolved layer into a DataArray (public API).
 
     A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``);
-    it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. The shared container cache means opening the same file across panels is free.
+    it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.
     """
-    name = layer.get("transform")
+    name, ref_name = layer.get("transform"), layer.get("ref_transform")
     fn = registered(TRANSFORMS, name, "transform") if name else None  # spec error before any IO
+    ref_fn = registered(TRANSFORMS, ref_name, "transform") if ref_name else None
     ds = _open_ds(layer["container"])
     from tvbo.data.dataref import match_output
 
@@ -722,6 +760,8 @@ def load_layer(layer: dict):
         da = fn(da)
     if layer.get("sel"):
         da = da.sel(layer["sel"], method=layer.get("sel_method"))
+    if ref_fn:
+        da = ref_fn(da)
     return da
 
 
@@ -794,6 +834,7 @@ def _resolve_layer(layer, panel_kind, base_dir):
         "color": color,
         "cmap": getattr(style, "colormap", None),
         "transform": getattr(layer, "transform", None),
+        "ref_transform": getattr(used[0] if isinstance(used, list) else used, "transform", None),
         "sel": sel,
         "sel_method": method,
         "triangle": str(triangle) if triangle else None,

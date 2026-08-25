@@ -216,7 +216,18 @@ def read_md_tables(source) -> list[MarkdownTable]:
 # ── The replication-report toolkit ────────────────────────────────────────── Every replication report does the same handful of things: format a number that may not have been computed, open a result or analysis container, read a value off the recipe, embed a figure with the published original beside it, caption it from the recipe's own metadata, and score the run against the targets written before it. Those live here, once, so a report holds only what is specific to its study -- its metrics -- and ten reports cannot drift apart on the parts they share.
 
 
-_FIG_LABEL_RE = re.compile(r"(EDF|Fig)(\d+)")
+_FIG_LABEL_RE = re.compile(r"(EDF|Fig)\.?[\s_-]*(S)?0*(\d+)", re.IGNORECASE)
+
+_TARGET_FIG_RE = re.compile(r"^(EDF|S(?:upp\w*)?)?\.?\s*0*(\d+)", re.IGNORECASE)
+
+
+def _canonical_figure(prefix: str | None, number) -> str:
+    """One spelling for a figure reference, so a recipe name and a targets-table cell can be compared.
+
+    Main text is bare (``"4"``), extended data keeps ``EDF``, supplementary collapses to ``S`` — which is what makes ``Supp. 3``, ``S3A`` and a figure named ``figS3_extremes`` the same figure.
+    """
+    kind = (prefix or "").upper()[:1]
+    return f"{'EDF' if kind == 'E' else 'S' if kind == 'S' else ''}{int(number)}"
 
 _MISSING = "—"
 
@@ -392,10 +403,14 @@ def may_show_original(cleared: bool = False) -> bool:
 def figure_label(figure) -> tuple[str, int]:
     """The paper's own label for a figure, parsed from the name the recipe declares.
 
-    Returns ``("Fig", 4)`` or ``("EDF", 10)``, and ``("New", 0)`` for a figure the paper has no counterpart for. Sorting on it puts the main-text figures in order, the extended data after them and our own last, so a report never hardcodes a figure list.
+    Returns ``("Fig", 4)``, ``("EDF", 10)`` or ``("Supp", 3)``, and ``("New", 0)`` for a figure the paper has no counterpart for. Case and zero padding are ignored, so ``fig03_transfer`` and ``Pang2023_Fig3_x`` both read as figure 3, and an ``S`` between the marker and the number makes it supplementary. Sorting on it puts the main-text figures in order, the extended data and supplement after them and our own last, so a report never hardcodes a figure list.
     """
     match = _FIG_LABEL_RE.search(slot(figure, "name", "") or "")
-    return (match.group(1), int(match.group(2))) if match else ("New", 0)
+    if not match:
+        return ("New", 0)
+    marker, supplementary, number = match.groups()
+    kind = "EDF" if marker.upper() == "EDF" else "Supp" if supplementary else "Fig"
+    return (kind, int(number))
 
 
 def figure_title(figure) -> str:
@@ -406,6 +421,8 @@ def figure_title(figure) -> str:
     kind, number = figure_label(figure)
     if kind == "EDF":
         return f"Extended Data Fig. {number}"
+    if kind == "Supp":
+        return f"Supplementary Fig. {number}"
     if kind == "Fig":
         return f"Figure {number}"
     declared = slot(figure, "label", "") or ""
@@ -434,7 +451,7 @@ def figure_caption(figure, *studies) -> str:
     return " ".join(str(slot(figure, "description", "") or "").split())
 
 
-_FIGURE_ORDER = {"Fig": 0, "EDF": 1, "New": 2}
+_FIGURE_ORDER = {"Fig": 0, "EDF": 1, "Supp": 2, "New": 3}
 
 
 def figures_in_paper_order(figures) -> list:
@@ -450,11 +467,11 @@ def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list
     kind, number = figure_label(figure)
     if kind == "New":
         return []  # a figure the paper never printed carries none of its targets
-    want = f"EDF{number}" if kind == "EDF" else str(number)
+    want = _canonical_figure(kind if kind in ("EDF", "Supp") else None, number)
     hits = []
     for row in rows:
-        tokens = (re.match(r"(EDF\d+|\d+)", t.strip()) for t in re.split(r"[,;]", row.get(column, "")))
-        if any(m and m.group(1) == want for m in tokens):
+        tokens = (_TARGET_FIG_RE.match(t.strip()) for t in re.split(r"[,;]", row.get(column, "")))
+        if any(m and _canonical_figure(*m.groups()) == want for m in tokens):
             hits.append(row)
     return hits
 
@@ -470,6 +487,9 @@ DIVERGENCE_CLASSES = {
 
 
 # The two spellings the corpus uses for a register's materiality column; anything else leaves its rows unscored.
+# An id annotated "(ours)" is a fault of the replication, not a divergence in the published study.
+_OURS_RE = re.compile(r"\(\s*ours\s*\)", re.IGNORECASE)
+
 _MATERIALITY_RE = re.compile(r"[*_]*(material|changes a number)", re.IGNORECASE)
 
 
@@ -479,6 +499,8 @@ def divergence_register(source) -> dict:
     The register is a skill-mandated artifact of any replication whose study ships code, and its counts are quoted in the report's prose. Parsing it here means the report can never disagree with the register it cites — the drift the register itself documents.
 
     Rows are recognised by an id cell that STARTS with ``<class><n>``, ignoring emphasis markers and any annotation after it — ``| **A4** *(cross-impl)* |`` is one row of class A. A row is *scored* when the table it sits in ends in a materiality column — headed ``Material`` or ``Changes a number?``, the two spellings the corpus uses — and it counts as material when that final cell opens with "yes" in any case or emphasis. Scoring is tracked per ROW rather than per class, because a register that continues one class into a second table would otherwise count those rows in the total and drop them from the material tally, understating its own headline; ``scored`` says how many rows were eligible, so a caption can state what it actually counted. A class with no scored row at all reports ``material`` as ``None`` rather than zero.
+
+    An id annotated ``(ours)`` marks a fault or standing gap in the *replication* rather than a divergence in the published study, and the two are counted apart: ``paper`` and ``paper_material`` are what a claim about the published work may quote, ``ours`` and ``ours_material`` what the replication owes its reader, and ``total`` remains every row. Summing them into one number is the specific mistake this split exists to prevent -- a portfolio headline that reads "divergences found in published studies" must not be inflated by the replicators' own bugs.
 
     The tolerance is load-bearing. A pattern that demands a bare id matches nothing on a register that bolds its ids, and the zeros it returns read as "no divergences found".
     """
@@ -493,20 +515,32 @@ def divergence_register(source) -> dict:
         m = re.match(r"^\|\s*[*_`]*([A-Z])(\d+)[*_`]*[^|]*\|", line)
         if not m:
             continue
-        entry = classes.setdefault(m.group(1), {"ids": [], "material": None, "scored": 0, "rows": []})
+        entry = classes.setdefault(m.group(1), {"ids": [], "material": None, "scored": 0, "rows": [], "ours": 0, "ours_material": 0})
         entry["ids"].append(f"{m.group(1)}{m.group(2)}")
         entry["rows"].append(cells)
+        ours = _OURS_RE.search(cells[0]) is not None
+        entry["ours"] += ours
         if scores:
             entry["scored"] += 1
-            entry["material"] = (entry["material"] or 0) + bool(re.match(r"[*_]*yes", cells[-1], re.IGNORECASE))
+            material = bool(re.match(r"[*_]*yes", cells[-1], re.IGNORECASE))
+            entry["material"] = (entry["material"] or 0) + material
+            entry["ours_material"] += ours and material
     for key, entry in classes.items():
         entry["count"] = len(entry["ids"])
         entry["title"] = DIVERGENCE_CLASSES.get(key, "")
+    total = sum(e["count"] for e in classes.values())
+    material = sum(e["material"] or 0 for e in classes.values())
+    ours = sum(e["ours"] for e in classes.values())
+    ours_material = sum(e["ours_material"] for e in classes.values())
     return {
         "classes": dict(sorted(classes.items())),
-        "total": sum(e["count"] for e in classes.values()),
-        "material": sum(e["material"] or 0 for e in classes.values()),
+        "total": total,
+        "material": material,
         "scored": sum(e["scored"] for e in classes.values()),
+        "ours": ours,
+        "ours_material": ours_material,
+        "paper": total - ours,
+        "paper_material": material - ours_material,
     }
 
 
@@ -640,9 +674,31 @@ class Scorecard:
         status = row["Status"].strip()
         return self.verdicts.get(status, status)
 
+    def _shorten(self, text: str) -> str:
+        """*text* up to its first top-level comma, less a trailing parenthetical.
+
+        Brackets are tracked rather than split on, so a target named after an expression keeps the name it was given: splitting at the first comma or bracket of any kind reduced ``Equilibrium manifold `v_30(m_3T0, c_31)` at the AD median Abeta`` to ``Equilibrium manifold `v_30`` and ``The (G, tau_i) parameter space`` to ``The``. A comma followed by a digit continues a list of values rather than opening a clause, so ``Codim-1 diagrams in `m_3T0` at `tau_i` = 14, 22, 50 ms`` keeps all three.
+        """
+        depth = 0
+        for i, ch in enumerate(text):
+            if ch in "([":
+                depth += 1
+            elif ch in ")]":
+                depth = max(0, depth - 1)
+            elif ch == "," and depth == 0 and not text[i + 1 :].lstrip()[:1].isdigit():
+                text = text[:i]
+                break
+        return re.sub(r"\s*\([^()]*\)$", "", text.strip()).strip()
+
     def headline(self, row) -> str:
-        """The target's headline, without its parenthetical and trailing qualifiers."""
-        return row["Target"].split(",")[0].split("(")[0].strip()
+        """The target's headline: its name, shortened only where the short form still names it alone.
+
+        A headline is how a target is referred to in prose, so two targets may not share one. `Group frequency spectra, heterogeneous Abeta` and `Group frequency spectra, homogeneous mean Abeta` differ only after the comma, and shortening both to `Group frequency spectra` would put the same name on the two halves of a controlled comparison.
+        """
+        full = row["Target"].strip()
+        short = self._shorten(full)
+        clash = any(other is not row and self._shorten(other["Target"].strip()) == short for other in self.rows)
+        return full if clash else short
 
     def reason(self, row) -> str:
         """The recorded reason for a row's outcome, or a note that none was given."""
@@ -660,7 +716,9 @@ class Scorecard:
             for tier in self.tiers
             if sum(counts[tier].values())
         ]
-        body.append(["**all**", *(sum(counts[t][v] for t in self.tiers) for v in self.verdicts), len(self.rows)])
+        totals = [sum(counts[t][v] for t in self.tiers) for v in self.verdicts]
+        # Total is the sum of the cells, not the row count: a target whose Status is still blank belongs to no outcome, and a row reading 4 + 1 + 0 + 0 = 37 contradicts itself while a study is part-way scored.
+        body.append(["**all**", *totals, sum(totals)])
         return md_table(["Tier", *self.verdicts.values(), "Total"], body, aligns=["l"] + ["r"] * (len(self.verdicts) + 1))
 
     def target_table(self, columns: Sequence[str] = ("ID", "Target", "Fig(s)", "Scope", "Fidelity", "Status")) -> str:

@@ -48,6 +48,8 @@ def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
 
     The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the study root each layer's ``used`` IRI resolves against, whose results directory holds the containers.
 
+Every figure is attempted before anything is raised, so one broken declaration reports itself alongside the others rather than hiding the thirteen behind it; the run still fails, naming all of them.
+
     The image lands directly in ``out_dir`` — the one place the report and every other consumer reads a figure from — while its self-contained, editable ``plot_<name>.py`` goes to ``out_dir/scripts/``. Both are regenerable and gitignored together; separating them just keeps a study with many figures from interleaving twice as many files in the directory people actually browse. The subdirectory is deliberately NOT called ``code``: in a study that name means the authored, tracked, importable code the recipe references by bare module name, which this is not.
     """
     from tvbo.adapters import bsplot
@@ -56,12 +58,18 @@ def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
     script_dir = out_dir / "scripts"
     script_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
+    failed: list[str] = []
     for figure in figures:
         name = getattr(figure, "name", None) or "figure"
         fmt = (getattr(figure, "format", None) or "png").lstrip(".")
         outfile = out_dir / f"{name}.{fmt}"
         script_path = script_dir / f"plot_{sanitize_name(name)}.py"
-        bsplot.render(figure, base_dir=str(base_dir), outfile=str(outfile), script_path=str(script_path))
+        try:
+            bsplot.render(figure, base_dir=str(base_dir), outfile=str(outfile), script_path=str(script_path))
+        except Exception as e:  # noqa: BLE001 — every figure is attempted, then the whole set of failures is raised at once
+            failed.append(f"{name}: {type(e).__name__}: {e}")
+            _common.info(f"{name} FAILED ({type(e).__name__}: {e})")
+            continue
         _common.info(f"wrote {outfile}")
         _common.info(f"wrote {script_path}")
         written.append(outfile)
@@ -72,6 +80,8 @@ def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
                 _common.info(f"wrote {cap}")
         except Exception as e:  # noqa: BLE001 — a caption must never lose a rendered figure
             _common.info(f"caption for {name} not written ({type(e).__name__}: {e})")
+    if failed:
+        raise RuntimeError("{} of {} figures did not render:\n  {}".format(len(failed), len(list(figures)), "\n  ".join(failed)))
     return written
 
 

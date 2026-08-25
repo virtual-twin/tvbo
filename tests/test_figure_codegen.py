@@ -1159,3 +1159,122 @@ def test_the_heatmaps_coordinate_arrays_follow_the_dim_names_too():
 
     C = heatmap_orientation(da, np.asarray(da.values), "rho_pfc", "rho_ppc", len(_x), len(_y))
     assert C.shape == (len(_y), len(_x)), "pcolormesh(x, y, C) needs C shaped (len(y), len(x))"
+
+
+# --------------------------------------------------------------- encoding resolves to a variable
+
+
+def _abscissa_container(path):
+    """An analysis container whose abscissa is a data VARIABLE, not a coordinate.
+
+    This is the ordinary shape for an analysis that returns a table: `equilibrium_manifold_beta` and friends write one row per point, so both the control value and the response are variables along an anonymous row dim that carries no coordinate at all.
+    """
+    import numpy as np
+    import xarray as xr
+
+    beta = np.linspace(0.0, 2.65, 41)
+    xr.Dataset(
+        {
+            "observation__beta": ("row", beta),
+            "observation__rate": ("row", 0.02 + 0.05 / (1.0 + np.exp(6.227 * (beta - 2.025)))),
+        }
+    ).to_netcdf(path, engine="h5netcdf")
+    return beta
+
+
+def test_an_x_encoding_naming_a_variable_plots_against_that_variable(tmp_path):
+    """`x: beta` means the values of `beta`, whichever way the container happens to store it.
+
+    A positional-index fallback here is the worst kind of defect: it draws a smooth, plausible curve against the wrong abscissa and nothing raises. In the case that found this, the abscissa became 0..400 while the panel declared `xlim: [1, 3]`, so the figure showed the first three samples of a sigmoid as a flat line at its upper asymptote.
+    """
+    import numpy as np
+
+    results = _results(tmp_path)
+    beta = _abscissa_container(results / "ana-transfer_result.h5")
+    bsplot._container_path.cache_clear()
+
+    fig = _cartesian_figure(iri="tvbo:result/S/transfer", output="rate", name="fig_x_var")
+    fig.panels["a"].layers[0].encoding = P.Encoding(x="beta", y="rate")
+    code = bsplot.render_code(fig, base_dir=tmp_path)
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ns = {}
+    exec(compile(code, "<emitted>", "exec"), ns)
+    mpl_fig, ax = plt.subplots()
+    ns["_panel_a"](mpl_fig, ax)          # the emitted panel, drawing through whatever it resolves x with
+    got = np.asarray(ax.lines[0].get_xdata())
+    plt.close(mpl_fig)
+
+    np.testing.assert_allclose(got, beta)
+    assert not np.allclose(got, np.arange(len(beta))), "abscissa fell back to a positional index"
+
+
+def test_an_encoding_that_names_nothing_raises_rather_than_indexing(tmp_path):
+    """An unresolvable name is a mistake in the spec, and silence turns it into a wrong figure."""
+    results = _results(tmp_path)
+    _abscissa_container(results / "ana-transfer_result.h5")
+    bsplot._container_path.cache_clear()
+
+    fig = _cartesian_figure(iri="tvbo:result/S/transfer", output="rate", name="fig_x_bad")
+    fig.panels["a"].layers[0].encoding = P.Encoding(x="no_such_thing", y="rate")
+    code = bsplot.render_code(fig, base_dir=tmp_path)
+
+    ns = {}
+    exec(compile(code, "<emitted>", "exec"), ns)
+    ds = ns["_open"](str((results / "ana-transfer_result.h5").resolve()))
+    with pytest.raises(KeyError, match="names neither a coordinate"):
+        ns["_channel"](ds, ns["_var"](ds, "rate"), "no_such_thing", 0)
+
+
+def test_a_transform_declared_on_the_used_ref_reaches_the_plotted_values(tmp_path):
+    """`transform:` is a slot on DataRef as well as on Layer, and both name the same registry.
+
+    Honouring only one of the two is worse than rejecting the other: the schema accepts the declaration, `extra="forbid"` never fires, and the panel draws untransformed data under the axis label the transform was declared for. The study that found this had 28 such layers -- every log scale and every -log10 p in it was inert, and eight of its fourteen figures were wrong with nothing raised.
+    """
+    import numpy as np
+
+    results = _results(tmp_path)
+    beta = _abscissa_container(results / "ana-transfer_result.h5")
+    bsplot._container_path.cache_clear()
+
+    @bsplot.register_transform("_test_negate")
+    def _negate(da):
+        return -da
+
+    fig = _cartesian_figure(iri="tvbo:result/S/transfer", output="rate", name="fig_ref_tf")
+    layer = fig.panels["a"].layers[0]
+    layer.encoding = P.Encoding(x="beta", y="rate")
+    layer.used.transform = "_test_negate"
+    code = bsplot.render_code(fig, base_dir=tmp_path)
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ns = {}
+    exec(compile(code, "<emitted>", "exec"), ns)
+    mpl_fig, ax = plt.subplots()
+    ns["_panel_a"](mpl_fig, ax)
+    got = np.asarray(ax.lines[0].get_ydata())
+    plt.close(mpl_fig)
+
+    assert np.all(got < 0), "the DataRef transform never reached the emitted panel"
+    np.testing.assert_allclose(got, -(0.02 + 0.05 / (1.0 + np.exp(6.227 * (beta - 2.025)))))
+
+
+def test_a_layer_transform_runs_before_the_selection_and_a_ref_transform_after_it():
+    """The two slots differ only in where they sit relative to ``sel``, so the emitted order is the contract."""
+    fig = _cartesian_figure(name="fig_tf_order")
+    layer = fig.panels["a"].layers[0]
+    layer.transform = "_before"
+    layer.used.transform = "_after"
+    layer.used.sel = {"row": P.Argument(name="row", value=0)}
+    code = bsplot.render_code(fig, base_dir=TAHER_BASE)
+
+    body = code[code.index("def _panel_a") :]          # `.sel(` also appears in the shared preamble
+    before, sel, after = (body.index(x) for x in ("'_before'", "_da.sel(", "'_after'"))
+    assert before < sel < after

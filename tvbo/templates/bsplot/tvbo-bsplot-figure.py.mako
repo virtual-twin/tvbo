@@ -420,6 +420,13 @@ def _channel(ds, da, name, axis=0):
             return np.asarray(_var(ds, name).values).squeeze()
         except KeyError:
             pass
+        if str(name) not in [str(d) for d in getattr(da, "dims", ())]:
+            raise KeyError(
+                f"encoding {name!r} names neither a coordinate, a dimension, a component of a "
+                f"coordinate, nor a variable of this container. Falling back to a positional "
+                f"index here would draw a plausible line against the wrong abscissa: available "
+                f"variables are {sorted(getattr(ds, 'data_vars', {}))}, dims {list(getattr(da, 'dims', ()))}."
+            )
     return _coord(da, name, axis)
 
 
@@ -563,6 +570,9 @@ def _restore_fixed_axes(snap):
 % if L['sel'] is not None:
     _da = _da.sel(_sel_keys(_da, ${repr(L['sel'])}), method=${repr(L['sel_method'])})
 % endif
+% if L['ref_transform']:
+    _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)
+% endif
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     _y = _channel(_ds, _da, ${repr(L['y'])}, 1)
     _z = _channel(_ds, _da, ${repr(L['z'])}, 2)
@@ -588,10 +598,13 @@ ${colorbar(p)}\
 % if L['sel'] is not None:
     _da = _da.sel(_sel_keys(_da, ${repr(L['sel'])}), method=${repr(L['sel_method'])})
 % endif
+% if L['ref_transform']:
+    _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)
+% endif
 % if L['mark'] == 'heatmap':
     _C = np.asarray(_da.values)
-    _x = _coord(_da, ${repr(L['x'])}, 0)
-    _y = _coord(_da, ${repr(L['y'])}, 1)
+    _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
+    _y = _channel(_ds, _da, ${repr(L['y'])}, 1)
     _C = _orient(_da, _C, ${repr(L['x'])}, ${repr(L['y'])}, len(_x), len(_y))
 % if L['triangle']:
     _C = _triangle(_C, ${repr(L['triangle'])}, ${p['triangle_gap']})
@@ -599,7 +612,7 @@ ${colorbar(p)}\
 % endif
     _im = ax.pcolormesh(_x, _y, _C, shading="auto", **_mesh_style(${repr(L['style'])}, _C))
 % elif L['mark'] == 'scatter':
-    _x = _coord(_da, ${repr(L['x'])}, 0)
+    _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
 % if L['color']:
     # Colour is a THIRD QUANTITY per point, not a fan of artists: one cloud shaded by the variable it is not plotted against.
     _im = ax.scatter(_x, np.asarray(_da.values).squeeze(),
@@ -609,13 +622,13 @@ ${colorbar(p)}\
     ax.scatter(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
 % endif
 % elif L['mark'] == 'bar':
-    _x = _coord(_da, ${repr(L['x'])}, 0)
+    _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     ax.bar(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
 % elif L['mark'] == 'area':
-    _x = _coord(_da, ${repr(L['x'])}, 0)
+    _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     ax.fill_between(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
 % elif L['mark'] == 'band':
-    _x = _coord(_da, ${repr(L['x'])}, 0 if _da.shape[0] != 2 else 1)  # swept axis is the non-pair one
+    _x = _channel(_ds, _da, ${repr(L['x'])}, 0 if _da.shape[0] != 2 else 1)  # swept axis is the non-pair one
     _b = _bounds(_da, _x, ${repr(L['output'])})
     ax.fill_between(_x, _b[0], _b[1], **${repr(L['style'])})
 % elif L['mark'] == 'rule':
@@ -630,10 +643,10 @@ ${colorbar(p)}\
     _cmap = plt.get_cmap(${repr(L['cmap'] or 'viridis')})
     for _i, _lab in enumerate(_labels):
         _line = _da.isel({_dim: _i})
-        ax.plot(_coord(_line, ${repr(L['x'])}, 0), np.asarray(_line.values).squeeze(),
+        ax.plot(_channel(_ds, _line, ${repr(L['x'])}, 0), np.asarray(_line.values).squeeze(),
                 color=_cmap(_i / max(len(_labels) - 1, 1)), label=_lab, **${repr(L['style'])})
 % else:
-    _x = _coord(_da, ${repr(L['x'])}, 0)
+    _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     ax.plot(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
 % endif
 % endfor

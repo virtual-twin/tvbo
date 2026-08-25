@@ -11,7 +11,9 @@ import pytest
 
 from tvbo.utils import study_layout as layout_rules
 from tvbo.utils.report import (
+    Scorecard,
     figure_caption,
+    figure_label,
     figure_targets,
     figure_title,
     figures_in_paper_order,
@@ -455,3 +457,98 @@ def test_a_swept_axis_reaches_the_report():
     axes = report.sweep_axes(exp)
     assert "network.conduction_speed" in axes, axes
     assert "n=50" in axes["network.conduction_speed"]
+
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("fig03_transfer", ("Fig", 3)),
+        ("fig13_kernel", ("Fig", 13)),
+        ("figS3_extremes", ("Supp", 3)),
+        ("Fig4_wave", ("Fig", 4)),
+        ("S_Fig4_y", ("Fig", 4)),
+        ("S_EDF10_x", ("EDF", 10)),
+        ("Pang2023_fit_landscape", ("New", 0)),
+    ],
+)
+def test_a_figure_name_is_labelled_whatever_its_case_and_padding(name, expected):
+    # A zero-padded lowercase name is the natural way to keep fig03 sorting beside fig13 in a directory; reading it as unnumbered silently drops every target the figure carries.
+    assert figure_label(_fig(name)) == expected
+
+
+def test_a_supplementary_figure_titles_and_sorts_as_supplementary():
+    assert figure_title(_fig("figS3_extremes")) == "Supplementary Fig. 3"
+    order = figures_in_paper_order([_fig("ours_x"), _fig("figS3_a"), _fig("fig04_b"), _fig("S_EDF2_c")])
+    assert [f.name for f in order] == ["fig04_b", "S_EDF2_c", "figS3_a", "ours_x"]
+
+
+_SUPP_ROWS = [
+    {"#": "T17", "Fig(s)": "Supp. 3"},
+    {"#": "T32", "Fig(s)": "S3A"},
+    {"#": "T34", "Fig(s)": "S5A,B"},
+    {"#": "T1", "Fig(s)": "3, Eq. 13-14"},
+    {"#": "T2", "Fig(s)": "6C,G,K; 9"},
+    {"#": "T29", "Fig(s)": "n/a"},
+]
+
+
+def test_a_supplementary_figure_joins_every_spelling_the_targets_table_uses():
+    hits = [r["#"] for r in figure_targets(_fig("figS3_extremes"), _SUPP_ROWS)]
+    assert hits == ["T17", "T32"]
+
+
+def test_a_main_text_figure_does_not_collect_the_supplementary_row_of_the_same_number():
+    assert [r["#"] for r in figure_targets(_fig("fig03_x"), _SUPP_ROWS)] == ["T1"]
+    assert [r["#"] for r in figure_targets(_fig("fig09_x"), _SUPP_ROWS)] == ["T2"]
+    assert [r["#"] for r in figure_targets(_fig("fig05_x"), _SUPP_ROWS)] == []
+
+
+_HEADLINE_DOC = """
+## Targets
+
+| ID | Target | Scope | Status |
+|----|--------|-------|--------|
+| T8 | Codim-1 diagrams in `m_3T0` at `tau_i` = 14, 22, 50 ms | core | met |
+| T11 | Group frequency spectra, heterogeneous Abeta | core | met |
+| T12 | Group frequency spectra, homogeneous mean Abeta | core | short |
+| T20 | The (G, tau_i) parameter space | core | short |
+| T29 | A reference integration, run under tvb-library | core | met |
+"""
+
+
+def test_a_list_of_values_is_not_cut_at_its_first_comma():
+    # "at tau_i = 14" names a different claim than "at tau_i = 14, 22, 50 ms" does.
+    sc = Scorecard(_HEADLINE_DOC)
+    assert sc.headline(sc.of("met")[0]) == "Codim-1 diagrams in `m_3T0` at `tau_i` = 14, 22, 50 ms"
+
+
+def test_two_targets_that_differ_only_after_the_comma_keep_their_full_names():
+    # The two halves of a controlled comparison must not both be called "Group frequency spectra".
+    sc = Scorecard(_HEADLINE_DOC)
+    by_id = {r["ID"]: sc.headline(r) for r in sc.rows}
+    assert by_id["T11"] == "Group frequency spectra, heterogeneous Abeta"
+    assert by_id["T12"] == "Group frequency spectra, homogeneous mean Abeta"
+    assert by_id["T20"] == "The (G, tau_i) parameter space"
+    assert by_id["T29"] == "A reference integration"
+
+
+_OURS_REGISTER = """
+| # | Class | Methods says | The code does | How established | Changes a number? |
+|---|---|---|---|---|---|
+| A1 | A | one value | another | verified | yes |
+| B2 | B | an integral | a solve | read | no |
+| B3 (ours) | B | our own contract | our own bug | verified. Fixed | yes |
+| C4 (ours) | C | a declared limit | silently dropped | verified. Fixed | no |
+"""
+
+
+def test_our_own_faults_are_counted_apart_from_the_published_studys_divergences():
+    """A portfolio headline about published work must not be inflated by the replicators' own bugs."""
+    from tvbo.utils.report import divergence_register
+
+    reg = divergence_register(_OURS_REGISTER)
+    assert (reg["total"], reg["material"]) == (4, 2)
+    assert (reg["ours"], reg["ours_material"]) == (2, 1)
+    assert (reg["paper"], reg["paper_material"]) == (2, 1)
+    assert reg["classes"]["B"]["count"] == 2 and reg["classes"]["B"]["ours"] == 1
+    assert reg["classes"]["A"]["ours"] == 0
