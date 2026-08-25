@@ -247,6 +247,8 @@ integration:
   duration: 300000.0
   description: Heun integrator
   transient_time: 300000.0
+  block_size: 1000
+  noise_draw: fused
   scipy_ode_base: false
   number_of_stages: 1
   delayed: true
@@ -342,26 +344,6 @@ observations:
         period_samples:
           name: period_samples
           value: 1
-    - function: temporal_average
-      output: downsampled_history
-      arguments:
-        data:
-          name: data
-          value: integration.transient
-        period_samples:
-          name: period_samples
-          value: 1
-    - function: prepend_history
-      arguments:
-        data:
-          name: data
-          value: downsampled_data
-        history:
-          name: history
-          value: downsampled_history
-        kernel_samples:
-          name: kernel_samples
-          value: 5000
     - callable:
         name: fftconvolve
         module: jax.scipy.signal
@@ -370,7 +352,7 @@ observations:
       arguments:
         in1:
           name: in1
-          value: prepend_history
+          value: downsampled_data
         in2:
           name: in2
           value: hrf_kernel
@@ -437,12 +419,13 @@ observations:
           value: bold
         skip_t:
           name: skip_t
-          description: Skip first 20 TRs for transient removal in post-tuning
+          description: Skip 20 TRs beyond the settle, which is already cut, for the
+            post-tuning evaluation
           value: 20
   fc_inloop:
     name: fc_inloop
     label: Simulated Functional Connectivity (In-Loop)
-    description: FC computed on sliding window without transient skip (for algorithm
+    description: FC over the sliding window, with no skip beyond the settle (algorithm
       in-loop)
     source:
     - bold
@@ -457,7 +440,8 @@ observations:
           value: bold
         skip_t:
           name: skip_t
-          description: No skip for in-loop FC (sliding window already handles transient)
+          description: 'No extra skip in-loop: the settle is cut and the sliding window
+            carries its own warm-up'
           value: 0
   fc_gradient:
     name: fc_gradient
@@ -565,26 +549,6 @@ functions:
       (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0])
       + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0],
       period_samples).shape[0]]'
-  prepend_history:
-    name: prepend_history
-    description: 'Fit the (downsampled) transient history to one kernel length and
-      prepend it, zero-padding at the front when shorter — matches HRFBold._process_history.
-
-      '
-    arguments:
-      data:
-        name: data
-        description: Downsampled input time series
-      history:
-        name: history
-        description: Downsampled transient history data
-      kernel_samples:
-        name: kernel_samples
-        description: Kernel support = ceil(kernel_duration / downsample_period)
-        value: 5000
-    source_code: jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],)
-      + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples
-      else history[-kernel_samples:]), data], axis=0)
   volterra_transform:
     name: volterra_transform
     equation:
@@ -900,6 +864,8 @@ optimizations:
       step_size: 4.0
       duration: 300000.0
       transient_time: 0.0
+      block_size: 1000
+      noise_draw: fused
       scipy_ode_base: false
       number_of_stages: 1
       delayed: true

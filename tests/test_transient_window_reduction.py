@@ -1,11 +1,14 @@
 """The settle is folded away in-band, not materialised and sliced.
 
-A declared ``transient_time`` opens the scan at ``-transient_time`` so ``t=0`` is the first measured step. Stacking that settle and slicing it off afterwards costs the whole joined trajectory in memory: on a 379-node Jansen-Rit grid with a 60 s settle and a 5.12 s window that is 2.37 GB per cell, of which 2.24 GB is discarded on the next line. The ``(init, update, finalize)`` window reducer rides the native block scan instead and keeps only the measured window, so the same cell costs what the window costs.
+A declared ``transient_time`` opens the scan at ``-transient_time``, so the settle carries non-positive timestamps and ends at ``t=0``. Stacking that settle and slicing it off afterwards costs the whole joined trajectory in memory: on a 379-node Jansen-Rit grid with a 60 s settle and a 5.12 s window that is 2.37 GB per cell, of which 2.24 GB is discarded on the next line. The ``(init, update, finalize)`` window reducer rides the native block scan instead and keeps only the part of the rollout that is read, so the same cell costs what it reports.
+
+What is read is not always the measured window alone. A kernel observation convolves against its own history and so keeps its support in front of ``t=0`` and eats it; the fold therefore stops short of ``t=0`` by the widest such support, and every observation then cuts its own share from that head exactly as it would from the whole scan. A settle no longer than that support is read in full and folding it away would starve the convolution, so those renders materialise.
 
 The reducer is only sound where blocking is free. Blocking SELECTS the noise realization in tvboptim — a block grain regenerates each block from ``(key, block_index)`` — so an experiment that declared ``noise_draw: fused`` must keep the unblocked stack-and-cut path rather than have its trajectory quietly moved. That constraint is about noise, not about the declaration: a deterministic network has no realization to move, and gating it on the declaration alone silently doubled the memory of every noise-free study the day ``fused`` became the default.
 """
 
 import ast
+import re
 
 import numpy as np
 import pytest
@@ -17,6 +20,17 @@ from tvbo import SimulationExperiment, database_path
 DETERMINISTIC = "Delay_Speed_Synchronization"
 STOCHASTIC = "JR_MEG_FrequencyGradient_Optimization"
 CALL = "reduce=_window_reducer("
+# Its `bold` observation convolves a 20 s HRF kernel, so the settle it reads is 20 s of whatever is declared.
+KERNEL = "RWW_BOLD_FC_Optimization"
+KERNEL_DT = 4.0
+KERNEL_SUPPORT = 5000  # steps, the hrf_kernel time_range
+KERNEL_MEASURED = 30000  # steps of declared duration
+
+
+def reducer_args(code):
+    """The ``(n_skip, n_keep)`` this render folds with, or None where it materialises."""
+    found = re.search(r"reduce=_window_reducer\((\d+), (\d+)\)", code)
+    return (int(found.group(1)), int(found.group(2))) if found else None
 
 
 def render(name, transient=2000.0, noise_draw=None):
@@ -111,3 +125,22 @@ def test_folding_the_settle_equals_stacking_and_cutting(n_steps, n_skip, n_keep,
         acc = update(acc, traj[lo : lo + block])
 
     np.testing.assert_array_equal(np.asarray(finalize(acc)), np.asarray(traj[n_skip : n_skip + n_keep]))
+
+
+def test_a_settle_the_kernel_reads_whole_is_not_folded():
+    """Folding here would hand the convolution zeros where the run has signal, so the render keeps the settle."""
+    assert reducer_args(render(KERNEL, transient=KERNEL_SUPPORT * KERNEL_DT, noise_draw="blocked")) is None
+
+
+def test_a_folded_window_still_carries_the_kernel_its_warm_up():
+    """Only the head no observation reads comes off; the kernel's own support stays in front of t=0."""
+    n_transient = int(60000.0 / KERNEL_DT)
+    n_skip, n_keep = reducer_args(render(KERNEL, transient=60000.0, noise_draw="blocked"))
+    assert n_skip == n_transient - KERNEL_SUPPORT
+    assert n_keep - KERNEL_MEASURED == KERNEL_SUPPORT
+
+
+def test_the_folded_clock_still_ends_the_settle_at_zero():
+    """The kept head carries the negative timestamps it had on the whole scan, so an observation cuts the same rows."""
+    code = render(KERNEL, transient=60000.0, noise_draw="blocked")
+    assert f"_expl_ts = jnp.arange({1 - KERNEL_SUPPORT}, {KERNEL_MEASURED + 1}) * {KERNEL_DT}" in code

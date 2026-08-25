@@ -426,9 +426,14 @@ def run_${algo_name}(
 
     # Note: Derived observations don't have monitor classes - they're computed from other observations
     # So we don't need dependent_monitors anymore
+    _all_monitors = [o for o, _c in pipeline_observations] + [
+        s for s, _c in source_monitors if s not in [o[0] for o in pipeline_observations]]
 %>
     if monitors is None:
         monitors = {}
+% if use_sliding_window or _all_monitors:
+    n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else N_NODES
+% endif
 % for obs, obs_class in pipeline_observations:
     _${obs}_monitor = monitors.get('${obs}') if monitors.get('${obs}') is not None else ${obs_class}()
 % endfor
@@ -437,10 +442,15 @@ def run_${algo_name}(
     _${src_obs}_monitor = monitors.get('${src_obs}') if monitors.get('${src_obs}') is not None else ${src_class}()
 % endif
 % endfor
-    history_accessor = lambda tree: tree._history
+% if _all_monitors:
+    # Every window here is one iteration long and brings no settle, so a kernel observation opens on zeros once and carries its own warm-up from then on. Seeded before the scan, because the carry it lives in cannot change shape inside one.
+% for _mon_obs in _all_monitors:
+    if hasattr(_${_mon_obs}_monitor, 'open_warmup') and _${_mon_obs}_monitor._warmup is None:
+        _${_mon_obs}_monitor = _${_mon_obs}_monitor.open_warmup(n_nodes)
+% endfor
+% endif
 
 % if use_sliding_window:
-    n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else N_NODES
 % if use_maxwin:
     _M = int(max_window_size) if max_window_size is not None else int(window_size)  # physical ring size (== window_size on the contiguous path)
 % endif
@@ -466,10 +476,8 @@ def run_${algo_name}(
             _buf = _buf.at[-1, :, :].set(_wd[0, :, :])
         else:
             _buf = _buf.at[-1, 0, :].set(_wd)
-        if hasattr(_mon, '_history') and _mon._history is not None:
-            _nh = jnp.roll(_mon._history, -_wr.data.shape[0], axis=0)
-            _nh = _nh.at[-_wr.data.shape[0]:, :, :].set(_wr.data[:, 0:1, :])
-            _mon = eqx.tree_at(history_accessor, _mon, _nh)
+        if hasattr(_mon, 'carry_warmup'):
+            _mon = _mon.carry_warmup(_wr)
         return (state, key, _buf, _mon), None
 
     def _run_warmup_${src_obs}(state, key, _buf, _mon, _nsteps):
@@ -835,7 +843,6 @@ def _${algo_name}_tuning_core_impl(
     scalars enter TRACED (eta, resync period, ring window ws0); model_fn is a STATIC
     arg with stable identity so the jit cache keys the same across stages."""
     import equinox as eqx
-    history_accessor = lambda tree: tree._history
     # Update rule functions
 % for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
 <%
@@ -1053,12 +1060,8 @@ def _${algo_name}_tuning_core_impl(
         _${dobs_name}_acc = _${dobs_name}_reducer.evict(_${dobs_name}_acc, _${dobs_name}_evict)
         _${dobs_name}_acc = _${dobs_name}_reducer.add(_${dobs_name}_acc, _${src_obs}_buffer[-1, ${sinfo['s_var']}, :])
 % endfor
-        # Maintain the monitor's own rolling history only if it carries one.
-        # Stateless monitors (e.g. a BOLD monitor) have no _history buffer.
-        if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
-            _new_history = jnp.roll(_${src_obs}_monitor._history, -result.data.shape[0], axis=0)
-            _new_history = _new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
-            _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
+        if hasattr(_${src_obs}_monitor, 'carry_warmup'):
+            _${src_obs}_monitor = _${src_obs}_monitor.carry_warmup(result)
 % endfor
 % for dobs_name, sinfo in streaming_map.items():
         # Periodic exact re-sync (float-drift reset; add/evict not exactly reversible); resync_every<=0 disables it.
@@ -1217,12 +1220,9 @@ def _${algo_name}_tuning_core_impl(
         else:
             _${obs}_collect = ${obs}
 % endif
+        if hasattr(_${obs}_monitor, 'carry_warmup'):
+            _${obs}_monitor = _${obs}_monitor.carry_warmup(result)
 
-        # Update monitor history for hemodynamic state continuity (only if monitor has history)
-        if hasattr(_${obs}_monitor, '_history') and _${obs}_monitor._history is not None:
-            _new_history = jnp.roll(_${obs}_monitor._history, -result.data.shape[0], axis=0)
-            _new_history = _new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
-            _${obs}_monitor = eqx.tree_at(history_accessor, _${obs}_monitor, _new_history)
 % else:
 <%
     _why = ("is not declared in the experiment's observations" if obs_def is None

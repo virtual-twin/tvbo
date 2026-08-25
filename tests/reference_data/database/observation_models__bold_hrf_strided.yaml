@@ -64,24 +64,6 @@ functions:
         name: step
         description: Decimation stride = round(downsample_period / dt)
         value: 1
-  prepend_history:
-    name: prepend_history
-    description: Fit the (downsampled) transient history to one kernel length and
-      prepend it, zero-padding at the front when shorter — matches HRFBold._process_history.
-    arguments:
-      data:
-        name: data
-        description: Downsampled input time series
-      history:
-        name: history
-        description: Downsampled transient history data
-      kernel_samples:
-        name: kernel_samples
-        description: Kernel support = ceil(kernel_duration / downsample_period)
-        value: 5000
-    source_code: jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],)
-      + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples
-      else history[-kernel_samples:]), data], axis=0)
   strided_hrf:
     name: strided_hrf
     equation:
@@ -95,7 +77,8 @@ functions:
     arguments:
       data:
         name: data
-        description: Prepended neural signal (time, 1, node)
+        description: Neural signal (time, 1, node), its head the settle this convolution
+          warms on
       kernel:
         name: kernel
         description: HRF kernel
@@ -120,32 +103,12 @@ pipeline:
     step:
       name: step
       value: 1
-- function: subsample
-  output: downsampled_history
-  arguments:
-    data:
-      name: data
-      value: integration.transient
-    step:
-      name: step
-      value: 1
-- function: prepend_history
-  arguments:
-    data:
-      name: data
-      value: downsampled_data
-    history:
-      name: history
-      value: downsampled_history
-    kernel_samples:
-      name: kernel_samples
-      value: 5000
 - function: strided_hrf
   output: bold_convolve
   arguments:
     data:
       name: data
-      value: prepend_history
+      value: downsampled_data
     kernel:
       name: kernel
       value: hrf_kernel

@@ -38,7 +38,7 @@ def axis_value(expr, transform, col):
     obj_bunch = ', '.join('%s=%s' % (o, obs_acc('_oa', o)) for o in objs)
 %>\
     # ── NSGA-II multi-objective search (pymoo) over the decision space ──
-    # Each candidate is one model_fn(state) run over the base window, settle included — the same path as a bare simulation — so the objective values are byte-identical to the reference workflow's ga_evaluate.
+    # Each candidate is one model_fn(state) run over the shared base window, settle included — the same path as a bare simulation — so the objective values are byte-identical to the reference workflow's ga_evaluate.
     _xl = _np.array(${[a['lo'] for a in axes]})
     _xu = _np.array(${[a['hi'] for a in axes]})
     _obj_names = ${objs}

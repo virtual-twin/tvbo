@@ -200,7 +200,7 @@ class Brian2Adapter(BaseAdapter):
         duration = model["duration_ms"]  # the MEASURED window, milliseconds
         if model.get("ramp"):
             return self._run_ramp(net, meta, model)
-        # A declared settle is PREPENDED, so raising it never shortens the data; absent one, a leading slice is discarded instead.
+        # A declared settle is PREPENDED to the measured window, so raising it never shortens the data. Absent one, the run is unchanged: a leading slice of it is discarded instead, either the caller's `settle_ms` or a fifth of the run capped at 1 s.
         settle = model.get("transient_ms") or 0.0
         if settle:
             total, measured = settle + duration, duration
