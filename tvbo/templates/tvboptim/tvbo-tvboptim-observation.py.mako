@@ -1231,17 +1231,6 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
     call_args = class_ref['call_args']
     if class_ref.get('accepts_voi') and 'voi' not in constructor_arg_codes:
         constructor_arg_codes['voi'] = 'voi'
-    # The settle's share of THIS monitor's output grid, counted where the grid is known rather than from a traced time axis.
-    _ext_period = to_numeric(obs['period']) if obs.get('period') else None
-    _ext_grid = int(round(float(_ext_period) / dt)) if _ext_period else 1
-    if n_transient and n_transient % _ext_grid:
-        raise ValueError(
-            f"observation {obs_name!r} reports through {class_ref['name']} every {_ext_grid} steps, but the "
-            f"{n_transient}-step settle is not a whole number of them, so its output grid and the measured "
-            f"one cannot be made to coincide. Set integration.transient_time to a multiple of the sample period."
-        )
-    _ext_cut = (n_transient // _ext_grid) if n_transient else 0
-
     # The settle's share of THIS monitor's output grid, counted from the declared reporting period rather than from a time axis that is a tracer under jit. A period below one step, or one that is not a number, reports on the integration grid.
     _ext_period = to_numeric(constructor_args.get('period') or obs.get('period'))
     _ext_grid = max(1, int(round(float(_ext_period) / dt))) if isinstance(_ext_period, (int, float)) else 1
