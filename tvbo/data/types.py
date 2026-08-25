@@ -572,7 +572,7 @@ class SimulationResult:
         elif data is not None and not isinstance(data, xr.DataArray):
             data = _to_dataarray(data, None, state_names, nodes)
 
-        # One buffer cut by the marker: `.data` is the measured window, `.transient` its head, `.full` both; sliced on access.
+        # One buffer, cut by the marker: `.data` is the measured window, `.transient` its settling head, `.full` both. The slices are taken on access, so nothing is duplicated to hold them.
         self._n_transient = int(n_transient or 0)
         self._full = data
         self.data = data if self._n_transient <= 0 or data is None else data.isel(time=slice(self._n_transient, None))
@@ -1343,6 +1343,8 @@ class ExplorationResult(Bunch):
         True if results contain time series per grid point
     dt : float
         Time step for time series results (optional)
+    transient_time : float
+        Length of the settle at the head of each cell's recorded trajectory. A sweep records the window it integrated, so ``results`` spans the settle too — the analogue of ``SimulationResult.full`` — and this puts its time axis on the measurement clock, where the settle carries non-positive timestamps. ``results.sel(time=slice(dt, None))`` is the measured window that ``SimulationResult.data`` reports.
     output_names : list[str]
         Names of output variables (e.g., ['v_pyr']) for time series results
     """
@@ -1355,6 +1357,7 @@ class ExplorationResult(Bunch):
         axes=None,
         observable: str = None,
         dt: float = None,
+        transient_time: float = 0.0,
         output_names: list = None,
         observations=None,
         cell_coords=None,
@@ -1376,6 +1379,7 @@ class ExplorationResult(Bunch):
         self.axes = axes or []
         self.observable = observable
         self.dt = dt
+        self.transient_time = float(transient_time or 0.0)
         self.output_names = output_names or []
         self.is_shard = is_shard
         self.cell_coords = cell_coords
@@ -1474,7 +1478,8 @@ class ExplorationResult(Bunch):
             return dims, coords
         dims.append("time")
         if self.dt:
-            coords["time"] = np.arange(tail[0]) * self.dt
+            # The measurement clock, the one every other result reports on: samples are post-step, so the first sits one dt in, and a declared settle puts the origin at its end.
+            coords["time"] = (np.arange(tail[0]) + 1) * self.dt - float(getattr(self, "transient_time", 0.0) or 0.0)
         # tvboptim drops the `variable` dim for a single model output, so only label the leading spatial dim `variable` when it matches the output count; the rest map to (node, mode). Unknown output count → assume `variable` is present.
         spatial = tail[1:]
         n_out = len(self.output_names) if self.output_names else None
@@ -2997,11 +3002,11 @@ class ExperimentResult:
         }
         if "mode" in dims:
             coords["mode"] = list(range(data_np.shape[3]))
-        # The settle is t <= 0 and the first measured sample one step past it, where a tvboptim run of the same recipe opens too; the half step absorbs float drift in TVB's clock.
+        # The settle ends AT t=0 and carries non-positive timestamps, so a TVB run and a tvboptim run of the same recipe report the same window on the same clock. The slack is half a sample, read off the axis rather than from `sample_period` so it survives a series that does not declare one, and it absorbs the float drift between TVB's `step * dt` and a declared settle.
         _tv = np.asarray(primary_tv)
-        _step = float(_tv[1] - _tv[0]) if _tv.size > 1 else 0.0
-        _n_transient = int(np.count_nonzero(_tv <= float(transient_time) + 0.5 * _step)) if transient_time else 0
-        if _n_transient:
+        _half_sample = 0.5 * (float(_tv[1] - _tv[0]) if _tv.size > 1 else 0.0)
+        _n_transient = int(np.count_nonzero(_tv <= float(transient_time) + _half_sample)) if transient_time else 0
+        if transient_time:
             coords["time"] = _tv - float(transient_time)
         da = xr.DataArray(data=data_np, dims=dims, coords=coords)
 

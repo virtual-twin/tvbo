@@ -1190,7 +1190,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
 def _assert_transient_on_sample_grid(experiment: Any, name: str, period_steps: int, kind: str) -> None:
     """Require the settle to be a whole number of an observation's output samples.
 
-    The transient is integrated in-band and its leading OUTPUT samples are dropped at finalize, so the observation's sample grid is anchored to the scan while the reported one is anchored to measurement (t=0 is the start of the measured window). The two coincide only when the settle spans whole output periods; otherwise every reported timestamp carries a fractional-period offset that silently changes whenever ``transient_time`` does. Raising here keeps one grid instead of two.
+    The transient is integrated in-band and its leading OUTPUT samples are dropped at finalize, so the observation's sample grid is anchored to the scan while the reported one is anchored to measurement (t=0 is the settle's last step, the boundary the window opens after). The two coincide only when the settle spans whole output periods; otherwise every reported timestamp carries a fractional-period offset that silently changes whenever ``transient_time`` does. Raising here keeps one grid instead of two.
     """
     integ = get_attr(experiment, "integration")
     _dt = _integration_dt(experiment)
@@ -2289,7 +2289,7 @@ def render_analysis_observations(
     Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming ``result.data``. Each is emitted from its declarative ``analysis`` metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends;
     the template only interpolates the returned block. Analysis solves drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling- evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
     """
-    # The same one scan a run integrates: the settle is the head of this window, opening at -transient_time so t=0 is the first measured step and a declared event onset needs no shift.
+    # The same one scan the run integrates: the window opens at -transient_time, so t=0 is the first measured step and a declared event onset needs no shift, and the observables this analysis feeds cut the settle themselves.
     window = f"t0={-float(transient_time)}, t1={t1_default}, dt={dt}"
     solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
     lines: list[str] = []
