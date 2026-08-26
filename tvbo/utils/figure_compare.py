@@ -310,6 +310,25 @@ def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
     return fig, axes
 
 
+def _flatten_alpha(path) -> None:
+    """Rewrite a raster without its alpha channel, composited on white.
+
+    Matplotlib writes RGBA even when nothing is transparent, and a uniformly opaque alpha
+    channel becomes a soft mask in the embedding PDF that some viewers mishandle, painting
+    the page and every page after it black.
+    """
+    from PIL import Image
+
+    with Image.open(path) as im:
+        if im.mode not in ("RGBA", "LA", "PA"):
+            return
+        rgba = im.convert("RGBA")
+        flat = Image.new("RGB", rgba.size, "white")
+        flat.paste(rgba, mask=rgba.getchannel("A"))
+        dpi = im.info.get("dpi")
+    flat.save(path, **({"dpi": dpi} if dpi else {}))
+
+
 def side_by_side(panes: Sequence[Pane], outfile: Path, width: float = 6.7, fontsize: float = 6, dpi: int = 300) -> Path:
     """Write *panes* as one row at a common height — the A/B composite a report embeds.
 
@@ -319,6 +338,7 @@ def side_by_side(panes: Sequence[Pane], outfile: Path, width: float = 6.7, fonts
     outfile = Path(outfile)
     outfile.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(outfile, dpi=dpi)
+    _flatten_alpha(outfile)
     return outfile
 
 
@@ -346,4 +366,5 @@ def overlay(result: dict, outfile: Path, titles: tuple[str, str] = ("ours", "ref
     outfile = Path(outfile)
     outfile.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(outfile, dpi=110)
+    _flatten_alpha(outfile)
     return outfile

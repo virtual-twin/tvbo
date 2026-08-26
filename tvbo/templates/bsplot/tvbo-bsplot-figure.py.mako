@@ -502,6 +502,30 @@ def _share_scale(axd, keys, axis):
         getattr(a, set_)((hi, lo) if l0 > l1 else (lo, hi))
 
 
+def _flatten_alpha(path):
+    """Rewrite a raster output without its alpha channel, composited on white.
+
+    Matplotlib writes RGBA even when nothing is transparent, and a uniformly opaque alpha
+    channel becomes a soft mask in the embedding PDF. Some viewers mishandle that mask and
+    paint the page -- and every page after it -- black, so the channel is dropped once the
+    figure is on disk rather than left for the typesetter to trip over.
+    """
+    if not str(path).lower().endswith((".png", ".tif", ".tiff")):
+        return
+    try:
+        from PIL import Image
+    except ImportError:
+        return
+    with Image.open(path) as im:
+        if im.mode not in ("RGBA", "LA", "PA"):
+            return
+        rgba = im.convert("RGBA")
+        flat = Image.new("RGB", rgba.size, "white")
+        flat.paste(rgba, mask=rgba.getchannel("A"))
+        dpi = im.info.get("dpi")
+    flat.save(path, **({"dpi": dpi} if dpi else {}))
+
+
 def _snapshot_fixed_axes(ax):
     """Record the tick locator/formatter/limits of a custom panel's axes so the figure-wide
     format pass cannot overwrite ticks the drawer set on purpose.
@@ -812,6 +836,7 @@ def main():
 % endif
     _distinct_ticks(fig)                                    # an axis whose ticks repeat one number carries no scale
     fig.savefig(${repr(outfile)}, **${repr(savefig_kwargs)})
+    _flatten_alpha(${repr(outfile)})
     print("wrote", ${repr(outfile)})
     return fig
 
