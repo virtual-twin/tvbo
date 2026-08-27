@@ -307,6 +307,80 @@ observations:
           name: nperseg
           description: Segment length for Welch
           value: 256
+  y0_trace:
+    name: y0_trace
+    label: Pyramidal Membrane Potential
+    description: Subsampled y0 trajectory, the network dynamics the spectra are computed
+      from
+    record: true
+    source:
+    - y0
+    reconcile: by_label
+    pipeline:
+    - function: subsample
+      output: y0_trace
+      arguments:
+        data:
+          name: data
+          value: integration.result
+  psd_frequencies:
+    name: psd_frequencies
+    label: PSD Frequency Axis
+    description: The Welch frequency axis, recorded so a spectrum can be plotted against
+      Hz rather than bin index
+    record: true
+    source:
+    - simulated_psd
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: asarray
+        module: jax.numpy
+      output: psd_frequencies
+      arguments:
+        a:
+          name: a
+          value: simulated_psd.frequencies
+  target_peak_frequencies:
+    name: target_peak_frequencies
+    label: Target Peak Frequencies
+    description: The MEG frequency gradient the fit reproduces, built from tract-length
+      distance to visual cortex
+    reconcile: by_label
+    pipeline:
+    - function: distance_from_seed
+      output: dist_from_vc
+      arguments:
+        lengths:
+          name: lengths
+          value: network.edges.tractLength
+        labels:
+          name: labels
+          value: network.nodes.labels
+    - function: compute_target_frequencies
+      output: target_peak_frequencies
+      arguments:
+        d:
+          name: d
+          value: dist_from_vc
+  target_psd:
+    name: target_psd
+    label: Target Power Spectral Density
+    description: Per-region Cauchy spectra centred on the target peak frequencies
+    source:
+    - simulated_psd
+    - target_peak_frequencies
+    reconcile: by_label
+    pipeline:
+    - function: cauchy_pdf
+      output: target_psd
+      arguments:
+        x:
+          name: x
+          value: simulated_psd.frequencies
+        x0:
+          name: x0
+          value: target_peak_frequencies
   avg_spectrum:
     name: avg_spectrum
     label: Average Spectrum
@@ -442,15 +516,11 @@ functions:
         value: 11.0
   cauchy_pdf:
     name: cauchy_pdf
-    equation:
-      definition: Cauchy-Lorentz distribution centered at x0 with scale gamma
-      rhs: 1 / (pi * gamma * (1 + ((x - x0) / gamma)**2))
-      latex: false
-    description: Cauchy-Lorentz probability density function
+    description: Cauchy-Lorentz density of x about each peak in x0, one row per peak
     arguments:
       x:
         name: x
-        description: Input values (frequency axis)
+        description: Frequency axis shared by every row
       x0:
         name: x0
         description: Peak location for each region (target frequencies)
@@ -458,6 +528,27 @@ functions:
         name: gamma
         description: Scale parameter (half-width at half-maximum)
         value: 1.0
+    source_code: 1.0 / (3.141592653589793 * gamma * (1.0 + ((x[None, :] - x0[:, None])
+      / gamma) ** 2))
+  distance_from_seed:
+    name: distance_from_seed
+    description: Mean tract length from the seed regions to every region, seeds picked
+      BY LABEL
+    arguments:
+      lengths:
+        name: lengths
+        description: Tract-length matrix (n_regions, n_regions)
+      labels:
+        name: labels
+        description: Region label of each network node
+      seeds:
+        name: seeds
+        description: Seed regions the gradient is measured from (bilateral lateral
+          occipital)
+        value:
+        - L.LOG
+        - R.LOG
+    source_code: lengths[[list(labels).index(s) for s in seeds], :].mean(axis=0)
   correlation:
     name: correlation
     equation:
@@ -517,7 +608,9 @@ optimizations:
           value: observations.simulated_psd.psd
         target:
           name: target
-          description: Target power spectrum (passed to optimizer at runtime)
+          description: Target power spectrum, derived from the connectome's own tract
+            lengths
+          value: observations.target_psd
 explorations:
   frequency_landscape:
     name: frequency_landscape
