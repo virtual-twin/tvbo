@@ -36,7 +36,7 @@ initial_conditions = np.array([
     <%include file="/tvbo-tvb-stimulus_equation.py.mako" />
 %endif
 ######### Simulation #########
-def define_simulation(connectivity, simulation_length=${(experiment.integration.transient_time or 0.0) + experiment.integration.duration}, initial_conditions=None, model_kwargs={}, coupling_kwargs={}, integration_kwargs={'dt':${experiment.integration.step_size}}, stimulus_kwargs={}):
+def define_simulation(connectivity, simulation_length=${settle['total_duration']}, initial_conditions=None, model_kwargs={}, coupling_kwargs={}, integration_kwargs={'dt':${experiment.integration.step_size}}, stimulus_kwargs={}):
 %if experiment.stimulation:
     from tvb.datatypes.patterns import StimuliRegion
     %if experiment.stimulation.weighting:
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--simulation_length",
         type=float,
-        default=${(experiment.integration.transient_time or 0.0) + experiment.integration.duration},
+        default=${settle['total_duration']},
         help="Total integrated length: the measured duration plus any declared settle.",
     )
     args = parser.parse_args()
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
     # Wrap in ExperimentResult for consistent access and export
     from tvbo.data.types import ExperimentResult
-    results = ExperimentResult.from_tvb(sim, raw, transient_time=${experiment.integration.transient_time or 0.0})
+    results = ExperimentResult.from_tvb(sim, raw, transient_time=${settle['transient_time']})
     print(results)
 
     # Export BIDS-compatible output

@@ -16,13 +16,13 @@ state_names = list(model.state_variables.keys()) if model else ['x']
 # Recorded variable layout (states + auxiliaries-in-VOI). Matches solution.variable_names
 # produced by tvboptim >= 0.2.7 and the dfun's VARIABLES_OF_INTEREST tuple.
 _, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if model else ([], [], ['x'])
-dt = experiment.integration.step_size if experiment.integration else 0.1
-# Steps of settle at the head of the scan. Computed here rather than inherited: an <%include> carries the render context, not the including template's local bindings.
-_transient_time = float(getattr(experiment.integration, 'transient_time', 0.0) or 0.0) if experiment.integration else 0.0
-n_transient = int(round(_transient_time / dt)) if dt else 0
+# The window, resolved once by BaseAdapter.get_integration_info. Read from the render context, which an <%include> carries -- unlike the including template's local bindings, which is why this used to be a second derivation rather than a lookup.
+dt = settle['dt']
+_transient_time = settle['transient_time']
+n_transient = settle['n_transient']
 # Steps of MEASURED window. A monitor tells the settle from the measurement by subtracting this from the length of whatever window it is handed, so an algorithm's own shorter tuning window is read as carrying no settle rather than as a short measurement.
-_duration = float(getattr(experiment.integration, 'duration', 0.0) or 0.0) if experiment.integration else 0.0
-n_measured = int(round(_duration / dt)) if dt else 0
+_duration = settle['duration']
+n_measured = settle['n_measured']
 
 
 def resolve_var_index(source, label: str) -> int:

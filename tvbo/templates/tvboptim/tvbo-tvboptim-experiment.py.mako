@@ -160,7 +160,7 @@ for ck, cobj in all_couplings.items():
 from tvbo.adapters.tvboptim import solver_class as _solver_class
 method = integration.method or 'euler'
 solver_class = _solver_class(method)
-dt = float(integration.step_size)
+dt = settle['dt']
 # Seconds per model time unit, which puts analytic-frequency diagnostics on a physical Hz axis.
 from tvbo.utils.units import time_unit_of, unit_to_si_factor
 time_unit = time_unit_of(integration, experiment)
@@ -222,12 +222,13 @@ weight_transform_distances_arg = "distances=distances, " if weight_transform_nee
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
-t1_default = float(integration.duration)
-transient_time = float(integration.transient_time) if integration.transient_time else 0.0
+# The window, resolved once by BaseAdapter.get_integration_info and carried in the render context. Recomputing it here is what let two backends disagree about whether `duration` includes the settle.
+t1_default = settle['duration']
+transient_time = settle['transient_time']
 has_transient = transient_time > 0
 # Where a measured scan opens. The settle is its own scan over (-transient_time, 0] and hands its endpoint on through `update_history`, so every later scan opens at t=0 on a network that is already settled — and none of them carries the settle on its gradient tape.
 scan_t0 = 0.0
-n_transient = int(round(transient_time / dt)) if has_transient else 0
+n_transient = settle['n_transient']
 block_size = int(integration.block_size) if getattr(integration, 'block_size', None) else 1000
 # `noise_draw` selects the realization, because blocking is what selects it in tvboptim: a block grain regenerates each block's noise from (key, block_idx), no grain draws the whole tensor at once. A streamed observable folds block by block whatever this says; `blocked` is how a recipe puts the whole run on that same grain.
 noise_draw = str(getattr(integration, 'noise_draw', 'fused') or 'fused')

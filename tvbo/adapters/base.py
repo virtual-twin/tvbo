@@ -249,12 +249,25 @@ class BaseAdapter:
     # ── Integration ──────────────────────────────────────────────────────
 
     def get_integration_info(self) -> dict:
-        """Extract integration parameters."""
+        """The window a backend integrates, and which part of it is settling rather than measurement.
+
+        ``duration`` is the MEASURED window and ``transient_time`` is prepended to it, so the total a backend integrates is ``transient_time + duration`` and raising the settle never silently shortens the data. Resolved once here, because the settle is a property of the experiment rather than of any one backend: every backend that needs it in steps wants the same ``round(transient_time / dt)``, and three copies of that arithmetic is how two of them came to disagree about what ``duration`` meant.
+
+        Returns:
+            ``dt``, ``duration`` (measured), ``method``, ``transient_time``, ``total_duration`` (``transient_time + duration``, the window to integrate), and the same split in integration steps as ``n_transient`` and ``n_measured`` -- the first of which is the cut index between the two.
+        """
         integration = self.experiment.integration
+        dt = float(integration.step_size) if integration else 0.01
+        duration = float(integration.duration) if integration else 1000.0
+        transient = float(getattr(integration, "transient_time", 0.0) or 0.0) if integration else 0.0
         return {
-            "dt": float(integration.step_size) if integration else 0.01,
-            "duration": float(integration.duration) if integration else 1000.0,
+            "dt": dt,
+            "duration": duration,
             "method": (getattr(integration, "method", "Tsit5") if integration else "Tsit5"),
+            "transient_time": transient,
+            "total_duration": transient + duration,
+            "n_transient": int(round(transient / dt)) if dt else 0,
+            "n_measured": int(round(duration / dt)) if dt else 0,
         }
 
     # ── Per-node parameter parsing ───────────────────────────────────────
@@ -475,6 +488,10 @@ class BaseAdapter:
             # Integration
             "dt": integration_info["dt"],
             "duration": integration_info["duration"],
+            "transient_time": integration_info["transient_time"],
+            "total_duration": integration_info["total_duration"],
+            "n_transient": integration_info["n_transient"],
+            "n_measured": integration_info["n_measured"],
             "solver_method": integration_info["method"],
             "needs_stiff": ("auto" in str(integration_info["method"]).lower()),
             # Graph
