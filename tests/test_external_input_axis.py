@@ -1,12 +1,10 @@
 """An external input's own parameter is a sweepable axis, on the clock the recipe declares it in.
 
-A `<event>.<param>` axis writes to ``state.external.<event>.<param>``, where the emitted ExternalInput reads it. A declared ``t0`` is on the measurement clock, which is also the clock the one scan integrates on -- it opens at ``-transient_time`` and the settle ends at 0 -- so neither a fixed onset nor a swept one is shifted anywhere. The exploration's coordinate is that same declared time, and so is the time axis its recorded trajectory comes back on.
+A `<event>.<param>` axis writes to ``state.external.<event>.<param>``, where the emitted ExternalInput reads it. A declared ``t0`` is on the measurement clock, which is also the clock the measured scan integrates on -- it opens at 0, the settle having run before it as a scan of its own -- so neither a fixed onset nor a swept one is shifted anywhere. The exploration's coordinate is that same declared time, and so is the time axis its recorded trajectory comes back on.
 """
 
 import numpy as np
 import pytest
-
-from .tvboptim_capabilities import needs_axis_wrap
 
 pytest.importorskip("tvboptim")
 
@@ -106,7 +104,6 @@ def test_a_swept_onset_is_written_as_declared(tmp_path):
     assert "+50.0" not in axis, axis
 
 
-@needs_axis_wrap
 def test_every_cell_fires_at_the_onset_it_declares(tmp_path):
     """The pulse lands where the recipe puts it, and the coordinate and the time axis are that same declared time.
 
@@ -123,14 +120,13 @@ def test_every_cell_fires_at_the_onset_it_declares(tmp_path):
     np.testing.assert_allclose(onsets, [10.0, 60.0])
 
 
-@needs_axis_wrap
 def test_the_recorded_sweep_is_on_the_measurement_clock(tmp_path):
-    """A cell's recorded trajectory spans the settle, and says so: the settle carries non-positive timestamps.
+    """A cell's recorded trajectory is the MEASURED window, on the clock a declared onset is declared against.
 
-    A sweep records the window it integrated, so `results` is the analogue of `SimulationResult.full` rather than of `.data` — but on the same clock, which is what lets a declared onset be found at the time it declares.
+    A sweep records the window it integrated, and the settle is no longer part of that window: it is its own scan, run once, whose endpoint the grid warm-starts from. So `results` is the analogue of `SimulationResult.data` rather than of `.full` — on the same clock as before, which is what lets a declared onset still be found at the time it declares.
     """
     result = _experiment(tmp_path).run("tvboptim")
     t = np.asarray(result.explorations["onset_sweep"].results.coords["time"])
-    assert t[0] == pytest.approx(-49.8), t[0]
+    assert t[0] == pytest.approx(0.2), t[0]
     assert t[-1] == pytest.approx(150.0), t[-1]
-    np.testing.assert_allclose(t[t > 0], np.asarray(result.integration.data.coords["time"]))
+    np.testing.assert_allclose(t, np.asarray(result.integration.data.coords["time"]))

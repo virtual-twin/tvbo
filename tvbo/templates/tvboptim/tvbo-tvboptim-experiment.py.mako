@@ -225,8 +225,8 @@ assert integration.duration, "integration.duration required in YAML"
 t1_default = float(integration.duration)
 transient_time = float(integration.transient_time) if integration.transient_time else 0.0
 has_transient = transient_time > 0
-# The scan opens at -transient_time and the settle ends at t=0, so it carries non-positive timestamps and a declared onset needs no shift.
-scan_t0 = -transient_time
+# Where a measured scan opens. The settle is its own scan over (-transient_time, 0] and hands its endpoint on through `update_history`, so every later scan opens at t=0 on a network that is already settled — and none of them carries the settle on its gradient tape.
+scan_t0 = 0.0
 n_transient = int(round(transient_time / dt)) if has_transient else 0
 block_size = int(integration.block_size) if getattr(integration, 'block_size', None) else 1000
 # `noise_draw` selects the realization, because blocking is what selects it in tvboptim: a block grain regenerates each block's noise from (key, block_idx), no grain draws the whole tensor at once. A streamed observable folds block by block whatever this says; `blocked` is how a recipe puts the whole run on that same grain.
@@ -1340,7 +1340,7 @@ from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis, AbstractAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
-from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, resolve_exploration_n_pmap, resolve_exploration_n_vmap   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width and replica count
+from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, resolve_exploration_n_pmap, resolve_exploration_n_vmap, stack_grid_cells   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width and replica count; grid cells → one stacked pytree
 % endif
 % if _dataset_on_device:
 from tvbo.templates.tvboptim.callbacks import resolve_cohort_batch_size   # dataset.batch_size → subjects per on-device batch
@@ -1942,6 +1942,58 @@ def _run_compiled(fn, state):
     return jax.jit(fn)(state)
 
 
+def _settle_rows(sol):
+    """A settle's raw, undecimated rows ``[S, n_states, n]``, which is what a streaming reducer takes.
+
+    A reducer carries its own stride and its own source column, so it decimates its own tail rather
+    than being handed a pre-decimated one; ``_warmed`` by contrast takes the solution itself. Keeping
+    the two spellings apart is the point of this helper.
+    """
+    return None if sol is None else sol.ys
+
+
+def _history_window(sol, network, dt):
+    """The tail of a settle long enough to serve every delay, which is all ``update_history`` reads.
+
+    Delay lookups reach back at most ``network.max_delay`` and the initial condition is the last
+    slot, so a long settle need not be handed over whole. Keeping its tail bounds the stored
+    history at the delay horizon instead of the settle length — a 300 s settle at dt=1 would
+    otherwise park the entire trajectory in the network for the rest of the run.
+    """
+    if sol is None:
+        return None
+    _md = float(getattr(network, 'max_delay', 0.0) or 0.0)
+    _n = (-int(-_md // dt) + 2) if _md > 0 else 2
+    if sol.ys.shape[0] <= _n:
+        return sol
+    return NativeSolution(
+        ts=sol.ts[-_n:],
+        ys=sol.ys[-_n:],
+        dt=getattr(sol, 'dt', None),
+        variable_names=getattr(sol, 'variable_names', None),
+    )
+
+
+def _join_settle(settle, measured):
+    """The settle and the measured window as one buffer on one clock, for reporting only.
+
+    The two are integrated as separate scans so the settle stays off the gradient tape, but they
+    abut — the settle closes at t=0 and the measured window opens there — so rejoining them
+    reconstructs the axis `.full` and `.transient` read, with the settle on negative timestamps.
+    Returns the measured window unchanged when nothing was settled, and the number of settle
+    samples, which is the cut index between the two views.
+    """
+    if settle is None or measured is None:
+        return measured, 0
+    _n = settle.ys.shape[0]
+    return NativeSolution(
+        ts=jnp.concatenate([settle.ts, measured.ts]),
+        ys=jnp.concatenate([settle.ys, measured.ys]),
+        dt=getattr(measured, 'dt', None),
+        variable_names=getattr(measured, 'variable_names', None),
+    ), _n
+
+
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
@@ -1958,31 +2010,58 @@ def run_simulation(
     _noise_key = jax.random.key(jnp.asarray(${random_seed} if _rs is None else _rs, dtype=jnp.uint32))
     % endif
 
-    # One scan over (t0 - t_transient, t0 + t1]: the settle is the head of this same integration, so the delay history and the noise stream run through it unbroken and it ends at t=0. `t1` stays the MEASURED duration.
-    model_fn, state = prepare(network, solver, t0=t0 - t_transient, t1=t0 + t1, dt=dt)
+    def _open_window(_st):
+        """The initial condition a scan opens from: sampled defaults, declared per-node overrides, then any supplied operating point."""
     % if sv_distribution_info:
-    # Sample initial conditions from state variable distributions
-    state = _sample_initial_conditions(state)
+        _st = _sample_initial_conditions(_st)
     % endif
-    # Per-node initial state overrides (from node ``state:`` YAML entries)
-    state = _apply_node_overrides(state)
+        _st = _apply_node_overrides(_st)
     % if from_working_point:
-    # Ramps the parameter quasi-statically to its target and seeds the IC from the settled endpoint rather than the cold one above.
-    _wp_scan = _adiabatic_scan(
-        network, solver,
-        accessor=lambda _c: _c.${from_working_point['path']},
-        low=${from_working_point['lo']}, high=${from_working_point['hi']}, n=${from_working_point['n']},
-        t=${from_working_point['settle']}, skip=0, dt=dt, bothways=False,
-        observe=lambda _r: _r.ys,
-        statistics={'_endpoint': (lambda _a: _a[-1])},
-    )
-    state.initial_state.dynamics = jnp.asarray(_wp_scan.stats['_endpoint'])[-1]
+        # Ramps the parameter quasi-statically to its target and seeds the IC from the settled endpoint rather than the cold one above.
+        _wp_scan = _adiabatic_scan(
+            network, solver,
+            accessor=lambda _c: _c.${from_working_point['path']},
+            low=${from_working_point['lo']}, high=${from_working_point['hi']}, n=${from_working_point['n']},
+            t=${from_working_point['settle']}, skip=0, dt=dt, bothways=False,
+            observe=lambda _r: _r.ys,
+            statistics={'_endpoint': (lambda _a: _a[-1])},
+        )
+        _st.initial_state.dynamics = jnp.asarray(_wp_scan.stats['_endpoint'])[-1]
     % endif
-    # A supplied operating point is the IC the scan opens from; any declared settle then runs from it, in-band.
-    state = _apply_seed_dynamics(state)
-    state = _apply_seed_params(state)
+        return _apply_seed_params(_apply_seed_dynamics(_st))
+
+    result_transient = None
+    _settled = False
+    % if has_transient:
+    # tvboptim's warm start (`docs` "Warm-start simulations"): the settle is its OWN scan over
+    # (t0 - t_transient, t0], and `update_history` hands its settled state — delay history and
+    # initial condition alike — to the measured window. Keeping it a separate scan is what keeps
+    # the settle off the gradient tape: a loss prepared from this network differentiates the
+    # measured window only. The settle still carries negative timestamps, so a declared onset
+    # needs no shift and `.transient` reads the same clock it always did.
+    if t_transient > 0:
+        _tr_model_fn, _tr_state = prepare(network, solver, t0=t0 - t_transient, t1=t0, dt=dt)
+        _tr_state = _open_window(_tr_state)
+        % if stochastic_param_info:
+        _inject_stochastic_trajectories(_tr_state, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        % endif
+        result_transient = _run_compiled(_tr_model_fn, _tr_state)
+        # Two different quantities come off this one scan and neither substitutes for the other: the
+        # delay horizon, trimmed here, is what the network needs to read its own past; the kernel
+        # support, trimmed by each monitor's own `carry_warmup`, is what a convolution needs to open
+        # on signal instead of zeros. The settle is therefore kept whole even when `run_main` is
+        # False — that path is the amortised settle a tuning loop reuses, and it is exactly where a
+        # cold kernel costs the most (Transient-Single-Scan.md §16).
+        network.update_history(_history_window(result_transient, network, dt))
+        _settled = True
+    % endif
+
+    model_fn, state = prepare(network, solver, t0=t0, t1=t0 + t1, dt=dt)
+    # A settle already opened the window and `update_history` carried its endpoint over, so the IC is reconstructed here only when this scan is the opening one.
+    if not _settled:
+        state = _open_window(state)
     % if stochastic_param_info:
-    _inject_stochastic_trajectories(state, t_transient + t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+    _inject_stochastic_trajectories(state, t1, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
     % endif
 
     result = None
@@ -1996,11 +2075,14 @@ def run_simulation(
             state.noise.key = _noise_key
         % endif
 % if _base_stream:
+        # Only the tail a streamed kernel can reach: `_STREAMING_WARMUP_STEPS` is the raw-step bound over every streamed reducer that carries one, so a 300 s settle is not held whole to warm a 20 s support.
+        _settle_for_streams = (None if result_transient is None or not _STREAMING_WARMUP_STEPS
+                               else _settle_rows(result_transient)[-_STREAMING_WARMUP_STEPS:])
         _stream_fn, _ = prepare(   # folds in-carry over ${_base_bs}-step blocks; no trajectory
             network, get_solver(block_size=${_base_bs}),
-            t0=t0 - t_transient, t1=t0 + t1, dt=dt,
+            t0=t0, t1=t0 + t1, dt=dt,
             reduce=_compose_reducers(*[
-                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], dt, skip=${n_transient})
+                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], dt, skip=0, settle=_settle_for_streams)
                 for _n in ${repr(_base_stream_names)}
             ]),
         )
@@ -2030,12 +2112,12 @@ def run_simulation(
 <%
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
 %>
-        observations.${obs_name} = ${obs_class}()(result)
+        observations.${obs_name} = _warmed(${obs_class}(), result_transient)(result)
 % endif
 % endfor
 
         # Compute derived observations
-        _all_obs = compute_all_observations(result, state)
+        _all_obs = compute_all_observations(result, state, settle=result_transient)
 % for obs_name in sorted(derived_observation_names):
         observations.${obs_name} = _all_obs.${obs_name}
 % endfor
@@ -2043,7 +2125,7 @@ def run_simulation(
 
         # Analysis observations (operate on the solve/loss, not result.data)
 % if analysis_observations_dict:
-        for _an_name, _an_val in compute_analysis_observations(state, network).items():
+        for _an_name, _an_val in compute_analysis_observations(state, network, settle=result_transient).items():
             observations[_an_name] = _an_val
 % endif
 
@@ -2051,6 +2133,7 @@ def run_simulation(
         model_fn=model_fn,
         state=state,
         result=result,
+        result_transient=result_transient,
         observations=observations,
 % if _base_stream:
         stream_fn=_stream_fn,   # re-fold a caller's own state without materialising
@@ -2271,7 +2354,7 @@ def keep_recorded(obs):
     return Bunch(**kept) if kept else obs
 
 
-def compute_all_observations(result, state, only=None, network_obs=None, precomputed=None, analysis_names=None, network=None):
+def compute_all_observations(result, state, only=None, network_obs=None, precomputed=None, analysis_names=None, network=None, settle=None):
     # ``only`` restricts computation to the named observations, keeping a non-jittable one out of the trace; ``precomputed`` seeds values folded in-carry elsewhere so derived observations need no trajectory.
     obs = Bunch()
 
@@ -2318,7 +2401,7 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
 % if obs_name not in network_observation_names:
     if (only is None or '${obs_name}' in only) and '${obs_name}' not in (precomputed or {}):
         # ${obs_name}: observation derived from simulation state
-        _${obs_name}_monitor = ${obs_class}()
+        _${obs_name}_monitor = _warmed(${obs_class}(), settle)
         _${obs_name}_result = _${obs_name}_monitor(result)
         # Keep full result to preserve named outputs (e.g., .psd, .frequencies)
         obs.${obs_name} = _${obs_name}_result
@@ -2341,87 +2424,108 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
             # Bound under its bare attribute name, so the equation reads `(I_E - I_E_range_lo)` rather than a generated constant identifier.
             src_node_arrays[node_label(_so_name)] = node_const(node_label(_so_name))
 
-    # Get pipeline callable
-    pipeline_call = None
+    # Every stage of the pipeline, in order. A derived observation is as much a pipeline as a raw
+    # one, and stopping at the first stage silently returned an intermediate — an argmax's bin
+    # index where the recipe asked for `index_at(frequencies, idx)`, the frequency at that bin.
+    from tvbo.codegen.streaming_reducers import is_windowed_reducer
     pipeline_equation = None       # equation-based derived obs (rhs over other observations)
     pipeline_equation_params = {}  # local equation constants
-    pipeline_args = []
-    positional_args = []  # Track positional args from source_observations
-    if dobs.pipeline:
-        first_stage = dobs.pipeline[0]
-        c = getattr(first_stage, 'callable', None)
+    pipeline_lines = []            # [(lhs, expr)] emitted in order
+    _stage_locals = {}             # declared stage output name -> the local holding it
+    _local = f"_d_{dobs_name}"
+
+    def _bind(arg_name, arg_value, first):
+        """One argument of one stage, resolved against prior stage outputs then observations."""
+        val_str = str(arg_value)
+        if val_str in _stage_locals:
+            # An earlier stage's declared output; this is what the single-stage emit could not see.
+            return f"{arg_name}={_stage_locals[val_str]}"
+        if val_str in src_obs_list or val_str in observation_names or val_str in derived_observation_names:
+            # Bound by name, since `arguments:` is keyed by the callable's parameter; `.data` unwraps the stored monitor result, while a dotted reference keeps its named output.
+            return f"{arg_name}=_obs_data(obs.{val_str})"
+        if val_str.replace('.', '').replace('-', '').isdigit():
+            return f"{arg_name}={val_str}"
+        if val_str.startswith('network.') and (_edge_lab := edge_label(val_str)):
+            # The embedded connectome constant rather than a string literal, keeping a derived observation consistent with the non-derived source path.
+            return f"{arg_name}={edge_const(_edge_lab)}"
+        if val_str.startswith('network.') and (_node_lab := node_label(val_str)):
+            # The node-level analogue of the edge-matrix branch above.
+            return f"{arg_name}={node_const(_node_lab)}"
+        if '.' in val_str:
+            prefix, _, rest = val_str.partition('.')
+            if prefix in _stage_locals:
+                return f"{arg_name}={_stage_locals[prefix]}.{rest}"
+            if prefix in (src_obs_list + list(observation_names) + list(derived_observation_names)):
+                return f"{arg_name}=obs.{val_str}"
+            return f"{arg_name}='{val_str}'"
+        return f"{arg_name}='{val_str}'" if isinstance(arg_value, str) else f"{arg_name}={val_str}"
+
+    for _si, stage in enumerate(dobs.pipeline or []):
+        _first = _si == 0
+        call = None
+        c = getattr(stage, 'callable', None)
         if c:
             call_module = getattr(c, 'module', None)
             call_name = getattr(c, 'name', None) or getattr(c, 'qualname', None)
             if call_module and call_name:
-                pipeline_call = f"{call_module}.{call_name}"
-        if pipeline_call is None:
+                call = f"{call_module}.{call_name}"
+        if call is None:
             # function-based derived observation: a YAML-defined function rendered
             # as a module-level helper. Preferred over library callables — it is
             # backend-independent (each backend renders the same function).
-            _fn = getattr(first_stage, 'function', None)
+            _fn = getattr(stage, 'function', None)
             if _fn is not None:
-                pipeline_call = str(_fn) if not hasattr(_fn, 'name') else str(_fn.name)
-        if pipeline_call is None:
-            # An `equation` over other observations rather than a callable, rendered inline with each source bound to a local.
-            _eq = getattr(first_stage, 'equation', None)
-            if _eq is not None:
+                call = str(_fn) if not hasattr(_fn, 'name') else str(_fn.name)
+        if call is None:
+            # An `equation` over other observations rather than a callable, rendered inline with each source bound to a local. Only a sole stage is expressed this way.
+            _eq = getattr(stage, 'equation', None)
+            if _eq is not None and _first:
                 pipeline_equation = getattr(_eq, 'rhs', None)
                 pipeline_equation_params = dict(iter_parameter_values(getattr(_eq, 'parameters', None)))
                 _sample_dt = derived_equation_sample_period(dobs, _all_observations, dt)
                 if _sample_dt is not None and 'dt' not in pipeline_equation_params:
                     pipeline_equation_params['dt'] = _sample_dt
-        # The callable path only; the equation path binds its source observations directly at emit time below.
-        if pipeline_call and hasattr(first_stage, 'arguments') and first_stage.arguments:
-            for arg_name, arg in first_stage.arguments.items():
+            break
+
+        _args_list = []
+        if getattr(stage, 'arguments', None):
+            for arg_name, arg in stage.arguments.items():
                 arg_value = getattr(arg, 'value', None)
                 # Only include arguments that have explicit values (not just names/descriptions)
                 if arg_name and arg_value is not None:
-                    val_str = str(arg_value)
-                    # Check if value is an observation reference vs a literal
-                    if val_str in src_obs_list or val_str in observation_names or val_str in derived_observation_names:
-                        # Bound by name, since `arguments:` is keyed by the callable's parameter; `.data` unwraps the stored monitor result, while a dotted reference keeps its named output.
-                        pipeline_args.append(f"{arg_name}=_obs_data(obs.{val_str})")
-                    elif val_str.replace('.', '').replace('-', '').isdigit():
-                        # Numeric literal - use as keyword arg
-                        pipeline_args.append(f"{arg_name}={val_str}")
-                    elif val_str.startswith('network.') and (_edge_lab := edge_label(val_str)):
-                        # The embedded connectome constant rather than a string literal, keeping a derived observation consistent with the non-derived source path.
-                        pipeline_args.append(f"{arg_name}={edge_const(_edge_lab)}")
-                    elif val_str.startswith('network.') and (_node_lab := node_label(val_str)):
-                        # The node-level analogue of the edge-matrix branch above.
-                        pipeline_args.append(f"{arg_name}={node_const(_node_lab)}")
-                    elif '.' in val_str:
-                        prefix = val_str.split('.')[0]
-                        if prefix in (src_obs_list + list(observation_names) + list(derived_observation_names)):
-                            # Dotted observation reference (e.g., avg_spectrum.avg_psd) - add as keyword
-                            pipeline_args.append(f"{arg_name}=obs.{val_str}")
-                        else:
-                            # Unknown dotted reference - pass as string
-                            pipeline_args.append(f"{arg_name}='{val_str}'")
-                    else:
-                        # String literal or other - use as keyword arg
-                        pipeline_args.append(f"{arg_name}='{val_str}'" if isinstance(arg_value, str) else f"{arg_name}={val_str}")
-        # If no explicit args were parsed, use source_observations positionally
-        if pipeline_call and not positional_args and not pipeline_args:
-            positional_args = [f"_obs_data(obs.{s})" for s in src_obs_list]
+                    _args_list.append(_bind(arg_name, arg_value, _first))
+        if not _args_list:
+            # No explicit arguments: the opening stage takes its sources positionally, a later one takes what the stage before it produced.
+            _args_list = ([f"_obs_data(obs.{s})" for s in src_obs_list] if _first
+                          else [pipeline_lines[-1][0]])
+        _args = ', '.join(_args_list)
+        # A windowed correlation is undefined over a window under two samples, so route it through _windowed_corr to return NaN rather than crash; the family comes from the reducer registry, not a hand-kept list.
+        _rmod, _, _rname = call.rpartition('.')
+        _expr = (f"_windowed_corr({call}, {_args})" if is_windowed_reducer(_rmod or None, _rname)
+                 else f"{call}({_args})")
 
-    # Build final args: positional first, then keyword
-    all_args = positional_args + pipeline_args
-    _args = ', '.join(all_args)
-    # A windowed correlation is undefined over a window under two samples, so route it through _windowed_corr to return NaN rather than crash; the family comes from the reducer registry, not a hand-kept list.
-    from tvbo.codegen.streaming_reducers import is_windowed_reducer
-    _reduce_mod, _, _reduce_name = pipeline_call.rpartition('.') if pipeline_call else ('', '', '')
-    _pipeline_emit = (
-        f"_windowed_corr({pipeline_call}, {_args})"
-        if pipeline_call and is_windowed_reducer(_reduce_mod or None, _reduce_name)
-        else f"{pipeline_call}({_args})"
-    )
+        # `output:` names what the stage produces, so a later stage can refer to it; a comma-separated list unpacks.
+        _out = getattr(stage, 'output', None)
+        _names = [o.strip() for o in str(_out).split(',')] if _out else []
+        if len(_names) > 1:
+            _lhs = ', '.join(f"{_local}_{n}" for n in _names)
+            for n in _names:
+                _stage_locals[n] = f"{_local}_{n}"
+            _tail = f"{_local}_{_names[0]}"
+        else:
+            _nm = _names[0] if _names else f"s{_si}"
+            _lhs = f"{_local}_{_nm}"
+            _stage_locals[_nm] = _lhs
+            _tail = _lhs
+        pipeline_lines.append((_tail, _lhs, _expr))
 %>
-% if pipeline_call and src_obs_list:
-    # ${dobs_name}: derived from ${', '.join(src_obs_list)}
+% if pipeline_lines and src_obs_list:
+    # ${dobs_name}: derived from ${', '.join(src_obs_list)}${(' via ' + ' -> '.join(l[1] for l in pipeline_lines)) if len(pipeline_lines) > 1 else ''}
     if (only is None or '${dobs_name}' in only) and all(hasattr(obs, _src) for _src in [${', '.join(f"'{s}'" for s in src_obs_list)}]):
-        obs.${dobs_name} = ${_pipeline_emit}
+% for _tail, _lhs, _expr in pipeline_lines:
+        ${_lhs} = ${_expr}
+% endfor
+        obs.${dobs_name} = ${pipeline_lines[-1][0]}
 % elif pipeline_equation and src_obs_list:
     # ${dobs_name}: equation over ${', '.join(list(src_obs_list) + sorted(src_node_arrays))}
     if (only is None or '${dobs_name}' in only) and all(hasattr(obs, _src) for _src in [${', '.join(f"'{s}'" for s in src_obs_list)}]):
@@ -2438,7 +2542,7 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
 
     # Evaluated at this call's state, so a per-cell observable records the diagnostic at each swept operating point.
     if analysis_names:
-        for _an_name, _an_val in compute_analysis_observations(state, network).items():
+        for _an_name, _an_val in compute_analysis_observations(state, network, settle=settle).items():
             if _an_name in analysis_names:
                 obs[_an_name] = _an_val
 % endif
@@ -2451,7 +2555,7 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
 ${lyap.benettin_function()}
 
 % endif
-def compute_analysis_observations(state, network):
+def compute_analysis_observations(state, network, settle=None):
     """Compute the declarative ``analysis`` observations — diagnostics that ANALYZE the
     solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than
     transforming ``result.data``. Factored out so the main run and any exploration that
@@ -2474,7 +2578,7 @@ def compute_analysis_observations(state, network):
             }
             break
 %>
-${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor, events=(dict(experiment.events) if experiment.events else {}), op_constraint=_op_constraint)}
+${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor, events=(dict(experiment.events) if experiment.events else {}), op_constraint=_op_constraint)}
     return obs
 % endif
 
@@ -2701,7 +2805,8 @@ def run_optimization(
     )
     _stream_names = _rec_stream
     _stream_bs = expl.get('block_size') or 1000
-    _stream_skip = n_transient
+    # The scan is the measured window now that the settle is its own, so a reducer folds every sample it sees.
+    _stream_skip = 0
     # An exploration bundling every declared observation streams only when all of them are trajectory-free; one that needs the raw trajectory keeps the whole set on the materialise path.
     _bundle_plan = streaming_post_eval_plan(experiment) if bundles_observations else {'names': [], 'deliverables': [], 'period_in_steps': None}
     _bundle_stream_names = _bundle_plan['names']
@@ -2739,7 +2844,7 @@ def run_optimization(
     # Reset per exploration; the `record:` branch narrows it to that sweep's recorded closure. Every jit/vmap decision here reads `_rec_host or has_host_pipeline_obs`, so an un-jitted observable can never reach ParallelExecution.
     _rec_host = False
 %>
-def ${expl['name']}(state, model_fn, **kwargs):
+def ${expl['name']}(state, model_fn, settle=None, **kwargs):
     """${expl['label']} - ${grid_desc}."""
     _network = kwargs.get('network')
 % if any(ax.get('builder_expr') for ax in expl['axes']):
@@ -2794,19 +2899,23 @@ def ${expl['name']}(state, model_fn, **kwargs):
         _network = _rebuilt_on(_network, _delay_graph)
 % endif
     if _network is not None:
-        # The same one-scan window a bare run integrates: each cell settles its own head over (-${transient_time}, ${t1_default}], so a swept cell and a bare run are one computation.
+        # The same window a bare run measures: the settle already ran once and the network carries its endpoint, so a swept cell and a bare run are the same computation from the same settled state.
         _solver = get_solver(block_size=${solver_block})
         _expl_model_fn_raw, _expl_state = prepare(_network, _solver, t0=${scan_t0}, t1=${t1_default}, dt=${dt})
         _expl_state = copy.deepcopy(_expl_state)  # isolate from shared network params
+        % if has_transient:
+        # Only the parameters are re-applied: `prepare` rebuilds those from the network defaults, while the initial condition already comes from the settled history and re-declaring it here would put every cell back at the cold state the settle started from.
+        _expl_state = _apply_seed_params(_expl_state)
+        % else:
         # The main run's IC construction, so the sweep starts from the declared state rather than cold.
         % if sv_distribution_info:
         _expl_state = _sample_initial_conditions(_expl_state)
         % endif
         _expl_state = _apply_seed_params(_apply_seed_dynamics(_apply_node_overrides(_expl_state)))
-        % if stochastic_param_info:
-        _inject_stochastic_trajectories(_expl_state, ${transient_time + t1_default}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
-        # The whole window, settle included: every observable drops the settle itself, so trimming here too would cut it twice and make a swept cell a different computation from a bare run.
+        % if stochastic_param_info:
+        _inject_stochastic_trajectories(_expl_state, ${t1_default}, ${dt}, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        % endif
 % if _state_only_aux:
         def _expl_model_fn(s):
             return _realign_state_auxiliaries(_expl_model_fn_raw(s), s.dynamics)
@@ -2949,12 +3058,12 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
 % if _use_stream:
     # Every recorded observable folds into the integrator carry, so peak memory is O(batch·block·n_node) and the whole grid vmaps on one device; a passed-in model_fn falls back to the post-scan path.
     if _network is not None:
-        # Streams the full window, the reducer's skip=${_stream_skip} folding only post-transient samples, so the settle happens inside the scan.
+        # Streams the measured window from the settled network, so every folded sample is a measured one.
         _stream_model_fn, _ = prepare(
             _network, get_solver(block_size=${_stream_bs}),
             t0=${scan_t0}, t1=${t1_default}, dt=${dt},
             reduce=_compose_reducers(*[
-                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt}, skip=${_stream_skip})
+                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt}, skip=${_stream_skip}, settle=_settle_rows(settle))
                 for _n in ${repr(_stream_names)}
             ]),
         )
@@ -3038,7 +3147,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 <%
     obs_class = ''.join(word.capitalize() for word in obs.split('_'))
 %>
-    _${obs}_monitor = ${obs_class}()
+    _${obs}_monitor = _warmed(${obs_class}(), settle)
 % endfor
 
     @jax.jit
@@ -3049,7 +3158,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endfor
 % if needs_all_obs:
         # Compute all observations to get derived observations
-        _all_obs = compute_all_observations(result, s)
+        _all_obs = compute_all_observations(result, s, settle=settle)
 % endif
 <%
     # Build args list by observation type
@@ -3090,7 +3199,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             _network, get_solver(block_size=${_bundle_bs}),
             t0=${scan_t0}, t1=${t1_default}, dt=${dt},
             reduce=_compose_reducers(*[
-                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt}, skip=${_stream_skip})
+                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt}, skip=${_stream_skip}, settle=_settle_rows(settle))
                 for _n in ${repr(_bundle_stream_names)}
             ]),
         )
@@ -3105,12 +3214,12 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         _expl_model_fn_jit = jax.jit(_expl_model_fn)
         def observable_fn(s):
             result = _expl_model_fn_jit(s)
-            return keep_recorded(compute_all_observations(result, s))
+            return keep_recorded(compute_all_observations(result, s, settle=settle))
 % else:
         @jax.jit
         def observable_fn(s):
             result = _expl_model_fn(s)
-            return keep_recorded(compute_all_observations(result, s))
+            return keep_recorded(compute_all_observations(result, s, settle=settle))
 % endif
 % elif bundles_observations:
     # Observations declared: observable_fn returns only the reduced
@@ -3123,12 +3232,12 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _expl_model_fn_jit = jax.jit(_expl_model_fn)
     def observable_fn(s):
         result = _expl_model_fn_jit(s)
-        return keep_recorded(compute_all_observations(result, s))
+        return keep_recorded(compute_all_observations(result, s, settle=settle))
 % else:
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
-        return keep_recorded(compute_all_observations(result, s))
+        return keep_recorded(compute_all_observations(result, s, settle=settle))
 % endif
 % elif has_model_output and model_output_indices:
     # ``model_output_channel_index`` is a scalar for one output, dropping the variable dim, or a slice for several.
@@ -3148,7 +3257,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
-        all_obs = compute_all_observations(result, s)
+        all_obs = compute_all_observations(result, s, settle=settle)
 % if output_key:
         obs_result = getattr(all_obs, '${obs_name}', None)
         if hasattr(obs_result, '${output_key}'):
@@ -3162,7 +3271,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         return obs_result.data if hasattr(obs_result, 'data') else obs_result
 % endif
 % else:
-    _${obs_name}_monitor = ${obs_class}()
+    _${obs_name}_monitor = _warmed(${obs_class}(), settle)
 
     @jax.jit
     def observable_fn(s):
@@ -3221,8 +3330,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # Each trial uses a different random noise realization for stochastic parameters.
     # vmap maps the observable over all trials in parallel on the same device.
     _n_trials = ${expl['n_trials']}
-    # The whole scanned window, settle included, since the scan opens at -transient_time and the cell integrates it in one go.
-    _n_steps_stoch = int(${transient_time + t1_default} / ${dt}) + 2
+    # The scanned window: the settle is its own scan and does not enter this one.
+    _n_steps_stoch = int(${t1_default} / ${dt}) + 2
     _trial_keys = jax.random.split(jax.random.key(${stochastic_param_info[_sp_names[0]]['seed']}), _n_trials)
     % for _sp_idx, _sp_name in enumerate(_sp_names):
 <%
@@ -3451,16 +3560,16 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 
 % if has_axes:
     exec_runner = SequentialExecution(_algo_point_fn, grid)
-    _grid_outputs = list(exec_runner.run())
+    _grid_cells = exec_runner.run()
 % else:
-    _grid_outputs = [_algo_point_fn(_expl_state)]
+    _grid_cells = [_algo_point_fn(_expl_state)]
 % endif
 % else:
 % if has_axes:
 % if has_host_pipeline_obs or _rec_host:
     # A host pipeline callable cannot trace under jit, so grid cells run sequentially with each solve still jitted.
     exec_runner = SequentialExecution(progress_ticker(grid.N, label="grid cell")(observable_fn), grid)
-    _grid_outputs = list(exec_runner.run())
+    _grid_cells = exec_runner.run()
 % else:
     _n_vmap = resolve_exploration_n_vmap(${repr(expl['n_parallel'])}, grid.N, observable_fn, _expl_state)
     _n_pmap = resolve_exploration_n_pmap(grid.N, _n_vmap)
@@ -3471,16 +3580,17 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         progress_ticker(_n_batches, label="grid batch")(observable_fn),
         grid, n_pmap=_n_pmap, n_vmap=_n_vmap,
     )
-    _grid_outputs = list(exec_runner.run())
+    _grid_cells = exec_runner.run()
 % endif
 % else:
     # Trial-only exploration — no parameter grid
-    _grid_outputs = [observable_fn(_expl_state)]
+    _grid_cells = [observable_fn(_expl_state)]
 % endif
 % endif
     # Tree-aware stack: works for both array returns and pytree returns
-    # (e.g. Bunch with data + observations when no observable is specified).
-    _stacked = jax.tree.map(lambda *xs: jnp.stack(xs), *_grid_outputs)
+    # (e.g. Bunch with data + observations when no observable is specified). A parallel run
+    # is already stacked on device, so this reshapes it rather than gathering cell by cell.
+    _stacked = stack_grid_cells(_grid_cells)
 
     # Build axes info for ExplorationResult. The point count mirrors the grid's own
     # ``kwargs.get('n_<axis>', <default>)`` so a runtime n override stays consistent
@@ -3643,7 +3753,10 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
-        transient_time=${transient_time},
+        # A swept cell integrates the measured window alone — the settle is its own scan and the
+        # cell opens from the state it left — so these results are the analogue of `.data`, not
+        # `.full`, and their time axis opens at t=0 like every other measured window.
+        transient_time=0.0,
         output_names=${model_output_names if has_model_output and not obs_name else []},
         observations=_observations_xr,
 % if expl.get('n_trials', 1) > 1:
@@ -3741,12 +3854,15 @@ def run_experiment(
     run_main = mode in ('simulation', 'all', None)
     % endif
 
-    # One scan over the declared window; any transient_time is its head and is cut at t=0.
+    # The settle runs first, on (-${transient_time}, 0]; `model_fn` integrates the measured window alone, from the state it left behind.
     sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time}, run_main=run_main, random_seed=kwargs.get('random_seed'))
     model_fn = sim_result.model_fn
     default_state = sim_result.state
+    result_transient = sim_result.result_transient
     _log(f"  Simulation period: ${t1_default} ${time_unit}, dt: ${dt} ${time_unit}")
-    _log(f"  Transient period: ${transient_time} ${time_unit} (settled in-band, cut at t=0)")
+    % if has_transient:
+    _log(f"  Transient period: ${transient_time} ${time_unit} (settled on (-${transient_time}, 0], warm-started via update_history)")
+    % endif
 
     # Use custom state if provided (e.g., from previous optimization)
     if state is not None:
@@ -3818,18 +3934,18 @@ def run_experiment(
 <%
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_'))
 %>
-        observations.${obs_name} = ${obs_class}()(result)
+        observations.${obs_name} = _warmed(${obs_class}(), result_transient)(result)
 % endif
 % endfor
 
-        _all_obs = compute_all_observations(result, state)
+        _all_obs = compute_all_observations(result, state, settle=result_transient)
 % for obs_name in sorted(derived_observation_names):
         observations.${obs_name} = _all_obs.${obs_name}
 % endfor
 
         # Analysis observations (operate on the solve/loss, not result.data)
 % if analysis_observations_dict:
-        for _an_name, _an_val in compute_analysis_observations(state, network).items():
+        for _an_name, _an_val in compute_analysis_observations(state, network, settle=result_transient).items():
             observations[_an_name] = _an_val
 % endif
     else:
@@ -3863,10 +3979,12 @@ def run_experiment(
         if hasattr(_res, "ys"):
             return type(_res)(_res.ts, _res.ys[:, _record_idx], dt=getattr(_res, "dt", None), variable_names=${tuple(_output_names)})
         return _res[:, _record_idx]
-    _main_sel = _select_channels(result)
-    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${_output_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, n_transient=${n_transient}) if (_main_sel is not None or observations is not None) else None
+    # Rejoined for reporting only: `.data` stays the measured window, `.transient` the settle, `.full` both — the same three views, now cut at the seam between two scans rather than inside one.
+    _main_sel, _n_settle = _join_settle(_select_channels(result_transient), _select_channels(result))
+    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${_output_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, n_transient=_n_settle) if (_main_sel is not None or observations is not None) else None
     % else:
-    main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, n_transient=${n_transient}) if (result is not None or observations is not None) else None
+    _main_sel, _n_settle = _join_settle(result_transient, result)
+    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${result_var_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, n_transient=_n_settle) if (_main_sel is not None or observations is not None) else None
     % endif
 
     results = Bunch(
@@ -3892,6 +4010,7 @@ def run_experiment(
         exploration_result.${expl['name']} = ${expl['name']}(
             state, model_fn,
             network=network,
+            settle=result_transient,   # kernel observables open on the settle a swept cell no longer integrates
             base_observations=observations,  # base-sim observations for builder-axis arguments
             **kwargs,  # Pass runtime kwargs (e.g., target data for correlation-based observables)
         )
@@ -4118,7 +4237,7 @@ def run_experiment(
                     network, get_solver(block_size=${_pp_bs}), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
                     reduce=_compose_reducers(*[
                         _STREAMING_REDUCERS[_n][0](
-                            _STREAMING_REDUCERS[_n][1], ${dt}, skip=${n_transient},
+                            _STREAMING_REDUCERS[_n][1], ${dt}, skip=0, settle=_settle_rows(result_transient),
                             # A single non-vmapped long fold, so progress streams live from inside the scan.
                             progress=True,
                         )
@@ -4481,7 +4600,7 @@ def run_experiment(
                 results.integration = main_result
             if getattr(main_result, 'observations', None) is None:
                 main_result.observations = Bunch()
-            for _an_name, _an_val in compute_analysis_observations(algo_result.state, network).items():
+            for _an_name, _an_val in compute_analysis_observations(algo_result.state, network, settle=result_transient).items():
                 main_result.observations[_an_name] = _an_val
 % endif
     % endif
@@ -4537,8 +4656,9 @@ def run_experiment(
             % else:
             opt_network = create_network(weights, ${weight_transform_distances_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % endif
-            # The settle is the head of this same window, so no separate warm-up run is needed.
-            opt_model_fn, opt_state = prepare(opt_network, get_solver(block_size=${solver_block}), t0=${scan_t0}, t1=${opt_t1}, dt=${opt_dt})
+            # This network is fresh, so it settles its own: `run_simulation` runs the settle, warm-starts through `update_history` and hands back the measured-window model, without materialising a base trajectory nobody reads.
+            _opt_sim = run_simulation(opt_network, t1=${opt_t1}, dt=${opt_dt}, t_transient=${transient_time}, run_main=False, random_seed=kwargs.get('random_seed'))
+            opt_model_fn, opt_state = _opt_sim.model_fn, _opt_sim.state
             current_state = copy.deepcopy(opt_state)
 % endif
             _opt_model_fn = opt_model_fn
@@ -4561,7 +4681,7 @@ def run_experiment(
             # SAME compute_all_observations path as the diagnostics, so it is byte-identical to
             # the `loss` observation and stays backend-independent (no monitor-class references).
             def loss_fn(state):
-                _obs = compute_all_observations(_opt_model_fn(state), state)
+                _obs = compute_all_observations(_opt_model_fn(state), state, settle=result_transient)
 <%
     _recon_idx = context.get('dataset_reconcile_indices') or {}
     # A by_label target carries a keyed gather, so the simulated observables are gathered onto the same shared nodes.
@@ -4571,11 +4691,15 @@ def run_experiment(
     for a in _lf_args:
         if a['type'] == 'observation':
             obs_name_arg = a['obs_name']
-            # Unwrap `.data` when the observation is an ObservationResult (derived
-            # pipelines), else use the bare value — evaluates identically for the
-            # bare case, so existing loss functions stay byte-identical.
-            _acc = (f"(getattr(_obs, '{obs_name_arg}').data if hasattr(getattr(_obs, "
-                    f"'{obs_name_arg}', None), 'data') else getattr(_obs, '{obs_name_arg}'))")
+            # A dotted reference names the output the recipe asked for (`simulated_psd.psd`) and is
+            # read by that name. `.data` is not such a name: it is the alias for whatever an
+            # ObservationResult carries as its primary output, and a derived observation that is a
+            # bare array has no attribute of that name at all — so it, and a bare reference, both
+            # take the guarded unwrap, which evaluates identically for either shape.
+            _named = a.get('output_key')
+            _acc = (f"getattr(_obs, '{obs_name_arg}').{_named}" if _named and _named != 'data'
+                    else (f"(getattr(_obs, '{obs_name_arg}').data if hasattr(getattr(_obs, "
+                          f"'{obs_name_arg}', None), 'data') else getattr(_obs, '{obs_name_arg}'))"))
             if obs_name_arg in network_observation_names:
                 # Empirical target: allow a runtime override, else the loaded constant.
                 loss_arg_exprs.append(f"kwargs.get('{obs_name_arg}', {_acc})")

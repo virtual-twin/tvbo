@@ -55,10 +55,10 @@ def axis_value(expr, transform, col):
         def _obj_fn(_s):
             _oa = compute_all_observations(model_fn(_s), _s)
             return Bunch(${obj_bunch})
-        _results = list(ParallelExecution(_obj_fn, _space, n_pmap=${expl['n_workers']}).run())
-        _F = _np.empty((len(_results), ${len(objs)}))
-        for _i, _r in enumerate(_results):
-            _F[_i] = [float(_np.asarray(getattr(_r, _n))) for _n in _obj_names]
+        # One gather for the whole population: the execution already returns it stacked, and pulling it apart per individual costs a device round trip each, once per generation.
+        _pop = stack_grid_cells(ParallelExecution(_obj_fn, _space, n_pmap=${expl['n_workers']}).run())
+        _F = _np.stack([_np.asarray(getattr(_pop, _n), dtype=float).reshape(_X.shape[0]) for _n in _obj_names], axis=1)
+        for _i in range(_X.shape[0]):
             _all_evals.append({'x': [float(v) for v in _np.asarray(_X[_i])], 'F': [float(v) for v in _F[_i]]})
         return _np.nan_to_num(_F, nan=1e6, posinf=1e6, neginf=1e6)
     class _MOOProblem(_Problem):

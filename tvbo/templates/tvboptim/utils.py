@@ -1183,7 +1183,12 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
         _vpar = get_attr(get_attr(_vstep, "equation"), "parameters") if _vstep is not None else None
     red["k_1"] = float(to_numeric(parameter_value(_vpar, "k_1", 5.6)))
     red["V_0"] = float(to_numeric(parameter_value(_vpar, "V_0", 0.02)))
-    _assert_transient_on_sample_grid(experiment, name, red["ds_steps"] * red["tr_stride"], "BOLD")
+    # Resolved here rather than from the emitted kernel array, so the reducer can state its warm-up as a literal a caller reads before any kernel is built. Without a `dt` the span cannot be counted in steps, and the caller is told there is no bound rather than a wrong one.
+    red["warmup_steps"] = (
+        kernel_support_steps(_fname_of(kernel_step), get_attr(kernel_step, "arguments"), functions_by_name(experiment), _dt)
+        if _dt
+        else 0
+    )
     return red
 
 
@@ -1232,6 +1237,12 @@ def _assert_transient_on_sample_grid(experiment: Any, name: str, period_steps: i
     """Require the settle to be a whole number of an observation's output samples.
 
     The transient is integrated in-band and its leading OUTPUT samples are dropped at finalize, so the observation's sample grid is anchored to the scan while the reported one is anchored to measurement (t=0 is the settle's last step, the boundary the window opens after). The two coincide only when the settle spans whole output periods; otherwise every reported timestamp carries a fractional-period offset that silently changes whenever ``transient_time`` does. Raising here keeps one grid instead of two.
+
+    Per consumer, not universal, because the two conventions are not equally forced. A consumer that emits on chunk boundaries taken from the scan can only be kept on one grid by this: the ``monitor``-kind observer, whose block reshape is what fixes its phase; the ``wave`` reducer, which decimates each block as ``block[period - 1 :: period]`` and refuses a block that is not a whole number of periods; and an external monitor class, which is a black box. A pipeline monitor is anchored to measurement whatever the settle is, since the cut moved to the input and the ``valid`` convolution's first output lands on measured step 0; so is the streaming stride/convolution reducer, which carries its own phase (see ``_measured_grid``). Raising for those would refuse a recipe for a misalignment that provably cannot reach it.
+
+    ``kind`` names the consumer in the message, so it is passed rather than assumed: the observer resolver produces a monitor or a wave reducer from the same ``period``, and telling a modeller their wave detector is misaligned as a "monitor" sends them looking for an observation they do not have.
+
+    What the guarded consumers have in common is that they drop the settle's samples with a floor -- ``skip // period`` -- which is right only when the settle spans whole periods and silently keeps one settle sample when it does not. The unguarded ones round that division up, because a sample straddling t=0 covers settle as well as measurement and belongs to neither window.
     """
     integ = get_attr(experiment, "integration")
     _dt = _integration_dt(experiment)
@@ -1252,6 +1263,35 @@ def _assert_transient_on_sample_grid(experiment: Any, name: str, period_steps: i
         f"a fraction of a sample. Set integration.transient_time to a multiple of the "
         f"{_period_time:g} sample period — nearest are {_lo:g} and {_hi:g}."
     )
+
+
+def assert_measured_window_is_stable(experiment: Any, name: str) -> None:
+    """Require the measured window an observation subtracts to be the one every scan it sees actually runs.
+
+    A monitor is handed a window and tells settle from measurement by subtracting the recipe's measured step count from that window's own length. The subtraction is sound because every scan the monitor sees runs either the declared window (settle prepended, so the excess IS the settle) or a shorter tuning window (so the excess is zero and nothing is cut). An ``optimization.integration`` override breaks exactly that: it re-prepares with its own ``duration`` and ``step_size``, so a longer or finer-stepped tuning scan carries an excess that is not settle, and the monitor cuts real measurement off the front of it without saying so.
+
+    Refused rather than accommodated, because the alternative reads of the excess are not distinguishable from inside the monitor -- shape is the only signal it has -- and a silent cut of the front of a fitting window is the kind of error that shows up as a fit that will not converge. No recipe in the tree sets the override today, so this closes a footgun rather than a live break.
+    """
+    optimizations = as_list(get_attr(experiment, "optimization"))
+    integration = get_attr(experiment, "integration")
+    for optimization in optimizations:
+        override = get_attr(optimization, "integration")
+        if override is None:
+            continue
+        for slot in ("duration", "step_size"):
+            declared, overridden = get_attr(integration, slot), get_attr(override, slot)
+            if overridden is None or declared is None or float(to_numeric(overridden)) == float(to_numeric(declared)):
+                continue
+            raise ValueError(
+                f"Observation {name!r} reads its settle off the length of the window it is handed, "
+                f"against integration.{slot} {to_numeric(declared)}; but optimization.integration "
+                f"overrides {slot} to {to_numeric(overridden)}, so a tuning scan's window means "
+                f"something else and the monitor would cut the front off it. Give the optimization "
+                f"the same {slot} as the experiment, or drop the observation from the fitting stage. "
+                f"An optimization.integration block carries the schema's default for every slot it "
+                f"does not name, so one written to change only the method re-times the scan too — "
+                f"restate {slot} on it if that was not the intent."
+            )
 
 
 def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
@@ -1467,6 +1507,35 @@ _REDUCTION_DIMS = {
     "monitor": ("time", "node"),  # a co-integrated observer emitting at its period
     "wave": ("group", "metric"),  # grouped wave detector: per-group scalar metrics
 }
+
+
+def emission_period_steps(red: dict[str, Any] | None) -> int | None:
+    """Integration steps between two consecutive samples a reduction folds into, or ``None`` when it folds every step.
+
+    One reduction, one answer, because two things need it and they must not drift: a reducer that writes into a sample-indexed buffer needs a block size a slot boundary never falls inside, and the values it reports need timestamps. The period differs by kind -- ``ds_steps * tr_stride`` for a convolution (BOLD), ``ds_steps`` for a plain stride, ``period_steps`` for a monitor observer or a ``wave`` detector.
+
+    This is emphatically NOT the question "does the output carry a time axis". A ``wave`` reduction decimates on a period and then collapses those samples into per-group scalars: it needs the block alignment and it has no time axis. Gating this on :func:`reduction_dims` conflated the two and silently dropped a wave observation's block back to the 1000-step default, which is how the whole-trajectory vmap it exists to avoid comes back. :func:`emission_times` is where the time-axis question belongs.
+    """
+    if red is None:
+        return None
+    if red.get("period_steps"):
+        return int(red["period_steps"])
+    if not red.get("ds_steps"):
+        return None
+    return int(red["ds_steps"]) * int(red.get("tr_stride", 1))
+
+
+def emission_times(red: dict[str, Any] | None, n_samples: int, dt: float) -> list[float] | None:
+    """The measurement-clock timestamp of each of ``n_samples`` output samples, or ``None`` for a reduction with no time axis.
+
+    A sample covers the period that ENDS at its timestamp -- sample m spans ``(m*period, (m+1)*period]`` and is stamped at the last step of it, established by perturbation on the pipeline monitor (a delta at measured step 250 is the last that moves sample 0; step 251 is the first that moves sample 1). Anchored to measurement, so the first sample lands one whole period after t = 0 whatever settle preceded the window.
+
+    Having a period is not the same as reporting one sample per period: a ``wave`` detector decimates on a period and then folds those samples away, so it is asked of :data:`_REDUCTION_DIMS` and not of the period.
+    """
+    period = emission_period_steps(red)
+    if period is None or "time" not in reduction_dims(red):
+        return None
+    return [(m + 1) * period * float(dt) for m in range(int(n_samples))]
 
 
 def reduction_dims(red: dict[str, Any] | None) -> tuple:
@@ -1973,6 +2042,10 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
                 "corr": str(get_attr(partition, "correlation")),
             }
         )
+    # Deferred to here rather than to where `period_steps` is resolved, so the message names the consumer that will actually emit: a partitioned observer is a `wave` reducer, and both it and a plain monitor decimate on scan boundaries.
+    _assert_transient_on_sample_grid(
+        experiment, str(get_attr(obs, "name", "observation")), period_steps or 0, str(red.get("kind"))
+    )
     return red
 
 
@@ -2038,11 +2111,10 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
 
     import math
 
-    # A reducer that writes into a sample-indexed buffer carries a block to align to, so that a slot boundary never falls inside a block: ds_steps * tr_stride for a convolution (BOLD) reducer, ds_steps for a plain stride, period_steps for a monitor observer. A scalar stat stream has none, so default the block to a plain 1000 steps.
-    slotted = [r for r in streaming.values() if r.get("period_steps") or r.get("ds_steps")]
+    # A reducer that writes into a sample-indexed buffer carries a block to align to, so that a slot boundary never falls inside a block. A scalar stat stream has no period, so default the block to a plain 1000 steps.
+    slotted = [_p for _p in (emission_period_steps(r) for r in streaming.values()) if _p]
     pis = 1
-    for r in slotted:
-        step = int(r["period_steps"] if r.get("period_steps") else int(r["ds_steps"]) * int(r.get("tr_stride", 1)))
+    for step in slotted:
         pis = pis * step // math.gcd(pis, step)
     period = pis if slotted else 1000
     return {
@@ -2316,7 +2388,6 @@ def render_analysis_observations(
     analysis_obs: dict[str, Any],
     coupling_keys: set[str],
     solver_class: str,
-    transient_time: float,
     t1_default: float,
     dt: float,
     solver_kwargs: str = "",
@@ -2330,8 +2401,8 @@ def render_analysis_observations(
     Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming ``result.data``. Each is emitted from its declarative ``analysis`` metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends;
     the template only interpolates the returned block. Analysis solves drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling- evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
     """
-    # The same one scan the run integrates: the window opens at -transient_time, so t=0 is the first measured step and a declared event onset needs no shift, and the observables this analysis feeds cut the settle themselves.
-    window = f"t0={-float(transient_time)}, t1={t1_default}, dt={dt}"
+    # The same window the run measures. The settle is its own scan and reaches this network through `update_history`, so an analysis opens at t=0 on a settled network — and a gradient diagnostic differentiates the measured window alone, which is what the fit it diagnoses does.
+    window = f"t0=0.0, t1={t1_default}, dt={dt}"
     solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
     lines: list[str] = []
 
@@ -2400,7 +2471,7 @@ def render_analysis_observations(
                 f"_asolve_{name}, _ = prepare(network, {solver_class}({solver_kwargs}), {window})",
                 f"def _grad_of_{name}(_p):",
                 f"    _gs = eqx.tree_at(lambda _s: _s.{access}, state, _p)",
-                f"    return compute_all_observations(_asolve_{name}(_gs), _gs).{target}",
+                f"    return compute_all_observations(_asolve_{name}(_gs), _gs, settle=settle).{target}",
                 f"_, obs.{name} = jax.value_and_grad(_grad_of_{name})(state.{access})",
             ]
         elif atype == "finite_difference":
@@ -2421,7 +2492,7 @@ def render_analysis_observations(
                     f"_g0_{gid} = state.{access}",
                     f"def _fd_{gid}(_key):",
                     "    _cs = eqx.tree_at(lambda _s: _s.noise.key, state, _key)",
-                    f"    _loss_at = lambda _g: compute_all_observations(_asolve_{gid}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs).{target}",
+                    f"    _loss_at = lambda _g: compute_all_observations(_asolve_{gid}(eqx.tree_at(lambda _s: _s.{access}, _cs, _g)), _cs, settle=settle).{target}",
                     f"    return (_loss_at(_g0_{gid} + _delta_{gid}) - _loss_at(_g0_{gid} - _delta_{gid})) / (2.0 * _delta_{gid})",
                     f"{arr} = jax.lax.map(_fd_{gid}, _keys_{gid})",
                 ]
@@ -2475,9 +2546,9 @@ def render_recorded_observable(
             _only = [n for n in only_obs if n not in channel]
             # An empty closure must emit an empty *set* literal — "{}" is an empty dict, which would change compute_all_observations' `only=` semantics.
             _only_lit = ("{{{}}}".format(", ".join(repr(n) for n in sorted(_only)))) if _only else "set()"
-            lines.append(f"_all_obs = compute_all_observations(result, s, only={_only_lit})")
+            lines.append(f"_all_obs = compute_all_observations(result, s, only={_only_lit}, settle=settle)")
         else:
-            lines.append("_all_obs = compute_all_observations(result, s)")
+            lines.append("_all_obs = compute_all_observations(result, s, settle=settle)")
     if any(n in analysis_set for n in record_names):
         lines.append("_an_obs = compute_analysis_observations(s, _network)")
     entries = []
@@ -2562,7 +2633,7 @@ def render_inference(
         if source in network_obs_names:
             return [f"{indent}{target} = {source}"]
         tmp = f"_oa{target}"
-        acc = f"compute_all_observations(model_fn({cfg}), {cfg}).{source}"
+        acc = f"compute_all_observations(model_fn({cfg}), {cfg}, settle=result_transient).{source}"
         if source in derived_names:
             return [f"{indent}{target} = {acc}"]
         return [f"{indent}{tmp} = {acc}", f"{indent}{target} = {tmp}.data if hasattr({tmp}, 'data') else {tmp}"]

@@ -197,6 +197,27 @@ def resolve_cohort_batch_size(spec, n_subjects, fit_fn=None, example_args=None):
     return width
 
 
+def stack_grid_cells(execution_result):
+    """The grid's cells as ONE pytree of ``(N, ...)`` arrays, without a per-cell gather.
+
+    ``ParallelExecution`` already returns its cells stacked on device as ``(n_pmap, per_device, ...)``, so the stacked form is a reshape of the leading two axes and a trim of the pmap padding -- one op per leaf. Iterating the result instead costs an XLA slice and a device-to-host round trip per cell, and then builds a ``stack`` whose operand count IS the grid size, which XLA has to trace and fuse. Both are linear in cells with a large constant, and on a grid of tens of thousands they stop being the tail of the run and become the run: on the 37500-cell Jansen & Rit parameter sweep the cells integrate in about a minute and the collection took eight. tvboptim took the same reshape into ``ParallelResult.to_dataframe`` for the same reason.
+
+    The flat order is the one ``ParallelResult.__getitem__`` defines -- cell ``i`` is ``[i // per_device, i % per_device]`` -- which is exactly what reshaping ``(n_pmap, per_device)`` into one axis yields, so the cells stay in grid order.
+
+    A sequential run has no such stacking: its cells arrive as a Python list and are stacked here, which is the only shape available and is cheap, because the path exists for grids small enough or observables host-bound enough not to vectorise.
+    """
+    import jax
+    import jax.numpy as jnp
+
+    results = getattr(execution_result, "results", None)
+    n_pmap = getattr(execution_result, "n_pmap", None)
+    total = getattr(execution_result, "N", None)
+    if results is None or n_pmap is None or total is None:
+        cells = list(execution_result)
+        return jax.tree.map(lambda *xs: jnp.stack(xs), *cells)
+    return jax.tree.map(lambda leaf: leaf.reshape((-1,) + leaf.shape[2:])[: int(total)], results)
+
+
 def resolve_exploration_n_vmap(spec, grid_n, observable_fn, state):
     """Resolve ``Exploration.n_parallel`` to a vmap chunk width for a grid run.
 

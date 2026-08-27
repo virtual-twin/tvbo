@@ -17,14 +17,11 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from mako.template import Template
 
 jax.config.update("jax_enable_x64", True)
 
 from tvbo.datamodel.schema import Observation
 from tvbo.templates.tvboptim.utils import observation_dims, resolve_reduction, streaming_post_eval_plan
-
-_OBS_TEMPLATE = Template(filename="tvbo/templates/tvboptim/tvbo-tvboptim-observation.py.mako")
 
 
 class _Exp:
@@ -86,8 +83,8 @@ def test_bare_predicate_without_experiment_is_truthy():
 
 def _emit_reducer(red, name="obs"):
     """Render the reduction via the dispatcher and exec it (proves stat streams route to the recurrence branch)."""
-    src = _OBS_TEMPLATE.get_def("render_reduction").render(red=red, name=name, s_idx=0, dt=1.0)
-    ns = {"jnp": jnp, "jax": jax}
+    src = OBS_TEMPLATE.get_def("render_reduction").render(red=red, name=name, s_idx=0, dt=1.0)
+    ns = reducer_namespace()
     exec(compile(src, "<reducer>", "exec"), ns)
     return ns[f"_reduction_{name}"]
 
@@ -266,6 +263,8 @@ def test_an_unrecognised_pipeline_step_leaves_the_observation_unlabelled():
 
 import tvboptim.observations.observation as _tvboptim_obs
 
+from .reducer_harness import OBS_TEMPLATE, reducer_namespace
+
 
 def _fc_observation(skip_t=20, source="x_e_pre"):
     """A compute_fc (node-node correlation) pipeline opted into streaming."""
@@ -283,8 +282,8 @@ def _fc_observation(skip_t=20, source="x_e_pre"):
 
 
 def _emit_fc_reducer(red, s_idx=4, name="inp_corr"):
-    src = _OBS_TEMPLATE.get_def("render_reduction").render(red=red, name=name, s_idx=s_idx, dt=1.0)
-    ns = {"jnp": jnp, "jax": jax}
+    src = OBS_TEMPLATE.get_def("render_reduction").render(red=red, name=name, s_idx=s_idx, dt=1.0)
+    ns = reducer_namespace()
     exec(compile(src, "<fc-reducer>", "exec"), ns)
     return ns[f"_reduction_{name}"]
 
