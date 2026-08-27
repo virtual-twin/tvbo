@@ -244,6 +244,7 @@ from tvbo.templates.tvboptim.utils import jax_platform as _jax_platform_of
 jax_platform = _jax_platform_of(accelerator)
 enable_x64 = precision == 'float64'
 random_seed = int(exec_config.random_seed) if exec_config and exec_config.random_seed else 0
+settle_seed = getattr(getattr(integration, 'noise', None), 'settle_seed', None)
 
 # experiment.observations minus the ones with their own path: `analysis` diagnostics and cross-trial `reduce: trials` reductions are not raw/network monitors.
 observations_dict = {n: o for n, o in experiment.observations.items()
@@ -2008,6 +2009,10 @@ def run_simulation(
     # A live runtime PRNG leaf, so a runtime random_seed wins over the codegen default ${random_seed}; jnp.asarray coerces an array- or tracer-valued seed instead of raising.
     _rs = kwargs.get('random_seed')
     _noise_key = jax.random.key(jnp.asarray(${random_seed} if _rs is None else _rs, dtype=jnp.uint32))
+% if settle_seed is not None:
+    # Declared `Noise.settle_seed`: the settle integrates this stream instead of the one its solver hands it. Equal to the measured seed puts both scans on one draw -- and a shorter draw from one key is a PREFIX of a longer one, so the measured window then replays the settle sample for sample.
+    _settle_key = jax.random.key(jnp.asarray(${int(settle_seed)}, dtype=jnp.uint32))
+% endif
     % endif
 
     def _open_window(_st):
@@ -2042,6 +2047,10 @@ def run_simulation(
     if t_transient > 0:
         _tr_model_fn, _tr_state = prepare(network, solver, t0=t0 - t_transient, t1=t0, dt=dt)
         _tr_state = _open_window(_tr_state)
+        % if has_noise and settle_seed is not None:
+        if getattr(_tr_state, 'noise', None) is not None:
+            _tr_state.noise.key = _settle_key
+        % endif
         % if stochastic_param_info:
         _inject_stochastic_trajectories(_tr_state, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
