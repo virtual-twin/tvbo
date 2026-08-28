@@ -2038,12 +2038,7 @@ def run_simulation(
     result_transient = None
     _settled = False
     % if has_transient:
-    # tvboptim's warm start (`docs` "Warm-start simulations"): the settle is its OWN scan over
-    # (t0 - t_transient, t0], and `update_history` hands its settled state — delay history and
-    # initial condition alike — to the measured window. Keeping it a separate scan is what keeps
-    # the settle off the gradient tape: a loss prepared from this network differentiates the
-    # measured window only. The settle still carries negative timestamps, so a declared onset
-    # needs no shift and `.transient` reads the same clock it always did.
+    # tvboptim's warm start: the settle is its own scan over (t0 - t_transient, t0] on negative timestamps, off the gradient tape, and `update_history` hands its settled state to the measured window.
     if t_transient > 0:
         _tr_model_fn, _tr_state = prepare(network, solver, t0=t0 - t_transient, t1=t0, dt=dt)
         _tr_state = _open_window(_tr_state)
@@ -2055,12 +2050,7 @@ def run_simulation(
         _inject_stochastic_trajectories(_tr_state, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
         % endif
         result_transient = _run_compiled(_tr_model_fn, _tr_state)
-        # Two different quantities come off this one scan and neither substitutes for the other: the
-        # delay horizon, trimmed here, is what the network needs to read its own past; the kernel
-        # support, trimmed by each monitor's own `carry_warmup`, is what a convolution needs to open
-        # on signal instead of zeros. The settle is therefore kept whole even when `run_main` is
-        # False — that path is the amortised settle a tuning loop reuses, and it is exactly where a
-        # cold kernel costs the most (Transient-Single-Scan.md §16).
+        # Kept whole even when `run_main` is False: the delay horizon is trimmed here, the kernel support by each monitor's own `carry_warmup`, and neither substitutes for the other.
         network.update_history(_history_window(result_transient, network, dt))
         _settled = True
     % endif
@@ -2433,9 +2423,7 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
             # Bound under its bare attribute name, so the equation reads `(I_E - I_E_range_lo)` rather than a generated constant identifier.
             src_node_arrays[node_label(_so_name)] = node_const(node_label(_so_name))
 
-    # Every stage of the pipeline, in order. A derived observation is as much a pipeline as a raw
-    # one, and stopping at the first stage silently returned an intermediate — an argmax's bin
-    # index where the recipe asked for `index_at(frequencies, idx)`, the frequency at that bin.
+    # Every stage of the pipeline, in order: stopping at the first returns an intermediate, an argmax's bin index where the recipe asked for the frequency at that bin.
     from tvbo.codegen.streaming_reducers import is_windowed_reducer
     pipeline_equation = None       # equation-based derived obs (rhs over other observations)
     pipeline_equation_params = {}  # local equation constants
@@ -3339,8 +3327,8 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # Each trial uses a different random noise realization for stochastic parameters.
     # vmap maps the observable over all trials in parallel on the same device.
     _n_trials = ${expl['n_trials']}
-    # The scanned window: the settle is its own scan and does not enter this one.
-    _n_steps_stoch = int(${t1_default} / ${dt}) + 2
+    # The whole integrated window, settle included, which is what `test_the_draw_spans_the_settle_and_the_window` pins. Splitting the settle into its own scan does not narrow this: the dfun indexes the draw with `clip(t / dt, 0, N - 1)` and the settle runs on negative t, so the settle reads index 0 throughout while the measured window keeps reading the same samples it read before.
+    _n_steps_stoch = int(${transient_time + t1_default} / ${dt}) + 2
     _trial_keys = jax.random.split(jax.random.key(${stochastic_param_info[_sp_names[0]]['seed']}), _n_trials)
     % for _sp_idx, _sp_name in enumerate(_sp_names):
 <%
@@ -3596,14 +3584,10 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _grid_cells = [observable_fn(_expl_state)]
 % endif
 % endif
-    # Tree-aware stack: works for both array returns and pytree returns
-    # (e.g. Bunch with data + observations when no observable is specified). A parallel run
-    # is already stacked on device, so this reshapes it rather than gathering cell by cell.
+    # Tree-aware stack over array or pytree returns; a parallel run is already stacked on device, so this reshapes it rather than gathering cell by cell.
     _stacked = stack_grid_cells(_grid_cells)
 
-    # Build axes info for ExplorationResult. The point count mirrors the grid's own
-    # ``kwargs.get('n_<axis>', <default>)`` so a runtime n override stays consistent
-    # with the recorded coordinate (otherwise the stacked result and its coord disagree).
+    # The point count mirrors the grid's own ``kwargs.get('n_<axis>', <default>)``, so a runtime n override leaves the stacked result and its recorded coordinate agreeing.
     _axes_info = [
 % for ax in expl['axes']:
 <%
@@ -3762,9 +3746,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
-        # A swept cell integrates the measured window alone — the settle is its own scan and the
-        # cell opens from the state it left — so these results are the analogue of `.data`, not
-        # `.full`, and their time axis opens at t=0 like every other measured window.
+        # A swept cell integrates the measured window alone and opens from the state the settle left, so these are the analogue of `.data` rather than `.full` and their time axis opens at t=0.
         transient_time=0.0,
         output_names=${model_output_names if has_model_output and not obs_name else []},
         observations=_observations_xr,
@@ -4700,11 +4682,7 @@ def run_experiment(
     for a in _lf_args:
         if a['type'] == 'observation':
             obs_name_arg = a['obs_name']
-            # A dotted reference names the output the recipe asked for (`simulated_psd.psd`) and is
-            # read by that name. `.data` is not such a name: it is the alias for whatever an
-            # ObservationResult carries as its primary output, and a derived observation that is a
-            # bare array has no attribute of that name at all — so it, and a bare reference, both
-            # take the guarded unwrap, which evaluates identically for either shape.
+            # A dotted reference is read by name; `.data` is not such a name but the alias for an ObservationResult's primary output, so it and a bare reference both take the guarded unwrap, which evaluates identically for either shape.
             _named = a.get('output_key')
             _acc = (f"getattr(_obs, '{obs_name_arg}').{_named}" if _named and _named != 'data'
                     else (f"(getattr(_obs, '{obs_name_arg}').data if hasattr(getattr(_obs, "

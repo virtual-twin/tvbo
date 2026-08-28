@@ -313,9 +313,7 @@ def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
 def _flatten_alpha(path) -> None:
     """Rewrite a raster without its alpha channel, composited on white.
 
-    Matplotlib writes RGBA even when nothing is transparent, and a uniformly opaque alpha
-    channel becomes a soft mask in the embedding PDF that some viewers mishandle, painting
-    the page and every page after it black.
+    Matplotlib writes RGBA even when nothing is transparent, and a uniformly opaque alpha channel becomes a soft mask in the embedding PDF that some viewers mishandle, painting the page and every page after it black.
     """
     from PIL import Image
 
