@@ -81,6 +81,24 @@ top — never `import` inside a generated function body.
 function body with heavy `% if/for` branching buried in the 3000-line experiment template,
 *or* a Python routine string-building that same body, are both smells — split them.
 
+## Generated code runs at grid scale — count what it does per cell
+
+The emitted module's hot path is not the one you read. A line that costs a millisecond runs once in a bare simulation and 37,500 times in a parameter sweep, so anything the generated code does **per cell, per node or per sample** has to be written as one array operation over the whole grid, not as a Python loop over it.
+
+The failure has a signature: a device array indexed inside a loop. `ParallelExecution` returns its cells already stacked on device as `(n_pmap, per_device, ...)`, and `ParallelResult.__getitem__` slices one cell out of that — an XLA slice plus a device-to-host round trip, per cell, per leaf. `list(execution.run())` is therefore N of them, and the `jnp.stack` that follows builds a single op whose operand count *is* the grid size, which XLA then has to trace and fuse. Both are linear in cells with a constant large enough to dominate: on the Jansen & Rit 4D sweep (37,500 cells, 1250 RK4 steps each) the cells integrated in about a second and the collection took eight and a half minutes. Reshaping the two leading axes into one and trimming the pmap padding is the same value in one op per leaf — `stack_grid_cells` in `tvbo/templates/tvboptim/callbacks.py`. It took that experiment from 518 s to 3 s, and the study's whole report from 31 minutes to 34 seconds.
+
+So, when emitting or reviewing generated code:
+
+- **Collect a grid once.** Never `list()` an execution result, never `for cell in results`, never `results[i]` on device data. Stack first, then index the host array if you need rows.
+- **Watch the operand count of a single op too.** `jnp.stack(*cells)` and `jnp.concatenate` over a Python list are O(grid) in the *graph*, which costs compile time even when the data is small.
+- **Keep the check in the measurement, not the reasoning.** Time a sweep at two grid sizes. Cell count is the independent variable; anything superlinear is collection or compile, not integration. That is what separated this bug from the plausible suspects — a 64-cell cap on `n_parallel: auto` and the settle being recorded — neither of which changed the number.
+
+## Read the backend's own release notes before assuming its API
+
+The tvboptim adapter targets a library under active development, and its checkout at `~/work_data/toolboxes/tvboptim` carries a `CHANGELOG.md`, a `docs/` tree, and since 0.5.0 a bundled agent skill at `src/tvboptim/skills/tvboptim/`. Consult them when touching the adapter: they record both the documented way to do a thing and the reasons a spelling changed.
+
+Two live examples. tvboptim fixed exactly the collection bug above inside its own `to_dataframe` (commit `bb8e2ca`, "Make to_dataframe faster by removing python loop") and its skill names `to_dataframe()` as the postprocessing path — TVBO kept indexing cells for another year. And `incoming_states=` / `local_states=` on couplings are deprecated in favour of `source=` / `local=`, which is what the `DeprecationWarning` in every tvboptim run of a generated module is saying; the rename cannot be emitted until a tvboptim carrying it is released, since CI installs from PyPI, so the gap is recorded rather than closed.
+
 ## Common pitfalls
 
 - **Don't mix Mako and Jinja2** in the same template tree — pick the one the sibling uses.

@@ -160,7 +160,7 @@ for ck, cobj in all_couplings.items():
 from tvbo.adapters.tvboptim import solver_class as _solver_class
 method = integration.method or 'euler'
 solver_class = _solver_class(method)
-dt = float(integration.step_size)
+dt = settle['dt']
 # Seconds per model time unit, which puts analytic-frequency diagnostics on a physical Hz axis.
 from tvbo.utils.units import time_unit_of, unit_to_si_factor
 time_unit = time_unit_of(integration, experiment)
@@ -222,12 +222,13 @@ weight_transform_distances_arg = "distances=distances, " if weight_transform_nee
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
-t1_default = float(integration.duration)
-transient_time = float(integration.transient_time) if integration.transient_time else 0.0
+# The window, resolved once by BaseAdapter.get_integration_info and carried in the render context. Recomputing it here is what let two backends disagree about whether `duration` includes the settle.
+t1_default = settle['duration']
+transient_time = settle['transient_time']
 has_transient = transient_time > 0
 # Where a measured scan opens. The settle is its own scan over (-transient_time, 0] and hands its endpoint on through `update_history`, so every later scan opens at t=0 on a network that is already settled — and none of them carries the settle on its gradient tape.
 scan_t0 = 0.0
-n_transient = int(round(transient_time / dt)) if has_transient else 0
+n_transient = settle['n_transient']
 block_size = int(integration.block_size) if getattr(integration, 'block_size', None) else 1000
 # `noise_draw` selects the realization, because blocking is what selects it in tvboptim: a block grain regenerates each block's noise from (key, block_idx), no grain draws the whole tensor at once. A streamed observable folds block by block whatever this says; `blocked` is how a recipe puts the whole run on that same grain.
 noise_draw = str(getattr(integration, 'noise_draw', 'fused') or 'fused')
@@ -3324,11 +3325,10 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _n_sp = len(_sp_names)
 %>\
     # === Trial parallelization: ${expl['n_trials']} trials via jax.vmap ===
-    # Each trial uses a different random noise realization for stochastic parameters.
-    # vmap maps the observable over all trials in parallel on the same device.
+    # One noise realization per trial, vmapped over trials on the same device.
     _n_trials = ${expl['n_trials']}
-    # The whole integrated window, settle included, which is what `test_the_draw_spans_the_settle_and_the_window` pins. Splitting the settle into its own scan does not narrow this: the dfun indexes the draw with `clip(t / dt, 0, N - 1)` and the settle runs on negative t, so the settle reads index 0 throughout while the measured window keeps reading the same samples it read before.
-    _n_steps_stoch = int(${transient_time + t1_default} / ${dt}) + 2
+    # Sized over the whole integrated window, settle included, which is what `test_the_draw_spans_the_settle_and_the_window` pins. The settle scan itself reads index 0 throughout -- the dfun indexes with `clip(t / dt, 0, N - 1)` and the settle runs on negative t -- so the leading rows are allocated rather than read, and the draw stays a function of the window the experiment integrates.
+    _n_steps_stoch = int(${settle['total_duration']} / ${dt}) + 2
     _trial_keys = jax.random.split(jax.random.key(${stochastic_param_info[_sp_names[0]]['seed']}), _n_trials)
     % for _sp_idx, _sp_name in enumerate(_sp_names):
 <%
@@ -3584,7 +3584,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _grid_cells = [observable_fn(_expl_state)]
 % endif
 % endif
-    # Tree-aware stack over array or pytree returns; a parallel run is already stacked on device, so this reshapes it rather than gathering cell by cell.
+    # Tree-aware stack, for array and pytree returns alike; a parallel run is already stacked on device, so this reshapes it rather than gathering cell by cell.
     _stacked = stack_grid_cells(_grid_cells)
 
     # The point count mirrors the grid's own ``kwargs.get('n_<axis>', <default>)``, so a runtime n override leaves the stacked result and its recorded coordinate agreeing.
@@ -3746,7 +3746,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
-        # A swept cell integrates the measured window alone and opens from the state the settle left, so these are the analogue of `.data` rather than `.full` and their time axis opens at t=0.
+        # A swept cell integrates the measured window alone, so these results are the analogue of `.data`, not `.full`, opening at t=0 like every other measured window.
         transient_time=0.0,
         output_names=${model_output_names if has_model_output and not obs_name else []},
         observations=_observations_xr,
@@ -3972,10 +3972,10 @@ def run_experiment(
         return _res[:, _record_idx]
     # Rejoined for reporting only: `.data` stays the measured window, `.transient` the settle, `.full` both — the same three views, now cut at the seam between two scans rather than inside one.
     _main_sel, _n_settle = _join_settle(_select_channels(result_transient), _select_channels(result))
-    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${_output_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, n_transient=_n_settle) if (_main_sel is not None or observations is not None) else None
+    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${_output_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, ${'observation_times=_stream_axes(observations), ' if _base_stream else ''}n_transient=_n_settle) if (_main_sel is not None or observations is not None) else None
     % else:
     _main_sel, _n_settle = _join_settle(result_transient, result)
-    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${result_var_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, n_transient=_n_settle) if (_main_sel is not None or observations is not None) else None
+    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${result_var_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, ${'observation_times=_stream_axes(observations), ' if _base_stream else ''}n_transient=_n_settle) if (_main_sel is not None or observations is not None) else None
     % endif
 
     results = Bunch(
@@ -4682,7 +4682,7 @@ def run_experiment(
     for a in _lf_args:
         if a['type'] == 'observation':
             obs_name_arg = a['obs_name']
-            # A dotted reference is read by name; `.data` is not such a name but the alias for an ObservationResult's primary output, so it and a bare reference both take the guarded unwrap, which evaluates identically for either shape.
+            # A dotted reference names the output the recipe asked for and is read by that name; `.data` is only an alias, so it and a bare reference both take the guarded unwrap.
             _named = a.get('output_key')
             _acc = (f"getattr(_obs, '{obs_name_arg}').{_named}" if _named and _named != 'data'
                     else (f"(getattr(_obs, '{obs_name_arg}').data if hasattr(getattr(_obs, "

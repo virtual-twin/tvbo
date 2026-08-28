@@ -213,6 +213,12 @@ one from scratch — confirmed examples in the database:
 `tvbo info experiment:<name>` shows an experiment's tasks and explorations before
 you run it. See `tvbo/classes/` for the `Exploration` metadata slots.
 
+### When a sweep is slow, time it at two grid sizes first
+
+Cell count is the independent variable, so run the same exploration at a fraction of its grid and again at full size. Integration is linear in cells; anything superlinear is the sweep being *collected* or *compiled*, not simulated, and no amount of `n_parallel` tuning will touch it. A 37,500-cell Jansen & Rit sweep read 440 cells/s at 6,000 cells and 72 at full size — the tell that its 8 minutes were a per-cell host round trip rather than the ~1 s of integration underneath.
+
+Guess after you measure, not before. On that sweep the two obvious suspects — the batch width `n_parallel: auto` had chosen, and the settle being recorded along with the measurement — were both real and neither moved the number.
+
 ## Studies
 
 A `SimulationStudy` aggregates multiple experiments (e.g. parameter sweeps). Load

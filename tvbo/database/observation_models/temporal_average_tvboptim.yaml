@@ -1,0 +1,34 @@
+# Temporal Average - running temporal mean, tvboptim's windowing
+#
+# The same statistic as temporal_average_tvb.yaml over a window one sample later. tvboptim derives
+# each window's start from `ts / dt`, and a native solution's `ts[0]` is `t0 + dt` rather than `t0`,
+# so its first window covers steps 1..istep instead of 0..istep-1. Measured against TVB's monitor on
+# one shared trajectory the two differ by 3.6e-01 -- not a rounding difference and not a whole-window
+# shift, which is why it is a second monitor here rather than a tolerance somewhere.
+#
+# Declared separately rather than as a backend switch: one file means one thing, so a recipe states
+# which convention its numbers are on instead of inheriting whichever the backend happened to use.
+
+name: TemporalAverage_tvboptim
+label: Temporal Average (tvboptim windowing)
+iri: tvbo:TemporalAverage_tvboptim
+description: >-
+    Running temporal mean over non-overlapping windows of `period`, windowed as tvboptim's
+    TemporalAverage windows them: the first window covers integration steps 1..istep. Use
+    TemporalAverage for TVB's windowing, which opens at step 0.
+
+period: 0.9765625  # ms (~1024 Hz default)
+
+pipeline:
+    - name: temporal_average_tvboptim
+      output: averaged
+      equation:
+          rhs: "window_mean(slice_axis(X, 0, 1, 1 + window_size * floor((shape(X, 0) - 1) / window_size)), window_size)"
+          parameters:
+              window_size:
+                  equation: {rhs: "iround(period / dt)"}
+                  description: "Integration steps per averaging window, so the window tracks the grid the experiment declares rather than the one this file was written on."
+      arguments:
+          window_size:
+              description: "Integration steps per averaging window. Its value is declared on the equation parameter of the same name; a backend that has not yet been migrated to read that still derives it here."
+      apply_on_dimension: time

@@ -206,5 +206,4 @@ on this backend.
 - [Parameter exploration](../Simulation/ParameterExploration.qmd) — sweep `amplitude` or
   `onset` like any other parameter.
 - [`Event`](../datamodel/classes/Event.qmd) · [`Stimulus`](../datamodel/classes/Stimulus.qmd) — the schema.
-- [Jansen & Rit (1995)](../Replication/Jansen1995/docs/report.qmd) — a published
-  stimulation experiment reproduced end to end.
+- [The replication pipeline](../Replication/pipeline.qmd) — where a stimulation experiment sits in a full study.

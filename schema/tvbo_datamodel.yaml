@@ -1731,6 +1731,12 @@ classes:
                 description: >-
                     Ordered list of auxiliary inputs the observation pipeline consumes. Examples: a Surface mesh's faces array, an empirical FC matrix on a reference Network, or another Observation's output. Resolved load-time eagerly; rendered code is self-contained.
 
+            dims:
+                range: string
+                multivalued: true
+                description: >-
+                    Axis names of this observation's output, outermost first, e.g. ``[node]`` for a per-region value or ``[time, node]`` for a trajectory. Declare it when the shape cannot be derived: a standard reduction states its own axes and needs nothing here, but a ``pipeline`` of user functions has an output shape only its author knows. Without it the container falls back to positional names built from the CONTAINER VARIABLE, not from the observation — ``integration__target_peak_frequencies_d0``, not ``target_peak_frequencies_d0`` — because inferring an axis from a length is how a four-sample trace in a four-node network comes to be labelled by region. A declaration that does not match the value it describes is refused by name rather than ignored.
+
             # Monitor attributes (for BOLD, EEG, etc.)
             period:
                 range: float
@@ -2374,6 +2380,10 @@ classes:
                 multivalued: true
                 range: Argument
                 inlined_as_list: true
+            warmup:
+                range: float
+                description: >-
+                    How much signal this class convolves against before its first output is meaningful, as a duration in the integration's time unit. An external class is a black box, so its memory is declared here rather than inferred from the length of what it returns -- a class that pads or trims would make that inference wrong silently, and the result would look like a plausible series. Absent means memoryless: the class emits one output per period with no history behind it (GlobalAverage, SpatialAverage, EEG, AfferentCoupling), and the settle's own output samples are simply dropped. Present means kernel-bearing (a BOLD monitor and its HRF variants): the settle is cut at the INPUT instead, leaving this much of it in front of t = 0 for the class to eat, so the first reported sample is the first measured one and no arithmetic is done on the output at all. A settle shorter than the warm-up opens the class on zeros, which is what it would do at t = 0 anyway.
 
     DerivedParameter:
         is_a: Parameter

@@ -60,7 +60,7 @@ print(f"  TVB class: {obs_raw.class_reference.name}")
 ```
 
 ```{python}
-obs_ta = Observation.from_db("temporal_average")
+obs_ta = Observation.from_db("TemporalAverage")
 print(f"{obs_ta.name}: {obs_ta.label}")
 print(f"  Period: {obs_ta.period} ms")
 print(f"  Pipeline: {[str(s.name) for s in obs_ta.pipeline]}")
@@ -502,7 +502,7 @@ monitor and back:
 ```{python}
 from tvbo.adapters.tvb import to_tvb_monitor
 
-for name in ["raw", "eeg", "bold_tvb", "temporal_average"]:
+for name in ["raw", "eeg", "bold_tvb", "TemporalAverage"]:
     obs = Observation.from_db(name)
     mon = to_tvb_monitor(obs)
     print(f"{str(obs.name):20s} → {type(mon).__name__:30s}", end="")

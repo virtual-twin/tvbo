@@ -76,24 +76,42 @@ def _unwrap_observation(obs):
     return obs if isinstance(obs, xr.DataArray) else getattr(obs, "data", obs)
 
 
-def _observation_dataarray(raw_data, dims=None, nodes=None):
-    """Attach an observation's DECLARED axis names to the array the backend returned.
+def _observation_dataarray(raw_data, dims=None, nodes=None, times=None, name=None):
+    """*raw_data* with its observation's DECLARED axes bound to its array, in whatever wrapper it arrived in.
 
-    The axes are not inferred here. An observation's output shape is fixed by the reduction that produced it, so codegen emits the names alongside the reducer (``_STREAMING_DIMS``, from ``utils.reduction_dims``) and this only binds them — together with the network's node labels, which the caller already holds. Inferring dims from shape instead cannot tell an ``(n_freq, n_node)`` spectrum from an ``(n_node, n_node)`` matrix, so nothing here guesses: an observation with no declared dims is passed through unlabelled and the container falls back to positional names.
+    The axes are never inferred. An observation's output shape is fixed by the reduction that produced it or stated outright by the recipe's ``dims:``, so codegen emits the names (``_OBSERVATION_DIMS``, from ``utils.observation_dims``) and this only binds them, together with the network's node labels the caller already holds. Inferring from shape instead cannot tell an ``(n_freq, n_node)`` spectrum from an ``(n_node, n_node)`` matrix.
 
-    Returns the input untouched when it is already labelled, is not a numeric array, or carries no dims declaration of the right rank.
+    A pipeline observation arrives wrapped in an :class:`ObservationResult` carrying several named outputs. Its array is labelled in place, so binding the axes never costs the rest of what the pipeline produced.
+
+    Raises when a declaration contradicts the array it describes. Applying it would reshape the data and dropping it would leave the author's ``dims:`` silently ignored, which is the failure this declaration exists to end. A value with no axes at all is not a contradiction — the reduction that produced it collapsed them, so there is nothing to name. An observation that declares nothing is passed through unlabelled, and the container falls back to positional names.
     """
-    if raw_data is None or isinstance(raw_data, xr.DataArray) or not dims:
+    if raw_data is None or not dims:
+        return raw_data
+    if isinstance(raw_data, ObservationResult):
+        labelled = _observation_dataarray(raw_data.data, dims, nodes, times, name=name)
+        if isinstance(labelled, xr.DataArray):
+            raw_data.ys = labelled
+        return raw_data
+    if isinstance(raw_data, xr.DataArray):
         return raw_data
     try:
         a = np.asarray(raw_data)
     except (ValueError, TypeError):
         return raw_data
-    if a.dtype == object or a.ndim == 0 or a.size == 0 or a.ndim != len(dims):
+    if a.dtype == object or a.ndim == 0 or a.size == 0:
         return raw_data
+    if a.ndim != len(dims):
+        raise ValueError(
+            f"observation {name or '<unnamed>'!r} declares {len(dims)} axis/axes {tuple(dims)} but its "
+            f"value has {a.ndim} with shape {a.shape}. Correct the observation's `dims:` to the shape its "
+            f"pipeline actually returns, or remove it and let the container fall back to positional names."
+        )
 
     dims = [str(d) for d in dims]
-    return xr.DataArray(a, dims=dims, coords=_node_coords(dims, a.shape, nodes))
+    coords = _node_coords(dims, a.shape, nodes)
+    if times is not None and "time" in dims and len(times) == a.shape[dims.index("time")]:
+        coords["time"] = np.asarray(times)
+    return xr.DataArray(a, dims=dims, coords=coords)
 
 
 def _jax_array(value):
@@ -555,6 +573,7 @@ class SimulationResult:
         state_names=None,
         nodes=None,
         observation_dims=None,
+        observation_times=None,
         units=None,
         n_transient=0,
         **kwargs,
@@ -578,8 +597,12 @@ class SimulationResult:
         self.data = data if self._n_transient <= 0 or data is None else data.isel(time=slice(self._n_transient, None))
         # Normalize observations to Bunch so both JAX and tvboptim results have dot-access: result.observations.BOLD_TVB  (not just dict indexing). Observations carry the axis names their reduction declared at codegen, bound to the SAME node labels the trajectory just got — the one place holding both.
         _odims = observation_dims or {}
+        _otimes = observation_times or {}
+
         if observations:
-            self.observations = Bunch({k: _observation_dataarray(v, _odims.get(k), nodes) for k, v in observations.items()})
+            self.observations = Bunch(
+                {k: _observation_dataarray(v, _odims.get(k), nodes, _otimes.get(k), name=k) for k, v in observations.items()}
+            )
         else:
             self.observations = Bunch()
         # A backend that settles separately still hands its window over; it is reported as-is.
@@ -2296,6 +2319,7 @@ class ExperimentResult:
                 # Labels are asked for only when one of the declared axes is a node axis, so an array with none never pays for resolving them.
                 nodes = _node_labels() if any(d in _NODE_AXES for d in dims) else None
                 return xr.DataArray(a, dims=dims, coords=_node_coords(dims, a.shape, nodes))
+            # No declared axes: an honest placeholder. A length matching the node count is not evidence of a node axis — a four-sample trace in a four-node network has the same shape — and a guess that lands wrong paints a brain map with the wrong region's value while looking labelled.
             return xr.DataArray(a, dims=[f"{name}_d{i}" for i in range(a.ndim)])
 
         # An analysis observation (a Fisher curve, a gradient) is a bare array with no dims, so it goes through _numeric_da rather than being dropped by the labelled-only guard.
@@ -2526,9 +2550,11 @@ class ExperimentResult:
             if self._extras.get("spikes"):
                 # The same filename-safe token used for the raster variables and the population coord, so attrs, coord and variable names all agree (no raw-vs-sanitised drift).
                 _attrs["populations"] = [_san(p) for p in self._extras["spikes"]]
-                for _k in ("duration_ms", "dt_ms"):
+                for _k in ("duration_ms", "dt_ms", "transient_ms"):
                     if self._extras.get(_k) is not None:
                         _attrs[_k] = float(self._extras[_k])
+                # Stated rather than inferred: a raster is on the measurement clock, so its settle carries negative timestamps and t = 0 opens the measured window. A file written before this attribute existed counts from the start of integration instead, and the absence of the attribute is what says so.
+                _attrs["spike_time_origin"] = "measurement"
             if self._extras.get("synapse_state"):
                 _attrs["synapse_recorded"] = [_san(k) for k in self._extras["synapse_state"]]
             ds = xr.Dataset(data_vars, attrs=_attrs)

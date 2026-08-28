@@ -273,6 +273,10 @@ observations:
     description: Power spectral density using Welch's method on simulated y0
     source:
     - y0
+    dims:
+    - node
+    - variable
+    - frequency
     reconcile: by_label
     pipeline:
     - function: subsample
@@ -315,6 +319,10 @@ observations:
     record: true
     source:
     - y0
+    dims:
+    - time
+    - variable
+    - node
     reconcile: by_label
     pipeline:
     - function: subsample
@@ -323,6 +331,30 @@ observations:
         data:
           name: data
           value: integration.result
+  y0_mean:
+    name: y0_mean
+    label: Mean Pyramidal Potential per Region
+    description: Time-average of y0 for each region, the amplitude a trace bundle
+      is shaded by
+    record: true
+    source:
+    - y0_trace
+    dims:
+    - variable
+    - node
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: mean
+        module: jax.numpy
+      output: y0_mean
+      arguments:
+        a:
+          name: a
+          value: y0_trace
+        axis:
+          name: axis
+          value: 0
   psd_frequencies:
     name: psd_frequencies
     label: PSD Frequency Axis
@@ -331,6 +363,8 @@ observations:
     record: true
     source:
     - simulated_psd
+    dims:
+    - frequency
     reconcile: by_label
     pipeline:
     - callable:
@@ -346,6 +380,8 @@ observations:
     label: Target Peak Frequencies
     description: The MEG frequency gradient the fit reproduces, built from tract-length
       distance to visual cortex
+    dims:
+    - node
     reconcile: by_label
     pipeline:
     - function: distance_from_seed
@@ -370,6 +406,9 @@ observations:
     source:
     - simulated_psd
     - target_peak_frequencies
+    dims:
+    - node
+    - frequency
     reconcile: by_label
     pipeline:
     - function: cauchy_pdf
@@ -387,6 +426,9 @@ observations:
     description: Mean power spectrum across all regions
     source:
     - simulated_psd
+    dims:
+    - variable
+    - frequency
     reconcile: by_label
     pipeline:
     - callable:
@@ -408,6 +450,8 @@ observations:
     description: Peak frequency for each brain region from its PSD
     source:
     - simulated_psd
+    dims:
+    - node
     reconcile: by_label
     pipeline:
     - callable:

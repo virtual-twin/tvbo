@@ -24,7 +24,7 @@ import difflib
 import pytest
 
 from .database_corpus import DB, REPO, collect
-from .golden import GoldenCorpus
+from .golden import GoldenCorpus, text_discriminates
 
 pytestmark = pytest.mark.backend_core
 
@@ -56,6 +56,7 @@ CORPUS = GoldenCorpus(
     write=lambda path, produced: path.write_text(produced, encoding="utf-8"),
     read=lambda path: path.read_text(encoding="utf-8"),
     compare=_diff,
+    discriminates=text_discriminates,
 )
 
 

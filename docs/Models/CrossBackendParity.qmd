@@ -21,7 +21,7 @@ This page documents:
 
 ```python
 import numpy as np
-from tvbo import SimulationStudy
+from tvbo import SimulationExperiment
 
 def strip_stochastics(exp):
     """Make an experiment fully deterministic for cross-backend comparison."""
@@ -40,16 +40,15 @@ def strip_stochastics(exp):
         exp.integration.state_wise_sigma = []
     exp.integration.transient_time = 0.0
 
-study = SimulationStudy.from_file("docs/Replication/Jansen1995/Jansen1995.yaml")
-
 results = {}
 for backend in ("tvboptim", "jax", "tvb"):
-    exp = study.get_experiment(1)
+    # A fresh copy per backend, so `strip_stochastics` never edits an object another run already read.
+    exp = SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization")
     strip_stochastics(exp)
     r = exp.run(backend)
     d = r.integration.data
     results[backend] = np.asarray(
-        d.sel(variable="v_pyr") if "variable" in d.coords else d
+        d.sel(variable="y0") if "variable" in d.coords else d
     ).flatten()
 
 # tvboptim records the IC at sample 0; jax/tvb start at post-first-step.
@@ -62,7 +61,7 @@ for ref_name, ref in (("jax", jax_[:n]), ("tvb", tvb_[:n])):
     print(f"tvboptim vs {ref_name}: rmse={rmse:.2e}  corr={corr:.6f}")
 ```
 
-Expected output on Jansen-Rit experiment 1:
+Expected output on the curated Jansen-Rit experiment:
 
 ```
 tvboptim vs jax: rmse=1.43e-14  corr=1.000000

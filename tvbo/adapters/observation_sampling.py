@@ -25,9 +25,9 @@ __all__ = [
 
 
 def tvb_iround(value: float) -> int:
-    """Round half-down to an integer, matching TVB monitor step counting.
+    """TVB's ``iround``, character for character, so a monitor's step count is the one TVB would compute.
 
-    This is the canonical rounding shared by every backend so that boundary ratios resolve to the same step count everywhere.
+    The body is copied rather than reasoned about: it delegates to Python's ``round``, which is round-half-to-EVEN, and the ``- 0.5`` correction that follows only guards the float-representation case the TVB docstring cites. So this is not ``floor(x + 0.5)`` and differs from it at every exact half — ``tvb_iround(2.5)`` is 2, not 3. It is the canonical rounding shared by every backend, so that boundary ratios resolve to the same step count everywhere; a backend spelling it ``int(round(x))`` gets the same answer, and should call this anyway so the definition stays in one place.
     """
     rounded = round(value) - 0.5
     return int(rounded) + (rounded > 0)

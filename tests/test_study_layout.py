@@ -231,6 +231,41 @@ def test_init_writes_both_dataset_descriptions(scaffold):
     assert derivative["GeneratedBy"][0]["Name"] == "tvbo"
 
 
+@pytest.fixture
+def slim_scaffold(tmp_path):
+    """A study scaffolded with `--slim`: what a docs page or a notebook gets."""
+    result = CliRunner().invoke(app, ["study", "init", "DemoSlim", "--in", str(tmp_path), "--slim"])
+    assert result.exit_code == 0, result.output
+    return tmp_path / "DemoSlim"
+
+
+def test_slim_writes_only_the_recipe_the_ignore_rules_and_the_dataset_marker(slim_scaffold):
+    """A demonstration is not a study of record: it gets what it needs to run and be found, and none of the documentation."""
+    written = sorted(p.name for p in slim_scaffold.rglob("*"))
+    assert written == [".gitignore", "DemoSlim.yaml", "dataset_description.json"]
+
+
+def test_slim_creates_no_directories(slim_scaffold, record):
+    """Every directory in the record is somewhere a run writes; scaffolding them empty is what made a docs page look like an archive."""
+    assert not [rel for rel, _ in layout_rules.walk(record) if (slim_scaffold / rel).exists()]
+
+
+def test_a_slim_study_can_be_located_from_inside(slim_scaffold):
+    """`study_root` walks up for `dataset_description.json`, so leaving it out makes every layout role unresolvable from within."""
+    assert layout_rules.study_root(slim_scaffold) == slim_scaffold
+
+
+def test_slim_does_not_announce_a_derivative_it_has_not_produced(slim_scaffold):
+    """The nested `dataset_description.json` declares a derivative dataset; writing it before the run would describe results that do not exist."""
+    assert not (slim_scaffold / "derivatives").exists()
+
+
+def test_slim_ignores_the_products_the_record_names(slim_scaffold, record):
+    """The ignore rules come from the one record either way, so a slim study cannot commit what a full one hides."""
+    expected = layout_rules.gitignore_lines(record, (), "DemoSlim")
+    assert (slim_scaffold / ".gitignore").read_text().splitlines() == expected
+
+
 def test_init_splices_the_layout_into_the_readme(scaffold):
     """The README carries the tree as a generated region, never as prose someone must update."""
     readme = (scaffold / "README.md").read_text()

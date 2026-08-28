@@ -32,7 +32,25 @@ from tvbo.adapters.smallscale.lowering import (
 )
 from tvbo.codegen.code import render_expression
 from tvbo.utils import edge_param, noise_sigma, normalize_params
-from tvbo.utils.units import time_unit_factor
+from tvbo.utils.units import time_unit_factor, unit_multiplier
+
+
+def _shift_onto_integration_clock(quantity, transient_ms):
+    """A declared time, moved from the measurement clock onto the one Brian2 counts on.
+
+    Brian2's ``t`` opens at the start of integration, which is the start of the settle; a recipe declares its onsets against the measured window, which opens ``transient_ms`` later. The shift is applied in the quantity's OWN unit, so a delay declared in seconds and a settle counted in milliseconds compose exactly rather than through whichever of the two the caller happened to write.
+    """
+    value, unit = quantity
+    if not transient_ms:
+        return quantity
+    multiplier = unit_multiplier(unit)
+    if multiplier is None:
+        raise ValueError(
+            f"a declared onset in {unit!r} cannot be placed on the integration clock: the unit is "
+            "not curated, so the settle prepended to the measured window cannot be converted into it."
+        )
+    return (float(value) + transient_ms / 1000.0 / float(multiplier), unit)
+
 
 # ── Brian2 role vocabulary ────────────────────────────────────────────
 _POISSON_TYPES = frozenset({"poissonFiringSynapse", "transientPoissonFiringSynapse"})
@@ -176,7 +194,7 @@ class Brian2Adapter(BaseAdapter):
 
     TEMPLATE = "brian2/tvbo-brian2-experiment.py.mako"
 
-    def run(self, seed=None, record_v=False, settle_ms=None, codegen_target="numpy", **kwargs):
+    def run(self, seed=None, record_v=False, codegen_target="numpy", **kwargs):
         """Build and run the network in Brian2, returning an ExperimentResult.
 
         Population firing rates (from Brian2 ``SpikeMonitor``) are the primary output — the exact quantity the Deco 2014 replication targets — and are exposed both as ``result.integration.observations.firing_rate_<pop>`` and, raw, under ``result._extras``.
@@ -190,6 +208,11 @@ class Brian2Adapter(BaseAdapter):
 
         from tvbo.data.types import ExperimentResult, SimulationResult
 
+        if "settle_ms" in kwargs:
+            raise TypeError(
+                "settle_ms is gone: the settle is the recipe's own `integration.transient_time`, prepended to the "
+                "measured `duration`. A caller-side override is what let run() and render() measure different windows."
+            )
         if codegen_target:
             brian2.prefs.codegen.target = codegen_target
         model = self.prepare_context()
@@ -200,13 +223,9 @@ class Brian2Adapter(BaseAdapter):
         duration = model["duration_ms"]  # the MEASURED window, milliseconds
         if model.get("ramp"):
             return self._run_ramp(net, meta, model)
-        # A declared settle is PREPENDED to the measured window, so raising it never shortens the data. Absent one, the run is unchanged: a leading slice of it is discarded instead, either the caller's `settle_ms` or a fifth of the run capped at 1 s.
+        # `duration` is the MEASURED window and `transient_time` is prepended to it, so the run is their sum and raising the settle never shortens the data. The settle is therefore also the offset of the measurement clock, which is what every time payload below is reported on.
         settle = model.get("transient_ms") or 0.0
-        if settle:
-            total, measured = settle + duration, duration
-        else:
-            settle = settle_ms if settle_ms is not None else min(1000.0, 0.2 * duration)
-            total, measured = duration, duration - settle
+        total, measured = settle + duration, duration
         net.run(total * ms)
 
         rates, spikes = {}, {}
@@ -216,7 +235,8 @@ class Brian2Adapter(BaseAdapter):
             counts = int((t >= settle).sum())
             window_s = measured / 1000.0
             rates[name] = counts / (window_s * n) if window_s > 0 and n else 0.0
-            spikes[name] = {"i": np.asarray(mon.i), "t_ms": t}
+            # On the measurement clock, like every other time axis a run reports: the settle carries negative timestamps and t = 0 opens the measured window.
+            spikes[name] = {"i": np.asarray(mon.i), "t_ms": t - settle}
 
         integration = SimulationResult(observations={f"firing_rate_{k}": v for k, v in rates.items()})
         result = ExperimentResult(
@@ -227,17 +247,19 @@ class Brian2Adapter(BaseAdapter):
         result._extras["sizes"] = {name: model["populations"][name]["size"] for name in rates}
         result._extras["duration_ms"] = duration
         result._extras["dt_ms"] = model["dt_ms"]
+        # Written into the saved Dataset's attrs, so a file on disk says which clock its times are on rather than leaving a reader to infer it from a settle it cannot see.
+        result._extras["transient_ms"] = settle
         if record_v and meta.get("state_monitors"):
             result._extras["v"] = {p: np.asarray(m.v / meta["v_unit"]) for p, m in meta["state_monitors"].items()}
             any_mon = next(iter(meta["state_monitors"].values()))
-            result._extras["t_ms"] = np.asarray(any_mon.t / ms)
+            result._extras["t_ms"] = np.asarray(any_mon.t / ms) - settle
         # Recorded synapse-internal state (u, x): the population mean over the probed sample, the continuous trace the figures show as MEASURED (not reconstructed from spike trains).
         syn_state = {}
         for pinfo in meta.get("probe_monitors", {}).values():
             mon = pinfo["mon"]
             vals = {v: np.asarray(getattr(mon, v)) for v in pinfo["vars"]}  # [n_sample, n_time]
             syn_state[pinfo["key"]] = {
-                "t_ms": np.asarray(mon.t / ms),
+                "t_ms": np.asarray(mon.t / ms) - settle,
                 "vars": {v: arr.mean(axis=0) for v, arr in vals.items()},  # population mean [n_time]
                 "source": pinfo["source"],
                 "n_sample": int(next(iter(vals.values())).shape[0]) if vals else 0,
@@ -258,6 +280,13 @@ class Brian2Adapter(BaseAdapter):
 
         ramp = model["ramp"]
         step, settle = model["duration_ms"], model.get("transient_ms") or 0.0
+        if step <= 0:
+            raise ValueError(
+                f"ramp {ramp['name']!r} measures a firing rate over integration.duration, which is "
+                f"{step:g} — there is no window to count spikes in. `duration` is the MEASURED window "
+                "and `transient_time` is the settle prepended to it, so a point that should only relax "
+                "wants transient_time, not duration: 0."
+            )
         groups = {o.name: o for o in net.objects if hasattr(o, "namespace")}
         keep = {r[len("firing_rate_") :] for r in ramp["record"] if r.startswith("firing_rate_")}
         mons = {n: m for n, m in meta["spike_monitors"].items() if not keep or n in keep}
@@ -271,7 +300,8 @@ class Brian2Adapter(BaseAdapter):
             net.run(step * ms)
             for n, mon in mons.items():
                 size = model["populations"][n]["size"]
-                rates[n].append((int(mon.num_spikes) - counted[n]) / (window_s * size))
+                # An empty population has no rate rather than a division; the window itself is guarded above.
+                rates[n].append((int(mon.num_spikes) - counted[n]) / (window_s * size) if size else 0.0)
         axis = Bunch(name=ramp["parameter"], explored_values=np.asarray(ramp["values"]), n=len(ramp["values"]))
         expl = ExplorationResult(
             name=ramp["name"],
@@ -404,7 +434,14 @@ class Brian2Adapter(BaseAdapter):
                     continue
                 pulse_name, pulse_obj = pulse_of_node[src]
                 self._add_current_pulse(
-                    populations[cell_pop_of_node[tgt]], pulse_name, pulse_obj, weight, edge, edge_idx, rule_norm
+                    populations[cell_pop_of_node[tgt]],
+                    pulse_name,
+                    pulse_obj,
+                    weight,
+                    edge,
+                    edge_idx,
+                    rule_norm,
+                    transient_ms,
                 )
                 continue
 
@@ -516,12 +553,14 @@ class Brian2Adapter(BaseAdapter):
         pop["current_terms"].append(f"w_{gate} * gbase_{gate} * (erev_{gate} - v) * {gate}")
         pop["poisson"].append({"gate": gate, "rate": bp.get("averageRate", (2400.0, "Hz")), "weight": 1.0})
 
-    def _add_current_pulse(self, pop, pulse_name, pulse_obj, weight, edge, edge_idx, rule_norm):
+    def _add_current_pulse(self, pop, pulse_name, pulse_obj, weight, edge, edge_idx, rule_norm, transient_ms=0.0):
         """Wire a deterministic timed current pulse onto a target population.
 
         A ``pulseGenerator`` (delay, duration, amplitude) becomes a rectangular current window summed into ``iSyn``: ``w * amplitude`` for ``delay <= t < delay + duration``, zero otherwise, added to every neuron of the population. This is the declarative loading / nonspecific-readout drive — deterministic, so it is identical between the in-process run and the generated script. The per-edge ``weight`` scales the amplitude (a uniform nonspecific readout uses ``weight = 1``); when several pulse edges target the same population their windows sum, each keeping its own weight.
 
         A `random` edge instead drives only a random SUBSET, ``connection_probability`` of the population — the paper's nonspecific input to 15% of the excitatory neurons — as a per-neuron 0/1 mask drawn once from the seeded RNG, so run and rendered script are identical. The mask is per EDGE, so two random pulse edges onto one population are two independent subsets. Any other connectivity rule raises, as it does for a synapse edge.
+
+        The declared ``delay`` is on the MEASUREMENT clock, as a declared onset is in every other backend: a pulse at 300 ms fires 300 ms into the measured window, not 300 ms into the settle that precedes it. Brian2's ``t`` opens at the start of integration, so the settle is added here — once, on the constant — rather than left for a modeller to add to every onset by hand and to leave out of one.
         """
         fraction = self._pulse_fraction(edge, edge_idx, rule_norm)
         pp = _params(pulse_obj)
@@ -530,7 +569,7 @@ class Brian2Adapter(BaseAdapter):
         delay = pp.get("delay", (0.0, "ms"))
         dur = pp.get("duration", (0.0, "ms"))
         pop["namespace"][f"amp_stim_{key}"] = amp
-        pop["namespace"][f"delay_stim_{key}"] = delay
+        pop["namespace"][f"delay_stim_{key}"] = _shift_onto_integration_clock(delay, transient_ms)
         pop["namespace"][f"dur_stim_{key}"] = dur
         # Keyed by edge: independent draws, possibly different fractions.
         gate = ""

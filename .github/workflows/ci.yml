@@ -123,15 +123,11 @@ jobs:
                   tvbo validate study /tmp/layout-check/CiGeneral
                   tvbo study init CiReplication --in /tmp/layout-check -t replication
                   tvbo validate study /tmp/layout-check/CiReplication
-            - name: The repository's own study validates
-              # A scaffold conforms by construction; a study someone has worked in is the case the record has to hold for.
-              run: tvbo validate study docs/Replication/Jansen1995
             - name: Generated layout blocks are current
               # --sync rewrites in place, so a dirty tree afterwards means a document restates a layout the record no longer has.
               run: |
                   tvbo study layout --sync docs/Interoperability/BIDS/index.qmd
                   tvbo study layout --sync tvbo/skills/canonical/replicating-studies/SKILL.md -t replication
-                  tvbo study layout --sync docs/Replication/Jansen1995/README.md --study Jansen1995
                   git diff --exit-code -- docs tvbo/skills
             - name: Layout record tests
               run: |

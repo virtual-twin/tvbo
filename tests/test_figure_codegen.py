@@ -932,7 +932,7 @@ def test_color_encoding_draws_one_line_per_entry():
 
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "_color_dim(_da, 'parcel_name')" in code
+    assert "_color_dim(_ds, _da, 'parcel_name')" in code
     assert "plt.get_cmap('turbo')" in code
 
     ns: dict = {}
@@ -945,8 +945,13 @@ def test_color_encoding_draws_one_line_per_entry():
         dims=["parcel", "time"],
         coords={"parcel": [181, 186], "parcel_name": ("parcel", ["L_V1_ROI", "L_V4_ROI"])},
     )
-    assert ns["_color_dim"](da, "parcel_name") == ("parcel", ["L_V1_ROI", "L_V4_ROI"])
-    assert ns["_color_dim"](da, "parcel") == ("parcel", ["181", "186"])
+    # A coord or a dim only orders the lines along the map; a sibling variable measured once per entry carries the value that shades them.
+    assert ns["_color_dim"](None, da, "parcel_name") == ("parcel", ["L_V1_ROI", "L_V4_ROI"], None)
+    assert ns["_color_dim"](None, da, "parcel") == ("parcel", ["181", "186"], None)
+    ds = xr.Dataset({"amplitude": xr.DataArray(np.array([2.0, 5.0]), dims=["parcel"])})
+    dim, labels, values = ns["_color_dim"](ds, da, "amplitude")
+    assert (dim, labels) == ("parcel", ["181", "186"])  # labels come from the fanned dim, not an unrelated coord
+    assert list(values) == [2.0, 5.0]
 
 
 def test_colorbar_suppressed_by_opt():
