@@ -264,6 +264,8 @@ jobs:
             xla_device_count: "1"
             nvmap_auto_cap: "4096"
             test_timeout: "3600"
+            # Idle while the replication studies live in tvbo-manuscript: the pages left here carry no executable cells, so the shard stays wired up and revives on its own when one lands.
+            allow_empty: "true"
           # Core: everything the specialised shards above do not match.
     env:
       JAX_PLATFORMS: cpu
@@ -309,11 +311,20 @@ jobs:
           "${UV_BIN}" pip install --system pytest-xdist pytest-timeout
       - name: Run doc tests (${{ matrix.shard }})
         run: |
+          set +e
           pytest tests/test_docs.py -v --tb=long -m docs \
             -k "${{ matrix.doc_pattern }}" \
             ${{ matrix.extra_args }} \
             --timeout=${{ matrix.test_timeout }} --timeout-method=thread \
             --override-ini="addopts="
+          rc=$?
+          set -e
+          # Exit 5 is "nothing collected", which only a shard declaring allow_empty is permitted to report -- anywhere else it means the pattern stopped matching what it was written for.
+          if [ "$rc" -eq 5 ] && [ "${{ matrix.allow_empty }}" = "true" ]; then
+            echo "No docs matched '${{ matrix.doc_pattern }}'; shard idle."
+            exit 0
+          fi
+          exit $rc
 
   # ─── Release-ready check (main only) ────────────────────────
   release-ready:
