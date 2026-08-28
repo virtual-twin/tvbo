@@ -13,65 +13,147 @@ website:
           logo: _static/tvbo_logo.png
           collapse-level: 1
           contents:
-              # Curated navigation in declarative PARTS: a PART header is a text-only row Quarto renders as a plain label, topic sections stay collapsible under collapse-level 1, and the replication / datamodel / api blocks are spliced in by scripts/update_toc_*.py under the preceding PART.
-
-              - text: "GET STARTED"
+              # The sidebar IS the documentation's spine: five numbered PHASES a reader can walk end to end (Explore, Specify, Generate, Run, Share), then five unnumbered chapters you visit when you need them. A PART header is a text-only row Quarto renders as a plain label; scripts/update_toc_*.py splice the replication / datamodel / api blocks in under the preceding PART.
+              - text: "① EXPLORE"
               - text: "Home"
                 href: index.qmd
               - text: "Installation"
                 href: installation.md
-              - text: "Getting Started"
+              - text: "Getting started"
                 href: GettingStarted.qmd
-
-              - text: "SPECIFY AN EXPERIMENT"
-              - text: "The SimulationExperiment object"
+              - text: "The platform, feature by feature"
+                href: platform.qmd
+              - section: "Ontology"
+                href: ontology/index.qmd
+                contents:
+                  - text: "Specification (Widoco)"
+                    href: ontology/spec/index-en.html
+                  - text: "WebVOWL visualisation"
+                    href: ontology/spec/webvowl/index.html#ontology
+              - text: "② SPECIFY"
+              - text: "The running example"
+                href: Specification/RunningExample.qmd
+              - text: "The SimulationExperiment"
                 href: Simulation/SimulationExperiments.qmd
-              - text: "Writing TVB-O YAML"
-                href: Specification/YAML.qmd
-              - section: "Models & Dynamics"
+              - section: "Dynamical systems"
                 href: Models/index.qmd
                 contents:
                   - text: "Defining dynamical systems"
                     href: Models/DefineDynamicalSystem.qmd
-                  - text: "Events & stimulation"
-                    href: Models/Events.qmd
-                  - text: "Noise & stochastic integration"
-                    href: Models/Noise.qmd
                   - text: "Initial conditions"
                     href: Models/InitialConditions.qmd
+                  - text: "Noise & stochastic integration"
+                    href: Models/Noise.qmd
                   - text: "Unit-aware computations"
                     href: Models/UnitValidation.qmd
-                  - text: "Cross-backend numerical parity"
-                    href: Models/CrossBackendParity.qmd
-              - section: "Networks & Connectomes"
+                  - section: "Beyond the mean field"
+                    href: BeyondMeanField/index.qmd
+                    contents:
+                      - text: "Multi-scale modelling"
+                        href: BeyondMeanField/MultiScaleModelling.qmd
+                      - text: "NeuroML component mapping"
+                        href: Interoperability/NeuroML/index.qmd
+                  - section: "Bifurcation & continuation"
+                    href: Bifurcation/index.qmd
+                    contents:
+                      - text: "Run a continuation"
+                        href: Bifurcation/BifurcationAnalysis.qmd
+                      - text: "Numerical continuation"
+                        href: Bifurcation/07-NumericalContinuation.qmd
+              - section: "Networks & connectomes"
                 href: Networks/index.qmd
                 contents:
-                  - text: "Surface & PDE simulation"
-                    href: Networks/PDESimulation.qmd
+                  - text: "Network specification"
+                    href: Specification/Network.qmd
                   - text: "Build a connectome from tractography"
                     href: Networks/BuildConnectomeFromTractography.qmd
+                  - text: "Coupling functions"
+                    href: Networks/CouplingFunctions.qmd
                   - text: "Hierarchical & surface networks"
                     href: Networks/HierarchicalSurfaceNetworks.qmd
                   - text: "Heterogeneous nodes"
                     href: Networks/HeterogeneousNodes.qmd
                   - text: "Heterogeneous edges"
                     href: Networks/HeterogeneousEdges.qmd
-                  - text: "Network specification"
-                    href: Specification/Network.qmd
-              - text: "Coupling functions"
-                href: Networks/CouplingFunctions.qmd
-              - text: "Integrators"
-                href: Models/Integrators.qmd
-              - text: "Observation models"
+              - text: "Events & stimulation"
+                href: Models/Events.qmd
+              - section: "Observation models"
                 href: Simulation/ObservationModels.qmd
-              - text: "Output specification"
-                href: Specification/Output.qmd
-              - text: "Specify a figure"
-                href: Simulation/Figures.qmd
+                contents:
+                  - text: "Output specification"
+                    href: Specification/Output.qmd
               - text: "Parameter exploration"
                 href: Simulation/ParameterExploration.qmd
               - section: "Fitting, inference & optimization"
                 href: Fitting/index.qmd
+                contents:
+                  - text: "Model fitting"
+                    href: Fitting/ModelFitting.qmd
+                  - text: "Loss functions"
+                    href: Specification/LossFunction.qmd
+                  - text: "Algorithms (FIC, EIB)"
+                    href: Specification/Algorithms.qmd
+              - text: "Analyses"
+                href: Specification/Analyses.qmd
+              - text: "Calling your own code"
+                href: Specification/CodeSource.qmd
+              - section: "Specify a figure"
+                href: Simulation/Figures.qmd
+                contents:
+                  - text: "Custom figure panels"
+                    href: Replication/custom-panels.qmd
+              - section: "Solving a network of DDEs"
+                href: Models/Integrators.qmd
+                contents:
+                  - text: "Cross-backend numerical parity"
+                    href: Models/CrossBackendParity.qmd
+              - text: "Linked experiments in a SimulationStudy"
+                href: Simulation/SimulationStudies.qmd
+              - text: "Fan-out over subjects and phenotypes"
+                href: Specification/FanOut.qmd
+              - text: "Writing TVB-O YAML"
+                href: Specification/YAML.qmd
+              - text: "③ GENERATE"
+              - text: "How code generation works"
+                href: ScaleOut/CodegenPhilosophy.qmd
+              - text: "Code generation & export"
+                href: ScaleOut/CodeGeneration.qmd
+              - section: "Reproducible workflows"
+                href: ScaleOut/index.qmd
+                contents:
+                  - text: "Distributed workflows"
+                    href: ScaleOut/DistributedWorkflows.qmd
+                  - text: "Workflow kits anatomy"
+                    href: CLI/workflow-kits.qmd
+                  - text: "HPC patterns & containers"
+                    href: CLI/hpc.qmd
+              - text: "The study directory"
+                href: Interoperability/BIDS/index.qmd
+              - text: "④ RUN"
+              - text: "Run on a backend"
+                href: Simulation/Backends.qmd
+              - text: "The experiment result"
+                href: Simulation/Results.qmd
+              - text: "Visualization"
+                href: Simulation/Visualization.qmd
+              - text: "⑤ SHARE"
+              - text: "Share and publish your work"
+                href: Sharing.qmd
+              - text: "Results in BIDS"
+                href: Interoperability/BIDS/BIDS_comp_modelling.md
+              - text: "openMINDS"
+                href: Interoperability/OpenMINDS.qmd
+              - text: "EXAMPLES & USE-CASES"
+              - section: "Quick examples"
+                href: examples/index.qmd
+                contents:
+                  - text: "Create a network"
+                    href: examples/create_network.qmd
+                  - text: "Dynamics from the database"
+                    href: examples/dynamics_from_db.qmd
+                  - text: "Network from the database"
+                    href: examples/network_from_db.qmd
+              - section: "Worked experiments"
                 contents:
                   - text: "Fit functional connectivity (RWW)"
                     href: Fitting/RWW_tvboptim.qmd
@@ -85,30 +167,107 @@ website:
                     href: Fitting/Hopf_Pareto_tvboptim.qmd
                   - text: "Delay & speed synchronization"
                     href: Fitting/Delay_Speed_Synchronization_tvboptim.qmd
-                  - text: "Model fitting"
-                    href: Fitting/ModelFitting.qmd
                   - text: "Gradient stability & TBPTT"
                     href: Fitting/TBPTT_tvboptim.qmd
-                  - text: "Loss functions"
-                    href: Specification/LossFunction.qmd
-                  - text: "Algorithms (FIC, EIB)"
-                    href: Specification/Algorithms.qmd
-
-              - text: "RUN IT"
-              - text: "Run on a backend"
-                href: Simulation/Backends.qmd
-              - text: "The experiment result"
-                href: Simulation/Results.qmd
-              - text: "Visualization"
-                href: Simulation/Visualization.qmd
-              - section: "Scale-Out & Reproducibility"
-                href: ScaleOut/index.qmd
+                  - text: "Surface & PDE simulation"
+                    href: Networks/PDESimulation.qmd
+              - section: "Bifurcation track"
                 contents:
-                  - text: "Distributed workflows"
-                    href: ScaleOut/DistributedWorkflows.qmd
-                  - text: "Code generation & export"
-                    href: ScaleOut/CodeGeneration.qmd
-              - section: "Command-Line Interface"
+                  - text: "1. Linear stability"
+                    href: Bifurcation/01-LinearStability.qmd
+                  - text: "2. 2D phase portraits"
+                    href: Bifurcation/02-PhasePortrait2D.qmd
+                  - text: "3. Saddle-node"
+                    href: Bifurcation/03-SaddleNode.qmd
+                  - text: "4. Pitchfork"
+                    href: Bifurcation/04-Pitchfork.qmd
+                  - text: "5. Hysteresis"
+                    href: Bifurcation/05-Hysteresis.qmd
+                  - text: "6. Hopf"
+                    href: Bifurcation/06-Hopf.qmd
+# BEGIN:replication-autogen
+              - section: "Replication Studies"
+                href: Replication/index.qmd
+                contents:
+                  - text: "The replication pipeline"
+                    href: Replication/pipeline.qmd
+# END:replication-autogen
+              - text: "AGENTIC CODING"
+              - text: "Overview"
+                href: agents/index.qmd
+              - text: "For beginners"
+                href: agents/beginner.qmd
+              - text: "Installing & tuning skills"
+                href: agents/installing-skills.qmd
+              - text: "Skill reference"
+                href: agents/skills-reference.qmd
+              - text: "AGENTS.md"
+                href: agents/agents-md.qmd
+              - text: "INTEROPERABILITY"
+              - text: "Overview"
+                href: Interoperability/index.qmd
+              - section: "The Virtual Brain (TVB)"
+                href: Interoperability/TVB/index.qmd
+                contents:
+                  - text: "Connectome"
+                    href: Interoperability/TVB/Connectome.qmd
+                  - text: "Monitors"
+                    href: Interoperability/TVB/Monitor.qmd
+              - text: "Coming from tvboptim"
+                href: Interoperability/tvboptim/index.qmd
+              - section: "PyRates"
+                href: Interoperability/Pyrates/index.qmd
+                contents:
+                  - text: "Round-trip demo"
+                    href: Interoperability/Pyrates/PyRates.qmd
+                  - text: "Analysis"
+                    href: Interoperability/Pyrates/PyRates_Analysis.qmd
+                  - text: "Bifurcation"
+                    href: Interoperability/Pyrates/PyRates_Bifurcation.qmd
+                  - text: "Heterogeneous networks"
+                    href: Interoperability/Pyrates/PyRates_Heterogeneous_Network.qmd
+              - section: "NetworkDynamics.jl"
+                href: Interoperability/NetworkDynamics.jl/index.qmd
+                contents:
+                  - text: "Network diffusion"
+                    href: Interoperability/NetworkDynamics.jl/diffusion.qmd
+                  - text: "2D network diffusion"
+                    href: Interoperability/NetworkDynamics.jl/diffusion_2d.qmd
+                  - text: "Kuramoto oscillators"
+                    href: Interoperability/NetworkDynamics.jl/kuramoto.qmd
+                  - text: "Heterogeneous Kuramoto"
+                    href: Interoperability/NetworkDynamics.jl/heterogeneous_kuramoto.qmd
+                  - text: "FitzHugh-Nagumo"
+                    href: Interoperability/NetworkDynamics.jl/fitzhugh_nagumo.qmd
+                  - text: "Cascading failure"
+                    href: Interoperability/NetworkDynamics.jl/cascading_failure.qmd
+                  - text: "Stress on truss"
+                    href: Interoperability/NetworkDynamics.jl/stress_on_truss.qmd
+              - section: "BifurcationKit.jl"
+                href: Interoperability/BifurcationKit.jl/index.qmd
+                contents:
+                  - text: "Tsodyks-Markram model"
+                    href: Interoperability/BifurcationKit.jl/TMModel.qmd
+                  - text: "CO oxidation model"
+                    href: Interoperability/BifurcationKit.jl/COModel.qmd
+              - section: "ModelingToolkit.jl"
+                href: Interoperability/ModelingToolkit.jl/index.qmd
+                contents:
+                  - text: "Higher-order ODE lowering"
+                    href: Interoperability/ModelingToolkit.jl/higher_order.qmd
+              - section: "NeuroML / LEMS"
+                href: Interoperability/NeuroML/index.qmd
+                contents:
+                  - text: "LEMS export"
+                    href: Interoperability/NeuroML/LEMS_Export.qmd
+                  - text: "IRI vs. inline YAML"
+                    href: Interoperability/NeuroML/IRI_vs_YAML.qmd
+                  - text: "Conformance gallery"
+                    href: Interoperability/NeuroML/examples/index.qmd
+              - text: "REFERENCE"
+              - text: "Quick reference"
+                href: reference.qmd
+              - section: "Command-line interface"
                 href: CLI/index.qmd
                 contents:
                   - text: "Specs and resolution"
@@ -137,240 +296,10 @@ website:
                         href: CLI/skills.qmd
                       - text: "tvbo network"
                         href: CLI/network.qmd
-                  - section: "Workflows & HPC"
-                    contents:
-                      - text: "tvbo workflow"
-                        href: CLI/workflow.qmd
-                      - text: "Workflow kits anatomy"
-                        href: CLI/workflow-kits.qmd
-                      - text: "HPC patterns"
-                        href: CLI/hpc.qmd
+                  - text: "tvbo workflow"
+                    href: CLI/workflow.qmd
                   - text: "Recipes"
                     href: CLI/recipes.qmd
-
-              - text: "ANALYZE"
-              - section: "Bifurcation & Stability Analysis"
-                href: Bifurcation/index.qmd
-                contents:
-                  - text: "1. Linear stability"
-                    href: Bifurcation/01-LinearStability.qmd
-                  - text: "2. 2D phase portraits"
-                    href: Bifurcation/02-PhasePortrait2D.qmd
-                  - text: "Run a continuation"
-                    href: Bifurcation/BifurcationAnalysis.qmd
-                  - section: "Bifurcation types"
-                    contents:
-                      - text: "Saddle-node"
-                        href: Bifurcation/03-SaddleNode.qmd
-                      - text: "Pitchfork"
-                        href: Bifurcation/04-Pitchfork.qmd
-                      - text: "Hysteresis"
-                        href: Bifurcation/05-Hysteresis.qmd
-                      - text: "Hopf"
-                        href: Bifurcation/06-Hopf.qmd
-                  - text: "Numerical continuation"
-                    href: Bifurcation/07-NumericalContinuation.qmd
-
-              - text: "EXTEND"
-              - section: "Beyond the Mean Field"
-                href: BeyondMeanField/index.qmd
-                contents:
-                  - text: "Multi-scale modelling"
-                    href: BeyondMeanField/MultiScaleModelling.qmd
-                  - text: "NeuroML component mapping"
-                    href: Interoperability/NeuroML/index.qmd
-              - section: "Interoperability"
-                href: Interoperability/index.qmd
-                contents:
-                  - section: "The Virtual Brain (TVB)"
-                    href: Interoperability/TVB/index.qmd
-                    contents:
-                      - text: "Connectome"
-                        href: Interoperability/TVB/Connectome.qmd
-                      - text: "Monitors"
-                        href: Interoperability/TVB/Monitor.qmd
-                  - text: "Coming from tvboptim"
-                    href: Interoperability/tvboptim/index.qmd
-                  - section: "PyRates"
-                    href: Interoperability/Pyrates/index.qmd
-                    contents:
-                      - text: "Round-Trip Demo"
-                        href: Interoperability/Pyrates/PyRates.qmd
-                      - text: "Analysis"
-                        href: Interoperability/Pyrates/PyRates_Analysis.qmd
-                      - text: "Bifurcation"
-                        href: Interoperability/Pyrates/PyRates_Bifurcation.qmd
-                      - text: "Heterogeneous Networks"
-                        href: Interoperability/Pyrates/PyRates_Heterogeneous_Network.qmd
-                  - section: "NetworkDynamics.jl"
-                    href: Interoperability/NetworkDynamics.jl/index.qmd
-                    contents:
-                      - text: "Network Diffusion"
-                        href: Interoperability/NetworkDynamics.jl/diffusion.qmd
-                      - text: "2D Network Diffusion"
-                        href: Interoperability/NetworkDynamics.jl/diffusion_2d.qmd
-                      - text: "Kuramoto Oscillators"
-                        href: Interoperability/NetworkDynamics.jl/kuramoto.qmd
-                      - text: "Heterogeneous Kuramoto"
-                        href: Interoperability/NetworkDynamics.jl/heterogeneous_kuramoto.qmd
-                      - text: "FitzHugh-Nagumo"
-                        href: Interoperability/NetworkDynamics.jl/fitzhugh_nagumo.qmd
-                      - text: "Cascading Failure"
-                        href: Interoperability/NetworkDynamics.jl/cascading_failure.qmd
-                      - text: "Stress on Truss"
-                        href: Interoperability/NetworkDynamics.jl/stress_on_truss.qmd
-                  - section: "BifurcationKit.jl"
-                    href: Interoperability/BifurcationKit.jl/index.qmd
-                    contents:
-                      - text: "Tsodyks-Markram Model"
-                        href: Interoperability/BifurcationKit.jl/TMModel.qmd
-                      - text: "CO Oxidation Model"
-                        href: Interoperability/BifurcationKit.jl/COModel.qmd
-                  - section: "ModelingToolkit.jl"
-                    href: Interoperability/ModelingToolkit.jl/index.qmd
-                    contents:
-                      - text: "Higher-Order ODE Lowering"
-                        href: Interoperability/ModelingToolkit.jl/higher_order.qmd
-                  - section: "NeuroML / LEMS"
-                    href: Interoperability/NeuroML/index.qmd
-                    contents:
-                      - text: "LEMS Export"
-                        href: Interoperability/NeuroML/LEMS_Export.qmd
-                      - text: "IRI vs. Inline YAML"
-                        href: Interoperability/NeuroML/IRI_vs_YAML.qmd
-                      - section: "LEMS Examples"
-                        href: Interoperability/NeuroML/examples/index.qmd
-                        contents:
-                          - text: "Ex0: Integrate-and-Fire"
-                            href: Interoperability/NeuroML/examples/Ex0_IaF.qmd
-                          - text: "Ex1: Hodgkin-Huxley"
-                            href: Interoperability/NeuroML/examples/Ex1_HH.qmd
-                          - text: "Ex2: Izhikevich"
-                            href: Interoperability/NeuroML/examples/Ex2_Izh.qmd
-                          - text: "Ex3: HH Network with Synapses"
-                            href: Interoperability/NeuroML/examples/Ex3_Net.qmd
-                          - text: "Ex4: Kinetic Scheme Channels"
-                            href: Interoperability/NeuroML/examples/Ex4_KS.qmd
-                          - text: "Ex5: Detailed HH Cell"
-                            href: Interoperability/NeuroML/examples/Ex5_DetCell.qmd
-                          - text: "Ex6: NMDA Synapse"
-                            href: Interoperability/NeuroML/examples/Ex6_NMDA.qmd
-                          - text: "Ex7: Short-Term Plasticity"
-                            href: Interoperability/NeuroML/examples/Ex7_STP.qmd
-                          - text: "Ex8: Adaptive Exponential IF"
-                            href: Interoperability/NeuroML/examples/Ex8_AdEx.qmd
-                          - text: "Ex9: FitzHugh-Nagumo"
-                            href: Interoperability/NeuroML/examples/Ex9_FN.qmd
-                          - text: "Ex10: Q10 Temperature Dependence"
-                            href: Interoperability/NeuroML/examples/Ex10_Q10.qmd
-                          - text: "Ex12: Network 2"
-                            href: Interoperability/NeuroML/examples/Ex12_Net2.qmd
-                          - text: "Ex13: Population Instances"
-                            href: Interoperability/NeuroML/examples/Ex13_Instances.qmd
-                          - text: "Ex14: PyNN Cells"
-                            href: Interoperability/NeuroML/examples/Ex14_PyNN.qmd
-                          - text: "Ex15: Calcium Dynamics"
-                            href: Interoperability/NeuroML/examples/Ex15_CaDynamics.qmd
-                          - text: "Ex16: Input Types"
-                            href: Interoperability/NeuroML/examples/Ex16_Inputs.qmd
-                          - text: "Ex17: Tissue Simulation"
-                            href: Interoperability/NeuroML/examples/Ex17_Tissue.qmd
-                          - text: "Ex18: Goldman-Hodgkin-Katz"
-                            href: Interoperability/NeuroML/examples/Ex18_GHK.qmd
-                          - text: "Ex19: Gap Junctions"
-                            href: Interoperability/NeuroML/examples/Ex19_GapJunctions.qmd
-                          - text: "Ex20: Analog Synapses"
-                            href: Interoperability/NeuroML/examples/Ex20_AnalogSynapses.qmd
-                          - text: "Ex21: Current-Based Synapses"
-                            href: Interoperability/NeuroML/examples/Ex21_CurrentBasedSynapses.qmd
-                          - text: "Ex22: Pinsky-Rinzel CA3"
-                            href: Interoperability/NeuroML/examples/Ex22_PinskyRinzel.qmd
-                          - text: "Ex23: Spike Times"
-                            href: Interoperability/NeuroML/examples/Ex23_Spiketimes.qmd
-                          - text: "Ex24: Fractional Conductance"
-                            href: Interoperability/NeuroML/examples/Ex24_FractionalConductance.qmd
-                          - text: "Ex25: Multi-Compartment Cells"
-                            href: Interoperability/NeuroML/examples/Ex25_MultiComp.qmd
-                          - text: "Ex26: Connection Weights"
-                            href: Interoperability/NeuroML/examples/Ex26_Weights.qmd
-                          - text: "Ex27: Multi-Synapses"
-                            href: Interoperability/NeuroML/examples/Ex27_MultiSynapses.qmd
-                      - section: "NML2 Documentation"
-                        href: Interoperability/NeuroML/examples/index.qmd
-                        contents:
-                          - text: "Abstract Cells"
-                            href: Interoperability/NeuroML/examples/NML2_AbstractCells.qmd
-                          - text: "Single-Compartment HH Cell"
-                            href: Interoperability/NeuroML/examples/NML2_SingleCompHHCell.qmd
-                          - text: "Full Cell"
-                            href: Interoperability/NeuroML/examples/NML2_FullCell.qmd
-                          - text: "Simple Morphology"
-                            href: Interoperability/NeuroML/examples/NML2_SimpleMorphology.qmd
-                          - text: "Simple Ion Channel"
-                            href: Interoperability/NeuroML/examples/NML2_SimpleIonChannel.qmd
-                          - text: "Synapse Types"
-                            href: Interoperability/NeuroML/examples/NML2_SynapseTypes.qmd
-                          - text: "Analog Synapses"
-                            href: Interoperability/NeuroML/examples/NML2_AnalogSynapses.qmd
-                          - text: "Gap Junctions"
-                            href: Interoperability/NeuroML/examples/NML2_GapJunctions.qmd
-                          - text: "Inputs"
-                            href: Interoperability/NeuroML/examples/NML2_Inputs.qmd
-                          - text: "Instance-Based Network"
-                            href: Interoperability/NeuroML/examples/NML2_InstanceBasedNetwork.qmd
-                          - text: "Full NeuroML"
-                            href: Interoperability/NeuroML/examples/NML2_FullNeuroML.qmd
-                  - section: "BIDS"
-                    href: Interoperability/BIDS/index.qmd
-                    contents:
-                      - text: "Computational Modelling"
-                        href: Interoperability/BIDS/BIDS_comp_modelling.md
-                  - section: "OpenMINDS"
-                    contents:
-                      - text: "OpenMINDS Interoperability"
-                        href: Interoperability/OpenMINDS.qmd
-
-              - text: "TOOLING"
-              - text: "Platform"
-                href: platform.qmd
-              - section: "Agentic Coding"
-                href: agents/index.qmd
-                contents:
-                  - text: "For Beginners"
-                    href: agents/beginner.qmd
-                  - text: "Installing & Tuning Skills"
-                    href: agents/installing-skills.qmd
-                  - text: "Skill Reference"
-                    href: agents/skills-reference.qmd
-                  - text: "AGENTS.md"
-                    href: agents/agents-md.qmd
-                  - text: "Maintainer Guide"
-                    href: agents/maintainer-guide.qmd
-# BEGIN:replication-autogen
-              - section: "Replication Studies"
-                href: Replication/index.qmd
-                contents:
-                  - text: "The replication pipeline"
-                    href: Replication/pipeline.qmd
-                  - text: "Custom figure panels"
-                    href: Replication/custom-panels.qmd
-                  - text: "Jansen & Rit (1995)"
-                    href: Replication/Jansen1995/docs/report.qmd
-# END:replication-autogen
-
-              - text: "REFERENCE"
-              - text: "Quick reference"
-                href: reference.qmd
-              - text: "Examples"
-                href: examples/index.qmd
-              - section: "Ontology"
-                href: ontology/index.qmd
-                contents:
-                  - text: "Specification (Widoco)"
-                    href: ontology/spec/index-en.html
-                  - text: "WebVOWL visualisation"
-                    href: ontology/spec/webvowl/index.html#ontology
-
 # BEGIN:datamodel-autogen
               - section: "Data Model"
                 href: datamodel/index.qmd
@@ -397,6 +326,8 @@ website:
                         href: datamodel/schemas/types.qmd
                   - section: "Classes"
                     contents:
+                      - text: "Activity"
+                        href: datamodel/classes/Activity.qmd
                       - text: "Aggregation"
                         href: datamodel/classes/Aggregation.qmd
                       - text: "Algorithm"
@@ -413,6 +344,8 @@ website:
                         href: datamodel/classes/ArchiveConfig.qmd
                       - text: "Argument"
                         href: datamodel/classes/Argument.qmd
+                      - text: "Assignment"
+                        href: datamodel/classes/Assignment.qmd
                       - text: "Axis Reduction"
                         href: datamodel/classes/AxisReduction.qmd
                       - text: "BIDS Entities"
@@ -431,6 +364,8 @@ website:
                         href: datamodel/classes/CachedArray.qmd
                       - text: "Callable"
                         href: datamodel/classes/Callable.qmd
+                      - text: "Case"
+                        href: datamodel/classes/Case.qmd
                       - text: "Class Reference"
                         href: datamodel/classes/ClassReference.qmd
                       - text: "Clinical Improvement"
@@ -477,6 +412,8 @@ website:
                         href: datamodel/classes/DifferentialOperator.qmd
                       - text: "Differentiation"
                         href: datamodel/classes/Differentiation.qmd
+                      - text: "Digest"
+                        href: datamodel/classes/Digest.qmd
                       - text: "Discretization"
                         href: datamodel/classes/Discretization.qmd
                       - text: "Distribution"
@@ -591,6 +528,8 @@ website:
                         href: datamodel/classes/RandomStream.qmd
                       - text: "Range"
                         href: datamodel/classes/Range.qmd
+                      - text: "Reducer"
+                        href: datamodel/classes/Reducer.qmd
                       - text: "Reference"
                         href: datamodel/classes/Reference.qmd
                       - text: "Reference Fingerprint"
@@ -601,6 +540,8 @@ website:
                         href: datamodel/classes/RenderSpec.qmd
                       - text: "Result Binding"
                         href: datamodel/classes/ResultBinding.qmd
+                      - text: "Result Entity"
+                        href: datamodel/classes/ResultEntity.qmd
                       - text: "Sample"
                         href: datamodel/classes/Sample.qmd
                       - text: "Scalar Value"
@@ -639,6 +580,12 @@ website:
                         href: datamodel/classes/Study.qmd
                       - text: "Study Collection"
                         href: datamodel/classes/StudyCollection.qmd
+                      - text: "Study Directory"
+                        href: datamodel/classes/StudyDirectory.qmd
+                      - text: "Study File"
+                        href: datamodel/classes/StudyFile.qmd
+                      - text: "Study Layout"
+                        href: datamodel/classes/StudyLayout.qmd
                       - text: "Study Member"
                         href: datamodel/classes/StudyMember.qmd
                       - text: "Style"
@@ -649,6 +596,8 @@ website:
                         href: datamodel/classes/Surrogate.qmd
                       - text: "Time Series"
                         href: datamodel/classes/TimeSeries.qmd
+                      - text: "Tool Unit"
+                        href: datamodel/classes/ToolUnit.qmd
                       - text: "Tractogram"
                         href: datamodel/classes/Tractogram.qmd
                       - text: "Tuning Objective"
@@ -675,8 +624,14 @@ website:
                         href: datamodel/slots/acquisition.qmd
                       - text: "acronym"
                         href: datamodel/slots/acronym.qmd
+                      - text: "acted_on_behalf_of"
+                        href: datamodel/slots/acted_on_behalf_of.qmd
                       - text: "active_contacts"
                         href: datamodel/slots/active_contacts.qmd
+                      - text: "activities"
+                        href: datamodel/slots/activities.qmd
+                      - text: "add"
+                        href: datamodel/slots/add.qmd
                       - text: "additional_equations"
                         href: datamodel/slots/additional_equations.qmd
                       - text: "additive"
@@ -703,6 +658,8 @@ website:
                         href: datamodel/slots/allow_self_connections.qmd
                       - text: "alternate Name"
                         href: datamodel/slots/alternateName.qmd
+                      - text: "alternative_identifier"
+                        href: datamodel/slots/alternative_identifier.qmd
                       - text: "amplitude"
                         href: datamodel/slots/amplitude.qmd
                       - text: "analyses"
@@ -729,6 +686,8 @@ website:
                         href: datamodel/slots/array_chunk.qmd
                       - text: "arrow"
                         href: datamodel/slots/arrow.qmd
+                      - text: "associated_with"
+                        href: datamodel/slots/associated_with.qmd
                       - text: "atlas"
                         href: datamodel/slots/atlas.qmd
                       - text: "author"
@@ -749,6 +708,8 @@ website:
                         href: datamodel/slots/axis.qmd
                       - text: "backend"
                         href: datamodel/slots/backend.qmd
+                      - text: "backends"
+                        href: datamodel/slots/backends.qmd
                       - text: "baseline_value"
                         href: datamodel/slots/baseline_value.qmd
                       - text: "batch_mode"
@@ -763,6 +724,8 @@ website:
                         href: datamodel/slots/bids_dir.qmd
                       - text: "bids_root"
                         href: datamodel/slots/bids_root.qmd
+                      - text: "bids_version"
+                        href: datamodel/slots/bids_version.qmd
                       - text: "bindings"
                         href: datamodel/slots/bindings.qmd
                       - text: "block_size"
@@ -791,6 +754,8 @@ website:
                         href: datamodel/slots/callable.qmd
                       - text: "capture"
                         href: datamodel/slots/capture.qmd
+                      - text: "cases"
+                        href: datamodel/slots/cases.qmd
                       - text: "category"
                         href: datamodel/slots/category.qmd
                       - text: "cell"
@@ -821,6 +786,8 @@ website:
                         href: datamodel/slots/code_modules.qmd
                       - text: "code_source"
                         href: datamodel/slots/code_source.qmd
+                      - text: "codegen_format"
+                        href: datamodel/slots/codegen_format.qmd
                       - text: "coefficient"
                         href: datamodel/slots/coefficient.qmd
                       - text: "cohort"
@@ -829,6 +796,8 @@ website:
                         href: datamodel/slots/color.qmd
                       - text: "colormap"
                         href: datamodel/slots/colormap.qmd
+                      - text: "command"
+                        href: datamodel/slots/command.qmd
                       - text: "comment"
                         href: datamodel/slots/comment.qmd
                       - text: "comparison"
@@ -843,6 +812,8 @@ website:
                         href: datamodel/slots/condition_parameters.qmd
                       - text: "condition_states"
                         href: datamodel/slots/condition_states.qmd
+                      - text: "conditional"
+                        href: datamodel/slots/conditional.qmd
                       - text: "conditionals"
                         href: datamodel/slots/conditionals.qmd
                       - text: "conditions"
@@ -895,6 +866,8 @@ website:
                         href: datamodel/slots/coupling_function.qmd
                       - text: "coupling_inputs"
                         href: datamodel/slots/coupling_inputs.qmd
+                      - text: "coupling_terms"
+                        href: datamodel/slots/coupling_terms.qmd
                       - text: "coupling_variable"
                         href: datamodel/slots/coupling_variable.qmd
                       - text: "covariance"
@@ -919,6 +892,8 @@ website:
                         href: datamodel/slots/dataset_id.qmd
                       - text: "dataset_path"
                         href: datamodel/slots/dataset_path.qmd
+                      - text: "dataset_type"
+                        href: datamodel/slots/dataset_type.qmd
                       - text: "datatype"
                         href: datamodel/slots/datatype.qmd
                       - text: "date_created"
@@ -975,6 +950,8 @@ website:
                         href: datamodel/slots/diagonal.qmd
                       - text: "differentiation"
                         href: datamodel/slots/differentiation.qmd
+                      - text: "digest"
+                        href: datamodel/slots/digest.qmd
                       - text: "digital Identifier"
                         href: datamodel/slots/digitalIdentifier.qmd
                       - text: "dimension"
@@ -1041,12 +1018,18 @@ website:
                         href: datamodel/slots/element_type.qmd
                       - text: "elements"
                         href: datamodel/slots/elements.qmd
+                      - text: "emit"
+                        href: datamodel/slots/emit.qmd
+                      - text: "emit_kind"
+                        href: datamodel/slots/emit_kind.qmd
                       - text: "emit_provenance"
                         href: datamodel/slots/emit_provenance.qmd
                       - text: "empirical_data"
                         href: datamodel/slots/empirical_data.qmd
                       - text: "encoding"
                         href: datamodel/slots/encoding.qmd
+                      - text: "ended_at"
+                        href: datamodel/slots/ended_at.qmd
                       - text: "enforce"
                         href: datamodel/slots/enforce.qmd
                       - text: "engine"
@@ -1065,12 +1048,16 @@ website:
                         href: datamodel/slots/equation_order.qmd
                       - text: "equation_type"
                         href: datamodel/slots/equation_type.qmd
+                      - text: "evaluate"
+                        href: datamodel/slots/evaluate.qmd
                       - text: "evaluator"
                         href: datamodel/slots/evaluator.qmd
                       - text: "event_type"
                         href: datamodel/slots/event_type.qmd
                       - text: "events"
                         href: datamodel/slots/events.qmd
+                      - text: "evict"
+                        href: datamodel/slots/evict.qmd
                       - text: "evict_equation"
                         href: datamodel/slots/evict_equation.qmd
                       - text: "execution"
@@ -1081,6 +1068,8 @@ website:
                         href: datamodel/slots/experiment.qmd
                       - text: "experiment_yaml_hash"
                         href: datamodel/slots/experiment_yaml_hash.qmd
+                      - text: "expires_with"
+                        href: datamodel/slots/expires_with.qmd
                       - text: "explorations"
                         href: datamodel/slots/explorations.qmd
                       - text: "explored_values"
@@ -1099,6 +1088,8 @@ website:
                         href: datamodel/slots/figures.qmd
                       - text: "file"
                         href: datamodel/slots/file.qmd
+                      - text: "files"
+                        href: datamodel/slots/files.qmd
                       - text: "find_fixpoint"
                         href: datamodel/slots/find_fixpoint.qmd
                       - text: "font_size"
@@ -1123,6 +1114,8 @@ website:
                         href: datamodel/slots/gather.qmd
                       - text: "gaussian"
                         href: datamodel/slots/gaussian.qmd
+                      - text: "generated"
+                        href: datamodel/slots/generated.qmd
                       - text: "generated_at"
                         href: datamodel/slots/generated_at.qmd
                       - text: "generated_by"
@@ -1181,6 +1174,8 @@ website:
                         href: datamodel/slots/ifabsent.qmd
                       - text: "imaging_modality"
                         href: datamodel/slots/imaging_modality.qmd
+                      - text: "in_templates"
+                        href: datamodel/slots/in_templates.qmd
                       - text: "include"
                         href: datamodel/slots/include.qmd
                       - text: "includes"
@@ -1225,6 +1220,8 @@ website:
                         href: datamodel/slots/issue_tracker.qmd
                       - text: "is Version Of"
                         href: datamodel/slots/isVersionOf.qmd
+                      - text: "jobs"
+                        href: datamodel/slots/jobs.qmd
                       - text: "key"
                         href: datamodel/slots/key.qmd
                       - text: "keys"
@@ -1255,6 +1252,8 @@ website:
                         href: datamodel/slots/lefthandside.qmd
                       - text: "legend"
                         href: datamodel/slots/legend.qmd
+                      - text: "level"
+                        href: datamodel/slots/level.qmd
                       - text: "lhs"
                         href: datamodel/slots/lhs.qmd
                       - text: "library"
@@ -1393,6 +1392,8 @@ website:
                         href: datamodel/slots/nodes.qmd
                       - text: "noise"
                         href: datamodel/slots/noise.qmd
+                      - text: "noise_draw"
+                        href: datamodel/slots/noise_draw.qmd
                       - text: "noise_type"
                         href: datamodel/slots/noise_type.qmd
                       - text: "non_negative"
@@ -1445,6 +1446,8 @@ website:
                         href: datamodel/slots/ontologyIdentifier.qmd
                       - text: "opacity"
                         href: datamodel/slots/opacity.qmd
+                      - text: "opaque"
+                        href: datamodel/slots/opaque.qmd
                       - text: "operating_system"
                         href: datamodel/slots/operating_system.qmd
                       - text: "operator_type"
@@ -1467,6 +1470,8 @@ website:
                         href: datamodel/slots/output.qmd
                       - text: "output_equation"
                         href: datamodel/slots/output_equation.qmd
+                      - text: "outputs"
+                        href: datamodel/slots/outputs.qmd
                       - text: "outsym"
                         href: datamodel/slots/outsym.qmd
                       - text: "over"
@@ -1545,6 +1550,8 @@ website:
                         href: datamodel/slots/procedure.qmd
                       - text: "processing_pipeline"
                         href: datamodel/slots/processing_pipeline.qmd
+                      - text: "produced_by"
+                        href: datamodel/slots/produced_by.qmd
                       - text: "producer"
                         href: datamodel/slots/producer.qmd
                       - text: "programming_language"
@@ -1553,6 +1560,8 @@ website:
                         href: datamodel/slots/protocols.qmd
                       - text: "provenance"
                         href: datamodel/slots/provenance.qmd
+                      - text: "provenance_format"
+                        href: datamodel/slots/provenance_format.qmd
                       - text: "pulse_width"
                         href: datamodel/slots/pulse_width.qmd
                       - text: "pycode"
@@ -1607,6 +1616,8 @@ website:
                         href: datamodel/slots/relatedUBERONTerm.qmd
                       - text: "render"
                         href: datamodel/slots/render.qmd
+                      - text: "replaces"
+                        href: datamodel/slots/replaces.qmd
                       - text: "reported_optimum"
                         href: datamodel/slots/reported_optimum.qmd
                       - text: "repository"
@@ -1621,6 +1632,10 @@ website:
                         href: datamodel/slots/reset_state.qmd
                       - text: "results"
                         href: datamodel/slots/results.qmd
+                      - text: "resync"
+                        href: datamodel/slots/resync.qmd
+                      - text: "resync_masked"
+                        href: datamodel/slots/resync_masked.qmd
                       - text: "retries"
                         href: datamodel/slots/retries.qmd
                       - text: "rhs"
@@ -1669,12 +1684,18 @@ website:
                         href: datamodel/slots/sessions.qmd
                       - text: "settings"
                         href: datamodel/slots/settings.qmd
+                      - text: "settle_seed"
+                        href: datamodel/slots/settle_seed.qmd
                       - text: "setup"
                         href: datamodel/slots/setup.qmd
                       - text: "sex"
                         href: datamodel/slots/sex.qmd
                       - text: "shape"
                         href: datamodel/slots/shape.qmd
+                      - text: "share_x"
+                        href: datamodel/slots/share_x.qmd
+                      - text: "share_y"
+                        href: datamodel/slots/share_y.qmd
                       - text: "sigma"
                         href: datamodel/slots/sigma.qmd
                       - text: "simulation_experiments"
@@ -1725,6 +1746,8 @@ website:
                         href: datamodel/slots/spines.qmd
                       - text: "stages"
                         href: datamodel/slots/stages.qmd
+                      - text: "started_at"
+                        href: datamodel/slots/started_at.qmd
                       - text: "state"
                         href: datamodel/slots/state.qmd
                       - text: "state_variables"
@@ -1753,6 +1776,8 @@ website:
                         href: datamodel/slots/style.qmd
                       - text: "subdir"
                         href: datamodel/slots/subdir.qmd
+                      - text: "subdirs"
+                        href: datamodel/slots/subdirs.qmd
                       - text: "subject_id"
                         href: datamodel/slots/subject_id.qmd
                       - text: "subjects"
@@ -1845,6 +1870,10 @@ website:
                         href: datamodel/slots/tol_stability.qmd
                       - text: "tool_role"
                         href: datamodel/slots/tool_role.qmd
+                      - text: "traceable"
+                        href: datamodel/slots/traceable.qmd
+                      - text: "tracked"
+                        href: datamodel/slots/tracked.qmd
                       - text: "tractogram"
                         href: datamodel/slots/tractogram.qmd
                       - text: "trajectory"
@@ -1867,6 +1896,8 @@ website:
                         href: datamodel/slots/type.qmd
                       - text: "unit"
                         href: datamodel/slots/unit.qmd
+                      - text: "units"
+                        href: datamodel/slots/units.qmd
                       - text: "update_expression"
                         href: datamodel/slots/update_expression.qmd
                       - text: "update_rules"
@@ -1955,6 +1986,10 @@ website:
                         href: datamodel/enums/AlgorithmCompositionMode.qmd
                       - text: "Axis Reduction Statistic"
                         href: datamodel/enums/AxisReductionStatistic.qmd
+                      - text: "BIDS Dataset Type"
+                        href: datamodel/enums/BidsDatasetType.qmd
+                      - text: "BIDS Directory Status"
+                        href: datamodel/enums/BidsDirectoryStatus.qmd
                       - text: "Boundary Condition Type"
                         href: datamodel/enums/BoundaryConditionType.qmd
                       - text: "Comparison Operator"
@@ -1999,6 +2034,8 @@ website:
                         href: datamodel/enums/ModelType.qmd
                       - text: "Node Reconciliation"
                         href: datamodel/enums/NodeReconciliation.qmd
+                      - text: "Noise Draw"
+                        href: datamodel/enums/NoiseDraw.qmd
                       - text: "Noise Type"
                         href: datamodel/enums/NoiseType.qmd
                       - text: "Numerical Discretization Method"
@@ -2017,10 +2054,16 @@ website:
                         href: datamodel/enums/ProcedureStepType.qmd
                       - text: "Programming Language Enum"
                         href: datamodel/enums/ProgrammingLanguageEnum.qmd
+                      - text: "Provenance Format"
+                        href: datamodel/enums/ProvenanceFormat.qmd
+                      - text: "Reducer Emit Kind"
+                        href: datamodel/enums/ReducerEmitKind.qmd
                       - text: "Reduction Type"
                         href: datamodel/enums/ReductionType.qmd
                       - text: "Report Part"
                         href: datamodel/enums/ReportPart.qmd
+                      - text: "Requirement Level"
+                        href: datamodel/enums/RequirementLevel.qmd
                       - text: "Requirement Role"
                         href: datamodel/enums/RequirementRole.qmd
                       - text: "Sampling Axis"
@@ -2035,6 +2078,10 @@ website:
                         href: datamodel/enums/SpecimenEnum.qmd
                       - text: "Standard Graph Type"
                         href: datamodel/enums/StandardGraphType.qmd
+                      - text: "Study Directory Role"
+                        href: datamodel/enums/StudyDirectoryRole.qmd
+                      - text: "Study File Role"
+                        href: datamodel/enums/StudyFileRole.qmd
                       - text: "Subject Batch Mode"
                         href: datamodel/enums/SubjectBatchMode.qmd
                       - text: "Sweep Direction"
@@ -2045,6 +2092,8 @@ website:
                         href: datamodel/enums/SystemType.qmd
                       - text: "Tool Role"
                         href: datamodel/enums/ToolRole.qmd
+                      - text: "Tracked Content"
+                        href: datamodel/enums/TrackedContent.qmd
                       - text: "Triangle"
                         href: datamodel/enums/Triangle.qmd
                       - text: "Unit Enum"
@@ -2052,8 +2101,6 @@ website:
                       - text: "Workflow Distribute By"
                         href: datamodel/enums/WorkflowDistributeBy.qmd
 # END:datamodel-autogen
-
-
 # BEGIN:api-autogen
               - section: "API Documentation"
                 href: api/index.qmd
@@ -2064,6 +2111,378 @@ website:
                     href: api/multiscale.qmd
                   - text: "Platform"
                     href: api/platform.qmd
+                  - section: "Adapters"
+                    href: api/adapters/index.qmd
+                    contents:
+                      - text: "Base"
+                        href: api/adapters/base.qmd
+                      - text: "BIDS"
+                        href: api/adapters/bids.qmd
+                      - text: "BifurcationKit"
+                        href: api/adapters/bifurcationkit.qmd
+                      - text: "Brian2"
+                        href: api/adapters/brian2.qmd
+                      - text: "Bsplot"
+                        href: api/adapters/bsplot.qmd
+                      - text: "Colormaps"
+                        href: api/adapters/colormaps.qmd
+                      - text: "DiffEq"
+                        href: api/adapters/diffeq.qmd
+                      - text: "Figure Workflow"
+                        href: api/adapters/figure_workflow.qmd
+                      - text: "Gillespie"
+                        href: api/adapters/gillespie.qmd
+                      - text: "Julia"
+                        href: api/adapters/julia.qmd
+                      - text: "Julia Model"
+                        href: api/adapters/julia_model.qmd
+                      - text: "ModelingToolkit"
+                        href: api/adapters/modelingtoolkit.qmd
+                      - text: "NetworkDynamics"
+                        href: api/adapters/networkdynamics.qmd
+                      - text: "NeuroML"
+                        href: api/adapters/neuroml.qmd
+                      - text: "NumCont"
+                        href: api/adapters/numcont.qmd
+                      - text: "Observation Sampling"
+                        href: api/adapters/observation_sampling.qmd
+                      - text: "openMINDS"
+                        href: api/adapters/openminds.qmd
+                      - text: "PyRates"
+                        href: api/adapters/pyrates.qmd
+                      - text: "PyRates (Bifurcation)"
+                        href: api/adapters/pyrates_bifurcation.qmd
+                      - text: "TVB"
+                        href: api/adapters/tvb.qmd
+                      - text: "tvboptim"
+                        href: api/adapters/tvboptim.qmd
+                      - section: "Shared small-scale network-lowering core."
+                        href: api/adapters/smallscale/index.qmd
+                        contents:
+                          - text: "Lowering"
+                            href: api/adapters/smallscale/lowering.qmd
+                  - section: "Analysis"
+                    href: api/analysis/index.qmd
+                    contents:
+                      - text: "Bifurcation"
+                        href: api/analysis/bifurcation.qmd
+                      - text: "Linear Response"
+                        href: api/analysis/linear_response.qmd
+                      - text: "Replication"
+                        href: api/analysis/replication.qmd
+                      - text: "Units"
+                        href: api/analysis/units.qmd
+                  - section: "API"
+                    href: api/api/index.qmd
+                    contents:
+                      - text: "Direct Ontology Api"
+                        href: api/api/direct_ontology_api.qmd
+                      - text: "Dynamics Api"
+                        href: api/api/dynamics_api.qmd
+                      - text: "Experiment Api"
+                        href: api/api/experiment_api.qmd
+                      - text: "Main"
+                        href: api/api/main.qmd
+                      - text: "Network Api"
+                        href: api/api/network_api.qmd
+                      - text: "Ontology Api"
+                        href: api/api/ontology_api.qmd
+                  - section: "Hand-written behaviour attached to the generated model classes."
+                    href: api/behaviour/index.qmd
+                    contents:
+                      - text: "Continuation"
+                        href: api/behaviour/continuation.qmd
+                      - text: "Coupling"
+                        href: api/behaviour/coupling.qmd
+                      - text: "Dynamics"
+                        href: api/behaviour/dynamics.qmd
+                      - text: "Dynamics Runtime"
+                        href: api/behaviour/dynamics_runtime.qmd
+                      - text: "Event"
+                        href: api/behaviour/event.qmd
+                      - text: "Integrator"
+                        href: api/behaviour/integrator.qmd
+                      - text: "Perturbation"
+                        href: api/behaviour/perturbation.qmd
+                  - section: "Classes"
+                    href: api/classes/index.qmd
+                    contents:
+                      - text: "Atlas"
+                        href: api/classes/atlas.qmd
+                      - text: "Continuation"
+                        href: api/classes/continuation.qmd
+                      - text: "Correlated Noise"
+                        href: api/classes/correlated_noise.qmd
+                      - text: "Coupling"
+                        href: api/classes/coupling.qmd
+                      - text: "Dynamics"
+                        href: api/classes/dynamics.qmd
+                      - text: "Equation"
+                        href: api/classes/equation.qmd
+                      - text: "Experiment"
+                        href: api/classes/experiment.qmd
+                      - text: "Function"
+                        href: api/classes/function.qmd
+                      - text: "Network"
+                        href: api/classes/network.qmd
+                      - text: "Noise"
+                        href: api/classes/noise.qmd
+                      - text: "Observation"
+                        href: api/classes/observation.qmd
+                      - text: "Parcellation"
+                        href: api/classes/parcellation.qmd
+                      - text: "Perturbation"
+                        href: api/classes/perturbation.qmd
+                      - text: "Phenotype"
+                        href: api/classes/phenotype.qmd
+                      - text: "Software"
+                        href: api/classes/software.qmd
+                      - text: "Study"
+                        href: api/classes/study.qmd
+                  - section: "CLI"
+                    href: api/cli/index.qmd
+                    contents:
+                      - text: "Brain"
+                        href: api/cli/brain.qmd
+                      - text: "Cache"
+                        href: api/cli/cache.qmd
+                      - text: "Config"
+                        href: api/cli/config.qmd
+                      - text: "Export"
+                        href: api/cli/export.qmd
+                      - text: "Figures"
+                        href: api/cli/figures.qmd
+                      - text: "Formats"
+                        href: api/cli/formats.qmd
+                      - text: "Import"
+                        href: api/cli/import_.qmd
+                      - text: "Info"
+                        href: api/cli/info.qmd
+                      - text: "Install"
+                        href: api/cli/install.qmd
+                      - text: "Network"
+                        href: api/cli/network.qmd
+                      - text: "Run"
+                        href: api/cli/run.qmd
+                      - text: "Save"
+                        href: api/cli/save.qmd
+                      - text: "Skills"
+                        href: api/cli/skills.qmd
+                      - text: "Study"
+                        href: api/cli/study.qmd
+                      - text: "Units"
+                        href: api/cli/units.qmd
+                      - text: "Validate"
+                        href: api/cli/validate.qmd
+                      - text: "Verify"
+                        href: api/cli/verify.qmd
+                      - text: "Version"
+                        href: api/cli/version.qmd
+                      - text: "Workflow"
+                        href: api/cli/workflow.qmd
+                  - section: "TVB-O Code Generation"
+                    href: api/codegen/index.qmd
+                    contents:
+                      - text: "Code"
+                        href: api/codegen/code.qmd
+                      - text: "CUDA"
+                        href: api/codegen/cuda.qmd
+                      - text: "Functions"
+                        href: api/codegen/functions.qmd
+                      - text: "LEMS"
+                        href: api/codegen/lems.qmd
+                      - text: "Prune"
+                        href: api/codegen/prune.qmd
+                      - text: "PyRates"
+                        href: api/codegen/pyrates.qmd
+                      - text: "Reducers"
+                        href: api/codegen/reducers.qmd
+                      - text: "Streaming Reducers"
+                        href: api/codegen/streaming_reducers.qmd
+                      - text: "Style"
+                        href: api/codegen/style.qmd
+                      - text: "Templater"
+                        href: api/codegen/templater.qmd
+                      - text: "Transforms"
+                        href: api/codegen/transforms.qmd
+                  - section: "Data"
+                    href: api/data/index.qmd
+                    contents:
+                      - text: "Analysis Io"
+                        href: api/data/analysis_io.qmd
+                      - text: "Connectome Build"
+                        href: api/data/connectome_build.qmd
+                      - text: "Converters"
+                        href: api/data/converters.qmd
+                      - text: "Dataref"
+                        href: api/data/dataref.qmd
+                      - text: "Experiment Result Io"
+                        href: api/data/experiment_result_io.qmd
+                      - text: "Matrix Io"
+                        href: api/data/matrix_io.qmd
+                      - text: "Mesh Fem"
+                        href: api/data/mesh_fem.qmd
+                      - text: "Mesh Io"
+                        href: api/data/mesh_io.qmd
+                      - text: "Network Io"
+                        href: api/data/network_io.qmd
+                      - text: "Param Io"
+                        href: api/data/param_io.qmd
+                      - text: "Provenance"
+                        href: api/data/provenance.qmd
+                      - text: "Registry"
+                        href: api/data/registry.qmd
+                      - text: "Study Manifest"
+                        href: api/data/study_manifest.qmd
+                      - text: "Types"
+                        href: api/data/types.qmd
+                  - section: "Data Model"
+                    href: api/datamodel/index.qmd
+                    contents:
+                      - text: "Dialect"
+                        href: api/datamodel/dialect.qmd
+                      - text: "Dialect Tables"
+                        href: api/datamodel/dialect_tables.qmd
+                      - text: "Pydantic"
+                        href: api/datamodel/pydantic.qmd
+                      - text: "Schema"
+                        href: api/datamodel/schema.qmd
+                  - section: "Export"
+                    href: api/export/index.qmd
+                    contents:
+                      - text: "Formats"
+                        href: api/export/formats.qmd
+                      - text: "Registry"
+                        href: api/export/registry.qmd
+                  - section: "Graph Generators"
+                    href: api/graph_generators/index.qmd
+                    contents:
+                      - text: "Catalog"
+                        href: api/graph_generators/catalog.qmd
+                      - text: "Procedural"
+                        href: api/graph_generators/procedural.qmd
+                  - section: "JAX"
+                    href: api/jax/index.qmd
+                    contents:
+                      - text: "Xarray Pytrees"
+                        href: api/jax/xarray_pytrees.qmd
+                  - section: "TVB-O Ontology"
+                    href: api/ontology/index.qmd
+                    contents:
+                      - text: "Config"
+                        href: api/ontology/config.qmd
+                      - text: "Constants"
+                        href: api/ontology/constants.qmd
+                      - text: "DB"
+                        href: api/ontology/db.qmd
+                      - text: "Graph"
+                        href: api/ontology/graph.qmd
+                      - text: "OWL"
+                        href: api/ontology/owl.qmd
+                      - text: "Query"
+                        href: api/ontology/query.qmd
+                      - section: "Atlas"
+                        href: api/ontology/atlas/index.qmd
+                        contents:
+                          - text: "Freesurfer"
+                            href: api/ontology/atlas/freesurfer.qmd
+                      - section: "Semantic Web"
+                        href: api/ontology/semanticweb/index.qmd
+                        contents:
+                          - text: "TVB-GO"
+                            href: api/ontology/semanticweb/tvbgo.qmd
+                  - section: "Parse"
+                    href: api/parse/index.qmd
+                    contents:
+                      - text: "Expression"
+                        href: api/parse/expression.qmd
+                      - text: "Lems Loader"
+                        href: api/parse/lems_loader.qmd
+                      - text: "Symbols"
+                        href: api/parse/symbols.qmd
+                      - text: "System"
+                        href: api/parse/system.qmd
+                  - section: "Plot"
+                    href: api/plot/index.qmd
+                    contents:
+                      - text: "Analysis"
+                        href: api/plot/analysis.qmd
+                      - text: "Animate"
+                        href: api/plot/animate.qmd
+                      - text: "Dynamics"
+                        href: api/plot/dynamics.qmd
+                      - text: "Dynamics Layout"
+                        href: api/plot/dynamics_layout.qmd
+                      - text: "Experiment Layout"
+                        href: api/plot/experiment_layout.qmd
+                      - text: "Layout Mosaic"
+                        href: api/plot/layout_mosaic.qmd
+                      - text: "Network"
+                        href: api/plot/network.qmd
+                      - text: "Network Graph"
+                        href: api/plot/network_graph.qmd
+                      - text: "Ontology"
+                        href: api/plot/ontology.qmd
+                      - text: "Phase"
+                        href: api/plot/phase.qmd
+                      - text: "Schematic"
+                        href: api/plot/schematic.qmd
+                      - text: "Timeseries"
+                        href: api/plot/timeseries.qmd
+                      - text: "Utils"
+                        href: api/plot/utils.qmd
+                  - section: "Run"
+                    href: api/run/index.qmd
+                    contents:
+                      - text: "Compgraph"
+                        href: api/run/compgraph.qmd
+                      - text: "Graph"
+                        href: api/run/graph.qmd
+                      - text: "Julia"
+                        href: api/run/julia.qmd
+                  - section: "Templates"
+                    contents:
+                      - section: "PDE/FEM code-generation templates for TVBO field models."
+                        href: api/templates/pde/index.qmd
+                        contents:
+                          - text: "Utils"
+                            href: api/templates/pde/utils.qmd
+                      - section: "RateML"
+                        href: api/templates/rateml/index.qmd
+                        contents:
+                          - text: "Utils"
+                            href: api/templates/rateml/utils.qmd
+                      - section: "tvboptim"
+                        href: api/templates/tvboptim/index.qmd
+                        contents:
+                          - text: "Callbacks"
+                            href: api/templates/tvboptim/callbacks.qmd
+                          - text: "Observations"
+                            href: api/templates/tvboptim/observations.qmd
+                          - text: "Utils"
+                            href: api/templates/tvboptim/utils.qmd
+                  - section: "Utilities"
+                    href: api/utils/index.qmd
+                    contents:
+                      - text: "Auto"
+                        href: api/utils/auto.qmd
+                      - text: "Figure Compare"
+                        href: api/utils/figure_compare.qmd
+                      - text: "Pydantic Loader"
+                        href: api/utils/pydantic_loader.qmd
+                      - text: "Report"
+                        href: api/utils/report.qmd
+                      - text: "Study Layout"
+                        href: api/utils/study_layout.qmd
+                      - text: "Units"
+                        href: api/utils/units.qmd
+                      - text: "Yaml Loader"
+                        href: api/utils/yaml_loader.qmd
 # END:api-autogen
-              - text: "Developer"
+              - text: "DEVELOPER"
+              - text: "Contributing"
                 href: Developer/contributing.md
+              - text: "How this documentation is built"
+                href: Developer/DocsMachinery.qmd
+              - text: "Maintainer guide"
+                href: agents/maintainer-guide.qmd
