@@ -31,12 +31,12 @@ PLACEHOLDER = re.compile(r"[<>{}$*]|\.\.\.|\[")
 
 
 def load_cli():
-    import click
+    """The root click command Typer builds from the app."""
     import typer
 
     from tvbo.cli import app
 
-    return click, typer.main.get_command(app)
+    return typer.main.get_command(app)
 
 
 def commands(path: pathlib.Path) -> list[tuple[int, str]]:
@@ -63,23 +63,32 @@ def commands(path: pathlib.Path) -> list[tuple[int, str]]:
     return out
 
 
-def resolve(click, root, words: list[str]):
-    """Walk the command tree, returning (command, consumed) or (None, failing word)."""
+def subcommands(command) -> dict:
+    """The child commands of *command*, empty for a leaf.
+
+    A group is anything carrying a `commands` mapping. Typer vendors its own click shim, so `TyperGroup` is not reliably a `click.Group` subclass, and an isinstance test degrades silently: every example resolves to the root and every option it names is reported missing.
+    """
+    return getattr(command, "commands", None) or {}
+
+
+def resolve(root, words: list[str]):
+    """Walk the command tree, returning (command, None) or (None, failing word)."""
     node, index = root, 1
     while index < len(words):
         word = words[index]
         if word.startswith("-"):
             break
-        if not isinstance(node, click.Group):
+        children = subcommands(node)
+        if not children:
             break
-        child = node.commands.get(word)
+        child = children.get(word)
         if child is None:
             return None, word
         node, index = child, index + 1
     return node, None
 
 
-def long_options(click, command) -> set[str]:
+def long_options(command) -> set[str]:
     names = set()
     for param in getattr(command, "params", []):
         names.update(opt for opt in getattr(param, "opts", []) if opt.startswith("--"))
@@ -87,7 +96,7 @@ def long_options(click, command) -> set[str]:
     return names | {"--help"}
 
 
-def check(click, root, path: pathlib.Path, tally: dict[str, int]) -> list[str]:
+def check(root, path: pathlib.Path, tally: dict[str, int]) -> list[str]:
     found = []
     for number, line in commands(path):
         tally["seen"] += 1
@@ -101,11 +110,11 @@ def check(click, root, path: pathlib.Path, tally: dict[str, int]) -> list[str]:
             continue
         if len(words) < 2:
             continue
-        command, missing = resolve(click, root, words)
+        command, missing = resolve(root, words)
         if command is None:
             found.append(f"{path}:{number}: unknown command `{missing}` in `{line}`")
             continue
-        declared = long_options(click, command)
+        declared = long_options(command)
         for word in words:
             if not word.startswith("--"):
                 continue
@@ -122,10 +131,14 @@ def main() -> int:
     args = ap.parse_args()
 
     try:
-        click, root = load_cli()
+        root = load_cli()
     except Exception as error:
         # Loud, not lenient: this is the only thing standing between the docs and a command that no longer exists, and a green run over zero invocations is indistinguishable from a green run over all of them.
         print(f"cannot import the CLI, so nothing was checked: {error}", file=sys.stderr)
+        return 1
+
+    if not subcommands(root):
+        print(f"the CLI root {root.name!r} exposes no sub-commands, so every example would resolve to it", file=sys.stderr)
         return 1
 
     findings, scanned = [], 0
@@ -134,7 +147,7 @@ def main() -> int:
         if not path.is_file():
             continue
         scanned += 1
-        findings.extend(check(click, root, path, tally))
+        findings.extend(check(root, path, tally))
 
     for finding in findings:
         print(finding)
