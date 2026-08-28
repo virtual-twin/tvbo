@@ -5,17 +5,12 @@ citekey: JR_tvboptim
 title: "Reproducing MEG resting-state frequency gradients with network dynamics"
 label: "Jansen-Rit MEG frequency gradient: fitting region-specific time constants to a spatial frequency gradient"
 description: >-
-  Fits the region-specific Jansen-Rit time constants a and b so that each region's simulated
-  peak frequency matches a target gradient running from visual cortex (11 Hz) to the most
-  distant association areas (7 Hz). The target is not supplied to the fit: it is derived from
-  the connectome's own tract lengths to bilateral lateral occipital cortex, so the whole
-  experiment is reproducible from this recipe and the curated database alone.
+  Fits the region-specific Jansen-Rit time constants a and b so that each region's simulated peak frequency matches a target gradient running from visual cortex (11 Hz) to the most distant association areas (7 Hz). The target is not supplied to the fit: it is derived from the connectome's own tract lengths to bilateral lateral occipital cortex, so the whole experiment is reproducible from this recipe and the curated database alone.
 
 experiments:
     - tvbo:experiment/JR_MEG_FrequencyGradient_Optimization
 
-      # The same curated experiment without its settle, declared as the difference from it: the
-      # approach from the initial state is what the fitted run deliberately discards.
+      # The same curated experiment without its settle: the approach from the initial state is what the fitted run deliberately discards.
     - iri: tvbo:experiment/JR_MEG_FrequencyGradient_Optimization
       id: 2
       label: "Startup transient"
