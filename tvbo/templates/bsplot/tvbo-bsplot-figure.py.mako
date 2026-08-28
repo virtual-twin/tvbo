@@ -232,21 +232,38 @@ def _triangle(C, which, gap=0):
     return out
 
 
-def _color_dim(da, name):
-    """The dimension a colour encoding iterates, and the labels for its entries.
+def _color_dim(ds, da, name):
+    """The dimension a colour encoding iterates, the labels for its entries, and the quantity to shade them by.
 
     ``color`` may name a dimension (labels are its coordinate values, or indices when it
-    has none) or a NON-dimension coordinate defined along one — which is how a panel draws
-    one line per region and still labels them by name rather than by atlas number.
+    has none), a NON-dimension coordinate defined along one — which is how a panel draws
+    one line per region and still labels them by name rather than by atlas number — or a
+    per-entry QUANTITY stored beside the plotted array. Only the last carries a value per
+    line, so only it returns one; the other two shade by position along the map, which
+    orders the lines but says nothing about them.
     """
     if name in da.dims:
         vals = da.coords[name].values if name in da.coords else np.arange(da.sizes[name])
-        return name, [str(v) for v in vals]
-    if name not in da.coords:
-        raise KeyError(f"colour encoding {name!r} is neither a dim nor a coord "
-                       f"(dims {tuple(da.dims)}, coords {tuple(da.coords)}).")
-    coord = da.coords[name]
-    return str(coord.dims[0]), [str(v) for v in np.asarray(coord.values)]
+        return name, [str(v) for v in vals], None
+    if name in da.coords:
+        coord = da.coords[name]
+        return str(coord.dims[0]), [str(v) for v in np.asarray(coord.values)], None
+    try:                                  # a sibling variable measured once per entry
+        sib = _var(ds, name)
+    except KeyError:
+        raise KeyError(f"colour encoding {name!r} is neither a dim, a coord, nor a variable of this "
+                       f"container (dims {tuple(da.dims)}, coords {tuple(da.coords)}).") from None
+    dims = [str(d) for d in sib.dims if d in [str(x) for x in da.dims]]
+    # A length-1 axis holds one value and so cannot be the axis the lines fan along; dropping it is what lets a per-node quantity carrying a singleton `variable` axis still shade one line per node.
+    if len(dims) > 1:
+        dims = [d for d in dims if sib.sizes[d] > 1] or dims
+    if len(dims) != 1:
+        raise KeyError(f"colour encoding {name!r} must be measured along exactly one axis of the "
+                       f"plotted array to give each line a value; it has dims {tuple(sib.dims)}.")
+    dim = dims[0]
+    labels = ([str(v) for v in np.asarray(da.coords[dim].values)] if dim in da.coords
+              else [str(i) for i in range(da.sizes[dim])])
+    return dim, labels, np.asarray(sib.values, dtype=float).squeeze()
 
 
 def _coord(da, name, axis):
@@ -332,6 +349,9 @@ def _apply_axopts(ax, o):
         _c = list(_c) if isinstance(_c, (list, tuple)) else [_c]
         for _i, _v in enumerate(_at):
             _draw(_v, color=_c[min(_i, len(_c) - 1)], lw=0.7, ls=":", zorder=0)
+    if o.get("axline") is not None:
+        _ab = list(o["axline"])   # [slope, intercept]; identity is [1, 0], the agreement line of a target-vs-simulated panel
+        ax.axline((0.0, _ab[1]), slope=_ab[0], color=o.get("axline_color", "0.4"), lw=0.8, ls="--", zorder=0)
     for _ax, _key, _far in ((ax.xaxis, "xtick_side", "top"), (ax.yaxis, "ytick_side", "right")):
         _side = o.get(_key)
         if _side:                       # ticks and label on the named side, as the paper prints them
@@ -580,7 +600,7 @@ def _restore_fixed_axes(snap):
     _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
     if hasattr(_drawn, "xaxis"):
         _SCALE_AXES[${repr(p['key'])}] = _drawn   # the bar, not the slot: a declared frame belongs on it, the panel letter on the slot behind it
-% elif p['kind'] in ('custom', 'surface'):
+% elif p['kind'] in ('custom', 'surface', 'volume'):
     _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
     if hasattr(_drawn, "get_subplotspec"):
         ax = _drawn        # the drawer replaced its axes (e.g. swapped the 2-D cell for a 3-D projection); everything downstream styles the replacement
@@ -665,12 +685,14 @@ ${colorbar(p)}\
     for _i, _v in enumerate(np.atleast_1d(np.asarray(_da.values, dtype=float)).ravel()):
         _line(_v, label=(_rule_label if _i == 0 else None), **_rule_style)
 % elif L['color']:
-    _dim, _labels = _color_dim(_da, ${repr(L['color'])})   # one line per entry, coloured along the map
+    _dim, _labels, _cvals = _color_dim(_ds, _da, ${repr(L['color'])})   # one line per entry
     _cmap = plt.get_cmap(${repr(L['cmap'] or 'viridis')})
+    _cnorm = None if _cvals is None else matplotlib.colors.Normalize(vmin=float(np.nanmin(_cvals)), vmax=float(np.nanmax(_cvals)))
     for _i, _lab in enumerate(_labels):
         _line = _da.isel({_dim: _i})
+        _colour = _cmap(_cnorm(_cvals[_i])) if _cnorm is not None else _cmap(_i / max(len(_labels) - 1, 1))
         ax.plot(_channel(_ds, _line, ${repr(L['x'])}, 0), np.asarray(_line.values).squeeze(),
-                color=_cmap(_i / max(len(_labels) - 1, 1)), label=_lab, **${repr(L['style'])})
+                color=_colour, label=_lab, **${repr(L['style'])})
 % else:
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     ax.plot(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})

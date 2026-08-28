@@ -358,15 +358,93 @@ def _fold_state_variable_domains(obj: Any) -> Any:
     return obj
 
 
+_PATH_KEYS = ("bids_dir", "mesh_file", "data_file", "code_source", "path", "file")
+
+
+def _anchor_paths(obj: Any, origin: Path) -> Any:
+    """Rewrite a spliced fragment's relative file references to absolute, against the directory it came from.
+
+    A document moved out of its own directory takes its relative paths with it, and they then resolve against whoever spliced it — which is how an experiment lifted from the database comes to look for its connectome under the including study. Anchoring is guarded by existence: a value is rewritten only when it actually names something at the origin, so a path-shaped string that is not a path is left alone.
+    """
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key in _PATH_KEYS and isinstance(value, str) and not Path(value).is_absolute():
+                candidate = (origin / value).resolve()
+                if candidate.exists():
+                    obj[key] = str(candidate)
+                    continue
+            _anchor_paths(value, origin)
+    elif isinstance(obj, list):
+        for item in obj:
+            _anchor_paths(item, origin)
+    return obj
+
+
+def _expand_curated_experiments(data: Any) -> Any:
+    """Replace a study's curated-experiment IRI references with the documents they name.
+
+    ``experiments: [tvbo:experiment/<name>]`` loads that experiment out of the database in place, with its relative paths anchored at the database directory it came from. A path reference cannot do this job: ``!include`` splices a document without rebasing the paths inside it, so an experiment included out of the database resolves its own ``network.bids_dir`` against the including study and loads the wrong root. The IRI carries no path of its own, so the database resolves it against the database.
+
+    An entry may also be a mapping carrying ``iri:`` plus its own keys, which are merged over the curated document: a variant of a curated experiment — the same model run without its settle, or with one parameter moved — is then declared as the difference from it rather than as a second copy that can drift. Merging is recursive over mappings, and a null drops the curated key outright (``optimizations: null`` for a variant that only simulates).
+
+    Only a top-level ``experiments`` list is expanded. A reference that stays a reference (``model: JansenRit1995``) is left alone, so this cannot turn a pointer into an inlined copy.
+    """
+    if not isinstance(data, dict):
+        return data
+    entries = data.get("experiments")
+    if not isinstance(entries, list):
+        return data
+
+    def _ref(entry):
+        """The curated IRI an entry names, or None when it is an ordinary inline experiment."""
+        if isinstance(entry, str):
+            return entry
+        if isinstance(entry, dict) and isinstance(entry.get("iri"), str):
+            return entry["iri"]
+        return None
+
+    from tvbo.data.registry import iri_target, resolve_iri
+
+    if not any(iri_target(_ref(e) or "") for e in entries):
+        return data
+
+    def _merge(base, over):
+        """*over* laid on *base*, recursing into mappings; a null drops the key."""
+        merged = dict(base)
+        for k, v in over.items():
+            if v is None:
+                merged.pop(k, None)
+            elif isinstance(v, dict) and isinstance(merged.get(k), dict):
+                merged[k] = _merge(merged[k], v)
+            else:
+                merged[k] = v
+        return merged
+
+    expanded = []
+    for entry in entries:
+        iri = _ref(entry)
+        if iri is None or iri_target(iri) is None:
+            expanded.append(entry)
+            continue
+        source = resolve_iri(iri)
+        curated = _anchor_paths(strip_envelope(load_as_dict(str(source))), source.parent)
+        if isinstance(entry, dict):
+            curated = _merge(curated, {k: v for k, v in entry.items() if k != "iri"})
+        expanded.append(curated)
+    data["experiments"] = expanded
+    return data
+
+
 def _normalize_loaded(data: Any) -> Any:
     """Apply the dict-level TVBO conveniences shared by every load path.
 
-    Slot aliases are folded at construction by the generated datamodel (see ``hatch_build._alias_support``), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), and lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``. Both the string path (``load``/``loads`` → LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes.
+    Slot aliases are folded at construction by the generated datamodel (see ``hatch_build._alias_support``), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``, and loads a study's curated-experiment IRI references from the database. Both the string path (``load``/``loads`` → LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes, and the experiments are expanded first so the folds reach inside them.
     """
     import copy
 
     # The passes below mutate in place; never reach through to the caller's object.
     data = copy.deepcopy(data)
+    data = _expand_curated_experiments(data)
     data = _fold_edge_var_aliases(data)
     data = _fold_state_variable_domains(data)
     data = _lift_distribution_shortcut(data)

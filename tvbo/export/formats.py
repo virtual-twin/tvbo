@@ -65,8 +65,11 @@ def _codegen_context(exp, **kw) -> dict:
                 "run it on a backend that supplies its own solver."
             )
 
+    adapter = BaseAdapter(exp)
     kw.setdefault("model", exp.dynamics)
-    kw.setdefault("coupling", BaseAdapter(exp).get_default_coupling())
+    kw.setdefault("coupling", adapter.get_default_coupling())
+    # The settle plan, resolved once: which window to integrate and which leading part of it is not measurement. A template computing `transient_time + duration` for itself is a second answer to a question the adapter already answers, and that is how TVB and tvboptim came to disagree about what `duration` means.
+    kw.setdefault("settle", adapter.get_integration_info())
     return kw
 
 
@@ -100,8 +103,11 @@ def _render_tvboptim(exp, **kw):
     from tvbo.classes.experiment import templates
 
     template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
+    adapter = TvboptimAdapter(exp)
     # Which couplings this experiment has is the adapter's answer, not the template's.
-    kw.setdefault("all_couplings", TvboptimAdapter(exp).resolve_couplings())
+    kw.setdefault("all_couplings", adapter.resolve_couplings())
+    # And so is the window it integrates: which part settles and which is measured, in time and in steps. See `_codegen_context`, which hands the same answer to the backends that share it.
+    kw.setdefault("settle", adapter.get_integration_info())
     # Resolve network- and dataset-sourced observation pointers once, in Python, and hand the {obs_name: measure} mapping to the template (which only emits code). Both bind at run_experiment time via _bind_network_observations.
     measures = dict(exp.network_observation_measures)
     measures.update(exp.dataset_observation_targets)

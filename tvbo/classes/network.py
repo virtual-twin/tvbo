@@ -3550,20 +3550,20 @@ class Network(tvbo_datamodel.Network):
             coord = (center.x, center.y, center.z) if center else (0, 0, 0)
             return coord, getattr(entity, "lookupLabel", region)
 
-        # Build a coord index keyed by every label an entity is known by (name + abbreviation + alternateName), plus an ordered list for the lookupLabel fallback. The alternateName slot carries the abbreviated region labels that BIDS connectomes use (e.g. "L.BSTS").
+        # Build a coord index keyed by every label an entity is known by (name + hemisphere-qualified abbreviation + alternateName), plus an ordered list for the lookupLabel fallback. The abbreviation is a bare region notation two entities share across hemispheres ("LOG"), so it is keyed qualified ("L.LOG") — keying it bare would let the right hemisphere overwrite the left and hand back the wrong centre.
         by_label = {}
         ordered = []
         for region, entity in entity_items:
             coord, lookup_label = _entity_coord(entity, region)
             ordered.append((lookup_label if isinstance(lookup_label, int) else region, coord))
-            if isinstance(entity, dict):
-                names = [entity.get("name"), entity.get("abbreviation"), *(entity.get("alternateName") or [])]
-            else:
-                names = [
-                    getattr(entity, "name", None),
-                    getattr(entity, "abbreviation", None),
-                    *(getattr(entity, "alternateName", None) or []),
-                ]
+            get = entity.get if isinstance(entity, dict) else lambda k, _e=entity: getattr(_e, k, None)
+            abbreviation, hemisphere = get("abbreviation"), get("hemisphere")
+            side = {"left": "L", "right": "R"}.get(str(hemisphere)) if hemisphere else None
+            names = [
+                get("name"),
+                f"{side}.{abbreviation}" if abbreviation and side else abbreviation,
+                *(get("alternateName") or []),
+            ]
             for nm in names:
                 if nm:
                     by_label[str(nm)] = coord

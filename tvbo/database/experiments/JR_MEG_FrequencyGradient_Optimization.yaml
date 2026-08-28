@@ -278,6 +278,7 @@ functions:
 observations:
     # Root: Power Spectral Density from simulation state variable y0
   simulated_psd:
+    dims: [node, variable, frequency]
     label: "Simulated Power Spectral Density"
     description: "Power spectral density using Welch's method on simulated y0"
     source: [y0]
@@ -312,6 +313,7 @@ observations:
 
   # === Raw signals kept for inspection, not consumed by the fit ===
   y0_trace:
+    dims: [time, variable, node]
     label: "Pyramidal Membrane Potential"
     description: "Subsampled y0 trajectory, the network dynamics the spectra are computed from"
     source: [y0]
@@ -323,7 +325,26 @@ observations:
           data:
             value: integration.result
 
+  y0_mean:
+    dims: [variable, node]
+    label: "Mean Pyramidal Potential per Region"
+    description: "Time-average of y0 for each region, the amplitude a trace bundle is shaded by"
+    source:
+      - y0_trace
+    record: true
+    pipeline:
+      - callable:
+          module: jax.numpy
+          name: mean
+        output: y0_mean
+        arguments:
+          a:
+            value: y0_trace
+          axis:
+            value: 0
+
   psd_frequencies:
+    dims: [frequency]
     label: "PSD Frequency Axis"
     description: "The Welch frequency axis, recorded so a spectrum can be plotted against Hz rather than bin index"
     source:
@@ -340,6 +361,7 @@ observations:
 
   # === Fit target, derived from the connectome rather than passed in at runtime ===
   target_peak_frequencies:
+    dims: [node]
     label: "Target Peak Frequencies"
     description: "The MEG frequency gradient the fit reproduces, built from tract-length distance to visual cortex"
     pipeline:
@@ -357,6 +379,7 @@ observations:
             value: dist_from_vc
 
   target_psd:
+    dims: [node, frequency]
     label: "Target Power Spectral Density"
     description: "Per-region Cauchy spectra centred on the target peak frequencies"
     source:
@@ -374,6 +397,7 @@ observations:
   # === Derived observations (computed from other observations) ===
     # Derived: Average spectrum across regions
   avg_spectrum:
+    dims: [variable, frequency]
     name: avg_spectrum
     label: "Average Spectrum"
     description: "Mean power spectrum across all regions"
@@ -394,6 +418,7 @@ observations:
 
     # Derived: Peak frequency per region
   peak_frequencies:
+    dims: [node]
     label: "Peak Frequencies per Region"
     description: "Peak frequency for each brain region from its PSD"
     source:

@@ -4,12 +4,154 @@ Provides a thin wrapper around the generated datamodel that adds loading helpers
 """
 
 import os
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 
 from tvbo import templates
 from tvbo.classes import experiment
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.utils import report, yaml_loader
+
+
+@dataclass(frozen=True)
+class FigureImage:
+    """One figure a study run rendered: the image, the self-contained script that drew it, and an inline representation.
+
+    ``_repr_png_`` / ``_repr_svg_`` are what a notebook or Quarto cell calls, so the cell that ran the study also shows what it drew and a page never writes its own image reference. The object is a :class:`os.PathLike`, so it still passes anywhere a path does.
+    """
+
+    name: str
+    path: Path
+    script: Path | None = None
+    caption: str | None = None
+
+    def __fspath__(self) -> str:
+        return str(self.path)
+
+    def _repr_png_(self):
+        return self.path.read_bytes() if self.path.suffix.lower() == ".png" and self.path.is_file() else None
+
+    def _repr_svg_(self):
+        return self.path.read_text(encoding="utf-8") if self.path.suffix.lower() == ".svg" and self.path.is_file() else None
+
+
+class StudyResult(Mapping):
+    """What one :meth:`SimulationStudy.run` produced — the study-level counterpart of the :class:`~tvbo.data.types.ExperimentResult` a single experiment's ``run()`` returns.
+
+    A mapping from experiment to that experiment's outputs, read back from the same container the study's figures read, so a page and the figure it shows cannot report different numbers. Keys are the ``exp-<id>`` spelling the recipe's ``id:`` gives each experiment, which is also the name of the container on disk; the experiment's ``label`` reaches it too, and so does the bare id a figure layer writes (``used: {experiment: 2}``). A bare integer is accepted for that last reason and no other: it is the id, never a position in the list.
+
+    Each entry is an :class:`xarray.DataTree` in the recipe's own shape rather than the container's flat one, so an output is reached along the path it was declared at::
+
+        results["exp-1"].optimizations.spectral_gradient_fit.observations.peak_frequencies
+
+    Being a tree rather than a bag of attributes is what keeps the run an xarray object end to end: the node labels are declared once at the root and inherited by every group, one ``.sel`` reaches every per-node output at once, and an analysis can write back out what it derived.
+
+    :meth:`dataset` hands back the underlying :class:`xarray.Dataset` for anyone who wants the flat names, :meth:`analysis` reaches an analysis container by name, :meth:`figure` a rendered figure by name, and :meth:`report` the study's Methods section. Containers are read on first access and cached.
+    """
+
+    def __init__(self, study, root: Path, results_root: Path, experiments, figures, members=None):
+        from tvbo.data.dataref import experiment_id
+
+        self.study = study
+        self.members = dict(members or {})
+        """Each member study's own result, keyed by the label the recipe gives it — empty unless this is a study-of-studies.
+
+        Nested rather than merged into this mapping, because that is the shape the recipe has and the shape the results have on disk: a member keeps its own results root, and two members both declaring ``exp-1`` are two different experiments.
+        """
+        self.root = Path(root)
+        self.results_root = Path(results_root)
+        self._figures = {f.name: f for f in figures}
+        self._open: dict[str, object] = {}
+        self._keys: list[str] = []
+        self._by_alias: dict[str, str] = {}
+        for exp in experiments or []:
+            eid = experiment_id(getattr(exp, "id", exp))
+            if eid is None:
+                continue
+            key = f"exp-{eid}"
+            self._keys.append(key)
+            for alias in (key, eid, getattr(exp, "label", None)):
+                if alias:
+                    self._by_alias[str(alias)] = key
+
+    def _dataset(self, path: Path):
+        """The container at *path*, read into memory once and kept.
+
+        Read rather than opened: an open HDF5 handle holds a lock, and a result object that outlives its cell — which every notebook one does — would block the next run from rewriting the container it is holding.
+        """
+        import xarray as xr
+
+        key = str(path)
+        if key not in self._open:
+            with xr.open_dataset(path, engine="h5netcdf") as ds:
+                self._open[key] = ds.load()
+        return self._open[key]
+
+    def _container(self, key) -> Path:
+        """Path to the container of the experiment *key* names, in any spelling the recipe uses."""
+        from tvbo.data.dataref import locate_exp_container
+
+        resolved = self._by_alias.get(str(getattr(key, "id", key)))
+        if resolved is None:
+            raise KeyError(
+                f"{key!r} names no experiment in this study. It declares {self._keys}, "
+                f"reachable by that key, by its label, or by the bare id a figure layer writes."
+            )
+        return locate_exp_container(self.results_root, resolved.removeprefix("exp-"))
+
+    def __getitem__(self, key):
+        """Experiment *key*'s outputs as an :class:`xarray.DataTree` shaped like the recipe that declared them."""
+        from tvbo.data.experiment_result_io import result_tree
+
+        return result_tree(self._dataset(self._container(key)))
+
+    def dataset(self, key):
+        """The raw :class:`xarray.Dataset` behind experiment *key*, with the container's flat variable names."""
+        return self._dataset(self._container(key))
+
+    def __iter__(self):
+        return iter(self._keys)
+
+    def __len__(self) -> int:
+        return len(self._keys)
+
+    def analysis(self, name: str):
+        """The container the analysis *name* wrote, as a labelled :class:`xarray.Dataset`."""
+        from tvbo.data.dataref import locate_analysis_container
+
+        return self._dataset(locate_analysis_container(self.results_root, name))
+
+    @property
+    def figures(self) -> dict:
+        """The rendered figures, keyed by their declared ``name``."""
+        return dict(self._figures)
+
+    def figure(self, name: str | None = None) -> FigureImage:
+        """The rendered figure *name*, or the only one when the study declares a single figure."""
+        if name is None:
+            if len(self._figures) != 1:
+                raise KeyError(f"study declares {len(self._figures)} figures; name one of: {sorted(self._figures)}")
+            return next(iter(self._figures.values()))
+        try:
+            return self._figures[name]
+        except KeyError:
+            raise KeyError(f"no figure {name!r} was rendered; this run drew: {sorted(self._figures)}") from None
+
+    def report(self, *args, **kwargs) -> str:
+        """The study's Methods section — :meth:`SimulationStudy.report`, reached from the run that produced the numbers it describes."""
+        return self.study.report(*args, **kwargs)
+
+    def __repr__(self) -> str:
+        # Relative where that is shorter: this repr is cell output on a docs page, and an absolute path would publish one machine's directory layout and change under every other.
+        root = str(self.results_root)
+        try:
+            rel = os.path.relpath(self.results_root)
+            root = rel if len(rel) < len(root) else root
+        except ValueError:
+            pass
+        members = f", members={sorted(self.members)}" if self.members else ""
+        return f"StudyResult(experiments={self._keys}, figures={sorted(self._figures)}{members}, results_root={root!r})"
 
 
 class SimulationStudy(tvbo_datamodel.SimulationStudy):
@@ -125,6 +267,76 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     def experiment_ids(self) -> list:
         """The declared experiment ids, in recipe order."""
         return [getattr(e, "id", None) for e in (getattr(self, "experiments", None) or [])]
+
+    def run(self, root=None, *, backend: str | None = None, figures: bool = True) -> "StudyResult":
+        """Run the whole study in process — every experiment, its analyses, its declared figures — and return what it produced.
+
+        The Python entry point to what ``tvbo run <recipe>.yaml`` does from a shell, on the same orchestration, so a notebook and the CLI cannot drift apart. Use it wherever the containers are wanted as objects rather than as files: a docs page, a notebook, an embedding application.
+
+        Args:
+            root: The study root this run writes into — containers land in its results directory, figures in its figures directory, and every layer's ``used:`` resolves against it. Defaults to the recipe's own directory, which is what the CLI uses; point it elsewhere to keep a run's outputs out of the tree the recipe is committed in.
+            backend: Backend for each experiment that does not declare its own.
+            figures: Render the study's declared ``figures:`` once the experiments finish.
+
+        A study-of-studies runs through the same branch the CLI takes: every member first, in its own directory, then this study's own content, then the results manifest — and each member's own `StudyResult` comes back under `StudyResult.members`.
+
+        Returns:
+            A [`StudyResult`](#tvbo.classes.study.StudyResult) — the experiments' containers by id, the analyses by name, the rendered figures, and any member studies.
+        """
+        from tvbo.cli.run import _has_members, _run_whole_study, _run_with_members, member_root
+
+        spec = getattr(self, "_source_file", None)
+        if not spec:
+            raise ValueError(
+                "run() needs the recipe this study was loaded from, to resolve its relative paths; "
+                "load it with SimulationStudy.from_file(...) or from_db(...) rather than constructing it in memory."
+            )
+        recipe_dir = Path(spec).resolve().parent
+        base = Path(root).resolve() if root is not None else recipe_dir
+        base.mkdir(parents=True, exist_ok=True)
+
+        if not _has_members(self):
+            _run_whole_study(self, str(spec), None, backend=backend, figures=figures, base=base)
+            return self._collect(base)
+
+        _run_with_members(self, str(spec), None, backend=backend, figures=figures, base=base)
+        members = {}
+        for label, recipe in self.member_recipes(recipe_dir):
+            member = SimulationStudy.from_file(str(recipe))
+            members[label] = member._collect(member_root(base, recipe_dir, recipe) or Path(recipe).resolve().parent)
+        return self._collect(base, members=members)
+
+    def _collect(self, base: Path, members=None) -> "StudyResult":
+        """The `StudyResult` describing what a completed run left under *base*.
+
+        Reading the outcome is separated from causing it so that a member study, whose run this object did not drive, is described by exactly the same code as the study that owns it.
+        """
+        from tvbo.adapters.bsplot import compose_caption
+        from tvbo.cli.figures import figure_outputs
+        from tvbo.cli.run import study_path_for
+        from tvbo.utils import as_list
+
+        fig_dir = study_path_for("figures", base)
+        drawn = []
+        for fig in as_list(getattr(self, "figures", None)):
+            name, image, script = figure_outputs(fig, fig_dir)
+            if image.is_file():
+                drawn.append(
+                    FigureImage(
+                        name=name,
+                        path=image,
+                        script=script if script.is_file() else None,
+                        caption=compose_caption(fig) or None,
+                    )
+                )
+        return StudyResult(
+            self,
+            base,
+            study_path_for("results", base),
+            getattr(self, "experiments", None) or [],
+            drawn,
+            members=members,
+        )
 
     def report(
         self,
