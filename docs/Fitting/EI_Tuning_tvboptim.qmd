@@ -70,11 +70,13 @@ results.figure()
 print(results.figure().caption)
 ```
 
-FIC does what it is asked: mean excitatory gating falls from $0.41$ to $0.23$ against a target of $0.25$ **(a)**. That is a statement about activity, and it buys almost nothing in FC — the resulting correlation with the empirical matrix is $0.18$ **(e)**, which is what a constraint that never sees the target should be expected to give.
+FIC does what it is asked: mean excitatory gating falls from $0.41$ to $0.23$ against a target of $0.25$ **(a)**. That is a statement about activity, not about connectivity, and it buys almost nothing in FC — the resulting correlation with the empirical matrix is $0.18$, and panel **(e)** is what that looks like.
 
-Two numbers in **(b)** are worth keeping apart. The in-loop correlation the FIC+EIB loop tracks climbs from $0.13$ to $0.49$, but that is `fc_inloop`, computed on the loop's sliding window with no skip beyond the settle. Re-evaluated afterwards on a fresh simulation with the recipe's declared $20$-TR skip, the same fit scores $0.26$ **(f)**. The recipe declares those as two observations precisely because they are two quantities; the loop's own score is the optimistic one, and reading it as the fit's quality would overstate this fit by roughly a factor of two.
+The combined loop is where the connectivity is fitted. Its in-loop correlation climbs from $0.13$ to $0.58$ **(b)** while FIC keeps holding activity at target throughout ($0.228$ to $0.238$ across the 2000 iterations), and re-evaluated afterwards on a fresh simulation it reaches $r = 0.699$, RMSE $0.169$ **(f)**. The clean re-evaluation scores *higher* than the loop's own running estimate, which is what should happen: the in-loop figure is computed on a 150-TR sliding window, and a 300 s simulation estimates the same connectivity with far less sampling noise.
 
-The gradient fit reaches $0.84$ on that same clean re-evaluation, with the combined loss falling from $0.32$ to $0.09$ **(c)**. Both routes end up tuning the same two weight matrices, **(g)** and **(h)**, which are the study's actual deliverable: per-edge long-range excitation and feed-forward inhibition, on labelled region axes.
+The gradient route fits the same two weight matrices through the loss instead of through a hand-written update rule, starting from unit weights rather than from the tuned ones. Its combined loss falls from $0.32$ to $0.09$ over 66 steps **(c)** and it reaches $r = 0.839$, RMSE $0.087$ **(g)** — the closest of the three to the empirical matrix. Both routes deliver the same pair of per-edge weight matrices, **(h)** and **(i)**, on labelled region axes.
+
+These match the [original tvboptim workflow](https://github.com/virtual-twin/tvboptim/blob/main/docs/workflows/EI_Tuning.qmd) run end to end on the same connectome, which reports $r = 0.698$ after FIC+EIB and $r = 0.833$ after the gradient fit.
 
 ## See also
 

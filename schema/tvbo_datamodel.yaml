@@ -541,7 +541,7 @@ enums:
         permissible_values:
             independent:
                 description: >-
-                    Each point is initialised independently from the model's initial values (a cold start), so points are order-independent and may be evaluated in parallel (see parallel_mode). Default; today's behaviour.
+                    Points are order-independent and may be evaluated in parallel (see parallel_mode). Default. Independent of each OTHER, which is not the same as each cold-starting: where the experiment declares a transient, the settle is integrated once and every point opens from the state it reached, so what is shared between points is a settled state rather than a running trajectory. That is sound while the swept parameter does not change the approach, and unsound wherever the sweep crosses a bifurcation, since a point then inherits an attractor it would not have reached on its own. A settle per point would make the name literal and is not what the emitter does today; read this as the guarantee it gives rather than the one the word suggests.
             from_previous:
                 description: >-
                     Each point is seeded from the final state of the preceding point, so the trajectory follows the solution branch as the swept parameter changes quasi-statically. Forces sequential, order-dependent execution (emitted as a scan, not a vmap). Used to reach a working point by slowly ramping a parameter (e.g. global coupling) and, with sweep_direction, to expose hysteresis / multistability. Sweep-granularity analogue of InitialStateMethod.from_branch.
