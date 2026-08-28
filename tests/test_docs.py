@@ -116,9 +116,9 @@ for path in qmd_files:
 CONVERT_TIMEOUT_S = 120
 """A `quarto convert` is a format translation and never legitimately takes minutes."""
 
-EXECUTE_TIMEOUT_S = 600
+EXECUTE_TIMEOUT_S = int(os.environ.get("TVBO_DOC_EXECUTE_TIMEOUT_S") or 600)
 SLOW_EXECUTE_TIMEOUT_S = 3600
-"""Wall-clock ceilings on executing one notebook. Generous, because a doc that runs a simulation is allowed to be slow; finite, because one that hangs must not be allowed to stall the run."""
+"""Wall-clock ceilings on executing one notebook. Generous, because a doc that runs a simulation is allowed to be slow; finite, because one that hangs must not be allowed to stall the run. A shard that has declared how long its backend legitimately takes sets ``TVBO_DOC_EXECUTE_TIMEOUT_S``, because a ceiling the caller cannot raise makes its own declaration a dead letter."""
 
 
 def timeout_for(doc_name: str) -> int:
