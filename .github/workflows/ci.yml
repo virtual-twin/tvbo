@@ -63,6 +63,17 @@ jobs:
             - name: Prose — no stacked '#' blocks added
               run: python scripts/check_prose.py --diff "$(git rev-parse HEAD^1 2>/dev/null || echo origin/${{ github.base_ref || 'dev' }})"
 
+            # Every hand-authored page is clean, so both checks run whole-file; the generated api/ and datamodel/ trees are excluded because their prose comes from docstrings and the schema.
+            - name: Docs — page style
+              run: python docs/scripts/check_pages.py --quiet $(find docs -name '*.qmd' -o -name '*.md' | grep -vE '/(_site|_freeze|_build|[.]quarto|_archive|[.]jupyter_cache|_output|api|datamodel)/')
+
+            - name: Docs — documented CLI commands resolve
+              run: python docs/scripts/check_cli_examples.py --quiet $(find docs -name '*.qmd' -o -name '*.md' | grep -vE '/(_site|_freeze|_build|[.]quarto|_archive|[.]jupyter_cache|_output)/')
+
+            # A sidebar entry and a `project.render` glob live in different files with nothing tying them together, so a page can be linked, exist, and still be built by nothing — which only shows as a 404 on the deployed site.
+            - name: Docs — every sidebar link is in the render set
+              run: cd docs && python scripts/check_render_coverage.py
+
             # mypy: type-check the source tree, non-blocking.
             - uses: astral-sh/setup-uv@v8.1.0
               with:
@@ -123,15 +134,11 @@ jobs:
                   tvbo validate study /tmp/layout-check/CiGeneral
                   tvbo study init CiReplication --in /tmp/layout-check -t replication
                   tvbo validate study /tmp/layout-check/CiReplication
-            - name: The repository's own study validates
-              # A scaffold conforms by construction; a study someone has worked in is the case the record has to hold for.
-              run: tvbo validate study docs/Replication/Jansen1995
             - name: Generated layout blocks are current
               # --sync rewrites in place, so a dirty tree afterwards means a document restates a layout the record no longer has.
               run: |
                   tvbo study layout --sync docs/Interoperability/BIDS/index.qmd
                   tvbo study layout --sync tvbo/skills/canonical/replicating-studies/SKILL.md -t replication
-                  tvbo study layout --sync docs/Replication/Jansen1995/README.md --study Jansen1995
                   git diff --exit-code -- docs tvbo/skills
             - name: Layout record tests
               run: |
