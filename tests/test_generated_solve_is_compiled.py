@@ -71,4 +71,4 @@ def test_the_loss_function_still_receives_the_raw_callable():
     Asserted on the template because the loss branch is emitted only for a fitted experiment.
     """
     src = (TEMPLATES / "tvbo-tvboptim-experiment.py.mako").read_text()
-    assert "compute_all_observations(_opt_model_fn(state), state)" in src
+    assert re.search(r"compute_all_observations\(_opt_model_fn\(state\), state[,)]", src)
