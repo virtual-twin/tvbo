@@ -29,6 +29,17 @@ EXEMPT = {
         "_out",
         "dt",
     ): "what an external-class monitor returned, which owns `dt`",
+    ("templates/tvboptim/tvbo-tvboptim-experiment.py.mako", "sol", "dt"): "a tvboptim solution being trimmed, which owns `dt`",
+    (
+        "templates/tvboptim/tvbo-tvboptim-experiment.py.mako",
+        "measured",
+        "dt",
+    ): "a tvboptim solution being rejoined with its settle, which owns `dt`",
+    (
+        "templates/tvboptim/tvbo-tvboptim-observation.py.mako",
+        "result",
+        "dt",
+    ): "the tvboptim solution handed to an external-class monitor, which owns `dt`",
 }
 """``(path, object, alias) -> why THAT object is not a TVBO one``, so the alias is its name.
 

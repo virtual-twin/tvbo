@@ -66,7 +66,7 @@ import jax.numpy as jnp
 
 from tvboptim.types import Space, GridAxis
 from tvboptim.execution import ParallelExecution
-from tvbo.templates.tvboptim.callbacks import resolve_exploration_n_pmap, resolve_exploration_n_vmap   # n_parallel → vmap width and replica count
+from tvbo.templates.tvboptim.callbacks import resolve_exploration_n_pmap, resolve_exploration_n_vmap, stack_grid_cells   # n_parallel → vmap width and replica count; grid cells → one stacked pytree
 
 % for expl in explorations:
 <%
@@ -92,7 +92,6 @@ def run_${expl['name']}_exploration(state, observable_fn):
     grid = setup_${expl['name']}_grid(state)
     _n_vmap = resolve_exploration_n_vmap(${repr(expl['n_parallel'])}, grid.N, observable_fn, state)
     exec = ParallelExecution(observable_fn, grid, n_pmap=resolve_exploration_n_pmap(grid.N, _n_vmap), n_vmap=_n_vmap)
-    results = exec.run()
-    return grid, jnp.stack(results)
+    return grid, stack_grid_cells(exec.run())
 
 % endfor

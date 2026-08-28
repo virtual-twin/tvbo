@@ -8,6 +8,7 @@ from tvbo.templates.tvboptim.utils import (
     edge_label as _edge_label, edge_const as _edge_const, collect_network_edge_arrays,
     node_label as _node_label, node_const as _node_const, collect_network_node_arrays,
     functions_by_name as _functions_by_name, kernel_support_steps as _kernel_support_steps,
+    _assert_transient_on_sample_grid, assert_measured_window_is_stable, emission_period_steps,
 )
 
 model = experiment.dynamics
@@ -433,6 +434,7 @@ def parse_class_reference(class_ref, obs):
     if not class_ref:
         return None
 
+    _warmup = get_attr(class_ref, 'warmup')
     result = {
         'name': get_attr(class_ref, 'name'),
         'module': get_attr(class_ref, 'module'),
@@ -441,6 +443,8 @@ def parse_class_reference(class_ref, obs):
         'call_args': {},
         'accepts_voi': False,
         'extra_imports': [],
+        # Declared, never inferred from the output's length: a class that pads or trims would make that inference wrong and the result would still look like a plausible series.
+        'warmup_steps': int(round(float(to_numeric(_warmup)) / dt)) if _warmup is not None and dt else 0,
     }
 
     # Parse constructor_args
@@ -655,8 +659,8 @@ ${render_recurrence_reduction(red, name, s_idx, dt)}\
         raise ValueError("co-moment reducer: no carry-init shape for state(s) %s" % _missing)
     _init_tuple = ", ".join(_INIT_SHAPE[_s] for _s in _states)
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
-    # progress is accepted and ignored, so every reducer factory shares one call site.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
+    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
     _skip = skip + ${_skip_t}
     def _init(template, n_steps):
         n = template.shape[-1]
@@ -683,40 +687,50 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
 </%def>\
 <%def name="render_convolution_reduction(red, name, s_idx, dt)">\
 <%doc>
-    Streaming HRF-Volterra BOLD reducer (Observation.reduce == 'streaming'). Recasts the post-scan bold pipeline (HRF kernel -> stride decimation -> prepend downsampled transient -> 'valid' HRF convolution -> Volterra scaling -> subsample at the TR) as a block reducer: a downsampled-history ring buffer folds each integration block, and strided_convolve (a backend-abstracted printer primitive) evaluates the 'valid' convolution ONLY at the TR boundaries, so the full trajectory is never held. The portable array ops (subsample / concatenate / strided_convolve / Volterra scaling) are rendered via render_expression; the ring/buffer scaffolding is the backend template's concern, exactly as the recurrence reducer mixes jax.lax.scan with printed exprs. Byte-identical to the materialised pipeline to f64 rounding (strided_convolve is ~1e-12 vs the FFT fftconvolve). The declared settle is the head of the same window, so the ring warms on real signal and `skip` drops the settle's whole BOLD samples at finalize (codegen requires the settle to span whole BOLD periods, so the scan-anchored and measurement-anchored TR grids coincide).
+    Streaming HRF-Volterra BOLD reducer (Observation.reduce == 'streaming'). Recasts the post-scan bold pipeline (HRF kernel -> stride decimation -> prepend downsampled transient -> 'valid' HRF convolution -> Volterra scaling -> subsample at the TR) as a block reducer: a downsampled-history ring buffer folds each integration block, and strided_convolve (a backend-abstracted printer primitive) evaluates the 'valid' convolution ONLY at the TR boundaries, so the full trajectory is never held. The portable array ops (subsample / concatenate / strided_convolve / Volterra scaling) are rendered via render_expression; the ring/buffer scaffolding is the backend template's concern, exactly as the recurrence reducer mixes jax.lax.scan with printed exprs. Byte-identical to the materialised pipeline to f64 rounding (strided_convolve is ~1e-12 vs the FFT fftconvolve). The declared settle is the head of the same window, so the ring warms on real signal and the settle's own BOLD samples are dropped at finalize.
+
+    The TR grid is anchored to MEASUREMENT: sample m covers `(skip + m*_ds*_tr, skip + (m+1)*_ds*_tr]` whatever the settle is, so a recipe never has to move its `transient_time` to suit the reducer. Two static offsets carry that -- the decimation phase, and `_phase` extra ring rows that shift the strided convolution's own grid by the part of a TR the settle leaves over. Both are zero where the settle spans whole BOLD periods, which is the only case codegen used to accept, so nothing already streaming moves.
 </%doc>\
 <%
     from tvbo.codegen import render_expression
-    _cv = ['_block_voi', '_ds', '_ring', '_block_ds', '_signal', '_kernel', '_tr', '_conv', 'k_1', 'V_0']
+    _cv = ['_block_voi', '_ds', '_off', '_ring', '_block_ds', '_signal', '_kernel', '_tr', '_conv', 'k_1', 'V_0']
     _rc = lambda e: render_expression(e, format='jax', parameters=_cv)
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
+_warmup_${name} = ${red['warmup_steps']}
+"""Raw integration steps of history this reducer's 'valid' convolution consumes before its first sample.
+
+Module level, and a literal rather than a shape read off the kernel, because a caller has to know it before anything is built: it is what a settle scan's trajectory is trimmed to, so warming the ring costs the kernel's support rather than the whole settle. Read from the generator's own `time_range` in time, so it is the same span whatever grid the kernel is sampled on.
+"""
+
+
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
     k_1 = ${repr(red['k_1'])}
     V_0 = ${repr(red['V_0'])}
     _kernel = ${red['kernel_call']}   # HRF kernel array [K] (the pipeline's kernel function)
     _K = _kernel.shape[0]
     _ds = ${red['ds_steps']}          # decimation stride (raw integration steps / downsampled sample)
     _tr = ${red['tr_stride']}         # TR stride (downsampled samples / BOLD sample)
-    # The settle is folded in-band so the HRF warm-up is real signal, then its whole BOLD samples are dropped at finalize; `skip` is a multiple of _ds*_tr (enforced at codegen), so the scan-anchored and measurement-anchored TR grids coincide.
-    _skip_bold = skip // (_ds * _tr)
+    _off, _ds_skip = _measured_grid(skip, _ds)
+    # The settle the TR grid has to clear, and the leading BOLD samples that lie inside it. `_phase` rows of ring beyond the kernel shift the strided convolution onto the measured grid, so the first reported sample ends one whole TR after t=0.
+    _phase = (-_ds_skip) % _tr
+    _skip_bold = -(-_ds_skip // _tr)
     def _init(template, n_steps):
         n = template.shape[-1]
-        _n_ds = len(range(_ds - 1, n_steps, _ds))     # downsampled samples over the run
-        _n_bold = len(range(_tr, _n_ds + 1, _tr))     # BOLD samples at TR boundaries
-        # A run whose window opens cold has no preceding signal; a declared settle supplies it in-band.
-        _ring0 = jnp.zeros((_K, n))
+        _n_ds = len(range(_off, n_steps, _ds))        # downsampled samples over the run
+        _n_bold = (_n_ds + _phase) // _tr             # BOLD samples at TR boundaries
+        _ring0 = _warm_ring(settle, skip, s_var, _ds, _K + _phase, n)
         return (_ring0, jnp.zeros((_n_bold, n)), jnp.array(0))
     def _update(acc, block):
         _ring, _bold, _ds_count = acc
         _block_voi = block[:, s_var, :]                     # source column -> [block_len, n]
-        _block_ds = ${_rc("subsample(_block_voi, _ds - 1, _ds)")}   # SubSampling decimation
+        _block_ds = ${_rc("subsample(_block_voi, _off, _ds)")}      # SubSampling decimation
         _m_b = _block_ds.shape[0]
-        _signal = ${_rc("concatenate(_ring, _block_ds)")}          # [_K + m_b, n]
+        _signal = ${_rc("concatenate(_ring, _block_ds)")}          # [_K + _phase + m_b, n]
         _conv = ${_rc("strided_convolve(_signal, _kernel, _tr)")}  # 'valid' conv at TR boundaries
         _samples = ${_rc("k_1 * V_0 * (_conv - 1.0)")}             # Volterra BOLD scaling
         _start = _ds_count // _tr
         _bold = jax.lax.dynamic_update_slice(_bold, _samples, (_start, 0))
-        _ring = _signal[-_K:]
+        _ring = _signal[-(_K + _phase):]
         _ds_next = _ds_count + _m_b
         if progress:
             # Fires from inside the compiled scan so a long fold streams live; the plain-bool guard keeps a vmapped grid from flooding.
@@ -737,23 +751,24 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
 <%def name="render_stride_reduction(red, name, s_idx, dt)">\
 <%doc>
     Streaming stride reducer (Observation.reduce == 'streaming' over a pure decimation pipeline). Keeps every _ds-th sample of the source column and writes it straight into a preallocated buffer, so a run that reports 1/_ds of its samples never materialises the other (_ds - 1)/_ds. Bit-identical to the materialised SubSampling: the kept samples are the same samples. Block boundaries are multiples of _ds (streaming_post_eval_plan), so a block's local decimation grid is the global one and the write slot is exact.
+
+    The grid is anchored to MEASUREMENT, not to the scan: sample m covers the steps `(skip + m*_ds, skip + (m+1)*_ds]` and is taken at the last of them, so the decimation phase is `(skip - 1) % _ds` rather than `_ds - 1`. Where the settle spans whole periods the two coincide and nothing moves; where it does not, this is what keeps a reported timestamp from carrying a fractional-period offset that changes whenever `transient_time` does.
 </%doc>\
 <%
     from tvbo.codegen import render_expression
-    _rc = lambda e: render_expression(e, format='jax', parameters=['_block_voi', '_ds'])
+    _rc = lambda e: render_expression(e, format='jax', parameters=['_block_voi', '_ds', '_off'])
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
-    # progress is accepted and ignored, so every reducer factory shares one call site.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
+    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
     _ds = ${red['ds_steps']}           # decimation stride (integration steps per kept sample)
-    # `skip` integration steps of settle at the head of the window: this is how many of them survive the stride, and they go no further.
-    _skip_n = max(0, -(-(skip + 1) // _ds) - 1) if skip else 0
+    _off, _skip_n = _measured_grid(skip, _ds)
     def _init(template, n_steps):
         n = template.shape[-1]
-        return (jnp.zeros((len(range(_ds - 1, n_steps, _ds)), n)), jnp.array(0))
+        return (jnp.zeros((len(range(_off, n_steps, _ds)), n)), jnp.array(0))
     def _update(acc, block):
         _out, _count = acc
         _block_voi = block[:, s_var, :]
-        _samples = ${_rc("subsample(_block_voi, _ds - 1, _ds)")}
+        _samples = ${_rc("subsample(_block_voi, _off, _ds)")}
         _out = jax.lax.dynamic_update_slice(_out, _samples, (_count // _ds, 0))
         return (_out, _count + block.shape[0])
     def _finalize(acc):
@@ -830,8 +845,8 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
     _mem_ini = "".join("jnp.full((n,), %r), " % s['init'] for s in _mem)
     _ind = ' ' * 12   # the scan-step body's indentation, shared by the emitted fragments
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
-    # progress is accepted and ignored, so every reducer factory shares one call site.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
+    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
 % if _rpars:
     # Bound by name in the closure the init/update/finalize triple shares: a literal inlines, a sourced operator is read once so a large array never enters this source.
 % for _pname, _pdef in _rpars.items():
@@ -977,8 +992,8 @@ ${render_observer_states(red['states'], _jc, _ind)}\
     _gate = ('real_face_mask' in _rpars) and all(('pgn%d' % _k) in _dvnames for _k in range(3))
     _pthr = 0.06
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False):
-    # progress is accepted and ignored, so every reducer factory shares one call site.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
+    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
 % if _rpars:
     # A literal inlines and a sourced operator is read once, so a large array never enters this source.
 % for _pname, _pdef in _rpars.items():
@@ -1100,6 +1115,54 @@ def _load_constant(path, key):
     return jnp.asarray(LazyArrayStore(resolve_staged_path(path), {}).read_dataset(key))
 
 
+${render_clock_helpers()}\
+<%def name="render_clock_helpers()">\
+def _measured_grid(skip, period):
+    """Where an output grid anchored to MEASUREMENT falls on a buffer written from the scan.
+
+    A streaming reducer folds one window whose leading ``skip`` steps are the declared settle, and reports a series over what follows. Sample m of that series covers the steps ``(skip + m*period, skip + (m+1)*period]`` and is stamped at the last of them, so the grid it sits on is the measured one: its phase is ``(skip - 1) % period``, and it coincides with the scan-anchored phase ``period - 1`` exactly when the settle spans whole periods.
+
+    Anchoring here rather than requiring alignment is what lets a recipe declare its own settle: a settle that is not a whole number of output samples used to offset every reported timestamp by a fraction of a period, silently, and had to be refused. Returns the grid's phase in integration steps and the number of its samples that fall inside the settle -- the latter rounded up, because a sample straddling t=0 covers settle as well as measurement and belongs to neither window.
+    """
+    return (skip - 1) % period, -(-skip // period)
+
+
+def _warmed(monitor, settle):
+    """A monitor warmed on the settle that ran before its window, for a caller that integrated the two as separate scans.
+
+    A kernel observation convolves against its own past, so what it reports over the first support-length of its window is decided by what preceded that window. Where the settle is the head of the same scan the monitor eats it in-band and needs nothing from anyone. Where the settle is a scan of its own, that past exists but is not in the window the monitor is handed, and the convolution opens on zeros instead — the same shape, finite throughout, correctly stamped, and wrong by the whole warm-up. Measured on RWW's HRF: the first 20 TRs, which is exactly the kernel's 20000 ms support, out by up to 29%.
+
+    Continuity here is a fact and not a coincidence: the measured window continues the settle step for step, so the settle's tail IS the signal the kernel would have convolved against had the two been one scan. That is what separates this caller from a tuning loop, which is handed successive short windows it does not continue and must carry its warm-up from the window before it instead — the distinction ``carry_warmup`` exists to keep, and the reason a settle is a legitimate source here where a handed-over ``history=`` was not.
+
+    A monitor whose pipeline has no kernel carries no ``carry_warmup`` and is returned untouched, as is any monitor when there is no settle to warm on.
+    """
+    if settle is None or not hasattr(monitor, "carry_warmup"):
+        return monitor
+    return monitor.carry_warmup(settle)
+
+
+def _warm_ring(settle, skip, s_var, ds, rows, n):
+    """The decimated tail of a settle that ran before the measured window, as a ring a 'valid' convolution starts full.
+
+    A kernel-bearing reducer reports its first sample only once it holds `rows` decimated samples of history. Started cold that history is zeros, and every sample inside the kernel's support is wrong by the whole of it -- 28.77% on the first 20 s of an RWW BOLD run, which is exactly the kernel's own length. Decimation takes the last raw step of each bin, so row j sits `(rows - 1 - j) * ds` steps before the measured window opens and the last row is the step immediately before it. A settle too short to supply them all leaves the earliest rows zero, which is the cold answer for precisely the span no settle covered.
+    """
+    if settle is None:
+        return jnp.zeros((rows, n))
+    if skip:
+        # The two ways of supplying the settle are exclusive: `skip` says it is the head of the window being folded, `settle` that it is a scan of its own. Both means the same signal warms the ring and is folded again, so every reported sample carries the settle twice — the same shape, finite, correctly stamped, and wrong.
+        raise ValueError(
+            f"a reducer was given both skip={skip} and a settle to warm on. skip means the settle is "
+            "the head of the window being folded; settle means it ran as a separate scan. Pass one."
+        )
+    _tail = settle[:, s_var, :]
+    _need = (rows - 1) * ds + 1
+    _short = _need - _tail.shape[0]
+    if _short > 0:
+        _tail = jnp.concatenate([jnp.zeros((_short, n), _tail.dtype), _tail])
+    return _tail[-_need:][::ds]
+</%def>\
+
+
 % if network_obs_keys and bids_dir:
 from tvbo.classes.network import Network as _TvboNetwork
 
@@ -1200,7 +1263,10 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
     # The settle's share of THIS monitor's output grid, counted from the declared reporting period rather than from a time axis that is a tracer under jit. A period below one step, or one that is not a number, reports on the integration grid.
     _ext_period = to_numeric(constructor_args.get('period') or obs.get('period'))
     _ext_grid = max(1, int(round(float(_ext_period) / dt))) if isinstance(_ext_period, (int, float)) else 1
-    _ext_cut = (n_transient // _ext_grid) if n_transient else 0
+    # An external class is a black box, so which of the two settle conventions applies is DECLARED. `warmup` present means kernel-bearing: the cut is taken at the input, the support stays in front of t=0 for the class to eat, and nothing is taken off the output. Absent means memoryless -- one output per period with no history behind it -- and the settle's own output samples are dropped, which needs the settle to span whole periods.
+    _ext_warmup = int(class_ref.get('warmup_steps') or 0)
+    if n_transient and not _ext_warmup:
+        _assert_transient_on_sample_grid(experiment, obs_name, _ext_grid, 'monitor')
 
     # Build constructor kwargs string
     init_kwargs = []
@@ -1246,16 +1312,36 @@ class ${class_name}(eqx.Module):
     def __call__(self, result):
         """Process the run, reporting only its measured part.
 
-        The settle is the head of the same window, so the monitor's own warm-up is real signal; the ${_ext_cut} output samples it produced over the settle are dropped here. A window that carries no settle has nothing to drop, which its own length is what says.
+        The settle is the head of the same window, so the monitor's own warm-up is real signal. How much settle this window carries is read from its own length, not assumed of it, so a caller handing over a short window -- a fitting loop's tuning window, already settled -- has nothing cut from it.
         """
-        _out = self._monitor(result)
-% if _ext_cut:
+% if not _ext_warmup and not n_transient:
+        return self._monitor(result)
+% elif _ext_warmup:
+        # Kernel-bearing (warmup declared): the class keeps its ${_ext_warmup}-step support in front of t = 0 and eats it, so its first output is already the first measured sample and there is no arithmetic on the output at all. A settle too short to fill the support opens the class on zeros, exactly as it would at t = 0.
+<% assert_measured_window_is_stable(experiment, obs_name) %>\
         _data = result.data if hasattr(result, 'data') else result
-        if getattr(_out, "ts", None) is None or _data.shape[0] <= ${n_measured}:
+        _n_settle = max(0, _data.shape[0] - ${n_measured})
+        _cut = max(0, _n_settle - ${_ext_warmup})
+        _pad = ${_ext_warmup} - min(_n_settle, ${_ext_warmup})
+        _win, _wt = _data[_cut:], (result.time[_cut:] if getattr(result, "time", None) is not None else None)
+        if _pad:
+            _win = jnp.concatenate([jnp.zeros((_pad,) + _win.shape[1:], _win.dtype), _win], axis=0)
+            if _wt is not None:
+                _wt = jnp.concatenate([_wt[:1] - jnp.arange(_pad, 0, -1) * ${dt}, _wt], axis=0)
+        _out = self._monitor(type(result)(_wt, _win, dt=getattr(result, "dt", ${dt}), variable_names=getattr(result, "variable_names", None)))
+        if getattr(_out, "ts", None) is None:
             return _out
-        return type(_out)(_out.ts[${_ext_cut}:], _out.ys[${_ext_cut}:], dt=getattr(_out, "dt", None), variable_names=getattr(_out, "variable_names", None))
+        # The class emitted over the measured window alone, so it is stamped on the measured clock: sample m at the end of the period it covers.
+        return type(_out)((jnp.arange(_out.ys.shape[0]) + 1) * ${_ext_grid * dt}, _out.ys,
+                          dt=getattr(_out, "dt", None), variable_names=getattr(_out, "variable_names", None))
 % else:
-        return _out
+        # Memoryless (no warmup declared): one output per period with nothing behind it, so the settle's own output samples are the ones to drop. Codegen has required the settle to span whole periods, so this cut lands on a sample boundary.
+        _out = self._monitor(result)
+        _data = result.data if hasattr(result, 'data') else result
+        _cut = max(0, _data.shape[0] - ${n_measured}) // ${_ext_grid}
+        if getattr(_out, "ts", None) is None or not _cut:
+            return _out
+        return type(_out)(_out.ts[_cut:], _out.ys[_cut:], dt=getattr(_out, "dt", None), variable_names=getattr(_out, "variable_names", None))
 % endif
 
 % elif obs['reduction'] is not None:
@@ -1270,10 +1356,10 @@ class ${class_name}(AbstractMonitor):
         self.dt = dt
 
     def __call__(self, result):
-        # One block over the whole window equals the value the grid streams: the settle warms the HRF ring in-band and its BOLD samples are dropped at finalize. How much settle there is to drop is read from the window handed in, so a caller whose window carries none has nothing dropped.
+        # One block over the whole window equals the value the grid streams: the settle warms the HRF ring in-band and its BOLD samples are dropped at finalize. The settle is DERIVED from the window handed in rather than declared, because this call holds that window: a caller integrating a shorter one -- a fitting loop's tuning window -- would otherwise be cut by a settle it never ran.
         _data = result.data if hasattr(result, 'data') else result
         _init, _update, _finalize = _reduction_${obs_name}(
-            s_var=${state_idx}, dt=self.dt, skip=${n_transient} if _data.shape[0] > ${n_measured} else 0)
+            s_var=${state_idx}, dt=self.dt, skip=max(0, _data.shape[0] - ${n_measured}))
         _acc = _init(_data[0], _data.shape[0])
         _acc = _update(_acc, _data)
         return _finalize(_acc)
@@ -1289,10 +1375,10 @@ class ${class_name}(AbstractMonitor):
         self.dt = dt
 
     def __call__(self, result):
-        # One big block over the whole window == the post-scan reduction, less the settle. How much settle there is to drop is read from the window handed in, so a caller whose window carries none has nothing dropped.
+        # One big block over the whole window == the post-scan reduction, less the settle. The settle is DERIVED from the window handed in rather than declared, because this call holds that window: a caller integrating a shorter one -- a fitting loop's tuning window -- would otherwise be cut by a settle it never ran.
         _data = result.data if hasattr(result, 'data') else result
         _init, _update, _finalize = _reduction_${obs_name}(
-            s_var=${state_idx}, dt=self.dt, skip=${n_transient} if _data.shape[0] > ${n_measured} else 0)
+            s_var=${state_idx}, dt=self.dt, skip=max(0, _data.shape[0] - ${n_measured}))
         _acc = _init(_data[0], _data.shape[0])
         _acc = _update(_acc, _data)
         return _finalize(_acc)
@@ -1464,6 +1550,7 @@ class ${class_name}(AbstractMonitor):
 % endif
         _time = result.time
 % if _takes_settle:
+<% assert_measured_window_is_stable(experiment, obs_name) %>\
         # The settle THIS window carries: its own length, less the measured window the recipe declares. Read from the shape, which is known while tracing, so an algorithm's tuning window — shorter than the measurement, and settled already — is seen to carry none.
         _n_settle = max(0, _data.shape[0] - ${n_measured})
 % if _warmup_steps:
@@ -1774,8 +1861,39 @@ class ${class_name}(AbstractMonitor):
     # Lets the exploration grid stream recorded observables with no trajectory held.
     _streaming = [(o['name'], resolve_var_index(o['source'], o['name']))
                   for o in obs_list if o.get('reduction') is not None]
+    _warmed_streams = [o['name'] for o in obs_list
+                       if (o.get('reduction') or {}).get('kind') == 'convolution']
 %>
 % if _streaming:
+
+
+_STREAMING_PERIODS = {
+% for _sname, _sidx in _streaming:
+    ${repr(_sname)}: ${repr(emission_period_steps(next(o['reduction'] for o in obs_list if o['name'] == _sname)))},
+% endfor
+}
+"""Integration steps between consecutive samples of each streamed observable, or ``None`` where it folds time away.
+
+What a caller stamps its values with. A streamed reducer returns bare arrays -- it has no `ts` the way a materialised `ObservationResult` does -- so the grid has to come from the reduction that produced them, and deriving it a second time at the packing site is how a reported timestamp comes to disagree with the sample it labels.
+"""
+
+
+def _stream_times(name, n_samples, dt):
+    """The measurement-clock timestamp of each of a streamed observable's samples, or ``None`` where it has no time axis.
+
+    A sample covers the period that ENDS at its timestamp: sample m spans ``(m*period, (m+1)*period]``, so the first lands one whole period after t = 0 whatever settle preceded the window. Same rule the pipeline monitor's own axis follows, which is what lets a streamed observable and a materialised one be compared sample for sample.
+    """
+    _period = _STREAMING_PERIODS.get(name)
+    if _period is None:
+        return None
+    return (jnp.arange(int(n_samples)) + 1) * _period * dt
+
+
+_STREAMING_WARMUP_STEPS = max([${", ".join("_warmup_%s" % _n for _n in _warmed_streams) or "0"}])
+"""Raw integration steps of settle any streaming reducer here consumes as warm-up.
+
+Trim a settle scan's trajectory to this before handing it to the reducers: warming the ring costs the longest kernel's support, never the whole settle, and a caller that trims to it cannot starve one reducer to fit another. Zero when nothing streamed carries a kernel.
+"""
 
 
 def _compose_reducers(*reducers):

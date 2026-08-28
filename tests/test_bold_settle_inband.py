@@ -213,3 +213,26 @@ def test_a_window_that_carries_no_warmup_opens_on_zeros():
 
     assert cold.shape == warm.shape == (1, 1, N_NODES)
     assert float(np.max(np.abs(cold - warm))) > 1e-6, "the carried warm-up left no trace on the report"
+
+
+def test_the_settle_reaches_only_the_reports_first_support_samples():
+    """A disturbance in the settle moves the opening samples and NOTHING after them.
+
+    The complement of the invariance above, on the output side: that one bounds how far BACK the settle reaches, this one how far FORWARD it reaches into the report. The bound is the kernel's own support in samples, and it is what makes a wrong warm-up diagnosable rather than diffuse — the 29 % a cold ring cost was confined to exactly the first 20 TRs and agreed to 1.6e-15 after, which is how it was found at all. A pipeline that smeared the settle across the whole report would have shown the same total error and given nothing to look at.
+    """
+    transient_ms, duration_ms = 60000.0, 40000.0
+    settle_steps = int(round(transient_ms / DT))
+    measured_steps = int(round(duration_ms / DT))
+    monitor = _bold_monitor(transient_ms, duration_ms)
+
+    base = _window(settle_steps, measured_steps, seed=0)
+    disturbed = _Trajectory(base.data.at[settle_steps - 1].add(1.0), base.ts)
+    delta = np.abs(np.asarray(monitor(base).data) - np.asarray(monitor(disturbed).data))
+
+    support = int(np.ceil(KERNEL_MS / TR_MS))
+    assert delta.shape[0] > support, "the measured window must outlast the support for there to be an outside"
+    assert delta[:support].max() > 1e-6, "the settle left no trace where the kernel reaches"
+    assert delta[support:].max() < 1e-12 * delta[:support].max(), (
+        f"the settle reached sample {int(np.argmax(delta[support:].max(axis=(1, 2)) > 0)) + support}, "
+        f"past the {support}-sample support its kernel spans"
+    )

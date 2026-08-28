@@ -17,7 +17,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from mako.template import Template
 
 jax.config.update("jax_enable_x64", True)
 
@@ -32,7 +31,7 @@ from tvbo.datamodel.schema import (
 )
 from tvbo.templates.tvboptim.utils import resolve_reduction
 
-_TEMPLATE = "tvbo/templates/tvboptim/tvbo-tvboptim-observation.py.mako"
+from .reducer_harness import OBS_TEMPLATE, reducer_namespace
 
 
 def _surrogate_observer(perms, w, *, family_wise=False, direction="greater_equal"):
@@ -69,11 +68,11 @@ def _surrogate_observer(perms, w, *, family_wise=False, direction="greater_equal
 
 
 def _render(red, name="obs"):
-    return Template(filename=_TEMPLATE).get_def("render_reduction").render(red=red, name=name, s_idx=0, dt=1.0)
+    return OBS_TEMPLATE.get_def("render_reduction").render(red=red, name=name, s_idx=0, dt=1.0)
 
 
 def _factory(red, name="obs"):
-    ns = {"jnp": jnp, "jax": jax}
+    ns = reducer_namespace()
     exec(compile(_render(red, name), "<surrogate-reducer>", "exec"), ns)
     return ns[f"_reduction_{name}"]
 

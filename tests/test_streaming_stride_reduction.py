@@ -14,7 +14,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from mako.template import Template
 
 jax.config.update("jax_enable_x64", True)
 
@@ -26,7 +25,7 @@ from tvbo.templates.tvboptim.utils import (
     streaming_post_eval_plan,
 )
 
-_OBS_TEMPLATE = Template(filename="tvbo/templates/tvboptim/tvbo-tvboptim-observation.py.mako")
+from .reducer_harness import OBS_TEMPLATE, reducer_namespace
 
 
 class _Exp:
@@ -146,13 +145,13 @@ def test_an_experiment_declaring_no_observations_has_no_dims():
 
 
 def _emit_reducer(ds_steps):
-    src = _OBS_TEMPLATE.get_def("render_stride_reduction").render(
+    src = OBS_TEMPLATE.get_def("render_stride_reduction").render(
         red={"kind": "stride", "source": "BOLD", "ds_steps": ds_steps},
         name="bold_frames",
         s_idx=0,
         dt=1.0,
     )
-    ns = {"jnp": jnp, "jax": jax}
+    ns = reducer_namespace()
     exec(compile(src, "<reducer>", "exec"), ns)
     return ns["_reduction_bold_frames"]
 
@@ -218,16 +217,18 @@ def test_reducer_handles_a_partial_tail_block(n_steps):
     "skip, ds, n_steps, kept",
     [
         (0, 25, 300, 12),  # no transient: every strided sample
-        (100, 25, 300, 8),  # skip on a stride boundary
-        (124, 25, 300, 8),  # the sample AT skip survives
-        (125, 25, 300, 7),  # skip past it, one fewer
+        (100, 25, 300, 8),  # a settle spanning whole samples
+        (124, 25, 300, 7),  # a settle ending mid-sample: the straddler covers both windows and is kept by neither
+        (125, 25, 300, 7),  # one step later the straddler closes inside the settle, and the count is the same
         (200_000, 1440, 1_928_000, 1200),  # the Pang2023 resting sweep
     ],
 )
 def test_skip_drops_exactly_the_transient_samples(skip, ds, n_steps, kept):
-    """`skip` is honoured, not silently ignored.
+    """`skip` is honoured, not silently ignored, and what survives is `(n_steps - skip) // ds` whatever the settle's phase.
 
     A sweep folds transient and main run into ONE window and asks the reducer to drop the transient; the single-run path integrates them separately. When `skip` was accepted and discarded, a swept cell came back with `skip/ds` extra leading samples — 1,338 BOLD frames where the same experiment run alone gives 1,200 — and nothing raised.
+
+    The grid is anchored to measurement, so a settle that is not a whole number of samples does not shift the count by its remainder: sample m covers `(skip + m*ds, skip + (m+1)*ds]` and the first one closes a full stride after t=0. The two middle rows straddle that boundary from either side and agree, which is what says the anchoring holds rather than the phase happening to line up.
     """
     init, update, finalize = _emit_reducer(ds)(skip=skip)
     data = jnp.zeros((n_steps, 1, 2))
@@ -238,6 +239,7 @@ def test_skip_drops_exactly_the_transient_samples(skip, ds, n_steps, kept):
     got = np.asarray(finalize(acc))
 
     assert got.shape[0] == kept
+    assert kept == (n_steps - skip) // ds, "the expected counts are the rule, not five separately-derived numbers"
 
 
 def test_skip_keeps_the_post_transient_samples_themselves():

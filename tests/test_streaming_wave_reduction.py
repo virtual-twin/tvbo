@@ -17,13 +17,12 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from mako.template import Template
 
 jax.config.update("jax_enable_x64", True)
 
 from tvbo.parse.expression import parse_eq
 
-_TEMPLATE = "tvbo/templates/tvboptim/tvbo-tvboptim-observation.py.mako"
+from .reducer_harness import OBS_TEMPLATE, reducer_namespace
 
 
 def _wave_red(P, period=5):
@@ -49,8 +48,8 @@ def _wave_red(P, period=5):
 
 
 def _factory(red, name="wave"):
-    src = Template(filename=_TEMPLATE).get_def("render_reduction").render(red=red, name=name, s_idx=0, dt=1.0)
-    ns = {"jnp": jnp, "jax": jax}
+    src = OBS_TEMPLATE.get_def("render_reduction").render(red=red, name=name, s_idx=0, dt=1.0)
+    ns = reducer_namespace()
     exec(compile(src, "<wave-reducer>", "exec"), ns)
     return ns[f"_reduction_{name}"], src
 

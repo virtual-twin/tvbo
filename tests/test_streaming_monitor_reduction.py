@@ -18,11 +18,11 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from mako.template import Template
 
 jax.config.update("jax_enable_x64", True)
 
 from tvbo.classes.observation import Observation as CuratedObservation
+from tvbo.data.types import Bunch
 from tvbo.datamodel.schema import (
     DerivedParameter,
     DerivedVariable,
@@ -33,13 +33,15 @@ from tvbo.datamodel.schema import (
     StateVariable,
 )
 from tvbo.templates.tvboptim.utils import (
+    _assert_transient_on_sample_grid,
+    assert_measured_window_is_stable,
     observation_dims,
     reduction_dims,
     resolve_reduction,
     streaming_post_eval_plan,
 )
 
-_OBS_TEMPLATE = Template(filename="tvbo/templates/tvboptim/tvbo-tvboptim-observation.py.mako")
+from .reducer_harness import OBS_TEMPLATE, reducer_namespace
 
 
 class _Exp:
@@ -194,13 +196,13 @@ def _bw_reducer(period_steps, dt=1.0, n_var=1):
     exp = _Exp(step_size=dt)
     red = resolve_reduction(obs, exp)
     red["period_steps"] = period_steps
-    src = _OBS_TEMPLATE.get_def("render_recurrence_reduction").render(
+    src = OBS_TEMPLATE.get_def("render_recurrence_reduction").render(
         red=red,
         name="bold",
         s_idx=0,
         dt=dt,
     )
-    ns = {"jnp": jnp, "jax": jax}
+    ns = reducer_namespace()
     exec(compile(src, "<reducer>", "exec"), ns)
     return ns["_reduction_bold"]
 
@@ -338,7 +340,7 @@ def test_derived_parameters_are_bound_once_outside_the_scan():
     assert [d["name"] for d in red["derived_constants"]] == ["dt_s", "k1", "k2", "k3"]
     assert red["derived"] == [] or all(d["name"] == "bold_signal" for d in red["derived"])
 
-    src = _OBS_TEMPLATE.get_def("render_recurrence_reduction").render(red=red, name="bold", s_idx=0, dt=1.0)
+    src = OBS_TEMPLATE.get_def("render_recurrence_reduction").render(red=red, name="bold", s_idx=0, dt=1.0)
     body = src.split("def _step(")[1]
     assert "k1 = " not in body and "dt_s = " not in body
 
@@ -350,3 +352,87 @@ def test_a_derived_parameter_that_varies_per_step_is_rejected():
     obs.dynamics.derived_parameters["bad"] = DerivedParameter(name="bad", equation=Equation(rhs="acc * 2"))
     with pytest.raises(ValueError, match="which vary per step"):
         resolve_reduction(obs, _Exp())
+
+
+# ── The settle has to land on the sample grid a scan-anchored consumer emits on ────
+
+
+def _settled_exp(step_size, transient_time):
+    """An experiment stub carrying both halves of the window the resolver checks."""
+    exp = _Exp(step_size=step_size)
+    exp.integration.transient_time = transient_time
+    return exp
+
+
+@pytest.mark.parametrize(
+    "transient_time, aligned",
+    [(100.0, True), (0.0, True), (110.0, False), (99.0, False)],
+)
+def test_a_settle_off_the_monitor_sample_grid_is_refused(transient_time, aligned):
+    """A monitor decimates on scan boundaries, so a settle that is not whole samples offsets every reported timestamp.
+
+    It is refused rather than rounded because the offset is a fraction of a period that changes silently whenever `transient_time` does — the reported series would still have the right shape and the wrong times, and the recipe is the only place that can decide which settle it meant.
+    """
+    obs = _observer(period=25.0)
+    exp = _settled_exp(step_size=1.0, transient_time=transient_time)
+    if aligned:
+        assert resolve_reduction(obs, exp)["period_steps"] == 25
+        return
+    with pytest.raises(ValueError, match="not a whole number"):
+        resolve_reduction(obs, exp)
+
+
+def test_the_refusal_offers_the_two_settles_that_would_work():
+    """A message that only says no leaves the modeller to redo the arithmetic the guard just did."""
+    obs = _observer(period=25.0)
+    with pytest.raises(ValueError, match=r"nearest are 100 and 125"):
+        resolve_reduction(obs, _settled_exp(step_size=1.0, transient_time=110.0))
+
+
+@pytest.mark.parametrize("kind", ["monitor", "wave"])
+def test_the_refusal_names_the_consumer_that_will_emit(kind):
+    """The same `period` resolves to a monitor or, under a `partition`, to a wave reducer; both decimate on scan boundaries and both are guarded here.
+
+    Checked against the guard rather than through a resolved observation because building a partitioned one needs a produced gather table, and what is under test is which consumer the message names — telling a modeller their wave detector is misaligned as a "monitor" sends them looking through an observation they do not have.
+    """
+    with pytest.raises(ValueError, match=f"{kind} samples"):
+        _assert_transient_on_sample_grid(_settled_exp(step_size=1.0, transient_time=110.0), "obs", 25, kind)
+
+
+def test_an_aligned_settle_passes_whatever_the_consumer():
+    """The guard is silent where the settle spans whole samples, so it cannot be what refuses a valid recipe."""
+    for kind in ("monitor", "wave"):
+        _assert_transient_on_sample_grid(_settled_exp(step_size=1.0, transient_time=100.0), "obs", 25, kind)
+
+
+def test_an_optimization_that_re_times_the_scan_is_refused():
+    """A monitor tells settle from measurement by subtraction, so the window it subtracts against has to be the one that runs.
+
+    An `optimization.integration` override re-prepares the scan with its own duration and step size; a longer or finer-stepped tuning window then carries an excess that is not settle, and the monitor would cut real measurement off its front. Shape is the only signal a monitor has, so the two cases cannot be told apart from inside it — which is why this is refused at render rather than handled at runtime.
+    """
+    exp = _Exp(step_size=1.0)
+    exp.integration.duration = 1000.0
+    exp.optimization = [Bunch(integration=Integrator(step_size=1.0, duration=4000.0))]
+    with pytest.raises(ValueError, match="overrides duration"):
+        assert_measured_window_is_stable(exp, "obs")
+
+
+def test_an_optimization_on_the_same_grid_is_allowed():
+    """An override that restates the grid, or none at all, leaves the subtraction sound and must not be refused."""
+    exp = _Exp(step_size=1.0)
+    exp.integration.duration = 1000.0
+    for override in (None, Integrator(step_size=1.0, duration=1000.0)):
+        exp.optimization = [Bunch(integration=override)]
+        assert_measured_window_is_stable(exp, "obs")  # returns None; the assertion is that it does not raise
+
+
+def test_an_override_that_names_only_a_method_still_re_times_the_scan():
+    """The schema fills every slot an override does not name, so `{method: Heun}` carries a default step size — and the emitted code prepares with it.
+
+    Refusing it is not pedantry: `opt_dt` reads that defaulted value, so the tuning scan really does run on a different grid than the one the monitor subtracts against. The message says where the number came from, because nobody who wrote `{method: Heun}` is looking for a step size.
+    """
+    exp = _Exp(step_size=1.0)
+    exp.integration.duration = 1000.0
+    exp.optimization = [Bunch(integration=Integrator(method="Heun"))]
+    with pytest.raises(ValueError, match="does not name"):
+        assert_measured_window_is_stable(exp, "obs")
