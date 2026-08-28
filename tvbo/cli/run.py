@@ -334,7 +334,7 @@ def run(
             _apply_metadata_overrides(exp, set_)
             _apply_axis_pins(exp, pin)
             _apply_max_iterations(exp, eff_max_iterations)
-            kwargs["prov_ctx"] = _provenance_ctx(spec, obj)
+            kwargs["prov_ctx"] = _provenance_ctx(spec, obj, out_dir)
             _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after") if whole_study else True
         if not whole_study and shard is None:
@@ -346,14 +346,14 @@ def run(
                 experiments={i for exp in items for i in _common.experiment_ids(exp)},
             )
         if figures and whole_study and ok:
-            _render_study_figures(obj, spec, out_dir)
+            _render_study_figures(obj, spec)
         return
 
     if kind == "experiment":
         _apply_metadata_overrides(obj, set_)
         _apply_axis_pins(obj, pin)
         _apply_max_iterations(obj, eff_max_iterations)
-        kwargs["prov_ctx"] = _provenance_ctx(spec, obj)
+        kwargs["prov_ctx"] = _provenance_ctx(spec, obj, out_dir)
         _run_one(obj, _effective_backend(obj, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
@@ -474,18 +474,29 @@ def study_path_for(role: str, base: Path) -> Path:
     return study_path(role, root=base)
 
 
-def _provenance_ctx(spec: str, obj) -> dict | None:
-    """How this run records what it did, or ``None`` when the study switches it off.
+def _provenance_root(spec: str, out_dir: Path | None) -> Path:
+    """The root whose ``prov/`` holds this run's records.
 
-    The records land in the STUDY's ``prov/`` even when ``-o`` sends the data elsewhere: provenance describes what this study did, and following the data out of the study would scatter it wherever a caller happened to point.
+    The STUDY the spec belongs to, even when ``-o`` sends the data elsewhere: provenance describes what this study did, and following the data out of the study would scatter it wherever a caller happened to point. A spec that is in no study — a curated experiment run straight out of the installed database — has no such ``prov/``, so its records follow the results instead of being written into whatever directory the file happens to sit in.
     """
+    from tvbo.utils.study_layout import study_root
+
+    base = _spec_base(spec)
+    try:
+        return study_root(base)
+    except FileNotFoundError:
+        return Path(out_dir).resolve() if out_dir is not None else base
+
+
+def _provenance_ctx(spec: str, obj, out_dir: Path | None = None) -> dict | None:
+    """How this run records what it did, or ``None`` when the study switches it off."""
     from tvbo.data import provenance
 
     workflow = getattr(obj, "workflow", None)
     if workflow is not None and getattr(workflow, "emit_provenance", None) is False:
         return None
     return {
-        "study_root": _spec_base(spec),
+        "study_root": _provenance_root(spec, out_dir),
         "study": str(getattr(obj, "citekey", None) or getattr(obj, "key", None) or Path(spec).stem),
         "fmt": str(getattr(workflow, "provenance_format", None) or "yaml"),
         "started_at": provenance.now(),
@@ -529,7 +540,7 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
         return True
     base = _spec_base(spec)
     root = _results_root(spec, out_dir)
-    ctx = _provenance_ctx(spec, obj) if (obj := _analysis_owner(spec)) is not None else None
+    ctx = _provenance_ctx(spec, obj, out_dir) if (obj := _analysis_owner(spec)) is not None else None
 
     def _done(name, path):
         _common.info(f"  wrote {path.relative_to(base) if path.is_relative_to(base) else path}")
@@ -554,10 +565,10 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
     return True
 
 
-def _render_study_figures(study, spec: str, out_dir: Path | None, *, base: Path | None = None) -> None:
+def _render_study_figures(study, spec: str, *, base: Path | None = None) -> None:
     """Render a study's declarative ``figures:`` after its experiments have run.
 
-    Reuses the exact ``tvbo figure render`` path (``figures.render_figures``), so the images and render scripts a one-command ``tvbo run`` produces are byte-identical to a follow-up ``tvbo figure render`` — the study run just fuses the two steps. ``base_dir`` is the study file's own directory, the root each layer's ``used`` IRI resolves against; the images land in the study's figures directory, where the report reads them. A study with no ``figures:`` is a silent no-op. A render failure is reported but does not fail the run — the experiments already succeeded and their results are on disk.
+    Reuses the exact ``tvbo figure render`` path (``figures.render_figures``), so the images and render scripts a one-command ``tvbo run`` produces are byte-identical to a follow-up ``tvbo figure render`` — the study run just fuses the two steps. ``base`` is the study root each layer's ``used`` IRI resolves against and whose figures directory the images land in, defaulting to the recipe's own directory; ``-o`` moves the containers and not the figures, so there is no results directory to pass here. A study with no ``figures:`` is a silent no-op. A render failure is reported but does not fail the run — the experiments already succeeded and their results are on disk.
     """
     from tvbo.utils import as_list
     from tvbo.utils.study_layout import study_path
@@ -616,7 +627,7 @@ def _run_whole_study(
         _run_one(exp, _effective_backend(exp, backend), out_dir, {"compress": True, "record_only": True}, None, None, None)
     ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after")
     if figures and ok:
-        _render_study_figures(obj, spec, out_dir, base=base)
+        _render_study_figures(obj, spec, base=base)
     return ok
 
 

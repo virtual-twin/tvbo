@@ -8,6 +8,8 @@ Rewrites the block between the # BEGIN:api-autogen … # END:api-autogen markers
 Sub-packages are nested under their parent package section (e.g.
 Templates → RateML, tvboptim) rather than appearing as flat siblings.
 
+Also prunes pages quartodoc no longer generates: ``docs/api/`` is gitignored and never cleaned, so a module that was renamed or deleted leaves its old .qmd behind, where Quarto still renders it into an orphan page that no sidebar reaches and no redirect covers.
+
 Run automatically as a Quarto pre-render step (after quartodoc build).
 """
 
@@ -115,6 +117,27 @@ def _resolve_pages(contents: list) -> tuple[str | None, list[tuple[str, str]]]:
     return index_href, pages
 
 
+def prune_stale_pages(sections: list[dict]) -> list[str]:
+    """Delete .qmd files under api/ that the sections file no longer declares.
+
+    quartodoc rewrites the pages it owns but never removes the ones it has stopped owning. `index` is quartodoc's own landing page and is generated without appearing in any section, so it is kept.
+    """
+    declared = {"index"}
+    for section in sections:
+        for item in section.get("contents") or []:
+            if isinstance(item, dict) and item.get("kind") == "page":
+                declared.add(item["path"])
+            elif isinstance(item, str):
+                declared.add(item.split(".")[-1])
+
+    stale = sorted(str(p.relative_to(API_DIR)).removesuffix(".qmd") for p in API_DIR.rglob("*.qmd"))
+    stale = [page for page in stale if page not in declared]
+    for page in stale:
+        (API_DIR / f"{page}.qmd").unlink()
+        (API_DIR / f"{page}.html").unlink(missing_ok=True)
+    return stale
+
+
 # ── tree building ────────────────────────────────────────────────────
 
 
@@ -208,6 +231,10 @@ def build_block() -> str:
     data = yaml.safe_load(SECTIONS_FILE.read_text())
     sections = data.get("quartodoc", {}).get("sections", [])
 
+    stale = prune_stale_pages(sections)
+    if stale:
+        print(f"Pruned {len(stale)} stale API page(s): {', '.join(stale)}")
+
     roots = _build_tree(sections)
 
     lines: list[str] = [BEGIN_MARKER]
@@ -218,11 +245,13 @@ def build_block() -> str:
     lines.append(f"{i0}  contents:")
 
     for node in roots:
-        # The root `tvbo` section has no label of its own — inline its pages directly (they're top-level modules like tvbo.utils).
+        # The root `tvbo` section has no label of its own, so its own modules (tvbo.log, tvbo.multiscale …) are inlined as plain entries. Its children are the subpackage sections and still have to be rendered beneath them: every one of them hangs off `tvbo`, so returning here instead left 178 of 182 API pages in no sidebar at all.
         if node.package == "tvbo":
             for display, href in node.pages:
                 lines.append(f'{i1}- text: "{display}"')
                 lines.append(f"{i1}  href: {href}")
+            for child in node.children:
+                _render_node(child, 1, lines)
             continue
 
         _render_node(node, 1, lines)

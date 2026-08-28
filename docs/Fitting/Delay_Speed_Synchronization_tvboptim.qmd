@@ -5,16 +5,9 @@ aliases:
   - /Interoperability/tvboptim/Delay_Speed_Synchronization_tvboptim.html
 ---
 
-Transmission delays organize the synchronization of a brain network of coupled
-phase oscillators. Because the connectome carries **tract lengths**, tvbo lowers
-the delayed coupling onto a `DenseLengthGraph`: the backend derives
-`delays = lengths / conduction_speed` on every forward pass, so the conduction
-speed is a *live graph leaf* — the delay-domain twin of the coupling gain $G$.
-Sweeping it varies the delays and traces out the non-monotonic synchronization
-resonance of Petkoski & Jirsa (2019). The exploration is declared entirely in the
-[`Delay_Speed_Synchronization`](https://github.com/virtual-twin/tvbo) experiment;
-here we load it, run it, and confirm the generated code is **byte-identical** to a
-hand-written native tvboptim workflow.
+Transmission delays organize the synchronization of a brain network of coupled phase oscillators. Because the connectome carries **tract lengths**, tvbo lowers the delayed coupling onto a `DenseLengthGraph`: the backend derives `delays = lengths / conduction_speed` on every forward pass, so the conduction speed is a *live graph leaf*: the delay-domain twin of the coupling gain $G$.
+Sweeping it varies the delays and traces out the non-monotonic synchronization resonance of Petkoski & Jirsa (2019). The exploration is declared entirely in the [`Delay_Speed_Synchronization`](https://github.com/virtual-twin/tvbo) experiment;
+here we load it, run it, and confirm the generated code is **byte-identical** to a hand-written native tvboptim workflow.
 
 ```{python}
 # | output: false
@@ -45,10 +38,7 @@ R = np.asarray(sweep.values)
 
 ## Byte-identical to native tvboptim
 
-The declarative experiment and a hand-written tvboptim delayed-Kuramoto workflow —
-built from the *same* normalized weights and tract lengths — produce a
-bit-for-bit identical trajectory. The tvbo path lowers the coupling onto a
-`DenseLengthGraph` and derives the delays; the native path does the same by hand.
+The declarative experiment and a hand-written tvboptim delayed-Kuramoto workflow, both built from the *same* normalized weights and tract lengths, produce a bit-for-bit identical trajectory. The tvbo path lowers the coupling onto a `DenseLengthGraph` and derives the delays; the native path does the same by hand.
 
 ```{python}
 from tvboptim.experimental.network_dynamics import Network, prepare
@@ -189,12 +179,7 @@ plt.suptitle("Delays Shape Synchronization (tvboptim backend)", fontsize=13, fon
 bsplot.style.format_fig(fig)
 ```
 
-The conduction speed enters as a single `DenseLengthGraph.speed` leaf, so the very
-same declarative model is both **sweepable** (panel A, blue — via
-`exp.run(mode="exploration")`) and **differentiable** (panel A, orange — `jax.grad`
-through `delays = lengths / speed` once `history_interpolation="linear"` is
-enabled). Panel B confirms the tvbo-generated code reproduces a hand-written
-native tvboptim run bit-for-bit.
+The conduction speed enters as a single `DenseLengthGraph.speed` leaf, so the very same declarative model is both **sweepable** (panel A, blue, via `exp.run(mode="exploration")`) and **differentiable** (panel A, orange, by `jax.grad` through `delays = lengths / speed` once `history_interpolation="linear"` is enabled). Panel B confirms the tvbo-generated code reproduces a hand-written native tvboptim run bit-for-bit.
 
 ### References
 

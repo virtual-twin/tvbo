@@ -1,13 +1,4 @@
-# Temporal Average - running temporal mean, tvboptim's windowing
-#
-# The same statistic as temporal_average_tvb.yaml over a window one sample later. tvboptim derives
-# each window's start from `ts / dt`, and a native solution's `ts[0]` is `t0 + dt` rather than `t0`,
-# so its first window covers steps 1..istep instead of 0..istep-1. Measured against TVB's monitor on
-# one shared trajectory the two differ by 3.6e-01 -- not a rounding difference and not a whole-window
-# shift, which is why it is a second monitor here rather than a tolerance somewhere.
-#
-# Declared separately rather than as a backend switch: one file means one thing, so a recipe states
-# which convention its numbers are on instead of inheriting whichever the backend happened to use.
+# tvboptim's windowing: the same statistic as temporal_average_tvb.yaml over a window one sample later, because tvboptim derives each window's start from `ts / dt` and a native solution's `ts[0]` is `t0 + dt`. Measured against TVB's monitor on one shared trajectory the two differ by 3.6e-01, which is why this is a second file rather than a backend switch or a tolerance.
 
 name: TemporalAverage_tvboptim
 label: Temporal Average (tvboptim windowing)

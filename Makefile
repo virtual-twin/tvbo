@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-neuroml gen-all all check-runtime-onto
+.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-neuroml gen-all all check-runtime-onto
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -259,20 +259,62 @@ docs-gen-datamodel:
 	@cd docs && python scripts/generate_datamodel_docs.py
 	@echo "✓ DataModel documentation generated in docs/datamodel/"
 
+# The docs declare `jupyter: python3`, and that kernelspec's argv is a bare `python`, so PATH decides which interpreter executes the notebooks — on a machine with several project virtualenvs that is silently the wrong one, and the pages then fail against a stale released tvbo. These targets pin the kernel to this checkout's interpreter, the same way tests/test_docs.py does. QUARTO_PYTHON does not cover this; the kernelspec does.
+DOCS_VENV := $(CURDIR)/.venv/bin/python
+DOCS_KERNEL_DIR := $(CURDIR)/.docs-kernel
+
+$(DOCS_KERNEL_DIR)/kernels/python3/kernel.json:
+	@mkdir -p $(DOCS_KERNEL_DIR)/kernels/python3
+	@printf '{\n "argv": ["$(DOCS_VENV)", "-m", "ipykernel_launcher", "-f", "{connection_file}"],\n "display_name": "Python 3 (tvbo)",\n "language": "python"\n}\n' > $@
+	@echo "✓ docs kernel pinned to $(DOCS_VENV)"
+
+docs-kernel: $(DOCS_KERNEL_DIR)/kernels/python3/kernel.json
+
+# The page-level rules the formatter cannot reach: hard-wrapped prose, the page-style budget, and every documented `tvbo` command resolved against the installed CLI.
+DOCS_PYTHON = $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
+DOCS_PAGES = $(shell find docs -name '*.qmd' -o -name '*.md' | grep -vE '/(_site|_freeze|_build|\.quarto|_archive|\.jupyter_cache|_output|api|datamodel)/')
+
+docs-lint:
+	@python3 ~/.claude/tools/slopfmt.py $(DOCS_PAGES) docs/scripts/*.py docs/filters/*.lua docs/_static/*.yml
+	@$(DOCS_PYTHON) docs/scripts/check_pages.py --quiet $(DOCS_PAGES)
+	@$(DOCS_PYTHON) docs/scripts/check_cli_examples.py --quiet $(DOCS_PAGES)
+	@cd docs && $(abspath $(DOCS_PYTHON)) scripts/check_render_coverage.py
+
+docs-unwrap:
+	@$(DOCS_PYTHON) docs/scripts/unwrap_prose.py $(DOCS_PAGES)
+
+# Not part of docs-lint or CI: it needs the network, and a third-party site being down is not a build failure.
+docs-links:
+	@$(DOCS_PYTHON) docs/scripts/check_links.py
+
 docs-clean:
 	@echo "Cleaning generated docs..."
 	rm -rf docs/api/ docs/datamodel/ docs/_site/ docs/.quarto/
 	rm -f docs/api/.struct_stamp
 	@echo "✓ Cleaned: api/, datamodel/, _site/, .quarto/, api/.struct_stamp"
 
-docs-preview:
+docs-preview: docs-kernel
 	@echo "Starting Quarto preview (pre-render runs once, then skipped)..."
-	@cd docs && quarto render --no-serve 2>&1 | tail -1
-	@cd docs && TVBO_SKIP_PRERENDER=1 quarto preview
+	@cd docs && JUPYTER_PATH=$(DOCS_KERNEL_DIR) quarto render --no-serve 2>&1 | tail -1
+	@cd docs && JUPYTER_PATH=$(DOCS_KERNEL_DIR) TVBO_SKIP_PRERENDER=1 quarto preview
 
-docs-render:
+docs-render: docs-kernel
 	@echo "Full Quarto render..."
-	@cd docs && quarto render
+	@cd docs && JUPYTER_PATH=$(DOCS_KERNEL_DIR) quarto render
+
+# The three parts of the site render independently. The guide is the authoring loop and skips both generated references; the references are subtrees, so Quarto narrows them by path and the profile only tells the pre-render what to build.
+docs-render-guide: docs-kernel
+	@cd docs && JUPYTER_PATH=$(DOCS_KERNEL_DIR) QUARTO_PROFILE=guide quarto render
+
+docs-render-api: docs-kernel
+	@cd docs && JUPYTER_PATH=$(DOCS_KERNEL_DIR) QUARTO_PROFILE=api quarto render api
+
+docs-render-datamodel: docs-kernel
+	@cd docs && JUPYTER_PATH=$(DOCS_KERNEL_DIR) QUARTO_PROFILE=datamodel quarto render datamodel
+
+docs-preview-guide: docs-kernel
+	@cd docs && JUPYTER_PATH=$(DOCS_KERNEL_DIR) QUARTO_PROFILE=guide quarto render --no-serve 2>&1 | tail -1
+	@cd docs && JUPYTER_PATH=$(DOCS_KERNEL_DIR) QUARTO_PROFILE=guide TVBO_SKIP_PRERENDER=1 quarto preview
 
 docs-publish: docs-render
 	@echo "Publishing docs to GitHub Pages..."

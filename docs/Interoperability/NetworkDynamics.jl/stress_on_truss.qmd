@@ -128,4 +128,4 @@ anim = FuncAnimation(
 plt.close(fig)
 anim.save("_output/stress_on_truss.gif", writer="pillow", fps=20)
 ```
-![](_output/stress_on_truss.gif)
+![A loaded truss deforming under stress, each beam coloured by the force it carries.](_output/stress_on_truss.gif)

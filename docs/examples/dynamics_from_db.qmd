@@ -7,9 +7,7 @@ Models from the TVBO database simulated for 100 ms and plotted by category.
 Each panel shows the first state variable; colours are sampled from the
 **viridis** colourmap.
 
-Models that fail to integrate are skipped rather than reported as failures, so the
-gallery below is not necessarily complete. The summary table at the end gives the
-honest tally: **Available** models per category versus how many actually **Plotted**.
+Models that fail to integrate are skipped rather than reported as failures, so the gallery below is not necessarily complete. The summary table at the end gives the honest tally: **Available** models per category versus how many actually **Plotted**.
 
 ```{python}
 #| label: setup

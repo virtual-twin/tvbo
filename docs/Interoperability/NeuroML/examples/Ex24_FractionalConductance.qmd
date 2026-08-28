@@ -1,12 +1,14 @@
 ---
 title: "Ex24: Fractional Conductance"
 description: "Slow K channel with gateFractional, custom rate types, and cell morphology"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Fractional Conductance
 
-Demonstrates `<gateFractional>` with `<subGate>` — the slow potassium channel uses a
-fractional conductance formalism where gate `b` is composed of two sub-gates (`bb`,
+Demonstrates `<gateFractional>` with `<subGate>` — the slow potassium channel uses a fractional conductance formalism where gate `b` is composed of two sub-gates (`bb`,
 `bb1`), each contributing 50 % of the total conductance with independent time courses.
 
 The channel also includes:
@@ -17,8 +19,7 @@ The channel also includes:
 - `cell` type with single-segment cylinder morphology and `channelDensity`
 
 TVBO defines all of this declaratively using the composition tree (`components:` key).
-Standard NeuroML types use `iri: neuroml:*` shortcuts; custom types use
-`derived_variables:` to build LEMS `<ComponentType>` definitions from equations.
+Standard NeuroML types use `iri: neuroml:*` shortcuts; custom types use `derived_variables:` to build LEMS `<ComponentType>` definitions from equations.
 
 ---
 

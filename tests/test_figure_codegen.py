@@ -1284,3 +1284,24 @@ def test_a_layer_transform_runs_before_the_selection_and_a_ref_transform_after_i
     body = code[code.index("def _panel_a") :]  # `.sel(` also appears in the shared preamble
     before, sel, after = (body.index(x) for x in ("'_before'", "_da.sel(", "'_after'"))
     assert before < sel < after
+
+
+@requires_exp3
+def test_declared_colorbar_ticks_survive_the_shared_format_pass():
+    """A panel that declares `colorbar_ticks` must get those marks, not the renderer's.
+
+    ``bsplot.style.format_colorbar`` places ticks of its own, and it runs INSIDE the tidy-up pass — so ticks applied before it were silently replaced by the data's own min/mid/max. The bar still looked plausible, which is why the substitution went unnoticed: the panel has to be handed the list, not a flag saying one existed.
+    """
+    fig = _cartesian_figure()
+    panel = fig.panels["a"]
+    panel.kind = "heatmap"
+    panel.opts = {
+        "colorbar": P.Argument(name="colorbar", value=True),
+        "colorbar_ticks": P.Argument(name="colorbar_ticks", value=[-0.3, 0.3, 0.9]),
+    }
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "_COLORBAR_POST.append((_cb, None, [-0.3, 0.3, 0.9]))" in code
+    body = code.split("def _format_colorbar(")[1].split("\ndef ")[0]
+    shared, restore = body.index("bsplot.style.format_colorbar("), body.index("axis.set_ticks(list(declared))")
+    assert shared < restore, "the declared ticks must be re-applied AFTER the pass that overwrites them"

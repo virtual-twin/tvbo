@@ -13,8 +13,7 @@ $$
 A = \begin{pmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{pmatrix}
 $$
 
-the eigenvalues $\lambda_{1,2}$ of $A$ fully classify the equilibrium at the
-origin. The four canonical cases:
+the eigenvalues $\lambda_{1,2}$ of $A$ fully classify the equilibrium at the origin. The four canonical cases:
 
 | Case | Trace$(A)$ | Det$(A)$ | Eigenvalues | Phase portrait |
 |------|------------|----------|-------------|----------------|
@@ -60,11 +59,8 @@ state_variables:
 
 ## Phase planes for the four canonical cases
 
-Each panel uses the new `kind='phaseplane'` shortcut, which overlays the
-vector field with the two **nullclines** ($\dot x_1 = 0$ in blue,
-$\dot x_2 = 0$ in red) and marks the **fixed points** detected on the grid
-(black circles). Axis limits are set declaratively via the YAML
-`domain.lo / hi`.
+Each panel uses the new `kind='phaseplane'` shortcut, which overlays the vector field with the two **nullclines** ($\dot x_1 = 0$ in blue,
+$\dot x_2 = 0$ in red) and marks the **fixed points** detected on the grid (black circles). Axis limits are set declaratively via the YAML `domain.lo / hi`.
 
 ```{python}
 fig, axes = plt.subplots(2, 2, figsize=(9, 8))
@@ -88,14 +84,8 @@ plt.gca().set_xlim(-2, 2); plt.gca().set_ylim(-2, 2)
 plt.show()
 ```
 
-The two orthogonal nullclines intersect *only* at the origin, where the
-saddle sits. Trajectories are pulled along the stable manifold and ejected
-along the unstable one.
+The two orthogonal nullclines intersect *only* at the origin, where the saddle sits. Trajectories are pulled along the stable manifold and ejected along the unstable one.
 
 ## Linking to nonlinear bifurcations
 
-A nonlinear vector field $\dot{\vec x} = f(\vec x)$ can have **many**
-equilibria. Linearisation at each one gives a 2D matrix $A = Df(\vec x^*)$
-that classifies its local topology using the table above. **Bifurcations
-occur when the eigenvalues of one of those matrices crosses the imaginary
-axis as a parameter varies** — the topic of the rest of this tutorial.
+A nonlinear vector field $\dot{\vec x} = f(\vec x)$ can have **many** equilibria. Linearisation at each one gives a 2D matrix $A = Df(\vec x^*)$ that classifies its local topology using the table above. **Bifurcations occur when the eigenvalues of one of those matrices crosses the imaginary axis as a parameter varies** — the topic of the rest of this tutorial.

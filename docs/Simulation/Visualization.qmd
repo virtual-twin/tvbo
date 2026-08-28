@@ -8,10 +8,7 @@ aliases:
   - /Usage/Visualization.html
 ---
 
-Most objects in TVBO know how to draw themselves. A result can plot its own time series,
-a network its connectivity, a model its trajectories — so the common views need no
-plotting code at all. Everything below returns ordinary Matplotlib objects, so any figure
-can be captured and restyled.
+Most objects in TVBO know how to draw themselves. A result can plot its own time series, a network its connectivity, a model its trajectories, so the common views need no plotting code at all. Everything below returns ordinary Matplotlib objects, so any figure can be captured and restyled.
 
 ```{python}
 #| label: setup
@@ -49,7 +46,7 @@ print("result:", dict(zip(sim.data.dims, sim.data.shape)))
 | `type` | Shows |
 |---|---|
 | `timeseries` *(default)* | state variables against time |
-| `raster` | all nodes as an image — good for many regions |
+| `raster` | all nodes as an image, good for many regions |
 | `power_spectrum` | frequency content |
 | `eeg` | stacked, offset traces in the EEG idiom |
 
@@ -70,8 +67,7 @@ Without it, each call makes its own figure.
 
 ## Plotting a network
 
-A connectome has several standard views. `plot_matrix()` is the quickest look; the
-per-property helpers take an explicit axis so they can be composed.
+A connectome has several standard views. `plot_matrix()` is the quickest look; the per-property helpers take an explicit axis so they can be composed.
 
 ```{python}
 #| label: fig-network
@@ -88,9 +84,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-`plot_overview()` assembles a multi-panel summary — one row per edge property, each
-pairing a brain surface with its matrix — and `plot_brain_surface()` renders the surface
-alone. Both are heavier calls that build their own figure:
+`plot_overview()` assembles a multi-panel summary with one row per edge property, each pairing a brain surface with its matrix, and `plot_brain_surface()` renders the surface alone. Both are heavier calls that build their own figure:
 
 ```python
 net.plot_overview(log_weights=True)   # brain surface + matrices, one row per property
@@ -99,8 +93,7 @@ net.plot_brain_surface()              # surface only
 
 ## Plotting a model
 
-A `Dynamics` can draw its own trajectories. Passing state-variable names selects the
-projection — one name gives a time course, two give a phase portrait:
+A `Dynamics` can draw its own trajectories. Passing state-variable names selects the projection: one name gives a time course, two give a phase portrait:
 
 ```{python}
 #| label: fig-dynamics
@@ -124,8 +117,7 @@ d.plot_dependency_tree()   # how variables and parameters depend on each other
 d.plot_ontology()          # the model's place in the ontology
 ```
 
-A coupling likewise plots its own transfer function — see
-[coupling functions](../Networks/CouplingFunctions.qmd) for what that curve means:
+A coupling likewise plots its own transfer function. See [coupling functions](../Networks/CouplingFunctions.qmd) for what that curve means:
 
 ```python
 Coupling.from_db("Sigmoidal").plot()
@@ -133,8 +125,7 @@ Coupling.from_db("Sigmoidal").plot()
 
 ## Restyling
 
-Every helper returns Matplotlib objects, so nothing is a dead end: capture the axis and
-treat it like any other plot.
+Every helper returns Matplotlib objects, so nothing is a dead end: capture the axis and treat it like any other plot.
 
 ```{python}
 #| label: fig-restyle
@@ -149,13 +140,11 @@ plt.tight_layout()
 plt.show()
 ```
 
-`bsplot.style.use("tvbo")` (applied at the top of this page) sets the house style for
-every subsequent figure.
+`bsplot.style.use("tvbo")` (applied at the top of this page) sets the house style for every subsequent figure.
 
 ## The network as a graph
 
-`plot_graph()` draws the connectome as a node-link diagram rather than a matrix, which
-makes hub structure legible. Thresholding keeps the strongest edges:
+`plot_graph()` draws the connectome as a node-link diagram rather than a matrix, which makes hub structure legible. Thresholding keeps the strongest edges:
 
 ```{python}
 #| label: fig-graph
@@ -189,14 +178,11 @@ plt.tight_layout()
 plt.show()
 ```
 
-A phase plane needs values for anything the model's equations expect but the plane does
-not supply — the coupling inputs. By default these are evaluated at $0$, giving the
-**isolated-node** field; pass `inputs={"c_glob": ...}` to draw the flow at a fixed
-coupling drive, as on the right above.
+A phase plane needs values for anything the model's equations expect but the plane does not supply, namely the coupling inputs. By default these are evaluated at $0$, giving the
+**isolated-node** field; pass `inputs={"c_glob": ...}` to draw the flow at a fixed coupling drive, as on the right above.
 
 `plot_graph` has two rendering backends. The default `networkx` one is shown above;
-`format="bsplot"` draws the same graph through bsplot's edge renderer, which gives curved
-edges and the house styling:
+`format="bsplot"` draws the same graph through bsplot's edge renderer, which gives curved edges and the house styling:
 
 ```{python}
 #| label: fig-graph-bsplot
@@ -214,14 +200,12 @@ net.plot_graph(
 
 ::: {.callout-note}
 ## Requires bsplot ≥ 0.0.8
-Older bsplot releases raise `NameError: name 'colormaps' is not defined` from
-`bsplot/graph/edges.py`, which lacked the matplotlib colormap-registry import. If you hit
-that, upgrade bsplot; the default `networkx` backend is unaffected either way.
+Older bsplot releases raise `NameError: name 'colormaps' is not defined` from `bsplot/graph/edges.py`, which lacked the matplotlib colormap-registry import. If you hit that, upgrade bsplot; the default `networkx` backend is unaffected either way.
 :::
 
 ## Related
 
-- [The experiment result](Results.qmd) — the object being plotted, and how to index it.
-- [Bifurcation & stability](../Bifurcation/index.qmd) — phase portraits and continuation diagrams.
-- [Networks & connectomes](../Networks/index.qmd) — where connectomes come from.
-- [Parameter exploration](ParameterExploration.qmd) — plotting a swept grid.
+- [The experiment result](Results.qmd): the object being plotted, and how to index it.
+- [Bifurcation & stability](../Bifurcation/index.qmd): phase portraits and continuation diagrams.
+- [Networks & connectomes](../Networks/index.qmd): where connectomes come from.
+- [Parameter exploration](ParameterExploration.qmd): plotting a swept grid.

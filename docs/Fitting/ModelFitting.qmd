@@ -98,7 +98,7 @@ result.integration.observations.fc
 
 ## See Also
 
-- [Observation Models](../Simulation/ObservationModels.qmd) — define BOLD, FC pipelines
+- [Observation Models](../Simulation/ObservationModels.qmd): define BOLD, FC pipelines
 - [Algorithms](/Specification/Algorithms.qmd) — FIC/EIB tuning before optimization
-- [Parameter Exploration](../Simulation/ParameterExploration.qmd) — find good starting points
-- [RWW tvboptim workflow](RWW_tvboptim.qmd) — complete FC-matching example
+- [Parameter Exploration](../Simulation/ParameterExploration.qmd): find good starting points
+- [RWW tvboptim workflow](RWW_tvboptim.qmd): complete FC-matching example

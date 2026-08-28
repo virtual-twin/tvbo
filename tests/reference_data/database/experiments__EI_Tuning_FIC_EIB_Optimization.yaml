@@ -331,6 +331,10 @@ observations:
     description: BOLD signal from hemodynamic response function
     source:
     - S_e
+    dims:
+    - time
+    - variable
+    - node
     period: 720.0
     reconcile: by_label
     pipeline:
@@ -375,6 +379,9 @@ observations:
     description: Mean S_e over simulation window (for FIC algorithms)
     source:
     - S_e
+    dims:
+    - variable
+    - node
     reconcile: by_label
     aggregation: mean
   mean_S_e_final:
@@ -383,6 +390,9 @@ observations:
     description: Mean S_e over final 500 timesteps (for gradient optimization loss)
     source:
     - S_e
+    dims:
+    - variable
+    - node
     reconcile: by_label
     tail_samples: 500
     aggregation: mean
@@ -392,6 +402,9 @@ observations:
     description: Mean S_i over simulation window (for FIC)
     source:
     - S_i
+    dims:
+    - variable
+    - node
     reconcile: by_label
     aggregation: mean
   fc_target:
@@ -400,6 +413,9 @@ observations:
     description: Target FC matrix from network observations (loaded from BIDS)
     source:
     - network.observations.BoldCorrelation
+    dims:
+    - node_i
+    - node_j
     reconcile: by_label
   fc:
     name: fc
@@ -408,6 +424,9 @@ observations:
       evaluation)
     source:
     - bold
+    dims:
+    - node_i
+    - node_j
     reconcile: by_label
     pipeline:
     - callable:
@@ -429,6 +448,9 @@ observations:
       in-loop)
     source:
     - bold
+    dims:
+    - node_i
+    - node_j
     reconcile: by_label
     pipeline:
     - callable:
@@ -449,6 +471,9 @@ observations:
     description: FC computation for gradient optimization (skip_t=30 as in original)
     source:
     - bold
+    dims:
+    - node_i
+    - node_j
     reconcile: by_label
     pipeline:
     - callable:

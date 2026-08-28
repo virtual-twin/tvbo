@@ -13,13 +13,9 @@ $$
 $$
 
 Equilibria: $x = 0$ for all $a$, plus $x_{\pm} = \pm\sqrt{a}$ for $a > 0$.
-The Jacobian at the trivial branch is $f'(0) = a$, so $x = 0$ is *stable*
-for $a < 0$ and *unstable* for $a > 0$. The two non-trivial branches inherit
-stability from the loss-of-stability of the trivial one.
+The Jacobian at the trivial branch is $f'(0) = a$, so $x = 0$ is *stable* for $a < 0$ and *unstable* for $a > 0$. The two non-trivial branches inherit stability from the loss-of-stability of the trivial one.
 
-This is the canonical *symmetry-breaking* bifurcation: the system has the
-symmetry $x \mapsto -x$, and at the bifurcation point a pair of asymmetric
-solutions emerges from the symmetric one.
+This is the canonical *symmetry-breaking* bifurcation: the system has the symmetry $x \mapsto -x$, and at the bifurcation point a pair of asymmetric solutions emerges from the symmetric one.
 
 ```{python}
 from tvbo import Dynamics, Continuation, SimulationExperiment
@@ -80,14 +76,11 @@ axes[0].set_ylabel(r"$\dot x = a x - x^3$")
 plt.tight_layout(); plt.show()
 ```
 
-For $a > 0$ the trivial equilibrium (red) is unstable and two new stable
-branches (green) flank it.
+For $a > 0$ the trivial equilibrium (red) is unstable and two new stable branches (green) flank it.
 
 ## AUTO-07p (NumCont)
 
-Mirrors the standalone `PitchFork.py` example: AUTO-07p time-integrates the
-YAML-defined system to a steady state, then continues in both directions of
-$a$ via `bothside: true`.
+Mirrors the standalone `PitchFork.py` example: AUTO-07p time-integrates the YAML-defined system to a steady state, then continues in both directions of $a$ via `bothside: true`.
 
 ```{python}
 result_auto = exp.run("auto-07p")
@@ -97,10 +90,7 @@ plt.gca().set_xlim(-1, 2); plt.gca().set_ylim(-1.5, 1.5); plt.show()
 
 ## 3D bifurcation surface $(a, x, t)$
 
-A pedagogical view: integrate the system from a small positive perturbation
-across a finite time horizon for many values of $a$, and stack the
-trajectories along the $a$-axis. The convergence to $x \to +\sqrt a$ for
-$a > 0$ and to $x \to 0$ for $a < 0$ is visible as a 3-D surface.
+A pedagogical view: integrate the system from a small positive perturbation across a finite time horizon for many values of $a$, and stack the trajectories along the $a$-axis. The convergence to $x \to +\sqrt a$ for $a > 0$ and to $x \to 0$ for $a < 0$ is visible as a 3-D surface.
 
 ```{python}
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
@@ -126,7 +116,4 @@ ax.set_xlim(-1, 2); ax.set_zlim(-1.5, 1.5)
 plt.tight_layout(); plt.show()
 ```
 
-Note that detecting all three branches with continuation typically requires
-starting from a *non-zero* initial guess so that branch-switching at the
-pitchfork point is triggered. All backends label the bifurcation point at
-$a = 0$.
+Note that detecting all three branches with continuation typically requires starting from a *non-zero* initial guess so that branch-switching at the pitchfork point is triggered. All backends label the bifurcation point at $a = 0$.

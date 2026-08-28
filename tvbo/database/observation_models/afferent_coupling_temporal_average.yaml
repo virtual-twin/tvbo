@@ -18,7 +18,11 @@ pipeline:
       output: averaged_coupling
       equation:
           rhs: "window_mean(X, window_size)"
+          parameters:
+              window_size:
+                  equation: {rhs: "iround(period / dt)"}
+                  description: "Integration steps per averaging window. Inherits TemporalAverage's windowing, so it rounds with TVB's own iround rather than truncating."
       arguments:
           window_size:
-              description: "Number of integration steps per averaging window = period / dt"
+              description: "Integration steps per averaging window. Its value is declared on the equation parameter of the same name; a backend that has not yet been migrated to read that still derives it here."
       apply_on_dimension: time

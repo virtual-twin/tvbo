@@ -1,0 +1,49 @@
+# Which stage of `Specification/RunningExample.qmd` grows each page's block; see docs/Developer/DocsMachinery.qmd.
+
+page: Specification/RunningExample.qmd
+title: "The running example"
+
+stages:
+  - id: stage-1
+    number: 1
+    what: "the model, the network and the clock"
+    pages:
+      - Simulation/SimulationExperiments.qmd
+      - Models/index.qmd
+      - Models/DefineDynamicalSystem.qmd
+      - Models/Integrators.qmd
+  - id: stage-2
+    number: 2
+    what: "an `observations` block that declares what to measure"
+    pages:
+      - Simulation/ObservationModels.qmd
+      - Specification/Output.qmd
+  - id: stage-3
+    number: 3
+    what: "noise on one state variable"
+    pages:
+      - Models/Noise.qmd
+      - Models/InitialConditions.qmd
+  - id: stage-4
+    number: 4
+    what: "an `explorations` grid over the drive"
+    pages:
+      - Simulation/ParameterExploration.qmd
+  - id: stage-5
+    number: 5
+    what: "a connectome and a coupling function"
+    pages:
+      - Specification/Network.qmd
+      - Networks/index.qmd
+      - Networks/CouplingFunctions.qmd
+      - Networks/HeterogeneousNodes.qmd
+      - Networks/HeterogeneousEdges.qmd
+  - id: stage-6
+    number: 6
+    what: "several experiments, their analyses and their figures"
+    pages:
+      - Simulation/SimulationStudies.qmd
+      - Specification/Analyses.qmd
+      - Simulation/Figures.qmd
+      - Specification/YAML.qmd
+      - Specification/CodeSource.qmd

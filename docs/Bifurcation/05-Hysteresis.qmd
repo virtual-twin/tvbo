@@ -6,17 +6,13 @@ aliases:
   - /Usage/BifurcationTutorial/05-Hysteresis.html
 ---
 
-A small constant tilt added to the pitchfork unfolds it into a hysteresis
-curve with **two** saddle-node bifurcations:
+A small constant tilt added to the pitchfork unfolds it into a hysteresis curve with **two** saddle-node bifurcations:
 
 $$
 \dot x = a + x - x^3.
 $$
 
-The bifurcation diagram in $(a, x)$ is the classic S-curve with two folds
-(vertical tangents) at $a_{\pm} = \pm\,2/(3\sqrt 3) \approx \pm 0.385$,
-framing a *bistable* region in which the system has two coexisting stable
-states separated by an unstable middle branch. Reproduces `Hysteresis.png`.
+The bifurcation diagram in $(a, x)$ is the classic S-curve with two folds (vertical tangents) at $a_{\pm} = \pm\,2/(3\sqrt 3) \approx \pm 0.385$, framing a *bistable* region in which the system has two coexisting stable states separated by an unstable middle branch. Reproduces `Hysteresis.png`.
 
 ```{python}
 from tvbo import Dynamics, Continuation, SimulationExperiment
@@ -66,8 +62,7 @@ plt.gca().set_xlim(-1, 1); plt.gca().set_ylim(-2, 2); plt.show()
 
 ## PyRates / PyCoBi
 
-PyCoBi requires `NDIM >= 2`; the adapter raises a clear error for this 1-D
-system. Use `auto-07p` or `bifurcationkit.jl` instead.
+PyCoBi requires `NDIM >= 2`; the adapter raises a clear error for this 1-D system. Use `auto-07p` or `bifurcationkit.jl` instead.
 
 ```{python}
 try:
@@ -79,10 +74,7 @@ except NotImplementedError as e:
 
 ## AUTO-07p (NumCont)
 
-Direct analogue of the standalone `DoubleSaddleNode.py` example. AUTO-07p
-time-integrates from the model defaults to land on the upper stable branch,
-then sweeps $a$ in both directions so both saddle-nodes are picked up in a
-single merged diagram.
+Direct analogue of the standalone `DoubleSaddleNode.py` example. AUTO-07p time-integrates from the model defaults to land on the upper stable branch, then sweeps $a$ in both directions so both saddle-nodes are picked up in a single merged diagram.
 
 ```{python}
 result_auto = exp.run("auto-07p")
@@ -92,9 +84,7 @@ plt.gca().set_xlim(-1, 1); plt.gca().set_ylim(-2, 2); plt.show()
 
 ## Forward and backward sweep — visualising the hysteresis loop
 
-Numerically integrate the system while *slowly* sweeping $a$ first up
-($-1 \to 1$) then back down ($1 \to -1$). Trajectories *track* the upper
-branch on the way up and the lower branch on the way down — the system
+Numerically integrate the system while *slowly* sweeping $a$ first up ($-1 \to 1$) then back down ($1 \to -1$). Trajectories *track* the upper branch on the way up and the lower branch on the way down — the system
 *remembers* its history.
 
 ```{python}
@@ -122,6 +112,5 @@ ax.legend(loc="upper left", fontsize=9, handlelength=1.4)
 plt.tight_layout(); plt.show()
 ```
 
-The system *jumps* discontinuously to the opposite branch precisely when
-each saddle-node is crossed. The enclosed area of the loop is the
+The system *jumps* discontinuously to the opposite branch precisely when each saddle-node is crossed. The enclosed area of the loop is the
 *hysteresis area* — a quantitative measure of memory.

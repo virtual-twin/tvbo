@@ -49,17 +49,11 @@ Markdown(dyn_a.render('markdown'))
 
 ## Phase portraits across $a$ — animation
 
-The legacy figure series `HopfPhasePortrait_and_BifDiag3D_a=*.png` shows
-six static panels for fixed values of $a$. Below we use
-`BifurcationResult.animate(...)` further down to generate a single
-animation that captures the whole transition from stable focus to limit
-cycle alongside the 3D bifurcation diagram. First, the static reference
-grid:
+The legacy figure series `HopfPhasePortrait_and_BifDiag3D_a=*.png` shows six static panels for fixed values of $a$. Below we use `BifurcationResult.animate(...)` further down to generate a single animation that captures the whole transition from stable focus to limit cycle alongside the 3D bifurcation diagram. First, the static reference grid:
 
 ## Phase portraits across $a$ — static grid (legacy figures)
 
-For reference, the same six values rendered as a static grid using
-`kind='phaseplane'`:
+For reference, the same six values rendered as a static grid using `kind='phaseplane'`:
 
 ```{python}
 a_values = [-2.0, -1.0, -0.15, 0.5, 1.0, 1.5]
@@ -75,8 +69,7 @@ plt.tight_layout(); plt.show()
 
 ## Bifurcation diagram with limit-cycle continuation
 
-A single 1-parameter sweep in $a$ for the equilibrium branch, plus a nested
-branch that picks up periodic orbits from each detected Hopf point:
+A single 1-parameter sweep in $a$ for the equilibrium branch, plus a nested branch that picks up periodic orbits from each detected Hopf point:
 
 ```{python}
 dyn = Dynamics.from_string(HOPF_YAML)
@@ -105,8 +98,7 @@ hopf.plot(VOI="x1")
 
 ## 3D bifurcation diagram
 
-The full picture: equilibrium spine (with stability colouring), Hopf point,
-and the limit-cycle tube whose radius grows like $\sqrt a$:
+The full picture: equilibrium spine (with stability colouring), Hopf point, and the limit-cycle tube whose radius grows like $\sqrt a$:
 
 ```{python}
 hopf.plot_3d(VOI="x1")
@@ -114,10 +106,7 @@ hopf.plot_3d(VOI="x1")
 
 ## Combined sweep: phase portrait + 3D diagram
 
-`BifurcationResult.animate(...)` ties the two views together. The left
-panel re-renders the phase portrait at the current value of $a$; the
-right panel shows the 3D diagram once with a moving red marker that
-tracks the position on the equilibrium backbone.
+`BifurcationResult.animate(...)` ties the two views together. The left panel re-renders the phase portrait at the current value of $a$; the right panel shows the 3D diagram once with a moving red marker that tracks the position on the equilibrium backbone.
 
 ```{python}
 anim = hopf.animate(dyn, "a", np.linspace(-2.0, 1.5, 24),
@@ -128,15 +117,11 @@ anim = hopf.animate(dyn, "a", np.linspace(-2.0, 1.5, 24),
 anim.save("hopf_sweep.gif", writer="pillow", fps=8)
 ```
 
-![](hopf_sweep.gif)
+![A limit cycle being born as the bifurcation parameter crosses the Hopf point: the fixed point loses stability and trajectories spiral out onto a growing closed orbit.](hopf_sweep.gif)
 
 ## AUTO-07p (NumCont)
 
-Mirrors the standalone `PhasePortraitHopf.py` example: AUTO-07p
-time-integrates from the YAML defaults to a stable focus (or limit cycle),
-sweeps $a$ in both directions, and -- when the equilibrium branch yields a
-Hopf label -- continues the periodic orbit out via the nested branch
-declared above as `source_point: "hopf:all"`.
+Mirrors the standalone `PhasePortraitHopf.py` example: AUTO-07p time-integrates from the YAML defaults to a stable focus (or limit cycle), sweeps $a$ in both directions, and -- when the equilibrium branch yields a Hopf label -- continues the periodic orbit out via the nested branch declared above as `source_point: "hopf:all"`.
 
 ```{python}
 result_auto = exp.run("auto-07p")
@@ -144,13 +129,10 @@ hopf_auto = result_auto.continuations["hopf_in_a"]
 hopf_auto.plot(VOI="x1")
 ```
 
-The 3D view uses the unified style registry: stable LC segments are
-rendered as a tube surface, unstable ones as a wireframe.
+The 3D view uses the unified style registry: stable LC segments are rendered as a tube surface, unstable ones as a wireframe.
 
 ```{python}
 hopf_auto.plot_3d(VOI="x1")
 ```
 
-This single TVBO experiment reproduces the entire figure series of the
-legacy tutorial -- without writing a `model.f90`, without a global
-continuation registry, and using only the YAML strings declared above.
+This single TVBO experiment reproduces the entire figure series of the legacy tutorial -- without writing a `model.f90`, without a global continuation registry, and using only the YAML strings declared above.
