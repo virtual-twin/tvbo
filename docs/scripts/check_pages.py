@@ -96,7 +96,9 @@ def spine_pages() -> set[str]:
     """
     lua = pathlib.Path(__file__).parent.parent / "_static" / "phase_map.lua"
     if not lua.is_file():
-        sys.exit(f"--spine needs {lua}, which scripts/build_phase_map.py writes; run a render (or that script) first. Filtering to an empty spine would report a clean run over no pages at all.")
+        sys.exit(
+            f"--spine needs {lua}, which scripts/build_phase_map.py writes; run a render (or that script) first. Filtering to an empty spine would report a clean run over no pages at all."
+        )
     return set(re.findall(r'\["([^"]+)"\]\s*=\s*\{number=\d+,', lua.read_text(encoding="utf-8")))
 
 

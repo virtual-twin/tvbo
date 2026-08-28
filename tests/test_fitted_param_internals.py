@@ -22,9 +22,7 @@ FITTED = {
 
 @pytest.fixture
 def written(tmp_path):
-    result = ExperimentResult(
-        optimizations={"spectral_gradient_fit": SimpleNamespace(fitted_params=FITTED, final_loss=0.062)}
-    )
+    result = ExperimentResult(optimizations={"spectral_gradient_fit": SimpleNamespace(fitted_params=FITTED, final_loss=0.062)})
     paths = result.save(str(tmp_path), compress=False, record_only=False)
     h5 = [p for p in paths if p.endswith(".h5")]
     assert h5, f"expected an .h5 result, got {paths}"

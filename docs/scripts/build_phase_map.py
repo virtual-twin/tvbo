@@ -56,7 +56,9 @@ def main() -> None:
     by_part = spine()
     reference = next((e for e in by_part.values() if e["key"] == "reference"), None)
     if reference is None:
-        raise SystemExit("_static/phases.yml declares no chapter with key `reference`, which is where the generated api/ and datamodel/ trees are mapped.")
+        raise SystemExit(
+            "_static/phases.yml declares no chapter with key `reference`, which is where the generated api/ and datamodel/ trees are mapped."
+        )
     for directory, section in GENERATED.items():
         for page in sorted((DOCS / directory).rglob("*.qmd")):
             pages.setdefault(str(page.relative_to(DOCS)), {"part": reference["part"], "section": section})

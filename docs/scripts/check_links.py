@@ -16,7 +16,6 @@ import argparse
 import pathlib
 import re
 import subprocess
-import sys
 from concurrent.futures import ThreadPoolExecutor
 
 DOCS = pathlib.Path(__file__).resolve().parent.parent
@@ -45,7 +44,8 @@ def hand_authored() -> list[pathlib.Path]:
 def status(url: str) -> tuple[str, str]:
     result = subprocess.run(
         ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-m", "20", "-L", "-A", "Mozilla/5.0", url],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     return url, result.stdout.strip()
 
