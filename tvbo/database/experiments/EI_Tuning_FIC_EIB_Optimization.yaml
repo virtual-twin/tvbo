@@ -511,6 +511,7 @@ observations:
     label: "Simulated BOLD Signal"
     description: "BOLD signal from hemodynamic response function"
     source: [S_e]
+    dims: [time, variable, node]
     period: 720.0
     pipeline:
             # HRF kernel (precomputed once)
@@ -553,12 +554,14 @@ observations:
     label: "Mean Excitatory Activity"
     description: "Mean S_e over simulation window (for FIC algorithms)"
     source: [S_e]
+    dims: [variable, node]
     aggregation: mean
 
   mean_S_e_final:
     label: "Mean Excitatory Activity (Final 500 Timesteps)"
     description: "Mean S_e over final 500 timesteps (for gradient optimization loss)"
     source: [S_e]
+    dims: [variable, node]
     aggregation: mean
     tail_samples: 500
 
@@ -566,18 +569,21 @@ observations:
     label: "Mean Inhibitory Activity"
     description: "Mean S_i over simulation window (for FIC)"
     source: [S_i]
+    dims: [variable, node]
     aggregation: mean
 
   fc_target:
     label: "Empirical Functional Connectivity"
     description: "Target FC matrix from network observations (loaded from BIDS)"
     source: [network.observations.BoldCorrelation]
+    dims: [node_i, node_j]
   # === Derived observations (computed from other observations) ===
   fc:
     label: "Simulated Functional Connectivity (Post-Tuning)"
     description: "Pearson correlation matrix from BOLD time series (skip_t=20 for post-tuning evaluation)"
     source:
       - bold
+    dims: [node_i, node_j]
     pipeline:
       - callable:
           name: compute_fc
@@ -594,6 +600,7 @@ observations:
     description: "FC over the sliding window, with no skip beyond the settle (algorithm in-loop)"
     source:
       - bold
+    dims: [node_i, node_j]
     pipeline:
       - callable:
           name: compute_fc
@@ -610,6 +617,7 @@ observations:
     description: "FC computation for gradient optimization (skip_t=30 as in original)"
     source:
       - bold
+    dims: [node_i, node_j]
     pipeline:
       - callable:
           name: compute_fc
