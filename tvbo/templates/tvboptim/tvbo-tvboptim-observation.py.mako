@@ -1713,7 +1713,11 @@ class ${class_name}(AbstractMonitor):
             elif '.' in arg_val and not arg_val.replace('.', '').replace('-', '').replace('_', '').isdigit():
                 # Dotted reference: check for observation.attribute pattern (e.g., simulated_psd.psd)
                 prefix, attr = arg_val.split('.', 1)
-                if prefix in referenced_observations:
+                _elabel, _nlabel = _edge_label(arg_val), _node_label(arg_val)
+                if prefix == 'network' and (_elabel or _nlabel):
+                    # A connectome matrix or per-node vector, embedded once as a module constant — the same resolution ref_to_code gives a callable step, so a declared function can take the network too.
+                    call_parts.append(f"{arg_name}={_edge_const(_elabel) if _elabel else _node_const(_nlabel)}")
+                elif prefix in referenced_observations:
                     # Reference to observation's named output (e.g., simulated_psd.frequencies)
                     call_parts.append(f"{arg_name}=_{prefix}_result.{attr}")
                 elif prefix in observations:
