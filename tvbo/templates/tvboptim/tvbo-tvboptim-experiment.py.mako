@@ -3325,10 +3325,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _n_sp = len(_sp_names)
 %>\
     # === Trial parallelization: ${expl['n_trials']} trials via jax.vmap ===
-    # Each trial uses a different random noise realization for stochastic parameters.
-    # vmap maps the observable over all trials in parallel on the same device.
+    # One noise realization per trial, vmapped over trials on the same device.
     _n_trials = ${expl['n_trials']}
-    # Sized over the whole integrated window, so the draw does not change shape when a settle is declared. The settle scan itself reads index 0 throughout -- the dfun indexes with `clip(t / dt, 0, N - 1)` and the settle runs on negative t -- so only the measured window's samples are ever read.
+    # Sized over the whole integrated window, settle included, which is what `test_the_draw_spans_the_settle_and_the_window` pins. The settle scan itself reads index 0 throughout -- the dfun indexes with `clip(t / dt, 0, N - 1)` and the settle runs on negative t -- so the leading rows are allocated rather than read, and the draw stays a function of the window the experiment integrates.
     _n_steps_stoch = int(${settle['total_duration']} / ${dt}) + 2
     _trial_keys = jax.random.split(jax.random.key(${stochastic_param_info[_sp_names[0]]['seed']}), _n_trials)
     % for _sp_idx, _sp_name in enumerate(_sp_names):
