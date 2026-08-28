@@ -3587,9 +3587,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # Tree-aware stack, for array and pytree returns alike; a parallel run is already stacked on device, so this reshapes it rather than gathering cell by cell.
     _stacked = stack_grid_cells(_grid_cells)
 
-    # Build axes info for ExplorationResult. The point count mirrors the grid's own
-    # ``kwargs.get('n_<axis>', <default>)`` so a runtime n override stays consistent
-    # with the recorded coordinate (otherwise the stacked result and its coord disagree).
+    # The point count mirrors the grid's own ``kwargs.get('n_<axis>', <default>)``, so a runtime n override leaves the stacked result and its recorded coordinate agreeing.
     _axes_info = [
 % for ax in expl['axes']:
 <%
