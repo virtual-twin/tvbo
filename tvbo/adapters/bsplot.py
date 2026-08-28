@@ -95,7 +95,7 @@ def _read_mesh(path: str, kind: str, mesh_format):
 def _surface_mesh(ctx):
     """``(vertices, faces)`` for a ``surface`` panel, from whichever source it declares.
 
-    Three tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), a surface mesh FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that ``Mesh.mesh_file`` has always declared — or an ``.npz`` holding ``vertices``/``faces`` (what an analysis emits when the mesh is derived rather than measured).
+    Four tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), a surface mesh FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that ``Mesh.mesh_file`` has always declared — an ``.npz`` holding ``vertices``/``faces`` (what an analysis emits when the mesh is derived rather than measured), or a named ``template:`` surface, fetched rather than committed so a parcellated map needs no mesh checked in beside the page.
     """
     opts, base = ctx.get("opts", {}), ctx.get("base_dir")
     net_path, mesh_path = opts.get("network"), opts.get("mesh")
@@ -103,10 +103,22 @@ def _surface_mesh(ctx):
         return _read_mesh(str(resolve_path(net_path, base)), "network", None)
     if mesh_path:
         return _read_mesh(str(resolve_path(mesh_path, base)), "file", opts.get("mesh_format"))
+    if opts.get("template"):
+        import numpy as _np
+        from bsplot.data.surface import get_surface_geometry
+
+        template, density = str(opts["template"]), str(opts.get("density", "164k"))
+        hemi = str(opts.get("hemi", "lh"))
+        if hemi != "both":
+            return get_surface_geometry(template=template, hemi=hemi, density=density)
+        # One mesh out of two: the template ships a hemisphere at a time, while a whole-brain dorsal view is what a paper prints. Right-hemisphere faces shift past the left's vertices, which is the order `load_atlas_labels(hemi="both")` concatenates its parcels in too, so a vertex means the same region to both.
+        lv, lf = get_surface_geometry(template=template, hemi="lh", density=density)
+        rv, rf = get_surface_geometry(template=template, hemi="rh", density=density)
+        return _np.vstack([lv, rv]), _np.vstack([lf, rf + len(lv)])
     raise ValueError(
         "surface panel: declare where the mesh comes from — `network:` (a tvbo Network whose "
-        "companion carries a mesh group) or `mesh:` (a GIFTI/VTK/FreeSurfer surface, or an "
-        "npz with `vertices`/`faces`)."
+        "companion carries a mesh group), `mesh:` (a GIFTI/VTK/FreeSurfer surface, or an "
+        "npz with `vertices`/`faces`), or `template:` (a named surface such as fsaverage)."
     )
 
 
@@ -194,6 +206,44 @@ def surface_panel(fig, ax, ctx):
             raise ValueError(
                 f"surface panel: `geometry: true` means the layer supplies (V, 3) vertex coordinates; got shape {verts.shape}."
             )
+    elif layers and opts.get("atlas"):
+        # A parcellated layer holds one value per REGION, so it is spread onto the vertices of the parcel it names. Placing it by name keeps a cortical map honest the way the volume kind does: the alternative, trusting array order to match the mesh atlas's own, silently rotates the map.
+        da = load_layer(layers[0])
+        region_values = _np.asarray(da.values, dtype=float).squeeze()
+        labels = _region_labels(da)
+        if labels is None:
+            raise ValueError(
+                "surface panel: `atlas:` paints per-region values, but the layer carries no region-label "
+                "coordinate to place them by. The container must name its regions."
+            )
+        vertex_parcels, parcel_of = _surface_parcellation(
+            str(opts["atlas"]),
+            base,
+            str(opts.get("surface_atlas", "Desikan2006")),
+            str(opts.get("template", "fsaverage")),
+            str(opts.get("density", "164k")),
+            str(opts.get("hemi", "lh")),
+        )
+        if len(vertex_parcels) != len(verts):
+            raise ValueError(
+                f"surface panel: the parcellation covers {len(vertex_parcels)} vertices but the mesh has "
+                f"{len(verts)} — `atlas:` places values through the surface atlas's own geometry, so `template:`, "
+                "`density:` and `hemi:` must name the mesh the panel draws rather than a different one."
+            )
+        # A region the surface atlas does not carry is skipped rather than refused, because a cortical mesh legitimately has no parcel for a subcortical one; what is refused is a layer none of whose regions land, which is a mismatched atlas rather than a whole-brain map drawn on cortex.
+        values = _np.full(len(verts), _np.nan)
+        placed = 0
+        for nm, value in zip(labels, region_values, strict=True):
+            index = parcel_of.get(nm)
+            if index is not None:
+                values[vertex_parcels == index] = value
+                placed += 1
+        if not placed:
+            raise ValueError(
+                f"surface panel: none of the layer's {len(labels)} region labels are parcels of "
+                f"{opts.get('surface_atlas', 'Desikan2006')!r} through atlas {str(opts['atlas'])!r} "
+                f"({labels[:5]}{' …' if len(labels) > 5 else ''}). The panel would draw an empty mesh."
+            )
     elif layers:
         values = _vertex_values(load_layer(layers[0]), len(verts))
         if opts.get("mask"):
@@ -206,14 +256,7 @@ def surface_panel(fig, ax, ctx):
                 )
             values = _np.where(grey, _np.nan, values)  # also keeps it out of the limits
 
-    vmin, vmax = opts.get("vmin"), opts.get("vmax")
-    if values is not None:
-        finite = values[_np.isfinite(values)]
-        if (vmin is None or vmax is None) and opts.get("symmetric", True) and finite.size:
-            lim = float(_np.percentile(_np.abs(finite), float(opts.get("percentile", 100.0)))) or 1.0
-            # Each end is filled independently: a declared one is a fixed scale to honour.
-            vmin = -lim if vmin is None else vmin
-            vmax = lim if vmax is None else vmax
+    vmin, vmax = _colour_limits(values, opts, True)
 
     edges = (
         {"edgecolor": str(opts["edgecolor"]), "linewidth": float(opts.get("edge_linewidth", 0.08))}
@@ -226,7 +269,8 @@ def surface_panel(fig, ax, ctx):
         overlay=values,
         ax=ax,
         mask=grey,
-        hemi=str(opts.get("hemi", "lh")),
+        # A merged bilateral mesh is already whole, and the backend reads `hemi` as an instruction to go find one hemisphere's geometry — which it then cannot resolve.
+        hemi="lh" if str(opts.get("hemi", "lh")) == "both" else str(opts.get("hemi", "lh")),
         view=str(opts.get("view", "lateral")),
         cmap=_resolve_cmap(opts.get("cmap", "viridis")),
         vmin=vmin,
@@ -235,6 +279,221 @@ def surface_panel(fig, ax, ctx):
         faces_kwargs=edges,
     )
     ax.set_aspect("equal")  # a surface's frame is anatomy, not a coordinate system
+    ax.axis("off")
+    if opts.get("title"):
+        ax.set_title(str(opts["title"]))
+
+
+def _atlas_spec(atlas: str, base_dir) -> Path:
+    """The curated terminology file an ``atlas:`` opt names, by IRI or by path."""
+    from tvbo.data.registry import iri_target, resolve_iri
+
+    return Path(resolve_iri(atlas) if iri_target(atlas) else resolve_path(atlas, base_dir))
+
+
+@functools.cache
+def _atlas_crosswalk(atlas: str, base_dir):
+    """``{name: entity_key}`` over every name an atlas's regions answer to.
+
+    An entity is reachable by its key, its ``name``, each ``alternateName`` and its hemisphere-qualified ``abbreviation``. One crosswalk serves both brain-map kinds, so a connectome labelled ``L.LOG`` lands on the same region whether it is painted into a volume or onto a surface — two panels of one figure cannot disagree about which region a value belongs to.
+    """
+    from tvbo.utils import yaml_loader
+
+    spec = _atlas_spec(atlas, base_dir)
+    entities = (yaml_loader.load_as_dict(str(spec)).get("terminology") or {}).get("entities") or {}
+    names = {}
+    for key, ent in entities.items():
+        side = {"left": "L", "right": "R"}.get(str(ent.get("hemisphere") or ""))
+        abbreviation = ent.get("abbreviation")
+        aliases = [key, ent.get("name"), *(ent.get("alternateName") or [])]
+        if abbreviation and side:
+            aliases.append(f"{side}.{abbreviation}")
+        for nm in aliases:
+            if nm:
+                names[str(nm)] = key
+    return names, entities
+
+
+@functools.cache
+def _atlas_segmentation(atlas: str, base_dir):
+    """``(image, {label: code})`` for a labelled volume and every name its regions answer to.
+
+    The segmentation is the ``dseg`` raster beside the atlas terminology, and each name resolves to its entity's ``originalLookupLabel`` — the integer the raster actually carries. That is what lets a connectome labelled ``L.LOG`` paint the voxels FreeSurfer labelled ``1011`` with no per-study translation table.
+    """
+    import nibabel as nib
+
+    spec = _atlas_spec(atlas, base_dir)
+    raster = spec.parent / (spec.name.split(".")[0] + ".nii.gz")
+    if not raster.exists():
+        raise FileNotFoundError(
+            f"volume panel: atlas {atlas!r} has no segmentation beside its terminology (looked for "
+            f"{raster.name}). The labelled raster is a fetched asset rather than a tracked one."
+        )
+    names, entities = _atlas_crosswalk(atlas, base_dir)
+    codes = {}
+    for nm, key in names.items():
+        code = entities[key].get("originalLookupLabel")
+        if code is not None:
+            codes[nm] = int(code)
+    return nib.load(str(raster)), codes
+
+
+@functools.cache
+def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: str, density: str, hemi: str):
+    """``(vertex_labels, {node_label: parcel_index})`` for painting per-region values on a mesh.
+
+    The surface atlas supplies one integer parcel per vertex and the region names those integers stand for; the curated terminology supplies every other name each region answers to. Joining them on the entity key is what places a value by NAME on a mesh, so a parcellated map needs neither a committed ``.annot`` beside the page nor a hand-written abbreviation table.
+
+    Across ``hemi: both`` the surface atlas numbers its parcels from zero again in the right hemisphere, so a bare index says ``lateraloccipital`` without saying whose. The side is folded into the id, which is the difference between a bilateral map and one that paints both hemispheres with the left one's values.
+    """
+    import bsplot
+    import numpy as _np
+
+    SIDE_STRIDE = 1000
+
+    def _load(h):
+        return bsplot.load_atlas_labels(atlas=surface_atlas, hemi=h, template=template, density=density)
+
+    if hemi == "both":
+        left, region_names = _load("lh")
+        right, _ = _load("rh")
+        labels = _np.concatenate([_np.asarray(left), _np.asarray(right) + SIDE_STRIDE])
+        sides = ("lh", "rh")
+    else:
+        labels, region_names = _load(hemi)
+        labels = _np.asarray(labels)
+        sides = (hemi,)
+
+    names, _entities = _atlas_crosswalk(atlas, base_dir)
+    by_key = {}
+    for offset, side in enumerate(sides):
+        for index, region in enumerate(region_names):
+            by_key[f"ctx-{side}-{str(region)}"] = index + offset * SIDE_STRIDE
+    return labels, {nm: by_key[key] for nm, key in names.items() if key in by_key}
+
+
+def _check_placeable(labels, table, kind: str, atlas: str) -> None:
+    """Refuse a layer carrying a region the atlas does not know.
+
+    A name with no entry cannot be placed, and the two ways of not placing it are both silent: dropping it leaves a hole that reads as missing data, and falling back to array position paints the region next to it. Asked by the VOLUME kind, whose segmentation covers the whole brain, so any unplaceable name there is a mismatched atlas. The surface kind cannot ask it: a cortical mesh legitimately carries no parcel for a subcortical region, so it skips what it cannot place and refuses only a layer none of whose regions land.
+    """
+    unknown = [nm for nm in labels if nm not in table]
+    if unknown:
+        raise ValueError(
+            f"{kind} panel: {len(unknown)} region label(s) are not in atlas {atlas!r}: "
+            f"{unknown[:5]}{' …' if len(unknown) > 5 else ''}. Add these spellings as `alternateName` "
+            "on the atlas entities rather than translating them per study."
+        )
+
+
+def _colour_limits(values, opts, symmetric_default: bool):
+    """``(vmin, vmax)`` for a brain map, from whichever of them the panel did not declare.
+
+    A declared end is a fixed scale to honour, so each is filled independently. ``symmetric`` centres the range on zero, for a map of signed deviations that an off-centre scale would misread; ``percentile`` clips the range so one outlier region cannot wash the map out, and it applies whether or not the range is centred — a one-sided quantity has outliers too.
+    """
+    import numpy as _np
+
+    vmin, vmax = opts.get("vmin"), opts.get("vmax")
+    if values is None or (vmin is not None and vmax is not None):
+        return vmin, vmax
+    finite = _np.asarray(values)[_np.isfinite(values)]
+    if not finite.size:
+        return vmin, vmax
+    percentile = float(opts.get("percentile", 100.0))
+    if opts.get("symmetric", symmetric_default):
+        lim = float(_np.percentile(_np.abs(finite), percentile)) or 1.0
+        lo, hi = -lim, lim
+    elif percentile < 100.0:
+        lo, hi = (float(v) for v in _np.percentile(finite, [100.0 - percentile, percentile]))
+    else:
+        return vmin, vmax
+    return (lo if vmin is None else vmin), (hi if vmax is None else vmax)
+
+
+def _region_labels(da):
+    """The region name of each value in a per-region layer, or ``None`` when it carries none.
+
+    A per-node array is written with its node labels as a coordinate, so the name of each region travels with its value. Reading them off the container is what keeps a brain map a by-label placement; a container that lost them is a defect at the writer, not something to guess around here.
+    """
+    for dim in ("node", "region", "label", "nodes", "regions"):
+        if dim in da.coords:
+            values = da.coords[dim].values
+            if values.dtype.kind in "US" or values.dtype == object:
+                return [str(v) for v in values]
+    return None
+
+
+@register_panel("volume")
+def volume_panel(fig, ax, ctx):
+    """Per-region values painted into a labelled volume and projected — the built-in ``kind: volume``.
+
+    The volumetric counterpart of ``kind: surface``: same layer, same colour options, geometry from an atlas instead of a mesh. Registered here rather than shipped per study, so a glass brain needs no ``code_modules`` and no per-study index table.
+
+    Values are placed BY LABEL through the atlas crosswalk, never by array position — a per-region array ordered differently from the atlas would otherwise paint every region with its neighbour's number and still look like a brain.
+
+    opts:
+        - atlas / volume: where the segmentation comes from (a curated atlas IRI, or a dseg file).
+        - view: bsplot's camera name (sagittal, coronal, horizontal).
+        - intensity_projection: how voxels collapse along the view axis (default 'absmax').
+        - cmap: colormap name; symmetric/percentile/vmin/vmax set the colour limits.
+        - symmetric: centre the limits on zero (default false — unlike a surface map of signed deviations, a volume panel is as often a positive quantity such as a frequency).
+        - percentile: clip the limit to this percentile of |values| (default 100).
+    """
+    import bsplot
+    import nibabel as nib
+    import numpy as _np
+
+    from tvbo.adapters.colormaps import resolve as _resolve_cmap
+
+    opts, base = ctx.get("opts", {}), ctx.get("base_dir")
+    source = opts.get("atlas") or opts.get("volume")
+    if not source:
+        raise ValueError(
+            "volume panel: declare where the segmentation comes from — `atlas:` (a curated atlas) or `volume:` (a dseg file)."
+        )
+    layers = ctx.get("layers") or []
+    if not layers:
+        raise ValueError("volume panel: needs a layer supplying the per-region values.")
+
+    img, codes = _atlas_segmentation(str(source), base)
+    da = load_layer(layers[0])
+    values = _np.asarray(da.values, dtype=float).squeeze()
+    if values.ndim != 1:
+        raise ValueError(
+            f"volume panel: expected one value per region, got shape {values.shape} over dims "
+            f"{tuple(da.dims)}. Add a `sel:` to the layer picking a single map."
+        )
+    labels = _region_labels(da)
+    if labels is None:
+        raise ValueError(
+            "volume panel: the layer carries no region-label coordinate to place its values by. Placing "
+            "them positionally would paint each region with its neighbour's value, so the container must name its regions."
+        )
+    _check_placeable(labels, codes, "volume", str(source))
+
+    # One pass over the segmentation, not one per region: a table indexed by label code turns a whole-volume comparison per region into a single gather.
+    seg = _np.rint(_np.asarray(img.dataobj)).astype(_np.int64, copy=False)
+    lookup = _np.full(max([int(seg.max(initial=0)), *(codes[nm] for nm in labels)], default=0) + 1, _np.nan)
+    for nm, value in zip(labels, values, strict=True):
+        lookup[codes[nm]] = value
+    painted = lookup[_np.where(seg >= 0, seg, 0)]
+    painted[seg < 0] = _np.nan
+
+    vmin, vmax = _colour_limits(values, opts, False)
+
+    view = str(opts.get("view", "sagittal")).lower()
+    if view not in ("sagittal", "coronal", "horizontal"):
+        raise ValueError(f"volume panel: view {view!r} is not one of sagittal, coronal, horizontal.")
+    bsplot.glass_brain(
+        nib.Nifti1Image(painted, img.affine),
+        ax=ax,
+        view=view,
+        cmap=_resolve_cmap(opts.get("cmap", "viridis")),
+        intensity_projection=str(opts.get("intensity_projection", "absmax")),
+        vmin=vmin,
+        vmax=vmax,
+    )
+    ax.set_aspect("equal")  # a projection's frame is anatomy, not a coordinate system
     ax.axis("off")
     if opts.get("title"):
         ax.set_title(str(opts["title"]))
@@ -490,8 +749,10 @@ _AXIS_OPTS = {
     "hide_yticklabels",
     "axhline",
     "axvline",
+    "axline",
     "axhline_color",
     "axvline_color",
+    "axline_color",
     "xtick_side",
     "ytick_side",
     "xlabel_side",  # the axis label alone crosses to the far side, leaving the tick numbers where they are
@@ -567,6 +828,7 @@ _NUMERIC_AXIS_OPTS = {
     "region",
     "axhline",
     "axvline",
+    "axline",
     "nbins",
     "tick_size",
     "tick_length",
@@ -843,10 +1105,10 @@ def _resolve_layer(layer, panel_kind, base_dir):
 
 
 # Interior drawn by a callable or sub-axes, so its ticks must survive the format pass.
-_DRAWER_KINDS = {"custom", "surface", "grid", "line3d"}
+_DRAWER_KINDS = {"custom", "surface", "volume", "grid", "line3d"}
 
 # Kinds whose interior is a built-in callable, needing no `render:` and no code_modules.
-_BUILTIN_PANELS = {"surface", "colorbar", "legend"}
+_BUILTIN_PANELS = {"surface", "volume", "colorbar", "legend"}
 
 
 class _GridCell:

@@ -2,9 +2,11 @@
 <%doc>TVB-Optim Observation Template. Context: experiment (SimulationExperiment).</%doc>
 <%
 from tvbo.codegen import render_expression
+from tvbo.adapters.observation_sampling import tvb_iround as _tvb_iround
 from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
     adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values, resolve_tail_samples,
+    resolve_step_expression,
     edge_label as _edge_label, edge_const as _edge_const, collect_network_edge_arrays,
     node_label as _node_label, node_const as _node_const, collect_network_node_arrays,
     functions_by_name as _functions_by_name, kernel_support_steps as _kernel_support_steps,
@@ -16,13 +18,13 @@ state_names = list(model.state_variables.keys()) if model else ['x']
 # Recorded variable layout (states + auxiliaries-in-VOI). Matches solution.variable_names
 # produced by tvboptim >= 0.2.7 and the dfun's VARIABLES_OF_INTEREST tuple.
 _, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if model else ([], [], ['x'])
-dt = experiment.integration.step_size if experiment.integration else 0.1
-# Steps of settle at the head of the scan. Computed here rather than inherited: an <%include> carries the render context, not the including template's local bindings.
-_transient_time = float(getattr(experiment.integration, 'transient_time', 0.0) or 0.0) if experiment.integration else 0.0
-n_transient = int(round(_transient_time / dt)) if dt else 0
+# The window, resolved once by BaseAdapter.get_integration_info. Read from the render context, which an <%include> carries -- unlike the including template's local bindings, which is why this used to be a second derivation rather than a lookup.
+dt = settle['dt']
+_transient_time = settle['transient_time']
+n_transient = settle['n_transient']
 # Steps of MEASURED window. A monitor tells the settle from the measurement by subtracting this from the length of whatever window it is handed, so an algorithm's own shorter tuning window is read as carrying no settle rather than as a short measurement.
-_duration = float(getattr(experiment.integration, 'duration', 0.0) or 0.0) if experiment.integration else 0.0
-n_measured = int(round(_duration / dt)) if dt else 0
+_duration = settle['duration']
+n_measured = settle['n_measured']
 
 
 def resolve_var_index(source, label: str) -> int:
@@ -151,8 +153,10 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
     if ref_type == 'integration':
         if ref_val == 'transient':
             raise ValueError(
-                "`integration.transient` is not a data channel: the settle is the head of the same window, "
-                "so read `integration.result` — its leading samples are the settle and are cut for you."
+                "`integration.transient` is not a data channel: the settle runs as its own scan, so its "
+                "trajectory is not in the window a pipeline is handed. A kernel that needs the settle declares "
+                "it — the warm-up is taken at the input and eaten by the kernel — and everything else reads "
+                "`integration.result`, the measured window."
             )
         if ref_val == 'result':
             if state_idx is not None:
@@ -174,7 +178,7 @@ functions_by_name = _functions_by_name(experiment)
 # User-defined function names for expression rendering
 user_functions = {name: name for name in functions_by_name.keys()}
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
-from tvbo.codegen.templater import is_derived as _is_derived
+from tvbo.codegen.templater import canonical_observation_ref as _canonical_observation_ref, is_derived as _is_derived
 _obs_raw = get_attr(experiment, 'observations', {})
 if hasattr(_obs_raw, 'items'):
     _all_observations = dict(_obs_raw.items())
@@ -191,7 +195,7 @@ observations = {n: o for n, o in _all_observations.items() if not _is_derived(o,
 # =============================================================================
 def parse_step(func, step_name):
     """Parse a pipeline step into a clean dict structure."""
-    _inp = get_attr(func, 'input')
+    _inp = _canonical_observation_ref(get_attr(func, 'input'), _all_observations)
     step = {
         'name': step_name,
         'output': get_attr(func, 'output'),
@@ -229,8 +233,14 @@ def parse_step(func, step_name):
         # Note: equation.parameters are LOCAL constants, not function arguments
         # They are used when rendering the equation, not passed as kwargs
         step['equation_params'] = {}
+        # A constant the equation binds by name. Declared with a `value` it is that number; declared with an `equation` it is derived from the experiment's own scalars, which is how a stride stays right on an integration grid it was not written for.
+        step['equation_derived'] = {}
         for pname, pobj in (get_attr(eq, 'parameters') or {}).items():
-            if hasattr(pobj, 'value'):
+            _peq = get_attr(pobj, 'equation')
+            _prhs = get_attr(_peq, 'rhs') if _peq is not None else None
+            if _prhs is not None:
+                step['equation_derived'][str(pname)] = str(_prhs)
+            elif get_attr(pobj, 'value') is not None:
                 step['equation_params'][str(pname)] = to_numeric(pobj.value)
 
     # Parse arguments (these ARE function arguments), keyed by name (key == arg name).
@@ -239,7 +249,7 @@ def parse_step(func, step_name):
             step['arg_names'].append(name)
             val = get_attr(arg, 'value')
             if val is not None:
-                step['arguments'][name] = val
+                step['arguments'][name] = _canonical_observation_ref(val, _all_observations)
 
     # Lookup from functions section if no inline definition
     if not (step['source_code'] or step['callable'] or step['equation']):
@@ -267,7 +277,7 @@ def parse_step(func, step_name):
                     step['arg_names'].append(name)
                 val = get_attr(arg, 'value')
                 if name and val is not None and name not in step['arguments']:
-                    step['arguments'][name] = to_numeric(val)
+                    step['arguments'][name] = to_numeric(_canonical_observation_ref(val, _all_observations))
 
     return step
 
@@ -444,7 +454,7 @@ def parse_class_reference(class_ref, obs):
         'accepts_voi': False,
         'extra_imports': [],
         # Declared, never inferred from the output's length: a class that pads or trims would make that inference wrong and the result would still look like a plausible series.
-        'warmup_steps': int(round(float(to_numeric(_warmup)) / dt)) if _warmup is not None and dt else 0,
+        'warmup_steps': _tvb_iround(float(to_numeric(_warmup)) / dt) if _warmup is not None and dt else 0,
     }
 
     # Parse constructor_args
@@ -1393,10 +1403,10 @@ class ${class_name}(AbstractMonitor):
     refs_settle, needs_result_from_pipeline = analyze_pipeline(pipeline)
     if refs_settle:
         raise ValueError(
-            f"Observation {obs_name!r} references `integration.transient` in its pipeline. The settle is no "
-            "longer a separate simulation: it is the head of the same window, so a kernel's warm-up is already "
-            "in-band and its leading output samples are dropped for you. Drop the history reference (and any "
-            "`prepend_history` step) and read `integration.result`."
+            f"Observation {obs_name!r} references `integration.transient` in its pipeline. The settle runs as "
+            "its own scan and hands its endpoint on through `update_history`, so its trajectory is not in the "
+            "window this pipeline is handed. A kernel's warm-up is supplied from it automatically, at the input, "
+            "so drop the history reference (and any `prepend_history` step) and read `integration.result`."
         )
 
     # Resolve source to its column in the recorded variable layout.
@@ -1713,7 +1723,11 @@ class ${class_name}(AbstractMonitor):
             elif '.' in arg_val and not arg_val.replace('.', '').replace('-', '').replace('_', '').isdigit():
                 # Dotted reference: check for observation.attribute pattern (e.g., simulated_psd.psd)
                 prefix, attr = arg_val.split('.', 1)
-                if prefix in referenced_observations:
+                _elabel, _nlabel = _edge_label(arg_val), _node_label(arg_val)
+                if prefix == 'network' and (_elabel or _nlabel):
+                    # A connectome matrix or per-node vector, embedded once as a module constant — the same resolution ref_to_code gives a callable step, so a declared function can take the network too.
+                    call_parts.append(f"{arg_name}={_edge_const(_elabel) if _elabel else _node_const(_nlabel)}")
+                elif prefix in referenced_observations:
                     # Reference to observation's named output (e.g., simulated_psd.frequencies)
                     call_parts.append(f"{arg_name}=_{prefix}_result.{attr}")
                 elif prefix in observations:
@@ -1736,8 +1750,24 @@ class ${class_name}(AbstractMonitor):
         ${prefixed_output} = ${step_name}(${', '.join(call_parts)})
 % elif step.get('source_code'):
         ${prefixed_output} = ${step['source_code'].replace('_input', input_var)}
+% elif step.get('equation'):
+<%
+    # What the monitor says it computes, emitted. The scalars an argument may be derived from are the experiment's own: the integration step and the observation's reporting period.
+    _scope = {'dt': dt, 'period': to_numeric(obs.get('period')) if obs.get('period') is not None else dt}
+    _expr = resolve_step_expression(
+        step['equation'], input_var, step.get('equation_params'), step.get('equation_derived'),
+        _scope, f"Observation {obs_name!r} step {step_name!r}",
+    )
+%>\
+        ${prefixed_output} = ${jaxcode(_expr)}
 % else:
-        ${prefixed_output} = ${input_var}
+<%
+    raise ValueError(
+        f"Observation {obs_name!r} step {step_name!r} declares no equation, callable or source_code, "
+        "so there is nothing to emit for it. A step that cannot be resolved must not be emitted as a "
+        "pass-through: the monitor would return its input unchanged, with the right shape and the wrong values."
+    )
+%>\
 % endif
 % endfor
 % if tail_samples or aggregation:
@@ -1887,6 +1917,24 @@ def _stream_times(name, n_samples, dt):
     if _period is None:
         return None
     return (jnp.arange(int(n_samples)) + 1) * _period * dt
+
+
+def _stream_axes(values, dt=${repr(float(dt))}):
+    """The measurement-clock grid for each streamed observable that reports on one, keyed by name.
+
+    *values* is whatever holds the observables -- the reducer's own dict, or the ``Bunch`` the result carries -- and anything already stamped (a materialised ``ObservationResult``) is left alone rather than given a second answer.
+
+    What the result container labels a streamed observable's ``time`` axis with. A materialised observation arrives as an ``ObservationResult`` carrying its own ``ts``; a streamed one is the reducer's bare value, so the container gives it a ``time`` DIMENSION from the reduction's declared axes and then has nothing to put on it -- an axis that announces itself and cannot say what any of its values are. Built from `_STREAMING_PERIODS`, the period the reducer actually folded on, so the stamp cannot drift from the sample it names. A reduction that folds time away contributes nothing.
+    """
+    _axes = {}
+    for _name, _period in _STREAMING_PERIODS.items():
+        _v = values.get(_name) if hasattr(values, "get") else getattr(values, _name, None)
+        if _period is None or _v is None or getattr(_v, "ndim", 0) == 0 or hasattr(_v, "ts"):
+            continue
+        _ts = _stream_times(_name, len(_v), dt)
+        if _ts is not None:
+            _axes[_name] = _ts
+    return _axes
 
 
 _STREAMING_WARMUP_STEPS = max([${", ".join("_warmup_%s" % _n for _n in _warmed_streams) or "0"}])

@@ -694,11 +694,22 @@ class _ArrayFunctionPrinterMixin:
     def _slice_axis(self, base, axis, start, stop, step=None):
         rng = f"{self._afn('arange')}({self._print(start)}, {self._print(stop)}"
         rng += f", {self._print(step)})" if step is not None else ")"
-        return f"{self._afn('take')}({base}, {rng}, axis={axis})"
+        return f"{self._afn('take')}({base}, {self._int_index(rng, start, stop, step)}, axis={axis})"
 
     def _slice_from(self, base, axis, start):
         rng = f"{self._afn('arange')}({self._print(start)}, {self._shape(base, axis)})"
-        return f"{self._afn('take')}({base}, {rng}, axis={axis})"
+        return f"{self._afn('take')}({base}, {self._int_index(rng, start)}, axis={axis})"
+
+    def _int_index(self, rng, *bounds):
+        """An index range, cast to integer only when its bounds are not already integral.
+
+        Indexing requires integers. A literal bound is already one and the cast would be noise on every slice in the codebase, so it is not applied. A DERIVED bound is not: the number of whole windows that fit in a trace is ``floor((n - 1) / w)``, and `floor` returns a real, so the range comes out floating and indexing rejects it with ``indices must have an integer type``. The cast goes on the index rather than on the expression that computed the bound, because it is indexing that demands an integer; `floor` is doing real arithmetic and is right to return a real.
+
+        A bound counts as integral only when SymPy says so outright. ``is_integer`` is tri-state there -- ``True``, ``False``, or ``None`` for "cannot tell" -- while on a plain Python number it is a bound METHOD and therefore truthy whatever the value is, so a bare truth test would read 2.5 as whole and skip the cast the bound needs.
+        """
+        if all(b is None or getattr(b, "is_integer", None) is True for b in bounds):
+            return rng
+        return f"{rng}.astype(int)"
 
 
 def _qualify(module, names):

@@ -138,9 +138,24 @@ def _unflatten_dataset(aux, children):
     return ds
 
 
+def _flatten_datatree(tree):
+    """A tree flattens to its nodes' datasets, keyed by path.
+
+    The paths are the aux data, so unflattening rebuilds the same hierarchy; the datasets are children, so each one's own registration carries the arrays. Without this a ``DataTree`` is one opaque leaf, and a tree handed to ``jit`` or ``vmap`` is traced as a single value rather than as the arrays it holds.
+    """
+    paths = tuple(sorted(node.path for node in tree.subtree))
+    # ``to_dataset(inherit=False)``, not ``.dataset``: the latter hands back a ``DatasetView`` subclass, and the registry matches on exact type, so every node would stay one opaque leaf. ``inherit=False`` keeps a parent's coords out of its children, so a round trip rebuilds the tree it flattened rather than a copy with the coords duplicated down every branch.
+    return tuple(tree[path].to_dataset(inherit=False) for path in paths), paths
+
+
+def _unflatten_datatree(paths, datasets):
+    return xarray.DataTree.from_dict(dict(zip(paths, datasets, strict=True)))
+
+
 # Registration (runs on import)
 
 jax.tree_util.register_pytree_node(xarray.Variable, _flatten_variable, _unflatten_variable)
 jax.tree_util.register_static(xarray.IndexVariable)
 jax.tree_util.register_pytree_node(xarray.DataArray, _flatten_data_array, _unflatten_data_array)
 jax.tree_util.register_pytree_node(xarray.Dataset, _flatten_dataset, _unflatten_dataset)
+jax.tree_util.register_pytree_node(xarray.DataTree, _flatten_datatree, _unflatten_datatree)

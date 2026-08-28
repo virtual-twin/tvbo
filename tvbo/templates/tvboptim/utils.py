@@ -1578,7 +1578,7 @@ def _derived_dims(obs: Any, src_dims: tuple) -> tuple | None:
 def observation_dims(experiment: Any) -> dict[str, tuple]:
     """Every observation's declared axis names, keyed by observation name.
 
-    :func:`reduction_dims` names the axes of ONE reduction; this asks it of every observation an experiment declares, so the result container labels all of them and not only the ``reduce: streaming`` subset. An observation whose reduction declares nothing is absent, and the container falls back to its positional template for that one alone.
+    An observation's own ``dims:`` wins wherever it is declared: a ``pipeline`` of user functions has an output shape only its author knows, and nothing here may infer one from a length. Otherwise :func:`reduction_dims` names the axes of ONE reduction, asked of every observation an experiment declares, so the result container labels all of them and not only the ``reduce: streaming`` subset. An observation that neither declares its axes nor reduces into known ones is absent, and the container falls back to its positional template for that one alone.
 
     Derived observations are then given the axes their pipeline leaves on the observations they source (:data:`_PIPELINE_STEP_KINDS`): elementwise through an ``equation`` step, re-declared by a named step that reshapes. Sources that disagree, sources that are themselves unlabelled, and pipelines whose steps are not all recognised leave the derived observation unlabelled rather than guessed. Iterating to a fixed point handles a chain of derived-of-derived in any declaration order.
     """
@@ -1586,7 +1586,8 @@ def observation_dims(experiment: Any) -> dict[str, tuple]:
     obs_by_name = dict(obs.items()) if hasattr(obs, "items") else {str(get_attr(o, "name")): o for o in obs}
     dims: dict[str, tuple] = {}
     for n, o in obs_by_name.items():
-        d = reduction_dims(resolve_reduction(o, experiment))
+        declared = as_list(get_attr(o, "dims"))
+        d = tuple(str(x) for x in declared) if declared else reduction_dims(resolve_reduction(o, experiment))
         if d:
             dims[str(n)] = d
     changed = True
@@ -2147,6 +2148,8 @@ def _base_class_info(module: str, name: str, source_info: dict[str, Any]) -> dic
         "call_args": source_info.get("call_args", {}),
         "accepts_voi": False,
         "extra_imports": [],
+        # Carried, not re-derived: `warmup` is DECLARED on the reference because an external class is a black box, and swapping a TVB monitor for its tvboptim equivalent changes which class runs, never how much signal it eats before its first output means anything. Dropping it here silently demoted a kernel-bearing monitor to the memoryless convention, which cuts the settle off the OUTPUT and opens the kernel on zeros.
+        "warmup_steps": source_info.get("warmup_steps", 0),
     }
 
 
@@ -2917,6 +2920,64 @@ def is_external_observation(obs: Any) -> bool:
     return is_network_observation(obs)
 
 
+SOURCE_ARG_NAMES = ("data", "X", "x", "input", "timeseries", "a")
+"""Names by which a pipeline step's first argument refers to the series it is handed rather than to a constant."""
+
+
+def resolve_step_expression(rhs, input_var, literals=None, derived=None, scope=None, where="a pipeline step"):
+    """A pipeline step's declared equation, bound to the locals the monitor emits around it.
+
+    A monitor states what it computes as an equation over its input, and this is what makes that statement generatable instead of decorative. The source binds to whichever local holds the previous step's output; a constant declared with a ``value`` binds to it; and a constant declared as an EXPRESSION -- ``window_size = period / dt`` -- is evaluated here against the experiment's own scalars. That last case is the one that matters: without it the relationship can only be written as a number, correct for one integration grid and silently wrong on every other, or as a ``description`` no code reads, which is how these monitors came to need a Python class to stand in for their own declaration.
+
+    Returns a backend-independent sympy expression. How ``window_mean`` is spelled is the printer's decision, not this one, which is what lets the same declaration emit for tvboptim, TVB or anything else.
+    """
+    import sympy as sp
+
+    from tvbo.adapters.observation_sampling import tvb_iround
+    from tvbo.parse.expression import parse_eq
+
+    class _IRound(sp.Function):
+        """TVB's step-count rounding, foldable at codegen.
+
+        A monitor's stride is ``iround(period / dt)`` in TVB and in tvboptim alike, and a declaration that says `period / dt` instead is a different monitor at every ratio that is not already whole. Declared with the same helper the backends share (:func:`~tvbo.adapters.observation_sampling.tvb_iround`, which is TVB's own body), and folded to an integer here, so the expression a printer sees carries no rounding at all.
+        """
+
+        nargs = 1
+
+        @classmethod
+        def eval(cls, arg):
+            if arg.is_number:
+                return sp.Integer(tvb_iround(float(arg)))
+
+    scope = {str(k): v for k, v in (scope or {}).items() if v is not None}
+    literals, derived = dict(literals or {}), dict(derived or {})
+
+    subs = {}
+    for pname, pexpr in derived.items():
+        expr = parse_eq(str(pexpr), parameters=sorted(scope), functions={"iround": _IRound})
+        unknown = {str(s) for s in expr.free_symbols} - set(scope)
+        if unknown:
+            raise ValueError(
+                f"{where}: derived constant {str(pname)!r} references {sorted(unknown)}, which the "
+                f"experiment does not define here. Available: {sorted(scope)}."
+            )
+        subs[sp.Symbol(str(pname))] = expr.subs({sp.Symbol(k): v for k, v in scope.items()})
+    for pname, value in literals.items():
+        subs[sp.Symbol(str(pname))] = value
+
+    known = sorted({*scope, *literals, *derived, *SOURCE_ARG_NAMES})
+    expr = parse_eq(str(rhs), parameters=known, functions={"iround": _IRound}).subs(subs)
+    expr = expr.subs({sp.Symbol(n): sp.Symbol(str(input_var)) for n in SOURCE_ARG_NAMES})
+
+    unresolved = {str(s) for s in expr.free_symbols} - {str(input_var)}
+    if unresolved:
+        raise ValueError(
+            f"{where}: {sorted(unresolved)} left unresolved in {str(rhs)!r}. Give each a `value`, or an "
+            "`equation` deriving it from the experiment (e.g. `window_size: {equation: {rhs: period / dt}}`)."
+        )
+    return expr
+
+
 def obs_has_all_args(obs: Any) -> bool:
     """Check if observation has all required arguments satisfied.
 
@@ -2937,7 +2998,15 @@ def obs_has_all_args(obs: Any) -> bool:
             arg_name = arg_name or getattr(arg, "name", None)
             if arg_name and getattr(arg, "value", None) is None:
                 # First step's data-like args are satisfied by source
-                if is_first_step and has_source and arg_name in ("data", "X", "x", "input", "timeseries", "a"):
+                if is_first_step and has_source and arg_name in SOURCE_ARG_NAMES:
+                    continue
+                # So is an argument the step's own equation binds by name, whether as a literal `value` or as an expression over the experiment's scalars: it has a value, it is simply declared on the equation rather than on the argument.
+                _eq = getattr(func, "equation", None)
+                _eqp = (getattr(_eq, "parameters", None) or {}) if _eq is not None else {}
+                _named = _eqp.get(arg_name) if hasattr(_eqp, "get") else None
+                if _named is not None and (
+                    getattr(_named, "equation", None) is not None or getattr(_named, "value", None) is not None
+                ):
                     continue
                 return False
     return True
