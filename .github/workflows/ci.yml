@@ -67,14 +67,7 @@ jobs:
             - name: Docs — page style
               run: python docs/scripts/check_pages.py --quiet $(find docs -name '*.qmd' -o -name '*.md' | grep -vE '/(_site|_freeze|_build|[.]quarto|_archive|[.]jupyter_cache|_output|api|datamodel)/')
 
-            - name: Docs — documented CLI commands resolve
-              run: python docs/scripts/check_cli_examples.py --quiet $(find docs -name '*.qmd' -o -name '*.md' | grep -vE '/(_site|_freeze|_build|[.]quarto|_archive|[.]jupyter_cache|_output)/')
-
-            # A sidebar entry and a `project.render` glob live in different files with nothing tying them together, so a page can be linked, exist, and still be built by nothing — which only shows as a 404 on the deployed site.
-            - name: Docs — every sidebar link is in the render set
-              run: cd docs && python scripts/check_render_coverage.py
-
-            # mypy: type-check the source tree, non-blocking.
+            # The steps below all need the package importable: the CLI check resolves real commands, render coverage reads YAML, and mypy needs the datamodel that `-e .` regenerates through the hatch build hook.
             - uses: astral-sh/setup-uv@v8.1.0
               with:
                   python-version: "3.12"
@@ -83,9 +76,16 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
-            - name: Install (editable, no-deps → generates datamodel) + mypy
-              # `-e .` fires the hatch build hook, regenerating the untracked datamodel that mypy needs to see.
-              run: uv pip install -e . --no-deps && uv pip install mypy
+            - name: Install (editable → generates datamodel)
+              run: uv pip install -e . && uv pip install mypy
+
+            - name: Docs — documented CLI commands resolve
+              run: python docs/scripts/check_cli_examples.py --quiet $(find docs -name '*.qmd' -o -name '*.md' | grep -vE '/(_site|_freeze|_build|[.]quarto|_archive|[.]jupyter_cache|_output)/')
+
+            # A sidebar entry and a `project.render` glob live in different files with nothing tying them together, so a page can be linked, exist, and still be built by nothing — which only shows as a 404 on the deployed site.
+            - name: Docs — every sidebar link is in the render set
+              run: cd docs && python scripts/check_render_coverage.py
+
             - name: Mypy — type check (non-blocking)
               run: mypy tvbo || true
 
