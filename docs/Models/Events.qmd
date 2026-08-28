@@ -7,13 +7,9 @@ aliases:
   - /Usage/Events.html
 ---
 
-Most simulations need something to *happen*: a stimulation pulse, a task input, a
-perturbation to probe the model's response. In TVBO these are **events**, and the most
-common kind is a **stimulus** — a time-dependent signal injected into the model.
+Most simulations need something to *happen*: a stimulation pulse, a task input, a perturbation to probe the model's response. In TVBO these are **events**, and the most common kind is a **stimulus**: a time-dependent signal injected into the model.
 
-A stimulus is not a hardcoded array of numbers. It is a **symbolic equation in time**,
-which is what lets the same object serialize to YAML, render to every backend, and stay
-reproducible alongside the model.
+A stimulus is not a hardcoded array of numbers. It is a **symbolic equation in time**, which is what lets the same object serialize to YAML, render to every backend, and stay reproducible alongside the model.
 
 ## Anatomy of a stimulus
 
@@ -21,7 +17,7 @@ An event answers three questions:
 
 | Question | Field | Example |
 |---|---|---|
-| **Into what?** | the event's **name** | `I` — the model port it drives |
+| **Into what?** | the event's **name** | `I`, the model port it drives |
 | **What shape?** | `equation.rhs` + `parameters` | a rectangular pulse in `t` |
 | **Where?** | `nodes` / `weights` | which regions, how strongly |
 
@@ -49,22 +45,18 @@ events:
       width:     {value: 50.0,  unit: ms}
 ```
 
-Any expression in `t` and the event's own parameters is valid — a Gaussian, a ramp, or a
-sinusoid works the same way.
+Any expression in `t` and the event's own parameters is valid: a Gaussian, a ramp or a sinusoid all work the same way.
 
 ::: {.callout-important}
 ## The event name is the model port, not a label
+
 The name binds the signal to a symbol in the model's equations. `Generic2dOscillator` has
 
 $$\dot V = d\,\tau\left(I\gamma - V^3 f + V^2 e + \ldots\right)$$
 
-so naming the event **`I`** injects the signal into that input term. Naming it something
-descriptive like `stimulus` binds to nothing and is **silently ignored** — no error, no
-warning, just an unchanged simulation.
+so naming the event **`I`** injects the signal into that input term. Naming it something descriptive like `stimulus` binds to nothing and is **silently ignored**: no error, no warning, just an unchanged simulation.
 
-Worse, naming it after a **state variable** (`V`) overwrites that state inside the
-derivative function rather than driving an input. The run "responds", but the trajectory
-is unphysical. Check the model's equations and pick an input symbol.
+Worse, naming it after a **state variable** (`V`) overwrites that state inside the derivative function rather than driving an input. The run "responds", but the trajectory is unphysical. Check the model's equations and pick an input symbol.
 :::
 
 ## A stimulus in action
@@ -148,9 +140,7 @@ for name, V in [("baseline", baseline)] + [(f"amplitude {a}", v) for a, v in run
 pd.DataFrame(rows)
 ```
 
-The response scales with amplitude and the model returns to its baseline oscillation once
-the pulse ends — the signature of a stimulus entering through an input term rather than
-overwriting the state.
+The response scales with amplitude and the model returns to its baseline oscillation once the pulse ends, the signature of a stimulus entering through an input term rather than overwriting the state.
 
 ## Targeting regions
 
@@ -170,41 +160,30 @@ events:
     weights: [1.0, 0.5, 0.5]  # how strongly each one does
 ```
 
-Omitting `nodes` applies the stimulus to every region equally. This is how a focal
-perturbation — a single stimulated region, or an electrode's projection profile — is
-expressed declaratively.
+Omitting `nodes` applies the stimulus to every region equally. This is how a focal perturbation is expressed declaratively, whether that is a single stimulated region or an electrode's projection profile.
 
 ## The other event types
 
-`stimulus` is one of four mechanisms in the schema. The others trigger on a *condition*
-rather than supplying a continuous signal:
+`stimulus` is one of four mechanisms in the schema. The others trigger on a *condition* rather than supplying a continuous signal:
 
 | `event_type` | Triggers when | Status on the JAX/tvboptim backend |
 |---|---|---|
-| `stimulus` / `stimulation` | always — a continuous signal in `t` | **working** (shown above) |
+| `stimulus` / `stimulation` | always, a continuous signal in `t` | **working** (shown above) |
 | `continuous` | a condition expression crosses zero | see caveat |
 | `discrete` | a condition evaluates true at a step | see caveat |
-| `preset_time` | at listed `trigger_times` | **not emitted** — see caveat |
+| `preset_time` | at listed `trigger_times` | **not emitted**; see caveat |
 
 ::: {.callout-warning}
 ## Condition-triggered events are not yet usable on this backend
-Only stimulus-type events were reproducible in testing. A `preset_time` event runs without
-error but produces output **byte-identical to the unstimulated baseline** — the code
-generator does not emit it, so it is silently inert. A `continuous` event whose condition
-references a state variable fails to resolve that symbol.
 
-Threshold-and-reset dynamics (spiking, refractory periods) are therefore best expressed
-today through models that build the reset into their own equations, or through the
-[NeuroML route](../BeyondMeanField/index.qmd), which has explicit event semantics. Treat
-the `continuous` / `discrete` / `preset_time` rows above as specified-but-not-delivered
-on this backend.
+Only stimulus-type events were reproducible in testing. A `preset_time` event runs without error but produces output **byte-identical to the unstimulated baseline**, because the code generator does not emit it, so it is silently inert. A `continuous` event whose condition references a state variable fails to resolve that symbol.
+
+Threshold-and-reset dynamics (spiking, refractory periods) are therefore best expressed today through models that build the reset into their own equations, or through the [NeuroML route](../BeyondMeanField/index.qmd), which has explicit event semantics. Treat the `continuous` / `discrete` / `preset_time` rows above as specified-but-not-delivered on this backend.
 :::
 
 ## Related
 
-- [Defining dynamical systems](DefineDynamicalSystem.qmd) — find the input port to drive.
-- [Parameter exploration](../Simulation/ParameterExploration.qmd) — sweep `amplitude` or
-  `onset` like any other parameter.
-- [`Event`](../datamodel/classes/Event.qmd) · [`Stimulus`](../datamodel/classes/Stimulus.qmd) — the schema.
-- [Jansen & Rit (1995)](../Replication/Jansen1995/docs/report.qmd) — a published
-  stimulation experiment reproduced end to end.
+- [Defining dynamical systems](DefineDynamicalSystem.qmd): find the input port to drive.
+- [Parameter exploration](../Simulation/ParameterExploration.qmd): sweep `amplitude` or `onset` like any other parameter.
+- [`Event`](../datamodel/classes/Event.qmd) · [`Stimulus`](../datamodel/classes/Stimulus.qmd): the schema.
+- [The replication pipeline](../Replication/pipeline.qmd): where a stimulation experiment sits in a full study.

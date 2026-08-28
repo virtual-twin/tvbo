@@ -4,11 +4,7 @@ description: Observation models — from YAML definition to TVB monitors and bac
 jupyter: python3
 ---
 
-TVB uses **monitors** to define what a simulation records — raw state
-variables, temporal averages, BOLD fMRI via hemodynamic response, or
-scalp EEG/MEG via lead-field projection. TVBO stores each monitor as a
-framework-agnostic **Observation** YAML that captures the full signal
-processing pipeline, then converts to any backend on demand.
+TVB uses **monitors** to define what a simulation records — raw state variables, temporal averages, BOLD fMRI via hemodynamic response, or scalp EEG/MEG via lead-field projection. TVBO stores each monitor as a framework-agnostic **Observation** YAML that captures the full signal processing pipeline, then converts to any backend on demand.
 
 ```{python}
 import numpy as np
@@ -18,15 +14,14 @@ from tvbo import Observation, Network
 
 ## 1. Observation Model Overview
 
-Every observation model lives in `tvbo/database/observation_models/` as
-a self-describing YAML file. Each defines:
+Every observation model lives in `tvbo/database/observation_models/` as a self-describing YAML file. Each defines:
 
-- **name** / **label** — identifier and human-readable name
-- **class_reference** — maps to a specific TVB monitor class
-- **period** — sampling interval in ms
-- **pipeline** — ordered signal processing steps (gain projection, HRF convolution, etc.)
-- **data_source** — optional link to a sensor network (for EEG/MEG/iEEG)
-- **parameters** — physical constants (conductivity, permeability, TR, ...)
+- **name** / **label**: identifier and human-readable name
+- **class_reference**: maps to a specific TVB monitor class
+- **period**: sampling interval in ms
+- **pipeline**: ordered signal processing steps (gain projection, HRF convolution, etc.)
+- **data_source**: optional link to a sensor network (for EEG/MEG/iEEG)
+- **parameters**: physical constants (conductivity, permeability, TR, ...)
 
 ```{python}
 print("Available observation models:")
@@ -49,8 +44,7 @@ The models fall into four categories:
 
 ## 2. Basic Monitors
 
-Basic monitors apply simple temporal or spatial transformations to the
-raw simulation state. They require no external data.
+Basic monitors apply simple temporal or spatial transformations to the raw simulation state. They require no external data.
 
 ```{python}
 obs_raw = Observation.from_db("raw")
@@ -60,7 +54,7 @@ print(f"  TVB class: {obs_raw.class_reference.name}")
 ```
 
 ```{python}
-obs_ta = Observation.from_db("temporal_average")
+obs_ta = Observation.from_db("TemporalAverage")
 print(f"{obs_ta.name}: {obs_ta.label}")
 print(f"  Period: {obs_ta.period} ms")
 print(f"  Pipeline: {[str(s.name) for s in obs_ta.pipeline]}")
@@ -68,8 +62,7 @@ print(f"  Pipeline: {[str(s.name) for s in obs_ta.pipeline]}")
 
 ### Convert to TVB
 
-Each observation converts to its corresponding TVB monitor with a
-single function call:
+Each observation converts to its corresponding TVB monitor with a single function call:
 
 ```{python}
 from tvbo.adapters.tvb import to_tvb_monitor
@@ -83,8 +76,7 @@ print(f"TA   → {type(mon_ta).__name__}, period={mon_ta.period}")
 
 ## 3. Projection Monitors — EEG, MEG, iEEG
 
-Projection monitors transform source-level neural activity into sensor
-signals via a **lead-field (gain) matrix**. Each model links to a
+Projection monitors transform source-level neural activity into sensor signals via a **lead-field (gain) matrix**. Each model links to a
 **sensor network** stored as a YAML + HDF5 pair in the tvbo database.
 
 The forward model pipeline:
@@ -148,8 +140,7 @@ print(f"  Pipeline: {[str(s.name) for s in obs_ieeg.pipeline]}")
 
 ### Convert Projection Monitors to TVB
 
-The adapter loads sensors, orientations (MEG), and gain matrices
-automatically from the linked sensor network:
+The adapter loads sensors, orientations (MEG), and gain matrices automatically from the linked sensor network:
 
 ```{python}
 mon_eeg = to_tvb_monitor(obs_eeg)
@@ -170,9 +161,7 @@ print(f"  Sensors:    {type(mon_ieeg.sensors).__name__} {mon_ieeg.sensors.locati
 
 ## 4. Visualize TVB Projection Networks on TVB Surface
 
-We now build sensor-to-region projection graphs directly from the
-TVB-default EEG/MEG/iEEG monitor data and render them on the
-TVB default cortical surface mesh.
+We now build sensor-to-region projection graphs directly from the TVB-default EEG/MEG/iEEG monitor data and render them on the TVB default cortical surface mesh.
 
 ```{python}
 import nibabel as nib
@@ -337,9 +326,7 @@ plt.show()
 
 ## 5. Hemodynamic Monitors (BOLD)
 
-BOLD monitors simulate the fMRI signal by convolving neural activity
-with a hemodynamic response function (HRF), followed by temporal
-subsampling at the repetition time (TR).
+BOLD monitors simulate the fMRI signal by convolving neural activity with a hemodynamic response function (HRF), followed by temporal subsampling at the repetition time (TR).
 
 The pipeline:
 
@@ -382,9 +369,7 @@ for name in bold_variants:
 
 ## 6. Coupling Monitors
 
-Coupling monitors record the afferent (incoming) coupling term at each
-node — the network input that drives the dynamics, rather than the
-model state itself. Useful for analysing effective connectivity.
+Coupling monitors record the afferent (incoming) coupling term at each node — the network input that drives the dynamics, rather than the model state itself. Useful for analysing effective connectivity.
 
 ```{python}
 obs_ac = Observation.from_db("afferent_coupling")
@@ -398,11 +383,7 @@ print(f"  → {type(mon_ac).__name__}")
 
 ## 7. Simulation Round-Trip: Numerical Verification
 
-To verify that tvbo-generated TVB models are faithful to the original,
-we compare simulations run with the TVB-native `Generic2dOscillator`
-against the tvbo-generated equivalent. Both use identical connectivity,
-coupling, integrator, and initial conditions. Results are wrapped
-using `ExperimentResult.from_tvb()` for consistent access.
+To verify that tvbo-generated TVB models are faithful to the original, we compare simulations run with the TVB-native `Generic2dOscillator` against the tvbo-generated equivalent. Both use identical connectivity, coupling, integrator, and initial conditions. Results are wrapped using `ExperimentResult.from_tvb()` for consistent access.
 
 ```{python}
 from tvbo import Dynamics, ExperimentResult
@@ -496,13 +477,12 @@ if hasattr(mon, 'sensors') and mon.sensors is not None:
 
 ## 8. Monitor Round-Trip: tvbo → TVB → verify
 
-The adapter can convert every observation type to its corresponding TVB
-monitor and back:
+The adapter can convert every observation type to its corresponding TVB monitor and back:
 
 ```{python}
 from tvbo.adapters.tvb import to_tvb_monitor
 
-for name in ["raw", "eeg", "bold_tvb", "temporal_average"]:
+for name in ["raw", "eeg", "bold_tvb", "TemporalAverage"]:
     obs = Observation.from_db(name)
     mon = to_tvb_monitor(obs)
     print(f"{str(obs.name):20s} → {type(mon).__name__:30s}", end="")
@@ -527,6 +507,4 @@ for name in ["raw", "eeg", "bold_tvb", "temporal_average"]:
 | Sensors | `Network.from_file(database_path / "networks" / obs.data_source.path)` | Load linked sensor network |
 | Gain | `sensor_net.matrix("gain", format="dense")` | Access lead-field matrix |
 
-The observation model YAML captures the complete signal processing chain —
-from raw neural activity to the measured signal — in a
-framework-agnostic format that any backend can consume.
+The observation model YAML captures the complete signal processing chain — from raw neural activity to the measured signal — in a framework-agnostic format that any backend can consume.

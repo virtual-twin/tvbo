@@ -6,30 +6,18 @@ aliases:
   - /Usage/BifurcationTutorial/index.html
 ---
 
-This section teaches **bifurcation and stability analysis in TVBO** — locating fixed
-points, testing their linear stability, drawing phase portraits, and continuing the
-canonical bifurcations (saddle-node, pitchfork, Hopf) as a parameter varies. Each page is a
-short, copy-pasteable recipe.
+This section teaches **bifurcation and stability analysis in TVBO** — locating fixed points, testing their linear stability, drawing phase portraits, and continuing the canonical bifurcations (saddle-node, pitchfork, Hopf) as a parameter varies. Each page is a short, copy-pasteable recipe.
 
-It is built as a self-contained, declarative reproduction of the canonical normal-form
-bifurcation tutorial, written entirely with **TVBO** primitives.
+It is built as a self-contained, declarative reproduction of the canonical normal-form bifurcation tutorial, written entirely with **TVBO** primitives.
 
-The original tutorial is built on hand-written `ContinuationSystem` Python
-classes that wrap AUTO-07p Fortran subroutines (one `model.f90` per system).
-Here we replace **every** Fortran/Python pair with **a single inline YAML
-string** that defines the dynamical system declaratively. TVBO then routes the
-metadata to its bifurcation backends (BifurcationKit.jl or PyRates/PyCoBi)
-through the unified [`Continuation`](BifurcationAnalysis.qmd) API.
+The original tutorial is built on hand-written `ContinuationSystem` Python classes that wrap AUTO-07p Fortran subroutines (one `model.f90` per system).
+Here we replace **every** Fortran/Python pair with **a single inline YAML string** that defines the dynamical system declaratively. TVBO then routes the metadata to its bifurcation backends (BifurcationKit.jl or PyRates/PyCoBi) through the unified [`Continuation`](BifurcationAnalysis.qmd) API.
 
 ## Goals
 
-1. **Zero hidden state.** No `from_db()`, no `from_ontology()`, no Fortran
-   files, no scratch directories. Every model and every continuation is a
-   self-describing YAML string in the page.
-2. **One backend-agnostic specification.** The same YAML drives BifurcationKit.jl
-   and PyRates (AUTO-07p) -- picked at `exp.run(...)` time.
-3. **Reproduce every figure** from the legacy tutorial using TVBO plotting
-   only (`plot_dynamics` for phase portraits and `BifurcationResult.plot()` /
+1. **Zero hidden state.** No `from_db()`, no `from_ontology()`, no Fortran files, no scratch directories. Every model and every continuation is a self-describing YAML string in the page.
+2. **One backend-agnostic specification.** The same YAML drives BifurcationKit.jl and PyRates (AUTO-07p) -- picked at `exp.run(...)` time.
+3. **Reproduce every figure** from the legacy tutorial using TVBO plotting only (`plot_dynamics` for phase portraits and `BifurcationResult.plot()` /
    `.plot_3d()` for diagrams).
 
 ## Plan
@@ -77,14 +65,11 @@ free_parameters:
     domain: { lo: -2.0, hi: 2.0 }
 ```
 
-For Hopf systems we additionally request continuation of periodic orbits
-from each detected Hopf point via a nested branch
-(`source_point: "hopf:all"`).
+For Hopf systems we additionally request continuation of periodic orbits from each detected Hopf point via a nested branch (`source_point: "hopf:all"`).
 
 ### Running
 
-The `Continuation` is attached to a `SimulationExperiment` and dispatched to a
-backend:
+The `Continuation` is attached to a `SimulationExperiment` and dispatched to a backend:
 
 ```python
 exp = SimulationExperiment(dynamics=dyn, continuations=[cont])
@@ -94,22 +79,17 @@ result.continuations["eq_in_a"].plot(VOI="x")
 
 ### Phase portraits
 
-For pure phase-portrait figures we use `Dynamics.plot` with
-`kind="vectorfield"` (stream-plot only) or `kind="phaseplane"` (stream-plot
-plus nullclines and detected fixed points):
+For pure phase-portrait figures we use `Dynamics.plot` with `kind="vectorfield"` (stream-plot only) or `kind="phaseplane"` (stream-plot plus nullclines and detected fixed points):
 
 ```python
 dyn.plot("x1", "x2", kind="phaseplane", n_trajectories=3)
 ```
 
-Both kinds use the state-variable domains declared in the YAML to set the
-axis limits.
+Both kinds use the state-variable domains declared in the YAML to set the axis limits.
 
 ### Animations across a parameter
 
-`Dynamics.animate(parameter, values, *dims, kind=...)` produces a
-`matplotlib.animation.FuncAnimation` by re-running `plot()` for each value
-of the chosen parameter:
+`Dynamics.animate(parameter, values, *dims, kind=...)` produces a `matplotlib.animation.FuncAnimation` by re-running `plot()` for each value of the chosen parameter:
 
 ```python
 anim = dyn.animate("a", np.linspace(-2, 1.5, 60),
@@ -119,9 +99,7 @@ HTML(anim.to_jshtml())
 
 ### 3D Hopf diagram
 
-The 3D figure (equilibrium spine + limit-cycle tube + Hopf point) is produced
-with `BifurcationResult.plot_3d(VOI="x1")` once periodic orbits have been
-continued from the Hopf point.
+The 3D figure (equilibrium spine + limit-cycle tube + Hopf point) is produced with `BifurcationResult.plot_3d(VOI="x1")` once periodic orbits have been continued from the Hopf point.
 
 ## What this tutorial does NOT need
 

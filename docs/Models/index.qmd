@@ -1,40 +1,45 @@
 ---
 title: "Models & Dynamics"
-description: "Specify the dynamical system at each node: equations, parameters, noise, events, and units."
+description: "Specify the dynamical system at each node: equations, parameters, noise, events and units."
+jupyter: python3
 ---
 
-Every TVBO simulation starts with a **dynamical system** — the equations that govern a
-single node. TVBO ships 39 neural-mass models and lets you declare your own in YAML.
-This topic covers writing that specification and everything that shapes how it
-integrates.
+Every TVB-O simulation starts with a dynamical system: the equations that govern one node, before any network exists. You can write those equations yourself, or reference one of the curated models by its ontology IRI and never type them at all.
 
-## Learn
+```{python}
+#| label: model-count
+#| echo: false
+from tvbo import Dynamics
 
-- [Defining dynamical systems](DefineDynamicalSystem.qmd) — write a model from scratch,
-  from a damped pendulum to a neural mass.
+names = Dynamics.list_db()
+print(f"{len(names)} curated models, including {', '.join(sorted(names)[:4])} …")
+```
 
-## Do
+Most people start by reusing a curated model and only later declare their own. Both paths use the same specification, so moving from one to the other costs nothing.
 
-- [Events & stimulation](Events.qmd) — threshold events, preset-time events,
-  and external stimuli.
-- [Noise & stochastic integration](Noise.qmd) — additive and multiplicative noise.
-- [Initial conditions](InitialConditions.qmd) — set and resolve starting state.
-- [Unit-aware computations](UnitValidation.qmd) — keep a model dimensionally consistent.
+## Writing the system
 
-## Understand
+| Page | What it covers |
+|---|---|
+| [Defining dynamical systems](DefineDynamicalSystem.qmd) | Writing a model from scratch, from a damped pendulum to a neural mass. |
+| [Initial conditions](InitialConditions.qmd) | Setting the starting state, fixed or sampled from a distribution. |
+| [Noise & stochastic integration](Noise.qmd) | Additive and multiplicative noise, and what turns an ODE into an SDE. |
+| [Events & stimulation](Events.qmd) | Threshold events, preset-time events, and external stimuli. |
+| [Unit-aware computations](UnitValidation.qmd) | Keeping a model dimensionally consistent. |
 
-- [Cross-backend numerical parity](CrossBackendParity.qmd) — why two backends can
-  disagree, and the four things that break parity.
+## Solving it
 
-## Look up
+| Page | What it covers |
+|---|---|
+| [Integrators](Integrators.qmd) | The available methods, and when each one is the right choice. |
+| [Cross-backend numerical parity](CrossBackendParity.qmd) | Why two backends can disagree about the same model, and the four things that break parity. |
 
-- [Integrators](Integrators.qmd) — available methods and when to use them.
-- [`Dynamics`](../datamodel/classes/Dynamics.qmd) ·
-  [`StateVariable`](../datamodel/classes/StateVariable.qmd) ·
-  [`Parameter`](../datamodel/classes/Parameter.qmd) — the schema.
-- [Model gallery](../examples/dynamics_from_db.qmd) — every model in the database.
+## Beyond one averaged unit
 
-## Related
+A neural mass is one averaged population per region. When that is too coarse, [Beyond the mean field](../BeyondMeanField/index.qmd) covers spiking cells, ion channels and multi-scale models, and [Bifurcation & continuation](../Bifurcation/index.qmd) covers finding where a model changes qualitative behaviour.
 
-- [Networks & connectomes](../Networks/index.qmd) — wire these nodes into a brain.
-- [Bifurcation & stability](../Bifurcation/index.qmd) — analyse a model's regimes.
+Once the node is specified, [Networks & connectomes](../Networks/index.qmd) wires many of them into a brain.
+
+## Reference
+
+[`Dynamics`](../datamodel/classes/Dynamics.qmd) · [`StateVariable`](../datamodel/classes/StateVariable.qmd) · [`Parameter`](../datamodel/classes/Parameter.qmd) · the [model gallery](../examples/dynamics_from_db.qmd).

@@ -67,16 +67,11 @@ The OU process has a time constant `ntau` controlling the autocorrelation.
 
 ### Noise correlated across populations
 
-`Noise.covariance` together with `correlated_over` makes the noise driving several
-populations share a common component, integrated by `CorrelatedNoiseSolver`. The
-construction is a **linear mix** of a shared source $I_{CC}$ with an independent
-per-population source, not the variance-preserving rotation:
+`Noise.covariance` together with `correlated_over` makes the noise driving several populations share a common component, integrated by `CorrelatedNoiseSolver`. The construction is a **linear mix** of a shared source $I_{CC}$ with an independent per-population source, not the variance-preserving rotation:
 
-$$I^{f}_{A} = \rho\,I_{CC} + (1-\rho)\,I_{A}, \qquad
-  I^{f}_{B} = \rho\,I_{CC} + (1-\rho)\,I_{B}$$
+$$I^{f}_{A} = \rho\,I_{CC} + (1-\rho)\,I_{A}, \qquad I^{f}_{B} = \rho\,I_{CC} + (1-\rho)\,I_{B}$$
 
-The distinction matters, because the two differ in what they hold fixed. Writing
-$\sigma^2$ for each independent source's variance:
+The distinction matters, because the two differ in what they hold fixed. Writing $\sigma^2$ for each independent source's variance:
 
 | | linear mix (used here) | rotation $\xi_B = \rho\xi_A + \sqrt{1-\rho^2}\,\xi_I$ |
 |---|---|---|
@@ -84,9 +79,7 @@ $\sigma^2$ for each independent source's variance:
 | per-population amplitude $\operatorname{Var}(I^{f}_A)$ | $[\rho^2 + (1-\rho)^2]\,\sigma^2$, U-shaped with a minimum at $\rho = 0.5$ | constant |
 | realised A–B correlation | $\rho^2/[\rho^2 + (1-\rho)^2]$ | $\rho$ |
 
-So `covariance` sets the *mixing weight*, not the resulting correlation, and raising it
-reduces the differential drive between populations. Where a decision circuit's accuracy
-rises with $\rho$, that monotonic fall in differential noise is usually the cause.
+So `covariance` sets the *mixing weight*, not the resulting correlation, and raising it reduces the differential drive between populations. Where a decision circuit's accuracy rises with $\rho$, that monotonic fall in differential noise is usually the cause.
 
 ## YAML Specification
 
@@ -110,17 +103,13 @@ integration:
 | `ntau` | OU time constant (only for `ou` type) |
 
 Give the amplitude **either** way — `sigma` when you have a standard deviation,
-`nsig` when you have a dispersion. Both are read by one shared reader, so a recipe
-means the same amplitude on every backend (tvboptim, Brian2, NetworkDynamics.jl,
+`nsig` when you have a dispersion. Both are read by one shared reader, so a recipe means the same amplitude on every backend (tvboptim, Brian2, NetworkDynamics.jl,
 Julia). `sigma` wins if both are present.
 
 ::: {.callout-warning}
 ## `intensity` was removed in 1.0
 
-The bare `noise: {intensity: ...}` slot is gone; the schema rejects it. It had
-meant a **standard deviation**, so declare `parameters: {sigma: ...}` — or
-`parameters: {nsig: ...}` if the value was a dispersion, which differs by
-$\sqrt{2D}/D$.
+The bare `noise: {intensity: ...}` slot is gone; the schema rejects it. It had meant a **standard deviation**, so declare `parameters: {sigma: ...}` — or `parameters: {nsig: ...}` if the value was a dispersion, which differs by $\sqrt{2D}/D$.
 
 ```yaml
 # before                          # after
@@ -136,11 +125,7 @@ Stochastic integration uses the Heun method (stochastic Heun-Euler). Set `method
 
 ## Stochastic time-varying parameter inputs
 
-Some models drive a parameter with a random process *instead of* (or in
-addition to) Wiener noise on the state. The classical example is
-Jansen-Rit's `p`: an external pulse density resampled at every integration
-step from a uniform distribution. TVBO expresses this declaratively by
-attaching a `distribution` to the **parameter** with `axis: time`.
+Some models drive a parameter with a random process *instead of* (or in addition to) Wiener noise on the state. The classical example is Jansen-Rit's `p`: an external pulse density resampled at every integration step from a uniform distribution. TVBO expresses this declaratively by attaching a `distribution` to the **parameter** with `axis: time`.
 
 ### YAML schema
 
@@ -158,18 +143,13 @@ parameters:
       axis: time               # ⇐ key: "Resample every integration timestep"
 ```
 
-The `axis: time` value of [SamplingAxis](/datamodel/enums/SamplingAxis.qmd)
-marks the parameter as a stochastic time-varying input
-(the alternative `axis: space` declares heterogeneous-by-node sampling, see
-[Heterogeneous Node Dynamics](../Networks/HeterogeneousNodes.qmd)).
+The `axis: time` value of [SamplingAxis](/datamodel/enums/SamplingAxis.qmd) marks the parameter as a stochastic time-varying input (the alternative `axis: space` declares heterogeneous-by-node sampling, see [Heterogeneous Node Dynamics](../Networks/HeterogeneousNodes.qmd)).
 
 ### What the tvboptim backend generates
 
 For each `axis: time` parameter, the template emits:
 
-1. A pre-generated trajectory of length $\lceil t_1/\Delta t \rceil + 2$,
-   sampled via `jax.random.uniform` / `normal` / `truncated_normal` and
-   stored on `state.dynamics._stoch_<name>` once at the start of the run:
+1. A pre-generated trajectory of length $\lceil t_1/\Delta t \rceil + 2$, sampled via `jax.random.uniform` / `normal` / `truncated_normal` and stored on `state.dynamics._stoch_<name>` once at the start of the run:
 
    ```python
    state.dynamics._stoch_p = jax.random.uniform(
@@ -184,10 +164,7 @@ For each `axis: time` parameter, the template emits:
    ```
 
 3. A `_freeze_step_time` patch on the solver. Multi-stage methods (RK4,
-   Heun) evaluate the dfun at sub-step times $t,\, t + \Delta t/2,\,
-   t + \Delta t$. The freeze ensures all sub-evaluations within one step
-   read the same noise sample — the input is sampled *once per integration
-   step*, not interpolated across sub-stages.
+   Heun) evaluate the dfun at sub-step times $t,\, t + \Delta t/2,\, t + \Delta t$. The freeze ensures all sub-evaluations within one step read the same noise sample — the input is sampled *once per integration step*, not interpolated across sub-stages.
 
 ### Distribution names and parameterisation
 
@@ -197,32 +174,22 @@ For each `axis: time` parameter, the template emits:
 | `Gaussian` / `Normal`| `jax.random.normal`           | mean = `value`, std = `(hi - lo)/4` |
 | `TruncatedNormal`    | `jax.random.truncated_normal` | mean = `value`, std = `(hi - lo)/4`, clipped to `[lo, hi]` |
 
-For `Gaussian`/`TruncatedNormal`, the *fallback* `value` (used by
-non-stochastic backends and as the centre of the distribution) is the
-parameter's `value:` field, **not** the domain midpoint.
+For `Gaussian`/`TruncatedNormal`, the *fallback* `value` (used by non-stochastic backends and as the centre of the distribution) is the parameter's `value:` field, **not** the domain midpoint.
 
 ### Per-node vs scalar
 
 The trajectory shape is determined by `parameters.<name>.shape`:
 
-- `shape: "(n_nodes,)"` ⇒ `(n_steps, n_nodes)` — independent draw per node
-  per step.
+- `shape: "(n_nodes,)"` ⇒ `(n_steps, n_nodes)`: independent draw per node per step.
 - otherwise ⇒ `(n_steps,)` — one draw per step, broadcast to all nodes.
 
 ### Reproducibility
 
-The seed lives on the distribution itself (`distribution.seed`). The
-template wires it into `jax.random.key(<seed>)` at run time. Two runs with
-the same seed produce bit-identical trajectories on the same backend; seeds
-do **not** transfer between backends (`tvboptim` ↔ `jax` ↔ `tvb` use
-different RNGs).
+The seed lives on the distribution itself (`distribution.seed`). The template wires it into `jax.random.key(<seed>)` at run time. Two runs with the same seed produce bit-identical trajectories on the same backend; seeds do **not** transfer between backends (`tvboptim` ↔ `jax` ↔ `tvb` use different RNGs).
 
 ### Comparing to deterministic backends
 
-Only `tvboptim` currently honours `distribution: { axis: time }`. The `jax`
-and `tvb` codegen treats the parameter as the constant `value`. To run a
-deterministic baseline across all three backends, replace the distribution
-with the domain midpoint as a constant:
+Only `tvboptim` currently honours `distribution: { axis: time }`. The `jax` and `tvb` codegen treats the parameter as the constant `value`. To run a deterministic baseline across all three backends, replace the distribution with the domain midpoint as a constant:
 
 ```python
 for p in exp.dynamics.parameters.values():
@@ -232,17 +199,12 @@ for p in exp.dynamics.parameters.values():
         p.distribution = None
 ```
 
-This pattern, plus stripping `integration.noise`, gives bit-comparable
-output across backends — see
-[Cross-Backend Numerical Parity](CrossBackendParity.qmd).
+This pattern, plus stripping `integration.noise`, gives bit-comparable output across backends — see [Cross-Backend Numerical Parity](CrossBackendParity.qmd).
 
 ## See Also
 
-- [Cross-Backend Numerical Parity](CrossBackendParity.qmd) — running the same
-  experiment on `tvboptim`, `jax`, and `tvb` and verifying agreement.
-- [Initial Conditions & Initial State](InitialConditions.qmd) — distributions
-  on **state variables** for sampled ICs (`axis: space` semantics).
-- [Heterogeneous Node Dynamics](../Networks/HeterogeneousNodes.qmd) — `axis: space`
-  parameter sampling for per-node heterogeneity.
-- [Simulation Experiments](../Simulation/SimulationExperiments.qmd) — integrator configuration
-- [RWW tvboptim workflow](/Fitting/RWW_tvboptim.qmd) — stochastic RWW simulation
+- [Cross-Backend Numerical Parity](CrossBackendParity.qmd): running the same experiment on `tvboptim`, `jax`, and `tvb` and verifying agreement.
+- [Initial Conditions & Initial State](InitialConditions.qmd): distributions on **state variables** for sampled ICs (`axis: space` semantics).
+- [Heterogeneous Node Dynamics](../Networks/HeterogeneousNodes.qmd) — `axis: space` parameter sampling for per-node heterogeneity.
+- [Simulation Experiments](../Simulation/SimulationExperiments.qmd): integrator configuration
+- [RWW tvboptim workflow](/Fitting/RWW_tvboptim.qmd): stochastic RWW simulation

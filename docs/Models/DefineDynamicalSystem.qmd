@@ -12,7 +12,7 @@ This guide demonstrates how to define and simulate a Dynamical System using TVBO
 
 We'll create a simple damped pendulum system to illustrate the key concepts.
 
-![](_output/anim1.gif)
+![The state of the declared system evolving in time, traced as the integrator steps forward.](_output/anim1.gif)
 
 ### System Specification
 
@@ -97,15 +97,14 @@ Real-time animation of the pendulum motion alongside the time series data:
 # | echo: false
 ani = results.integration.animate('pendulum', save="_output/anim1.gif")
 ```
-```
 
 ### Phase Portrait
 
-State variables accept a [Distribution](/datamodel/classes/Distribution.html) for initial conditions. The presence of a distribution declares that the variable should be sampled — no runtime flags needed. The resolution order is:
+State variables accept a [Distribution](/datamodel/classes/Distribution.html) for initial conditions. The presence of a distribution declares that the variable should be sampled, with no runtime flags needed. The resolution order is:
 
 | Configuration | Behavior |
 |---|---|
-| `initial_value: 1.0` (no distribution) | Deterministic — always starts at 1.0 |
+| `initial_value: 1.0` (no distribution) | Deterministic; always starts at 1.0 |
 | `distribution:` present + `n_trials > 1` | Each trial samples a new IC from the distribution |
 | `distribution:` present, single run | Uses `initial_value` as fallback |
 | `distribution.domain` not set | Falls back to the state variable's `domain` |
@@ -132,7 +131,7 @@ theta:
     # → Uniform(-3.14, 3.14)
 ```
 
-An [Exploration](/datamodel/classes/Exploration.html) with `n_trials` runs them in parallel — each trial samples a different starting point, revealing the full phase portrait without any Python loop:
+An [Exploration](/datamodel/classes/Exploration.html) with `n_trials` runs them in parallel, and each trial samples a different starting point, revealing the full phase portrait without any Python loop:
 
 ```{python}
 from tvbo.datamodel.schema import Distribution, Range, Exploration

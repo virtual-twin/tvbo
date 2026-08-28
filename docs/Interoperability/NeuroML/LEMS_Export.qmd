@@ -32,8 +32,7 @@ The rendered XML includes:
 
 - `<ComponentType name="Generic2dOscillator">` with all model parameters as `<Parameter>`
 - `<StateVariable name="V" ...>` and `<StateVariable name="W" ...>` with `<Exposure>`
-- `<TimeDerivative variable="V" value="..."/>` — note the `/ SEC` when needed to
-  account for the TVBO convention of millisecond-based integration with a `1s` constant
+- `<TimeDerivative variable="V" value="..."/>`: note the `/ SEC` when needed to account for the TVBO convention of millisecond-based integration with a `1s` constant
 - `<OnStart>` with `<StateAssignment>` from initial conditions
 - A `<Component id="Generic2dOscillator" ...>` instance with default parameter values
 - A `<Simulation>` block with output files per state variable
@@ -92,9 +91,7 @@ The relational operators (`>=` → `.geq.`) are handled by `LEMSPrinter` inside 
 
 ## 3. Conditional Derived Variables
 
-Gate variables in Hodgkin-Huxley-style models use piecewise functions with a singularity
-at specific voltages. TVBO stores these as SymPy `Piecewise` expressions, which the template
-automatically maps to LEMS `<ConditionalDerivedVariable>`:
+Gate variables in Hodgkin-Huxley-style models use piecewise functions with a singularity at specific voltages. TVBO stores these as SymPy `Piecewise` expressions, which the template automatically maps to LEMS `<ConditionalDerivedVariable>`:
 
 ```yaml
 derived_variables:
@@ -119,8 +116,7 @@ The final `<Case>` with no `condition` is the default fallback — equivalent to
 
 ## 4. Coupling
 
-For a whole-brain experiment, TVBO's `Coupling` metadata (pre-expression, post-expression,
-global coupling constant) is exported as a dedicated LEMS `ComponentType`:
+For a whole-brain experiment, TVBO's `Coupling` metadata (pre-expression, post-expression, global coupling constant) is exported as a dedicated LEMS `ComponentType`:
 
 ```xml
 <ComponentType name="Coupling">
@@ -134,8 +130,7 @@ global coupling constant) is exported as a dedicated LEMS `ComponentType`:
 </ComponentType>
 ```
 
-The `c_pop0` DerivedParameter is the coupling term that appears in the network node's
-state variable equations.
+The `c_pop0` DerivedParameter is the coupling term that appears in the network node's state variable equations.
 
 ---
 
@@ -171,9 +166,7 @@ with open("lems_sim.xml", "w") as f:
 
 ## 6. Split-File Export
 
-By NeuroML convention, a fully portable model is distributed as three separate
-LEMS files that references each other via `<Include>`. The TVBO adapter generates
-all three with a single call:
+By NeuroML convention, a fully portable model is distributed as three separate LEMS files that references each other via `<Include>`. The TVBO adapter generates all three with a single call:
 
 ```{python}
 paths = adapter.export("./output", split=True, validate=False)
@@ -210,8 +203,7 @@ xml_sim = adapter.render_simulation(network_file="my_network.xml")
 
 ## 7. Unified `render()` API
 
-`SimulationExperiment.render()` is the unified entry point for all serialisation
-formats — both executable code and metadata.
+`SimulationExperiment.render()` is the unified entry point for all serialisation formats — both executable code and metadata.
 
 ```{python}
 # exp and adapter are already defined in section 5 above
@@ -256,15 +248,13 @@ Or from the command line:
 jnml ses-..._simulation.xml
 ```
 
-Results are written to `results/<model>_<sv>.dat` (one file per state variable per
-run), matching the `<OutputFile>` definitions in the `<Simulation>` block.
+Results are written to `results/<model>_<sv>.dat` (one file per state variable per run), matching the `<OutputFile>` definitions in the `<Simulation>` block.
 
 ---
 
 ## 9. User-Defined Functions
 
-LEMS has no mechanism for user-defined functions. Models that define helper
-functions in YAML (e.g. a sigmoid `Sigm(x)`) have those calls automatically
+LEMS has no mechanism for user-defined functions. Models that define helper functions in YAML (e.g. a sigmoid `Sigm(x)`) have those calls automatically
 **inlined** by the adapter before rendering:
 
 ```yaml
@@ -288,8 +278,7 @@ The adapter substitutes `Sigm(y1 - y2)` with its body, producing valid LEMS:
   value="(A*a * (2*e0/(1 + exp(r*(v0 - (y1 - y2))))) - 2*a*y3 - a^2*y0) / SEC"/>
 ```
 
-This inlining is done symbolically via SymPy's `replace()` + `xreplace()`, so
-nested or composed function calls work correctly.
+This inlining is done symbolically via SymPy's `replace()` + `xreplace()`, so nested or composed function calls work correctly.
 
 ---
 
@@ -375,11 +364,7 @@ A complete TVBO → LEMS export produces this XML skeleton:
 : That's correct — LEMS uses the function name `exp(x)`, not `e^x`.
 
 **Validation fails with "Unknown element: network"**
-: The TVBO template generates self-contained LEMS, not standard NeuroML XML. It does not
-  use `<neuroml>` as the root element — `<Lems>` is the root. Use `jnml` directly, not
-  `pynml_run_neuroml2_lems`.
+: The TVBO template generates self-contained LEMS, not standard NeuroML XML. It does not use `<neuroml>` as the root element — `<Lems>` is the root. Use `jnml` directly, not `pynml_run_neuroml2_lems`.
 
 **Missing units dimension**
-: If a parameter has `unit: "mA/cm2"` that isn't in the lookup table, the dimension
-  falls back to `"none"`. Extend `UNITS` in `tvbo/adapters/neuroml.py` or map it in
-  your YAML with a known unit string.
+: If a parameter has `unit: "mA/cm2"` that isn't in the lookup table, the dimension falls back to `"none"`. Extend `UNITS` in `tvbo/adapters/neuroml.py` or map it in your YAML with a known unit string.

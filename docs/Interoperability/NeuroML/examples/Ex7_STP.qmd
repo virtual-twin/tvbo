@@ -1,6 +1,9 @@
 ---
 title: "Ex7: Short-Term Plasticity"
 description: "Tsodyks-Markram short-term plasticity synapses (STD and STF)"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Short-Term Plasticity Synapses

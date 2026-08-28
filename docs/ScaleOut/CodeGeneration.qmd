@@ -96,5 +96,5 @@ Markdown(report)
 
 ## See Also
 
-- [Simulation Experiments](../Simulation/SimulationExperiments.qmd) — running experiments
+- [Simulation Experiments](../Simulation/SimulationExperiments.qmd): running experiments
 - [OpenMINDS](/Interoperability/OpenMINDS.qmd) — OpenMINDS JSON-LD export

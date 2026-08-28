@@ -17,9 +17,7 @@ Sub-tree that turns a Study or Experiment into a self-contained, portable reprod
 | `tvbo workflow finalize` | Reassemble an array run's shard outputs into one result |
 | `tvbo workflow backends` | List backends and their ontology-derived capabilities |
 
-The three emitters (`slurm`/`snakemake`/`nextflow`) share the same flag surface and
-just write a kit; `run` and `submit` also launch it. The kit layout is documented on
-its own page: see [Workflow kits anatomy](workflow-kits.qmd).
+The three emitters (`slurm`/`snakemake`/`nextflow`) share the same flag surface and just write a kit; `run` and `submit` also launch it. The kit layout is documented on its own page: see [Workflow kits anatomy](workflow-kits.qmd).
 
 ## Common flags
 
@@ -102,24 +100,16 @@ tvbo workflow slurm experiment:JR_MEG --backend jax --stdout > run.sbatch
 
 The emitters only *write* a kit. Two commands also *launch* it.
 
-**`tvbo workflow run <engine> SPEC`** — emit **and** execute in one step. For Slurm
-it submits `run.sbatch` (the array job) and chains `finalize.sbatch` with an
-`afterok` dependency, so the run converges to one reassembled result. Run it from a
-login node (it calls `sbatch`).
+**`tvbo workflow run <engine> SPEC`** — emit **and** execute in one step. For Slurm it submits `run.sbatch` (the array job) and chains `finalize.sbatch` with an `afterok` dependency, so the run converges to one reassembled result. Run it from a login node (it calls `sbatch`).
 
 ```bash
 tvbo workflow run slurm mystudy.yaml --experiment 30 --backend tvboptim
 tvbo workflow run slurm mystudy.yaml --experiment 2,3,20,30 --backend tvboptim  # one parallel job each
 ```
 
-Note the engine asymmetry: `run slurm` submits to the scheduler, but `run snakemake`
-executes the DAG **locally** (`snakemake --cores all`). To run a Snakefile *on* the
-cluster, emit it and launch it with snakemake's own slurm executor/profile.
+Note the engine asymmetry: `run slurm` submits to the scheduler, but `run snakemake` executes the DAG **locally** (`snakemake --cores all`). To run a Snakefile *on* the cluster, emit it and launch it with snakemake's own slurm executor/profile.
 
-**`tvbo workflow submit KIT`** — submit a kit you *already* emitted (and, say,
-copied to the cluster), with no recipe and no re-emit. It infers the engine from the
-kit's artefact (`run.sbatch` → slurm) and runs the same array + `finalize` chain as
-`run`, so you never type `sbatch` by hand:
+**`tvbo workflow submit KIT`** — submit a kit you *already* emitted (and, say, copied to the cluster), with no recipe and no re-emit. It infers the engine from the kit's artefact (`run.sbatch` → slurm) and runs the same array + `finalize` chain as `run`, so you never type `sbatch` by hand:
 
 ```bash
 tvbo workflow slurm mystudy.yaml --experiment 30 -o kit --pack   # laptop: emit + pack → kit.tar.gz
@@ -127,32 +117,17 @@ scp kit.tar.gz hpc:~/runs/                                        # ship one fil
 ssh hpc 'cd ~/runs && tvbo workflow submit kit.tar.gz'           # extracts, then launches
 ```
 
-`submit` takes a kit directory or a `.tar.gz`/`.tgz`/`.tar`/`.zip` of one — an
-archive is extracted next to itself first (and an already-extracted copy is reused,
-so a re-submit never clobbers an in-progress `results/`). `--array 0` submits a
-single smoke task; `--engine` overrides the auto-detection.
+`submit` takes a kit directory or a `.tar.gz`/`.tgz`/`.tar`/`.zip` of one — an archive is extracted next to itself first (and an already-extracted copy is reused, so a re-submit never clobbers an in-progress `results/`). `--array 0` submits a single smoke task; `--engine` overrides the auto-detection.
 
-**`tvbo workflow finalize`** reassembles an array run's per-shard outputs into one
-keyed `<stem>.h5` (+ `.yaml` sidecar). `run`/`submit` chain it automatically; call it
-by hand only to re-gather.
+**`tvbo workflow finalize`** reassembles an array run's per-shard outputs into one keyed `<stem>.h5` (+ `.yaml` sidecar). `run`/`submit` chain it automatically; call it by hand only to re-gather.
 
 ## Choosing an engine
 
-The three emitters are not interchangeable; they match two different shapes of
-parallelism. The planner already picks the right shape from the backend, so this
-is mostly about understanding what you get.
+The three emitters are not interchangeable; they match two different shapes of parallelism. The planner already picks the right shape from the backend, so this is mostly about understanding what you get.
 
-**Slurm array** fits a sweep the backend vectorizes. Every axis lives inside one
-JAX batch, so the tasks are identical and differ only by
-`$SLURM_ARRAY_TASK_ID`; task `i` runs `Space[i::N]`. There is no dependency graph
-to resolve and no per-cell file to track, so a bare `#SBATCH --array` is the
-whole mechanism. This is the `tvboptim` path for the Koller grid.
+**Slurm array** fits a sweep the backend vectorizes. Every axis lives inside one JAX batch, so the tasks are identical and differ only by `$SLURM_ARRAY_TASK_ID`; task `i` runs `Space[i::N]`. There is no dependency graph to resolve and no per-cell file to track, so a bare `#SBATCH --array` is the whole mechanism. This is the `tvboptim` path for the Koller grid.
 
-**Snakemake / Nextflow** fit a sweep the backend fans out: one process per cell,
-each with its own inputs and outputs. A DAG engine earns its overhead here
-because it tracks per-cell files, re-runs only what is missing, and can chain a
-per-cell `preprocess → simulate → analyse`. This is the path when the backend
-vectorizes nothing (e.g. `tvb`), or when you want file-level resume.
+**Snakemake / Nextflow** fit a sweep the backend fans out: one process per cell, each with its own inputs and outputs. A DAG engine earns its overhead here because it tracks per-cell files, re-runs only what is missing, and can chain a per-cell `preprocess → simulate → analyse`. This is the path when the backend vectorizes nothing (e.g. `tvb`), or when you want file-level resume.
 
 | Use a Slurm array when | Use Snakemake / Nextflow when |
 |------------------------|-------------------------------|
@@ -160,17 +135,13 @@ vectorizes nothing (e.g. `tvb`), or when you want file-level resume.
 | Tasks are identical (`Space[i::N]` slices) | Each cell is a distinct process |
 | You want minimal scheduling overhead | You want file-level resume or a per-cell DAG |
 
-A vectorized sweep can still run under Snakemake if you prefer its executor, but
-it adds a driver process and per-rule bookkeeping for no gain over the array.
-The reverse does not hold: `--slurm-chunk` refuses a fanned sweep, because there
-is no in-process batch to slice.
+A vectorized sweep can still run under Snakemake if you prefer its executor, but it adds a driver process and per-rule bookkeeping for no gain over the array.
+The reverse does not hold: `--slurm-chunk` refuses a fanned sweep, because there is no in-process batch to slice.
 
 ## Environment on the node
 
-The kit runs `tvbo run` on the compute node, so that node needs an environment where
-`tvbo` and the backend runtime import. Provision it from the emitted `environment.yml`
-/ `requirements.txt` (see *Environment files* below), then have the job **activate**
-it. The artefact runs `set -euo pipefail` and then activates in this order:
+The kit runs `tvbo run` on the compute node, so that node needs an environment where `tvbo` and the backend runtime import. Provision it from the emitted `environment.yml`
+/ `requirements.txt` (see *Environment files* below), then have the job **activate** it. The artefact runs `set -euo pipefail` and then activates in this order:
 
 | `workflow.<engine>` field | Emits | For |
 |---------------------------|-------|-----|
@@ -179,10 +150,7 @@ it. The artefact runs `set -euo pipefail` and then activates in this order:
 | `setup: ["…"]` | the lines verbatim, in order | anything else — conda, sourcing a profile, computed paths |
 
 `setup` is the general hook. A conda env is not a venv, so activate it with `setup`.
-**Hardcode the conda base** — run `conda info --base` once to get it. A batch job
-runs a non-login shell with no `conda` command (it's an interactive-shell function,
-and `--export=ALL` carries env vars, not shell functions), so `$(conda info --base)`
-fails on the node. Point `source` at the real path, in the recipe:
+**Hardcode the conda base** — run `conda info --base` once to get it. A batch job runs a non-login shell with no `conda` command (it's an interactive-shell function, and `--export=ALL` carries env vars, not shell functions), so `$(conda info --base)` fails on the node. Point `source` at the real path, in the recipe:
 
 ```yaml
 workflow:
@@ -205,26 +173,17 @@ For a single command, skip the JSON — a bare string is one line:
 tvbo workflow run slurm mystudy.yaml --experiment 30 --set slurm.setup="conda activate mystudy_env"
 ```
 
-If a job dies at once with `conda: command not found` or `ModuleNotFoundError: tvbo`
-in the logs, the node never got the env — this is where you fix it (and make sure the
-base path is hardcoded, not `$(conda info --base)`).
+If a job dies at once with `conda: command not found` or `ModuleNotFoundError: tvbo` in the logs, the node never got the env — this is where you fix it (and make sure the base path is hardcoded, not `$(conda info --base)`).
 
-**Recipe code needs no `PYTHONPATH`.** Callables/builders referenced by bare module
-name (`callable: {module: my_analysis}`) are bundled into the kit's `code/` and put on
-`PYTHONPATH` by the artefact; locally, `tvbo` adds the recipe's `code/` to `sys.path`
-on load. No `PYTHONPATH=code` prefix, on the node or off. See [`tvbo run`](run.qmd),
+**Recipe code needs no `PYTHONPATH`.** Callables/builders referenced by bare module name (`callable: {module: my_analysis}`) are bundled into the kit's `code/` and put on `PYTHONPATH` by the artefact; locally, `tvbo` adds the recipe's `code/` to `sys.path` on load. No `PYTHONPATH=code` prefix, on the node or off. See [`tvbo run`](run.qmd),
 *Custom code in a recipe*.
 
 ## Chunking, dependencies, and notifications
 
 **Chunk a sweep into array tasks.** `--set chunk=N` shards the sweep across `N`
-Slurm array tasks. This applies even when every axis is *backend-vectorized* (the
-common `tvboptim` case): each task runs `--slurm-chunk=$SLURM_ARRAY_TASK_ID/N`
-over its share. See [HPC patterns](hpc.qmd), *Chunking a sweep into array tasks*.
+Slurm array tasks. This applies even when every axis is *backend-vectorized* (the common `tvboptim` case): each task runs `--slurm-chunk=$SLURM_ARRAY_TASK_ID/N` over its share. See [HPC patterns](hpc.qmd), *Chunking a sweep into array tasks*.
 
-**Environment files.** Declare deps on the experiment's schema-native
-`environment.requirements`; the kit emits `requirements.txt` (pip) and
-`environment.yml` (conda) from them:
+**Environment files.** Declare deps on the experiment's schema-native `environment.requirements`; the kit emits `requirements.txt` (pip) and `environment.yml` (conda) from them:
 
 ```yaml
 environment:
@@ -234,8 +193,7 @@ environment:
     - {name: tvboptim, package: tvboptim}
 ```
 
-**Slurm resources / email.** Every `slurm.*` key becomes an `#SBATCH` directive,
-including notifications:
+**Slurm resources / email.** Every `slurm.*` key becomes an `#SBATCH` directive, including notifications:
 
 ```bash
 tvbo workflow slurm … \
@@ -277,6 +235,6 @@ jax  (JAX)
 ## See also
 
 - [Workflow kits anatomy](workflow-kits.qmd)
-- [Backends](../Simulation/Backends.qmd) — what each backend vectorizes
-- [HPC patterns](hpc.qmd) — sharding, containers, retries
-- [`tvbo run --engine`](run.qmd) — one-command emit + submit
+- [Backends](../Simulation/Backends.qmd): what each backend vectorizes
+- [HPC patterns](hpc.qmd): sharding, containers, retries
+- [`tvbo run --engine`](run.qmd): one-command emit + submit

@@ -1,0 +1,74 @@
+---
+title: "Share and publish your work"
+subtitle: "Four things you can hand someone, and which one to hand them"
+description: "The routes out of TVB-O: a specification, a reproducibility kit, a BIDS study dataset, an OMEX archive, and the platform's share and publish flows."
+---
+
+What you hand over depends on what you want the other person to be able to do. TVB-O has four routes out, and they are not interchangeable.
+
+| You want them to… | Hand them | Route |
+|---|---|---|
+| Read and re-run the experiment | the specification | a YAML file, or a platform share |
+| Re-run it on their cluster, without `tvbo` | a reproducibility kit | `tvbo workflow snakemake --pack` |
+| Analyse your results | a BIDS study dataset | the study directory `tvbo run` writes |
+| Regenerate every figure and number in a paper | a COMBINE/OMEX archive | the study's `archive:` block |
+
+## The specification
+
+The smallest thing that fully describes a run. It is a text file, so it diffs, reviews and versions like code, and it carries no results at all.
+
+```bash
+tvbo export jax study.yaml -o solve.py     # what it compiles to
+tvbo validate schema study.yaml            # that it is well-formed
+```
+
+A recipient needs `tvbo` installed and whatever data the spec references. Where the network or a fit target is external, [parameter external storage](Specification/Network.qmd) governs how it is pointed at rather than inlined.
+
+On the platform, the same object is what **Share** and **Publish** move: see [the platform gallery](platform.qmd#-share-two-different-things) for the difference between the two, and the [REST API](https://tvbo.charite.de/docs/python-package-api) for pushing one from Python so a collaborator reproduces a run by id rather than by emailed YAML.
+
+## A reproducibility kit
+
+`tvbo workflow` writes a self-contained directory and exits: the workflow artifact, the frozen backend script, the frozen specification, and a README. It runs without `tvbo` installed, which is what makes it archivable.
+
+```bash
+tvbo workflow snakemake study.yaml --backend jax -o ./kit --pack
+```
+
+[Reproducible workflows](ScaleOut/index.qmd) covers the kit's anatomy and what changes between Slurm, Snakemake and Nextflow.
+
+## A BIDS study dataset
+
+`tvbo run` on a study writes a BIDS dataset with `DatasetType: "study"`: the recipes, one self-describing container per experiment, the derived analyses, and the figures, laid out so the directory is readable without TVB-O. `xarray.open_dataset` opens a result container directly.
+
+```bash
+tvbo run study.yaml -o ./MyStudy
+tvbo validate bids ./MyStudy
+```
+
+This is the route when the value is in the *results*. [Linked experiments in a SimulationStudy](Simulation/SimulationStudies.qmd) shows the tree a two-experiment study writes, and [Results in BIDS](Interoperability/BIDS/BIDS_comp_modelling.md) documents where TVB-O's container layout diverges from BEP034 and why.
+
+## A COMBINE/OMEX archive
+
+The supplementary artifact for a paper: one file from which every figure, number and caption regenerates. A study declares it rather than a script assembling it, and the recipes, derived containers, figures and manifest go in automatically.
+
+```yaml
+archive:
+  path: MyStudy.omex
+  format: omex
+  include:
+    - "sourcedata/**"
+```
+
+```bash
+tvbo validate omex MyStudy.omex
+```
+
+The manifest records which numbers the run computed and which are external constants attributed to a citation, so a reader can tell the two apart.
+
+## Metadata beyond the run
+
+[openMINDS](Interoperability/OpenMINDS.qmd) is the route when the metadata itself is the deliverable — a dataset registered in a research infrastructure rather than a directory handed to a colleague.
+
+## Choosing
+
+Give the specification when the recipient will change something. Give the kit when they will run it unchanged somewhere you do not control. Give the BIDS dataset when they will analyse what you already ran. Give the archive when a reviewer must be able to regenerate the paper. Publishing on the platform is the specification route with a review gate in front of it, which is what makes the catalogue citable.

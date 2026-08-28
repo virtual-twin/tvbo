@@ -1,0 +1,42 @@
+# Which documentation page owns which specification slot; see docs/Developer/DocsMachinery.qmd.
+
+slots:
+  explorations:      Simulation/ParameterExploration.qmd
+  analyses:          Specification/Analyses.qmd
+  figures:           Simulation/Figures.qmd
+  events:            Models/Events.qmd
+  observations:      Simulation/ObservationModels.qmd
+  algorithms:        Specification/Algorithms.qmd
+  code_source:       Specification/CodeSource.qmd
+  code_modules:      Specification/CodeSource.qmd
+  requires:          Specification/CodeSource.qmd
+  optimizations:     Fitting/ModelFitting.qmd
+  optimization:      Fitting/ModelFitting.qmd
+  loss:              Specification/LossFunction.qmd
+  inference:         Fitting/index.qmd
+  continuations:     Bifurcation/BifurcationAnalysis.qmd
+  continuation:      Bifurcation/BifurcationAnalysis.qmd
+  dataset:           Specification/FanOut.qmd
+  sample:            Specification/FanOut.qmd
+  workflow:          ScaleOut/DistributedWorkflows.qmd
+  execution:         Simulation/Backends.qmd
+  noise:             Models/Noise.qmd
+  transforms:        Specification/Network.qmd
+  graph_generator:   Specification/Network.qmd
+  parcellation:      Specification/Network.qmd
+  coupling:          Networks/CouplingFunctions.qmd
+  members:           Simulation/SimulationStudies.qmd
+  results:           Simulation/SimulationStudies.qmd
+  distribution:      Models/InitialConditions.qmd
+  initial_state:     Models/InitialConditions.qmd
+  subnetwork:        BeyondMeanField/MultiScaleModelling.qmd
+  pde:               Networks/PDESimulation.qmd
+  spatial_domain:    Networks/PDESimulation.qmd
+
+# Idioms that are not slots: a regular expression over the raw recipe text.
+idioms:
+  "!include":                    Specification/YAML.qmd
+  "^\\s*<<:\\s*\\*":             Specification/YAML.qmd
+  "reduce:\\s*streaming":        Simulation/ObservationModels.qmd
+  "reconcile:\\s*by_label":      Specification/FanOut.qmd
+  "interpolate_delays:\\s*true": Models/Integrators.qmd

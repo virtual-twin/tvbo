@@ -1,35 +1,22 @@
 ---
 title: "Heterogeneous Edges"
-description: "Synapse-like relay nodes on the connection path — short-term plasticity modelled as its own dynamics, still a single-scale network."
+description: "Synapse-like relay nodes on the connection path: short-term plasticity modelled as its own dynamics, still a single-scale network."
 ---
 
-An edge can carry its own dynamics. Instead of a static weight, the connection
-between two nodes passes through a **relay node** with its own equations — here a
-short-term–plasticity synapse (depression, facilitation, Tsodyks–Markram). A
-pre-synaptic node drives three parallel synapse nodes, each filtering the signal
-differently before it reaches the post-synaptic node.
+An edge can carry its own dynamics. Instead of a static weight, the connection between two nodes passes through a **relay node** with its own equations, here a short-term–plasticity synapse (depression, facilitation, Tsodyks–Markram). A pre-synaptic node drives three parallel synapse nodes, each filtering the signal differently before it reaches the post-synaptic node.
 
 ::: {.callout-note}
 ## Still single-scale, still heterogeneous
 
-A relay node is just another node on the same graph — the synapse *is* a node,
-peer to the neurons it connects. This is heterogeneity on one scale, not
-[multi-scale nesting](../BeyondMeanField/MultiScaleModelling.qmd): nothing here
-contains a finer network with its own node-space or clock.
+A relay node is just another node on the same graph: the synapse *is* a node, peer to the neurons it connects. This is heterogeneity on one scale, not [multi-scale nesting](../BeyondMeanField/MultiScaleModelling.qmd): nothing here contains a finer network with its own node-space or clock.
 :::
 
 ::: {.callout-note}
 ## Backend: PyRates
 
-A relay's transmitted signal is **input-dependent**: `r_eff = r_in · x · u`
-reads what the synapse *receives*, not just its own state. PyRates routes such
-algebraic edge outputs natively, so this example runs on PyRates.
+A relay's transmitted signal is **input-dependent**: `r_eff = r_in · x · u` reads what the synapse *receives*, not just its own state. PyRates routes such algebraic edge outputs natively, so this example runs on PyRates.
 
-The tvboptim (JAX) engine behind [heterogeneous *nodes*](HeterogeneousNodes.qmd)
-transports signals derived from a node's own state; input-dependent relay
-outputs are a deferred milestone there. To model short-term plasticity on
-tvboptim today, put the synaptic state (`x`, `u`) in the *receiving* node and
-drive it through ordinary coupling.
+The tvboptim (JAX) engine behind [heterogeneous *nodes*](HeterogeneousNodes.qmd) transports signals derived from a node's own state; input-dependent relay outputs are a deferred milestone there. To model short-term plasticity on tvboptim today, put the synaptic state (`x`, `u`) in the *receiving* node and drive it through ordinary coupling.
 :::
 
 ```{mermaid}

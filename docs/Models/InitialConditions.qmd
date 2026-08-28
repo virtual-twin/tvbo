@@ -8,9 +8,9 @@ aliases:
 
 The **initial state** of a simulation is the value of every state variable on every node where the integration opens. TVBO resolves it from three layered sources, each overriding the previous:
 
-1. **Model defaults** — `state_variables.<name>.initial_value` in the dynamics YAML.
-2. **Per-node overrides** — `state:` blocks on individual nodes.
-3. **Random sampling** — `distribution` on a state variable, activated for trial-based explorations.
+1. **Model defaults**: `state_variables.<name>.initial_value` in the dynamics YAML.
+2. **Per-node overrides**: `state:` blocks on individual nodes.
+3. **Random sampling**: `distribution` on a state variable, activated for trial-based explorations.
 
 A declared `integration.transient_time` is **not** one of these. It does not replace the initial condition: the run opens from the IC resolved above at $t = -\text{transient\_time}$ and settles in-band, so $t = 0$ is simply where the settle ends and the *measured* window begins. To start from a state some other run already settled, see [Seeding from a settled state](#seeding-from-a-settled-state).
 
@@ -114,7 +114,7 @@ A plain `exp.run()` without an exploration ignores the `distribution`. Sampling 
 
 ## Settling in-band {#settling-in-band}
 
-`integration.transient_time` marks a settling window at the head of **one** integration. It is not a second simulation and it does not touch the initial condition — the scan simply opens earlier:
+`integration.transient_time` marks a settling window at the head of **one** integration. It is not a second simulation and it does not touch the initial condition; the scan simply opens earlier:
 
 ```python
 exp.integration.transient_time = 2000  # ms
@@ -129,7 +129,7 @@ Because the settle is part of the same window, an observation kernel that needs 
 
 ## Seeding from a settled state {#seeding-from-a-settled-state}
 
-A settle that many runs *reuse* — the shared operating point a fit evaluates hundreds of candidates from — is a different thing, and it is declared as one:
+A settle that many runs *reuse*, the shared operating point a fit evaluates hundreds of candidates from, is a different thing, and it is declared as one:
 
 ```yaml
 initial_state:

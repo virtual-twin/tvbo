@@ -1,13 +1,14 @@
 ---
 title: "Ex27: Multi-Synapses"
 description: "AMPA + NMDA synapses, individually and as doubleSynapse composite"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Multi-Synapses
 
-Five iafCells receiving spikes: cells get AMPA-only, NMDA-only, both separately,
-and a doubleSynapse (AMPA+NMDA composite) with delay. Demonstrates doubleSynapse
-which references two child synapses by name.
+Five iafCells receiving spikes: cells get AMPA-only, NMDA-only, both separately, and a doubleSynapse (AMPA+NMDA composite) with delay. Demonstrates doubleSynapse which references two child synapses by name.
 
 Reference: NeuroML2 LEMS_NML2_Ex27_MultiSynapses.xml
 

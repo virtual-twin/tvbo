@@ -7,27 +7,19 @@ aliases:
   - /Usage/CouplingFunctions.html
 ---
 
-A network model is not just nodes and a connectome. It also needs a rule that turns the
-state of one region into the *input* another region receives. That rule is the **coupling
-function**, and it matters as much as the node dynamics: the same neural mass model on the
-same connectome produces different brain-wide behaviour depending on how regions talk to
-each other.
+A network model is not just nodes and a connectome. It also needs a rule that turns the state of one region into the *input* another region receives. That rule is the **coupling function**, and it matters as much as the node dynamics: the same neural mass model on the same connectome produces different brain-wide behaviour depending on how regions talk to each other.
 
 ## The two-stage formalism
 
 TVBO splits coupling into two expressions, applied in sequence.
 
-**Stage 1 — pre-synaptic, per edge.** For every connection $j \to i$ a `pre_expression`
-is evaluated, then weighted by the structural connectivity $W_{ij}$ and summed over all
-sources:
+**Stage 1 — pre-synaptic, per edge.** For every connection $j \to i$ a `pre_expression` is evaluated, then weighted by the structural connectivity $W_{ij}$ and summed over all sources:
 
 $$
 g_i \;=\; \sum_{j} W_{ij}\;\mathrm{pre}\!\left(x_i,\; x_j(t - \tau_{ij})\right)
 $$
 
-**Stage 2 — post-synaptic, per node.** The aggregated signal $g_i$ (written `gx` in the
-YAML) passes through a `post_expression` to give the value injected into the node's
-equations:
+**Stage 2 — post-synaptic, per node.** The aggregated signal $g_i$ (written `gx` in the YAML) passes through a `post_expression` to give the value injected into the node's equations:
 
 $$
 c_i \;=\; \mathrm{post}\!\left(g_i\right)
@@ -41,11 +33,9 @@ Two symbols carry the meaning:
 | $x_i$ | `x_i` | state of the **target** (local) region, not delayed |
 | $g_i$ | `gx` | weighted sum over incoming edges, available to `post_expression` |
 
-The split is what makes the formalism efficient: anything that depends only on the sum
-belongs in `post_expression` and is evaluated once per node, not once per edge.
+The split is what makes the formalism efficient: anything that depends only on the sum belongs in `post_expression` and is evaluated once per node, not once per edge.
 
-The delay $\tau_{ij} = L_{ij}/v$ comes from tract length and conduction speed. Set
-`delayed: false` for an instantaneous approximation.
+The delay $\tau_{ij} = L_{ij}/v$ comes from tract length and conduction speed. Set `delayed: false` for an instantaneous approximation.
 
 ## The curated library
 
@@ -70,18 +60,15 @@ pd.DataFrame(rows)
 
 Read the table structurally rather than by name:
 
-- **`pre = x_j`** — the node simply receives its neighbours' activity. *Linear*,
+- **`pre = x_j`**: the node simply receives its neighbours' activity. *Linear*,
   *Sigmoidal*, *Scaling*.
-- **`pre` contains `x_i`** — the input depends on the *difference* between the two
-  regions, so the coupling is diffusive and vanishes when regions agree.
+- **`pre` contains `x_i`**: the input depends on the *difference* between the two regions, so the coupling is diffusive and vanishes when regions agree.
   *Difference*, *Kuramoto*.
-- **non-linear `post`** — the summed input saturates. *Sigmoidal*, *HyperbolicTangent*.
+- **non-linear `post`**: the summed input saturates. *Sigmoidal*, *HyperbolicTangent*.
 
 ## What the transfer functions look like
 
-The `post_expression` is where a coupling's character shows. Below, each curve is the
-node's received input $c_i$ as a function of the aggregated signal $g_i$, using each
-coupling's default parameters.
+The `post_expression` is where a coupling's character shows. Below, each curve is the node's received input $c_i$ as a function of the aggregated signal $g_i$, using each coupling's default parameters.
 
 ```{python}
 #| label: fig-transfer
@@ -121,13 +108,11 @@ plt.show()
 ```
 
 *Linear* and *Difference* scale their input without bound. *Sigmoidal* and
-*HyperbolicTangent* saturate, so a strongly-driven region cannot receive arbitrarily
-large input — often the difference between a model that settles and one that diverges.
+*HyperbolicTangent* saturate, so a strongly-driven region cannot receive arbitrarily large input — often the difference between a model that settles and one that diverges.
 
 ## Using a coupling in an experiment
 
-Reference a curated coupling by its ontology `iri`. The **key must be the coupling input
-declared by the model** — for models ported from TVB that is `c_glob`:
+Reference a curated coupling by its ontology `iri`. The **key must be the coupling input declared by the model** — for models ported from TVB that is `c_glob`:
 
 ```{python}
 #| label: build-exp
@@ -160,38 +145,29 @@ print("accepted coupling inputs:", list(exp.dynamics.coupling_inputs))
 
 Two fields decide how the coupling binds to the model:
 
-- **`incoming_states: [V]`** — which state variable of the *source* region plays the role
-  of $x_j$.
-- **`delayed`** — whether $x_j$ is read from the delayed history buffer.
+- **`incoming_states: [V]`**: which state variable of the *source* region plays the role of $x_j$.
+- **`delayed`**: whether $x_j$ is read from the delayed history buffer.
 
 ::: {.callout-tip}
 ## The key is the coupling input, not a name you choose
-A model declares which coupling inputs it accepts, as printed above. Keying the block
-anything else leaves the model's input unsatisfied and the run fails with
-`PRE_USES_LOCAL is True but no local_states were configured`.
+
+A model declares which coupling inputs it accepts, as printed above. Keying the block anything else leaves the model's input unsatisfied and the run fails with `PRE_USES_LOCAL is True but no local_states were configured`.
 :::
 
 ::: {.callout-warning}
 ## Normalize the connectome, and mind the step size
-Structural connectomes are stored in their native units — the dTOR Desikan-Killiany
-matrix holds **streamline counts** with a maximum near $4.6\times10^{5}$. Feeding those
-raw into any coupling makes the drive astronomically large and the simulation returns
-`NaN` immediately. The `transforms` block above rescales so the mean non-zero weight is
-$1$, which keeps coupling strengths $\mathcal{O}(1)$.
 
-Step size matters too: this model on this connectome diverges at `step_size: 0.5` with
-Heun and is stable at `0.1`. If a network run returns `NaN`, suspect weight scale and
-step size before the coupling itself.
+Structural connectomes are stored in their native units — the dTOR Desikan-Killiany matrix holds **streamline counts** with a maximum near $4.6\times10^{5}$. Feeding those raw into any coupling makes the drive astronomically large and the simulation returns `NaN` immediately. The `transforms` block above rescales so the mean non-zero weight is $1$, which keeps coupling strengths $\mathcal{O}(1)$.
+
+Step size matters too: this model on this connectome diverges at `step_size: 0.5` with Heun and is stable at `0.1`. If a network run returns `NaN`, suspect weight scale and step size before the coupling itself.
 :::
 
 ## The effect on network dynamics
 
-Coupling does not merely add input — it decides whether regions keep their own identity
-or collapse onto a common trajectory. Compare the curated `Linear` coupling with a
+Coupling does not merely add input — it decides whether regions keep their own identity or collapse onto a common trajectory. Compare the curated `Linear` coupling with a
 **diffusive** one written by hand.
 
-Because a diffusive `pre_expression` reads the local state $x_i$, it must declare
-`local_states` as well:
+Because a diffusive `pre_expression` reads the local state $x_i$, it must declare `local_states` as well:
 
 $$
 g_i = \sum_j W_{ij}\,\bigl(x_j - x_i\bigr),
@@ -265,22 +241,13 @@ pd.DataFrame(rows)
 ```
 
 The *across-region SD* is the number to read: it measures how far apart the regions stay.
-The diffusive coupling drives it to zero — every region converges on the same trajectory,
-because the term $\sum_j W_{ij}(x_j - x_i)$ vanishes only when $x_i = x_j$. That is
-synchronization produced by the coupling rule alone, on an unchanged connectome and an
-unchanged node model.
+The diffusive coupling drives it to zero — every region converges on the same trajectory, because the term $\sum_j W_{ij}(x_j - x_i)$ vanishes only when $x_i = x_j$. That is synchronization produced by the coupling rule alone, on an unchanged connectome and an unchanged node model.
 
-Parameters declared in the block are substituted into both expressions, so `G` and `n`
-can be swept in an [exploration](../Simulation/ParameterExploration.qmd) or fitted in an
-[optimization](../Fitting/index.qmd) exactly like model parameters.
+Parameters declared in the block are substituted into both expressions, so `G` and `n` can be swept in an [exploration](../Simulation/ParameterExploration.qmd) or fitted in an [optimization](../Fitting/index.qmd) exactly like model parameters.
 
 ::: {.callout-important}
 ## If `pre` uses `x_i`, declare `local_states`
-`incoming_states` binds $x_j$; `local_states` binds $x_i$. Omitting `local_states` on a
-diffusive coupling fails with `PRE_USES_LOCAL is True but no local_states were
-configured`. Curated diffusive couplings such as `Difference` and `Kuramoto` already
-carry it, which is why referencing them by `iri` needs no extra field — you supply it
-only when writing the expression yourself.
+`incoming_states` binds $x_j$; `local_states` binds $x_i$. Omitting `local_states` on a diffusive coupling fails with `PRE_USES_LOCAL is True but no local_states were configured`. Curated diffusive couplings such as `Difference` and `Kuramoto` already carry it, which is why referencing them by `iri` needs no extra field — you supply it only when writing the expression yourself.
 :::
 
 ## Choosing one
@@ -295,8 +262,7 @@ only when writing the expression yourself.
 
 ## Related
 
-- [Networks & connectomes](index.qmd) — the $W_{ij}$ this all runs on.
-- [Heterogeneous edges](HeterogeneousEdges.qmd) — per-edge coupling instead of one rule.
-- [`Coupling` schema](../datamodel/classes/Coupling.qmd) — every field.
-- [Bifurcation & stability](../Bifurcation/index.qmd) — coupling strength is the classic
-  bifurcation parameter for a network model.
+- [Networks & connectomes](index.qmd): the $W_{ij}$ this all runs on.
+- [Heterogeneous edges](HeterogeneousEdges.qmd): per-edge coupling instead of one rule.
+- [`Coupling` schema](../datamodel/classes/Coupling.qmd): every field.
+- [Bifurcation & stability](../Bifurcation/index.qmd): coupling strength is the classic bifurcation parameter for a network model.

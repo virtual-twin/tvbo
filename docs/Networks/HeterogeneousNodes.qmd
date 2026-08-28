@@ -1,23 +1,14 @@
 ---
 title: "Heterogeneous Nodes"
-description: "Different neural-mass models on one shared connectome — a single-scale network where only the dynamics vary from node to node."
+description: "Different neural-mass models on one shared connectome: a single-scale network where only the dynamics vary from node to node."
 ---
 
-A **heterogeneous network** gives different nodes different dynamics while they
-share **one connectome**. Every node is a peer: same node-space, same clock, one
-graph — only the equations differ. Below, a slow Hopf oscillator drives a
-FitzHugh–Nagumo node and a Van der Pol node into opposite regimes on a
-three-node graph.
+A **heterogeneous network** gives different nodes different dynamics while they share **one connectome**. Every node is a peer, with the same node-space, the same clock and one graph. Only the equations differ. Below, a slow Hopf oscillator drives a FitzHugh–Nagumo node and a Van der Pol node into opposite regimes on a three-node graph.
 
 ::: {.callout-note}
 ## Heterogeneous is not multi-scale
 
-Mixing neural-mass models never leaves the mean-field regime, and it does not
-nest one scale inside another. The test: if you can draw the model as one graph
-of peer nodes, it is *heterogeneous* and belongs here. If a node must **contain**
-a finer network — a spiking patch or reservoir with its own node-space and clock
-— that is *multi-scale*; see
-[Multi-scale modelling](../BeyondMeanField/MultiScaleModelling.qmd).
+Mixing neural-mass models never leaves the mean-field regime, and it does not nest one scale inside another. The test: if you can draw the model as one graph of peer nodes, it is *heterogeneous* and belongs here. If a node must **contain** a finer network, such as a spiking patch or reservoir with its own node-space and clock, that is *multi-scale*; see [Multi-scale modelling](../BeyondMeanField/MultiScaleModelling.qmd).
 :::
 
 ```{python}

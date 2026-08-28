@@ -1,95 +1,98 @@
 ---
 title: "Bayesian Inference of Stimulation & Excitability via tvboptim"
-# Redirect the pre-restructure URL so existing links keep resolving.
+description: "Recover a pulse amplitude and a node's excitability from one noisy recording, and watch the priors slide the posterior along the ridge where the two trade off."
+jupyter: python3
 aliases:
   - /Interoperability/tvboptim/Bayesian_tvboptim.html
 ---
 
-From a single noisy recording of a pulse-driven `Generic2dOscillator`, recover both
-the stimulus **amplitude** and the **excitability** `I` — via numpyro NUTS/MCMC. The
-two trade off (a degenerate ridge), so a point estimate is misleading; the posterior
-reports the whole ridge, and **priors steer** where it concentrates. Everything below
-is derived from **one** experiment YAML via `exp.run(mode="inference")`; only the
-observed-data synthesis and the plotting are hand-written.
+A 1 ms pulse drives a single `Generic2dOscillator` node out of its quiescent state, and one noisy recording of $V$ is all the evidence there is. Two unknowns produced it: the pulse **amplitude** and the node's **excitability** $I$. A weak pulse into an excitable node and a strong pulse into a quiet one leave almost the same trace, so the two are not separately identifiable from one recording, and a point estimate would report a number the data does not support. NUTS/MCMC reports the whole ridge instead, and the prior decides where on it the mass sits.
 
-```{python}
-import os
+Everything below is declared in [`Bayesian_tvboptim.yaml`](Bayesian_tvboptim.yaml) and the curated experiment it references. The page runs that recipe and shows what it produced; it contains no plotting code and no analysis of its own.
 
-device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "4")
-os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={device_count}"
+## The recipe
 
-import jax
+The study is one line, because the experiment is curated: it is referenced by IRI rather than copied, so this page and the database cannot drift apart.
 
-jax.config.update("jax_enable_x64", True)
-import numpy as np
-
-from tvbo import SimulationExperiment
-
-exp = SimulationExperiment.from_db("Stimulation_Bayesian_Inference")
-
-# Synthetic ground truth (a testing concern, not the schema's): the recording is the
-# forward at the declared true params (amplitude=0.4, I=0.1) plus observation noise.
-rec = np.asarray(exp.run("tvboptim", mode="simulation").observations.recorded_ts.data).ravel()
-observed = rec + 0.1 * np.asarray(jax.random.normal(jax.random.key(42), (rec.shape[0],)))
-
-# Three posteriors on the SAME observation, differing only in prior widths (A/B/C).
-results = exp.run("tvboptim", mode="inference", recorded_ts=observed)
+```yaml
+experiments:
+    - tvbo:experiment/Stimulation_Bayesian_Inference
 ```
 
-## Results
+## The recording is declared, not synthesised
+
+The recording the inference is fitted to is an `Observation` like any other: the forward run at the true parameters, subsampled, plus Gaussian measurement noise at a fixed seed. Declaring it is what makes the three scenarios comparable: they are fitted to the same numbers, and those numbers come back from this recipe alone rather than from whatever the page happened to draw.
+
+```yaml
+observations:
+  observed_ts:
+    source: [recorded_ts]
+    dims: [time]
+    pipeline:
+      - function: add_recording_noise
+        arguments:
+          data:  {value: observations.recorded_ts}
+          sigma: {value: 0.1}
+          seed:  {value: 42}
+```
+
+Each scenario then names that observation as what its likelihood scores, and differs from the others in nothing but the width of its priors:
+
+```yaml
+inferences:
+  scenario_B:
+    priors:
+      stimulus.amplitude:    {distribution: {name: Normal, parameters: {mean: {value: 0.2}, std: {value: 0.10}}}}
+      Generic2dOscillator.I: {distribution: {name: Normal, parameters: {mean: {value: 0.0}, std: {value: 0.10}}}}
+    likelihood: {source: [observed_ts], name: Normal, sigma: 0.2}
+    sampler: nuts
+```
+
+## Run it
+
+`SimulationStudy.run()` executes the whole recipe in process (the forward run, the three samplers, then the figure they declare) and returns a `StudyResult`. It is the Python form of `tvbo run Bayesian_tvboptim.yaml`, on the same orchestration, so a notebook and the command line cannot disagree.
 
 ```{python}
-# | label: fig-bayesian
-# | warning: false
-# | fig-cap: "**Bayesian recovery of stimulus amplitude and excitability.** (L) The observed recording (points) and the noiseless ground truth (line); the red band is the pulse window. (R) Joint posteriors over amplitude and I for three prior scenarios — the strong negative correlation is the degeneracy ridge; tightening one prior slides the posterior along it (B pins amplitude → I explains; C pins I → amplitude explains). (b, c) Marginal posteriors; dashed lines mark the true values."
+from tvbo import SimulationStudy
 
-import numpy as np
-import matplotlib.pyplot as plt
-import bsplot
-
-INK, TRUE, WARN = "#003754", "#AF1821", "#AF1821"
-COL = {"scenario_A": "#0a5170", "scenario_B": "#3E8E68", "scenario_C": "#d98a00"}
-LAB = {"scenario_A": "A: wide priors", "scenario_B": "B: tight amplitude", "scenario_C": "C: tight excitability"}
-TRUE_AMP, TRUE_I = 0.4, 0.1
-
-post = {k: (np.asarray(v.posterior["stimulus.amplitude"]), np.asarray(v.posterior["Generic2dOscillator.I"]))
-        for k, v in results.inferences.items()}
-
-mosaic = """
-DDRR
-DDRR
-bbRR
-ccRR
-"""
-fig, ax = plt.subplot_mosaic(mosaic, layout="tight", figsize=(11, 6))
-
-# D: the observed recording + ground truth
-a = ax["D"]
-t = np.arange(rec.shape[0]) * 0.2 * 15  # ms (subsampled every 15 at dt=0.2)
-a.plot(t, rec, color=INK, lw=1.5, label="ground truth")
-a.scatter(t, observed, s=14, color="k", zorder=3, label="observed (noisy)")
-a.axvspan(10.0, 11.0, color=WARN, alpha=0.15)
-a.set(xlabel="time (ms)", ylabel="V", title="One noisy recording")
-a.legend(fontsize=8, loc="best")
-
-# R: joint posteriors — the degeneracy ridge + prior steering
-a = ax["R"]
-for k, (amp, I) in post.items():
-    a.scatter(amp, I, s=6, alpha=0.25, color=COL[k], label=f"{LAB[k]}  (r={np.corrcoef(amp, I)[0,1]:.2f})")
-a.axvline(TRUE_AMP, color=TRUE, ls="--", lw=1)
-a.axhline(TRUE_I, color=TRUE, ls="--", lw=1)
-a.scatter([TRUE_AMP], [TRUE_I], color=TRUE, marker="*", s=160, edgecolors="k", zorder=5, label="truth")
-a.set(xlabel="stimulus amplitude", ylabel="excitability I", title="Joint posterior — the degeneracy ridge")
-a.legend(fontsize=7.5, loc="upper right")
-
-# b, c: marginals
-for key, idx, tv, lab in [("b", 0, TRUE_AMP, "amplitude"), ("c", 1, TRUE_I, "excitability I")]:
-    a = ax[key]
-    for k in post:
-        a.hist(post[k][idx], bins=30, density=True, histtype="step", lw=1.8, color=COL[k])
-    a.axvline(tv, color=TRUE, ls="--", lw=1.2)
-    a.set(xlabel=lab, yticks=[], title=f"posterior: {lab}")
-
-plt.suptitle("Bayesian inference — priors steer the posterior along the ridge", fontsize=13, fontweight="bold")
-bsplot.style.format_fig(fig)
+study = SimulationStudy.from_file("Bayesian_tvboptim.yaml")
+results = study.run(root="../_build/Bayesian_tvboptim")
+results
 ```
+
+## The containers
+
+A posterior comes back where the recipe put it. `inferences.scenario_A.posterior` is the group the `inferences:` block declared, and its variables are the parameters named in `priors:`, spelled `<component>.<parameter>` as the recipe spells them. Every draw of both parameters sits on the same `draw` axis, which is what makes the joint plot below a scatter rather than an outer product.
+
+```{python}
+results["exp-8"].inferences.scenario_A.posterior
+```
+
+The sampler's own diagnostics ride along beside the draws, so the spread is never read without them:
+
+```{python}
+results["exp-8"].inferences.scenario_A.diagnostics["stimulus.amplitude"]
+```
+
+## Result
+
+```{python}
+#| echo: false
+results.figure()
+```
+
+```{python}
+#| echo: false
+#| output: asis
+print(results.figure().caption)
+```
+
+Under wide priors **(b)** the posterior recovers the truth: amplitude $0.41 \pm 0.06$ against a true $0.40$, excitability $0.083 \pm 0.066$ against a true $0.10$. But the two are correlated at $-0.99$, so the cloud is a line, and its width along that line is the answer, not the marginal spread of either parameter on its own.
+
+That is what makes **(c)** and **(d)** the point of the page. Tightening the amplitude prior **(c)** does not pull the posterior towards the truth; it slides it down the ridge, to amplitude $0.37$ and excitability $0.13$. Tightening the excitability prior instead **(d)** slides it the other way, to $0.45$ and $0.037$. Each is a confident, well-mixed posterior, with all three scenarios returning $\hat{R} \approx 1.00$, and each is confident about a different place on the same ridge. The prior is doing the identifying that the recording cannot.
+
+## See also
+
+- [Model fitting](ModelFitting.qmd) — how losses and gradients work in TVBO.
+- [Specify a figure](../Simulation/Figures.qmd) — the grammar every panel above is written in.
+- [Observation models](../Simulation/ObservationModels.qmd) — where a fit target, or a synthetic recording, belongs.

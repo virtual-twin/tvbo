@@ -28,7 +28,6 @@ Model provenance travels with the result rather than in a separate directory. Ea
 
 ## Proposed alignment
 
-We consolidate on the container layout described above, and would propose matching changes to
-BEP034 itself. Nothing has been filed with the BIDS project.
+We consolidate on the container layout described above, and would propose matching changes to BEP034 itself. Nothing has been filed with the BIDS project.
 
 For the authoritative description of relationship matrices, see BEP017 in the BIDS documentation.

@@ -1,6 +1,9 @@
 ---
 title: "Ex1: Hodgkin-Huxley"
 description: "Classic Hodgkin-Huxley conductance-based cell with Na, K, and leak channels"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Hodgkin-Huxley Point Cell
@@ -13,11 +16,7 @@ With gating variable kinetics:
 $$\frac{dx}{dt} = \alpha_x(v)(1-x) - \beta_x(v)\,x \quad \text{for } x \in \{m, h, n\}$$
 
 The NeuroML2 example uses a `pointCellCondBased` with separate ion channel populations.
-By annotating the TVBO dynamics with `iri: neuroml:pointCellCondBased` and structuring
-the ion channels as `components`, TVBO emits standard NeuroML2 types that preserve the
-jLEMS child-before-parent RK4 evaluation order, so the simulated traces match the
-reference simulation to correlation r ≈ 1. The emitted XML is equivalent, not
-byte-identical, to the canonical NeuroML file.
+By annotating the TVBO dynamics with `iri: neuroml:pointCellCondBased` and structuring the ion channels as `components`, TVBO emits standard NeuroML2 types that preserve the jLEMS child-before-parent RK4 evaluation order, so the simulated traces match the reference simulation to correlation r ≈ 1. The emitted XML is equivalent, not byte-identical, to the canonical NeuroML file.
 
 ---
 
@@ -140,12 +139,7 @@ print(f"Components: {list(exp.dynamics.components.keys())}")
 
 ::: {.callout-note}
 ## Standard NeuroML Types
-This example uses `iri: neuroml:pointCellCondBased` with nested `components` for ion
-channels (`ionChannelHH`, `ionChannelPassive`) and gates (`gateHHrates`). TVBO's adapter
-detects these annotations and emits standard NeuroML2 XML elements rather than custom
-`ComponentType` definitions. This preserves the hierarchical RK4 evaluation order in
-jLEMS, so the traces match the reference simulation to correlation r ≈ 1 at the original
-step size (0.01 ms) — no `gate_rate_scale` hack needed.
+This example uses `iri: neuroml:pointCellCondBased` with nested `components` for ion channels (`ionChannelHH`, `ionChannelPassive`) and gates (`gateHHrates`). TVBO's adapter detects these annotations and emits standard NeuroML2 XML elements rather than custom `ComponentType` definitions. This preserves the hierarchical RK4 evaluation order in jLEMS, so the traces match the reference simulation to correlation r ≈ 1 at the original step size (0.01 ms) — no `gate_rate_scale` hack needed.
 :::
 
 ## 2. Render LEMS XML
@@ -189,10 +183,7 @@ plot_lems_comparison("LEMS_NML2_Ex1_HH.xml", ref_outputs, result.integration.dat
 
 ## Native Custom YAML (No IRI Dependencies)
 
-The same Hodgkin-Huxley model, defined with **full equations** — no reference to
-standard NeuroML component types. Uses `iri: extends:base*` to declare LEMS base
-type compatibility while providing all dynamics explicitly. This makes the YAML
-interoperable with any backend, not just NeuroML.
+The same Hodgkin-Huxley model, defined with **full equations** — no reference to standard NeuroML component types. Uses `iri: extends:base*` to declare LEMS base type compatibility while providing all dynamics explicitly. This makes the YAML interoperable with any backend, not just NeuroML.
 
 ### 6. Define Custom Version
 
@@ -456,9 +447,7 @@ print(f"Components: {list(exp_custom.dynamics.components.keys())}")
 ::: {.callout-tip}
 ## Full Custom — No NeuroML Dependencies
 This version uses `iri: extends:baseCellMembPot` instead of `iri: neuroml:pointCellCondBased`.
-Every equation — rate functions, gating kinetics, channel conductance — is defined explicitly
-in the YAML. The adapter generates custom LEMS `ComponentType` definitions that extend base
-infrastructure types, reproducing the standard version's traces to correlation r ≈ 1.
+Every equation — rate functions, gating kinetics, channel conductance — is defined explicitly in the YAML. The adapter generates custom LEMS `ComponentType` definitions that extend base infrastructure types, reproducing the standard version's traces to correlation r ≈ 1.
 :::
 
 ### 7. Run Custom Version
@@ -473,3 +462,4 @@ print(f"Custom: {da_custom.dims}, shape={da_custom.shape}")
 
 ```{python}
 plot_lems_comparison("LEMS_NML2_Ex1_HH.xml", ref_outputs, result_custom.integration.data, title_prefix="Ex1 Custom")
+```

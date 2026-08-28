@@ -1,0 +1,112 @@
+---
+title: "How this documentation is built"
+subtitle: "The generated maps, the Quarto filters and the linters that keep pages honest"
+description: "Where the sidebar, the phase badges, the running-example pointers and the use-case tags come from, and which checks run in CI."
+phase: developer
+---
+
+Most of what surrounds a page here is derived rather than typed. The phase badge in its corner, the pointer into the running example, the list of published studies at its foot: all three come from generated maps, so a page cannot claim a phase it is not in or a study that stopped using its feature. This page is the map of that machinery, for anyone changing it.
+
+## One sidebar, one spine
+
+`_toc.yml` is the single sidebar. Its top-level PART headers are the five numbered phases followed by the unnumbered chapters, and everything else hangs beneath them. Three regions of the file are script-owned and marked as such:
+
+| Region | Written by |
+|---|---|
+| `# BEGIN:replication-autogen` | `scripts/update_toc_replication.py` |
+| `# BEGIN:datamodel-autogen` | `scripts/build_datamodel_pages.py` |
+| `# BEGIN:api-autogen` | quartodoc, via `scripts/prerender.sh` |
+
+Edit outside those markers freely. Inside them, change the script.
+
+## The phase badge
+
+`_static/phases.yml` declares the five numbered phases and the five unnumbered chapters, each with a name, an icon and a colour. It is the only place any of those are written down, so swapping an icon set is one edit here.
+
+`scripts/build_phase_map.py` walks `_toc.yml` against that file and writes two generated artifacts, both gitignored:
+
+- `_static/phase_map.lua`, one entry per page: its phase key, number, name, icon, colour and the section it sits in.
+- `_static/phases.css`, the `--phase-1` … `--phase-5` custom properties the hero pipeline and the badge both read.
+
+`filters/phase-badge.lua` stamps the badge from that map. A page may override it with `phase:` in its own frontmatter, naming either the number or the key from `phases.yml`, and `phase-section:` sets the text after the separator. `phase: false` suppresses the badge entirely. A page that is in no PART and declares no `phase:` produces a build warning rather than a silently unbadged page, which is how the 38 NeuroML example pages were caught when the gallery took their place in the sidebar.
+
+## The running-example thread
+
+`_static/running_example.yml` maps each stage of [the running example](../Specification/RunningExample.qmd) onto the pages whose block that stage adds. `filters/running-example.lua` reads it from both ends: the pointer strip it inserts at the top of each listed page, and the stage that pointer links to. Because both come from one file, a pointer cannot outlive its stage. A page opts out with `running-example: false`.
+
+## Use-case tags
+
+`_static/usecase_slots.yml` says which page owns which specification slot. `scripts/build_usecase_tags.py` reads the hand-authored recipes of the use-case corpus, records the slots each study actually writes, and emits two committed artifacts:
+
+- `_static/usecase_tags.lua`, which `filters/usecase-tags.lua` renders as the **Used in published replications** block at the foot of an owning page.
+- `_static/usecase_studies.yml`, the catalogue [Replication studies](../Replication/index.qmd) renders.
+
+The corpus lives in a separate repository, so this is a maintainer step rather than part of the build:
+
+```bash
+python docs/scripts/build_usecase_tags.py --corpus ~/projects/TVB-O/tvbo-manuscript/use-cases
+```
+
+Nothing in that script counts a study's experiments or figures. The recipes reach those through `!include`, YAML anchors and nested blocks, so a text scan gets it wrong in both directions, and a wrong number in a catalogue is worse than no number.
+
+## The linters
+
+Five checks run over the documentation, four of them in CI.
+
+| Check | What it catches | In CI |
+|---|---|---|
+| `slopfmt.py` | hard-wrapped paragraphs and stacked comment blocks | yes |
+| `scripts/check_pages.py` | em-dash density, placeholder alt text, sequential-step tabsets, the templated index skeleton | yes |
+| `scripts/check_cli_examples.py` | a documented `tvbo` command, sub-command or long option the CLI does not have | yes |
+| `scripts/check_render_coverage.py` | a sidebar link matched by no `project.render` pattern, or pointing at a file that is gone | yes |
+| `scripts/check_links.py` | an absolute link the live web does not resolve | no |
+| `scripts/unwrap_prose.py` | the same hard wraps as slopfmt, but rewrites them | no |
+
+`check_pages.py` counts em-dashes in running prose only. Fenced code, table rows and headings are excluded, and so is the `**Label** — the gloss` idiom a definition list is written in, because none of those is a sentence reaching for a connector. What is left is mid-sentence use, which is what the budget is about.
+
+`check_cli_examples.py` resolves each invocation against the installed Typer app rather than a list. It reports how many it resolved and how many it skipped as templated, so a page full of `<placeholder>` commands cannot read as verified coverage.
+
+`unwrap_prose.py` reuses slopfmt's detector rather than reimplementing it, and refuses to write when the whitespace-normalised text would change or when the file has unbalanced code fences. Both guards exist because an earlier pass joined a heading to the paragraph below it and mangled code in two files whose fences were already unbalanced.
+
+`check_render_coverage.py` exists because the sidebar and the render set are written in different files and Quarto never compares them: it builds what the globs resolve to and says nothing about what the sidebar asks for. A page can therefore be linked, present on disk, and built by nothing — which shows up only as a 404 on the deployed site, since a local preview renders on demand and hides it. Its first run found two: `GettingStarted.qmd`, the target of the front page's own **Get started** button, and the BIDS comparison page, a `.md` under a directory whose glob only took `.qmd`.
+
+`check_links.py` stays out of CI deliberately: it needs the network, and a third-party site being briefly down is not a reason to fail a build. Its first run found nine dead links, including the site's own `repo-url`, which had been generating a broken **Edit this page** button on every page. A `403` from it usually means the publisher blocks automated requests rather than that the link is dead; check such a DOI against `api.crossref.org/works/<doi>` before changing it.
+
+```bash
+make docs-lint      # the four gates, plus the formatter
+make docs-unwrap    # rewrite the hard wraps
+make docs-links     # resolve every absolute link (network)
+```
+
+## Rendering in parts
+
+The site is three things with very different costs: the hand-written guide, the API reference generated by quartodoc, and the schema reference generated from the LinkML model. Together they are 1239 pages, of which the guide is 162, and regenerating the two references costs more than rendering everything else put together. Building all of it to check one paragraph is the wrong loop.
+
+| Command | Builds | Pages |
+|---|---|---|
+| `make docs-render-guide` | the hand-written guide | 162 |
+| `make docs-render-api` | the API reference | 182 |
+| `make docs-render-datamodel` | the schema reference | 895 |
+| `make docs-render` | everything, for deploy | 1239 |
+
+The two references are self-contained subtrees, so Quarto narrows them by path: `quarto render api` renders that directory and nothing else. The guide is the complement of both, which a path cannot express, so it is a Quarto profile — `_quarto-guide.yml` subtracts `api/**` and `datamodel/**`. That asymmetry is forced: `project.render` entries **append** across profiles, so a profile can subtract from the base list but never replace it, and excluding everything then re-including one directory resolves to an empty set.
+
+`scripts/prerender.sh` reads `QUARTO_PROFILE` and builds only the references the render can reach. Their `_toc.yml` regions are committed, so a skipped reference still appears in the sidebar with its full contents — a narrow render produces a partial site, not a broken one. Use `make docs-render` before publishing.
+
+`make docs-preview-guide` is the authoring loop: it renders the guide once, then serves it with the pre-render skipped entirely.
+
+## Executing the pages
+
+Cells run under a kernelspec pinned by the `docs-kernel` Makefile target. Quarto's `jupyter: python3` names a kernel whose `argv` is a bare `python`, so **PATH decides which interpreter runs the cells** and `QUARTO_PYTHON` does not change that. Without the pinned kernel a stale released `tvbo` from another virtualenv can win, which surfaces as constructor errors on pages that are perfectly correct.
+
+```bash
+make docs-kernel     # write the pinned kernelspec
+make docs-preview    # serve with it
+make docs-render     # full build with it
+```
+
+`execute: {cache: true, freeze: auto}` re-executes a page only when its source changes. Commit `_freeze/` to share the cache.
+
+## Generated, not typed
+
+Three claims that used to rot are now read from the software at render time: the [CLI command tree](../CLI/index.qmd) from the Typer app, the [model count](../Models/index.qmd) from `Dynamics.list_db()`, and the [backend capability table](../ScaleOut/CodegenPhilosophy.qmd) from `tvbo.cli._backends.BACKENDS`. Prefer that pattern over a hand-kept list whenever the software already knows the answer.

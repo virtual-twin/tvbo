@@ -1,35 +1,28 @@
 ---
-title: "Scale-Out & Reproducibility"
-description: "Take a working experiment to a cluster, generate standalone code, and make the result reproducible."
+title: "Reproducible workflows"
+description: "Take a working experiment to a cluster, and make the result reproduce on someone else's machine a year later."
 ---
 
-A model that runs on a laptop still has to survive a parameter sweep, a cluster, and
-somebody else's machine a year later. This topic covers generating code, distributing
-work, and shipping an experiment that reproduces.
+A model that runs on a laptop still has to survive a parameter sweep, a scheduler, and somebody else's machine a year from now. Those are three different problems, and TVB-O separates them.
 
-## Do
+Running here and running there is a **dispatch** problem: the same specification, executed by a workflow engine instead of in-process. Reproducing it later is a **packaging** problem: the emitted kit carries the frozen spec, the frozen backend script and its environment, so it runs without TVB-O installed at all.
 
-- [Distributed workflows](DistributedWorkflows.qmd) — emit, submit and finalize work
-  across a cluster.
-- [Code generation & export](CodeGeneration.qmd) — render an experiment to standalone
-  JAX, Julia, CUDA, LEMS, BIDS or openMINDS.
-- [HPC patterns](../CLI/hpc.qmd) and [CLI recipes](../CLI/recipes.qmd) — end-to-end
-  cluster runs from the command line.
+## Emitting work
 
-## Understand
+| Page | What it covers |
+|---|---|
+| [Distributed workflows](DistributedWorkflows.qmd) | Emitting, submitting and finalizing work across a cluster. |
+| [Workflow kits](../CLI/workflow-kits.qmd) | What a packaged kit contains, and why it is structured that way. |
+| [HPC patterns](../CLI/hpc.qmd) | Containers, sharding and engine dispatch. |
 
-- [Backends & capability matrix](../Simulation/Backends.qmd) — what each backend supports and
-  how work is dispatched.
-- [Workflow kits](../CLI/workflow-kits.qmd) — what a packaged cluster kit contains and
-  why it is structured that way.
+## Deciding how work is split
 
-## Look up
+The same study YAML produces a different job graph on different backends, because the planner asks each backend what it can vectorize internally and fans out only what it cannot. [How code generation works](CodegenPhilosophy.qmd) covers where those declarations come from, and [Run on a backend](../Simulation/Backends.qmd) is the capability table itself.
 
-- [`tvbo workflow`](../CLI/workflow.qmd) and the [CLI reference](../CLI/index.qmd).
-- [`WorkflowConfig`](../datamodel/classes/WorkflowConfig.qmd) ·
-  [`ExecutionConfig`](../datamodel/classes/ExecutionConfig.qmd).
+## Shipping the result
 
-## Related
+[Code generation & export](CodeGeneration.qmd) renders an experiment to standalone JAX, Julia, CUDA, LEMS, BIDS or openMINDS. [The study directory](../Interoperability/BIDS/index.qmd) is where a run's code, results and provenance land, in a layout `tvbo validate study` can check.
 
-- [Replication studies](../Replication/index.qmd) — reproducing a published paper from a
-  single declarative spec.
+## Reference
+
+[`WorkflowConfig`](../datamodel/classes/WorkflowConfig.qmd) · [`ExecutionConfig`](../datamodel/classes/ExecutionConfig.qmd) · [`tvbo workflow`](../CLI/workflow.qmd).
