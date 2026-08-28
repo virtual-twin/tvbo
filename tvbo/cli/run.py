@@ -200,6 +200,7 @@ def run(
         return
 
     kind, obj = _common.resolve_spec(spec)
+    requested_out_dir = out_dir
     # Resolved once, so every writer and reader below is handed the same concrete directory and a run persists whether or not -o was passed.
     if not _has_members(obj):
         out_dir = _results_root(spec, out_dir)
@@ -334,7 +335,7 @@ def run(
             _apply_metadata_overrides(exp, set_)
             _apply_axis_pins(exp, pin)
             _apply_max_iterations(exp, eff_max_iterations)
-            kwargs["prov_ctx"] = _provenance_ctx(spec, obj, out_dir)
+            kwargs["prov_ctx"] = _provenance_ctx(spec, obj, requested_out_dir)
             _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after") if whole_study else True
         if not whole_study and shard is None:
@@ -353,7 +354,7 @@ def run(
         _apply_metadata_overrides(obj, set_)
         _apply_axis_pins(obj, pin)
         _apply_max_iterations(obj, eff_max_iterations)
-        kwargs["prov_ctx"] = _provenance_ctx(spec, obj, out_dir)
+        kwargs["prov_ctx"] = _provenance_ctx(spec, obj, requested_out_dir)
         _run_one(obj, _effective_backend(obj, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
@@ -477,7 +478,7 @@ def study_path_for(role: str, base: Path) -> Path:
 def _provenance_root(spec: str, out_dir: Path | None) -> Path:
     """The root whose ``prov/`` holds this run's records.
 
-    The STUDY the spec belongs to, even when ``-o`` sends the data elsewhere: provenance describes what this study did, and following the data out of the study would scatter it wherever a caller happened to point. A spec that is in no study — a curated experiment run straight out of the installed database — has no such ``prov/``, so its records follow the results instead of being written into whatever directory the file happens to sit in.
+    The STUDY the spec belongs to, even when ``-o`` sends the data elsewhere: provenance describes what this study did, and following the data out of the study would scatter it wherever a caller happened to point. A spec that is in no study — a curated experiment run straight out of the installed database — has no such ``prov/``, so its records follow the results instead of being written into whatever directory the file happens to sit in. *out_dir* is ``-o`` as the caller gave it, not the directory it resolves to: the question is whether the results were redirected, and a resolved default answers that yes every time.
     """
     from tvbo.utils.study_layout import study_root
 
