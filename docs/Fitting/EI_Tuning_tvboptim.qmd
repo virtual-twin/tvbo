@@ -70,7 +70,7 @@ results.figure()
 print(results.figure().caption)
 ```
 
-FIC does what it is asked: mean excitatory gating falls from $0.41$ to $0.23$ against a target of $0.25$ **(a)**. That is a statement about activity, not about connectivity, and it buys almost nothing in FC — the resulting correlation with the empirical matrix is $0.18$, and panel **(e)** is what that looks like.
+FIC does what it is asked: mean excitatory gating falls from $0.41$ to $0.23$ against a target of $0.25$ **(a)**. That is a statement about activity, not about connectivity, and it buys almost nothing in FC: the resulting correlation with the empirical matrix is $0.18$, and panel **(e)** is what that looks like.
 
 The combined loop is where the connectivity is fitted. Its in-loop correlation climbs from $0.13$ to $0.58$ **(b)** while FIC keeps holding activity at target throughout ($0.228$ to $0.238$ across the 2000 iterations), and re-evaluated afterwards on a fresh simulation it reaches $r = 0.699$, RMSE $0.169$ **(f)**. The clean re-evaluation scores *higher* than the loop's own running estimate, which is what should happen: the in-loop figure is computed on a 150-TR sliding window, and a 300 s simulation estimates the same connectivity with far less sampling noise.
 
