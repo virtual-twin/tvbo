@@ -43,6 +43,16 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
     return as_list(getattr(study, "figures", None)), "study"
 
 
+def figure_outputs(figure, out_dir: Path) -> tuple[str, Path, Path]:
+    """``(name, image, script)`` for *figure* under *out_dir* — where the render writes, named once.
+
+    The renderer and every consumer that has to find a rendered figure afterwards ask this, so a figure's file name is derived in one place rather than re-spelled wherever it is looked up.
+    """
+    name = getattr(figure, "name", None) or "figure"
+    fmt = (getattr(figure, "format", None) or "png").lstrip(".")
+    return name, out_dir / f"{name}.{fmt}", out_dir / "scripts" / f"plot_{sanitize_name(name)}.py"
+
+
 def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
     """Emit + run each figure's render script and return the written images.
 
@@ -62,10 +72,7 @@ def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
     attempted = 0
     for figure in figures:
         attempted += 1  # counted here, not re-derived: `figures` may be an iterator the loop has consumed
-        name = getattr(figure, "name", None) or "figure"
-        fmt = (getattr(figure, "format", None) or "png").lstrip(".")
-        outfile = out_dir / f"{name}.{fmt}"
-        script_path = script_dir / f"plot_{sanitize_name(name)}.py"
+        name, outfile, script_path = figure_outputs(figure, out_dir)
         try:
             bsplot.render(figure, base_dir=str(base_dir), outfile=str(outfile), script_path=str(script_path))
         except Exception as e:  # noqa: BLE001 — every figure is attempted, then the whole set of failures is raised at once

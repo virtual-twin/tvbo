@@ -33,6 +33,7 @@ A cache hit requires both:
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import os
 from collections.abc import Mapping
@@ -230,3 +231,58 @@ def check_cache(
         if cur_hash != fp.get("hash"):
             return (CacheStatus.MISS_INPUT_HASH, f"input {key!r} hash mismatch (file modified)")
     return CacheStatus.HIT, None
+
+
+SEPARATOR = "__"
+"""What :meth:`ExperimentResult.save` puts between the segments of an output's path."""
+
+STRUCTURAL_PREFIXES = frozenset({"integration", "optimization", "algorithm", "continuation", "observation", "inference"})
+"""The path segments the writer emits as structure that a recipe also declares, and which therefore take the recipe's spelling.
+
+Re-spelled only where they carry children, so an observation a study happens to call ``observation`` stays what its author named it. ``estimate`` is deliberately absent: ``estimate__<param>`` is a fitted parameter the writer emits and no recipe section declares, so it has no spelling to be restored to and keeps the writer's own.
+"""
+
+
+@functools.cache
+def _spec_slot(segment: str) -> str:
+    """*segment* under the name :class:`SimulationExperiment` gives that slot.
+
+    The writer flattens in the singular (``optimization__…``) while a recipe declares in the plural (``optimizations:``). The plural is read off the datamodel rather than typed here, so the two spellings cannot drift from the schema. Cached, because the answer is a property of the schema and the alternative is re-reading every field of the class once per segment of every variable in the container.
+    """
+    import dataclasses
+
+    from tvbo.datamodel import schema as dm
+
+    slots = {f.name for f in dataclasses.fields(dm.SimulationExperiment)}
+    return segment if segment in slots else (f"{segment}s" if f"{segment}s" in slots else segment)
+
+
+def result_tree(dataset):
+    """A container's flat data-variables as the nested shape the recipe declares them in.
+
+    :meth:`ExperimentResult.save` writes every output as one data-variable named by its path with :data:`SEPARATOR` between the segments, so ``optimizations.spectral_gradient_fit.observations.peak_frequencies`` arrives as ``optimization__spectral_gradient_fit__observation__peak_frequencies``. This inverts that, restoring each structural segment (:data:`STRUCTURAL_PREFIXES`) to the recipe's own spelling.
+
+    The result is an :class:`xarray.DataTree` — a group per path, a variable per output — so the container stays an xarray object all the way down: ``tree.optimizations.spectral_gradient_fit.observations.peak_frequencies`` and ``tree["optimizations/spectral_gradient_fit"]`` both reach it, ``.sel`` applies across the whole tree, and it writes back out with ``to_netcdf``. The container's coordinates are hoisted to the root, where every group inherits them, so node labels are declared once for the run rather than repeated on each output.
+
+    A tree is what the container should have been written as in the first place: netCDF has groups, and encoding the hierarchy into the variable name is what makes this function necessary. An output that is both a value and a group is refused rather than resolved — the two cannot share a name, and inventing a place for one of them hides the collision instead of reporting it.
+    """
+    import xarray as xr
+
+    shared = list(dataset.coords)
+    groups: dict[str, dict] = {}
+    for name in dataset.data_vars:
+        segments = str(name).split(SEPARATOR)
+        path = "/" + "/".join(_spec_slot(s) if s in STRUCTURAL_PREFIXES else s for s in segments[:-1])
+        da = dataset[name]
+        groups.setdefault(path, {})[segments[-1]] = da.drop_vars([c for c in shared if c in da.coords])
+
+    nodes = {"/": xr.Dataset(groups.pop("/", {}), coords=dataset.coords)}
+    nodes.update({path: xr.Dataset(variables) for path, variables in groups.items()})
+    try:
+        return xr.DataTree.from_dict(nodes)
+    except KeyError as e:
+        raise ValueError(
+            f"this container holds an output that is both a value and a group ({e}); one of the two has to "
+            f"be renamed, because a group and a variable cannot share a name and choosing for you would hide "
+            f"the collision rather than report it."
+        ) from None

@@ -45,6 +45,53 @@ def local_name(iri: str) -> str:
     return iri.split(":", 1)[-1] if ":" in iri else iri
 
 
+# The IRI scope each curated entity is addressed under: `tvbo:<scope>/<name>` identifies a SPEC in the database, mirroring _CATEGORIES one level up. A container a run produced is addressed under `result/` and resolves against a study's results directory instead — a recipe and its output must never share a scope.
+_IRI_SCOPES = {
+    "experiment": "SimulationExperiment",
+    "study": "SimulationStudy",
+    "dynamics": "Dynamics",
+    "network": "Network",
+    "atlas": "BrainAtlas",
+    "coupling": "Coupling",
+    "integrator": "Integrator",
+    "observation": "Observation",
+    "function": "Function",
+    "continuation": "Continuation",
+    "graph_generator": "GraphGenerator",
+    "software": "SimulationTool",
+}
+
+_IRI_RE = re.compile(r"^(?P<prefix>[A-Za-z][\w.-]*):(?P<scope>[a-z_]+)/(?P<name>[^/].*)$")
+
+
+def iri_target(iri: str) -> tuple[str, str] | None:
+    """``(class_name, local_name)`` for a curated-entity IRI, or ``None`` when it is not one.
+
+    ``tvbo:experiment/JR_MEG_FrequencyGradient_Optimization`` -> ``("SimulationExperiment", "JR_MEG_FrequencyGradient_Optimization")``. Returns ``None`` for a bare name (no scope), for a ``result/`` reference (a produced container, which :mod:`tvbo.data.dataref` resolves against a study's results directory), and for any unknown scope — so a caller falls back rather than being handed the wrong entity.
+
+    The ``prefix:`` is required, and that is what separates an IRI from a relative path: without it ``network/Glasser.yaml`` reads as scope ``network``, and a path the caller meant to open would be resolved against the database instead.
+    """
+    m = _IRI_RE.match(str(iri).strip())
+    if not m:
+        return None
+    cls_name = _IRI_SCOPES.get(m.group("scope"))
+    return (cls_name, m.group("name")) if cls_name else None
+
+
+def resolve_iri(iri: str) -> Path:
+    """Resolve a curated-entity IRI to its database YAML path.
+
+    New specs reference curated entities this way because a relative path is not portable: ``!include`` splices a document without rebasing the paths inside it, so an experiment included out of the database resolves its own ``network.bids_dir`` against the including file and loads the wrong root. An IRI carries no path, so the database resolves it against the database.
+    """
+    target = iri_target(iri)
+    if target is None:
+        raise ValueError(
+            f"{iri!r} is not a curated-entity IRI. Expected `tvbo:<scope>/<name>` with scope one of: "
+            f"{', '.join(sorted(_IRI_SCOPES))}."
+        )
+    return resolve(*target)
+
+
 def resolve(cls_name: str, name: str) -> Path:
     """Resolve a short name to a database YAML file path.
 

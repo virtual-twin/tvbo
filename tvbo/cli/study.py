@@ -26,6 +26,11 @@ TEMPLATE_DIR = Path(tvbo.__file__).resolve().parent / "templates" / "study"
 
 _KEEP = ".gitkeep"
 
+SLIM_ROLES = ("recipe", "gitignore", "dataset_description")
+"""What ``--slim`` writes, at the study root only: the one specification a run is given, the rules that keep the run's products out of version control, and the file that makes the directory identifiable as a study.
+
+That last one is not documentation and cannot be dropped: :func:`~tvbo.utils.study_layout.study_root` finds a study by walking up for it, so without it nothing inside can resolve a layout role. What ``--slim`` does leave out is a study of record's documentation — the README, the sourcedata provenance note, the citation file, the report — which a demonstration has no use for. ``tvbo validate study`` reports those as missing, correctly: a slim study is a working recipe, not a complete BIDS dataset."""
+
 
 def _dataset_description(name: str, dataset_type: str, bids_version: str, sources: list[dict] | None = None) -> dict:
     """The ``dataset_description.json`` body for a dataset of ``dataset_type``."""
@@ -62,10 +67,21 @@ def init(
         help="Layout variant to include, e.g. `replication`. Repeatable; omit for the general layout.",
     ),
     force: bool = typer.Option(False, "--force", help="Overwrite files that already exist."),
+    slim: bool = typer.Option(
+        False,
+        "--slim/--full",
+        help="`--slim` writes the entry recipe, a `.gitignore` and `dataset_description.json`, "
+        "and stops. The result is a runnable study, NOT a complete BIDS dataset: `tvbo validate "
+        "study` will report the documentation a study of record needs and a demonstration does "
+        "not. For a docs page, a notebook, or anything driven from the Python API. `--full` "
+        "(default) scaffolds the whole BIDS study dataset.",
+    ),
 ) -> None:
     """Scaffold a BIDS study dataset from the layout record.
 
     Every directory, both ignore files and every ``dataset_description.json`` are derived from the record, so a study's shape is never typed out a second time. An empty directory gets a ``.gitkeep`` only when it is tracked; an untracked one is left for the run to create.
+
+    ``--slim`` writes only what a human authors (:data:`SLIM_ROLES`), for a study that demonstrates something rather than being archived.
     """
     record = layout_rules.load_layout()
     templates = tuple(template)
@@ -82,14 +98,18 @@ def init(
         typer.echo(f"  write    {rel}")
 
     typer.echo(f"{root}")
-    for rel, _ in layout_rules.walk(record, templates):
-        (root / rel).mkdir(parents=True, exist_ok=True)
-        typer.echo(f"  mkdir    {rel}/")
+    if not slim:
+        for rel, _ in layout_rules.walk(record, templates):
+            (root / rel).mkdir(parents=True, exist_ok=True)
+            typer.echo(f"  mkdir    {rel}/")
 
     bids_version = str(record.bids_version)
     for rel, entry in layout_rules.iter_files(record, templates):
         rel = layout_rules.interpolate(rel, name)
         role = str(entry.role)
+        # Slim writes at the root only: the nested `derivatives/tvbo/dataset_description.json` declares a derivative dataset the run has not produced yet, and writing it would announce one that is not there.
+        if slim and (role not in SLIM_ROLES or "/" in rel):
+            continue
         if role == "gitignore":
             write(rel, "\n".join(layout_rules.gitignore_lines(record, templates, name)))
         elif role == "bidsignore":
@@ -112,18 +132,21 @@ def init(
                 _seed(target, str(entry.template), name)
                 typer.echo(f"  write    {rel}")
 
-    # Last, so a directory that a seed has just filled is not given a placeholder it does not need.
-    for rel, _ in layout_rules.walk(record, templates):
-        target = root / rel
-        if layout_rules.is_tracked(rel, record, templates) and not any(target.iterdir()):
-            (target / _KEEP).touch()
-            typer.echo(f"  keep     {rel}/{_KEEP}")
+    if not slim:
+        # Last, so a directory that a seed has just filled is not given a placeholder it does not need.
+        for rel, _ in layout_rules.walk(record, templates):
+            target = root / rel
+            if layout_rules.is_tracked(rel, record, templates) and not any(target.iterdir()):
+                (target / _KEEP).touch()
+                typer.echo(f"  keep     {rel}/{_KEEP}")
 
-    readme = root / layout_rules.file_relpath("readme", name, record)
-    if readme.is_file():
-        layout_rules.sync_layout(readme, record, name, templates)
-        typer.echo(f"  layout   {readme.name}")
+        readme = root / layout_rules.file_relpath("readme", name, record)
+        if readme.is_file():
+            layout_rules.sync_layout(readme, record, name, templates)
+            typer.echo(f"  layout   {readme.name}")
     typer.echo(f"\nNext: fill in {name}.yaml, then `tvbo run {name}.yaml`.")
+    if slim:
+        typer.echo(f"Or from Python: SimulationStudy.from_file('{name}.yaml').run()")
 
 
 @app.command("layout")
