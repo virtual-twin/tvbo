@@ -932,7 +932,7 @@ def test_color_encoding_draws_one_line_per_entry():
 
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "_color_dim(_da, 'parcel_name')" in code
+    assert "_color_dim(_ds, _da, 'parcel_name')" in code
     assert "plt.get_cmap('turbo')" in code
 
     ns: dict = {}
@@ -945,8 +945,13 @@ def test_color_encoding_draws_one_line_per_entry():
         dims=["parcel", "time"],
         coords={"parcel": [181, 186], "parcel_name": ("parcel", ["L_V1_ROI", "L_V4_ROI"])},
     )
-    assert ns["_color_dim"](da, "parcel_name") == ("parcel", ["L_V1_ROI", "L_V4_ROI"])
-    assert ns["_color_dim"](da, "parcel") == ("parcel", ["181", "186"])
+    # A coord or a dim only orders the lines along the map; a sibling variable measured once per entry carries the value that shades them.
+    assert ns["_color_dim"](None, da, "parcel_name") == ("parcel", ["L_V1_ROI", "L_V4_ROI"], None)
+    assert ns["_color_dim"](None, da, "parcel") == ("parcel", ["181", "186"], None)
+    ds = xr.Dataset({"amplitude": xr.DataArray(np.array([2.0, 5.0]), dims=["parcel"])})
+    dim, labels, values = ns["_color_dim"](ds, da, "amplitude")
+    assert (dim, labels) == ("parcel", ["181", "186"])  # labels come from the fanned dim, not an unrelated coord
+    assert list(values) == [2.0, 5.0]
 
 
 def test_colorbar_suppressed_by_opt():
@@ -1279,3 +1284,24 @@ def test_a_layer_transform_runs_before_the_selection_and_a_ref_transform_after_i
     body = code[code.index("def _panel_a") :]  # `.sel(` also appears in the shared preamble
     before, sel, after = (body.index(x) for x in ("'_before'", "_da.sel(", "'_after'"))
     assert before < sel < after
+
+
+@requires_exp3
+def test_declared_colorbar_ticks_survive_the_shared_format_pass():
+    """A panel that declares `colorbar_ticks` must get those marks, not the renderer's.
+
+    ``bsplot.style.format_colorbar`` places ticks of its own, and it runs INSIDE the tidy-up pass — so ticks applied before it were silently replaced by the data's own min/mid/max. The bar still looked plausible, which is why the substitution went unnoticed: the panel has to be handed the list, not a flag saying one existed.
+    """
+    fig = _cartesian_figure()
+    panel = fig.panels["a"]
+    panel.kind = "heatmap"
+    panel.opts = {
+        "colorbar": P.Argument(name="colorbar", value=True),
+        "colorbar_ticks": P.Argument(name="colorbar_ticks", value=[-0.3, 0.3, 0.9]),
+    }
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "_COLORBAR_POST.append((_cb, None, [-0.3, 0.3, 0.9]))" in code
+    body = code.split("def _format_colorbar(")[1].split("\ndef ")[0]
+    shared, restore = body.index("bsplot.style.format_colorbar("), body.index("axis.set_ticks(list(declared))")
+    assert shared < restore, "the declared ticks must be re-applied AFTER the pass that overwrites them"

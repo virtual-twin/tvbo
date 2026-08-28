@@ -27,7 +27,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from .golden import GoldenCorpus
+from .golden import GoldenCorpus, array_discriminates
 
 CORPUS_ROOT = Path(__file__).parent / "reference_data" / "numerical"
 SPECS = CORPUS_ROOT / "specs"
@@ -118,6 +118,13 @@ def _compare(produced: dict, expected: dict, tol: dict) -> str | None:
     )
 
 
+DEGENERATE_OK: dict[str, str] = {}
+"""Specs whose frozen trajectory is legitimately empty, constant or non-finite, and why.
+
+Empty by design: a spec in here is one whose output cannot fail, so its reference asserts nothing about the code and the entry is the claim that this is intended. Reviewing an addition means agreeing that a spec worth freezing has nothing to freeze — which is almost always a defect in the spec instead.
+"""
+
+
 def _corpus_for(stem: str) -> GoldenCorpus:
     """The corpus as seen by one spec, carrying that spec's tolerance."""
     tol = {**DEFAULT_TOLERANCE, **TOLERANCES.get(stem, {})}
@@ -127,6 +134,8 @@ def _corpus_for(stem: str) -> GoldenCorpus:
         write=_write,
         read=_read,
         compare=lambda produced, expected: _compare(produced, expected, tol),
+        discriminates=lambda artifact: array_discriminates(artifact["values"]),
+        degenerate_ok=DEGENERATE_OK,
     )
 
 

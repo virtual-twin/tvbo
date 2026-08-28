@@ -80,7 +80,15 @@ The two swept values straddle the graph's own 2 ms delay by an order of magnitud
 """
 
 
-_ORDER_PARAMETER = """observations:
+_ORDER_PARAMETER = """functions:
+  kuramoto_order:
+    name: kuramoto_order
+    description: "Kuramoto order parameter R = <| <exp(i*theta)>_nodes |>_time over the whole window."
+    source_code: "jnp.mean(jnp.abs(jnp.mean(jnp.exp(1j * data[:, 0, :]), axis=1)))"
+    arguments:
+      data:
+        description: "Trajectory (time, states, nodes)."
+observations:
   order_parameter:
     label: "Kuramoto order parameter"
     source: [theta]
@@ -91,7 +99,10 @@ _ORDER_PARAMETER = """observations:
             value: integration.result
 
 """
-"""An observation on the sweep, so the run stacks a bundle and has to key it by the swept delay."""
+"""An observation on the sweep, so the run stacks a bundle and has to key it by the swept delay.
+
+The function is defined here rather than named and left undefined. Referencing a `function:` the spec never declares used to emit the step as `output = input` -- the observation returned the raw trajectory, and a test that asserts an axis rather than a value passed anyway. Codegen refuses that now, which is what surfaced it.
+"""
 
 
 def _experiment(tmp_path):

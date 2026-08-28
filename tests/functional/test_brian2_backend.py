@@ -174,7 +174,7 @@ network:
     - {source: 2, target: 3, dynamics: NMDA_I, connectivity: all_to_all, parameters: {weight: {value: 1.0}}}
     - {source: 3, target: 2, dynamics: GABA_E, connectivity: all_to_all, parameters: {weight: {value: 1.0}}}
     - {source: 3, target: 3, dynamics: GABA_I, connectivity: all_to_all, allow_self_connections: false, parameters: {weight: {value: 1.0}}}
-integration: {method: euler, step_size: 0.02, duration: 1500.0, time_scale: ms}
+integration: {method: euler, step_size: 0.02, duration: 1000.0, transient_time: 500.0, time_scale: ms}
 """
 """Recipe for the column: recurrent AMPA (rec) + saturating NMDA (Mg block) + GABA-A, with an independent 2.4 kHz Poisson background per neuron. Constants from Deco (2014) Table 2."""
 
@@ -230,7 +230,7 @@ class TestBrian2ReproducesTable2:
     """The native backend reproduces Deco (2014) Table-2 spontaneous rates."""
 
     def test_run_reproduces_rates(self, column):
-        res = column.run(format="brian2", seed=3, settle_ms=500.0)
+        res = column.run(format="brian2", seed=3)
         rates = res._extras["rates"]
         rE, rI = rates["ExcitatoryCell"], rates["InhibitoryCell"]
         # Table 2 targets: E 2.92 Hz, I 7.54 Hz. Assert the correct regime with a margin for the finite window; the balance (E < I, ~1:2.6) must hold.
@@ -241,7 +241,7 @@ class TestBrian2ReproducesTable2:
     def test_render_and_run_agree(self, column):
         """The generated script and the in-process run are the same computation.
 
-        Both at seed 3 with numpy codegen and the same stationary window, so the result is spike-level identical — a regression here means render() drifted from run(). (The default settle window matches the script's, so no ``settle_ms`` override is passed to run().)
+        Both at seed 3 with numpy codegen and the same stationary window, so the result is spike-level identical — a regression here means render() drifted from run(). The window comes from the recipe in both, which is what leaves nothing for the two paths to disagree about.
         """
         run_rates = column.run(format="brian2", seed=3)._extras["rates"]
         script = column.render("brian2", seed=3)
@@ -298,7 +298,7 @@ network:
     - {source: 0, target: 2, connectivity: all_to_all}
     - {source: 2, target: 2, dynamics: STP_fac_E, connectivity: random, allow_self_connections: false,
        parameters: {weight: {value: 1.0}, connection_probability: {value: 0.12}}}
-integration: {method: euler, step_size: 0.05, duration: 800.0, time_scale: ms}
+integration: {method: euler, step_size: 0.05, duration: 640.0, transient_time: 160.0, time_scale: ms}
 """
 """Recipe for a recurrent E population wired with sparse random connectivity through a facilitating Tsodyks-Markram synapse."""
 
@@ -377,7 +377,7 @@ network:
     - {id: 5, dynamics: LoadPulse}
   edges:
     - {source: 5, target: 2, connectivity: all_to_all}
-integration: {method: euler, step_size: 0.05, duration: 800.0, time_scale: ms}
+integration: {method: euler, step_size: 0.05, duration: 640.0, transient_time: 160.0, time_scale: ms}
 """
 """Recipe for the declarative loading / nonspecific-readout primitive: a `pulseGenerator` (delay, duration, amplitude) summed into the target's membrane current, with no Poisson background so the behaviour is fully deterministic."""
 
@@ -475,7 +475,7 @@ network:
     - {source: 10, target: 11, dynamics: STP_E, connectivity: random, parameters: {weight: {value: 0.5}, connection_probability: {value: 0.2}}}
     - {source: 11, target: 10, dynamics: STP_E, connectivity: random, parameters: {weight: {value: 0.5}, connection_probability: {value: 0.2}}}
     - {source: 30, target: 10, connectivity: all_to_all}
-integration: {method: euler, step_size: 0.05, duration: 1500.0, time_scale: ms}
+integration: {method: euler, step_size: 0.05, duration: 1200.0, transient_time: 300.0, time_scale: ms}
 """
 """Recipe in the faithful Mongillo/Amit-Brunel form: `tau_m dV/dt = -V + mu_ext + iSyn` with V_rest 0, and short-term facilitation on the recurrent synapse.
 
@@ -588,7 +588,7 @@ network:
     - {id: 5, dynamics: LoadPulse}
   edges:
     - {source: 5, target: 2, connectivity: all_to_all}
-integration: {method: euler, step_size: 0.05, duration: 500.0, time_scale: ms}
+integration: {method: euler, step_size: 0.05, duration: 400.0, transient_time: 100.0, time_scale: ms}
 """
 """Recipe with two E populations, one driven by a pulse and one silent, exercising the per-population keying and the save→load round-trip a spiking study's figures bind to, so `tvbo run` reproduces the raster from disk."""
 
@@ -613,7 +613,9 @@ class TestBrian2ResultContainer:
         res, ds = self._run_and_save(tmp_path)
         pops = list(ds.attrs["populations"])
         assert pops == ["ExcitatoryCell_2", "ExcitatoryCell_3"]
-        assert float(ds.attrs["duration_ms"]) == 500.0 and float(ds.attrs["dt_ms"]) == 0.05
+        assert float(ds.attrs["duration_ms"]) == 400.0 and float(ds.attrs["dt_ms"]) == 0.05
+        # The MEASURED window and the settle prepended to it, both stated, so the file needs no recipe beside it to be read.
+        assert float(ds.attrs["transient_ms"]) == 100.0 and ds.attrs["spike_time_origin"] == "measurement"
         # per-population rasters present; sizes and rates on the shared population axis, in order.
         import numpy as np
 
@@ -659,7 +661,7 @@ network:
         spike: {condition: {rhs: "v > thresh"}, affect: {rhs: "v = reset"}}
   nodes:
     - {id: 2, dynamics: NoisyCell, size: 5}
-integration: {method: euler, step_size: 0.05, duration: 100.0, time_scale: ms}
+integration: {method: euler, step_size: 0.05, duration: 80.0, transient_time: 20.0, time_scale: ms}
 """
 
 
@@ -701,7 +703,7 @@ network:
   edges:
     - {source: 5, target: 2, connectivity: all_to_all, parameters: {weight: {value: 2.0}}}
     - {source: 5, target: 2, connectivity: all_to_all, parameters: {weight: {value: 3.0}}}
-integration: {method: euler, step_size: 0.05, duration: 400.0, time_scale: ms}
+integration: {method: euler, step_size: 0.05, duration: 320.0, transient_time: 80.0, time_scale: ms}
 """
 
 
@@ -768,7 +770,7 @@ network:
   edges:
     - {source: 10, target: 10, dynamics: STP_bad, connectivity: random, allow_self_connections: false,
        parameters: {weight: {value: 3.0}, connection_probability: {value: 0.2}}}
-integration: {method: euler, step_size: 0.05, duration: 100.0, time_scale: ms}
+integration: {method: euler, step_size: 0.05, duration: 80.0, transient_time: 20.0, time_scale: ms}
 """
 
 
@@ -827,7 +829,7 @@ network:
   edges:
     - {source: 10, target: 10, dynamics: STP_E, connectivity: random, allow_self_connections: false,
        parameters: {weight: {value: 0.1}, connection_probability: {value: 0.2}}}
-integration: {method: euler, step_size: 0.05, duration: 400.0, time_scale: ms}
+integration: {method: euler, step_size: 0.05, duration: 320.0, transient_time: 80.0, time_scale: ms}
 """
 
 
@@ -919,7 +921,7 @@ network:
     - {id: 5, dynamics: Noise}
   edges:
     - {source: 5, target: 2, connectivity: random, parameters: {connection_probability: {value: 0.3}}}
-integration: {method: euler, step_size: 0.05, duration: 400.0, time_scale: ms}
+integration: {method: euler, step_size: 0.05, duration: 320.0, transient_time: 80.0, time_scale: ms}
 execution: {random_seed: 0}
 """
 """Recipe for the paper's "nonspecific input to 15% of the excitatory neurons": the 0/1 mask fraction is `connection_probability`, reusing the sparse-synapse convention, and a subthreshold `mu_ext` keeps the unstimulated neurons silent."""
@@ -956,3 +958,153 @@ class TestBrian2RandomSubsetPulse:
         i, t = np.asarray(spk["i"]), np.asarray(spk["t_ms"])
         assert 0.20 < len(np.unique(i)) / 200 < 0.40  # ~30% of neurons driven (fraction 0.3)
         assert np.all((t >= 100.0) & (t < 300.0))  # only within the pulse window
+
+
+_SETTLED_INTEGRATION = "integration: {method: euler, step_size: 0.05, duration: 320.0, transient_time: 80.0, time_scale: ms}"
+
+UNSETTLED_YAML = RECORDED_SYN_YAML.replace(
+    _SETTLED_INTEGRATION, "integration: {method: euler, step_size: 0.05, duration: 320.0, time_scale: ms}"
+)
+"""The same column with the settle taken off, so `duration` is the whole run and every step of it is measured."""
+
+
+class TestBrian2MeasurementClock:
+    """Every time axis a Brian2 run reports is on the measurement clock: the settle is negative, t = 0 opens the measured window."""
+
+    @pytest.fixture(scope="class")
+    def settled(self, tmp_path_factory):
+        path = tmp_path_factory.mktemp("brian2settle") / "settled.yaml"
+        path.write_text(RECORDED_SYN_YAML)
+        return SimulationExperiment.from_file(str(path)).run(format="brian2", seed=3, record_v=True)
+
+    @pytest.mark.backend_brian2
+    @pytest.mark.slow
+    def test_the_raster_spans_the_settle_as_negative_time(self, settled):
+        """The declared settle is integrated and reported, carrying the sign that says it precedes measurement."""
+        import numpy as np
+
+        t = np.asarray(settled._extras["spikes"]["ExcitatoryCell"]["t_ms"])
+        assert (t < 0).any(), "the settle was integrated, so its spikes must be reported on it"
+        assert t.min() >= -80.0 and t.max() < 320.0, (t.min(), t.max())
+
+    @pytest.mark.backend_brian2
+    @pytest.mark.slow
+    def test_the_rate_counts_exactly_the_non_negative_raster(self, settled):
+        """The rate beside the raster is over the measured window, and now the raster says which spikes those were.
+
+        This is the agreement the shift buys: before it, deriving the reported rate from the reported raster needed a settle the payload never carried.
+        """
+        import numpy as np
+
+        t = np.asarray(settled._extras["spikes"]["ExcitatoryCell"]["t_ms"])
+        expected = int((t >= 0).sum()) / (0.32 * settled._extras["sizes"]["ExcitatoryCell"])
+        assert settled._extras["rates"]["ExcitatoryCell"] == pytest.approx(expected, abs=1e-9)
+
+    @pytest.mark.backend_brian2
+    @pytest.mark.slow
+    def test_every_recorded_trace_shares_that_clock(self, settled):
+        """Membrane trace and synapse probe put zero in the same place as the raster, not one shifted against it.
+
+        They are sampled on different clocks — the probe has its own recording period — so what must agree is the origin, not the grid.
+        """
+        import numpy as np
+
+        for key, axis in (
+            ("membrane trace", np.asarray(settled._extras["t_ms"])),
+            ("synapse probe", np.asarray(settled._extras["synapse_state"]["ExcitatoryCell"]["t_ms"])),
+        ):
+            assert axis[0] == pytest.approx(-80.0, abs=1.0), f"{key} does not open on the settle: {axis[0]}"
+            assert 0.0 < axis[-1] < 320.0, f"{key} does not close inside the measured window: {axis[-1]}"
+
+    @pytest.mark.backend_brian2
+    @pytest.mark.slow
+    def test_a_saved_run_states_its_origin(self, settled, tmp_path):
+        """A file on disk says which clock its times are on, so a reader need not infer it from a settle it cannot see."""
+        import xarray as xr
+
+        settled.save(str(tmp_path))
+        with xr.open_dataset(str(next(tmp_path.glob("*result.h5"))), engine="h5netcdf") as ds:
+            assert ds.attrs["spike_time_origin"] == "measurement"
+            assert float(ds.attrs["transient_ms"]) == pytest.approx(80.0)
+
+    @pytest.mark.backend_brian2
+    @pytest.mark.slow
+    def test_an_undeclared_settle_measures_the_whole_run(self, tmp_path):
+        """`duration` with no `transient_time` IS the measured window, so the recipe's own clock is already the measurement clock.
+
+        This backend used to discard a leading fifth of any run that declared no settle — a settle nobody asked for, which made `duration` mean 80% of itself and made raising it change what fraction was measured. A recipe that wants one now says so.
+        """
+        import numpy as np
+
+        path = tmp_path / "plain.yaml"
+        path.write_text(UNSETTLED_YAML)
+        res = SimulationExperiment.from_file(str(path)).run(format="brian2", seed=3)
+        t = np.asarray(res._extras["spikes"]["ExcitatoryCell"]["t_ms"])
+        assert t.min() >= 0.0 and t.max() < 320.0, (t.min(), t.max())
+        assert res._extras["transient_ms"] == 0.0
+        assert res._extras["duration_ms"] == 320.0
+        rate = int(t.size) / (0.32 * res._extras["sizes"]["ExcitatoryCell"])
+        assert res._extras["rates"]["ExcitatoryCell"] == pytest.approx(rate, abs=1e-9)
+
+
+SETTLED_PULSE_YAML = PULSE_YAML.replace(
+    "integration: {method: euler, step_size: 0.05, duration: 640.0, transient_time: 160.0, time_scale: ms}",
+    "integration: {method: euler, step_size: 0.05, duration: 640.0, transient_time: 300.0, time_scale: ms}",
+)
+"""The pulse column with a settle almost as long as the pulse's own onset.
+
+Chosen so a missing shift is unmistakable rather than marginal: with the settle unaccounted for, the pulse would open 300 ms before it should and fire inside the settle instead of the measured window.
+"""
+
+
+class TestBrian2DeclaredOnsetClock:
+    """A declared onset is on the measurement clock, as it is in every other backend."""
+
+    @pytest.mark.backend_brian2
+    @pytest.mark.slow
+    @pytest.mark.parametrize(
+        "transient_time, yaml", [(160.0, PULSE_YAML), (300.0, SETTLED_PULSE_YAML)], ids=["settle-160", "settle-300"]
+    )
+    def test_the_pulse_lands_where_the_recipe_puts_it_whatever_the_settle(self, transient_time, yaml, tmp_path):
+        """`delay: 300` means 300 ms into the measured window, and moving the settle does not move it.
+
+        Two settles rather than one, because a single one cannot separate "the shift is applied" from "the shift happens to be zero here": the same declared window has to come back at the same place under both.
+        """
+        import numpy as np
+
+        path = tmp_path / f"pulse_{transient_time:g}.yaml"
+        path.write_text(yaml)
+        res = SimulationExperiment.from_file(str(path)).run(format="brian2")
+        t = np.asarray(res._extras["spikes"]["ExcitatoryCell"]["t_ms"])
+        assert res._extras["transient_ms"] == transient_time
+        assert int(((t >= 300) & (t < 500)).sum()) > 0, "the pulse drove nothing in the window it declares"
+        assert int((t < 300).sum()) == 0 and int((t >= 500).sum()) == 0, (
+            f"the pulse leaked outside its declared window: {t.min():g}..{t.max():g}"
+        )
+
+    def test_the_emitted_script_carries_the_shifted_constant(self, tmp_path):
+        """The shift is on the constant, once, rather than on every use of it — so render and run cannot disagree about where the pulse is."""
+        path = tmp_path / "pulse.yaml"
+        path.write_text(SETTLED_PULSE_YAML)
+        script = SimulationExperiment.from_file(str(path)).render("brian2")
+        assert '"delay_stim_LoadPulse": 600.0 * ms' in script, "delay 300 on a 300 ms settle is 600 on Brian2's clock"
+
+    @pytest.mark.backend_brian2
+    @pytest.mark.slow
+    def test_the_rendered_probe_axis_is_on_the_same_clock_as_the_run(self, tmp_path):
+        """Render and run agree about WHERE t = 0 is, not only about the numbers on either side of it.
+
+        The rates matched through the whole period the two paths disagreed about the probe's origin: a rate is a count over a window and says nothing about where that window is stamped. Comparing an axis is what catches a clock drifting apart.
+        """
+        import numpy as np
+
+        path = tmp_path / "rec.yaml"
+        path.write_text(RECORDED_SYN_YAML)
+        exp = SimulationExperiment.from_file(str(path))
+        run_axis = np.asarray(exp.run(format="brian2", seed=3)._extras["synapse_state"]["ExcitatoryCell"]["t_ms"])
+        ns = {}
+        exec(compile(exp.render("brian2", seed=3), "<generated>", "exec"), ns)
+        rendered_axis = np.asarray(ns["SYNAPSE_STATE"]["ExcitatoryCell"]["t_ms"])
+
+        assert run_axis[0] < 0.0, "the settle must be on the axis for its origin to be testable at all"
+        np.testing.assert_allclose(rendered_axis, run_axis)

@@ -118,8 +118,7 @@ CONVERT_TIMEOUT_S = 120
 
 EXECUTE_TIMEOUT_S = 600
 SLOW_EXECUTE_TIMEOUT_S = 3600
-"""Wall-clock ceilings on executing one notebook. Generous, because a doc that runs a simulation is
-allowed to be slow; finite, because one that hangs must not be allowed to stall the run."""
+"""Wall-clock ceilings on executing one notebook. Generous, because a doc that runs a simulation is allowed to be slow; finite, because one that hangs must not be allowed to stall the run."""
 
 
 def timeout_for(doc_name: str) -> int:

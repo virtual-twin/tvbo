@@ -25,7 +25,7 @@ import pytest
 from tvbo.classes.dynamics import Dynamics
 from tvbo.data.registry import database_dir
 
-from .golden import GoldenCorpus
+from .golden import GoldenCorpus, text_discriminates
 
 MODEL_ROOT = database_dir("Dynamics")
 
@@ -124,6 +124,7 @@ CORPUS = GoldenCorpus(
     write=lambda path, code: path.write_text(code, encoding="utf-8"),
     read=lambda path: path.read_text(encoding="utf-8"),
     compare=_diff,
+    discriminates=text_discriminates,
 )
 
 CASES = [(path, fmt) for path in _model_paths() for fmt in FORMATS if _case_id(path, fmt) not in EXCLUDED]
