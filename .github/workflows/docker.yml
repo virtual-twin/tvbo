@@ -272,11 +272,11 @@ jobs:
             extra_args: "--run-slow"
             xla_device_count: "8"
             test_timeout: "1800"
-          # Core: everything the specialised shards above do not match. The exclusions name paths rather than backends because `-k` matches case-insensitively, so a bare `TVB` also excludes every id under the `tvbo` checkout -- which is why this shard collected nothing and was commented out instead of fixed.
+          # Core: everything the specialised shards above do not match, on one device because these are ordinary pages that never ask to be split and forced host devices buy the runner nothing while costing it the 8x memory the RWW shard above records. The exclusions name paths rather than backends because `-k` matches case-insensitively, so a bare `TVB` also excludes every id under the `tvbo` checkout -- which is why this shard collected nothing and was commented out instead of fixed.
           - shard: core
             doc_pattern: "not NeuroML and not BifurcationKit and not ModelingToolkit and not NetworkDynamics and not Pyrates and not Interoperability/TVB and not _tvboptim and not Replication"
             extra_args: ""
-            xla_device_count: "8"
+            xla_device_count: "1"
             test_timeout: "1800"
     env:
       JAX_PLATFORMS: cpu
