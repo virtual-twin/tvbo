@@ -56,6 +56,17 @@ def source_observations(obs: Any, experiment: Any) -> list:
     return out
 
 
+def canonical_observation_ref(value: Any, observation_names: Any) -> Any:
+    """Rewrite ``observations.<name>`` to the bare ``<name>`` a pipeline argument resolves.
+
+    ``observations.<name>`` is how the spec names an observation from a loss, an exploration builder and a study analysis, so a pipeline argument accepts the same spelling rather than a second one. Anything that is not that spelling — a literal, ``network.observations.<measure>``, a name no observation carries — is returned unchanged, and a trailing ``.<key>`` is preserved so ``observations.psd.frequencies`` still reaches a named output.
+    """
+    if not isinstance(value, str) or not value.startswith("observations."):
+        return value
+    rest = value.split(".", 1)[1]
+    return rest if rest.split(".", 1)[0] in set(observation_names or ()) else value
+
+
 @dataclass(frozen=True)
 class CodeFormat:
     """How one component-level code format is rendered, formatted and re-entered.

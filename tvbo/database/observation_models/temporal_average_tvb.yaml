@@ -1,8 +1,4 @@
-# Temporal Average - running temporal mean, TVB's windowing
-#
-# The name stays `TemporalAverage` because recipes reference it; the file says which of the two
-# conventions it is. See temporal_average_tvboptim.yaml for the other, and the fidelity test for
-# the measured difference between them.
+# TVB's windowing. The name stays `TemporalAverage` because recipes reference it, so the FILE says which of the two conventions this is; temporal_average_tvboptim.yaml is the other, and the fidelity test measures the difference.
 
 name: TemporalAverage
 label: Temporal Average

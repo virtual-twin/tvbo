@@ -3,11 +3,11 @@ title: "tvbo brain"
 description: "The ASCII spec-to-cortex portrait: a model spec coming apart and reassembling as a cortical surface drawn from its own characters."
 ---
 
-`tvbo brain` draws a model spec dissolving into a cortical surface built out of the spec's own characters — the terminal form of bsplot's [Spec to cortex](https://virtual-twin.github.io/bsplot/Usage/AsciiSpecPortrait/AsciiSpecPortrait.html) portrait.
+`tvbo brain` draws a model spec dissolving into a cortical surface built out of the spec's own characters: the terminal form of bsplot's Spec to cortex portrait.
 
 A bare `tvbo` shows the same surface at banner scale — the name on the left edge, a cortex on the right, and the command list underneath. Three details make that banner work:
 
-- the **mark** is the wordmark spelled out in block characters, in the TVB-O brand blue. The real artwork is a raster logo; at a dozen character cells its letterforms turn to mush, so the banner spells the name instead. The artwork path is still there — `hero(mark="logo")` draws it, and `tvbo brain --save-logo` rebuilds its asset — for whenever a mark that survives the size turns up.
+- the **mark** is the wordmark spelled out in block characters, in the TVB-O brand blue. The real artwork is a raster logo; at a dozen character cells its letterforms turn to mush, so the banner spells the name instead. The artwork path is still there for whenever a mark that survives the size turns up: `hero(mark="logo")` draws it, and `tvbo brain --save-logo` rebuilds its asset.
 - the **cortex** is shaded through the coarse `" .:-=+*#%@"` ramp, not a letters ramp: at a dozen rows tonal contrast is what makes it read as a brain, and letterforms only add noise. The lighting is re-stretched after resampling, because box-averaging a 156×60 grid down to 30 columns otherwise flattens every cell toward the mean.
 - the cortex keeps its own proportions, so the **shared row count** sets its width; the tallest band that still fits both columns between the two edges wins, and the name is centred in it. Below the width where both fit, the cortex gives way and the name stands alone.
 
@@ -25,9 +25,9 @@ tvbo brain [SPEC] [--animate] [--bg dark|light] [--width N] [--plain] [--no-flow
 
 Three things happen left to right:
 
-- **the spec** — the YAML as written, every glyph a source with a real position;
-- **the flow** — a sample of those letters caught mid-flight, on an arc toward the cortex;
-- **the cortex** — one `fsaverage` pial surface. Each cell's glyph comes from an ink ramp built out of *the spec's own character set*, so the 3-D form reads through glyph density even with colour off, and the colour is the surface's binarised curvature (gyri light, sulci dark) shaded by the lighting. A `C` lands from a `C` in the text.
+- **the spec**: the YAML as written, every glyph a source with a real position;
+- **the flow**: a sample of those letters caught mid-flight, on an arc toward the cortex;
+- **the cortex**: one `fsaverage` pial surface. Each cell's glyph comes from an ink ramp built out of *the spec's own character set*, so the 3-D form reads through glyph density even with colour off, and the colour is the surface's binarised curvature (gyri light, sulci dark) shaded by the lighting. A `C` lands from a `C` in the text.
 
 `--animate` plays the dissolve: every glyph rests on its spec position until its departure beat, then flies to its cell, departures sweeping the spec in reading order.
 
@@ -47,7 +47,7 @@ Three things happen left to right:
 
 ## Why it is instant
 
-The logo ships as `tvbo/data/media/logo_ascii.txt` (an alpha block, a palette-indexed colour block, and the palette) — rebuilding it needs an SVG rasteriser (`rsvg-convert` or `inkscape`), which is exactly why it ships. The surface geometry ships precomputed as `tvbo/data/media/cortex_ascii.txt`: a text grid holding, per character cell, the shading intensity and the binarised curvature, cropped to the cortex bounding box, plus the measured ink ordering of printable ASCII. Printing the portrait is a file read and some arithmetic — no bsplot import, no template download, no network.
+The logo ships as `tvbo/data/media/logo_ascii.txt` (an alpha block, a palette-indexed colour block, and the palette), because rebuilding it needs an SVG rasteriser (`rsvg-convert` or `inkscape`), which is exactly why it ships. The surface geometry ships precomputed as `tvbo/data/media/cortex_ascii.txt`: a text grid holding, per character cell, the shading intensity and the binarised curvature, cropped to the cortex bounding box, plus the measured ink ordering of printable ASCII. Printing the portrait is a file read and some arithmetic: no bsplot import, no template download, no network.
 
 `--render` is the escape hatch when you want another view, and `--save-asset` regenerates the shipped grid:
 

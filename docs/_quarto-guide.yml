@@ -1,0 +1,5 @@
+# The hand-written guide alone: `QUARTO_PROFILE=guide quarto render`. `project.render` entries append across profiles, so a profile can subtract but not replace — the two generated references are excluded here, and scripts/prerender.sh reads the same profile to skip building them.
+project:
+  render:
+    - "!api/**"
+    - "!datamodel/**"

@@ -39,6 +39,15 @@ pipeline:
       name: a
       description: Source-to-electrode vectors (n_sources, 3)
 - equation:
+    parameters:
+      period_steps:
+        name: period_steps
+        description: Integration steps per sampling period. TVB's Projection monitors
+          TRUNCATE this ratio (`int(period / dt)`) where the averaging monitors round
+          it, so at the default period the two differ by a sample.
+        equation:
+          rhs: floor(period / dt)
+          latex: false
     rhs: gain @ sum(X, axis=-1) / period_steps
     latex: false
   name: lead_field_projection

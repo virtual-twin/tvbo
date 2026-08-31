@@ -8,20 +8,15 @@ aliases:
   - /Usage/PDESimulation.html
 ---
 
-TVB-O integrates partial differential equations on a mesh with linear finite elements. The PDE backend generates a self-contained solver from a YAML experiment description, supporting triangle meshes — flat or a curved surface in space, which is the cortical case — as well as tetrahedral meshes via [scikit-fem](https://scikit-fem.readthedocs.io/), Dirichlet boundary conditions, declared `events:` as drives, and spatially varying coefficients.
+TVB-O integrates partial differential equations on a mesh with linear finite elements. The PDE backend generates a self-contained solver from a YAML experiment description, supporting triangle meshes (flat, or a curved surface in space, which is the cortical case) as well as tetrahedral meshes via [scikit-fem](https://scikit-fem.readthedocs.io/), Dirichlet boundary conditions, declared `events:` as drives, and spatially varying coefficients.
 
-**The declared equation is the operator that runs.** Each state variable's `equation.rhs` is
-parsed into mass and stiffness blocks, so a system is lowered to
+**The declared equation is the operator that runs.** Each state variable's `equation.rhs` is parsed into mass and stiffness blocks, so a system is lowered to
 
 $$
 M\,\dot{\mathbf{u}} = A\,\mathbf{u} + M\,\mathbf{f}(\mathbf{u},t)
 $$
 
-with one block row per state variable. Terms that are linear in the state go into $A$ and are
-solved implicitly — unconditionally stable, so the step size follows accuracy rather than a
-stability limit — while anything else is evaluated at the current state each step. Because the
-constraint set and $A$ are fixed, the sparse factorisation is computed once and every step is a
-triangular solve.
+with one block row per state variable. Terms that are linear in the state go into $A$ and are solved implicitly, which is unconditionally stable and lets the step size follow accuracy rather than a stability limit; anything else is evaluated at the current state each step. Because the constraint set and $A$ are fixed, the sparse factorisation is computed once and every step is a triangular solve.
 
 That covers rather more than diffusion:
 
@@ -33,9 +28,7 @@ That covers rather more than diffusion:
 | `div(c * grad(u))` with per-vertex `c` | weighted stiffness assembly — a heterogeneous medium |
 | a term naming an `events:` entry | the stimulus is substituted into the equation and evaluated each step |
 
-Time integration is **Crank–Nicolson** by default (second-order accurate and non-dissipative,
-which matters for waves: backward Euler damps oscillations artificially). Set
-`method: implicit Euler` for the first-order, strongly damping alternative.
+Time integration is **Crank–Nicolson** by default (second-order accurate and non-dissipative, which matters for waves: backward Euler damps oscillations artificially). Set `method: implicit Euler` for the first-order, strongly damping alternative.
 
 $$
 \partial_t u(t,\mathbf{x}) = D\,\Delta u(t,\mathbf{x}) \quad \text{in } \Omega, \qquad u(t,\mathbf{x}) = 0 \quad \text{on } \partial\Omega
@@ -169,10 +162,7 @@ plt.close()
 
 ## Example 2: Cortical Surface Diffusion {#sec-pde-cortex}
 
-Diffusion on a cortical surface mesh (fsLR 32k), using the `mesh_file` attribute
-to reference an external GIFTI file directly. The cortical midthickness surface is
-a closed manifold (no boundary), so the Dirichlet BC has no effect and total mass
-is conserved — the field spreads but doesn't decay.
+Diffusion on a cortical surface mesh (fsLR 32k), using the `mesh_file` attribute to reference an external GIFTI file directly. The cortical midthickness surface is a closed manifold (no boundary), so the Dirichlet BC has no effect and total mass is conserved, so the field spreads but doesn't decay.
 
 ### Setup and run
 
@@ -289,11 +279,7 @@ plt.close()
 
 ## Example 3: A damped wave equation with a heterogeneous medium {#sec-pde-wave}
 
-A second-order-in-time system, written as two first-order state variables, with a
-spatially varying propagation scale. This is the neural-field form used by geometric
-eigenmode models [@Pang2023], generalised: those fit a single $r_s$ for the whole cortex,
-which the modal route requires — vary $r_s$ in space and the operator stops being diagonal in
-the eigenbasis, so only a field formulation reaches this regime.
+A second-order-in-time system, written as two first-order state variables, with a spatially varying propagation scale. This is the neural-field form used by geometric eigenmode models [@Pang2023], generalised: those fit a single $r_s$ for the whole cortex, which the modal route requires. Vary $r_s$ in space and the operator stops being diagonal in the eigenbasis, so only a field formulation reaches this regime.
 
 $$
 \gamma^{-2}\,\partial_{tt}\phi + 2\gamma^{-1}\,\partial_t\phi + \phi - \nabla\!\cdot\!\big(r_s(\mathbf{x})^2 \nabla \phi\big) = Q
@@ -334,8 +320,7 @@ _, U3 = solve3(steps=400, save_timeseries=True)
 print(f"states: {meta3['variables']}, U shape {U3.shape}")
 ```
 
-For the spatially uniform mode the Laplacian vanishes and the system is exactly critically
-damped, $\phi = \phi_0(1+\gamma t)e^{-\gamma t}$ — which is how the backend is verified:
+For the spatially uniform mode the Laplacian vanishes and the system is exactly critically damped, $\phi = \phi_0(1+\gamma t)e^{-\gamma t}$, which is how the backend is verified:
 
 ```{python}
 t3 = np.arange(U3.shape[0]) * 0.005
@@ -345,22 +330,15 @@ print(f"max deviation from the analytic envelope: {np.abs(U3[:, 0, :].mean(axis=
 
 ## Example 4: A brain wave equation, and the ODE system it becomes {#sec-pde-modal}
 
-Geometric eigenmode models of cortex [@Pang2023] pose a damped wave equation on the cortical
-surface and then **never integrate it**. They expand the field in the eigenbasis of the
-Laplace–Beltrami operator, $\Delta\psi_k = -\lambda_k\psi_k$, which turns the field equation
-into one damped oscillator per mode,
+Geometric eigenmode models of cortex [@Pang2023] pose a damped wave equation on the cortical surface and then **never integrate it**. They expand the field in the eigenbasis of the Laplace–Beltrami operator, $\Delta\psi_k = -\lambda_k\psi_k$, which turns the field equation into one damped oscillator per mode,
 
 $$
 \gamma^{-2}\ddot{a}_k + 2\gamma^{-1}\dot{a}_k + \big(1 + r_s^2\lambda_k\big)a_k = Q_k(t),
 $$
 
-and integrate a few hundred of those instead. With constant coefficients this is an **exact
-reformulation** of the PDE, not an approximation of it, so the only error is the one introduced
-by stopping the sum. Having both routes in one framework is what turns that from a claim into a
-measurement.
+and integrate a few hundred of those instead. With constant coefficients this is an **exact reformulation** of the PDE, not an approximation of it, so the only error is the one introduced by stopping the sum. Having both routes in one framework is what turns that from a claim into a measurement.
 
-The demonstration needs a closed curved surface, because that is the cortical case: no boundary
-anywhere, so a Dirichlet condition would constrain nothing.
+The demonstration needs a closed curved surface, because that is the cortical case: no boundary anywhere, so a Dirichlet condition would constrain nothing.
 
 ```{python}
 import numpy as np
@@ -393,8 +371,7 @@ meshio.Mesh(points=vertices, cells=[('triangle', faces)]).write(
 print(f"{len(vertices)} vertices, {len(faces)} triangles")
 ```
 
-The equation is @Pang2023's, at their fitted parameters, driven by a 1 ms pulse declared as an
-`events:` entry — the backend substitutes it into the equation that names it:
+The equation is @Pang2023's, at their fitted parameters, driven by a 1 ms pulse declared as an `events:` entry. The backend substitutes it into the equation that names it:
 
 ```{python}
 GAMMA, R_S, DT, STEPS = 116.0, 28.9, 1e-4, 200
@@ -436,9 +413,7 @@ field = U4[-1, 0]
 print(f"stimulated {int(patch.sum())} vertices; peak |phi| = {np.abs(field).max():.4f}")
 ```
 
-Now the same system as modal ODEs. Solving $K\psi = \lambda M\psi$ mass-orthonormally gives the
-discrete eigenbasis; each mode is stepped with the scheme the field solver uses, and the
-stimulus enters through its own projection $\psi^\top M q$:
+Now the same system as modal ODEs. Solving $K\psi = \lambda M\psi$ mass-orthonormally gives the discrete eigenbasis; each mode is stepped with the scheme the field solver uses, and the stimulus enters through its own projection $\psi^\top M q$:
 
 ```{python}
 evals, modes = eigh(meta4['stiffness_matrix'].toarray(), meta4['mass_matrix'].toarray())
@@ -468,62 +443,35 @@ for n_modes in (10, 50, 200, meta4['ndofs']):
     print(f"{n_modes:12d} {err:18.3e}")
 ```
 
-The last row is the point: **with the complete basis the two agree to round-off**, so the
-reformulation is exact and every row above it is pure truncation. That is what licenses reading
-a mode-truncated model's residual as a statement about mode count rather than about the solver.
+The last row is the point: **with the complete basis the two agree to round-off**, so the reformulation is exact and every row above it is pure truncation. That is what licenses reading a mode-truncated model's residual as a statement about mode count rather than about the solver.
 
-The sphere keeps the page fast, but nothing here changes at brain scale. On the full fsLR-32k
-left midthickness — 32,492 vertices, 64,984 degrees of freedom for this two-variable system —
-assembling $M$ and $K$ takes 0.07 s, the sparse factorisation 8.4 s, and each subsequent step is
-a triangular solve at roughly 76 ms, in about 3 GiB. The factorisation cost is paid once because
-$\Delta t$ and the operator are both fixed; changing either invalidates it.
+The sphere keeps the page fast, but nothing here changes at brain scale. On the full fsLR-32k left midthickness, at 32,492 vertices and 64,984 degrees of freedom for this two-variable system, assembling $M$ and $K$ takes 0.07 s, the sparse factorisation 8.4 s, and each subsequent step is a triangular solve at roughly 76 ms, in about 3 GiB. The factorisation cost is paid once because $\Delta t$ and the operator are both fixed; changing either invalidates it.
 
 ### Numerical details
 
-The FEM update assembles mass ($M$) and stiffness ($K$) matrices over linear elements,
-builds the block operator $A$ from the declared equations, and solves at each step
+The FEM update assembles mass ($M$) and stiffness ($K$) matrices over linear elements, builds the block operator $A$ from the declared equations, and solves at each step
 
 $$
 (M_\text{blk} - \theta \Delta t\, A)\, \mathbf{u}^{n+1} = \big(M_\text{blk} + (1-\theta)\Delta t\, A\big)\mathbf{u}^{n} + \Delta t\, M_\text{blk}\mathbf{f}^{n}
 $$
 
-with $\theta = \tfrac12$ for Crank–Nicolson and $\theta = 1$ for implicit Euler. A term
-`a * laplacian(u)` contributes $-aK$ (the weak form of the Laplacian is
-$-\!\int\!\nabla u\cdot\nabla v$), a term `a * u` contributes $aM$, and `div(c*grad(u))`
-contributes the weighted stiffness $-\!\int\! c\,\nabla u\cdot\nabla v$.
+with $\theta = \tfrac12$ for Crank–Nicolson and $\theta = 1$ for implicit Euler. A term `a * laplacian(u)` contributes $-aK$ (the weak form of the Laplacian is $-\!\int\!\nabla u\cdot\nabla v$), a term `a * u` contributes $aM$, and `div(c*grad(u))` contributes the weighted stiffness $-\!\int\! c\,\nabla u\cdot\nabla v$.
 
-`meta` carries the assembled `mass_matrix`, `stiffness_matrix` and `operator`, so a
-conservation law can be checked directly — note that the conserved quantity of pure
-diffusion is $\mathbf{1}^\top M\mathbf{u}$, not the nodal sum.
+`meta` carries the assembled `mass_matrix`, `stiffness_matrix` and `operator`, so a conservation law can be checked directly. Note that the conserved quantity of pure diffusion is $\mathbf{1}^\top M\mathbf{u}$, not the nodal sum.
 
-Triangles are assembled in closed form rather than through a FEM library, which is what makes
-a cortical mesh usable: it is a 2-manifold carrying three coordinates, and a general-purpose
-assembler expects the element and coordinate dimensions to agree. The P1 gradients on a surface
-triangle are tangential and known analytically, so the surface case is exact, and the stiffness
-matrix it produces is the familiar cotangent operator. Tetrahedra go through scikit-fem.
+Triangles are assembled in closed form rather than through a FEM library, which is what makes a cortical mesh usable: it is a 2-manifold carrying three coordinates, and a general-purpose assembler expects the element and coordinate dimensions to agree. The P1 gradients on a surface triangle are tangential and known analytically, so the surface case is exact, and the stiffness matrix it produces is the familiar cotangent operator. Tetrahedra go through scikit-fem.
 
 ::: {.callout-important}
 ## Surface operators carry the surface metric
-A general-purpose assembler handed a curved triangle mesh does not necessarily refuse it — it
-may quietly discretise the mesh's **projection onto a coordinate plane**, which runs, looks
-right, and answers a different question. On fsLR-32k that projection has an area of
-33,070 mm² against the surface's true 69,589 mm². The operators here are invariant under
-rotation and translation of the mesh, and `tests/test_mesh_fem.py` pins that against both
-scikit-fem (where the two agree, in the plane) and the analytic sphere spectrum (where only
-the surface form applies).
+
+A general-purpose assembler handed a curved triangle mesh does not necessarily refuse it. It may quietly discretise the mesh's **projection onto a coordinate plane**, which runs, looks right, and answers a different question. On fsLR-32k that projection has an area of 33,070 mm² against the surface's true 69,589 mm². The operators here are invariant under rotation and translation of the mesh, and `tests/test_mesh_fem.py` pins that against both scikit-fem (where the two agree, in the plane) and the analytic sphere spectrum (where only the surface form applies).
 :::
 
 ::: {.callout-note}
 ## Not yet supported
-`c(x) * laplacian(u)` is refused rather than approximated: its weak form requires
-$\nabla c$ and is not self-adjoint. Write it in divergence form, `div(c*grad(u))`, which is
-conservative and symmetric. Neumann, Robin and Periodic boundary conditions are schema-only
-and raise if declared, rather than being silently dropped. Declared noise and coupling to a
-node-level `dynamics:` block are not lowered onto the field.
+`c(x) * laplacian(u)` is refused rather than approximated: its weak form requires $\nabla c$ and is not self-adjoint. Write it in divergence form, `div(c*grad(u))`, which is conservative and symmetric. Neumann, Robin and Periodic boundary conditions are schema-only and raise if declared, rather than being silently dropped. Declared noise and coupling to a node-level `dynamics:` block are not lowered onto the field.
 
-The explicit remainder $\mathbf{f}$ is evaluated at the start of the step, so a system with a
-nonlinear or time-dependent term is first-order in time even under Crank–Nicolson. The linear
-part keeps its second order, and it is the linear part that sets stability.
+The explicit remainder $\mathbf{f}$ is evaluated at the start of the step, so a system with a nonlinear or time-dependent term is first-order in time even under Crank–Nicolson. The linear part keeps its second order, and it is the linear part that sets stability.
 :::
 
 
@@ -539,8 +487,7 @@ The `Mesh` class supports two ways to reference mesh geometry:
 
 Supported mesh formats:
 
-Meshes are read by `tvbo.data.mesh_io.read_mesh`, the same reader the rest of TVB-O uses, so
-a surface behaves identically wherever it appears:
+Meshes are read by `tvbo.data.mesh_io.read_mesh`, the same reader the rest of TVB-O uses, so a surface behaves identically wherever it appears:
 
 | Format | Extensions | Loader |
 |--------|-----------|--------|
@@ -583,5 +530,5 @@ The generated module contains:
 
 ## See Also
 
-- [Simulation Experiments](../Simulation/SimulationExperiments.qmd) — the `'pde'` backend
+- [Simulation Experiments](../Simulation/SimulationExperiments.qmd): the `'pde'` backend
 - [Code Generation & Export](../ScaleOut/CodeGeneration.qmd) — `render_code('pde')`

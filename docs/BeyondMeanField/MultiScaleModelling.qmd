@@ -6,55 +6,33 @@ aliases:
   - /How-To/MultiScaleModelling.html
 ---
 
-One simulation, more than one level of detail: a whole-brain mean-field network for
-context, and a finer model inside one or more regions. This page explains what that
-means, which pairings TVBO supports today, and how a multi-scale experiment is
-specified. It is background rather than a recipe — the runnable pieces are linked
-from each section.
+One simulation, more than one level of detail: a whole-brain mean-field network for context, and a finer model inside one or more regions. This page explains what that means, which pairings TVBO supports today, and how a multi-scale experiment is specified. It is background rather than a recipe — the runnable pieces are linked from each section.
 
 ## Heterogeneous or multi-scale?
 
 These are different questions, and it helps to separate them before you build.
-*Heterogeneity* is about **which model** runs at each node; *scale* is about **how
-much detail** a node resolves. They are independent axes:
+*Heterogeneity* is about **which model** runs at each node; *scale* is about **how much detail** a node resolves. They are independent axes:
 
 |                   | **single-scale**                              | **multi-scale (nested)**                             |
 |-------------------|-----------------------------------------------|------------------------------------------------------|
 | **homogeneous**   | classic TVB: one neural mass, one connectome  | one model, a region opened to a finer nested network |
 | **heterogeneous** | mixed neural masses on one connectome         | mixed masses macro **+** a nested spiking patch      |
 
-If you can draw the model as **one graph of peer nodes** — even when those nodes
-run different equations — it is *heterogeneous* and single-scale, covered by
-[Heterogeneous nodes](../Networks/HeterogeneousNodes.qmd) and
-[Heterogeneous edges](../Networks/HeterogeneousEdges.qmd); a heterogeneous
-network of neural masses is still entirely mean-field. This page is about the
-other axis: when a node must **contain** a finer network, with its own
-node-space, usually its own clock, and a projection up and down between levels.
-The two compose — a nested patch can itself be heterogeneous — but they are not
-the same feature.
+If you can draw the model as **one graph of peer nodes** — even when those nodes run different equations — it is *heterogeneous* and single-scale, covered by [Heterogeneous nodes](../Networks/HeterogeneousNodes.qmd) and [Heterogeneous edges](../Networks/HeterogeneousEdges.qmd); a heterogeneous network of neural masses is still entirely mean-field. This page is about the other axis: when a node must **contain** a finer network, with its own node-space, usually its own clock, and a projection up and down between levels.
+The two compose — a nested patch can itself be heterogeneous — but they are not the same feature.
 
 ## What multi-scale modelling is
 
-At the coarse level, each brain region is a single averaged unit, a *neural
-mass* or *mean-field* model. A handful of equations track the average firing of
-millions of neurons. This level is cheap to run and maps onto whole-brain
-recordings like fMRI or EEG.
+At the coarse level, each brain region is a single averaged unit, a *neural mass* or *mean-field* model. A handful of equations track the average firing of millions of neurons. This level is cheap to run and maps onto whole-brain recordings like fMRI or EEG.
 
-At a finer level you can open up one region and model what is inside it: a
-network of individual spiking neurons, a *reservoir* of abstract recurrent
-units, or morphologically detailed cells with ion channels.
+At a finer level you can open up one region and model what is inside it: a network of individual spiking neurons, a *reservoir* of abstract recurrent units, or morphologically detailed cells with ion channels.
 
 Multi-scale simulation runs both levels together and lets them exchange signals.
-The coarse regions drive the detailed patch with their ongoing activity; the
-patch sends a summary of its own activity back up. You reach for this when
-neither level alone answers the question, when you need the whole-brain context
-and the local mechanism in one simulation.
+The coarse regions drive the detailed patch with their ongoing activity; the patch sends a summary of its own activity back up. You reach for this when neither level alone answers the question, when you need the whole-brain context and the local mechanism in one simulation.
 
 ## The pairings, and what runs today
 
-The detailed engine is meant to be swappable. A spiking network, a reservoir, or
-a biophysical cell should each plug into the same setup without changing how the
-macro side is described.
+The detailed engine is meant to be swappable. A spiking network, a reservoir, or a biophysical cell should each plug into the same setup without changing how the macro side is described.
 
 | Coarse (macro) | Detailed (micro) | Micro engine | Status |
 |---|---|---|---|
@@ -63,48 +41,26 @@ macro side is described.
 | region observer node | reservoir | tvboptim (JAX) | available |
 | whole-brain mean-field | biophysical neurons | Jaxley | planned |
 
-The single-file representation of a mean-field-plus-spiking co-simulation is
-already documented and loads today. The spiking engine that executes it through
-tvb-multiscale is still being built, so treat the mean-field-plus-spiking row as
-a specification you can author now and run once that engine lands. The reservoir
-pairing runs on the tvboptim backend.
+The single-file representation of a mean-field-plus-spiking co-simulation is already documented and loads today. The spiking engine that executes it through tvb-multiscale is still being built, so treat the mean-field-plus-spiking row as a specification you can author now and run once that engine lands. The reservoir pairing runs on the tvboptim backend.
 
-Individual detailed models do not need the multi-scale machinery to exist. A
-spiking neuron, ion channel, or synapse is available on its own through the
-[NeuroML integration](../Interoperability/NeuroML/index.qmd): set
-`iri: neuroml:<TypeName>` on a dynamics and TVBO pulls the equations from the
-NeuroML2 library, so you supply only parameter values. The open work is joining
-such a patch to a running mean-field brain, not describing the patch.
+Individual detailed models do not need the multi-scale machinery to exist. A spiking neuron, ion channel, or synapse is available on its own through the [NeuroML integration](../Interoperability/NeuroML/index.qmd): set `iri: neuroml:<TypeName>` on a dynamics and TVBO pulls the equations from the NeuroML2 library, so you supply only parameter values. The open work is joining such a patch to a running mean-field brain, not describing the patch.
 
 ## How TVBO expresses a multi-scale model
 
-TVBO describes any simulation as a **network of nodes**. A multi-scale model uses
-a *layered* network: a macro region can itself contain a smaller network (its
-`subnetwork`), and edges can reach across layers to carry signals up and down. No
-special co-simulation object is needed; the layered network is the
-specification.
+TVBO describes any simulation as a **network of nodes**. A multi-scale model uses a *layered* network: a macro region can itself contain a smaller network (its `subnetwork`), and edges can reach across layers to carry signals up and down. No special co-simulation object is needed; the layered network is the specification.
 
-A selected region acts as a **proxy**. Instead of its own mean-field equations,
-its state is driven by the aggregate activity of the detailed patch mapped onto
-it. The rest of the network stays mean-field and exchanges firing rates and
-coupling currents with the patch through interface edges.
+A selected region acts as a **proxy**. Instead of its own mean-field equations, its state is driven by the aggregate activity of the detailed patch mapped onto it. The rest of the network stays mean-field and exchanges firing rates and coupling currents with the patch through interface edges.
 
 The parts that carry this:
 
 - `Node.subnetwork` holds the detailed patch inside a region.
-- `Network.parent_network` and `node_mapping` tie each detailed node to its proxy
-  region.
-- `Edge.source_network` / `target_network`, with a `parent` sentinel, route
-  signals across layers. `source_var` and `target_var` pick which state variable
-  crosses, which is where the rate-to-spike (and back) transformation lives.
+- `Network.parent_network` and `node_mapping` tie each detailed node to its proxy region.
+- `Edge.source_network` / `target_network`, with a `parent` sentinel, route signals across layers. `source_var` and `target_var` pick which state variable crosses, which is where the rate-to-spike (and back) transformation lives.
 
-The full mechanics, a worked YAML-plus-HDF5 example, and the interface-variable
-transformer live in the network specification:
+The full mechanics, a worked YAML-plus-HDF5 example, and the interface-variable transformer live in the network specification:
 
 - [Multi-layer networks](../Specification/Network.qmd#advanced-multi-layer-networks)
-- [Multi-scale co-simulation](../Specification/Network.qmd#multi-scale-co-simulation),
-  including the proxy pattern, interface variables, and how the same file maps to
-  tvb-multiscale, JAX, and NeuroML backends
+- [Multi-scale co-simulation](../Specification/Network.qmd#multi-scale-co-simulation), including the proxy pattern, interface variables, and how the same file maps to tvb-multiscale, JAX, and NeuroML backends
 - schema slots
   [`subnetwork`](../datamodel/slots/subnetwork.qmd),
   [`source_network`](../datamodel/slots/source_network.qmd),
@@ -113,18 +69,11 @@ transformer live in the network specification:
 ## Building blocks you will need
 
 - [Defining networks](../Specification/Network.qmd): nodes, edges, and connectomes
-- [Hierarchical & surface networks](../Networks/HierarchicalSurfaceNetworks.qmd): building a
-  layered network, with a surface patch linked to a parent region
-- [Heterogeneous nodes](../Networks/HeterogeneousNodes.qmd) /
-  [heterogeneous edges](../Networks/HeterogeneousEdges.qmd): a *separate* axis
-  (a different model per node, all on one scale) that composes with multi-scale —
-  a nested patch can itself be heterogeneous
-- [Coupling functions](../Networks/CouplingFunctions.qmd): the rule that turns one
-  node's state into a signal others receive
+- [Hierarchical & surface networks](../Networks/HierarchicalSurfaceNetworks.qmd): building a layered network, with a surface patch linked to a parent region
+- [Heterogeneous nodes](../Networks/HeterogeneousNodes.qmd) / [heterogeneous edges](../Networks/HeterogeneousEdges.qmd): a *separate* axis (a different model per node, all on one scale) that composes with multi-scale — a nested patch can itself be heterogeneous
+- [Coupling functions](../Networks/CouplingFunctions.qmd): the rule that turns one node's state into a signal others receive
 
 ## Related goals
 
-- [Build a connectome from tractography](../Networks/BuildConnectomeFromTractography.qmd) for
-  the macro-scale structural network
-- [Coming from a spiking simulator?](../Interoperability/index.qmd) for how TVBO
-  concepts line up with tvb-multiscale, NEST, and NeuroML
+- [Build a connectome from tractography](../Networks/BuildConnectomeFromTractography.qmd) for the macro-scale structural network
+- [Coming from a spiking simulator?](../Interoperability/index.qmd) for how TVBO concepts line up with tvb-multiscale, NEST, and NeuroML

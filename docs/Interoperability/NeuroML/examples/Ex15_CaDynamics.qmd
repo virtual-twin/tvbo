@@ -1,18 +1,19 @@
 ---
 title: "Ex15: Calcium Dynamics"
 description: "Intracellular calcium concentration pool and calcium-dependent K channels"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Calcium Dynamics
 
-A cerebellar granule cell (Maex & De Schutter, 1998) with 7 ion channel types,
-a decaying calcium concentration pool, and a calcium-dependent K channel:
+A cerebellar granule cell (Maex & De Schutter, 1998) with 7 ion channel types, a decaying calcium concentration pool, and a calcium-dependent K channel:
 
 $$\frac{d[\text{Ca}^{2+}]}{dt} = -\frac{I_{Ca}}{2 F \cdot \text{shell}} - \frac{[\text{Ca}^{2+}] - [\text{Ca}^{2+}]_{\text{rest}}}{\tau}$$
 
 The full composition tree uses `neuroml:cell` with detailed morphology,
-`channelDensity` for each channel, species for Ca²⁺, and a mix of standard
-NeuroML rate types and custom `ComponentType` definitions.
+`channelDensity` for each channel, species for Ca²⁺, and a mix of standard NeuroML rate types and custom `ComponentType` definitions.
 
 ---
 

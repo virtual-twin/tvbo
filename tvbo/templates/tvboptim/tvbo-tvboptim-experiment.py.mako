@@ -567,7 +567,7 @@ if has_optimization:
 # Split experiment.observations into raw vs derived views based on
 # whether each Observation's `source` references another observation
 # in the same experiment.
-from tvbo.codegen.templater import is_derived as _is_derived
+from tvbo.codegen.templater import canonical_observation_ref as _canonical_observation_ref, is_derived as _is_derived
 _all_observations = dict(experiment.observations) if experiment.observations else {}
 # Analysis observations operate on the solve/loss (gradient, finite-difference,
 # Lyapunov, ...) — handled by a dedicated path, not the raw/derived pipelines.
@@ -2434,6 +2434,7 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
 
     def _bind(arg_name, arg_value, first):
         """One argument of one stage, resolved against prior stage outputs then observations."""
+        arg_value = _canonical_observation_ref(arg_value, _all_observations)
         val_str = str(arg_value)
         if val_str in _stage_locals:
             # An earlier stage's declared output; this is what the single-stage emit could not see.

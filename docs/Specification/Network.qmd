@@ -4,10 +4,7 @@ description: How to create, visualize, save, and load brain network connectivity
 jupyter: python3
 ---
 
-A `Network` describes the connectivity structure between brain regions:
-nodes (regions) connected by weighted edges (tracts). TVBO provides
-several ways to create networks — from inline YAML, from matrices,
-from files, or from the tvbo platform.
+A `Network` describes the connectivity structure between brain regions: nodes (regions) connected by weighted edges (tracts). TVBO provides several ways to create networks: from inline YAML, from matrices, from files, or from the tvbo platform.
 
 ```{python}
 from tvbo import Network
@@ -15,9 +12,7 @@ from tvbo import Network
 
 ## 1. From YAML Strings
 
-The simplest way to define a small network. Each node has an `id` and
-`label`; each edge connects a `source` to a `target` with optional
-parameters.
+The simplest way to define a small network. Each node has an `id` and `label`; each edge connects a `source` to a `target` with optional parameters.
 
 ```{python}
 net = Network.from_string("""
@@ -58,7 +53,7 @@ edges:
 net.plot_graph()
 ```
 
-Edges are **undirected** by default — the connection goes both ways.
+Edges are **undirected** by default, so the connection goes both ways.
 Set `directed: true` for one-way connections:
 
 ```{python}
@@ -121,9 +116,7 @@ print(f"Mean length:   {net.lengths_matrix.mean():.0f} mm")
 
 ## 3. Saving and Loading
 
-Networks are stored as a YAML **sidecar** (metadata) paired with an
-HDF5 **companion** file (matrix data). This keeps metadata readable
-while storing large matrices efficiently.
+Networks are stored as a YAML **sidecar** (metadata) paired with an HDF5 **companion** file (matrix data). This keeps metadata readable while storing large matrices efficiently.
 
 ### Save
 
@@ -140,7 +133,7 @@ for f in sorted(tmpdir.iterdir()):
     print(f"  {f.name:20s}  ({sz:,} bytes)")
 ```
 
-The sidecar is plain YAML — human-readable and schema-valid:
+The sidecar is plain YAML, human-readable and schema-valid:
 
 ```{python}
 print((tmpdir / "visual.yaml").read_text())
@@ -148,8 +141,7 @@ print((tmpdir / "visual.yaml").read_text())
 
 ### Load
 
-Loading is lazy: metadata is read immediately, but matrix data is only
-loaded from the HDF5 file on first access.
+Loading is lazy: metadata is read immediately, but matrix data is only loaded from the HDF5 file on first access.
 
 ```{python}
 loaded = Network.from_file(tmpdir / "visual.yaml")
@@ -172,8 +164,7 @@ The `save()` call produces two files:
 | YAML sidecar | Nodes, labels, schema fields | Human-readable text |
 | HDF5 companion | Weight/length matrices | Compressed binary |
 
-This **sidecar + companion** pattern keeps metadata inspectable while
-storing large matrices efficiently.
+This **sidecar + companion** pattern keeps metadata inspectable while storing large matrices efficiently.
 
 ### HDF5 Structure
 
@@ -201,9 +192,9 @@ with h5py.File(tmpdir / "visual.h5", "r") as f:
 
 Each edge group (`edges/weights`, `edges/lengths`) stores:
 
-- **`format`** attr — `"dense"`, `"csr"`, or `"coo"`
-- **`shape`** attr — matrix dimensions $[N, N]$
-- **`data`** dataset — matrix values (dense) or nonzero values (sparse)
+- **`format`** attr: `"dense"`, `"csr"`, or `"coo"`
+- **`shape`** attr: matrix dimensions $[N, N]$
+- **`data`** dataset: matrix values (dense) or nonzero values (sparse)
 - For CSR: additional `indices` + `indptr` datasets
 - For COO: additional `row` + `col` datasets
 
@@ -220,7 +211,7 @@ Storage format is chosen automatically from matrix properties:
 
 | Backend | Extension | Use case |
 |---------|-----------|----------|
-| **HDF5** | `.h5` | Default — best compression, random access |
+| **HDF5** | `.h5` | Default; best compression and random access |
 | **Zarr** | `.zarr/` | Cloud-native storage (S3, GCS) |
 | **CSV** | `.csv` | Legacy, single matrix only |
 
@@ -247,8 +238,7 @@ sc.plot_overview(log_weights=True)
 
 ### BIDS-Compliant File Naming
 
-Network files in `tvbo/database/networks/` follow the
-[BEP017](https://bids.neuroimaging.io/bep017) naming convention:
+Network files in `tvbo/database/networks/` follow the [BEP017](https://bids.neuroimaging.io/bep017) naming convention:
 
 ```
 tpl-<space>[_cohort-<source>]_rec-<pipeline>_atlas-<atlas>[_seg-<variant>][_scale-<N>]_desc-<modality>_relmat.<ext>
@@ -273,8 +263,7 @@ print(sc.bids_filename)
 
 ### Transforms
 
-Raw streamline counts vary over orders of magnitude. Apply min–max
-normalization to scale weights to $[0, 1]$:
+Raw streamline counts vary over orders of magnitude. Apply min–max normalization to scale weights to $[0, 1]$:
 
 ```{python}
 print(
@@ -288,12 +277,9 @@ print(
 )
 ```
 
-`normalize()` does **not** overwrite the stored matrix.  Instead it
-appends a `Function` transform to the Network's `transforms` list — the
-transformation is applied lazily when accessing `weights_matrix`.
+`normalize()` does **not** overwrite the stored matrix.  Instead it appends a `Function` transform to the Network's `transforms` list, so the transformation is applied lazily when accessing `weights_matrix`.
 Multiple transforms on the same target are applied in order.
-Because the transforms are written into the YAML sidecar, every
-processing step is recorded for reproducibility:
+Because the transforms are written into the YAML sidecar, every processing step is recorded for reproducibility:
 
 ```{python}
 # The YAML sidecar now contains the transforms
@@ -304,14 +290,11 @@ print(yaml.dump({"transforms": meta.get("transforms")}, default_flow_style=False
 ```
 
 The `rhs` field captures *what* was done, not just the result.
-Anyone who loads this YAML gets the same transformed weights —
-no hidden in-memory mutations, and the raw matrix in HDF5 stays
-untouched.
+Anyone who loads this YAML gets the same transformed weights, with no hidden in-memory mutations, and the raw matrix in HDF5 stays untouched.
 
 ## 6. Delays from Tract Lengths
 
-Transmission delays are computed from the lengths matrix and conduction
-speed ($v$, default 3 mm/ms):
+Transmission delays are computed from the lengths matrix and conduction speed ($v$, default 3 mm/ms):
 
 ```{python}
 delays = sc.calculate_delays()
@@ -320,39 +303,27 @@ print(f"Delay range: [{delays.min():.1f}, {delays.max():.1f}] ms")
 
 ## 7. Advanced: Multi-Layer Networks
 
-The Network schema supports heterogeneous node dynamics, edge-level
-models, and variable routing — the building blocks for surface-based
-and multi-scale simulations.
+The Network schema supports heterogeneous node dynamics, edge-level models, and variable routing: the building blocks for surface-based and multi-scale simulations.
 
 ### 7.1. Surface-Based Simulations
 
-In surface-based simulations **every vertex of the cortical mesh is
-a node**.  The simulation runs dynamics at vertex resolution — each
-of the ~10 000–160 000 vertices executes its own copy of the neural
-mass model.  Two coupling mechanisms operate at different spatial
-scales:
+In surface-based simulations **every vertex of the cortical mesh is a node**.  The simulation runs dynamics at vertex resolution, so each of the ~10 000–160 000 vertices executes its own copy of the neural mass model.  Two coupling mechanisms operate at different spatial scales:
 
 | Mechanism | Scale | Matrix | Delays |
 |-----------|-------|--------|--------|
 | **Local connectivity** | vertex ↔ vertex | Sparse, based on geodesic distance kernel | instantaneous |
 | **Long-range SC** | region ↔ region | Dense, from tractography | proportional to tract length |
 
-A **region mapping** (= `node_mapping`) array bridges the two
-scales: vertex states are averaged into region states for SC
-computation, and regional coupling is broadcast back to vertices.
+A **region mapping** (= `node_mapping`) array bridges the two scales: vertex states are averaged into region states for SC computation, and regional coupling is broadcast back to vertices.
 
 #### TVBO representation
 
-TVBO uses **hierarchical network composition** to represent both
-scales in one consistent structure:
+TVBO uses **hierarchical network composition** to represent both scales in one consistent structure:
 
-- **Parent Network** — region-level SC ($N_\text{regions}$ nodes,
-  weight and tract-length matrices).
-- **Child Network** — vertex-level local connectivity
-  ($N_\text{vertices}$ nodes, sparse LC matrix).
+- **Parent Network**: region-level SC ($N_\text{regions}$ nodes, weight and tract-length matrices).
+- **Child Network**: vertex-level local connectivity ($N_\text{vertices}$ nodes, sparse LC matrix).
     - `parent_network` → path to the parent SC file.
-    - `node_mapping` → HDF5 dataset `/nodes/parent_index`, the
-      $\text{int32}(N_\text{vertices},)$ region-mapping array.
+    - `node_mapping` → HDF5 dataset `/nodes/parent_index`, the $\text{int32}(N_\text{vertices},)$ region-mapping array.
 
 ```
 Parent Network (dk_sc.yaml + dk_sc.h5)
@@ -372,11 +343,8 @@ Child Network (surface_rh.yaml + surface_rh.h5)
 
 #### Loading the surface and parcellation
 
-The `fsaverage` pial surface and the Desikan–Killiany parcellation
-labels are fetched from
-[templateflow](https://www.templateflow.org/).  The parcellation
-labels *are* the `region_mapping` — each integer assigns a vertex
-to a DK region:
+The `fsaverage` pial surface and the Desikan–Killiany parcellation labels are fetched from [templateflow](https://www.templateflow.org/).  The parcellation
+labels *are* the `region_mapping`: each integer assigns a vertex to a DK region:
 
 ```{python}
 #| code-fold: true
@@ -409,9 +377,7 @@ print(f"  e.g. vertex 0 → region {region_mapping[0]} ({label_names[region_mapp
 
 #### Building the local connectivity
 
-Local connectivity encodes lateral cortical coupling — a sparse
-kernel based on geodesic distance along the surface mesh (typically
-Gaussian with $\sigma \approx 10\,$mm, truncated at 30–40 mm).
+Local connectivity encodes lateral cortical coupling through a sparse kernel based on geodesic distance along the surface mesh (typically Gaussian with $\sigma \approx 10\,$mm, truncated at 30–40 mm).
 Here we approximate with Euclidean distance for demonstration:
 
 ```{python}
@@ -474,8 +440,7 @@ print(f"  node_mapping:   {surface_net.node_mapping}")
 
 #### HDF5 companion structure
 
-The parent stores dense SC matrices; the child stores the sparse
-LC matrix and the `parent_index` region-mapping array:
+The parent stores dense SC matrices; the child stores the sparse LC matrix and the `parent_index` region-mapping array:
 
 ```{python}
 #| code-fold: true
@@ -495,9 +460,7 @@ for name in ["dk_sc.h5", "surface_rh.h5"]:
 
 #### Visualizing the two-scale structure
 
-The parcellation colours show which vertices belong to each region
-(= one row/column of the parent SC matrix).  The network overlay
-shows the long-range structural connections between regions:
+The parcellation colours show which vertices belong to each region (= one row/column of the parent SC matrix).  The network overlay shows the long-range structural connections between regions:
 
 ```{python}
 #| code-fold: true
@@ -575,36 +538,21 @@ plt.show()
 ```
 
 Each coloured surface patch is the territory of one region node.
-All vertices within a patch share the same long-range SC input
-(broadcast via `region_mapping`), while local connectivity couples
-each vertex to its cortical neighbours.
+All vertices within a patch share the same long-range SC input (broadcast via `region_mapping`), while local connectivity couples each vertex to its cortical neighbours.
 
 ### 7.2 Multi-Scale Co-Simulation
 
-Multi-scale brain simulations couple a macroscale mean-field network
-with a microscale spiking subnetwork. A selected region node acts
-as a **proxy** — its mean-field dynamics are replaced by the
-aggregate activity of a detailed spiking population. The remaining
-network stays mean-field, exchanging firing rates and coupling
-currents with the spiking subnetwork through interface edges.
+Multi-scale brain simulations couple a macroscale mean-field network with a microscale spiking subnetwork. A selected region node acts as a **proxy**, so its mean-field dynamics are replaced by the aggregate activity of a detailed spiking population. The remaining network stays mean-field, exchanging firing rates and coupling currents with the spiking subnetwork through interface edges.
 
-TVBO represents this in a **single YAML + HDF5 file pair** using
-hierarchical network composition: macroscale (mean-field) and
-microscale (spiking) nodes coexist in one network, linked by
-`node_mapping`. The proxy node's state is driven by the
-aggregate output of its child subnetwork.
+TVBO represents this in a **single YAML + HDF5 file pair** using hierarchical network composition: macroscale (mean-field) and microscale (spiking) nodes coexist in one network, linked by `node_mapping`. The proxy node's state is driven by the aggregate output of its child subnetwork.
 
 #### Architecture
 
-The proxy pattern used here is compatible with tvb-multiscale's
-co-simulation architecture, where:
+The proxy pattern used here is compatible with tvb-multiscale's co-simulation architecture, where:
 
-1. **Proxy nodes** in the mean-field network are not simulated
-   locally — their state is replaced by spiking network output
-2. **Input proxies** (TVB → spiking) inject mean-field activity
-   as stimulation into the spiking population
-3. **Output proxies** (spiking → TVB) record aggregate spiking
-   activity and transform it back to mean-field state variables
+1. **Proxy nodes** in the mean-field network are not simulated locally; their state is replaced by spiking network output
+2. **Input proxies** (TVB → spiking) inject mean-field activity as stimulation into the spiking population
+3. **Output proxies** (spiking → TVB) record aggregate spiking activity and transform it back to mean-field state variables
 4. **Transformers** handle scale translation (e.g., spike trains
    → instantaneous firing rate → synaptic gating variable $S$)
 
@@ -639,14 +587,10 @@ graph TD
 
 #### Network Definition
 
-The entire multi-scale setup lives in a single YAML file. YAML
-anchors (`&`) and aliases (`*`) eliminate redundancy — dynamics and
-coupling are defined once and referenced everywhere:
+The entire multi-scale setup lives in a single YAML file. YAML anchors (`&`) and aliases (`*`) eliminate redundancy, so dynamics and coupling are defined once and referenced everywhere:
 
 - Node 0 is a regular mean-field region (ReducedWongWang)
-- Node 1 is a **proxy** — during co-simulation its mean-field
-  state is replaced by the aggregate output of the child
-  subnetwork (10 Izhikevich spiking neurons)
+- Node 1 is a **proxy**: during co-simulation its mean-field state is replaced by the aggregate output of the child subnetwork (10 Izhikevich spiking neurons)
 - `parent_network` on the child points back to this file;
   `node_mapping` maps all 10 spiking neurons to parent node 1
 
@@ -662,8 +606,7 @@ Markdown(f"```yaml\n{ms_yaml}```")
 #### Saving and Loading
 
 The only custom code is the random subnetwork connectivity.
-Everything else — YAML sidecar, HDF5 companion, matrix storage
-format — is handled automatically by `Network`:
+Everything else is handled automatically by `Network`: the YAML sidecar, the HDF5 companion and the matrix storage format:
 
 ```{python}
 #| code-fold: true
@@ -702,8 +645,7 @@ print(f"Template edges: {sum(1 for e in net.edges if getattr(e, 'source', None) 
 print(f"Explicit edges: {sum(1 for e in net.edges if getattr(e, 'source', None) is not None)}")
 ```
 
-Attach the subnetwork weight matrix and save — `Network.save()`
-writes the YAML sidecar and HDF5 companion automatically:
+Attach the subnetwork weight matrix and save. `Network.save()` writes the YAML sidecar and HDF5 companion automatically:
 
 ```{python}
 # Attach matrix (matches template edge label: weights)
@@ -720,7 +662,7 @@ for f in sorted(tmpdir.glob("multiscale*")):
     print(f"  {f.name:30s}  ({f.stat().st_size:,} bytes)")
 ```
 
-Roundtrip — load the saved network and verify the matrix:
+Roundtrip: load the saved network and verify the matrix:
 
 ```{python}
 loaded = Network.from_file(tmpdir / "multiscale_cortex.yaml")
@@ -754,28 +696,19 @@ with h5py.File(tmpdir / "multiscale_cortex.h5", "r") as f:
     f.visititems(show)
 ```
 
-The template edge `label: weights` tells `save()` to write the
-matrix at `edges/weights/data` in HDF5. On load, the same label
-routes the lazy reader back to the right dataset. No manual
-`h5py` code needed — the Network API handles the full
-sidecar + companion lifecycle.
+The template edge `label: weights` tells `save()` to write the matrix at `edges/weights/data` in HDF5. On load, the same label routes the lazy reader back to the right dataset. No manual `h5py` code needed, because the Network API handles the full sidecar and companion lifecycle.
 
 #### Interface Variables
 
-The interface edges between the proxy (node 1) and the subnetwork
-route specific state variables across scales. This is where the
-**transformer** logic lives — converting between mean-field and
-spiking representations:
+The interface edges between the proxy (node 1) and the subnetwork route specific state variables across scales. This is where the
+**transformer** logic lives, converting between mean-field and spiking representations:
 
 | Direction | Source Variable | Target Variable | Transformation |
 |-----------|---------------|-----------------|----------------|
 | TVB → spiking | `S` (synaptic gating) | `I` (input current) | $I = g \cdot S \cdot N_E$ |
 | Spiking → TVB | spike trains | `S`, `R` (gating, rate) | $\frac{dS}{dt} = -\frac{S}{\tau_s} + (1-S) R \gamma$ |
 
-The transformer converts spike trains to instantaneous firing
-rates (via kernel convolution or binning), then integrates
-the mean-field synaptic ODE to produce $S$ and $R$ values
-compatible with the parent network's state space.
+The transformer converts spike trains to instantaneous firing rates (via kernel convolution or binning), then integrates the mean-field synaptic ODE to produce $S$ and $R$ values compatible with the parent network's state space.
 
 #### Schema Features for Multi-Scale
 
@@ -791,8 +724,7 @@ compatible with the parent network's state space.
 
 #### Framework Interoperability
 
-The single-file network representation maps naturally to
-multiple simulation backends:
+The single-file network representation maps naturally to multiple simulation backends:
 
 | Framework | Mean-Field Nodes | Spiking Subnetwork | Interface |
 |-----------|-----------------|-------------------|-----------|
@@ -801,23 +733,16 @@ multiple simulation backends:
 | **NeuroML** | `<population>` of rate neurons | `<population>` of `<izhikevichCell>` | `<continuousProjection>` for rate coupling |
 | **NetworkDynamics.jl** | `ODEVertex` per mean-field node | `ODEVertex` per spiking neuron | `StaticEdge` or `ODEEdge` with routing |
 
-Each backend adapter reads the same YAML + HDF5 pair and
-generates backend-specific code:
+Each backend adapter reads the same YAML + HDF5 pair and generates backend-specific code:
 
 - **tvb-multiscale**: `node_mapping` identifies proxy nodes,
-  `source_var`/`target_var` on interface edges configure VOI
-  mappings and transformer selection
-- **JAX**: generates a combined ODE system where the subnetwork
-  neurons are additional state dimensions, coupled via
-  differentiable transformers
-- **NeuroML**: exports `<population>` elements per dynamics
-  type with `<continuousProjection>` connections routing the
-  declared variables between populations
+  `source_var`/`target_var` on interface edges configure VOI mappings and transformer selection
+- **JAX**: generates a combined ODE system where the subnetwork neurons are additional state dimensions, coupled via differentiable transformers
+- **NeuroML**: exports `<population>` elements per dynamics type with `<continuousProjection>` connections routing the declared variables between populations
 
 #### Edge Dynamics
 
-Edges can carry their own state variables — useful for synaptic
-plasticity or adaptation:
+Edges can carry their own state variables, which is useful for synaptic plasticity or adaptation:
 
 ```yaml
 edges:
@@ -836,28 +761,16 @@ edges:
           value: 0.012
 ```
 
-Here the edge weight $w$ evolves according to its own ODE during
-simulation, implementing spike-timing-dependent plasticity.
+Here the edge weight $w$ evolves according to its own ODE during simulation, implementing spike-timing-dependent plasticity.
 
 ### 7.3 Forward Model (Sensor Projection)
 
-A **forward model** maps region-level brain activity to sensor-level
-recordings (EEG, MEG, iEEG). The projection is stored as a **gain
-matrix** $G \in \mathbb{R}^{N_\text{sensors} \times N_\text{regions}}$
-inside a sensor Network: each row is a sensor, each column a cortical
-region, and $G_{ij}$ quantifies how strongly region $j$ contributes to
-sensor $i$.
+A **forward model** maps region-level brain activity to sensor-level recordings (EEG, MEG, iEEG). The projection is stored as a **gain matrix** $G \in \mathbb{R}^{N_\text{sensors} \times N_\text{regions}}$ inside a sensor Network: each row is a sensor, each column a cortical region, and $G_{ij}$ quantifies how strongly region $j$ contributes to sensor $i$.
 
-TVBO ships with a pre-computed EEG forward model based on the MNE
-`standard_1005` montage projected onto the fsaverage cortex
-(Desikan–Killiany parcellation). The gain matrix, sensor coordinates,
-and metadata are all stored in a single YAML + HDF5 pair — no MNE
-processing required at load time.
+TVBO ships with a pre-computed EEG forward model based on the MNE `standard_1005` montage projected onto the fsaverage cortex (Desikan–Killiany parcellation). The gain matrix, sensor coordinates and metadata are all stored in a single YAML and HDF5 pair — no MNE processing required at load time.
 
 ::: {.callout-tip}
-For details on how observation pipelines use the gain matrix during
-simulation, see [Observation Models](../Simulation/ObservationModels.qmd)
-and [TVB Monitor Round-Trip](../Interoperability/TVB/Monitor.qmd).
+For details on how observation pipelines use the gain matrix during simulation, see [Observation Models](../Simulation/ObservationModels.qmd) and [TVB Monitor Round-Trip](../Interoperability/TVB/Monitor.qmd).
 :::
 
 #### Loading the sensor network
@@ -883,10 +796,7 @@ plt.imshow(gain)
 
 #### Building a projection graph
 
-`execute(format="networkx")` constructs a bipartite graph connecting
-sensors to brain regions via thresholded gain edges. The target brain
-network is resolved automatically from the edge's `target_network`
-reference — no extra argument needed:
+`execute(format="networkx")` constructs a bipartite graph connecting sensors to brain regions via thresholded gain edges. The target brain network is resolved automatically from the edge's `target_network` reference — no extra argument needed:
 
 ```{python}
 G = sensor_net.execute(format="networkx", threshold_percentile=90)
@@ -896,9 +806,7 @@ print(f"Graph: {n_s} sensors + {n_r} regions = {G.number_of_nodes()} nodes")
 print(f"Edges: {G.number_of_edges()} (gain > 85th percentile)")
 ```
 
-Every node has a `pos` attribute (MNI coordinates) and a `color`
-attribute (red for sensors, blue for regions), so the graph is
-ready for 3D rendering with bsplot:
+Every node has a `pos` attribute (MNI coordinates) and a `color` attribute (red for sensors, blue for regions), so the graph is ready for 3D rendering with bsplot:
 
 ```{python}
 import matplotlib.pyplot as plt
@@ -924,8 +832,7 @@ for ax, view in zip(axes, ["front", "top"]):
 plt.show()
 ```
 
-Optionally, overlay a translucent **head surface** from MNE's
-fsaverage BEM model using `extra_surfaces`:
+Optionally, overlay a translucent **head surface** from MNE's fsaverage BEM model using `extra_surfaces`:
 
 ```{python}
 #| code-fold: true
@@ -976,8 +883,7 @@ plt.show()
 
 #### YAML structure
 
-The sensor network YAML follows the standard Network schema with
-`descriptor: sensors` and a template edge for the gain matrix:
+The sensor network YAML follows the standard Network schema with `descriptor: sensors` and a template edge for the gain matrix:
 
 ```yaml
 tvbo_class: tvbo:Network
@@ -1006,8 +912,7 @@ edges:
       # ... 68 entries total
 ```
 
-The HDF5 companion stores data and **dimension scales** (HDF5 §12.2)
-that label matrix rows and columns:
+The HDF5 companion stores data and **dimension scales** (HDF5 §12.2) that label matrix rows and columns:
 
 | Dataset | Shape | Content |
 |---------|-------|---------|

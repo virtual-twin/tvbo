@@ -373,9 +373,9 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
 
 
 def _check_placeable(labels, table, kind: str, atlas: str) -> None:
-    """Refuse a layer carrying a region the atlas does not know, for either brain-map kind.
+    """Refuse a layer carrying a region the atlas does not know.
 
-    A name with no entry cannot be placed, and the two ways of not placing it are both silent: dropping it leaves a hole that reads as missing data, and falling back to array position paints the region next to it. Both kinds ask this, so a surface and a volume of the same map cannot disagree about which labels they accept.
+    A name with no entry cannot be placed, and the two ways of not placing it are both silent: dropping it leaves a hole that reads as missing data, and falling back to array position paints the region next to it. Asked by the VOLUME kind, whose segmentation covers the whole brain, so any unplaceable name there is a mismatched atlas. The surface kind cannot ask it: a cortical mesh legitimately carries no parcel for a subcortical region, so it skips what it cannot place and refuses only a layer none of whose regions land.
     """
     unknown = [nm for nm in labels if nm not in table]
     if unknown:

@@ -59,9 +59,7 @@ flowchart LR
 
 ### Import a TVB Simulator
 
-Convert a fully configured TVB `Simulator` into a tvbo
-`SimulationExperiment` — preserving the model, coupling, integrator,
-monitors, noise, and network:
+Convert a fully configured TVB `Simulator` into a tvbo `SimulationExperiment` — preserving the model, coupling, integrator, monitors, noise, and network:
 
 ```{python}
 import numpy as np
@@ -108,8 +106,7 @@ print(f"Noise:      {'additive' if exp.integration.noise.additive else 'multipli
 print(f"Monitors:   {list(exp.observations.keys())}")
 ```
 
-The imported experiment is a standard tvbo object — you can inspect
-the YAML representation, modify parameters, or re-export:
+The imported experiment is a standard tvbo object — you can inspect the YAML representation, modify parameters, or re-export:
 
 ```{python}
 # Show the YAML specification
@@ -119,8 +116,7 @@ print("...")
 
 ### Export a Dynamics Model to TVB
 
-Any tvbo `Dynamics` can be compiled into a TVB-compatible `Model`
-object. This uses Mako code generation to produce a TVB Model subclass:
+Any tvbo `Dynamics` can be compiled into a TVB-compatible `Model` object. This uses Mako code generation to produce a TVB Model subclass:
 
 ```{python}
 dyn = Dynamics.from_db("JansenRit")
@@ -143,8 +139,7 @@ print("...")
 
 ### Define and Run a Simulation
 
-A `SimulationExperiment` can also be defined from a YAML string —
-useful for sharing reproducible experiment specifications:
+A `SimulationExperiment` can also be defined from a YAML string — useful for sharing reproducible experiment specifications:
 
 ```{python}
 # Define an experiment from YAML
@@ -219,9 +214,7 @@ plt.show()
 
 ### Import a Connectivity
 
-For connectome-only workflows, import TVB connectivity without a full
-simulator. See the [Connectome Round-Trip](Connectome.qmd) page for
-the complete walkthrough including surface meshes and HDF5 persistence.
+For connectome-only workflows, import TVB connectivity without a full simulator. See the [Connectome Round-Trip](Connectome.qmd) page for the complete walkthrough including surface meshes and HDF5 persistence.
 
 ```{python}
 from tvb.datatypes.connectivity import Connectivity

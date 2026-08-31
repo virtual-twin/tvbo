@@ -1,0 +1,121 @@
+# The study's entry recipe: `tvbo run Bayesian_tvboptim.yaml`. Its directory is the study root.
+tvbo_class: tvbo:SimulationStudy
+
+citekey: Bayesian_tvboptim
+title: "Recovering stimulus amplitude and excitability from one noisy recording"
+label: "Bayesian inference of stimulation and excitability: three priors on one degenerate ridge"
+description: >-
+  Recovers both the amplitude of a 1 ms pulse and the excitability I of the Generic2dOscillator it
+  drives, from a single noisy recording of V, by NUTS/MCMC. The two parameters trade off, so the
+  posterior is a ridge rather than a point, and the three declared prior scenarios differ in nothing
+  but how tightly they constrain each parameter. The recording is declared, not synthesised at run
+  time: it is the forward run plus Gaussian measurement noise at a fixed seed, so every scenario is
+  fitted to the same numbers and this recipe reproduces them.
+
+experiments:
+    - tvbo:experiment/Stimulation_Bayesian_Inference
+
+figures:
+    - name: bayesian_recovery
+      label: "Bayesian recovery of stimulus amplitude and excitability"
+      description: >-
+        One noisy recording, three prior scenarios, and the degeneracy ridge that makes a point
+        estimate misleading here.
+      layout: |
+          aaa
+          aaa
+          bcd
+          bcd
+      width: 180.0
+      height: 105.0
+      font_size: 7.0
+      panel_numbers: true
+      panels:
+          a:
+              kind: cartesian
+              label: "The recording"
+              description: >-
+                The noiseless forward run at the true parameters (line) and the noisy recording the
+                inference is given (points) — one trace, 50 samples. The rules mark the 1 ms pulse.
+              layers:
+                  - used: {experiment: 8, output: integration__recorded_ts}
+                    mark: line
+                    label: "Ground truth"
+                    encoding: {x: time}
+                    style: {color: "#003754", opts: {linewidth: 1.2}}
+                  - used: {experiment: 8, output: integration__observed_ts}
+                    mark: scatter
+                    label: "Observed (noisy)"
+                    encoding: {x: time}
+                    style: {color: "#000000", opts: {s: 8, zorder: 3}}
+              opts:
+                  xlabel: "Time [ms]"
+                  ylabel: "V [a.u.]"
+                  xticks: [0, 50, 100, 150]
+                  axvline: [10.0, 11.0]
+                  legend: "upper right"
+
+          b:
+              kind: cartesian
+              label: "A — no hypothesis"
+              description: >-
+                Wide priors on both parameters. The draws fall on a line, not in a blob: a weak pulse
+                into an excitable node and a strong pulse into a quiet one fit this recording equally
+                well, and one trace cannot separate them. The rules cross at the truth.
+              layers:
+                  - used: {experiment: 8, output: inference__scenario_A__posterior__Generic2dOscillator.I}
+                    mark: scatter
+                    encoding: {x: inference__scenario_A__posterior__stimulus.amplitude}
+                    style: {color: "#0a5170", opacity: 0.2, opts: {s: 3}}
+              opts:
+                  xlabel: "Stimulus amplitude"
+                  ylabel: "Excitability I"
+                  xlim: [0.18, 0.62]
+                  ylim: [-0.12, 0.42]
+                  xticks: [0.2, 0.3, 0.4, 0.5, 0.6]
+                  yticks: [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4]
+                  axvline: [0.4]
+                  axhline: [0.1]
+
+          c:
+              kind: cartesian
+              label: "B — tight amplitude prior"
+              description: >-
+                Pinning the amplitude does not shrink the posterior towards the truth: it slides along
+                the same ridge, and the excitability takes up what the amplitude is no longer allowed
+                to explain.
+              layers:
+                  - used: {experiment: 8, output: inference__scenario_B__posterior__Generic2dOscillator.I}
+                    mark: scatter
+                    encoding: {x: inference__scenario_B__posterior__stimulus.amplitude}
+                    style: {color: "#3E8E68", opacity: 0.2, opts: {s: 3}}
+              opts:
+                  xlabel: "Stimulus amplitude"
+                  ylabel: ""
+                  xlim: [0.18, 0.62]
+                  ylim: [-0.12, 0.42]
+                  xticks: [0.2, 0.3, 0.4, 0.5, 0.6]
+                  yticks: [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4]
+                  axvline: [0.4]
+                  axhline: [0.1]
+                  hide_yticklabels: true
+
+          d:
+              kind: cartesian
+              label: "C — tight excitability prior"
+              description: "The mirror image: pinning I moves the mass the other way along the ridge."
+              layers:
+                  - used: {experiment: 8, output: inference__scenario_C__posterior__Generic2dOscillator.I}
+                    mark: scatter
+                    encoding: {x: inference__scenario_C__posterior__stimulus.amplitude}
+                    style: {color: "#d98a00", opacity: 0.2, opts: {s: 3}}
+              opts:
+                  xlabel: "Stimulus amplitude"
+                  ylabel: ""
+                  xlim: [0.18, 0.62]
+                  ylim: [-0.12, 0.42]
+                  xticks: [0.2, 0.3, 0.4, 0.5, 0.6]
+                  yticks: [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4]
+                  axvline: [0.4]
+                  axhline: [0.1]
+                  hide_yticklabels: true

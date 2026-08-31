@@ -9,21 +9,12 @@ aliases:
 ---
 
 A delay-coupled `SupHopf` network is fit to **two targets at once**: an empirical
-**functional connectivity (FC)** matrix and a spatial **peak-frequency gradient**. The
-point is what happens when the targets disagree — FC-correlation alone is maximised by
-global oversynchronisation (large $G$), the frequency gradient alone by decoupling
-($G\to0$). Optimising them together acts as a biological regulariser: neither reaches its
-degenerate optimum. The workflow has two stages, both derived from **one** experiment
-YAML — only the plotting below is hand-written:
+**functional connectivity (FC)** matrix and a spatial **peak-frequency gradient**. The point is what happens when the targets disagree. FC-correlation alone is maximised by global oversynchronisation (large $G$), the frequency gradient alone by decoupling ($G\to0$). Optimising them together acts as a biological regulariser: neither reaches its degenerate optimum. The workflow has two stages, both derived from **one** experiment YAML, with only the plotting below hand-written:
 
-- **Stage 0 — NSGA-II genetic pre-search** (`Exploration.strategy: nsga2`) over
-  $(G, a, \log_{10}\sigma)$ against two objectives (PSD-MAE to 9 Hz, $1-\rho_{FC}$).
-- **Stage 1 — parallel gradient refinement** (`Optimization.depends_on: ga_presearch`):
-  one full multimodal optimization per Pareto seed, all in parallel.
+- **Stage 0 — NSGA-II genetic pre-search** (`Exploration.strategy: nsga2`) over $(G, a, \log_{10}\sigma)$ against two objectives (PSD-MAE to 9 Hz, $1-\rho_{FC}$).
+- **Stage 1 — parallel gradient refinement** (`Optimization.depends_on: ga_presearch`): one full multimodal optimization per Pareto seed, all in parallel.
 
-This replicates tvboptim's `Hopf_Pareto_ParallelOpt` workflow byte-identically (the
-generated NSGA-II GA front and the per-seed refined parameters match the reference to
-machine precision).
+This replicates tvboptim's `Hopf_Pareto_ParallelOpt` workflow byte-identically (the generated NSGA-II GA front and the per-seed refined parameters match the reference to machine precision).
 
 ```{python}
 # | code-summary: "Setup + run (Stage 0 GA → Stage 1 refine)"
@@ -176,8 +167,4 @@ plt.suptitle("Hopf FC vs. frequency-gradient — competing objectives regularise
 
 ## Summary
 
-Seeds from across the Pareto front converge into the same intermediate regime after the
-parallel gradient stage — the combined loss has a single basin sitting where neither
-objective alone would land. The fit is *plausible*, not exact: a single Hopf node is a
-coarse caricature of a brain region, so residual mismatch in both FC and the gradient is
-expected by construction. Both stages are byte-identical to the tvboptim reference.
+Seeds from across the Pareto front converge into the same intermediate regime after the parallel gradient stage, because the combined loss has a single basin sitting where neither objective alone would land. The fit is *plausible*, not exact: a single Hopf node is a coarse caricature of a brain region, so residual mismatch in both FC and the gradient is expected by construction. Both stages are byte-identical to the tvboptim reference.

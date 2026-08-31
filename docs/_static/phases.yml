@@ -1,0 +1,16 @@
+# The documentation spine, declared once. `part` must match the PART header in `_toc.yml`; see docs/Developer/DocsMachinery.qmd.
+
+phases:
+  - {number: 1, key: explore,  name: Explore,  part: "① EXPLORE",   icon: "fa-solid fa-compass",     color: "#2a9d8f"}
+  - {number: 2, key: specify,  name: Specify,  part: "② SPECIFY",   icon: "fa-solid fa-pen-ruler",   color: "#4361ee"}
+  - {number: 3, key: generate, name: Generate, part: "③ GENERATE",  icon: "fa-solid fa-gears",       color: "#7209b7"}
+  - {number: 4, key: run,      name: Run,      part: "④ RUN",       icon: "fa-solid fa-play",        color: "#e07a1f"}
+  - {number: 5, key: share,    name: Share,    part: "⑤ SHARE",     icon: "fa-solid fa-share-nodes", color: "#2d6a4f"}
+
+# Chapters are the unnumbered half of the sidebar: places you go when you need them rather than steps you walk. They carry an icon and no numeral, which is what keeps the numbered spine visually distinct.
+chapters:
+  - {key: examples, name: "Examples & Use-Cases", part: "EXAMPLES & USE-CASES", icon: "fa-solid fa-flask-vial",   color: "#5c6f6e"}
+  - {key: agents,   name: "Agentic Coding",       part: "AGENTIC CODING",       icon: "fa-solid fa-robot",        color: "#5c6f6e"}
+  - {key: interop,  name: "Interoperability",     part: "INTEROPERABILITY",     icon: "fa-solid fa-plug",         color: "#5c6f6e"}
+  - {key: reference,name: "Reference",            part: "REFERENCE",            icon: "fa-solid fa-book",         color: "#5c6f6e"}
+  - {key: developer,name: "Developer",            part: "DEVELOPER",            icon: "fa-solid fa-code-branch",  color: "#5c6f6e"}

@@ -8,24 +8,18 @@ aliases:
   - /Usage/ParameterExploration.html
 ---
 
-A brain network model is a **hypothesis with knobs**. Choosing knob values is how the
-hypothesis gets tested, and before fitting anything it pays to know how the model
-*behaves* across its parameter range — where it is quiet, where it oscillates, and where
-it changes character.
+A brain network model is a **hypothesis with knobs**. Choosing knob values is how the hypothesis gets tested, and before fitting anything it pays to know how the model
+*behaves* across its parameter range: where it is quiet, where it oscillates, and where it changes character.
 
 $$
 \theta \;\longrightarrow\; \text{model} \;\longrightarrow\; \hat{y}(\theta)
 $$
 
-An **exploration** evaluates $\hat{y}(\theta)$ on a grid of $\theta$ values. TVBO declares
-that grid in the same YAML as the model, evaluates the cells vectorized in parallel (see
-[Parallelization](#parallelization)), and returns the results as a labelled array indexed
-by the swept parameter.
+An **exploration** evaluates $\hat{y}(\theta)$ on a grid of $\theta$ values. TVBO declares that grid in the same YAML as the model, evaluates the cells vectorized in parallel (see [Parallelization](#parallelization)), and returns the results as a labelled array indexed by the swept parameter.
 
 ## Declaring a sweep
 
-An `explorations` block names the sweep, lists the axes in `space`, and says how to
-combine them. Each axis is addressed as `<scope>.<parameter>`:
+An `explorations` block names the sweep, lists the axes in `space`, and says how to combine them. Each axis is addressed as `<scope>.<parameter>`:
 
 | Scope | Example axis | Sweeps |
 |---|---|---|
@@ -72,9 +66,7 @@ exp = SimulationExperiment.from_string(SWEEP)
 print("sweeping:", list(exp.explorations))
 ```
 
-`domain: {lo, hi, n}` gives `n` evenly spaced values. `mode: product` takes the Cartesian
-product of the axes, so two axes of 9 and 5 points run 45 cells; `mode: zip` would pair
-them instead.
+`domain: {lo, hi, n}` gives `n` evenly spaced values. `mode: product` takes the Cartesian product of the axes, so two axes of 9 and 5 points run 45 cells; `mode: zip` would pair them instead.
 
 ## Running it
 
@@ -87,8 +79,7 @@ print(res)
 print("axis:", res.axes[0].name, "->", res.axes[0].explored_values)
 ```
 
-The result is indexed by the swept parameter. `as_grid()` returns a labelled array whose
-first dimension *is* the axis, so cells are selected by value rather than by position:
+The result is indexed by the swept parameter. `as_grid()` returns a labelled array whose first dimension *is* the axis, so cells are selected by value rather than by position:
 
 ```{python}
 #| label: grid
@@ -104,8 +95,7 @@ print("state order:", names)
 ## Reading the sweep
 
 A sweep is only useful with a **summary statistic** that collapses each cell to a number.
-Here the question is whether regions keep their own identity, so the statistic is the
-standard deviation *across regions*, averaged over time:
+Here the question is whether regions keep their own identity, so the statistic is the standard deviation *across regions*, averaged over time:
 
 $$
 S(G) \;=\; \big\langle\, \operatorname{SD}_{\text{regions}} V(t)\, \big\rangle_t
@@ -144,16 +134,11 @@ import pandas as pd
 pd.DataFrame({"G": np.round(Gs, 3), "across-region SD": np.round(S, 4)})
 ```
 
-At $G = 0$ the regions are effectively independent and $S$ sits at its baseline. Switching
-coupling on moves the network off that baseline immediately, after which $S$ grows
-steadily. The interesting region of a sweep is almost always where the curve *bends*, not
-where it is flat — that is where the model changes qualitative behaviour, and it is the
-natural place to look with [bifurcation analysis](../Bifurcation/index.qmd).
+At $G = 0$ the regions are effectively independent and $S$ sits at its baseline. Switching coupling on moves the network off that baseline immediately, after which $S$ grows steadily. The interesting region of a sweep is almost always where the curve *bends*, not where it is flat — that is where the model changes qualitative behaviour, and it is the natural place to look with [bifurcation analysis](../Bifurcation/index.qmd).
 
 ## Inspecting individual cells
 
-Because the grid is labelled, a single cell can be pulled out by its parameter value and
-plotted like any other simulation:
+Because the grid is labelled, a single cell can be pulled out by its parameter value and plotted like any other simulation:
 
 ```{python}
 #| label: fig-cells
@@ -172,8 +157,7 @@ plt.show()
 
 ## Several axes at once
 
-Axes compose. Sweeping coupling strength against conduction speed explores how delays and
-drive interact — a grid of $9 \times 5 = 45$ cells:
+Axes compose. Sweeping coupling strength against conduction speed explores how delays and drive interact, on a grid of $9 \times 5 = 45$ cells:
 
 ```yaml
 explorations:
@@ -186,22 +170,13 @@ explorations:
     mode: product
 ```
 
-`network.conduction_speed` is special: changing it rebuilds the delay graph for every
-cell, so the sweep genuinely re-derives $\tau_{ij} = L_{ij}/v$ rather than reusing one set
-of delays.
+`network.conduction_speed` is special: changing it rebuilds the delay graph for every cell, so the sweep genuinely re-derives $\tau_{ij} = L_{ij}/v$ rather than reusing one set of delays.
 
-A network whose edges carry an explicit `delay` instead of a tract length sweeps that delay
-directly, with `network.edges.delay`. The two are alternatives, not a choice of style: a
-connectome that measures tract lengths derives its delays from the conduction speed, so it is
-the speed that is sweepable there, and TVBO says so rather than sweeping nothing. Either way
-the history buffer is sized once, before compilation, for the longest delay the sweep can
-reach.
+A network whose edges carry an explicit `delay` instead of a tract length sweeps that delay directly, with `network.edges.delay`. The two are alternatives, not a choice of style: a connectome that measures tract lengths derives its delays from the conduction speed, so it is the speed that is sweepable there, and TVBO says so rather than sweeping nothing. Either way the history buffer is sized once, before compilation, for the longest delay the sweep can reach.
 
 ## Parallelization
 
-Grid cells are independent simulations, so TVBO evaluates them **vectorized** — one
-compiled kernel steps a batch of cells at once (`jax.vmap`), far faster than looping cell
-by cell. The batch width is `n_parallel`, and it defaults to `auto`:
+Grid cells are independent simulations, so TVBO evaluates them **vectorized**: one compiled kernel steps a batch of cells at once with `jax.vmap`, far faster than looping cell by cell. The batch width is `n_parallel`, and it defaults to `auto`:
 
 ```yaml
 explorations:
@@ -210,42 +185,24 @@ explorations:
     n_parallel: auto   # the default — you rarely need to set it
 ```
 
-- **`auto`** vectorizes the grid, bounded two ways: a **cell-count cap**
-  (`min(grid_size, 64)` — past the point where per-cell throughput saturates, so it keeps
-  the full speed-up) and a **memory budget** (default 2 GB). Vectorizing holds `n_vmap`
-  cells' working state at once — so `auto` does use more memory than a sequential run —
-  and the budget, sized against the per-cell output and live state, keeps that from
-  ballooning on a large-per-cell grid such as a whole-brain delay network. On a
-  big-memory machine, raise the count cap with `TVBO_NVMAP_AUTO_CAP` or the budget with
-  `TVBO_NVMAP_MEM_BUDGET_GB` (both are portable defaults, not hardware limits).
-- **An integer** fixes the chunk width and bypasses both bounds. `n_parallel: 1` is fully
-  sequential (slowest, smallest footprint); a larger value like `256` packs wider batches
-  (fewer kernel launches, more working memory) and only helps on a very large grid with
-  memory to spare.
+- **`auto`** vectorizes the grid, bounded two ways: a **cell-count cap** (`min(grid_size, 64)`, past the point where per-cell throughput saturates, so it keeps the full speed-up) and a **memory budget** (default 2 GB). Vectorizing holds `n_vmap` cells' working state at once — so `auto` does use more memory than a sequential run — and the budget, sized against the per-cell output and live state, keeps that from ballooning on a large-per-cell grid such as a whole-brain delay network. On a big-memory machine, raise the count cap with `TVBO_NVMAP_AUTO_CAP` or the budget with `TVBO_NVMAP_MEM_BUDGET_GB` (both are portable defaults, not hardware limits).
+- **An integer** fixes the chunk width and bypasses both bounds. `n_parallel: 1` is fully sequential (slowest, smallest footprint); a larger value like `256` packs wider batches (fewer kernel launches, more working memory) and only helps on a very large grid with memory to spare.
 
-The result array — `grid_size × timepoints × …` — is materialized in full regardless of
-`n_parallel`; for a full-trajectory sweep that, not the batch width, is what bounds a grid
-on one machine.
+The result array, `grid_size × timepoints × …`, is materialized in full regardless of `n_parallel`; for a full-trajectory sweep that, not the batch width, is what bounds a grid on one machine.
 
 ::: {.callout-tip}
 ## Grids grow fast
-`mode: product` multiplies. Three axes of 10 points is 1000 simulations. Start coarse,
-find the interesting region, then refine — and move large grids to a cluster with
-[`tvbo workflow`](../CLI/workflow.qmd) and the [HPC patterns](../CLI/hpc.qmd) rather than
-running them locally.
+`mode: product` multiplies. Three axes of 10 points is 1000 simulations. Start coarse, find the interesting region, then refine — and move large grids to a cluster with [`tvbo workflow`](../CLI/workflow.qmd) and the [HPC patterns](../CLI/hpc.qmd) rather than running them locally.
 :::
 
 ## Where to go next
 
-- **Found an interesting region?** [Bifurcation analysis](../Bifurcation/index.qmd)
-  characterizes *what* changes there, instead of only where.
-- **Want the best parameters, not the landscape?** [Fitting, inference & optimization](../Fitting/index.qmd)
-  optimizes $\theta$ against data rather than enumerating it.
+- **Found an interesting region?** [Bifurcation analysis](../Bifurcation/index.qmd) characterizes *what* changes there, instead of only where.
+- **Want the best parameters, not the landscape?** [Fitting, inference & optimization](../Fitting/index.qmd) optimizes $\theta$ against data rather than enumerating it.
 - **Grid too large for a laptop?** [Distributed workflows](../ScaleOut/DistributedWorkflows.qmd).
 
 ## Related
 
-- [`Exploration`](../datamodel/classes/Exploration.qmd) ·
-  [`ExplorationAxis`](../datamodel/classes/ExplorationAxis.qmd) — the schema.
-- [Coupling functions](../Networks/CouplingFunctions.qmd) — what $G$ actually does.
-- [The experiment result](Results.qmd) — the container the grid comes back in.
+- [`Exploration`](../datamodel/classes/Exploration.qmd) · [`ExplorationAxis`](../datamodel/classes/ExplorationAxis.qmd): the schema.
+- [Coupling functions](../Networks/CouplingFunctions.qmd): what $G$ actually does.
+- [The experiment result](Results.qmd): the container the grid comes back in.

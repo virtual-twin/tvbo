@@ -101,3 +101,27 @@ def test_an_output_that_is_both_a_value_and_a_group_is_refused(container):
 def test_an_unnested_output_stays_at_the_root(container):
     """`results` is a whole exploration grid and carries no path; nesting it under a segment would invent one."""
     assert result_tree(container).results.dims == ("a", "b")
+
+
+def test_a_name_cannot_sanitise_into_the_path_separator(tmp_path):
+    """`peak freq (Hz)` once became `peak_freq__Hz_`, which reads back as a group nothing declared.
+
+    The hierarchy is encoded in the variable name, so the separator has to mean only what the writer put there.
+    """
+    from types import SimpleNamespace
+
+    import numpy as np
+
+    from tvbo.data.types import ExperimentResult, SimulationResult
+
+    labels = ["L.LOG", "L.SFG"]
+    source = SimpleNamespace(network=SimpleNamespace(node_labels=labels), dynamics=None, coupling=None)
+    integration = SimulationResult(observations={"peak freq (Hz)": np.zeros(2)}, nodes=labels)
+    written = ExperimentResult(integration=integration, source=source).save(str(tmp_path), compress=False, record_only=False)
+
+    import xarray as xr
+
+    with xr.open_dataset([p for p in written if p.endswith(".h5")][0], engine="h5netcdf") as ds:
+        names = [str(v) for v in ds.data_vars]
+    assert not [n for n in names if n.count("__") > 1], names
+    assert "integration__peak_freq_Hz_" in names

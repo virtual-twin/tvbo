@@ -1,12 +1,14 @@
 ---
 title: "Ex25: Multi-Compartment Cells"
 description: "Cells with multiple dendritic compartments connected to a network"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Multi-Compartment Network
 
-Three multi-compartment HH cells (4 segments each: soma + 3 dendrites)
-connected via AMPA and NMDA synapses with segment-targeted connections.
+Three multi-compartment HH cells (4 segments each: soma + 3 dendrites) connected via AMPA and NMDA synapses with segment-targeted connections.
 Pulse generator inputs drive cells 0 and 2; cell 1 receives synaptic input.
 
 Reference: NeuroML2 LEMS_NML2_Ex25_MultiComp.xml

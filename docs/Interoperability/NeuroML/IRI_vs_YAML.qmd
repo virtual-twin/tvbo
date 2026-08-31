@@ -7,33 +7,24 @@ bibliography: ../../references.bib
 
 ## Two authoring styles, one model
 
-TVBO offers two ways to describe a dynamics model that corresponds to a standard
-NeuroML2 `ComponentType`.
+TVBO offers two ways to describe a dynamics model that corresponds to a standard NeuroML2 `ComponentType`.
 
-**IRI reference** — set `iri: neuroml:<TypeName>`, supply parameter values and
-initial conditions. TVBO uses the `iri` to look up the equations from the
-NeuroML2 library at render time, emitting a plain `<Component>` that reuses the
-built-in definition. No `equation.rhs` entries are needed in the YAML.
+**IRI reference** — set `iri: neuroml:<TypeName>`, supply parameter values and initial conditions. TVBO uses the `iri` to look up the equations from the NeuroML2 library at render time, emitting a plain `<Component>` that reuses the built-in definition. No `equation.rhs` entries are needed in the YAML.
 
-**Inline YAML** — omit the `iri` and write the `state_variables` with their
-`equation.rhs` strings. TVBO generates a custom LEMS `<ComponentType>` from those
-equations and can also run the model via any other backend (JAX, NumPy, …). Both
-paths are valid LEMS; the difference is in what the rendered file contains and
-which backends are available.
+**Inline YAML** — omit the `iri` and write the `state_variables` with their `equation.rhs` strings. TVBO generates a custom LEMS `<ComponentType>` from those equations and can also run the model via any other backend (JAX, NumPy, …). Both paths are valid LEMS; the difference is in what the rendered file contains and which backends are available.
 
 ---
 
 ## The component: `fitzHughNagumo1969Cell`
 
-The [NeuroML2 `fitzHughNagumo1969Cell`](https://docs.neuroml.org/Userdocs/NML2_AbstractCells.html)
+The [NeuroML2 `fitzHughNagumo1969Cell`](https://docs.neuroml.org/Userdocs/Schemas/Cells.html#schema-fitzhughnagumocell)
 implements the classic FitzHugh-Nagumo (1969) oscillator in parameterised form:
 
 $$\frac{dV}{dt} = \frac{V - V^3/3 - W + I}{\text{TS}}$$
 
 $$\frac{dW}{dt} = \frac{\phi\,(V + a - b\,W)}{\text{TS}}$$
 
-where $\text{TS} = 1\,\text{ms}$ is the LEMS time constant that converts the
-dimensionless equations to the simulator's time base.
+where $\text{TS} = 1\,\text{ms}$ is the LEMS time constant that converts the dimensionless equations to the simulator's time base.
 
 Canonical parameters from `NML2_AbstractCells.nml`: $a = 0.7$, $b = 0.08$,
 $\phi = 0.08$, $I = 1.0$, $V_0 = W_0 = 0$.
@@ -77,8 +68,7 @@ print(f"IRI           : {exp_iri.dynamics.iri}")
 
 ### Rendered LEMS (IRI path)
 
-The LEMS file contains **no custom ComponentType** — it references the
-`fitzHughNagumo1969Cell` type that is already defined inside `Cells.xml`:
+The LEMS file contains **no custom ComponentType** — it references the `fitzHughNagumo1969Cell` type that is already defined inside `Cells.xml`:
 
 ```{python}
 xml_iri = exp_iri.render("lems")
@@ -97,8 +87,7 @@ for line in xml_iri.splitlines():
         print(line)
 ```
 
-Key observation: `<Component type="fitzHughNagumo1969Cell" .../>` — the type name
-is the NeuroML2 identifier. No `<TimeDerivative>` appears in this file.
+Key observation: `<Component type="fitzHughNagumo1969Cell" .../>` — the type name is the NeuroML2 identifier. No `<TimeDerivative>` appears in this file.
 
 ---
 
@@ -138,8 +127,7 @@ print(f"IRI           : {exp_yaml.dynamics.iri}")
 
 ### Rendered LEMS (inline path)
 
-The LEMS file now **defines** the ComponentType, including the `<TimeDerivative>`
-elements generated from the YAML equations:
+The LEMS file now **defines** the ComponentType, including the `<TimeDerivative>` elements generated from the YAML equations:
 
 ```{python}
 xml_yaml = exp_yaml.render("lems")
@@ -156,8 +144,7 @@ for line in xml_yaml.splitlines():
         break
 ```
 
-Key observation: `<TimeDerivative variable="V" value="..."/>` — the equations
-appear verbatim (translated to LEMS syntax by `LEMSPrinter`).
+Key observation: `<TimeDerivative variable="V" value="..."/>` — the equations appear verbatim (translated to LEMS syntax by `LEMSPrinter`).
 
 ---
 
@@ -247,9 +234,7 @@ max_diff = np.max(np.abs(arr_iri - arr_yaml))
 print(f"Maximum absolute difference across all columns : {max_diff:.2e}")
 ```
 
-Both traces are **numerically identical** — the difference is zero (or machine
-epsilon at most), because NeuroML's built-in `fitzHughNagumo1969Cell` defines
-exactly the equations we wrote in YAML.
+Both traces are **numerically identical** — the difference is zero (or machine epsilon at most), because NeuroML's built-in `fitzHughNagumo1969Cell` defines exactly the equations we wrote in YAML.
 
 ---
 
@@ -297,6 +282,4 @@ plt.show()
 | You want equations visible in the TVBO spec file | Inline YAML |
 | You want the LEMS output to be maximally concise | `iri: neuroml:<TypeName>` |
 
-The `iri` field is optional: TVBO runs correctly either way. Setting it instructs
-the LEMS adapter to emit a reference to the standard type rather than generate a
-custom `ComponentType`, which can simplify validation against the NeuroML2 schema.
+The `iri` field is optional: TVBO runs correctly either way. Setting it instructs the LEMS adapter to emit a reference to the standard type rather than generate a custom `ComponentType`, which can simplify validation against the NeuroML2 schema.

@@ -78,3 +78,36 @@ def test_a_value_with_no_axes_is_not_a_contradiction():
         observation_dims={"peak_frequency": ("node",)},
     )
     assert not hasattr(res.observations["peak_frequency"], "dims")
+
+
+def test_a_solver_solution_is_labelled_like_any_other_wrapper():
+    """A monitor returns the solver's own solution object, not an ObservationResult, and labelling only the latter left every raw pipeline observation on positional axes."""
+
+    class _Solution:
+        def __init__(self, ts, ys):
+            self.ts, self.ys = ts, ys
+
+    solution = _Solution(ts=np.linspace(0.2, 150.0, 4), ys=np.arange(4, dtype=float))
+    res = SimulationResult(
+        observations={"recorded_ts": solution},
+        nodes=LABELS,
+        observation_dims={"recorded_ts": ("time",)},
+    )
+    assert res.observations["recorded_ts"].ys.dims == ("time",)
+
+
+def test_the_wrappers_own_time_grid_stamps_the_axis():
+    """A pipeline that subsampled reports the grid it actually sampled; the integration's step grid no longer describes it."""
+
+    class _Solution:
+        def __init__(self, ts, ys):
+            self.ts, self.ys = ts, ys
+
+    solution = _Solution(ts=np.array([0.0, 3.0, 6.0]), ys=np.arange(3, dtype=float))
+    res = SimulationResult(
+        observations={"recorded_ts": solution},
+        nodes=LABELS,
+        times=np.arange(9, dtype=float),
+        observation_dims={"recorded_ts": ("time",)},
+    )
+    assert list(res.observations["recorded_ts"].ys.coords["time"].values) == [0.0, 3.0, 6.0]

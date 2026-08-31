@@ -7,14 +7,9 @@ aliases:
   - /Usage/GettingStarted.html
 ---
 
-TVBO describes a simulation as **data, not code**. A model, a network, an integrator and
-whatever you want to measure are declared in one specification; TVBO generates the code
-and runs it on the backend you choose. The same file runs on JAX, TVB, PyRates, Julia or
-NeuroML, and it stays readable and version-controllable.
+TVBO describes a simulation as **data, not code**. A model, a network, an integrator and whatever you want to measure are declared in one specification; TVBO generates the code and runs it on the backend you choose. The same file runs on JAX, TVB, PyRates, Julia or NeuroML, and it stays readable and version-controllable.
 
-This page goes from a single equation to a whole-brain run in three steps. If you already
-know brain network modelling, skip to [step 3](#step-3-a-whole-brain-simulation) — the
-first two are the mechanics.
+This page goes from a single equation to a whole-brain run in three steps. If you already know brain network modelling, skip to [step 3](#step-3-a-whole-brain-simulation) — the first two are the mechanics.
 
 ```{python}
 #| label: setup
@@ -37,8 +32,7 @@ $$
 \dot{x} = v, \qquad \dot{v} = -k\,x - c\,v
 $$
 
-becomes a specification by naming the state variables, their right-hand sides, and the
-parameters:
+becomes a specification by naming the state variables, their right-hand sides, and the parameters:
 
 ```{python}
 #| label: first-model
@@ -82,13 +76,11 @@ plt.tight_layout()
 plt.show()
 ```
 
-That is the whole loop: **declare → run → inspect**. Everything after this is the same
-loop with richer ingredients.
+That is the whole loop: **declare → run → inspect**. Everything after this is the same loop with richer ingredients.
 
 ## Step 2: a model from the database
 
-You rarely write neural mass models by hand — TVBO ships a curated library. Reference one
-by its ontology `iri` instead of spelling out the equations:
+You rarely write neural mass models by hand — TVBO ships a curated library. Reference one by its ontology `iri` instead of spelling out the equations:
 
 ```{python}
 #| label: db-model
@@ -130,13 +122,11 @@ plt.tight_layout()
 plt.show()
 ```
 
-Browse the full library with `Dynamics.list_db()`, or the
-[model gallery](examples/dynamics_from_db.qmd).
+Browse the full library with `Dynamics.list_db()`, or the [model gallery](examples/dynamics_from_db.qmd).
 
 ## Step 3: a whole-brain simulation
 
-A brain network model is the same specification with two additions: a **connectome** to
-say which regions connect, and a **coupling function** to say how activity travels.
+A brain network model is the same specification with two additions: a **connectome** to say which regions connect, and a **coupling function** to say how activity travels.
 
 ```{python}
 #| label: whole-brain
@@ -181,11 +171,8 @@ plt.show()
 
 ::: {.callout-warning}
 ## Two things that bite newcomers
-- **Normalize the connectome.** Connectomes are stored in native units — the
-  Desikan-Killiany matrix holds streamline counts in the hundreds of thousands. Feeding
-  those in raw makes the drive enormous and the run returns `NaN`. The `transforms` block
-  above rescales so the mean non-zero weight is $1$.
-- **The coupling key is the model's input port**, here `c_glob` — not a name you invent.
+- **Normalize the connectome.** Connectomes are stored in native units: the Desikan-Killiany matrix holds streamline counts in the hundreds of thousands. Feeding those in raw makes the drive enormous and the run returns `NaN`. The `transforms` block above rescales so the mean non-zero weight is $1$.
+- **The coupling key is the model's input port**, here `c_glob`: not a name you invent.
   Get it from `list(exp.dynamics.coupling_inputs)`.
 :::
 
@@ -205,13 +192,8 @@ The documentation follows the shape of an experiment — **specify** it, **run**
 | Run on JAX, TVB, Julia, … | [Run on a backend](Simulation/Backends.qmd) |
 | Find where behaviour changes | [Bifurcation & stability](Bifurcation/index.qmd) |
 | Add spiking or multi-scale detail | [Beyond the mean field](BeyondMeanField/index.qmd) |
-| Scale up to a cluster | [Scale-out & reproducibility](ScaleOut/index.qmd) |
+| Scale up to a cluster | [Reproducible workflows](ScaleOut/index.qmd) |
 
-**New to the science itself?** The natural reading order follows the field's own arc:
-single-system dynamics and bifurcations → neuron and neural-mass models → whole-brain
-networks. Start with [Models & dynamics](Models/index.qmd), then
-[Bifurcation & stability](Bifurcation/index.qmd), then
-[Networks & connectomes](Networks/index.qmd).
+**New to the science itself?** The natural reading order follows the field's own arc: single-system dynamics and bifurcations → neuron and neural-mass models → whole-brain networks. Start with [Models & dynamics](Models/index.qmd), then [Bifurcation & stability](Bifurcation/index.qmd), then [Networks & connectomes](Networks/index.qmd).
 
-**Coming from another tool?** [Interoperability](Interoperability/index.qmd) maps TVBO
-onto TVB, PyRates, NeuroML, tvboptim, the Julia backends, BIDS and openMINDS.
+**Coming from another tool?** [Interoperability](Interoperability/index.qmd) maps TVBO onto TVB, PyRates, NeuroML, tvboptim, the Julia backends, BIDS and openMINDS.

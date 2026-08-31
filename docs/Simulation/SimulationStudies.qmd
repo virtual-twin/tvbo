@@ -1,0 +1,149 @@
+---
+title: "Linked experiments in a SimulationStudy"
+description: "A study is its experiments, the analyses that reduce them, and the figures that read both, as one object, one file and one run."
+subtitle: "The unit a paper is written from"
+jupyter: python3
+---
+
+A `SimulationExperiment` answers one question. Real work asks several, and the answers have to be compared: two coupling strengths, eleven driving frequencies, a model against its control. A `SimulationStudy` is the object that holds them together, and it holds three kinds of thing rather than one.
+
+```text
+SimulationStudy
+  experiments  →  the runs
+  analyses     →  what reduces the runs to numbers
+  figures      →  what reads the runs and the analyses
+```
+
+That third field is what closes the loop. A study is not a folder of simulations with a plotting script beside it; the figures are part of the specification, so the thing that produced a panel is recoverable from the same file that produced the data underneath it.
+
+## A study with two experiments
+
+The two runs differ in one parameter, so everything else is written once and referenced. `&dyn` names a value and `*dyn` reuses it, plain YAML covered in [Writing TVB-O YAML](../Specification/YAML.qmd).
+
+```{python}
+#| label: mini-study
+#| code-fold: true
+#| code-summary: "Write the study file"
+from pathlib import Path
+import tempfile
+
+STUDY = """
+key: MiniStudy
+label: "A two-experiment study"
+experiments:
+  - id: 1
+    label: "Weak coupling"
+    dynamics: &dyn {iri: "tvbo:Generic2dOscillator"}
+    network: &net
+      number_of_nodes: 4
+      coupling:
+        c_glob: {iri: "tvbo:Linear", delayed: false, incoming_states: [V]}
+    integration: &integ {method: Heun, step_size: 0.1, duration: 300.0}
+  - id: 2
+    label: "Strong coupling"
+    dynamics: *dyn
+    network:
+      <<: *net
+      coupling:
+        c_glob: {iri: "tvbo:Linear", delayed: false, incoming_states: [V], parameters: {a: 0.5}}
+    integration: *integ
+"""
+
+root = Path(tempfile.mkdtemp())
+spec = root / "MiniStudy.yaml"
+spec.write_text(STUDY)
+```
+
+Load it and the experiments are addressable by the `id` they declare:
+
+```{python}
+#| label: load-study
+from tvbo import SimulationStudy
+
+study = SimulationStudy.from_file(spec)
+print(study.label)
+print("experiments:", study.experiment_ids())
+print("id 2 is:", study.get_experiment(2).label)
+```
+
+## Running it
+
+Running a study runs every experiment, then the analyses, then the figures. Both routes below do the same work.
+
+:::: {.panel-tabset}
+
+### Python
+
+```{python}
+#| label: run-study
+result = study.run(root=root, figures=False)
+print(type(result).__name__, "->", list(result))
+```
+
+### CLI
+
+```bash
+tvbo run MiniStudy.yaml
+```
+
+::::
+
+What comes back is keyed by experiment, and each value is an `xarray.DataTree`, the same container a single experiment returns, so every axis is selected by name rather than by position:
+
+```{python}
+#| label: read-study
+V = result["exp-1"].integration.sel(variable="V")
+print("nodes:", V.sizes["node"], "| timepoints:", V.sizes["time"])
+```
+
+The run also wrote a BIDS derivative tree beside the recipe. Each container has a `.yaml` sidecar holding the frozen, re-runnable spec that produced it, so a result can never drift away from the specification it came from:
+
+```{python}
+#| label: study-outputs
+for path in sorted((root / "derivatives" / "tvbo").iterdir()):
+    print(path.name)
+```
+
+That layout is not incidental: it is [the study directory](../Interoperability/BIDS/index.qmd), which `tvbo study init` scaffolds and `tvbo validate study` checks.
+
+## The rest of the object
+
+Two experiments and no analyses is the smallest useful study. The fields below are what a real one adds, and each is documented where it is specified rather than here.
+
+| Field | What it holds |
+|---|---|
+| `experiments` | The runs. Each is a full [`SimulationExperiment`](SimulationExperiments.qmd). |
+| `analyses` | Reductions over results, each persisted as its own container and so bindable by a figure or by a later analysis exactly like a run. |
+| `figures` | [Declarative figure specs](Figures.qmd) that read the containers above. |
+| `code_source` | Where the callables the recipe names by bare `module:` live. |
+| `requires` | Packages this study's own code needs beyond tvbo, with the version it was reproduced against. |
+| `workflow` | Study-wide defaults for rendering sweeps into Slurm, Snakemake or Nextflow jobs. |
+| `sample` | The subjects or cohort the study runs over. |
+| `members` | Other studies this one aggregates, making it a study of studies. |
+| `results` | The named numbers the prose cites, each bound to a computed value rather than typed into the text. |
+| `archive` | How to package the run as a COMBINE/OMEX archive. |
+
+## One result reads another
+
+An analysis or a figure names the container it consumes with `used:`, and that binding is also the provenance edge: the record of which run a number came from.
+
+```yaml
+analyses:
+  - name: coupling_contrast
+    label: "Synchrony gained by raising the coupling"
+    callable: {name: contrast, module: mini_analysis}
+    arguments:
+      weak:   {used: {experiment: 1, output: V}}
+      strong: {used: {experiment: 2, output: V}}
+```
+
+Because an analysis is persisted like a run, a figure binds to it with `used: {analysis: coupling_contrast}` exactly as it binds to `used: {experiment: 1}`, and a second analysis can consume the first. Nothing in the chain is a script that has to be run in the right order by hand, because the `used:` edges are the order.
+
+[Analyses](../Specification/Analyses.qmd) covers this in full, and [calling your own code](../Specification/CodeSource.qmd) covers where `module: mini_analysis` is found.
+
+## Where to go next
+
+- [Fan-out over subjects and phenotypes](../Specification/FanOut.qmd): the same study run across a cohort.
+- [The study directory](../Interoperability/BIDS/index.qmd): where all of this lands on disk.
+- [Specify a figure](Figures.qmd): the grammar `figures:` is written in.
+- [`SimulationStudy`](../datamodel/classes/SimulationStudy.qmd): every field, exhaustively.

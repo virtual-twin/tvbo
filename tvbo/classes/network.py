@@ -3550,20 +3550,30 @@ class Network(tvbo_datamodel.Network):
             coord = (center.x, center.y, center.z) if center else (0, 0, 0)
             return coord, getattr(entity, "lookupLabel", region)
 
-        # Build a coord index keyed by every label an entity is known by (name + hemisphere-qualified abbreviation + alternateName), plus an ordered list for the lookupLabel fallback. The abbreviation is a bare region notation two entities share across hemispheres ("LOG"), so it is keyed qualified ("L.LOG") — keying it bare would let the right hemisphere overwrite the left and hand back the wrong centre.
+        # Build a coord index keyed by every label an entity is known by (name + abbreviation, hemisphere-qualified where two entities share it, + alternateName), plus an ordered list for the lookupLabel fallback. The abbreviation is often a bare region notation both hemispheres carry ("LOG"), so a SHARED one is keyed only qualified ("L.LOG") — keying it bare would let the right hemisphere overwrite the left and hand back the wrong centre. An abbreviation only one entity carries stays reachable bare, because dropping it would lose a connectome's only spelling for that region and drop the match rate below the threshold that keeps this off the positional fallback.
+        def _get(entity):
+            return entity.get if isinstance(entity, dict) else lambda k, _e=entity: getattr(_e, k, None)
+
+        abbrev_counts: dict[str, int] = {}
+        for _, entity in entity_items:
+            abbreviation = _get(entity)("abbreviation")
+            if abbreviation:
+                abbrev_counts[str(abbreviation)] = abbrev_counts.get(str(abbreviation), 0) + 1
+
         by_label = {}
         ordered = []
         for region, entity in entity_items:
             coord, lookup_label = _entity_coord(entity, region)
             ordered.append((lookup_label if isinstance(lookup_label, int) else region, coord))
-            get = entity.get if isinstance(entity, dict) else lambda k, _e=entity: getattr(_e, k, None)
+            get = _get(entity)
             abbreviation, hemisphere = get("abbreviation"), get("hemisphere")
             side = {"left": "L", "right": "R"}.get(str(hemisphere)) if hemisphere else None
-            names = [
-                get("name"),
-                f"{side}.{abbreviation}" if abbreviation and side else abbreviation,
-                *(get("alternateName") or []),
-            ]
+            names = [get("name"), *(get("alternateName") or [])]
+            if abbreviation:
+                if side:
+                    names.append(f"{side}.{abbreviation}")
+                if abbrev_counts.get(str(abbreviation), 0) == 1:
+                    names.append(abbreviation)
             for nm in names:
                 if nm:
                     by_label[str(nm)] = coord
