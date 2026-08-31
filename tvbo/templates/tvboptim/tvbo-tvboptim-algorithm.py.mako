@@ -1308,6 +1308,13 @@ def _${algo_name}_tuning_core_impl(
 
     coupling_key = coupling_param_to_key.get(target_name, None)
     is_coupling_param = coupling_key is not None
+
+    def rule_arg(pname, pval, _inc=is_from_included):
+        """How one hyperparameter reaches this rule: by name, or by the value the include declared.
+
+        The enclosing scope binds ONE variable per hyperparameter name, and `get_all_hyperparams` lets the outer algorithm's own value win a collision. So an included rule whose hyperparameter shares a name with the outer's — `includes: [{algorithm: fic, arguments: [{name: eta, ...}]}]` under an algorithm that also has an `eta` — read the outer's number and the declared override was computed and then dropped at the call. Passing the declared value directly is what makes the override mean what it says; a name that collides with nothing still comes through the scope, so a staged schedule keeps varying it.
+        """
+        return repr(pval) if (_inc and hyperparam_dict.get(pname, pval) != pval) else pname
 %>
         new_${target_name} = ${rule_name}(
 % if is_coupling_param:
@@ -1319,7 +1326,7 @@ def _${algo_name}_tuning_core_impl(
             ${obs},
 % endfor
 % for pname, pval in rule_params_dict.items():
-            ${pname},
+            ${rule_arg(pname, pval)},
 % endfor
 % if needs_warmup:
             eta_scale,

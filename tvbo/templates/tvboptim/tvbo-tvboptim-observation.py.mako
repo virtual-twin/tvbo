@@ -178,7 +178,7 @@ functions_by_name = _functions_by_name(experiment)
 # User-defined function names for expression rendering
 user_functions = {name: name for name in functions_by_name.keys()}
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
-from tvbo.codegen.templater import is_derived as _is_derived
+from tvbo.codegen.templater import canonical_observation_ref as _canonical_observation_ref, is_derived as _is_derived
 _obs_raw = get_attr(experiment, 'observations', {})
 if hasattr(_obs_raw, 'items'):
     _all_observations = dict(_obs_raw.items())
@@ -195,7 +195,7 @@ observations = {n: o for n, o in _all_observations.items() if not _is_derived(o,
 # =============================================================================
 def parse_step(func, step_name):
     """Parse a pipeline step into a clean dict structure."""
-    _inp = get_attr(func, 'input')
+    _inp = _canonical_observation_ref(get_attr(func, 'input'), _all_observations)
     step = {
         'name': step_name,
         'output': get_attr(func, 'output'),
@@ -249,7 +249,7 @@ def parse_step(func, step_name):
             step['arg_names'].append(name)
             val = get_attr(arg, 'value')
             if val is not None:
-                step['arguments'][name] = val
+                step['arguments'][name] = _canonical_observation_ref(val, _all_observations)
 
     # Lookup from functions section if no inline definition
     if not (step['source_code'] or step['callable'] or step['equation']):
@@ -277,7 +277,7 @@ def parse_step(func, step_name):
                     step['arg_names'].append(name)
                 val = get_attr(arg, 'value')
                 if name and val is not None and name not in step['arguments']:
-                    step['arguments'][name] = to_numeric(val)
+                    step['arguments'][name] = to_numeric(_canonical_observation_ref(val, _all_observations))
 
     return step
 

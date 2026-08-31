@@ -1061,9 +1061,11 @@ def test_ei_optimization_runs():
     """EI_Tuning: the gradient optimization must run, not just the trajectory.
 
     Guards a wrapping crash class the byte-identity trajectory tests do not cover: an aggregated observable (``mean_activity`` — time axis collapsed to a per-node value) must reach the loss as a plain array, not a re-wrapped ``NativeSolution``, or ``mean_activity + target`` raises "unsupported operand ... 'NativeSolution'". Two complementary places satisfy that: the observation template returns raw for a collapsed aggregation (producer, root cause) and the loss-builder unwraps ``.data`` (consumer). The test passes on either, so it pins the failure class rather than one mechanism.
+
+    The window is shortened to keep the test quick, but not below what an FC objective needs: the BOLD pipeline convolves against a 5000-sample HRF kernel at ``mode="valid"`` and then keeps every 180th sample (720 ms TR over a 4 ms step), so a 2000 ms window leaves two BOLD samples, correlation over them is undefined, and ``_windowed_corr`` reports that by design as an all-NaN matrix. 60 s leaves 83 samples, 53 of them after the objective's ``skip_t=30``.
     """
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "EI_Tuning_FIC_EIB_Optimization.yaml"))
-    exp.integration.duration = 2000.0
+    exp.integration.duration = 60000.0
     exp.integration.transient_time = 2000.0
     for _o in exp.optimizations.values():
         if hasattr(_o, "max_iterations"):
@@ -1092,7 +1094,8 @@ def test_ei_optimization_runs():
         return None
 
     lv = _final_loss(r)
-    assert lv is None or np.isfinite(lv), f"EI optimization loss not finite: {lv}"
+    assert lv is not None, "the optimization recorded no loss the container could read"
+    assert np.isfinite(lv), f"EI optimization loss not finite: {lv}"
 
 
 # Delays Shape Synchronization: length-graph delayed coupling (DenseLengthGraph)

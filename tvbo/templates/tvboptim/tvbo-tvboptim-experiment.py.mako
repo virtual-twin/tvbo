@@ -567,7 +567,7 @@ if has_optimization:
 # Split experiment.observations into raw vs derived views based on
 # whether each Observation's `source` references another observation
 # in the same experiment.
-from tvbo.codegen.templater import is_derived as _is_derived
+from tvbo.codegen.templater import canonical_observation_ref as _canonical_observation_ref, is_derived as _is_derived
 _all_observations = dict(experiment.observations) if experiment.observations else {}
 # Analysis observations operate on the solve/loss (gradient, finite-difference,
 # Lyapunov, ...) — handled by a dedicated path, not the raw/derived pipelines.
@@ -2432,11 +2432,6 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
     _stage_locals = {}             # declared stage output name -> the local holding it
     _local = f"_d_{dobs_name}"
 
-    def _canonical(val_str):
-        """The bare observation name behind an `observations.<name>` reference, which is how a recipe spells what a pipeline argument resolves by name."""
-        head, _, rest = val_str.partition('.')
-        return rest if head == 'observations' and rest.partition('.')[0] in _all_observations else val_str
-
     def _binds_input(stage):
         """Whether this stage's declared arguments already name its input, rather than only its hyperparameters.
 
@@ -2445,13 +2440,13 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
         known = set(_stage_locals) | set(src_obs_list) | set(observation_names) | set(derived_observation_names)
         for arg in (getattr(stage, 'arguments', None) or {}).values():
             val = getattr(arg, 'value', None)
-            if val is not None and _canonical(str(val)).partition('.')[0] in known:
+            if val is not None and str(_canonical_observation_ref(val, _all_observations)).partition('.')[0] in known:
                 return True
         return False
 
     def _bind(arg_name, arg_value, first):
         """One argument of one stage, resolved against prior stage outputs then observations."""
-        val_str = _canonical(str(arg_value))
+        val_str = str(_canonical_observation_ref(arg_value, _all_observations))
         if val_str in _stage_locals:
             # An earlier stage's declared output; this is what the single-stage emit could not see.
             return f"{arg_name}={_stage_locals[val_str]}"

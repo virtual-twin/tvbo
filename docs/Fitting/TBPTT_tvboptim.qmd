@@ -5,13 +5,7 @@ aliases:
   - /Interoperability/tvboptim/TBPTT_tvboptim.html
 ---
 
-Why the exact FC-loss gradient breaks past the chaos onset, and how a single
-`integration.differentiation` window fixes it. Everything below — the adiabatic
-bifurcation envelope, the diagnostics swept over the global coupling $G$ (loss,
-autodiff gradient, finite-difference ground truth, top Lyapunov exponent) and
-both optimization legs — is derived from **one** experiment YAML via `exp.run`;
-only the plotting is hand-written. The figures reproduce the original tvboptim
-[`TBPTT.qmd`](https://github.com/virtual-twin/tvboptim/blob/main/docs/workflows/TBPTT.qmd)
+Why the exact FC-loss gradient breaks past the chaos onset, and how a single `integration.differentiation` window fixes it. The adiabatic bifurcation envelope, the diagnostics swept over the global coupling $G$ (loss, autodiff gradient, finite-difference ground truth, top Lyapunov exponent) and both optimization legs all derive from **one** experiment YAML via `exp.run`; only the plotting is hand-written. The figures reproduce the original tvboptim [`TBPTT.qmd`](https://github.com/virtual-twin/tvboptim/blob/main/docs/workflows/TBPTT.qmd)
 workflow through the tvbo declarative pipeline.
 
 ```{python}
@@ -116,11 +110,7 @@ tb_G_final, ad_G_final = float(tb_G[-1]), float(ad_G_traj[-1])
 
 ## The problem: the exact gradient breaks at the bifurcation
 
-The loss is the RMSE between the simulated FC and the empirical target. Swept over
-$G$, the network runs from a quiescent fixed point, through synchronized
-oscillation, into **chaos** — where the exact reverse-mode gradient of a long-rollout
-FC loss amplifies without bound and flips sign. The adiabatic scan reads that
-transition straight off the dynamics; the Lyapunov exponent flags the same onset.
+The loss is the RMSE between the simulated FC and the empirical target. Swept over $G$, the network runs from a quiescent fixed point, through synchronized oscillation, into **chaos**, where the exact reverse-mode gradient of a long-rollout FC loss amplifies without bound and flips sign. The adiabatic scan reads that transition straight off the dynamics; the Lyapunov exponent flags the same onset.
 
 ```{python}
 # | label: fig-tbptt-gradient-breaks
@@ -217,13 +207,7 @@ plt.show()
 
 ## The fix: truncating the gradient horizon
 
-Truncated backprop-through-time keeps the long forward rollout but pulls the
-gradient back only through a fixed window of $W =$ `grad_horizon` steps
-(`integration.differentiation.truncation_window`). Every window is differentiated
-and contributes its local $\partial L_k/\partial G$; the carried *state* gradient is
-severed at each window boundary with `stop_gradient`, so the $\exp(T\,\lambda_{max})$
-blow-up is cut off at $W$, while the shared parameter gradient survives as the sum
-over windows.
+Truncated backprop-through-time keeps the long forward rollout but pulls the gradient back only through a fixed window of $W =$ `grad_horizon` steps (`integration.differentiation.truncation_window`). Every window is differentiated and contributes its local $\partial L_k/\partial G$; the carried *state* gradient is severed at each window boundary with `stop_gradient`, so the $\exp(T\,\lambda_{max})$ blow-up is cut off at $W$, while the shared parameter gradient survives as the sum over windows.
 
 ```{python}
 # | label: fig-tbptt-schematic
@@ -275,11 +259,7 @@ plt.show()
 
 ## The payoff: optimizing $G$ with and without truncation
 
-Both legs fit $G$ to the empirical FC from the same sub-critical start with the same
-optimizer, differing only in how the gradient is obtained — full AD (the exact,
-untruncated gradient) versus TBPTT (`grad_horizon` window). The full-AD run is driven
-by the unstable gradient into the chaotic band; the TBPTT run descends on a stable,
-short-horizon gradient and settles near the RMSE optimum on the stable side.
+Both legs fit $G$ to the empirical FC from the same sub-critical start with the same optimizer, differing only in how the gradient is obtained: full AD (the exact, untruncated gradient) versus TBPTT (`grad_horizon` window). The full-AD run is driven by the unstable gradient into the chaotic band; the TBPTT run descends on a stable, short-horizon gradient and settles near the RMSE optimum on the stable side.
 
 ```{python}
 # | label: fig-tbptt-trajectories
@@ -368,10 +348,5 @@ plt.show()
 ::: {.callout-note}
 ## One experiment, three views
 
-The adiabatic envelope, the diagnostics sweep, and both descent legs all come from the
-same `TBPTT_JansenRit_FC_Optimization` YAML — the bifurcation scan is a declarative
-`strategy: adiabatic_scan` exploration, the diagnostics are `analysis` observations
-recorded over a `G` sweep, and the truncation window is a single
-`integration.differentiation.truncation_window`. Only the plotting above is
-hand-written.
+The adiabatic envelope, the diagnostics sweep, and both descent legs all come from the same `TBPTT_JansenRit_FC_Optimization` YAML. The bifurcation scan is a declarative `strategy: adiabatic_scan` exploration, the diagnostics are `analysis` observations recorded over a `G` sweep, and the truncation window is a single `integration.differentiation.truncation_window`. Only the plotting above is hand-written.
 :::

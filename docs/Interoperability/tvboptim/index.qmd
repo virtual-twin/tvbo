@@ -3,19 +3,13 @@ title: "Coming from tvboptim"
 subtitle: "How TVBO and the tvboptim JAX backend divide the work"
 ---
 
-If you already know **tvboptim**, this page explains where TVBO fits. If instead you
-want to *fit a model to data*, go straight to the
-[Fitting, inference & optimization](../../Fitting/index.qmd) topic — that is where the workflows live.
+If you already know **tvboptim**, this page explains where TVBO fits. If instead you want to *fit a model to data*, go straight to the [Fitting, inference & optimization](../../Fitting/index.qmd) topic, which is where the workflows live.
 
 ## The division of labour
 
-tvboptim is a JAX framework for simulating and optimizing brain network models: it
-provides the solver, the `prepare` machinery, JIT compilation, automatic
-differentiation, and GPU execution.
+tvboptim is a JAX framework for simulating and optimizing brain network models: it provides the solver, the `prepare` machinery, JIT compilation, automatic differentiation, and GPU execution.
 
-TVBO does not reimplement any of that. It supplies the **declarative specification** —
-a YAML model, network, loss, and optimization schedule — and generates the concrete
-tvboptim code from it. The backend stays the runtime; TVBO stays the spec layer:
+TVBO does not reimplement any of that. It supplies the **declarative specification** (a YAML model, network, loss, and optimization schedule) and generates the concrete tvboptim code from it. The backend stays the runtime; TVBO stays the spec layer:
 
 | Concern | Owned by |
 |---|---|
@@ -24,30 +18,25 @@ tvboptim code from it. The backend stays the runtime; TVBO stays the spec layer:
 | Solver, JIT, autodiff, GPU execution | tvboptim |
 | Result container and observation pipeline | TVBO |
 
-A practical consequence: TVBO-generated runs are checked to be numerically identical to
-the equivalent hand-written tvboptim workflow, so moving a model into TVBO does not
-change its numbers.
+A practical consequence: TVBO-generated runs are checked to be numerically identical to the equivalent hand-written tvboptim workflow, so moving a model into TVBO does not change its numbers.
 
 ## What this buys you
 
-- **One spec, several backends.** The same YAML also renders to TVB, PyRates, NeuroML,
-  and the Julia backends — see the [interoperability overview](../index.qmd).
-- **Declarative optimization.** Losses, free parameters, staged schedules and algorithms
-  are data, not code.
+- **One spec, several backends.** The same YAML also renders to TVB, PyRates, NeuroML, and the Julia backends; see the [interoperability overview](../index.qmd).
+- **Declarative optimization.** Losses, free parameters, staged schedules and algorithms are data, not code.
 - **Reproducibility.** The experiment is a file you can version, share, and re-run.
 
 ## Where the workflows went
 
-The optimization workflows that used to sit on this page are now organized by *goal*
-rather than by backend, in [Fitting, inference & optimization](../../Fitting/index.qmd):
+The optimization workflows that used to sit on this page are now organized by *goal* rather than by backend, in [Fitting, inference & optimization](../../Fitting/index.qmd):
 
-- [Reduced Wong-Wang](../../Fitting/RWW_tvboptim.qmd) — fit empirical BOLD functional connectivity
-- [Jansen-Rit](../../Fitting/JR_tvboptim.qmd) — fit a MEG frequency gradient
-- [EI tuning](../../Fitting/EI_Tuning_tvboptim.qmd) — excitation/inhibition balance
-- [Bayesian inference](../../Fitting/Bayesian_tvboptim.qmd) — numpyro MCMC
+- [Reduced Wong-Wang](../../Fitting/RWW_tvboptim.qmd): fit empirical BOLD functional connectivity
+- [Jansen-Rit](../../Fitting/JR_tvboptim.qmd): fit a MEG frequency gradient
+- [EI tuning](../../Fitting/EI_Tuning_tvboptim.qmd): excitation/inhibition balance
+- [Bayesian inference](../../Fitting/Bayesian_tvboptim.qmd): numpyro MCMC
 - [Hopf-Pareto](../../Fitting/Hopf_Pareto_tvboptim.qmd) — NSGA-II multi-objective
 - [Delay & speed synchronization](../../Fitting/Delay_Speed_Synchronization_tvboptim.qmd)
-- [Gradient stability & TBPTT](../../Fitting/TBPTT_tvboptim.qmd) — the theory behind the above
+- [Gradient stability & TBPTT](../../Fitting/TBPTT_tvboptim.qmd): the theory behind the above
 
 ## Quick start
 
@@ -59,5 +48,4 @@ results = exp.run()
 print(results)
 ```
 
-Result objects follow the YAML structure (`integration`, `algorithms`, `optimization`);
-see [the experiment result](../../Simulation/Results.qmd) for the full container.
+Result objects follow the YAML structure (`integration`, `algorithms`, `optimization`); see [the experiment result](../../Simulation/Results.qmd) for the full container.

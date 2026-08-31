@@ -12,13 +12,9 @@ aliases:
 
 ## Overview
 
-After running a simulation experiment, TVBO returns an `ExperimentResult` that
-provides structured access to all output data — raw state variables, derived
-observations (BOLD, FC, PSD), algorithm history, and optimization traces.
+After running a simulation experiment, TVBO returns an `ExperimentResult` that provides structured access to all output data — raw state variables, derived observations (BOLD, FC, PSD), algorithm history, and optimization traces.
 
-The result object mirrors the YAML experiment specification: each section of the
-experiment (integration, algorithms, optimizations, explorations) maps to a
-corresponding field on the result.
+The result object mirrors the YAML experiment specification: each section of the experiment (integration, algorithms, optimizations, explorations) maps to a corresponding field on the result.
 
 
 ## Result Architecture
@@ -70,8 +66,7 @@ result
 
 ### Integration (Main Simulation)
 
-The primary simulation result is an `xr.DataArray` with named dimensions
-and coordinates:
+The primary simulation result is an `xr.DataArray` with named dimensions and coordinates:
 
 ```{python}
 result.integration.data
@@ -110,8 +105,7 @@ print("result.data.shape:", result.data.shape)
 
 ### Source Experiment Link
 
-`ExperimentResult` holds a back-reference to the `SimulationExperiment` that
-produced it:
+`ExperimentResult` holds a back-reference to the `SimulationExperiment` that produced it:
 
 ```{python}
 print("source type:  ", type(result.source).__name__)
@@ -121,8 +115,7 @@ print("dynamics name:", result.source.dynamics.name)
 
 ## Observations
 
-Observations (BOLD, functional connectivity, PSD, etc.) are attached to the
-simulation that produced them:
+Observations (BOLD, functional connectivity, PSD, etc.) are attached to the simulation that produced them:
 
 ```python
 result.integration.observations                # dict of observation outputs
@@ -133,8 +126,7 @@ result.integration.observations['bold'].data   # xr.DataArray
 
 ## Algorithm Results
 
-When running experiments with algorithms (e.g. FIC, EIB), results track the
-full iteration history:
+When running experiments with algorithms (e.g. FIC, EIB), results track the full iteration history:
 
 ```python
 # Load and run an experiment with algorithms
@@ -171,8 +163,7 @@ opt.simulation           # Post-optimization SimulationResult
 
 ### BIDS-Compatible Export
 
-`ExperimentResult.export()` writes simulation data and experiment metadata to a
-[BIDS](https://bids-specification.readthedocs.io/)-compatible directory following
+`ExperimentResult.export()` writes simulation data and experiment metadata to a [BIDS](https://bids-specification.readthedocs.io/)-compatible directory following
 [BEP034](https://bids.neuroimaging.io/bep034) conventions (computational model
 derivatives):
 
@@ -229,9 +220,7 @@ result.export(
 
 ### Data Format: netCDF
 
-Simulation data is stored as **netCDF4** (`.nc`) — a self-describing scientific
-data format built on HDF5. Each file contains the full array with named
-dimensions and coordinates, readable by any netCDF *or* HDF5 tool.
+Simulation data is stored as **netCDF4** (`.nc`) — a self-describing scientific data format built on HDF5. Each file contains the full array with named dimensions and coordinates, readable by any netCDF *or* HDF5 tool.
 
 #### Why netCDF and not NIfTI or plain HDF5?
 
@@ -242,9 +231,7 @@ dimensions and coordinates, readable by any netCDF *or* HDF5 tool.
 | **netCDF4** | Yes | Self-describing dimensions + coordinates *and* HDF5-compatible storage. Round-trips xarray `DataArray`s losslessly. |
 
 ::: {.callout-tip}
-netCDF4 files **are** HDF5 files. Any HDF5 reader (h5py, HDFView, MATLAB's
-`h5read`) can open them directly. The netCDF layer just adds self-describing
-dimension names and coordinates on top.
+netCDF4 files **are** HDF5 files. Any HDF5 reader (h5py, HDFView, MATLAB's `h5read`) can open them directly. The netCDF layer just adds self-describing dimension names and coordinates on top.
 :::
 
 #### Reading exported data back
@@ -267,6 +254,6 @@ shutil.rmtree(os.path.dirname(outdir))
 
 ## See Also
 
-- [Simulation Experiments](SimulationExperiments.qmd) — defining and running experiments
-- [Observation Models](ObservationModels.qmd) — derived observables (BOLD, FC, …)
-- [Visualization](Visualization.qmd) — detailed plotting guide
+- [Simulation Experiments](SimulationExperiments.qmd): defining and running experiments
+- [Observation Models](ObservationModels.qmd): derived observables (BOLD, FC, …)
+- [Visualization](Visualization.qmd): detailed plotting guide

@@ -8,8 +8,7 @@ aliases:
 ---
 
 TVBO uses [SymPy's units system](https://docs.sympy.org/latest/modules/physics/units/index.html)
-to handle physical units automatically. This enables correct unit conversions across
-different components of a simulation experiment.
+to handle physical units automatically. This enables correct unit conversions across different components of a simulation experiment.
 
 ## Overview
 
@@ -71,8 +70,7 @@ print(f"Delays (ms):\n{np.round(delays, 2)}")
 
 ### 1.2 Mixed Units
 
-TVBO correctly handles mixed units. The conduction speed unit doesn't need to match
-the network's distance/time units:
+TVBO correctly handles mixed units. The conduction speed unit doesn't need to match the network's distance/time units:
 
 ```{python}
 # Speed in m/s, distances in mm, output in ms
@@ -176,14 +174,9 @@ for edge in net_explicit.edges:
 
 ## 2. Integrator Units
 
-The integrator sets its time unit with `time_unit` — the same spelling the network
-uses. One `step_size`, one `duration`, and one `transient_time` are all read in that
-unit.
+The integrator sets its time unit with `time_unit` — the same spelling the network uses. One `step_size`, one `duration`, and one `transient_time` are all read in that unit.
 
-Leaving it unset means *undeclared*, not `ms`: the slot stays `None` so that an
-integrator can inherit the unit declared one scope out. `time_unit_of` is the single
-reader that resolves a scope's declaration, falling back to `ms` only when nothing
-anywhere declared one.
+Leaving it unset means *undeclared*, not `ms`: the slot stays `None` so that an integrator can inherit the unit declared one scope out. `time_unit_of` is the single reader that resolves a scope's declaration, falling back to `ms` only when nothing anywhere declared one.
 
 ```{python}
 from tvbo.datamodel import Integrator
@@ -207,13 +200,9 @@ integ_alias = Integrator(method="heun", step_size=0.1, time_scale="us")
 print(f"Via time_scale synonym: {time_unit_of(integ_alias)}")
 ```
 
-Accepted values are `s`, `ms`, and `us` — the [`UnitEnum`](../datamodel/enums/UnitEnum.qmd)
-time units. `time_scale` is accepted as a synonym for `time_unit` on input, and `dt` as
-a synonym for `step_size`; a synonym is read back under the canonical name. See
-[Integrators](Integrators.qmd) for methods, noise, and coupling-stage options.
+Accepted values are `s`, `ms`, and `us` — the [`UnitEnum`](../datamodel/enums/UnitEnum.qmd) time units. `time_scale` is accepted as a synonym for `time_unit` on input, and `dt` as a synonym for `step_size`; a synonym is read back under the canonical name. See [Integrators](Integrators.qmd) for methods, noise, and coupling-stage options.
 
-Keep the integrator's `time_unit` consistent with the network's (section 1) unless you
-deliberately mix scales.
+Keep the integrator's `time_unit` consistent with the network's (section 1) unless you deliberately mix scales.
 
 ---
 

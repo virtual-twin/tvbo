@@ -50,5 +50,5 @@ tvbo import ./bundle.jsonld --format openminds -o ./study.yaml
 
 ## See also
 
-- [`tvbo export`](export.qmd) — inverse direction
-- [`tvbo formats`](formats.qmd) — see which formats are importable
+- [`tvbo export`](export.qmd): inverse direction
+- [`tvbo formats`](formats.qmd): see which formats are importable

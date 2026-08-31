@@ -126,7 +126,7 @@ def _numeric_text(text):
     return True
 
 
-def _format_colorbar(cb, decimals, declared_ticks=False):
+def _format_colorbar(cb, decimals, declared=None):
     """Colourbar ticks that carry their own magnitude, dropping one that collides with a neighbour.
 
     A slim bar has nowhere to put a shared exponent: factored out, a field spanning 3e4 reads
@@ -135,10 +135,13 @@ def _format_colorbar(cb, decimals, declared_ticks=False):
     at each end and one at the centre value; when the data barely crosses that centre, two land
     on the same pixel and print over each other, so the middle one goes.
 
-    A panel that declared its own `colorbar_ticks` keeps every one of them: the marks are then
-    the paper's, and dropping one because it crowds a neighbour would be the renderer overruling
-    the spec. Their text is still written in full, which is the half of this pass that is about
-    magnitude rather than about which marks appear.
+    A panel that declared its own `colorbar_ticks` gets them back AFTER the shared pass, which
+    places marks of its own over whatever was set before it — declaring them and leaving it there
+    is how a declared scale came to be drawn with the renderer's marks instead of the paper's, in
+    a bar that looked perfectly plausible. It then keeps every one of them, since dropping one
+    because it crowds a neighbour would be the renderer overruling the spec. Their text is still
+    written in full, which is the half of this pass that is about magnitude rather than about
+    which marks appear.
     """
     bsplot.style.format_colorbar(cb, colorbar_decimals=decimals)
     ax = cb.ax
@@ -147,10 +150,12 @@ def _format_colorbar(cb, decimals, declared_ticks=False):
     ax.tick_params(length=min(float(plt.rcParams["ytick.major.size"]), 0.5 * _thick))   # the bar is thinner than the figure's own tick is long
     vertical = str(getattr(cb, "orientation", "vertical")) != "horizontal"   # the bar's declared orientation, not its slot's shape
     axis, lim = (ax.yaxis, ax.get_ylim()) if vertical else (ax.xaxis, ax.get_xlim())
+    if declared is not None:
+        axis.set_ticks(list(declared))
     ticks = list(axis.get_ticklocs())
     span = abs(lim[1] - lim[0]) or 1.0
     keep = [t for i, t in enumerate(ticks)
-            if declared_ticks or i in (0, len(ticks) - 1)
+            if declared is not None or i in (0, len(ticks) - 1)
             or min(abs(t - ticks[0]), abs(t - ticks[-1])) / span > 0.12]
     if len(keep) != len(ticks):
         axis.set_ticks(keep)
@@ -585,7 +590,7 @@ def _restore_fixed_axes(snap):
     _cb.set_ticks(${repr(p['colorbar_ticks'])})
 % endif
     _cb.outline.set_linewidth(0.5)
-    _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}, ${repr(p['colorbar_ticks'] is not None)}))   # re-applied after the format pass
+    _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}, ${repr(p['colorbar_ticks'])}))   # re-applied after the format pass
 % endif
 </%def>\
 <%def name="draw(p)">\

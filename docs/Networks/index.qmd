@@ -1,37 +1,37 @@
 ---
 title: "Networks & Connectomes"
-description: "Build the network a brain model runs on: connectomes, parcellations, coupling, and heterogeneity."
+description: "Build the network a brain model runs on: connectomes, parcellations, coupling and heterogeneity."
 ---
 
-A whole-brain model is dynamics on a **network**. This topic covers getting that
-network: where the connectome comes from, how regions are parcellated, how
-connections couple, and how to vary behaviour across nodes and edges.
+A whole-brain model is dynamics on a network. Three things have to be decided: where the connectome comes from, how regions couple, and whether every region and connection behaves the same way.
 
-## Learn
+The first decision is usually the quickest. TVB-O ships curated connectomes you can reference by IRI, so most experiments never build one. You build your own when the parcellation, the cohort or the tractography method has to match something specific.
 
-- [Surface & PDE simulation](PDESimulation.qmd) — build a surface-based model and
-  solve on it with finite elements.
+## Getting a network
 
-## Do
+| Page | What it covers |
+|---|---|
+| [Network specification](../Specification/Network.qmd) | The `Network` spec itself: constructors, storage format, and the built-in connectome catalogue. |
+| [Build a connectome from tractography](BuildConnectomeFromTractography.qmd) | A tractogram plus a parcellation atlas becomes a schema-compliant network. |
 
-- [Build a connectome from tractography](BuildConnectomeFromTractography.qmd) —
-  tractogram + parcellation atlas → a schema-compliant TVBO network.
-- [Hierarchical & surface networks](HierarchicalSurfaceNetworks.qmd) — a fine mesh
-  layered onto a coarse parent network.
-- [Coupling functions](CouplingFunctions.qmd) — the rule that turns one node's state
-  into the signal its neighbours receive.
-- [Heterogeneous nodes](HeterogeneousNodes.qmd) /
-  [heterogeneous edges](HeterogeneousEdges.qmd) — give regions and connections their
-  own behaviour.
+## How activity travels
 
-## Look up
+| Page | What it covers |
+|---|---|
+| [Coupling functions](CouplingFunctions.qmd) | The rule that turns one node's state into the signal its neighbours receive. |
 
-- [`Network`](../datamodel/classes/Network.qmd) · [`Node`](../datamodel/classes/Node.qmd) ·
-  [`Edge`](../datamodel/classes/Edge.qmd) — the schema itself.
-- [Network specification](../Specification/Network.qmd) — constructors, storage format,
-  and the built-in connectome catalogue.
+Coupling is where most first experiments go wrong, in two specific ways: the coupling key must be the model's own input port rather than a name you invent, and a raw connectome carries streamline counts in the hundreds of thousands, which will drive any model to `NaN` unless it is normalized. Both are covered on that page.
 
-## Related
+## When regions differ
 
-- [Beyond the mean field](../BeyondMeanField/index.qmd) — give a region finer internal
-  detail instead of a single averaged unit.
+| Page | What it covers |
+|---|---|
+| [Heterogeneous nodes](HeterogeneousNodes.qmd) | Giving regions their own parameters. |
+| [Heterogeneous edges](HeterogeneousEdges.qmd) | Giving connections their own behaviour. |
+| [Hierarchical & surface networks](HierarchicalSurfaceNetworks.qmd) | A fine mesh layered onto a coarse parent network. |
+
+For a region with genuine internal structure rather than different parameters, see [Beyond the mean field](../BeyondMeanField/index.qmd).
+
+## Reference
+
+[`Network`](../datamodel/classes/Network.qmd) · [`Node`](../datamodel/classes/Node.qmd) · [`Edge`](../datamodel/classes/Edge.qmd).

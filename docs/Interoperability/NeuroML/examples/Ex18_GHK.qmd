@@ -1,21 +1,19 @@
 ---
 title: "Ex18: Goldman-Hodgkin-Katz"
 description: "GHK current equation for ion channel permeability with calcium dynamics"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: GHK Current Equation
 
-The Goldman-Hodgkin-Katz flux equation provides a more physically accurate
-description of ion channel current than the simple Ohmic ($g(V-E)$) model,
-accounting for ionic concentrations on both sides of the membrane:
+The Goldman-Hodgkin-Katz flux equation provides a more physically accurate description of ion channel current than the simple Ohmic ($g(V-E)$) model, accounting for ionic concentrations on both sides of the membrane:
 
 $$I = P \cdot z^2 \cdot \frac{F^2 V}{RT} \cdot \frac{[\text{ion}]_i - [\text{ion}]_o \exp(-zFV/RT)}{1 - \exp(-zFV/RT)}$$
 
 This example uses a Hodgkin-Huxley cell with Na, K, and Ca channels.
-The calcium current uses `channelDensityGHK` with a `permeability` instead of
-`condDensity`/`erev`, and includes an exponentially decaying calcium pool
-(`fixedFactorConcentrationModel`). The Ca gate uses `q10Fixed` with a hardcoded
-time factor.
+The calcium current uses `channelDensityGHK` with a `permeability` instead of `condDensity`/`erev`, and includes an exponentially decaying calcium pool (`fixedFactorConcentrationModel`). The Ca gate uses `q10Fixed` with a hardcoded time factor.
 
 ---
 

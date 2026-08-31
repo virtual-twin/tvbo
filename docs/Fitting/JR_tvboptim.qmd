@@ -8,7 +8,7 @@ aliases:
 
 MEG resting-state activity is not one rhythm. Peak frequency falls from roughly 11 Hz in visual cortex to roughly 7 Hz in the association areas furthest from it [@Mahjoory2020]. This page fits region-specific Jansen-Rit time constants $a$ and $b$ so a whole-brain simulation reproduces that spatial gradient.
 
-Everything below — the experiments, the target they are fitted to, and the figure that reads the result — is declared in [`JR_tvboptim.yaml`](JR_tvboptim.yaml). The page runs that recipe and shows what it produced; it contains no plotting code and no analysis of its own.
+The experiments, the target they are fitted to, and the figure that reads the result are all declared in [`JR_tvboptim.yaml`](JR_tvboptim.yaml). The page runs that recipe and shows what it produced; it contains no plotting code and no analysis of its own.
 
 ## The recipe
 
@@ -59,7 +59,7 @@ loss:
 
 ## Run it
 
-`SimulationStudy.run()` executes the whole recipe in process — both experiments, then the figures they declare — and returns a `StudyResult`, the study-level counterpart of the `ExperimentResult` a single experiment's `run()` gives back. It is the Python form of `tvbo run JR_tvboptim.yaml`, on the same orchestration, so a notebook and the command line cannot disagree.
+`SimulationStudy.run()` executes the whole recipe in process, running both experiments and then the figures they declare, and returns a `StudyResult`, the study-level counterpart of the `ExperimentResult` a single experiment's `run()` gives back. It is the Python form of `tvbo run JR_tvboptim.yaml`, on the same orchestration, so a notebook and the command line cannot disagree.
 
 ```{python}
 from tvbo import SimulationStudy
@@ -71,14 +71,14 @@ results
 
 ## The containers
 
-Each experiment is keyed by the `id:` the recipe gave it — `results["Startup transient"]` reaches the same one by its label — and its outputs come back in the shape they were declared in, so an observation is reached along the path the recipe writes it at. Nothing is positional, here or inside: every axis carries its coordinates, so a region is selected by its name rather than by an index you have to trust.
+Each experiment is keyed by the `id:` the recipe gave it, and `results["Startup transient"]` reaches the same one by its label. Its outputs come back in the shape they were declared in, so an observation is reached along the path the recipe writes it at. Nothing is positional, here or inside: every axis carries its coordinates, so a region is selected by its name rather than by an index you have to trust.
 
 ```{python}
 fitted = results["exp-1"].optimizations.spectral_gradient_fit.observations.peak_frequencies
 fitted.sel(node=["L.LOG", "L.SFG"])
 ```
 
-The seed region keeps its 11 Hz and superior frontal cortex has come down to 7 Hz — the gradient the fit was asked for.
+The seed region keeps its 11 Hz and superior frontal cortex has come down to 7 Hz: the gradient the fit was asked for.
 
 ## Result
 
@@ -93,12 +93,12 @@ results.figure()
 print(results.figure().caption)
 ```
 
-The fit descends the landscape in **(c)**: only a narrow band of the $(a, b)$ plane oscillates at all, and the alpha band sits on its upper edge. **(d)** shows what the fit buys — the initial network rhythms almost uniformly, while the fitted map reproduces the posterior-to-anterior gradient of the target. **(f)** and **(g)** are that same comparison on the cortical surface.
+The fit descends the landscape in **(c)**: only a narrow band of the $(a, b)$ plane oscillates at all, and the alpha band sits on its upper edge. **(d)** shows what the fit buys: the initial network rhythms almost uniformly, while the fitted map reproduces the posterior-to-anterior gradient of the target. **(f)** and **(g)** are that same comparison on the cortical surface.
 
 Peak frequency here is read as the argmax of a Welch spectrum over a 1 s window, which quantises it to roughly 1 Hz. That resolution, not the optimiser, sets the floor on how closely the fitted points in **(d)** can sit on the target line.
 
 ## See also
 
-- [Model fitting](ModelFitting.qmd) — how losses and gradients work in TVBO.
-- [Specify a figure](../Simulation/Figures.qmd) — the grammar every panel above is written in.
-- [Observation models](../Simulation/ObservationModels.qmd) — where a fit target belongs.
+- [Model fitting](ModelFitting.qmd): how losses and gradients work in TVBO.
+- [Specify a figure](../Simulation/Figures.qmd): the grammar every panel above is written in.
+- [Observation models](../Simulation/ObservationModels.qmd): where a fit target belongs.

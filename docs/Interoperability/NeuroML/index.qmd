@@ -102,8 +102,7 @@ paths = adapter.export("./output", split=True, validate=False)
 # }
 ```
 
-Each file uses `<Include file="..."/>` to chain the others, so you can run the
-simulation file with `jnml ses-..._simulation.xml` and it pulls in the rest automatically.
+Each file uses `<Include file="..."/>` to chain the others, so you can run the simulation file with `jnml ses-..._simulation.xml` and it pulls in the rest automatically.
 
 For a single self-contained file (default):
 
@@ -176,11 +175,7 @@ NeuroMLAdapter
 
 ### Template Context
 
-All templates share a pre-computed context dictionary returned by
-`build_lems_context(experiment)`.  Templates contain no Python setup logic — all
-variables arrive ready-to-use via `template.render(**ctx)`.  This means the same
-model object is computed once and shared across all templates during a `split=True`
-export.
+All templates share a pre-computed context dictionary returned by `build_lems_context(experiment)`.  Templates contain no Python setup logic — all variables arrive ready-to-use via `template.render(**ctx)`.  This means the same model object is computed once and shared across all templates during a `split=True` export.
 
 ---
 

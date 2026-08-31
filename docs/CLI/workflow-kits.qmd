@@ -70,12 +70,8 @@ The frozen YAML snapshot of the experiment, produced by `experiment.render(forma
 
 ### `requirements.txt` / `environment.yml`
 
-Emitted from the experiment's schema-native `environment.requirements` (skipped
-if none are declared). `requirements.txt` is one pip spec per line (`pkg>=x`, or a
-`source_url` verbatim); `environment.yml` is a conda env with those under `pip:`.
-Provision the run env with `conda env create -f environment.yml` or
-`pip install -r requirements.txt`. Both are rendered from Mako templates
-(`templates/workflow/{requirements.txt,environment.yml}.mako`).
+Emitted from the experiment's schema-native `environment.requirements` (skipped if none are declared). `requirements.txt` is one pip spec per line (`pkg>=x`, or a `source_url` verbatim); `environment.yml` is a conda env with those under `pip:`.
+Provision the run env with `conda env create -f environment.yml` or `pip install -r requirements.txt`. Both are rendered from Mako templates (`templates/workflow/{requirements.txt,environment.yml}.mako`).
 
 ### `README.md`
 
@@ -143,6 +139,6 @@ python ./kit/scripts/JR_MEG_FrequencyGradient_Optimization.py \
 
 ## See also
 
-- [`tvbo workflow`](workflow.qmd) — the emitter commands
-- [HPC patterns](hpc.qmd) — sharding and containers
-- [Backends](../Simulation/Backends.qmd) — what determines `vectorize_axes` vs `workflow_axes`
+- [`tvbo workflow`](workflow.qmd): the emitter commands
+- [HPC patterns](hpc.qmd): sharding and containers
+- [Backends](../Simulation/Backends.qmd): what determines `vectorize_axes` vs `workflow_axes`

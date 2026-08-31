@@ -10,10 +10,7 @@ Replication results are embargoed until the corresponding paper is published, so
 Every study page must make the decision explicit:
 
 * ``publish: true``   -> listed in the sidebar and the index listing.
-* ``publish: false``  -> withheld. Allowed for local drafting, but the page still
-  *renders* into ``_site`` (it matches the ``Replication/**/*.qmd`` render glob in
-  ``_quarto.yml``), so it remains reachable by direct URL. The script warns loudly
-  and prints that URL.
+* ``publish: false``  -> withheld. Allowed for local drafting, but the page still *renders* into ``_site`` (it matches the ``Replication/**/*.qmd`` render glob in ``_quarto.yml``), so it remains reachable by direct URL. The script warns loudly and prints that URL.
 * **missing**         -> hard error. Omission must never be a silent publish.
 
 Run with ``--strict`` (recommended in CI and any deploy job) to also fail on ``publish: false``, guaranteeing that a withheld study never reaches a built site.
@@ -148,10 +145,9 @@ def enforce_gate(strict: bool) -> list[Path]:
     return published
 
 
-# Section-level pages that are not studies. They live directly in Replication/ and would otherwise be orphaned: rendered by the glob but absent from the sidebar.
+# Section-level pages that are not studies. They live directly in Replication/ and would otherwise be orphaned: rendered by the glob but absent from the sidebar. `custom-panels.qmd` is deliberately absent: it teaches the figure-spec escape hatch, so the curated region carries it under SPECIFY beside the figure grammar.
 SECTION_PAGES = [
     ("The replication pipeline", "Replication/pipeline.qmd"),
-    ("Custom figure panels", "Replication/custom-panels.qmd"),
 ]
 
 

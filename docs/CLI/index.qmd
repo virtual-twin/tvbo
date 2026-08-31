@@ -1,28 +1,35 @@
 ---
 title: "Command-Line Interface"
-description: "Run, export, validate and orchestrate experiments from the shell — the registry-driven, transport-aware tvbo command tree."
+description: "Run, export, validate and orchestrate experiments from the shell: the registry-driven, transport-aware tvbo command tree."
 page-layout: full
+jupyter: python3
 ---
 
-The `tvbo` command-line interface is the primary entry point for running, exporting, importing, validating, and orchestrating TVB-O simulations from a shell. It is **registry-driven** (every backend and file format is a plug-in entry) and **transport-aware** (specs may be local files, ontology CURIEs, database names, or — in upcoming releases — HTTP URLs).
+The `tvbo` command line runs, exports, imports, validates and orchestrates TVB-O simulations from a shell. It is **registry-driven**: every backend and every file format is a plug-in entry rather than a hard-coded branch. It is also **transport-aware**, so a spec may be a local file, an ontology CURIE, or a database name. HTTP URLs are reserved for a future release.
 
-## Command tree at a glance
+## The command tree
 
-```text
-tvbo
-├── run         Execute a SimulationStudy or SimulationExperiment
-├── export      Render a SPEC into a target format (no execution)
-├── save        Like export, but with bundled binary data when supported
-├── import      Load a foreign file (auto-dispatch by extension)
-├── info        Inspect a SPEC (tasks, outputs, declared backends)
-├── formats     List all registered I/O formats
-├── version     Print the tvbo version
-├── brain       Draw a spec dissolving into a cortical surface (bare `tvbo` shows it)
-├── validate    [schema | bids | sedml | omex]
-├── config      [path | show]
-├── network     [build]
-├── workflow    [plan | slurm | snakemake | nextflow | backends]
-└── skills      [install | uninstall | sync]
+Generated from the installed CLI, so it cannot describe a command that does not exist.
+
+```{python}
+#| label: command-tree
+#| echo: false
+import click, typer
+from tvbo.cli import app
+
+root = typer.main.get_command(app)
+verbs = [(n, c) for n, c in root.commands.items() if not isinstance(c, click.Group)]
+groups = [(n, c) for n, c in root.commands.items() if isinstance(c, click.Group)]
+
+lines = ["tvbo"]
+for i, (name, cmd) in enumerate(verbs + groups):
+    stem = "└── " if i == len(verbs) + len(groups) - 1 else "├── "
+    if isinstance(cmd, click.Group):
+        lines.append(f"{stem}{name:<11}[{' | '.join(sorted(cmd.commands))}]")
+    else:
+        lines.append(f"{stem}{name:<11}{(cmd.help or '').splitlines()[0]}")
+
+print("\n".join(lines))
 ```
 
 ## What is a SPEC?
@@ -41,36 +48,36 @@ See [Specs and resolution](specs.qmd) for the full rules.
 
 ## Verb reference
 
-::: {.callout-tip}
-Each page below documents one verb (or sub-tree) with all flags, exit codes, and worked examples.
-:::
+Each page below documents one verb or sub-tree, with its flags, exit codes and worked examples.
 
-- [Specs and resolution](specs.qmd) — how `tvbo` finds your file
-- [`tvbo run`](run.qmd) — execute a study or experiment
-- [`tvbo export`](export.qmd) — render code/serialisations without executing
-- [`tvbo save`](save.qmd) — `export --with-data`
-- [`tvbo import`](import.qmd) — load foreign files into TVBO objects
-- [`tvbo info`](info.qmd) — inspect a SPEC without running it
-- [`tvbo formats`](formats.qmd) — list registered I/O formats
-- [`tvbo brain`](brain.qmd) — the ASCII spec-to-cortex portrait a bare `tvbo` prints
-- [`tvbo validate`](validate.qmd) — schema, BIDS, SED-ML, OMEX validation
-- [`tvbo config`](config.qmd) — view CLI configuration
-- [`tvbo network`](network.qmd) — build connectomes from a tractogram + parcellation (MRtrix wrapper)
-- [`tvbo workflow`](workflow.qmd) — emit Slurm / Snakemake / Nextflow kits
-- [`tvbo skills`](skills.qmd) — install AI-assistant skills for Claude Code, Cursor, Copilot
-- [Workflow kits anatomy](workflow-kits.qmd) — what a generated kit contains
-- [Backends](../Simulation/Backends.qmd) — capability table, vectorize-vs-fanout
-- [HPC patterns](hpc.qmd) — containers, sharding, engine dispatch
-- [Recipes](recipes.qmd) — copy-paste cookbook
+- [Specs and resolution](specs.qmd): how `tvbo` finds your file
+- [`tvbo run`](run.qmd): execute a study or experiment
+- [`tvbo export`](export.qmd): render code or serialisations without executing
+- [`tvbo save`](save.qmd): `export --with-data`
+- [`tvbo import`](import.qmd): load foreign files into TVBO objects
+- [`tvbo info`](info.qmd): inspect a SPEC without running it
+- [`tvbo formats`](formats.qmd): list registered I/O formats
+- [`tvbo brain`](brain.qmd): the ASCII spec-to-cortex portrait a bare `tvbo` prints
+- [`tvbo validate`](validate.qmd): schema, BIDS, SED-ML and OMEX validation
+- [`tvbo config`](config.qmd): view CLI configuration
+- [`tvbo network`](network.qmd): build connectomes from a tractogram and a parcellation, wrapping MRtrix
+- [`tvbo workflow`](workflow.qmd): emit Slurm, Snakemake or Nextflow kits
+- [`tvbo skills`](skills.qmd): install AI-assistant skills for Claude Code, Cursor and Copilot
+- [Workflow kits anatomy](workflow-kits.qmd): what a generated kit contains
+- [Backends](../Simulation/Backends.qmd): the capability table, and vectorize versus fan-out
+- [HPC patterns](hpc.qmd): containers, sharding and engine dispatch
+- [Recipes](recipes.qmd): a copy-paste cookbook
+
+Six command groups have no guide page yet and are documented only by their generated API reference: [`tvbo figure`](../api/cli/figures.qmd), [`tvbo study`](../api/cli/study.qmd), [`tvbo units`](../api/cli/units.qmd), [`tvbo cache`](../api/cli/cache.qmd), [`tvbo verify`](../api/cli/verify.qmd) and [`tvbo install`](../api/cli/install.qmd).
 
 ## Two execution paths
 
 The CLI exposes two complementary execution paths:
 
-1. **Direct execution** — `tvbo run` invokes the requested backend in-process and saves results. Best for laptops, CI, and short experiments.
-2. **Workflow emission** — `tvbo workflow {slurm,snakemake,nextflow}` writes a self-contained reproducibility kit (workflow artefact + frozen backend script + frozen YAML spec + README) and exits. The kit is portable: it can be `tar`-ed up, moved to an HPC cluster, and run independently of `tvbo`.
+1. **Direct execution.** `tvbo run` invokes the requested backend in-process and saves the results. Best for laptops, CI and short experiments.
+2. **Workflow emission.** `tvbo workflow {slurm,snakemake,nextflow}` writes a self-contained reproducibility kit and exits. The kit holds the workflow artefact, the frozen backend script, the frozen YAML spec and a README, so it can be archived, moved to a cluster and run without `tvbo` installed.
 
-The same Study YAML produces a *different* DAG depending on the chosen backend, because the planner consults the [backend capability table](../Simulation/Backends.qmd) (mirrored from `ontology/tvb-o-axioms.ttl §4.1`) to decide which sweep axes can be vectorized inside the backend versus fanned out across workflow tasks.
+The same study YAML produces a *different* DAG on different backends. The planner consults the [backend capability table](../Simulation/Backends.qmd), mirrored from `ontology/tvb-o-axioms.ttl §4.1`, to decide which sweep axes vectorize inside the backend and which fan out across workflow tasks.
 
 ## Quick start
 

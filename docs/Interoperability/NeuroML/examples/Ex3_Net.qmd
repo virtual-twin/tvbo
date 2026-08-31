@@ -1,18 +1,16 @@
 ---
 title: "Ex3: HH Network with Synapses"
 description: "Network of HH cells connected by expOneSynapse, expTwoSynapse, and alphaSynapse"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: HH Network
 
-This example connects a pre-synaptic HH cell to three post-synaptic passive
-cells via different synapse types (expOneSynapse, expTwoSynapse, alphaSynapse).
+This example connects a pre-synaptic HH cell to three post-synaptic passive cells via different synapse types (expOneSynapse, expTwoSynapse, alphaSynapse).
 
-Cell types use standard NeuroML types (`pointCellCondBased`) with hierarchical
-`components:` composition trees.  Synapses use standard NeuroML synapse types
-on network edges.  The simulated traces match the reference jNeuroML simulation to
-correlation r ≈ 1; the emitted XML is equivalent, not byte-identical, to the canonical
-NeuroML file.
+Cell types use standard NeuroML types (`pointCellCondBased`) with hierarchical `components:` composition trees.  Synapses use standard NeuroML synapse types on network edges.  The simulated traces match the reference jNeuroML simulation to correlation r ≈ 1; the emitted XML is equivalent, not byte-identical, to the canonical NeuroML file.
 
 ---
 

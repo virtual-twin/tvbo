@@ -2,16 +2,12 @@
 title: "tvbo network"
 ---
 
-Build brain-network connectomes. Today this sub-tree has one verb, `build`, a
-thin wrapper around [MRtrix3](https://www.mrtrix.org/)'s `tck2connectome` that
-turns a streamline **tractogram** + a **parcellation** into a tvbo structural
-connectome (`…_desc-SC_relmat.h5` + YAML sidecar) you can load with
-`tvbo.Network(...)`.
+Build brain-network connectomes. Today this sub-tree has one verb, `build`, a thin wrapper around [MRtrix3](https://www.mrtrix.org/)'s `tck2connectome` that
+turns a streamline **tractogram** + a **parcellation** into a tvbo structural connectome (`…_desc-SC_relmat.h5` + YAML sidecar) you can load with `tvbo.Network(...)`.
 
 ## Prerequisites
 
-`tvbo network build` shells out to MRtrix3 — it does not vendor any tractography
-code. You need `tck2connectome` on your `PATH`:
+`tvbo network build` shells out to MRtrix3 — it does not vendor any tractography code. You need `tck2connectome` on your `PATH`:
 
 - Install MRtrix3: <https://www.mrtrix.org/download/>
 - `tck2connectome` reference:
@@ -21,10 +17,7 @@ If MRtrix is missing, the command fails fast with these same links.
 
 ::: {.callout-important}
 ## Same space, not registered here
-The tractogram and the parcellation image **must already be co-registered in the
-same space** (e.g. both in `FSLMNI152`). `tvbo network build` does not register
-them — it only assigns streamline endpoints to parcellation labels. Record the
-shared space with `--space` so it lands in the output filename and metadata.
+The tractogram and the parcellation image **must already be co-registered in the same space** (e.g. both in `FSLMNI152`). `tvbo network build` does not register them — it only assigns streamline endpoints to parcellation labels. Record the shared space with `--space` so it lands in the output filename and metadata.
 :::
 
 ## Synopsis
@@ -66,18 +59,14 @@ tvbo network build TRACTOGRAM PARCELLATION
 ## Behaviour
 
 1. Checks `tck2connectome` is installed (friendly error with docs links if not).
-2. Resolves the output path and the overwrite guard **up front** — before the
-   (potentially minutes-long) MRtrix run — since the name is entirely
-   entity-derived.
+2. Resolves the output path and the overwrite guard **up front** — before the (potentially minutes-long) MRtrix run — since the name is entirely entity-derived.
 3. Runs `tck2connectome` twice in a temp dir:
-   - **weights** — streamline count per node pair;
+   - **weights**: streamline count per node pair;
    - **lengths** — `-scale_length -stat_edge mean`, the mean streamline length per edge.
-4. Loads the two CSVs, assembles a `Network` (`descriptor: SC`, `distance_unit: mm`)
-   with any `--labels` and the provided BIDS entities, and saves the sidecar + `.h5`.
+4. Loads the two CSVs, assembles a `Network` (`descriptor: SC`, `distance_unit: mm`) with any `--labels` and the provided BIDS entities, and saves the sidecar + `.h5`.
 
 The result loads straight back through the normal DB path, e.g.
-`tvbo.Network(atlas=..., tractogram=...)` / `get_normative_connectome_data(...)`
-— see [Networks](../Specification/Network.qmd).
+`tvbo.Network(atlas=..., tractogram=...)` / `get_normative_connectome_data(...)` — see [Networks](../Specification/Network.qmd).
 
 ## Examples
 
@@ -128,6 +117,6 @@ Edge weights are raw streamline counts and index the relative density of a conne
 
 ## See also
 
-- [`tvbo import`](import.qmd) — load foreign network files into TVBO objects
-- [Networks](../Specification/Network.qmd) — how connectomes are consumed at runtime
+- [`tvbo import`](import.qmd): load foreign network files into TVBO objects
+- [Networks](../Specification/Network.qmd): how connectomes are consumed at runtime
 - MRtrix3 `tck2connectome`: <https://mrtrix.readthedocs.io/en/latest/reference/commands/tck2connectome.html>

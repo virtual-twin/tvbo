@@ -4,34 +4,34 @@ project:
     - bash scripts/prerender.sh
   render:
     - index.qmd
+    - GettingStarted.qmd
     - installation.md
     - reference.qmd
     - platform.qmd
+    - Sharing.qmd
     - api/**/*.qmd
     - datamodel/*.qmd
     - datamodel/**/*.qmd
     - Models/*.qmd
     - Simulation/*.qmd
-    # index.qmd dissolved into SPECIFY/RUN IT; Simulation/SimulationExperiments.qmd owns its old URL via `aliases:`, so the stub is excluded here.
-    - "!Simulation/index.qmd"
     - ScaleOut/*.qmd
     - Bifurcation/*.qmd
     - Networks/*.qmd
     - BeyondMeanField/*.qmd
     - Fitting/*.qmd
     - CLI/*.qmd
-    # backends.qmd moved to Simulation/Backends.qmd, whose `aliases:` owns its old URL, so the stub is excluded here to avoid a duplicate path.
-    - "!CLI/backends.qmd"
     - examples/**/*.qmd
     - Specification/*.qmd
     - Interoperability/**/*.qmd
+    - Interoperability/**/*.md
     - Interoperability/*.qmd
     - Replication/*.qmd
     - Replication/**/*.qmd
     - Developer/*.md
+    - Developer/*.qmd
     - ontology/*.qmd
     - agents/*.qmd
-    - "!_archive/*"
+    - "!_archive/**"
     - "!ontology/spec/**"
   resources:
     - ontology/spec/**
@@ -41,13 +41,19 @@ project:
 metadata-files:
     - _toc.yml
 
+# phase-badge stamps the spine phase; usecase-tags lists the published studies whose recipes exercise the page. Both read generated maps under _static/.
+filters:
+    - filters/phase-badge.lua
+    - filters/running-example.lua
+    - filters/usecase-tags.lua
+
 website:
     title: "TVB-O Documentation"
     favicon: "_static/tvbo_python_square.svg"
     image: "_static/tvbo_python_square.svg"
 
-    repo-url: https://github.com/TVB-Ontology/tvbo-python
-    issue-url: https://github.com/TVB-Ontology/tvbo-python/new/choose
+    repo-url: https://github.com/virtual-twin/tvbo
+    issue-url: https://github.com/virtual-twin/tvbo/issues/new/choose
     repo-actions: [edit, issue]
     page-navigation: true
 
@@ -55,20 +61,14 @@ website:
         logo: _static/tvbo_favicon.png
         logo-alt: "TVB-O logo"
 
-        # Mirrors the sidebar PARTS in _toc.yml: each item is the representative landing for one part, so navbar and sidebar tell the same story.
+        # Destinations you jump to, not the reading order. The five numbered phases are the sidebar's job and the per-page badge's; repeating them here would say the same thing three times.
         left:
             - href: index.qmd
               text: Home
             - text: "Get Started"
               href: GettingStarted.qmd
-            - text: "Specify an Experiment"
-              href: Simulation/SimulationExperiments.qmd
-            - text: "Run on a Backend"
-              href: Simulation/Backends.qmd
-            - text: "Analyze"
-              href: Bifurcation/index.qmd
-            - text: "Extend"
-              href: Interoperability/index.qmd
+            - text: "Examples"
+              href: examples/index.qmd
             - text: "Reference"
               href: reference.qmd
             - text: "Platform"
@@ -76,7 +76,7 @@ website:
 
         tools:
             - icon: github
-              href: https://github.com/leon-k-martin/tvbo
+              href: https://github.com/virtual-twin/tvbo
               text: tvbo GitHub
 
     sidebar: []  # merged from _toc.yml and api/_sidebar.yml
@@ -95,7 +95,9 @@ website:
 format:
     html:
         theme: cosmo
-        css: styles.css
+        css:
+            - _static/phases.css
+            - styles.css
         toc: true
         code-copy: true
         code-overflow: wrap

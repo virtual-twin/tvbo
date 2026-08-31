@@ -6,24 +6,17 @@ aliases:
   - /Usage/CreatingNetworks.html
 ---
 
-TVBO supports **hierarchical multi-layer networks** where a fine-grained
-network (e.g. surface vertices) references a coarser parent network
-(e.g. brain regions or lobes). This page covers that layered construction.
+TVBO supports **hierarchical multi-layer networks** where a fine-grained network (e.g. surface vertices) references a coarser parent network (e.g. brain regions or lobes). This page covers that layered construction.
 
 Two related topics live elsewhere:
 
-- To build the coarse structural network from tractography, see
-  [Build a Connectome from Tractography](BuildConnectomeFromTractography.qmd).
-- To wrap connectivity matrices you already have, or load a built-in connectome,
-  see [Defining Networks](../Specification/Network.qmd).
-- To give regions a detailed spiking or reservoir patch, see
-  [Model Across Scales](../BeyondMeanField/MultiScaleModelling.qmd).
+- To build the coarse structural network from tractography, see [Build a Connectome from Tractography](BuildConnectomeFromTractography.qmd).
+- To wrap connectivity matrices you already have, or load a built-in connectome, see [Defining Networks](../Specification/Network.qmd).
+- To give regions a detailed spiking or reservoir patch, see [Model Across Scales](../BeyondMeanField/MultiScaleModelling.qmd).
 
 ## Multi-Layer Networks: Surface Mapping
 
-A hierarchical network avoids redundant storage — the surface network stores
-only the mesh geometry and a vertex→region mapping, while the parent network
-holds the connectivity matrices.
+A hierarchical network avoids redundant storage: the surface network stores only the mesh geometry and a vertex→region mapping, while the parent network holds the connectivity matrices.
 
 ### Architecture
 
@@ -37,16 +30,12 @@ Surface Network (desc-surf)          Parent Network (desc-SC)
 └──────────────────────────┘        └──────────────────────┘
 ```
 
-The `parent_network` field in the surface YAML points to the SC network
-file, and `node_mapping` gives the HDF5 dataset path for the
-vertex→region index array.
+The `parent_network` field in the surface YAML points to the SC network file, and `node_mapping` gives the HDF5 dataset path for the vertex→region index array.
 
 ### Creating a Surface Network
 
-Load a cortical surface mesh (e.g. fsLR 32k from TemplateFlow) and
-map each vertex to its parent region by sampling the parcellation atlas.
-This reuses the `lobar_atlas.nii.gz` and the saved SC `Network` produced in
-[Build a Connectome from Tractography](BuildConnectomeFromTractography.qmd):
+Load a cortical surface mesh (e.g. fsLR 32k from TemplateFlow) and map each vertex to its parent region by sampling the parcellation atlas.
+This reuses the `lobar_atlas.nii.gz` and the saved SC `Network` produced in [Build a Connectome from Tractography](BuildConnectomeFromTractography.qmd):
 
 ```python
 import nibabel as nib
@@ -132,13 +121,10 @@ The surface network produces:
 | `*_desc-SC_relmat.yaml` | ~2 KB | SC metadata (17 nodes, positions) |
 | `*_desc-SC_relmat.h5` | ~3 KB | Weight + length matrices (17×17) |
 
-No connectivity matrices are duplicated — the surface network references
-the parent SC network for all edge data.
+No connectivity matrices are duplicated, because the surface network references the parent SC network for all edge data.
 
 ## Tips
 
-- **Surface coverage:** Cortical surfaces (fsLR, fsaverage) cover only
-  cortical regions — subcortical and cerebellar vertices won't be mapped.
+- **Surface coverage:** Cortical surfaces (fsLR, fsaverage) cover only cortical regions, so subcortical and cerebellar vertices are not mapped.
   Unmapped vertices get index -1 in the region mapping.
-- **Schema validation:** `network.save()` validates the YAML against the
-  TVBO LinkML schema automatically.
+- **Schema validation:** `network.save()` validates the YAML against the TVBO LinkML schema automatically.

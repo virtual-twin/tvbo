@@ -1,47 +1,39 @@
 ---
 title: "Fitting, inference & optimization"
-description: "Fit a model to empirical data, tune it, and infer parameters — with the theory that explains when it works."
+description: "Fit a model to empirical data, tune it into a regime, and infer parameter distributions."
 ---
 
-Simulating a model is one thing; making it *match data* is another. This topic covers
-fitting model parameters to empirical measurements, tuning a network into a target
-regime, and inferring parameter distributions — plus the background on when gradient
-optimization is trustworthy.
+Simulating a model is one thing; making it match data is another. This part of the specification covers three related but distinct jobs, and choosing between them is the first decision.
 
-These workflows run on the **tvboptim** JAX backend (JIT-compiled, autodiff,
-GPU-capable). If you arrived wanting to know how TVBO relates to tvboptim as a *tool*,
-see [coming from tvboptim](../Interoperability/tvboptim/index.qmd).
+**Fitting** minimises a loss against a measurement, and gives you one parameter set. **Tuning** drives the model to a target regime with an algorithm rather than a loss, which is what [FIC and E/I balance](../Specification/Algorithms.qmd) do. **Inference** estimates a distribution over parameters rather than a point, and tells you how well-determined each one actually is.
 
-## Do
+These workflows run on the tvboptim JAX backend, which is JIT-compiled, differentiable and GPU-capable. If you arrived wanting to know how TVB-O relates to tvboptim as a tool rather than as a backend, see [coming from tvboptim](../Interoperability/tvboptim/index.qmd).
 
-| Goal | Guide |
+## What you declare
+
+| Page | What it covers |
+|---|---|
+| [Model fitting](ModelFitting.qmd) | How losses and gradients work here, and what makes a model differentiable. |
+| [Loss functions](../Specification/LossFunction.qmd) | Declaring the quantity being minimised, symbolically. |
+| [Algorithms (FIC, EIB)](../Specification/Algorithms.qmd) | Iterative tuning that reaches a regime without a loss. |
+
+## Worked examples
+
+Each of these is a complete study rather than a snippet, and they live in [Examples & Use-Cases](../examples/index.qmd):
+
+| Goal | Example |
 |---|---|
 | Match empirical BOLD functional connectivity | [Reduced Wong-Wang](RWW_tvboptim.qmd) |
 | Match a MEG frequency gradient | [Jansen-Rit](JR_tvboptim.qmd) |
-| Drive regions to a target firing rate (E/I balance) | [EI tuning](EI_Tuning_tvboptim.qmd) |
+| Drive regions to a target firing rate | [E/I tuning](EI_Tuning_tvboptim.qmd) |
 | Estimate posteriors over parameters | [Bayesian inference](Bayesian_tvboptim.qmd) |
-| Trade off competing objectives | [Multi-objective (Hopf-Pareto)](Hopf_Pareto_tvboptim.qmd) |
-| Fit conduction speed / delays | [Delay & speed synchronization](Delay_Speed_Synchronization_tvboptim.qmd) |
+| Trade off competing objectives | [Multi-objective Hopf-Pareto](Hopf_Pareto_tvboptim.qmd) |
+| Fit conduction speed and delays | [Delay & speed synchronization](Delay_Speed_Synchronization_tvboptim.qmd) |
 
-## Understand
+## Before you trust a fit
 
-- [Model fitting](ModelFitting.qmd) — how losses and gradients work in TVBO, and what
-  makes a model differentiable.
-- [Gradient stability & truncated BPTT](TBPTT_tvboptim.qmd) — why gradients through long
-  chaotic trajectories explode, and what truncation buys you.
+A converged optimiser is not the same as a good answer. [Gradient stability & truncated BPTT](TBPTT_tvboptim.qmd) explains why gradients through long chaotic trajectories explode and what truncation buys you. A fitted parameter set that sits on the edge of its search range has almost certainly been truncated rather than found, and [Bifurcation & continuation](../Bifurcation/index.qmd) tells you which dynamical regime the answer landed in.
 
-## Look up
+## Reference
 
-- [`Optimization`](../datamodel/classes/Optimization.qmd) ·
-  [`Inference`](../datamodel/classes/Inference.qmd) ·
-  [`LossFunction`](../datamodel/classes/LossFunction.qmd) ·
-  [`Algorithm`](../datamodel/classes/Algorithm.qmd)
-- [Loss function specification](../Specification/LossFunction.qmd) ·
-  [Algorithms (FIC, EIB)](../Specification/Algorithms.qmd)
-
-## Related
-
-- [Simulation & observation](../Simulation/ObservationModels.qmd) — the observations you fit
-  *against* (FC, BOLD, spectra).
-- [Bifurcation & stability](../Bifurcation/index.qmd) — where a fitted parameter set sits
-  in the model's dynamical regime.
+[`Optimization`](../datamodel/classes/Optimization.qmd) · [`Inference`](../datamodel/classes/Inference.qmd) · [`LossFunction`](../datamodel/classes/LossFunction.qmd) · [`Algorithm`](../datamodel/classes/Algorithm.qmd).

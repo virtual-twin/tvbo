@@ -74,23 +74,23 @@ toc: false
 </section>
 
 <section class="pipeline">
-  <p class="section-eyebrow">From database to reproducible result</p>
+  <p class="section-eyebrow">The five steps this documentation follows</p>
   <ol class="steps">
-    <li class="step"><span class="step__n">1</span><h3>Explore</h3><p>Find curated models, networks, and studies in the knowledge database.</p></li>
-    <li class="step"><span class="step__n">2</span><h3>Specify</h3><p>Define dynamical systems and networks as one typed spec.</p></li>
-    <li class="step"><span class="step__n">3</span><h3>Build</h3><p>Assemble the network model — nodes, coupling, noise.</p></li>
-    <li class="step"><span class="step__n">4</span><h3>Generate &amp; run</h3><p>Emit optimized code and execute on any backend.</p></li>
-    <li class="step"><span class="step__n">5</span><h3>Plot</h3><p>Compose multi-panel publication figures from results.</p></li>
-    <li class="step"><span class="step__n">6</span><h3>Share</h3><p>Export reproducible models with standardized metadata.</p></li>
+    <li class="step" style="--phase:var(--phase-1)"><span class="step__n">1</span><h3>Explore</h3><p>Find curated models, networks and published studies in the knowledge base.</p></li>
+    <li class="step" style="--phase:var(--phase-2)"><span class="step__n">2</span><h3>Specify</h3><p>Declare the experiment — dynamics, network, observations, figures.</p></li>
+    <li class="step" style="--phase:var(--phase-3)"><span class="step__n">3</span><h3>Generate</h3><p>Compile it to backend-native code, plots and a study directory.</p></li>
+    <li class="step" style="--phase:var(--phase-4)"><span class="step__n">4</span><h3>Run</h3><p>Execute on a laptop or a cluster, and read the result back.</p></li>
+    <li class="step" style="--phase:var(--phase-5)"><span class="step__n">5</span><h3>Share</h3><p>Publish to the platform, and export results as BIDS.</p></li>
   </ol>
   <div class="pipeline__targets">
-    <span class="step__n step__n--sm" aria-hidden="true">4</span>
+    <span class="step__n step__n--sm" aria-hidden="true">3</span>
     <span class="chips__label">From one source</span>
     <span class="targets__arrow" aria-hidden="true">&rarr;</span>
     <ul class="chips">
-      <li>TVB</li><li>JAX</li><li>Julia</li><li>C / CUDA</li><li>AUTO</li><li>BifurcationKit</li>
+      <li>TVB</li><li>JAX</li><li>Julia</li><li>C / CUDA</li><li>Brian2</li><li>PyRates</li><li>NeuroML</li>
     </ul>
   </div>
+  <p class="pipeline__note">Every page carries the number of the step it belongs to, in the top-left corner.</p>
 </section>
 
 <figure class="overview">
@@ -124,166 +124,90 @@ toc: false
 
 ---
 
-## Quickstart
+## A first simulation
 
-:::: {.panel-tabset .tvbo-quickstart}
-### Python Installation
-```bash
-pip install tvbo
+Install it, then run a whole-brain model in one call. The specification is data — the same text runs on any backend TVB-O supports.
+
+```{python}
+#| label: first-run
+from tvbo import SimulationExperiment
+
+SPEC = """
+label: "A whole-brain simulation"
+dynamics:
+  iri: tvbo:Generic2dOscillator
+network:
+  iri: tvbo:DesikanKilliany
+  transforms:
+    - name: weight
+      equation: {rhs: "weight / mean(weight[weight > 0])"}
+  coupling:
+    c_glob: {iri: tvbo:Linear, delayed: false, incoming_states: [V]}
+integration: {method: Heun, step_size: 0.1, duration: 600.0, transient_time: 200.0}
+"""
+
+result = SimulationExperiment.from_string(SPEC).run()
+V = result.integration.data.sel(variable="V")
+print(f"{V.sizes['node']} regions x {V.sizes['time']} timepoints")
 ```
-For more installation options, see the [Installation Guide](installation.md).
 
-### Model Specification
+```{python}
+#| label: fig-home
+#| fig-cap: "Eighty-seven cortical and subcortical regions, coupled through a structural connectome."
+#| code-fold: true
+result.integration.plot(type="raster")
+```
+
+## The same experiment, three ways
+
+TVB-O keeps one specification and three ways to hold it. These are alternatives, not steps — pick whichever suits the task.
+
+:::: {.panel-tabset}
+
+### YAML
+
 ```yaml
-name: LorenzAttractor
-parameters:
-    sigma:
-        value: 10
-        label: Prandtl number
-    rho:
-        label: Rayleigh number
-        value: 28
-    beta:
-        value: 2.6666666666666665
-state_variables:
-    X:
-        equation:
-        lhs: \dot{X}
-        rhs: sigma * (Y - X)
-    Y:
-        equation:
-        lhs: \dot{Y}
-        rhs: X * (rho - Z) - Y
-    Z:
-        equation:
-        lhs: \dot{Z}
-        rhs: X * Y - beta * Z
-```
-### Generate Code
-```{python}
-from tvbo import Dynamics, SimulationExperiment
-from IPython.display import Markdown
-lorenz = Dynamics(
-    parameters={
-        "sigma": {"value": 10.0},
-        "rho": {"value": 28.0},
-        "beta": {"value": 8 / 3},
-    },
-    state_variables={
-        "X": {"equation": {"rhs": "sigma * (Y - X)"}},
-        "Y": {"equation": {"rhs": "X * (rho - Z) - Y"}},
-        "Z": {"equation": {"rhs": "X * Y - beta * Z"}},
-    },
-)
-
-code = SimulationExperiment(dynamics=lorenz).render_code('jax')
+label: "A whole-brain simulation"
+dynamics:
+  iri: tvbo:Generic2dOscillator
+network:
+  iri: tvbo:DesikanKilliany
+  coupling:
+    c_glob: {iri: tvbo:Linear, delayed: false, incoming_states: [V]}
+integration: {method: Heun, step_size: 0.1, duration: 600.0}
 ```
 
-**output**:
-```{python}
-Markdown("```python" + code + "```")
-```
+### Python
 
-### Run Dynamics
-
-```{python}
-from tvbo import Dynamics, SimulationExperiment
-
-lorenz = Dynamics(
-    parameters={
-        "sigma": {"value": 10.0},
-        "rho": {"value": 28.0},
-        "beta": {"value": 8 / 3},
-    },
-    state_variables={
-        "X": {"equation": {"rhs": "sigma * (Y - X)"}},
-        "Y": {"equation": {"rhs": "X * (rho - Z) - Y"}},
-        "Z": {"equation": {"rhs": "X * Y - beta * Z"}},
-    },
-)
-
-SimulationExperiment(dynamics=lorenz).run(duration=1000).integration.plot()
-```
-
-### Explore network dynamics with `tvboptim`
-```{python}
-import matplotlib.pyplot as plt
-from tvbo import Network
-from tvbo import SimulationExperiment, Dynamics
-from tvbo import Coupling
-from tvboptim.types import GridAxis, Space
-from tvboptim.execution import ParallelExecution
-import jax
-import bsplot
-
-c = Coupling.from_ontology("Linear")
-c.parameters["a"].value = 1.0
-
-sc = Network.from_db("DesikanKilliany")
-sc.add_transform("weight", "(weight - min(weight)) / (max(weight) - min(weight))")
-sc.coupling["Linear"] = c
+```python
+from tvbo import SimulationExperiment
 
 exp = SimulationExperiment(
-    dynamics=Dynamics.from_ontology("Generic2dOscillator"),
-    network=sc,
-    integration={
-        "method": "Heun",
-        "duration": 3000,
-        "step_size": 0.1,
+    label="A whole-brain simulation",
+    dynamics={"iri": "tvbo:Generic2dOscillator"},
+    network={
+        "iri": "tvbo:DesikanKilliany",
+        "coupling": {"c_glob": {"iri": "tvbo:Linear", "delayed": False, "incoming_states": ["V"]}},
     },
+    integration={"method": "Heun", "step_size": 0.1, "duration": 600.0},
 )
+result = exp.run()
+```
 
-model = exp.execute("jax")
+### CLI
 
-state = exp.collect_state()
-
-n = 8
-# Explore a (controls Hopf bifurcation) and d (time scale separation)
-# a ~ 0 is the bifurcation point; d controls fast/slow dynamics
-state.parameters.dynamics.a = GridAxis(-2, 1.5, n)
-state.parameters.dynamics.d = GridAxis(0.01, 0.1, n)
-grid = Space(state, mode="product")
-
-n_devices = jax.device_count()
-
-
-def explore():
-    exec = ParallelExecution(model, grid, n_pmap=n_devices, n_vmap=10)
-    return exec.run()
-
-
-exploration_results = explore()
-
-print(exploration_results.results.shape)
-
-# Reshape: (n_pmap, n_vmap, time, state_vars, nodes, modes) -> (n_combinations, time, state_vars, nodes)
-data = exploration_results.results.data.squeeze()  # remove modes dim
-# Flatten n_pmap and n_vmap dimensions
-data = data.reshape(-1, *data.shape[2:])  # (n_pmap*n_vmap, time, state_vars, nodes)
-
-# Get parameter values directly from the grid (no redundant linspace!)
-axis_vals = grid._generate_axis_values()
-a_vals = axis_vals.parameters.dynamics.a
-d_vals = axis_vals.parameters.dynamics.d
-
-fig, axs = plt.subplots(n, n, figsize=(12, 12))
-for i in range(min(n * n, data.shape[0])):
-    row, col = i // n, i % n
-    ax = axs[row, col]
-    # data[i] has shape (time, state_vars, nodes) - plot first state variable, first node
-    ax.plot(data[i, 1000:, 0, 0], linewidth=0.5)
-
-    # Labels: rows = a (first axis), cols = d (second axis)
-    if row == 0:
-        ax.set_title(f"d={d_vals[col]:.3f}", fontsize=10)
-    if col == 0:
-        ax.set_ylabel(f"a={a_vals[row]:.2f}", fontsize=10)
-
-bsplot.style.format_fig(fig)
-
-for ax in fig.axes:
-    ax.set_xticks([])
-    ax.set_yticks([])
+```bash
+tvbo run experiment.yaml -b jax -o ./out
+tvbo export jax experiment.yaml -o solve.py
 ```
 
 ::::
+
+## Where to start
+
+| | |
+|---|---|
+| **New to TVB-O** | [Getting started](GettingStarted.qmd) walks one equation to a whole brain. |
+| **Want the spec** | [The SimulationExperiment object](Simulation/SimulationExperiments.qmd). |
+| **Replicating a paper** | [Linked experiments in a SimulationStudy](Simulation/SimulationStudies.qmd). |
+| **Coming from another tool** | [Interoperability](Interoperability/index.qmd) maps TVB, PyRates, NeuroML and the Julia backends. |

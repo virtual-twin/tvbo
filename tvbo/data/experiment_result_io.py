@@ -236,7 +236,7 @@ def check_cache(
 SEPARATOR = "__"
 """What :meth:`ExperimentResult.save` puts between the segments of an output's path."""
 
-STRUCTURAL_PREFIXES = frozenset({"integration", "optimization", "algorithm", "continuation", "observation"})
+STRUCTURAL_PREFIXES = frozenset({"integration", "optimization", "algorithm", "continuation", "observation", "inference"})
 """The path segments the writer emits as structure that a recipe also declares, and which therefore take the recipe's spelling.
 
 Re-spelled only where they carry children, so an observation a study happens to call ``observation`` stays what its author named it. ``estimate`` is deliberately absent: ``estimate__<param>`` is a fitted parameter the writer emits and no recipe section declares, so it has no spelling to be restored to and keeps the writer's own.

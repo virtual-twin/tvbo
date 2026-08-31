@@ -4,13 +4,9 @@ subtitle: "The cross-tool entry point at the root of the repository"
 ---
 
 [agents.md](https://agents.md/) is an emerging cross-tool convention: AI
-coding assistants look for an `AGENTS.md` file at the root of a repository
-and read it whole as orientation context. Aider, Codex CLI, Continue.dev,
-and several others honour it. Claude Code and Cursor read it as a
-fallback when no tool-specific config is present.
+coding assistants look for an `AGENTS.md` file at the root of a repository and read it whole as orientation context. Aider, Codex CLI, Continue.dev, and several others honour it. Claude Code and Cursor read it as a fallback when no tool-specific config is present.
 
-TVBO ships its own `AGENTS.md` at the repo root. This page explains what's
-in it, what's generated vs hand-written, and how to update it.
+TVBO ships its own `AGENTS.md` at the repo root. This page explains what's in it, what's generated vs hand-written, and how to update it.
 
 ## Structure
 
@@ -33,37 +29,28 @@ The **generated region** is delimited by two HTML comments:
 <!-- END SKILLS INDEX -->
 ```
 
-Everything outside these markers is hand-written prose. `tvbo skills sync`
-rewrites only the marked region; your edits to the rest survive.
+Everything outside these markers is hand-written prose. `tvbo skills sync` rewrites only the marked region; your edits to the rest survive.
 
 ## Editing AGENTS.md
 
 ::: {.callout-warning}
-**Do not** edit the content between `<!-- BEGIN SKILLS INDEX -->` and
-`<!-- END SKILLS INDEX -->`. Those tables are regenerated from canonical
-skill descriptions on every `tvbo skills sync`. To change a description,
-edit the canonical `SKILL.md` and re-sync.
+**Do not** edit the content between `<!-- BEGIN SKILLS INDEX -->` and `<!-- END SKILLS INDEX -->`. Those tables are regenerated from canonical skill descriptions on every `tvbo skills sync`. To change a description, edit the canonical `SKILL.md` and re-sync.
 :::
 
-For everything else — the three-pillar prose, the "working in this repo"
-section, tool-routing table, documentation pointers — edit in place.
+Edit everything else in place: the three-pillar prose, the "working in this repo" section, the tool-routing table and the documentation pointers.
 
 ## Why the index is generated
 
 Two reasons:
 
-1. **No drift.** Every time a maintainer adds a new skill, its name and
-   description appear in `AGENTS.md` automatically. No one has to remember
-   to update the table by hand.
+1. **No drift.** Every time a maintainer adds a new skill, its name and description appear in `AGENTS.md` automatically. No one has to remember to update the table by hand.
 2. **Single source of truth.** The description in the canonical
    `SKILL.md` is the description in `.claude/skills/`,
-   `.github/instructions/`, `.cursor/rules/`, *and* `AGENTS.md`. If we
-   had three copies, they would drift.
+   `.github/instructions/`, `.cursor/rules/`, *and* `AGENTS.md`. If we had three copies, they would drift.
 
 ## What about downstream `AGENTS.md` files?
 
-If you have your own project that uses TVBO and you already maintain an
-`AGENTS.md`:
+If you have your own project that uses TVBO and you already maintain an `AGENTS.md`:
 
 ```bash
 tvbo skills install --target agents-md          # update <cwd>/AGENTS.md
@@ -71,8 +58,7 @@ tvbo skills install --target agents-md --out path/to/AGENTS.md
 ```
 
 This inserts (or updates) a TVBO skills-index region into *your* file.
-If your `AGENTS.md` doesn't have the markers yet, the command creates a
-stub with markers; your existing prose is kept.
+If your `AGENTS.md` doesn't have the markers yet, the command creates a stub with markers; your existing prose is kept.
 
 ## Why ship `AGENTS.md` *and* per-tool adapter files?
 
@@ -85,9 +71,7 @@ The two serve different purposes:
 | `.github/instructions/<name>.instructions.md` | Always-on, path-matched rule (Copilot pulls when you open a matching file) |
 | `.cursor/rules/<name>.mdc` | Similar to Copilot, glob-matched |
 
-If we put every behavioural rule into `AGENTS.md`, that file would balloon
-to 50+ KB and dominate every prompt. The skill files are scoped — they
-only fire when the assistant decides the situation calls for them.
+If we put every behavioural rule into `AGENTS.md`, that file would balloon to 50+ KB and dominate every prompt. The skill files are scoped, so they only fire when the assistant decides the situation calls for them.
 
 `AGENTS.md` is the **map**. The skill files are the **territory**.
 
@@ -100,8 +84,7 @@ tvbo skills sync --check
 ```
 
 Exits non-zero if any adapter file (including `AGENTS.md`) would change.
-Suitable for use in a CI step or pre-commit hook. The TVBO repository
-does not yet enforce this in CI by default — recommended pattern:
+Suitable for use in a CI step or pre-commit hook. The TVBO repository does not yet enforce this in CI by default. The recommended pattern is:
 
 ```yaml
 # .github/workflows/skills-drift-check.yml (sketch)
@@ -109,5 +92,4 @@ does not yet enforce this in CI by default — recommended pattern:
   run: tvbo skills sync --check
 ```
 
-If the check fails, run `tvbo skills sync` locally and commit the
-regenerated files.
+If the check fails, run `tvbo skills sync` locally and commit the regenerated files.

@@ -1,17 +1,17 @@
 ---
 title: Observation Models
-description: "Measure a simulation the way an experiment would — BOLD, EEG, functional connectivity, and power spectra, declared as observation models."
+description: "Measure a simulation the way an experiment would: BOLD, EEG, functional connectivity and power spectra, declared as observation models."
 jupyter: python3
 # Redirect the pre-restructure URL so existing links keep resolving.
 aliases:
   - /Usage/ObservationModels.html
 ---
 
-Observation models define what to measure from a simulation — BOLD signals, functional connectivity, power spectral density, and custom pipelines. Everything is defined in YAML: functions are declared in the `functions:` section and referenced by name in the observation `pipeline:`.
+Observation models define what to measure from a simulation: BOLD signals, functional connectivity, power spectral density and custom pipelines. Everything is defined in YAML: functions are declared in the `functions:` section and referenced by name in the observation `pipeline:`.
 
 ## BOLD Signal
 
-The Balloon-Windkessel hemodynamic model transforms neural activity into a BOLD fMRI signal. The pipeline is defined entirely in YAML — each function is specified with its equation, callable, or time range, then chained together:
+The Balloon-Windkessel hemodynamic model transforms neural activity into a BOLD fMRI signal. The pipeline is defined entirely in YAML, and each function is specified with its equation, callable, or time range, then chained together:
 
 ```{python}
 from tvbo import SimulationExperiment
@@ -89,9 +89,9 @@ exp = SimulationExperiment.from_string(exp_yaml)
 print(exp.render_code('jax')[-1500:])
 ```
 
-The generated code shows each function definition followed by the pipeline composition. No Python functions are hardcoded — everything is generated from the YAML specification.
+The generated code shows each function definition followed by the pipeline composition. No Python functions are hardcoded: everything is generated from the YAML specification.
 
-Note the emitted call `subsample_bold(..., stepsize=20000)`. That count is not the `value: 10000` written under `arguments:` — sampling steps are resolved from the observation's declared `period` (the BOLD TR, 2000 ms) divided by the integration `step_size` (0.1 ms). Declaring the TR in physical units keeps the pipeline correct when `step_size` changes; the literal under `arguments:` only supplies the function's standalone default. Every backend routes through the same resolver, so the sample count is identical across `jax`, `tvboptim`, and `tvb`.
+Note the emitted call `subsample_bold(..., stepsize=20000)`. That count is not the `value: 10000` written under `arguments:`, because sampling steps are resolved from the observation's declared `period` (the BOLD TR, 2000 ms) divided by the integration `step_size` (0.1 ms). Declaring the TR in physical units keeps the pipeline correct when `step_size` changes; the literal under `arguments:` only supplies the function's standalone default. Every backend routes through the same resolver, so the sample count is identical across `jax`, `tvboptim`, and `tvb`.
 
 ## Pipeline Architecture
 
@@ -114,5 +114,5 @@ Pre-defined observation models in `tvbo/database/observation_models/`:
 
 ## See Also
 
-- [Model Fitting](../Fitting/ModelFitting.qmd) — use observations as targets for optimization
-- [Parameter Exploration](ParameterExploration.qmd) — sweep parameters with observation-based metrics
+- [Model Fitting](../Fitting/ModelFitting.qmd): use observations as targets for optimization
+- [Parameter Exploration](ParameterExploration.qmd): sweep parameters with observation-based metrics

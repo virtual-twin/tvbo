@@ -4,7 +4,9 @@ Provides `TimeSeries`, a JAX-pytree-aware, xarray-backed time-series container w
 """
 
 import copy
+import dataclasses
 import logging
+import re
 from copy import deepcopy
 
 import jax
@@ -81,16 +83,20 @@ def _observation_dataarray(raw_data, dims=None, nodes=None, times=None, name=Non
 
     The axes are never inferred. An observation's output shape is fixed by the reduction that produced it or stated outright by the recipe's ``dims:``, so codegen emits the names (``_OBSERVATION_DIMS``, from ``utils.observation_dims``) and this only binds them, together with the network's node labels the caller already holds. Inferring from shape instead cannot tell an ``(n_freq, n_node)`` spectrum from an ``(n_node, n_node)`` matrix.
 
-    A pipeline observation arrives wrapped in an :class:`ObservationResult` carrying several named outputs. Its array is labelled in place, so binding the axes never costs the rest of what the pipeline produced.
+    An observation arrives wrapped — in an :class:`ObservationResult` carrying several named outputs, or in the solver's own solution object. Either way its ``.ys`` buffer is labelled in place, so binding the axes never costs the rest of what the wrapper carries, and the wrapper's own ``.ts`` is what stamps the time axis: a pipeline that subsampled reports the grid it actually sampled, which the integration's step grid no longer describes. A wrapper that refuses the assignment — a frozen solution object — keeps its unlabelled buffer rather than failing the run that produced it.
 
     Raises when a declaration contradicts the array it describes. Applying it would reshape the data and dropping it would leave the author's ``dims:`` silently ignored, which is the failure this declaration exists to end. A value with no axes at all is not a contradiction — the reduction that produced it collapsed them, so there is nothing to name. An observation that declares nothing is passed through unlabelled, and the container falls back to positional names.
     """
     if raw_data is None or not dims:
         return raw_data
-    if isinstance(raw_data, ObservationResult):
-        labelled = _observation_dataarray(raw_data.data, dims, nodes, times, name=name)
+    if not isinstance(raw_data, xr.DataArray) and hasattr(raw_data, "ys"):
+        own_ts = getattr(raw_data, "ts", None)
+        labelled = _observation_dataarray(raw_data.ys, dims, nodes, times if own_ts is None else own_ts, name=name)
         if isinstance(labelled, xr.DataArray):
-            raw_data.ys = labelled
+            try:
+                raw_data.ys = labelled
+            except (AttributeError, TypeError, dataclasses.FrozenInstanceError):
+                pass
         return raw_data
     if isinstance(raw_data, xr.DataArray):
         return raw_data
@@ -121,6 +127,18 @@ def _jax_array(value):
     """
     unwrap = getattr(value, "__jax_array__", None)
     return unwrap() if unwrap is not None else value
+
+
+def _loss_series(saved):
+    """*saved* as the flat float array :attr:`OptimizationResult.loss_trajectory` promises.
+
+    tvboptim records the loss into a pandas DataFrame, so the column arrives as an object Series of 0-d device scalars. That indexes by LABEL, which makes ``[-1]`` a ``KeyError`` rather than the last step, and reaches the container as nothing numeric. Anything that cannot be read as numbers yields None, so an optimization with no usable record reports none rather than a broken one.
+    """
+    try:
+        a = np.asarray(getattr(saved, "values", saved), dtype=float)
+    except (ValueError, TypeError):
+        return None
+    return a if a.ndim else a.reshape(1)
 
 
 def _declared_observation_dims(source) -> dict:
@@ -1005,23 +1023,23 @@ class OptimizationResult:
         self._extract_metrics()
 
     def _extract_metrics(self):
-        """Extract convenience metrics from history."""
-        if self.history and hasattr(self.history, "loss"):
-            loss_data = self.history.loss
-            if hasattr(loss_data, "save"):
-                self.loss_trajectory = loss_data.save
-            elif hasattr(loss_data, "array"):
-                self.loss_trajectory = loss_data.array
-            else:
-                self.loss_trajectory = loss_data
+        """Extract convenience metrics from history.
+
+        The history is keyed, not attributed: tvboptim's callbacks write into a plain ``dict``, so ``"loss" in history`` is what finds the loss and ``history.loss`` finds nothing. Reading it by attribute left ``loss_trajectory`` and ``final_loss`` None for every gradient fit, which is why neither reached the container — the sibling ``parameters`` branch below was already keyed and did work.
+
+        Every metric is assigned on every path, including the one where a recorded loss cannot be read as numbers: an attribute left unset is not None here but an ``AttributeError`` from ``__getattr__``, which ``__repr__`` then raises on.
+        """
+        self.loss_trajectory = None
+        self.final_loss = self.initial_loss = self.loss_improvement = None
+        if self.history and "loss" in self.history:
+            loss_data = self.history["loss"]
+            saved = next((v for v in (getattr(loss_data, a, None) for a in ("save", "array")) if v is not None), loss_data)
+            self.loss_trajectory = _loss_series(saved)
 
             if self.loss_trajectory is not None and len(self.loss_trajectory) > 0:
                 self.final_loss = float(self.loss_trajectory[-1])
                 self.initial_loss = float(self.loss_trajectory[0])
                 self.loss_improvement = self.initial_loss - self.final_loss
-        else:
-            self.loss_trajectory = None
-            self.final_loss = None
 
         # State trajectory (from SavingParametersCallback)
         if self.history and "parameters" in self.history:
@@ -2014,7 +2032,7 @@ class ExperimentResult:
         Back-reference to input specification.
     """
 
-    _output_sections = {"integration", "algorithms", "optimizations", "explorations", "continuations"}
+    _output_sections = {"integration", "algorithms", "optimizations", "explorations", "continuations", "inferences"}
 
     def __init__(
         self,
@@ -2023,6 +2041,7 @@ class ExperimentResult:
         algorithms=None,
         optimizations=None,
         continuations=None,
+        inferences=None,
         data_sources=None,
         name=None,
         source=None,
@@ -2039,9 +2058,18 @@ class ExperimentResult:
             optimizations = results.get("optimizations", optimizations)
             explorations = results.get("explorations", explorations)
             continuations = results.get("continuations", continuations)
+            inferences = results.get("inferences", inferences)
             # Preserve extra keys (state, model_fn, timings, etc.)
             for k, v in results.items():
-                if k not in ("integration", "algorithms", "optimizations", "explorations", "continuations", "data_sources"):
+                if k not in (
+                    "integration",
+                    "algorithms",
+                    "optimizations",
+                    "explorations",
+                    "continuations",
+                    "inferences",
+                    "data_sources",
+                ):
                     self._extras[k] = v
 
         # Also handle keyword: ExperimentResult(results=bunch, ...)
@@ -2053,6 +2081,7 @@ class ExperimentResult:
                 optimizations = optimizations or results_kw.get("optimizations")
                 explorations = explorations or results_kw.get("explorations")
                 continuations = continuations or results_kw.get("continuations")
+                inferences = inferences or results_kw.get("inferences")
                 for k, v in results_kw.items():
                     if k not in (
                         "integration",
@@ -2060,6 +2089,7 @@ class ExperimentResult:
                         "optimizations",
                         "explorations",
                         "continuations",
+                        "inferences",
                         "data_sources",
                     ):
                         self._extras[k] = v
@@ -2069,6 +2099,7 @@ class ExperimentResult:
         self.optimizations = optimizations or {}
         self.explorations = explorations or {}
         self.continuations = continuations or {}
+        self.inferences = inferences or {}
         self.data_sources = data_sources or {}
         self.name = name or experiment_name
         self.source = source
@@ -2099,6 +2130,7 @@ class ExperimentResult:
         "optimization": "optimizations",
         "algorithm": "algorithms",
         "continuation": "continuations",
+        "inference": "inferences",
     }
 
     def __getattr__(self, name):
@@ -2248,7 +2280,11 @@ class ExperimentResult:
         os.makedirs(out_dir, exist_ok=True)
 
         def _san(s):
-            return "".join(c if (c.isalnum() or c in "._-") else "_" for c in str(s))
+            """*s* as a container-safe name, with runs of ``_`` collapsed so it cannot contain the path separator.
+
+            An output's place in the hierarchy is encoded in its name with ``__`` between the segments, so a name that sanitises into one — ``peak freq (Hz)`` becomes ``peak_freq__Hz_`` — would be read back as a group nothing declared. Collapsing the run keeps the separator meaning only what the writer put there.
+            """
+            return re.sub(r"_+", "_", "".join(c if (c.isalnum() or c in "._-") else "_" for c in str(s)))
 
         _labels_cache: list = []
 
@@ -2333,13 +2369,18 @@ class ExperimentResult:
                     data_vars[f"integration__{_san(obs_name)}"] = da
 
         def _numeric_leaves(prefix, obj, dims=None):
-            """Yield (var_name, DataArray) for the numeric leaves of a nested pytree."""
+            """Yield (var_name, DataArray) for the numeric leaves of a nested pytree.
+
+            An underscore-prefixed key is the backend's own scaffolding rather than a result: a solver's parameter pytree carries its step size, its history indices and its stage bookkeeping beside the values it fitted, and writing those into the container states them as outcomes of the run. One of them is a subtree named ``time``, which no group in the result tree can be called, because the container's ``time`` coordinate is inherited by every group.
+            """
             leaf = _numeric_da(prefix.rsplit("__", 1)[-1], obj, dims=dims)
             if leaf is not None:
                 yield prefix, leaf
                 return
             if isinstance(obj, dict):
                 for k, v in obj.items():
+                    if str(k).startswith("_"):
+                        continue
                     yield from _numeric_leaves(f"{prefix}__{_san(k)}", v)
             elif isinstance(obj, (list, tuple)):
                 for i, v in enumerate(obj):
@@ -2375,8 +2416,9 @@ class ExperimentResult:
                         data_vars[var] = da
 
         for opt_name, opt in (self.optimizations or {}).items():
-            for field in ("final_loss", "loss_trajectory"):
-                da = _numeric_da(field, getattr(opt, field, None))
+            # The loss trajectory is one value per optimization step, named so a convergence panel selects on the step rather than on a positional axis — the same naming the algorithms' `iteration` history uses beside it.
+            for field, field_dims in (("final_loss", None), ("loss_trajectory", ("step",))):
+                da = _numeric_da(field, getattr(opt, field, None), dims=field_dims)
                 if da is not None:
                     data_vars[f"optimization__{_san(opt_name)}__{field}"] = da
             fitted = getattr(opt, "fitted_params", None)
@@ -2390,12 +2432,53 @@ class ExperimentResult:
                 lambda n, _o=opt_name: f"optimization__{_san(_o)}__observation__{_san(n)}",
             )
 
+        # A posterior joins the container like every other kind, bound as `inference__<name>__posterior__<param>` with its diagnostics per parameter; its parameters share ONE chain of draws, so those axes are bound by name rather than positionally, without which a joint plot of two marginals is an outer product rather than a scatter.
+        _draw_dims = {1: ("draw",), 2: ("chain", "draw")}
+        for inf_name, inf in (self.inferences or {}).items():
+            for param, samples in (getattr(inf, "posterior", None) or {}).items():
+                da = _numeric_da(_san(param), samples, dims=_draw_dims.get(np.ndim(samples)))
+                if da is not None:
+                    data_vars[f"inference__{_san(inf_name)}__posterior__{_san(param)}"] = da
+            for param, stats in (getattr(inf, "diagnostics", None) or {}).items():
+                if not hasattr(stats, "items"):
+                    continue
+                for stat, value in stats.items():
+                    da = _numeric_da(_san(stat), value)
+                    if da is not None:
+                        data_vars[f"inference__{_san(inf_name)}__diagnostics__{_san(param)}__{_san(stat)}"] = da
+
+        def _tracked_dims(shape, declared):
+            """Axis names for one per-iteration record: the iteration it was taken at, then the axes of the value itself.
+
+            The value's own axes come from the observation's declaration where it has one, and otherwise from the node axes a per-node vector or per-edge matrix implies — the same convention the ``estimate__`` parameters beside them use. None where neither answers, so the container falls back to positional names rather than naming an axis it cannot know.
+            """
+            rest = list(declared or ())
+            if len(rest) == len(shape) - 1:
+                return ("iteration", *rest)
+            if len(shape) == 1:
+                return ("iteration",)
+            trailing = {2: ["node"], 3: ["node_i", "node_j"]}.get(len(shape))
+            n_nodes = len(_node_labels() or ()) if trailing else 0
+            if trailing and n_nodes and all(s == n_nodes for s in shape[1:]):
+                return ("iteration", *trailing)
+            return None
+
         for algo_name, algo in (self.algorithms or {}).items():
             post = getattr(algo, "post_tuning", None)
             _write_fit_observations(
                 getattr(post, "observations", None) if post is not None else None,
                 lambda n, _a=algo_name: f"algorithm__{_san(_a)}__{_san(n)}",
             )
+            # An algorithm's `observations:` are what the recipe asks it to TRACK, so the container holds them per iteration and not only at the end: the tuned parameters its update rules write are recorded the same way and land beside them, which is what makes a fit's trajectory legible from the artifact rather than just its endpoint. The `history` segment is what puts them at `/algorithms/<name>/history/<track>` in the tree, one level below the post-tuning outputs they converge to.
+            history = getattr(algo, "history", None)
+            for track, value in history.items() if hasattr(history, "items") else ():
+                key = f"algorithm__{_san(algo_name)}__history__{_san(track)}"
+                shape = getattr(value, "shape", None)
+                if not shape:
+                    continue
+                da = _numeric_da(key, value, dims=_tracked_dims(shape, _declared_dims().get(str(track))))
+                if da is not None:
+                    data_vars[key] = da
 
         # Persist each tuned FREE parameter's fitted value as ``estimate__<param>`` so a from_experiment warm-start can reload it as a prior location (point prior). Kept on LABELLED node axes (``node`` for vectors, ``node_i``+``node_j`` for per-edge matrices) — the same convention FC matrices use — so the consumer reconciles by label with the existing `.sel` path, no bespoke reindex. Container-layer only (values already live in AlgorithmResult.state) → no codegen change; free params only, so it can't shadow a ``<sv>_final`` key; sourced from the algorithm that FITS each param (last-writer among fitting passes, see _algo_tuned_params).
         free_names = _free_param_names(self.source) if self.algorithms else set()
