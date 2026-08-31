@@ -290,9 +290,10 @@ jobs:
       - uses: actions/checkout@v6
       - name: Ensure Quarto is available
         run: |
+          # Pinned, not resolved from the releases API: eight shards ask at once, unauthenticated, and a throttled answer leaves the version empty and the download a 404.
           if ! command -v quarto &>/dev/null; then
             apt-get update && apt-get install -y --no-install-recommends curl jq wget sudo
-            QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | grep -oP '"tag_name": "v\K[^"]+')
+            QUARTO_VERSION=1.10.18
             ARCH=$(dpkg --print-architecture)
             wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${ARCH}.deb"
             dpkg -i quarto.deb && rm quarto.deb
