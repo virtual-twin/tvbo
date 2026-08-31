@@ -328,7 +328,7 @@ def _atlas_segmentation(atlas: str, base_dir):
     if not raster.exists():
         raise FileNotFoundError(
             f"volume panel: atlas {atlas!r} has no segmentation beside its terminology (looked for "
-            f"{raster.name}). The labelled raster is a fetched asset rather than a tracked one."
+            f"{raster.name} in {raster.parent})."
         )
     names, entities = _atlas_crosswalk(atlas, base_dir)
     codes = {}
