@@ -123,9 +123,9 @@ qif.mod
 qif.o
 fort.[0-9]*
 docs/Interoperability/BIDS/derivatives/
-# Atlas parcellation volumes: large binaries shipped as build artifacts, not tracked.
-# Atlases are consolidated under tvbo/database/atlases (see tvbo/data/tvbo_data/__init__.py).
+# Atlas parcellation volumes are build artifacts rather than tracked files, consolidated under tvbo/database/atlases (see tvbo/data/tvbo_data/__init__.py); the Desikan-Killiany raster is tracked because a curated figure's volume panel reads it, no fetch produces it and templateflow carries no volume segmentation for this template, so a fresh checkout could not draw that figure at all.
 tvbo/database/atlases/*.nii.gz
+!tvbo/database/atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg.nii.gz
 # Non-BIDS Schaefer generation source (regenerable download; used only by scripts/).
 tvbo/data/tvbo_data/atlas/schaefer2018_original_mni
 tvbo/data/tvbo_data/atlas/*.nii.gz
