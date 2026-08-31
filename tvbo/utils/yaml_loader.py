@@ -403,22 +403,10 @@ def _expand_curated_experiments(data: Any) -> Any:
             return entry["iri"]
         return None
 
-    from tvbo.data.registry import iri_target, resolve_iri
+    from tvbo.data.registry import iri_target
 
     if not any(iri_target(_ref(e) or "") for e in entries):
         return data
-
-    def _merge(base, over):
-        """*over* laid on *base*, recursing into mappings; a null drops the key."""
-        merged = dict(base)
-        for k, v in over.items():
-            if v is None:
-                merged.pop(k, None)
-            elif isinstance(v, dict) and isinstance(merged.get(k), dict):
-                merged[k] = _merge(merged[k], v)
-            else:
-                merged[k] = v
-        return merged
 
     expanded = []
     for entry in entries:
@@ -426,25 +414,116 @@ def _expand_curated_experiments(data: Any) -> Any:
         if iri is None or iri_target(iri) is None:
             expanded.append(entry)
             continue
-        source = resolve_iri(iri)
-        curated = _anchor_paths(strip_envelope(load_as_dict(str(source))), source.parent)
+        curated = _load_curated(iri)
         if isinstance(entry, dict):
-            curated = _merge(curated, {k: v for k, v in entry.items() if k != "iri"})
+            curated = _merge_curated(curated, {k: v for k, v in entry.items() if k != "iri"})
         expanded.append(curated)
     data["experiments"] = expanded
     return data
 
 
-def _normalize_loaded(data: Any) -> Any:
-    """Apply the dict-level TVBO conveniences shared by every load path.
+def _merge_curated(base: dict, over: dict) -> dict:
+    """*over* laid on *base*, recursing into mappings; a null drops the key.
 
-    Slot aliases are folded at construction by the generated datamodel (see ``hatch_build._alias_support``), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``, and loads a study's curated-experiment IRI references from the database. Both the string path (``load``/``loads`` → LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes, and the experiments are expanded first so the folds reach inside them.
+    Shared by every curated-reference expansion so a variant declared as the difference from a curated record means the same thing wherever it is written.
+    """
+    merged = dict(base)
+    for k, v in over.items():
+        if v is None:
+            merged.pop(k, None)
+        elif isinstance(v, dict) and isinstance(merged.get(k), dict):
+            merged[k] = _merge_curated(merged[k], v)
+        else:
+            merged[k] = v
+    return merged
+
+
+def _load_curated(iri: str) -> dict:
+    """The curated document an IRI names, envelope dropped and its relative paths anchored at the database directory it came from.
+
+    Shared by every curated-reference expansion. Anchoring is the half that is easy to forget and impossible to notice: a document spliced out of the database takes its relative ``data_file``/``path`` references with it, and they then resolve against whoever spliced it.
+    """
+    from tvbo.data.registry import resolve_iri
+
+    source = resolve_iri(iri)
+    return _anchor_paths(strip_envelope(load_as_dict(str(source))), source.parent)
+
+
+def _expand_pipeline_references(data: Any) -> Any:
+    """Splice the steps of the curated observation a ``pipeline`` entry names by ``iri``.
+
+    A pipeline step that carries ``iri: tvbo:observation/<name>`` is that observation's pipeline, written once and reused: the BOLD variants differ only in their hemodynamic kernel, and repeating the interim average, the convolution and the output stride in each is how five copies of one pipeline come to drift apart. The entry's own keys are merged over the referenced step, so a reuse states only what differs from it, and a null drops a curated key outright.
+
+    Splicing rather than gap-filling because the target is a list: an observation whose pipeline is several steps contributes all of them, in order. Overriding keys is therefore only meaningful against a single step, and naming a multi-step observation while also overriding raises rather than guessing which step the override was meant for.
+
+    Only the steps travel. A referenced observation's own ``period``, ``parameters`` and ``data_source`` stay behind, so the spliced steps resolve those against the host — which is what a monitor reused on another grid wants, and which is also why a reference to an observation whose steps depend on its own declarations does not carry them along.
+
+    Applies to every ``pipeline`` list in the document, at any depth, so an observation curated in the database and one written inline in a recipe expand alike. The spliced steps are copies: handing a caller the objects the curated document was parsed into lets a later mutation reach every other recipe that named it.
     """
     import copy
 
-    # The passes below mutate in place; never reach through to the caller's object.
+    from tvbo.data.registry import iri_target
+
+    def _intact(walked, original) -> bool:
+        """Whether the walk handed back the very objects it was given, a rebuilt list of unchanged members included."""
+        if walked is original:
+            return True
+        if isinstance(walked, list) and isinstance(original, list) and len(walked) == len(original):
+            return all(a is b for a, b in zip(walked, original, strict=True))
+        return False
+
+    def _walk(node):
+        """*node* with every ``pipeline`` list under it expanded, or *node* itself where nothing under it names a curated step.
+
+        Returned unchanged rather than rebuilt, because this runs on every document the loader reads and almost none of them carry a reference: copying each one a second time on top of the deepcopy :func:`_normalize_loaded` already took buys nothing.
+        """
+        if isinstance(node, list):
+            walked = [_walk(item) for item in node]
+            return node if _intact(walked, node) else walked
+        if not isinstance(node, dict):
+            return node
+        out = {}
+        for key, value in node.items():
+            if key == "pipeline" and isinstance(value, list):
+                out[key] = [step for entry in value for step in _steps_for(entry)]
+            else:
+                out[key] = _walk(value)
+        return node if all(_intact(out[key], value) for key, value in node.items()) else out
+
+    def _steps_for(entry):
+        """The steps one pipeline entry contributes: itself, or the curated pipeline it names by ``iri``."""
+        target = iri_target(entry.get("iri", "")) if isinstance(entry, dict) else None
+        if target is None or target[0] != "Observation":
+            return [_walk(entry)]
+        referenced = _load_curated(entry["iri"]).get("pipeline") or []
+        overrides = {k: v for k, v in entry.items() if k != "iri"}
+        if not referenced:
+            raise ValueError(
+                f"pipeline step names {entry['iri']!r}, which declares no pipeline of its own — there is "
+                "nothing to splice. Reference an observation that carries the steps you meant to reuse."
+            )
+        if len(referenced) != 1 and overrides:
+            raise ValueError(
+                f"pipeline step names {entry['iri']!r}, whose pipeline has {len(referenced)} steps, "
+                f"and also overrides {sorted(overrides)} — an override has no single step to apply to. "
+                "Reference it without overrides, or name a single-step observation."
+            )
+        return [_merge_curated(step, overrides) if overrides else copy.deepcopy(step) for step in referenced]
+
+    return _walk(data)
+
+
+def _normalize_loaded(data: Any) -> Any:
+    """Apply the dict-level TVBO conveniences shared by every load path.
+
+    Slot aliases are folded at construction by the generated datamodel (see ``hatch_build._alias_support``), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``, loads a study's curated-experiment IRI references from the database, and splices the curated observation a pipeline step names by ``iri``. Both the string path (``load``/``loads`` → LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes, and the experiments are expanded first so the folds reach inside them.
+    """
+    import copy
+
+    # Some passes below mutate in place; never reach through to the caller's object.
     data = copy.deepcopy(data)
     data = _expand_curated_experiments(data)
+    data = _expand_pipeline_references(data)
     data = _fold_edge_var_aliases(data)
     data = _fold_state_variable_domains(data)
     data = _lift_distribution_shortcut(data)
