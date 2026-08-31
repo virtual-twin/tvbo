@@ -2419,6 +2419,19 @@ class ExperimentResult:
                     if da is not None:
                         data_vars[key] = da
 
+        def _storable(da):
+            """*da* in a dtype HDF5 accepts: an object column of labels becomes fixed-width text, so fold and Hopf markers survive the round trip.
+
+            A missing entry becomes the empty string rather than the text ``"None"``, which would read back as a special point on every step of the branch, and text rather than bytes, so a consumer's ``== "hopf"`` still matches after the round trip.
+            """
+            if da.dtype != object:
+                return da
+            try:
+                text = np.array(["" if v is None else str(v) for v in np.ravel(da.values)], dtype=str)
+            except (TypeError, ValueError):
+                return None
+            return da.copy(data=text.reshape(da.shape))
+
         # Continuation branches (bifurcation results) persist through the SAME native Dataset — no per-figure array dump. Each branch keeps its own ``step`` dimension (renamed unique) so multiple branches and the sweep grid coexist; the continuation parameter and observables become data variables.
         for cont_name, bifres in (self.continuations or {}).items():
             to_ds = getattr(bifres, "to_dataset", None)
@@ -2430,8 +2443,9 @@ class ExperimentResult:
             dim = f"continuation__{_san(cont_name)}__step"
             cds = cds.rename({"step": dim}).reset_coords()  # ICS coord (e.g. G) → data var
             for vname, da in cds.data_vars.items():
-                if da.dtype != object:  # skip special-point label strings (HDF5 object dtype)
-                    data_vars[f"continuation__{_san(cont_name)}__{_san(vname)}"] = da
+                stored = _storable(da)
+                if stored is not None:
+                    data_vars[f"continuation__{_san(cont_name)}__{_san(vname)}"] = stored
 
             # Child periodic-orbit branches (from a Hopf point) hang off the equilibrium branch in ``periodic_orbits`` and were previously dropped by the save, so a PO branch's amplitude envelope (max/min per state var) and period never reached the ``.h5``. Serialize each under a nested ``__<po>__`` name so the full bifurcation diagram (Fig-2 periodic branch, Fig-3A period divergence) is reproducible from ``tvbo run`` alone.
             for i, po in enumerate(getattr(bifres, "periodic_orbits", None) or []):
@@ -2445,8 +2459,9 @@ class ExperimentResult:
                 pdim = f"continuation__{_san(cont_name)}__{po_name}__step"
                 po_ds = po_ds.rename({"step": pdim}).reset_coords()
                 for vname, da in po_ds.data_vars.items():
-                    if da.dtype != object:
-                        data_vars[f"continuation__{_san(cont_name)}__{po_name}__{_san(vname)}"] = da
+                    stored = _storable(da)
+                    if stored is not None:
+                        data_vars[f"continuation__{_san(cont_name)}__{po_name}__{_san(vname)}"] = stored
 
                 # Orbit waveforms: the adapter attaches ``orbit_profiles`` ([n_steps, n_phase, n_vars], phase-resampled over one period) when the engine reconstructs them. Serialize as one 3-D var so every orbit's actual E(t)/x(t)/u(t) profile (Fig-3B morphologies, Fig-3C orbit) is reproducible.
                 prof = getattr(po, "orbit_profiles", None)
