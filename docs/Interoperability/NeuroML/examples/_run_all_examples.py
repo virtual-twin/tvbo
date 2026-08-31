@@ -19,12 +19,12 @@ It then executes:
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import json
 import re
 import sys
 import traceback
 import xml.etree.ElementTree as ET
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,9 +32,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from tvbo import SimulationExperiment
-
 from tvbo.adapters.neuroml import LEMS_EXAMPLES, run_lems_example
-
 
 EXAMPLE_FILE_RE = re.compile(r"^Ex(?P<num>\d+)_.*\.qmd$")
 LEMS_RE = re.compile(r"run_lems_example\((['\"])(?P<lems>[^'\"]+)\1\)")
@@ -337,7 +335,7 @@ def _parse_lems_output_columns(xml_str: str) -> dict[str, list[str]]:
             if fname.startswith("./"):
                 fname = fname[2:]
             if fname.startswith("results/"):
-                fname = fname[len("results/"):]
+                fname = fname[len("results/") :]
             quantities = []
             for oc in of.iter("OutputColumn"):
                 q = oc.get("quantity", "")
@@ -423,31 +421,37 @@ def _match_tvbo_to_reference(
         # Match by variable name, positionally when duplicates exist
         ref_entries = ref_by_var.get(base_var)
         if not ref_entries:
-            mappings.append({
-                "tvbo_var": var_name,
-                "skip": True,
-                "reason": f"no reference column for variable '{base_var}'",
-            })
+            mappings.append(
+                {
+                    "tvbo_var": var_name,
+                    "skip": True,
+                    "reason": f"no reference column for variable '{base_var}'",
+                }
+            )
             continue
 
         pos = _var_consumed.get(base_var, 0)
         if pos >= len(ref_entries):
-            mappings.append({
-                "tvbo_var": var_name,
-                "skip": True,
-                "reason": f"more TVBO '{base_var}' columns than reference",
-            })
+            mappings.append(
+                {
+                    "tvbo_var": var_name,
+                    "skip": True,
+                    "reason": f"more TVBO '{base_var}' columns than reference",
+                }
+            )
             continue
         _var_consumed[base_var] = pos + 1
 
         ref_file, ref_col_idx, _ref_q = ref_entries[pos]
         ref_arr = ref_outputs.get(ref_file)
         if ref_arr is None or ref_arr.ndim != 2 or ref_arr.shape[1] <= ref_col_idx:
-            mappings.append({
-                "tvbo_var": var_name,
-                "skip": True,
-                "reason": f"reference file '{ref_file}' missing or too few columns",
-            })
+            mappings.append(
+                {
+                    "tvbo_var": var_name,
+                    "skip": True,
+                    "reason": f"reference file '{ref_file}' missing or too few columns",
+                }
+            )
             continue
 
         ref_time = ref_arr[:, 0]
@@ -455,8 +459,11 @@ def _match_tvbo_to_reference(
 
         # Interpolate TVBO onto reference time grid
         interp_fn = interp1d(
-            tvbo_time, tvbo_trace, kind="linear",
-            bounds_error=False, fill_value="extrapolate",
+            tvbo_time,
+            tvbo_trace,
+            kind="linear",
+            bounds_error=False,
+            fill_value="extrapolate",
         )
         tvbo_on_ref = interp_fn(ref_time)
 
@@ -465,16 +472,18 @@ def _match_tvbo_to_reference(
         nrmse = rmse / ref_span if ref_span > 1e-12 else rmse
         corr = _safe_corr(ref_trace, tvbo_on_ref)
 
-        mappings.append({
-            "tvbo_var": var_name,
-            "tvbo_col": tvbo_col_idx,
-            "ref_file": ref_file,
-            "ref_col": ref_col_idx,
-            "corr": corr,
-            "rmse": rmse,
-            "nrmse": nrmse,
-            "match_type": "name",
-        })
+        mappings.append(
+            {
+                "tvbo_var": var_name,
+                "tvbo_col": tvbo_col_idx,
+                "ref_file": ref_file,
+                "ref_col": ref_col_idx,
+                "corr": corr,
+                "rmse": rmse,
+                "nrmse": nrmse,
+                "match_type": "name",
+            }
+        )
 
     return mappings
 
@@ -485,8 +494,11 @@ def run_one(parsed: ParsedExample, strict_canonical: bool = False) -> dict:
     print(f"{'=' * 76}")
 
     exp = SimulationExperiment.from_string(parsed.yaml_text)
-    dyn_name = (exp.dynamics.name if exp.dynamics else
-                (next(iter(exp.network.dynamics)) if exp.network and exp.network.dynamics else 'network'))
+    dyn_name = (
+        exp.dynamics.name
+        if exp.dynamics
+        else (next(iter(exp.network.dynamics)) if exp.network and exp.network.dynamics else "network")
+    )
     print(f"TVBO model: {dyn_name}  (source var: {parsed.source_var})")
 
     rendered_xml = exp.render("lems")
@@ -501,10 +513,10 @@ def run_one(parsed: ParsedExample, strict_canonical: bool = False) -> dict:
         print(f"  - structure mismatch: {mismatch['key']}")
 
     # Detect multicompartmental cells → need NEURON backend (jLEMS can't handle them)
-    _needs_neuron = 'neuroml:segment' in parsed.yaml_text
-    _backend = 'neuron' if _needs_neuron else 'jneuroml'
+    _needs_neuron = "neuroml:segment" in parsed.yaml_text
+    _backend = "neuron" if _needs_neuron else "jneuroml"
     if _needs_neuron:
-        print(f"Using NEURON backend (multicompartmental cell detected)")
+        print("Using NEURON backend (multicompartmental cell detected)")
     result = exp.run("neuroml", backend=_backend)
     da = result.integration.data
 
@@ -531,8 +543,11 @@ def run_one(parsed: ParsedExample, strict_canonical: bool = False) -> dict:
     print(f"Reference outputs: {', '.join(ref_outputs.keys())}")
 
     mappings = _match_tvbo_to_reference(
-        tvbo_arr, tvbo_var_names, ref_outputs,
-        tvbo_xml=rendered_xml, ref_xml=ref_xml,
+        tvbo_arr,
+        tvbo_var_names,
+        ref_outputs,
+        tvbo_xml=rendered_xml,
+        ref_xml=ref_xml,
     )
 
     corr_values: list[float] = []
@@ -560,13 +575,9 @@ def run_one(parsed: ParsedExample, strict_canonical: bool = False) -> dict:
         # reference (e.g. pre-cell + post-cells while ref only has post-cells).
         # Only score the top N best-matching variables where N = total ref cols.
         if is_multi_pop:
-            n_ref_cols = sum(
-                max(0, arr.shape[1] - 1)
-                for arr in ref_outputs.values()
-                if arr.ndim == 2
-            )
+            n_ref_cols = sum(max(0, arr.shape[1] - 1) for arr in ref_outputs.values() if arr.ndim == 2)
             if n_ref_cols > 0 and len(corr_values) > n_ref_cols:
-                scored = sorted(zip(corr_values, nrmse_values), key=lambda x: -x[0])[:n_ref_cols]
+                scored = sorted(zip(corr_values, nrmse_values, strict=True), key=lambda x: -x[0])[:n_ref_cols]
                 corr_values = [c for c, _ in scored]
                 nrmse_values = [n for _, n in scored]
         worst_corr = float(min(corr_values))
@@ -604,9 +615,7 @@ def write_markdown_report(results: list[dict], out_path: Path) -> None:
 
     for item in results:
         if item.get("status") == "ERROR":
-            lines.append(
-                f"| {item['name']} | ERROR | - | - | - | - |"
-            )
+            lines.append(f"| {item['name']} | ERROR | - | - | - | - |")
             continue
 
         lines.append(
