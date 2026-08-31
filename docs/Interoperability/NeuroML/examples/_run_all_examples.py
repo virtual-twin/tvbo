@@ -375,9 +375,7 @@ def _match_tvbo_to_reference(
 ) -> list[dict]:
     """Match TVBO output columns to reference columns by variable name.
 
-    Parses OutputColumn (or Display/Line) quantities from both LEMS XMLs
-    and matches by the bare variable name (last path segment).
-    No post-hoc scaling is applied: outputs must already be in matching units.
+    Parses OutputColumn (or Display/Line) quantities from both LEMS XMLs and matches by the bare variable name, its last path segment. No post-hoc scaling is applied: outputs must already be in matching units.
     """
     mappings: list[dict] = []
 
@@ -389,8 +387,7 @@ def _match_tvbo_to_reference(
     tvbo_outs = _parse_lems_output_columns(tvbo_xml) if tvbo_xml else {}
     ref_outs = _parse_lems_output_columns(ref_xml) if ref_xml else {}
 
-    # Build ref index: var_name → list of (ref_file, col_idx, full_quantity)
-    # Preserves order for multi-population matching.
+    # var_name -> [(ref_file, col_idx, full_quantity)], in order, which is what multi-population matching pairs on.
     ref_by_var: dict[str, list[tuple[str, int, str]]] = {}
     for ref_file, quantities in ref_outs.items():
         for col_idx, q in enumerate(quantities, start=1):
@@ -407,8 +404,7 @@ def _match_tvbo_to_reference(
     # Restrict to voltage-like variables for comparison
     comparable = {str(v).lower() for v in ("v", "vs", "vd")}
 
-    # Track how many times each variable name has been consumed for
-    # positional matching when there are multiple populations.
+    # How many times each name has been consumed, so multiple populations match positionally.
     _var_consumed: dict[str, int] = {}
 
     for tvbo_col_idx, var_name in enumerate(tvbo_var_names, start=1):
@@ -571,9 +567,7 @@ def run_one(parsed: ParsedExample, strict_canonical: bool = False) -> dict:
         )
 
     if corr_values:
-        # For multi-pop: TVBO may record more voltage variables than the
-        # reference (e.g. pre-cell + post-cells while ref only has post-cells).
-        # Only score the top N best-matching variables where N = total ref cols.
+        # TVBO may record more voltage variables than the reference does, so only the best-matching N are scored, N being the reference's own column count.
         if is_multi_pop:
             n_ref_cols = sum(max(0, arr.shape[1] - 1) for arr in ref_outputs.values() if arr.ndim == 2)
             if n_ref_cols > 0 and len(corr_values) > n_ref_cols:
