@@ -8,6 +8,7 @@ Resolves a declarative ``Figure`` (see ``schema/figure.yaml``) into a codegen co
 from __future__ import annotations
 
 import functools
+import itertools
 import re
 from pathlib import Path
 
@@ -1337,18 +1338,24 @@ def build_context(figure, base_dir, outfile: str) -> dict:
     """Resolve a ``Figure`` into the template context (all IO paths + names resolved)."""
     base_dir = Path(base_dir)
     panels = [_resolve_drawable(panel, key, base_dir) for key, panel in _items(figure.panels)]
-    layout = figure.layout or "".join(str(p["key"]) for p in panels) or "a"
-    layout = layout.replace("/", "\n")  # bsplot mosaics split rows on newline
+    if figure.layout:
+        layout = _mosaic(str(figure.layout).replace("/", "\n"))  # bsplot mosaics split rows on newline
+    else:
+        # One row of the declared keys. A multi-character key has to go out as a token row: concatenated it would read as one cell per character.
+        keys = [str(p["key"]) for p in panels] or ["a"]
+        layout = [keys] if any(len(k) > 1 for k in keys) else "".join(keys)
     fmt = getattr(figure, "panel_number_format", None) or "{}"
     fig_loc = getattr(figure, "panel_number_loc", None)  # unset -> keep bsplot's own default placement
     font_size = getattr(figure, "font_size", None)
     number_size = getattr(figure, "panel_number_size", None) or (font_size * _PANEL_NUMBER_SCALE if font_size else None)
     offset = [float(v) for v in (getattr(figure, "panel_number_offset", None) or [])]
-    for p in panels:
+    reading = {key: n for n, key in enumerate(_panel_layout_order(figure))}
+    seen: set[str] = set()
+    for p in sorted(panels, key=lambda p: reading.get(p["key"], len(reading))):
         override = p.pop(
             "number", None
         )  # overrides the mosaic key; "false" suppresses the letter (many cells = one paper panel)
-        ident = _letter_identity(override, p["key"])
+        ident = _letter_identity(override, p["key"], seen)
         if ident is None:
             p["letter"] = None
             p["number_kwargs"] = {}
@@ -1441,14 +1448,47 @@ def render(figure, base_dir=".", outfile="figure.png", script_path=None):
 # --------------------------------------------------------------------------- captions
 
 
-def _letter_identity(number, key):
-    """The letter a panel carries — its ``number`` override, else its mosaic ``key`` — or None when the override suppresses it (``false``/``none``/``""``: many cells under one paper letter).
+def _group_letter(key):
+    """The paper letter a mosaic key belongs to: its leading alphabetic run, so ``f1``, ``f2`` and ``f`` are all panel (f)."""
+    text = str(key)
+    head = "".join(itertools.takewhile(str.isalpha, text))
+    return head or text
+
+
+def _letter_identity(number, key, seen=None):
+    """The letter a panel carries — its ``number`` override, else the paper letter of its mosaic ``key`` — or None when the override suppresses it (``false``/``none``/``""``: many cells under one paper letter).
+
+    Pass *seen* to letter a group once: keys sharing a leading letter (``f1``, ``f2``, ...) are one paper panel, so only the first cell of the group draws it. Without *seen* every key answers for itself.
 
     Shared by :func:`build_context` (which formats it onto the figure) and the caption composer, so a caption's ``(a)`` can never disagree with the letter drawn on the panel.
     """
     if number is not None and str(number).lower() in ("false", "none", ""):
         return None
-    return number if number is not None else key
+    if number is not None:
+        if seen is not None:
+            seen.add(_group_letter(key))  # an explicit letter still spends the group, or a sibling cell draws a second one
+        return number
+    ident = _group_letter(key)
+    if seen is None:
+        return ident
+    if ident in seen:
+        return None
+    seen.add(ident)
+    return ident
+
+
+def _mosaic(layout: str):
+    """The mosaic bsplot is handed: the layout string as-is, or a nested list when its rows are whitespace-separated.
+
+    A row of single characters is the compact form and stays a string. Writing a row as tokens (``f1 f1 f2 f2``) is what lets a mosaic name its cells beyond one character, which is how several cells declare themselves parts of one paper panel. The two are told apart by a row holding more than one token, so surrounding whitespace of either kind leaves a compact layout compact.
+    """
+    rows = [row for row in layout.split("\n") if row.strip()]
+    if not any(len(row.split()) > 1 for row in rows):
+        return layout
+    grid = [row.split() for row in rows]
+    if len({len(row) for row in grid}) != 1:
+        raise ValueError("every row of a token mosaic must hold the same number of cells")
+    return grid
 
 
 def _panel_layout_order(figure) -> list[str]:
@@ -1457,10 +1497,12 @@ def _panel_layout_order(figure) -> list[str]:
     layout = getattr(figure, "layout", None)
     if not layout:
         return declared
+    grid = _mosaic(str(layout).replace("/", "\n"))
+    cells = itertools.chain.from_iterable(grid) if isinstance(grid, list) else str(grid)
     order: list[str] = []
-    for ch in str(layout):
-        if ch in declared and ch not in order:
-            order.append(ch)
+    for cell in cells:
+        if cell in declared and cell not in order:
+            order.append(cell)
     for k in declared:
         if k not in order:
             order.append(k)
@@ -1523,7 +1565,10 @@ def _panel_descriptor(panel) -> str:
         clauses = by_source.setdefault(src or "", [])
         if body and body not in clauses:
             clauses.append(body)
-    return "; ".join(", ".join(c) + (f" from {s}" if s else "") for s, c in by_source.items()) or kind
+    # A custom panel draws through registered code, so the spec holds nothing structural to say about it: its authored description is the whole clause.
+    return "; ".join(", ".join(c) + (f" from {s}" if s else "") for s, c in by_source.items()) or (
+        "" if kind == "custom" else kind
+    )
 
 
 def _sentence(text: str) -> str:
@@ -1537,7 +1582,7 @@ def _sentence(text: str) -> str:
 def compose_caption(figure) -> str:
     """Compose a figure's caption from its spec — the authored lead plus one clause per panel.
 
-    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
+    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling's authored prose is not dropped with its letter. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
     """
     spec_by_key = {k: p for k, p in _items(figure.panels)}
     lead: list[str] = []
@@ -1546,18 +1591,34 @@ def compose_caption(figure) -> str:
         lead.append(f"**{str(label).strip()}.**")  # journal convention: a bold figure title
     lead.append(_sentence(getattr(figure, "description", None) or ""))
     clauses: list[str] = []
+    seen: set[str] = set()
+    group_clause: dict[str, int] = {}
     for key in _panel_layout_order(figure):
         panel = spec_by_key.get(key)
         if panel is None:
             continue
-        ident = _letter_identity(getattr(panel, "number", None), key)
-        if ident is None:
+        ident = _letter_identity(getattr(panel, "number", None), key, seen)
+        parts = [
+            _sentence(getattr(panel, "label", None) or ""),
+            _sentence(_panel_descriptor(panel)),
+            _sentence(getattr(panel, "description", None) or ""),
+        ]
+        group = _group_letter(key)
+        if ident is not None:
+            group_clause[group] = len(clauses)
+            clauses.append(f"**({ident})** {' '.join(s for s in parts if s)}".strip())
             continue
-        label = _sentence(getattr(panel, "label", None) or "")
-        struct = _sentence(_panel_descriptor(panel))
-        interp = _sentence(getattr(panel, "description", None) or "")
-        body = " ".join(s for s in (label, struct, interp) if s)
-        clauses.append(f"**({ident})** {body}".strip())
+        # A cell of a paper panel already lettered, or whose letter the author suppressed: it shares that panel's clause.
+        index = group_clause.get(group)
+        said = clauses[index] if index is not None else ""
+        fresh = " ".join(s for s in parts if s and s not in said)
+        if not fresh:
+            continue
+        if index is None:
+            group_clause[group] = len(clauses)
+            clauses.append(fresh)
+        else:
+            clauses[index] = f"{said} {fresh}".strip()
     return " ".join(s for s in (lead + clauses) if s).strip()
 
 

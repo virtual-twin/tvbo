@@ -117,17 +117,63 @@ def _free_parameter(cont, model):
     return name, p_min, p_max
 
 
+# The declared continuation fields each AUTO constant is filled from when `cont.parameters` names no override.
+_SCHEMA_CONSTANTS = {"NMX": "max_steps", "DS": "ds", "DSMAX": "ds_max", "DSMIN": "ds_min"}
+
+
 def _cont_par(cont, key, default=None):
-    """Look up named scalar in cont.parameters."""
+    """The AUTO constant *key*: an explicit ``cont.parameters`` entry first, then the schema field it corresponds to, then *default*."""
     if cont is None:
         return default
     params = getattr(cont, "parameters", None)
-    if not params:
-        return default
-    p = params.get(key) if isinstance(params, dict) else None
-    if p and getattr(p, "value", None) is not None:
-        return p.value
-    return default
+    if params and isinstance(params, dict):
+        p = params.get(key)
+        if p and getattr(p, "value", None) is not None:
+            return p.value
+    declared = getattr(cont, _SCHEMA_CONSTANTS.get(key, ""), None)
+    return default if declared is None else declared
+
+
+def _po_par(cont, po_cont, key, default):
+    """One AUTO constant for the periodic-orbit branch: the parent's ``<KEY>_PO`` override, else the nested Hopf branch's own declaration, else *default*.
+
+    Presence decides, not truthiness: a declared ``DS_PO: 0`` is a bad step size the caller should see rejected, not a silent fall-through to the branch below it.
+    """
+    override = _cont_par(cont, f"{key}_PO", None)
+    return override if override is not None else _cont_par(po_cont, key, default)
+
+
+def _po_continuation(cont):
+    """The nested :class:`Continuation` a ``hopf:`` BranchSwitch declares for its periodic-orbit branch, or ``None``."""
+    branches = getattr(cont, "branches", None) or {}
+    entries = branches.values() if isinstance(branches, dict) else branches
+    for branch in entries:
+        if str(getattr(branch, "source_point", "") or "").lower().startswith("hopf"):
+            return getattr(branch, "continuation", None)
+    return None
+
+
+def _orbit_profiles(solutions, sv_names, n_phase=101):
+    """Every periodic solution resampled onto one shared phase grid, as ``[n_steps, n_phase, n_vars]``.
+
+    AUTO meshes each orbit adaptively, so the raw profiles have different lengths and cannot be stacked; interpolating each onto the same normalised phase makes them one array the result container can store.
+    """
+    import numpy as np
+
+    grid = np.linspace(0.0, 1.0, n_phase)
+    profiles = []
+    for solution in solutions:
+        values = np.asarray(solution.coordarray, dtype=float)
+        names = list(solution.coordnames)
+        if values.ndim != 2 or not all(sv in names for sv in sv_names):
+            return None
+        phase = np.asarray(solution.indepvararray, dtype=float)
+        if phase.size == 0 or phase.size != values.shape[1]:
+            return None
+        span = phase[-1] - phase[0]
+        phase = (phase - phase[0]) / span if span else np.linspace(0.0, 1.0, phase.size)
+        profiles.append(np.column_stack([np.interp(grid, phase, values[names.index(sv)]) for sv in sv_names]))
+    return np.asarray(profiles) if profiles else None
 
 
 class NumContAdapter(ContinuationAdapter):
@@ -227,6 +273,8 @@ class NumContAdapter(ContinuationAdapter):
             NMX=int(_cont_par(cont, "NMX", 1000)),
             NPR=int(_cont_par(cont, "NPR", 10)),
             DS=float(_cont_par(cont, "DS", 0.005)),
+            DSMAX=float(_cont_par(cont, "DSMAX", 0.05)),
+            DSMIN=float(_cont_par(cont, "DSMIN", 1e-6)),
             MXBF=int(_cont_par(cont, "MXBF", 50)),
         )
 
@@ -243,10 +291,12 @@ class NumContAdapter(ContinuationAdapter):
 
             # 4. Periodic-orbit continuation from each Hopf point
             po_results = []
+            po_profiles = []
             for _i, br in enumerate(R_eq):
                 hbs = br.labels.by_label.get("HB", {})
                 n_hb = len(hbs) if hbs else 0
                 for k in range(n_hb):
+                    po_cont = _po_continuation(cont)
                     kwargs_po = dict(
                         data=R_eq(f"HB{k + 1}"),
                         EPSL=kwargs_eq["EPSL"],
@@ -258,10 +308,12 @@ class NumContAdapter(ContinuationAdapter):
                         ICP=[fp_name, "PERIOD"],
                         RL0=p_min,
                         RL1=p_max,
-                        NMX=int(_cont_par(cont, "NMX_PO", 400)),
+                        NMX=int(_po_par(cont, po_cont, "NMX", 400)),
                         NPR=1,
-                        DS=float(_cont_par(cont, "DS_PO", 0.01)),
-                        IADS=0,
+                        DS=float(_po_par(cont, po_cont, "DS", 0.01)),
+                        DSMAX=float(_po_par(cont, po_cont, "DSMAX", 0.1)),
+                        DSMIN=float(_po_par(cont, po_cont, "DSMIN", 1e-6)),
+                        IADS=1,
                         MXBF=int(_cont_par(cont, "MXBF", 50)),
                         IID=0,
                     )
@@ -269,6 +321,7 @@ class NumContAdapter(ContinuationAdapter):
                     po_name = f"{cont_name}_HB{k}"
                     auto.sv(R_po, po_name)
                     po_results.append((po_name, R_po))
+                    po_profiles.append(_orbit_profiles(R_po(), list(model.state_variables)))
 
             # 5. Codim-2 fold (and Hopf, BP) continuation from BranchSwitch specs
             codim2_results = self._run_codim2_branches(
@@ -281,7 +334,7 @@ class NumContAdapter(ContinuationAdapter):
         finally:
             os.chdir(cwd0)
 
-        return BifurcationResult.from_auto(
+        result = BifurcationResult.from_auto(
             R_eq,
             cont_name=cont_name,
             model=model,
@@ -291,6 +344,16 @@ class NumContAdapter(ContinuationAdapter):
             codim2_raw=codim2_results,
             workdir=workdir,
         )
+
+        # AUTO returns each periodic solution as a full profile over one period, but the branch table keeps only per-variable extrema. Carrying the profiles lets a consumer take the exact envelope of any observable, including an expression such as `y1 - y2` that no single column bounds.
+        orbits = getattr(result, "periodic_orbits", None) or []
+        if len(orbits) == len(po_profiles):
+            for orbit, profiles in zip(orbits, po_profiles, strict=True):
+                if profiles is not None and len(profiles) == len(orbit.df):
+                    orbit.orbit_profiles = profiles
+                    if getattr(orbit, "model", None) is None:
+                        orbit.model = model
+        return result
 
     # ── Codim-2 continuation ──────────────────────────────────────────────
 

@@ -237,7 +237,7 @@ def test_render_study_figures_renders_into_the_layouts_figures_dir(monkeypatch, 
     spec.write_text("name: s\n", encoding="utf-8")
     study = SimpleNamespace(figures=[SimpleNamespace(name="Fig1")])
 
-    run_cli._render_study_figures(study, str(spec), out_dir=None)
+    run_cli._render_study_figures(study, str(spec))
 
     from tvbo.utils.study_layout import study_path
 
@@ -258,8 +258,8 @@ def test_render_study_figures_no_figures_is_a_no_op(monkeypatch, tmp_path: Path)
     spec = tmp_path / "Study.yaml"
     spec.write_text("name: s\n", encoding="utf-8")
 
-    run_cli._render_study_figures(SimpleNamespace(figures=None), str(spec), out_dir=None)
-    run_cli._render_study_figures(SimpleNamespace(figures=[]), str(spec), out_dir=None)
+    run_cli._render_study_figures(SimpleNamespace(figures=None), str(spec))
+    run_cli._render_study_figures(SimpleNamespace(figures=[]), str(spec))
     assert called is False
 
 
@@ -274,7 +274,7 @@ def test_render_study_figures_swallows_render_error(monkeypatch, tmp_path: Path)
     spec.write_text("name: s\n", encoding="utf-8")
 
     # Must not raise.
-    run_cli._render_study_figures(SimpleNamespace(figures=[SimpleNamespace(name="Fig1")]), str(spec), out_dir=None)
+    run_cli._render_study_figures(SimpleNamespace(figures=[SimpleNamespace(name="Fig1")]), str(spec))
 
 
 def _die_raises(monkeypatch):

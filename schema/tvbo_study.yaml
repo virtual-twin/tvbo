@@ -332,6 +332,24 @@ classes:
         range: string
         description: >-
           Init templates that include this file. Absent means every study gets it.
+      template_variants:
+        multivalued: true
+        inlined: true
+        range: LayoutTemplateVariant
+        description: >-
+          Seeds that supersede ``template`` for one init variant, keyed by variant name. A file every study gets may still need different starting text once the variant says what kind of study this is — a replication's provenance note names a paper, and a general study has no paper to name — so stating only the difference keeps one entry per file rather than two that drift apart. The first selected variant naming a seed wins; absent means every variant starts from ``template``.
+
+  LayoutTemplateVariant:
+    description: >-
+      One variant's seed for a file the record already accounts for.
+    attributes:
+      variant:
+        key: true
+        range: string
+        description: "The ``tvbo study init --template`` name this seed belongs to."
+      template:
+        range: string
+        description: "Asset seeding the file when that variant is selected."
 
 enums:
   SubjectBatchMode:

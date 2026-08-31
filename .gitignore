@@ -136,7 +136,10 @@ _archive/database
 
 # Compiled Mako templates
 tvbo/templates/modules/*.py.mako.py
+# Underscore-prefixed files there are run artifacts, except the suite runner and the record the gallery table reads.
 docs/Interoperability/NeuroML/examples/_*.*
+!docs/Interoperability/NeuroML/examples/_run_all_examples.py
+!docs/Interoperability/NeuroML/examples/_run_all_examples_results.json
 results/*.dat
 var
 docs/**/execute-results/

@@ -266,14 +266,25 @@ jobs:
             test_timeout: "3600"
             # Idle while the replication studies live in tvbo-manuscript: the pages left here carry no executable cells, so the shard stays wired up and revives on its own when one lands.
             allow_empty: "true"
-          # Core: everything the specialised shards above do not match.
+          # The remaining tvboptim fitting workflows, which `SLOW_DIRS` marks slow, so they need --run-slow to run at all. Eight devices because the pages ask for that themselves: the Pareto page splits a GA population over `n_pmap` and one device leaves it nothing to split.
+          - shard: fitting
+            doc_pattern: "_tvboptim and not RWW_tvboptim"
+            extra_args: "--run-slow"
+            xla_device_count: "8"
+            test_timeout: "1800"
+          # Core: everything the specialised shards above do not match. The exclusions name paths rather than backends because `-k` matches case-insensitively, so a bare `TVB` also excludes every id under the `tvbo` checkout -- which is why this shard collected nothing and was commented out instead of fixed.
+          - shard: core
+            doc_pattern: "not NeuroML and not BifurcationKit and not ModelingToolkit and not NetworkDynamics and not Pyrates and not Interoperability/TVB and not _tvboptim and not Replication"
+            extra_args: ""
+            xla_device_count: "8"
+            test_timeout: "1800"
     env:
       JAX_PLATFORMS: cpu
       XLA_PYTHON_CLIENT_ALLOCATOR: platform
       XLA_PYTHON_CLIENT_PREALLOCATE: "false"
       TVBO_XLA_DEVICE_COUNT: ${{ matrix.xla_device_count }}
       TVBO_NVMAP_AUTO_CAP: ${{ matrix.nvmap_auto_cap }}
-      # The shard's declared ceiling governs the notebook subprocess too, not only pytest -- the inner one is the lower of the two and so decides when a slow backend is called wedged.
+      # The shard's declared ceiling governs the notebook subprocess too, not only pytest; `timeout_for` holds the inner one below it so the inner is the timer that fires and names the doc.
       TVBO_DOC_EXECUTE_TIMEOUT_S: ${{ matrix.test_timeout }}
     steps:
       - uses: actions/checkout@v6

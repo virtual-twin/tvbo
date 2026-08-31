@@ -116,13 +116,21 @@ for path in qmd_files:
 CONVERT_TIMEOUT_S = 120
 """A `quarto convert` is a format translation and never legitimately takes minutes."""
 
-EXECUTE_TIMEOUT_S = int(os.environ.get("TVBO_DOC_EXECUTE_TIMEOUT_S") or 600)
+EXECUTE_TIMEOUT_S = 600
 SLOW_EXECUTE_TIMEOUT_S = 3600
-"""Wall-clock ceilings on executing one notebook. Generous, because a doc that runs a simulation is allowed to be slow; finite, because one that hangs must not be allowed to stall the run. A shard that has declared how long its backend legitimately takes sets ``TVBO_DOC_EXECUTE_TIMEOUT_S``, because a ceiling the caller cannot raise makes its own declaration a dead letter."""
+"""Wall-clock ceilings on executing one notebook. Generous, because a doc that runs a simulation is allowed to be slow; finite, because one that hangs must not be allowed to stall the run."""
+
+SHARD_TIMEOUT_S = int(os.environ.get("TVBO_DOC_EXECUTE_TIMEOUT_S") or 0)
+"""The per-test ceiling the caller declared (``--timeout`` on the shard), or 0 when it declared none. A caller that has measured how long its backend legitimately takes knows better than the defaults below, so its declaration supersedes them rather than being clipped by them — a ceiling the caller can neither raise nor lower makes its own declaration a dead letter."""
 
 
 def timeout_for(doc_name: str) -> int:
-    """The execution ceiling for one doc: longer where the doc is marked slow."""
+    """The execution ceiling for one doc: the caller's own declared ceiling where it made one, otherwise the default, longer where the doc is marked slow.
+
+    A declared ceiling is used less :data:`CONVERT_TIMEOUT_S`, never at or above the caller's own figure, because the two race: the caller's timer starts when the test does, this one only once ``quarto convert`` has finished. Equal ceilings therefore always resolve in the caller's favour, and its expiry is the one that reports no test name and no failure -- exactly what naming this ceiling exists to avoid.
+    """
+    if SHARD_TIMEOUT_S:
+        return max(60, SHARD_TIMEOUT_S - CONVERT_TIMEOUT_S)
     return SLOW_EXECUTE_TIMEOUT_S if any(d in doc_name for d in SLOW_DIRS) else EXECUTE_TIMEOUT_S
 
 
