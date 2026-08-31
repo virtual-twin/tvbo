@@ -151,8 +151,7 @@ def normalize_unit(unit_str):
     Strings without an alias are returned unchanged.
 
     Args:
-        unit_str: The raw unit label; any value is coerced to `str`. A falsy
-            value (such as `None` or `""`) yields `None`.
+        unit_str: The raw unit label; any value is coerced to `str`. A falsy value (such as `None` or `""`) yields `None`.
 
     Returns:
         The canonical unit string, or `None` when `unit_str` is empty.
@@ -193,9 +192,7 @@ def sympy_to_lems(expr_str, parameters=None):
     expr_str : str or sympy.Basic
         Equation RHS to convert.
     parameters : list of str, optional
-        Model symbol names (parameters, state variables, etc.) to inject as
-        SymPy Symbols before parsing, overriding any conflicting built-ins
-        (e.g. ``I``, ``gamma``, ``lambda``).
+        Model symbol names (parameters, state variables, etc.) to inject as SymPy Symbols before parsing, overriding any conflicting built-ins (e.g. ``I``, ``gamma``, ``lambda``).
     """
     if expr_str is None or (isinstance(expr_str, str) and not expr_str):
         return ""
@@ -293,9 +290,7 @@ def _build_regime_data(events):
     Returns ``None`` when no Regime rendering is needed, otherwise a dict::
 
         {
-            'condition':  str,          # e.g. "v > thresh"
-            'assignments': [(lhs, rhs), ...],  # parsed affect assignments
-            'reset_vars': set,          # SVs clamped in refractory (no TD)
+            'condition':  str,          # e.g. "v > thresh" 'assignments': [(lhs, rhs), ...],  # parsed affect assignments 'reset_vars': set,          # SVs clamped in refractory (no TD)
         }
 
     A variable is "clamped" (excluded from refractory TimeDerivatives) when the assignment is a pure reset (``v = reset``, LHS absent from RHS).
@@ -826,13 +821,7 @@ def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude
     dynamics : Dynamics
         The dynamics node to render.
     key_name : str
-        Name of this node (parent's modes/components dict key).
-    indent : int
-        Current indentation (spaces).
-    custom_types : dict or None
-        Collector for custom ComponentType definitions {type_name: xml_str}.
-    exclude_params : set or None
-        Parameter names to skip (e.g. channelPopulation attrs).
+        Name of this node (parent's modes/components dict key). indent : int Current indentation (spaces). custom_types : dict or None Collector for custom ComponentType definitions {type_name: xml_str}. exclude_params : set or None Parameter names to skip (e.g. channelPopulation attrs).
     """
     type_name = _nml_type_name(dynamics)
     if not type_name:
@@ -1868,8 +1857,7 @@ def build_std_lems_context(experiment):
     Returns:
     -------
     dict or None
-        ``None`` when the experiment cannot be rendered using standard
-        NeuroML types.  Otherwise a dict containing:
+        ``None`` when the experiment cannot be rendered using standard NeuroML types.  Otherwise a dict containing:
 
         * ``'is_network'``  – True for multi-population network template
         * ``'is_fhn'``      – True for FitzHugh-Nagumo cell template
@@ -3046,8 +3034,7 @@ def build_lems_context(experiment):
     def _parse_piecewise(equation):
         """Return [(condition_str, value_str)] if the equation is a Piecewise, else None.
 
-        Takes an `Equation` as readily as a string, for the same reason `lems_expr` does:
-        an equation stated purely as conditional branches has no `rhs` to stringify, and that is exactly the shape this function exists to recognise.
+        Takes an `Equation` as readily as a string, for the same reason `lems_expr` does: an equation stated purely as conditional branches has no `rhs` to stringify, and that is exactly the shape this function exists to recognise.
         """
         try:
             parse_names = all_names[:]
@@ -3401,12 +3388,7 @@ class NeuroMLAdapter(BaseAdapter):
         Parameters
         ----------
         use_standard_types : bool
-            When True and the dynamics uses NeuroML standard types
-            (``iri: neuroml:*``), emit standard components with
-            ``<Include file="Cells.xml"/>`` etc.  These includes are
-            resolved by jNeuroML at runtime but NOT by the Python ``lems``
-            validator, so this should only be True when the output is
-            destined for ``run()``.
+            When True and the dynamics uses NeuroML standard types (``iri: neuroml:*``), emit standard components with ``<Include file="Cells.xml"/>`` etc.  These includes are resolved by jNeuroML at runtime but NOT by the Python ``lems`` validator, so this should only be True when the output is destined for ``run()``.
         """
         if use_standard_types and self.experiment:
             ctx = build_std_lems_context(self.experiment)
@@ -3472,8 +3454,7 @@ class NeuroMLAdapter(BaseAdapter):
         Parameters
         ----------
         dynamics_file : str or None
-            If given, an ``<Include file="..."/>`` referencing that filename is
-            prepended so the document can be used standalone.
+            If given, an ``<Include file="..."/>`` referencing that filename is prepended so the document can be used standalone.
         """
         from tvbo import templates
 
@@ -3490,8 +3471,7 @@ class NeuroMLAdapter(BaseAdapter):
         Parameters
         ----------
         network_file : str or None
-            If given, an ``<Include file="..."/>`` referencing that filename is
-            prepended so the document can be used standalone.
+            If given, an ``<Include file="..."/>`` referencing that filename is prepended so the document can be used standalone.
         """
         from tvbo import templates
 
@@ -3511,17 +3491,13 @@ class NeuroMLAdapter(BaseAdapter):
             Output directory (created if needed).
         format : str
             ``'lems'`` (default) — LEMS output (monolithic or split).
-            ``'neuroml'`` — NeuroML ``.nml`` document + LEMS simulation wrapper.
-        split : bool
-            Only used for ``format='lems'``.
+            ``'neuroml'`` — NeuroML ``.nml`` document + LEMS simulation wrapper. split : bool Only used for ``format='lems'``.
             ``False`` (default) — one monolithic ``{prefix}_simulation.xml``.
             ``True`` — three canonical files:
 
             * ``{prefix}_dynamics.xml``   — ComponentType definitions
             * ``{prefix}_network.xml``    — Network (includes dynamics)
-            * ``{prefix}_simulation.xml`` — Simulation (includes network)
-        validate : bool
-            Run PyLEMS validation on every written file (default ``True``).
+            * ``{prefix}_simulation.xml`` — Simulation (includes network) validate : bool Run PyLEMS validation on every written file (default ``True``).
 
         Returns:
         -------
@@ -3907,10 +3883,8 @@ class NeuroMLAdapter(BaseAdapter):
         2. Compile ``.mod`` files with ``nrnivmodl``.
         3. Parse ``.net.nml`` to extract population/component names.
         4. Patch the generated ``.py``:
-           * Add ``'pointp': component`` to all ``recordTraces`` entries so
-             NetPyNE records from the POINT_PROCESS (not a section range).
-           * Replace ``importNeuroML2SimulateAnalyze`` with a direct
-             ``netParams`` build + ``sim.createSimulateAnalyze``.
+           * Add ``'pointp': component`` to all ``recordTraces`` entries so NetPyNE records from the POINT_PROCESS (not a section range).
+           * Replace ``importNeuroML2SimulateAnalyze`` with a direct ``netParams`` build + ``sim.createSimulateAnalyze``.
         5. Exec the patched script.
         """
         import os
@@ -4211,9 +4185,7 @@ def run_lems_example(lems_file: str, cwd: str | _Path | None = None) -> dict[str
     Parameters
     ----------
     lems_file : str
-        Name of the LEMS file (e.g., 'LEMS_NML2_Ex9_FN.xml').
-    cwd : path, optional
-        Working directory.  Defaults to the LEMSexamples directory.
+        Name of the LEMS file (e.g., 'LEMS_NML2_Ex9_FN.xml'). cwd : path, optional Working directory.  Defaults to the LEMSexamples directory.
 
     Returns:
     -------
@@ -4591,8 +4563,7 @@ def parse_lems_displays(lems_file: str) -> list[_Display]:
     Parameters
     ----------
     lems_file : str
-        LEMS filename (e.g. 'LEMS_NML2_Ex9_FN.xml') resolved relative
-        to the LEMSexamples directory.
+        LEMS filename (e.g. 'LEMS_NML2_Ex9_FN.xml') resolved relative to the LEMSexamples directory.
 
     Returns:
     -------
@@ -4700,8 +4671,7 @@ def _find_ref_column(quantity: str, ref_outputs: dict, output_columns: dict | No
     ref_outputs : dict
         {filename: array} from run_lems_example()
     output_columns : dict, optional
-        {filename: [quantity_strings]} parsed from OutputFile/OutputColumn
-        If None, uses positional order.
+        {filename: [quantity_strings]} parsed from OutputFile/OutputColumn If None, uses positional order.
 
     Returns:
     -------
@@ -4760,14 +4730,11 @@ def plot_lems_comparison(
     Parameters
     ----------
     lems_file : str
-        Reference LEMS filename (e.g. 'LEMS_NML2_Ex2_Izh.xml')
-    ref_outputs : dict
+        Reference LEMS filename (e.g. 'LEMS_NML2_Ex2_Izh.xml') ref_outputs : dict
         {filename: array} from run_lems_example()
     tvbo_result : xarray.DataArray, optional
         ``result.integration.data`` from ``exp.run("neuroml")``.
-        Expects dims ``(time, quantity)``.  If None, only reference is plotted.
-    title_prefix : str, optional
-        Prefix for figure titles (e.g. 'Ex2')
+        Expects dims ``(time, quantity)``.  If None, only reference is plotted. title_prefix : str, optional Prefix for figure titles (e.g. 'Ex2')
     """
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
