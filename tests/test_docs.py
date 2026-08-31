@@ -149,17 +149,36 @@ def _run(cmd, doc_name: str, timeout: int, **kwargs):
         )
 
 
+def _executed_cells(path: Path) -> list:
+    """The cells of the notebook as it was written back, empty when it was not written or cannot be read."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("cells", [])
+    except (OSError, ValueError):
+        return []
+
+
+def _cell_error(path: Path) -> str:
+    """The first error a cell recorded, as ``EName: message``, or empty when every cell ran.
+
+    This is what decides whether a page ran, rather than the exit status: execution is asked to continue past a failing cell, without which nbclient discards the notebook and every earlier cell's output with it, and that concession always makes the status zero.
+    """
+    for cell in _executed_cells(path):
+        for out in cell.get("outputs", []):
+            if out.get("output_type") == "error":
+                return f"{out.get('ename', 'Error')}: {out.get('evalue', '')}".strip()
+    return ""
+
+
 def _cell_streams(path: Path) -> str:
-    """The stdout and stderr the executed cells produced, which ``jupyter execute`` keeps only when asked to write the notebook back.
+    """The stdout and stderr the executed cells produced.
 
     A failing cell's own traceback reaches stderr, but anything an EARLIER cell printed does not, and that is usually where the cause is: a study reports at WARNING that its figure never rendered, and the cell that fails is the later one reading that figure back. Without this the log carries only the second error.
     """
-    try:
-        cells = json.loads(path.read_text(encoding="utf-8")).get("cells", [])
-    except (OSError, ValueError):
-        return ""
     text = "".join(
-        "".join(out.get("text", "")) for cell in cells for out in cell.get("outputs", []) if out.get("output_type") == "stream"
+        "".join(out.get("text", ""))
+        for cell in _executed_cells(path)
+        for out in cell.get("outputs", [])
+        if out.get("output_type") == "stream"
     )
     return text.strip()
 
@@ -213,17 +232,17 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
         env["PATH"] = os.pathsep.join([str(Path(sys.executable).parent), env.get("PATH", "")])
 
         result = _run(
-            [jupyter_executable(), "execute", "--kernel_name", KERNEL_NAME, "--inplace", str(ipynb_path)],
+            # --allow-errors so the notebook is written back at all; the cell errors it records are what fail the test.
+            [jupyter_executable(), "execute", "--kernel_name", KERNEL_NAME, "--inplace", "--allow-errors", str(ipynb_path)],
             doc_name,
             timeout_for(doc_name),
             cwd=str(doc_dir),  # Run from doc's directory for correct relative paths
             env=env,
         )
 
-        # Check for execution errors
-        if result.returncode != 0:
-            # Try to extract meaningful error message
-            error_msg = result.stderr.strip().split("\n")[-1] if result.stderr else "Unknown error"
+        cell_error = _cell_error(ipynb_path)
+        if cell_error or result.returncode != 0:
+            error_msg = cell_error or (result.stderr.strip().split("\n")[-1] if result.stderr else "Unknown error")
             streams = _cell_streams(ipynb_path)
             pytest.fail(
                 f"Notebook execution failed: {error_msg}\n\nFull stderr:\n{result.stderr}"
