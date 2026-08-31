@@ -2611,10 +2611,13 @@ def render_inference(
 
     Mirrors the tvboptim workflow's ``make_model`` + ``MCMC(NUTS(...)).run``: sample each prior, inject it into the forward config at its resolved path, run the SAME differentiable ``model_fn``, score the observed observable under the likelihood.
     Config injection uses ``eqx.tree_at`` (functionally identical to the reference's in-place mutation). The observed data comes from the ``likelihood.source`` observation — a runtime binding or a loaded network measure — so synthetic ground-truth generation stays out of the schema.
+
+    The two sides of the residual are emitted from different observables when the likelihood names them apart: ``source`` is evaluated once at the declared configuration and is the data, ``predicted`` is recomputed inside the model at each proposed theta. They coincide by default, which is what a recipe wants when the data enters from outside. A recipe that declares its own recording — a measurement-noise step in the forward pipeline — must separate them, because the noise is a deterministic draw and applying it to both sides subtracts it away.
     """
     name = str(getattr(inf, "name", "inference"))
     lik = getattr(inf, "likelihood", None)
     source = str((getattr(lik, "source", None) or ["recorded_ts"])[0])
+    predicted = str((getattr(lik, "predicted", None) or [source])[0])
     sigma = getattr(lik, "sigma", None)
     noise_family = str(getattr(lik, "name", None) or "Normal")
     sampler = str(getattr(inf, "sampler", None) or "nuts").lower()
@@ -2631,13 +2634,13 @@ def render_inference(
     def _var(dotted: str) -> str:
         return "_p_" + "".join(c if c.isalnum() else "_" for c in dotted)
 
-    def _pred_stmts(cfg: str, target: str, indent: str) -> list[str]:
-        """Statements computing the observed/predicted observable into ``target``, hoisting the compute_all_observations call to a single temp."""
-        if source in network_obs_names:
-            return [f"{indent}{target} = {source}"]
+    def _obs_stmts(obs: str, cfg: str, target: str, indent: str) -> list[str]:
+        """Statements computing observable ``obs`` at config ``cfg`` into ``target``, hoisting the compute_all_observations call to a single temp."""
+        if obs in network_obs_names:
+            return [f"{indent}{target} = {obs}"]
         tmp = f"_oa{target}"
-        acc = f"compute_all_observations(model_fn({cfg}), {cfg}, settle=result_transient).{source}"
-        if source in derived_names:
+        acc = f"compute_all_observations(model_fn({cfg}), {cfg}, settle=result_transient).{obs}"
+        if obs in derived_names:
             return [f"{indent}{target} = {acc}"]
         return [f"{indent}{tmp} = {acc}", f"{indent}{target} = {tmp}.data if hasattr({tmp}, 'data') else {tmp}"]
 
@@ -2648,12 +2651,12 @@ def render_inference(
             f'    {_var(str(key))} = numpyro.sample("{key}", {dist_expr(getattr(prior, "distribution", None))})',
             f"    _cfg = eqx.tree_at(lambda _s: _s.{access}, _cfg, {_var(str(key))})",
         ]
-    model += _pred_stmts("_cfg", "_pred", "    ")
+    model += _obs_stmts(predicted, "_cfg", "_pred", "    ")
     model += [f'    numpyro.sample("obs", dist.{noise_family}(_pred, {sigma}), obs=v_obs)']
 
     runner = [
-        f"# Observed data for '{name}': the likelihood.source observation (runtime-bound or loaded).",
-        *_pred_stmts("state", f"_v_obs_{name}", ""),
+        f"# Observed data for '{name}': the likelihood.source observation at the declared config (runtime-bindable).",
+        *_obs_stmts(source, "state", f"_v_obs_{name}", ""),
         f"_v_obs_{name} = kwargs.get('{source}', _v_obs_{name})",
         f"_nuts_{name} = numpyro.infer.NUTS(_bayes_model_{name}, dense_mass=True)",
         f"_mcmc_{name} = numpyro.infer.MCMC(_nuts_{name}, num_warmup={n_warmup}, num_samples={n_samples}, num_chains={n_chains}, progress_bar=False)",

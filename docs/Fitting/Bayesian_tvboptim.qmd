@@ -5,12 +5,7 @@ aliases:
   - /Interoperability/tvboptim/Bayesian_tvboptim.html
 ---
 
-From a single noisy recording of a pulse-driven `Generic2dOscillator`, recover both
-the stimulus **amplitude** and the **excitability** `I` — via numpyro NUTS/MCMC. The
-two trade off (a degenerate ridge), so a point estimate is misleading; the posterior
-reports the whole ridge, and **priors steer** where it concentrates. Everything below
-is derived from **one** experiment YAML via `exp.run(mode="inference")`; only the
-observed-data synthesis and the plotting are hand-written.
+From a single noisy recording of a pulse-driven `Generic2dOscillator`, recover both the stimulus **amplitude** and the **excitability** `I` — via numpyro NUTS/MCMC. The two trade off (a degenerate ridge), so a point estimate is misleading; the posterior reports the whole ridge, and **priors steer** where it concentrates. Everything below is derived from **one** experiment YAML via `exp.run(mode="inference")` — the recording included; only the plotting is hand-written.
 
 ```{python}
 import os
@@ -27,13 +22,13 @@ from tvbo import SimulationExperiment
 
 exp = SimulationExperiment.from_db("Stimulation_Bayesian_Inference")
 
-# Synthetic ground truth (a testing concern, not the schema's): the recording is the
-# forward at the declared true params (amplitude=0.4, I=0.1) plus observation noise.
-rec = np.asarray(exp.run("tvboptim", mode="simulation").observations.recorded_ts.data).ravel()
-observed = rec + 0.1 * np.asarray(jax.random.normal(jax.random.key(42), (rec.shape[0],)))
+# The recording is an observation: the forward at the declared true params (amplitude=0.4, I=0.1) plus measurement noise at a fixed seed.
+sim = exp.run("tvboptim", mode="simulation")
+rec = np.asarray(sim.observations.recorded_ts.data).ravel()
+observed = np.asarray(sim.observations.observed_ts).ravel()
 
-# Three posteriors on the SAME observation, differing only in prior widths (A/B/C).
-results = exp.run("tvboptim", mode="inference", recorded_ts=observed)
+# Three posteriors on the SAME observation, each with its own prior widths and sampler seed (A/B/C).
+results = exp.run("tvboptim", mode="inference")
 ```
 
 ## Results

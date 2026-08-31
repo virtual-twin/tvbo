@@ -2432,9 +2432,26 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
     _stage_locals = {}             # declared stage output name -> the local holding it
     _local = f"_d_{dobs_name}"
 
+    def _canonical(val_str):
+        """The bare observation name behind an `observations.<name>` reference, which is how a recipe spells what a pipeline argument resolves by name."""
+        head, _, rest = val_str.partition('.')
+        return rest if head == 'observations' and rest.partition('.')[0] in _all_observations else val_str
+
+    def _binds_input(stage):
+        """Whether this stage's declared arguments already name its input, rather than only its hyperparameters.
+
+        The names are exactly the ones `_bind` resolves to an observation or an earlier stage's output, so the two cannot disagree: a narrower set here passes the input positionally as well and the call then carries it twice.
+        """
+        known = set(_stage_locals) | set(src_obs_list) | set(observation_names) | set(derived_observation_names)
+        for arg in (getattr(stage, 'arguments', None) or {}).values():
+            val = getattr(arg, 'value', None)
+            if val is not None and _canonical(str(val)).partition('.')[0] in known:
+                return True
+        return False
+
     def _bind(arg_name, arg_value, first):
         """One argument of one stage, resolved against prior stage outputs then observations."""
-        val_str = str(arg_value)
+        val_str = _canonical(str(arg_value))
         if val_str in _stage_locals:
             # An earlier stage's declared output; this is what the single-stage emit could not see.
             return f"{arg_name}={_stage_locals[val_str]}"
@@ -2492,10 +2509,10 @@ def compute_all_observations(result, state, only=None, network_obs=None, precomp
                 # Only include arguments that have explicit values (not just names/descriptions)
                 if arg_name and arg_value is not None:
                     _args_list.append(_bind(arg_name, arg_value, _first))
-        if not _args_list:
-            # No explicit arguments: the opening stage takes its sources positionally, a later one takes what the stage before it produced.
+        if not _binds_input(stage):
+            # Nothing declared names the input, so it is passed positionally ahead of whatever hyperparameters were declared: the opening stage takes its sources, a later one takes what the stage before it produced.
             _args_list = ([f"_obs_data(obs.{s})" for s in src_obs_list] if _first
-                          else [pipeline_lines[-1][0]])
+                          else [pipeline_lines[-1][0]]) + _args_list
         _args = ', '.join(_args_list)
         # A windowed correlation is undefined over a window under two samples, so route it through _windowed_corr to return NaN rather than crash; the family comes from the reducer registry, not a hand-kept list.
         _rmod, _, _rname = call.rpartition('.')
