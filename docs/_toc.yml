@@ -464,6 +464,8 @@ website:
                         href: datamodel/classes/Integrator.qmd
                       - text: "Layer"
                         href: datamodel/classes/Layer.qmd
+                      - text: "Layout Template Variant"
+                        href: datamodel/classes/LayoutTemplateVariant.qmd
                       - text: "Likelihood"
                         href: datamodel/classes/Likelihood.qmd
                       - text: "Loss Function"
@@ -1514,6 +1516,8 @@ website:
                         href: datamodel/slots/precision.qmd
                       - text: "preconditioner"
                         href: datamodel/slots/preconditioner.qmd
+                      - text: "predicted"
+                        href: datamodel/slots/predicted.qmd
                       - text: "preprocessing"
                         href: datamodel/slots/preprocessing.qmd
                       - text: "primary_weight"
@@ -1806,6 +1810,8 @@ website:
                         href: datamodel/slots/task_name.qmd
                       - text: "template"
                         href: datamodel/slots/template.qmd
+                      - text: "template_variants"
+                        href: datamodel/slots/template_variants.qmd
                       - text: "tensor_coefficient"
                         href: datamodel/slots/tensor_coefficient.qmd
                       - text: "terminology"
@@ -1880,6 +1886,8 @@ website:
                         href: datamodel/slots/values.qmd
                       - text: "variable_of_interest"
                         href: datamodel/slots/variable_of_interest.qmd
+                      - text: "variant"
+                        href: datamodel/slots/variant.qmd
                       - text: "vectorize"
                         href: datamodel/slots/vectorize.qmd
                       - text: "vectorized"
