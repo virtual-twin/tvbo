@@ -110,6 +110,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../_static/tvbo-icons.js"></script>
 
 
+<link rel="stylesheet" href="../../_static/phases.css">
 <link rel="stylesheet" href="../../styles.css">
 </head>
 
@@ -138,24 +139,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../GettingStarted.qmd"> 
+    <a class="nav-link" href="../../GettingStarted.html"> 
 <span class="menu-text">Get Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Simulation/SimulationExperiments.html"> 
-<span class="menu-text">Specify an Experiment</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../Simulation/Backends.html"> 
-<span class="menu-text">Run on a Backend</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../Bifurcation/index.html"> 
-<span class="menu-text">Analyze</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../Interoperability/index.html"> 
-<span class="menu-text">Extend</span></a>
+    <a class="nav-link" href="../../examples/index.html"> 
+<span class="menu-text">Examples</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../reference.html"> 
@@ -168,7 +157,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
-    <a href="https://github.com/leon-k-martin/tvbo" title="tvbo GitHub" class="quarto-navigation-tool px-1" aria-label="tvbo GitHub"><i class="bi bi-github"></i></a>
+    <a href="https://github.com/virtual-twin/tvbo" title="tvbo GitHub" class="quarto-navigation-tool px-1" aria-label="tvbo GitHub"><i class="bi bi-github"></i></a>
 </div>
       </div> <!-- /container-fluid -->
     </nav>
@@ -195,7 +184,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
- <span class="menu-text">GET STARTED</span>
+ <span class="menu-text">① EXPLORE</span>
   </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
@@ -211,29 +200,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../GettingStarted.qmd" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Getting Started</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
- <span class="menu-text">SPECIFY AN EXPERIMENT</span>
-  </li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Simulation/SimulationExperiments.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">The SimulationExperiment object</span></a>
+  <a href="../../GettingStarted.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Getting started</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Specification/YAML.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Writing TVB-O YAML</span></a>
+  <a href="../../platform.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The platform, feature by feature</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a href="../../Models/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Models &amp; Dynamics</span></a>
+            <a href="../../ontology/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ontology</span></a>
           <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -241,20 +221,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Specification (Widoco)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">WebVOWL visualisation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+ <span class="menu-text">② SPECIFY</span>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Specification/RunningExample.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The running example</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Simulation/SimulationExperiments.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The SimulationExperiment</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Models/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamical systems</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../Models/DefineDynamicalSystem.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Defining dynamical systems</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Models/Events.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Events &amp; stimulation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Models/Noise.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Noise &amp; stochastic integration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -265,37 +271,89 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Models/UnitValidation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-aware computations</span></a>
+  <a href="../../Models/Noise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Noise &amp; stochastic integration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Models/CrossBackendParity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Cross-backend numerical parity</span></a>
+  <a href="../../Models/UnitValidation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Unit-aware computations</span></a>
   </div>
 </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../BeyondMeanField/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Beyond the mean field</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../BeyondMeanField/MultiScaleModelling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Multi-scale modelling</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NeuroML/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NeuroML component mapping</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Bifurcation/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bifurcation &amp; continuation</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Bifurcation/BifurcationAnalysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Run a continuation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Bifurcation/07-NumericalContinuation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Numerical continuation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="../../Networks/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Networks &amp; Connectomes</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+ <span class="menu-text">Networks &amp; connectomes</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Networks/PDESimulation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Surface &amp; PDE simulation</span></a>
+  <a href="../../Specification/Network.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Network specification</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Networks/BuildConnectomeFromTractography.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Build a connectome from tractography</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Networks/CouplingFunctions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Coupling functions</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -316,44 +374,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Heterogeneous edges</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Specification/Network.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Network specification</span></a>
-  </div>
-</li>
       </ul>
   </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Networks/CouplingFunctions.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Coupling functions</span></a>
+  <a href="../../Models/Events.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Events &amp; stimulation</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Models/Integrators.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Integrators</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Simulation/ObservationModels.html" class="sidebar-item-text sidebar-link">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Simulation/ObservationModels.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Observation models</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Specification/Output.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Output specification</span></a>
   </div>
 </li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Simulation/Figures.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Specify a figure</span></a>
-  </div>
-</li>
+      </ul>
+  </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Simulation/ParameterExploration.html" class="sidebar-item-text sidebar-link">
@@ -364,11 +409,228 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="sidebar-item-container"> 
             <a href="../../Fitting/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Fitting, inference &amp; optimization</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Fitting/ModelFitting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model fitting</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Specification/LossFunction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Loss functions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Specification/Algorithms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Algorithms (FIC, EIB)</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Specification/Analyses.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Analyses</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Specification/CodeSource.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Calling your own code</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Simulation/Figures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Specify a figure</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Replication/custom-panels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Custom figure panels</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Models/Integrators.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Solving a network of DDEs</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Models/CrossBackendParity.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cross-backend numerical parity</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Simulation/SimulationStudies.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Linked experiments in a SimulationStudy</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Specification/FanOut.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Fan-out over subjects and phenotypes</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Specification/YAML.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Writing TVB-O YAML</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+ <span class="menu-text">③ GENERATE</span>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../ScaleOut/CodegenPhilosophy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">How code generation works</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../ScaleOut/CodeGeneration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Code generation &amp; export</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../ScaleOut/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reproducible workflows</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../ScaleOut/DistributedWorkflows.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Distributed workflows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../CLI/workflow-kits.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow kits anatomy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../CLI/hpc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">HPC patterns &amp; containers</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/BIDS/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The study directory</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+ <span class="menu-text">④ RUN</span>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Simulation/Backends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Run on a backend</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Simulation/Results.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The experiment result</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Simulation/Visualization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Visualization</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+ <span class="menu-text">⑤ SHARE</span>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Sharing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Share and publish your work</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/BIDS/BIDS_comp_modelling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Results in BIDS</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/OpenMINDS.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">openMINDS</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+ <span class="menu-text">EXAMPLES &amp; USE-CASES</span>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../examples/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Quick examples</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../examples/create_network.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Create a network</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../examples/dynamics_from_db.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamics from the database</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../examples/network_from_db.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Network from the database</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="false">
+ <span class="menu-text">Worked experiments</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Fitting/RWW_tvboptim.html" class="sidebar-item-text sidebar-link">
@@ -407,83 +669,328 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Fitting/ModelFitting.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Model fitting</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../Fitting/TBPTT_tvboptim.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Gradient stability &amp; TBPTT</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Specification/LossFunction.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Loss functions</span></a>
+  <a href="../../Networks/PDESimulation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Surface &amp; PDE simulation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" role="navigation" aria-expanded="false">
+ <span class="menu-text">Bifurcation track</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-13" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Bifurcation/01-LinearStability.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Linear stability</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Specification/Algorithms.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Algorithms (FIC, EIB)</span></a>
+  <a href="../../Bifurcation/02-PhasePortrait2D.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. 2D phase portraits</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Bifurcation/03-SaddleNode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Saddle-node</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Bifurcation/04-Pitchfork.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Pitchfork</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Bifurcation/05-Hysteresis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Hysteresis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Bifurcation/06-Hopf.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. Hopf</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Replication/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Replication Studies</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-14" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Replication/pipeline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The replication pipeline</span></a>
   </div>
 </li>
       </ul>
   </li>
         <li class="sidebar-item">
- <span class="menu-text">RUN IT</span>
+ <span class="menu-text">AGENTIC CODING</span>
   </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Simulation/Backends.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Run on a backend</span></a>
+  <a href="../../agents/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Simulation/Results.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">The experiment result</span></a>
+  <a href="../../agents/beginner.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">For beginners</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../Simulation/Visualization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Visualization</span></a>
+  <a href="../../agents/installing-skills.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Installing &amp; tuning skills</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../agents/skills-reference.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Skill reference</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../agents/agents-md.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AGENTS.md</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+ <span class="menu-text">INTEROPERABILITY</span>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a href="../../ScaleOut/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Scale-Out &amp; Reproducibility</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <a href="../../Interoperability/TVB/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">The Virtual Brain (TVB)</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-15" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../ScaleOut/DistributedWorkflows.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Distributed workflows</span></a>
+  <a href="../../Interoperability/TVB/Connectome.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Connectome</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../ScaleOut/CodeGeneration.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Code generation &amp; export</span></a>
+  <a href="../../Interoperability/TVB/Monitor.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitors</span></a>
   </div>
 </li>
       </ul>
   </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/tvboptim/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Coming from tvboptim</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Interoperability/Pyrates/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PyRates</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/Pyrates/PyRates.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Round-trip demo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/Pyrates/PyRates_Analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/Pyrates/PyRates_Bifurcation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bifurcation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/Pyrates/PyRates_Heterogeneous_Network.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Heterogeneous networks</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Interoperability/NetworkDynamics.jl/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NetworkDynamics.jl</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NetworkDynamics.jl/diffusion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Network diffusion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NetworkDynamics.jl/diffusion_2d.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2D network diffusion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NetworkDynamics.jl/kuramoto.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Kuramoto oscillators</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NetworkDynamics.jl/heterogeneous_kuramoto.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Heterogeneous Kuramoto</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NetworkDynamics.jl/fitzhugh_nagumo.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">FitzHugh-Nagumo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NetworkDynamics.jl/cascading_failure.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cascading failure</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NetworkDynamics.jl/stress_on_truss.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Stress on truss</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Interoperability/BifurcationKit.jl/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">BifurcationKit.jl</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/BifurcationKit.jl/TMModel.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tsodyks-Markram model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/BifurcationKit.jl/COModel.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">CO oxidation model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Interoperability/ModelingToolkit.jl/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ModelingToolkit.jl</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/ModelingToolkit.jl/higher_order.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Higher-order ODE lowering</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../Interoperability/NeuroML/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NeuroML / LEMS</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-20" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-20" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NeuroML/LEMS_Export.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">LEMS export</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NeuroML/IRI_vs_YAML.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">IRI vs.&nbsp;inline YAML</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Interoperability/NeuroML/examples/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conformance gallery</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+ <span class="menu-text">REFERENCE</span>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../reference.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Quick reference</span></a>
+  </div>
+</li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="../../CLI/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Command-Line Interface</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="false" aria-label="Toggle section">
+ <span class="menu-text">Command-line interface</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-21" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../CLI/specs.html" class="sidebar-item-text sidebar-link">
@@ -492,13 +999,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false">
  <span class="menu-text">Verbs</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-22" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../CLI/run.html" class="sidebar-item-text sidebar-link">
@@ -537,6 +1044,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../CLI/brain.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo brain</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../CLI/validate.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tvbo validate</span></a>
   </div>
@@ -561,15 +1074,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
       </ul>
   </li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false">
- <span class="menu-text">Workflows &amp; HPC</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../CLI/workflow.html" class="sidebar-item-text sidebar-link">
@@ -578,719 +1082,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../CLI/workflow-kits.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Workflow kits anatomy</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../CLI/hpc.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">HPC patterns</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../CLI/recipes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Recipes</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item">
- <span class="menu-text">ANALYZE</span>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Bifurcation/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Bifurcation &amp; Stability Analysis</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Bifurcation/01-LinearStability.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">1. Linear stability</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Bifurcation/02-PhasePortrait2D.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">2. 2D phase portraits</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Bifurcation/BifurcationAnalysis.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Run a continuation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="false">
- <span class="menu-text">Bifurcation types</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth2 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Bifurcation/03-SaddleNode.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Saddle-node</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Bifurcation/04-Pitchfork.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Pitchfork</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Bifurcation/05-Hysteresis.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Hysteresis</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Bifurcation/06-Hopf.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Hopf</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Bifurcation/07-NumericalContinuation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Numerical continuation</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item">
- <span class="menu-text">EXTEND</span>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../BeyondMeanField/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Beyond the Mean Field</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../BeyondMeanField/MultiScaleModelling.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Multi-scale modelling</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NeuroML component mapping</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Interoperability</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth1 ">  
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/TVB/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">The Virtual Brain (TVB)</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth2 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/TVB/Connectome.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Connectome</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/TVB/Monitor.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Monitors</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/tvboptim/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Coming from tvboptim</span></a>
-  </div>
-</li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/Pyrates/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">PyRates</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-13" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-13" class="collapse list-unstyled sidebar-section depth2 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/Pyrates/PyRates.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Round-Trip Demo</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/Pyrates/PyRates_Analysis.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Analysis</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/Pyrates/PyRates_Bifurcation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Bifurcation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/Pyrates/PyRates_Heterogeneous_Network.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Heterogeneous Networks</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/NetworkDynamics.jl/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NetworkDynamics.jl</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-14" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-14" class="collapse list-unstyled sidebar-section depth2 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NetworkDynamics.jl/diffusion.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Network Diffusion</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NetworkDynamics.jl/diffusion_2d.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">2D Network Diffusion</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NetworkDynamics.jl/kuramoto.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Kuramoto Oscillators</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NetworkDynamics.jl/heterogeneous_kuramoto.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Heterogeneous Kuramoto</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NetworkDynamics.jl/fitzhugh_nagumo.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">FitzHugh-Nagumo</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NetworkDynamics.jl/cascading_failure.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Cascading Failure</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NetworkDynamics.jl/stress_on_truss.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Stress on Truss</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/BifurcationKit.jl/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">BifurcationKit.jl</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-15" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-15" class="collapse list-unstyled sidebar-section depth2 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/BifurcationKit.jl/TMModel.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Tsodyks-Markram Model</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/BifurcationKit.jl/COModel.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">CO Oxidation Model</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/ModelingToolkit.jl/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ModelingToolkit.jl</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-16" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-16" class="collapse list-unstyled sidebar-section depth2 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/ModelingToolkit.jl/higher_order.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Higher-Order ODE Lowering</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/NeuroML/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NeuroML / LEMS</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-17" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-17" class="collapse list-unstyled sidebar-section depth2 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/LEMS_Export.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">LEMS Export</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/IRI_vs_YAML.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">IRI vs.&nbsp;Inline YAML</span></a>
-  </div>
-</li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/NeuroML/examples/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">LEMS Examples</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-18" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-18" class="collapse list-unstyled sidebar-section depth3 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex0_IaF.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex0: Integrate-and-Fire</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex1_HH.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex1: Hodgkin-Huxley</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex2_Izh.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex2: Izhikevich</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex3_Net.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex3: HH Network with Synapses</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex4_KS.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex4: Kinetic Scheme Channels</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex5_DetCell.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex5: Detailed HH Cell</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex6_NMDA.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex6: NMDA Synapse</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex7_STP.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex7: Short-Term Plasticity</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex8_AdEx.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex8: Adaptive Exponential IF</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex9_FN.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex9: FitzHugh-Nagumo</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex10_Q10.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex10: Q10 Temperature Dependence</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex12_Net2.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex12: Network 2</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex13_Instances.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex13: Population Instances</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex14_PyNN.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex14: PyNN Cells</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex15_CaDynamics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex15: Calcium Dynamics</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex16_Inputs.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex16: Input Types</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex17_Tissue.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex17: Tissue Simulation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex18_GHK.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex18: Goldman-Hodgkin-Katz</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex19_GapJunctions.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex19: Gap Junctions</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex20_AnalogSynapses.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex20: Analog Synapses</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex21_CurrentBasedSynapses.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex21: Current-Based Synapses</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex22_PinskyRinzel.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex22: Pinsky-Rinzel CA3</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex23_Spiketimes.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex23: Spike Times</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex24_FractionalConductance.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex24: Fractional Conductance</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex25_MultiComp.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex25: Multi-Compartment Cells</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex26_Weights.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex26: Connection Weights</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/Ex27_MultiSynapses.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ex27: Multi-Synapses</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/NeuroML/examples/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">NML2 Documentation</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-19" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-19" class="collapse list-unstyled sidebar-section depth3 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_AbstractCells.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Abstract Cells</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_SingleCompHHCell.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Single-Compartment HH Cell</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_FullCell.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Full Cell</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_SimpleMorphology.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Simple Morphology</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_SimpleIonChannel.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Simple Ion Channel</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_SynapseTypes.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Synapse Types</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_AnalogSynapses.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Analog Synapses</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_GapJunctions.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Gap Junctions</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_Inputs.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Inputs</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_InstanceBasedNetwork.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Instance-Based Network</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/NeuroML/examples/NML2_FullNeuroML.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Full NeuroML</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-      </ul>
-  </li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Interoperability/BIDS/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">BIDS</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-20" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-20" class="collapse list-unstyled sidebar-section depth2 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/BIDS/BIDS_Export.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">BIDS Export</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/BIDS/BIDS_comp_modelling.md" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Computational Modelling</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-          <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false">
- <span class="menu-text">OpenMINDS</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-21" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-21" class="collapse list-unstyled sidebar-section depth2 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Interoperability/OpenMINDS.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">OpenMINDS Interoperability</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-      </ul>
-  </li>
-        <li class="sidebar-item">
- <span class="menu-text">TOOLING</span>
-  </li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../platform.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Platform</span></a>
-  </div>
-</li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../agents/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Agentic Coding</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-22" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-22" class="collapse list-unstyled sidebar-section depth1 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../agents/beginner.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">For Beginners</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../agents/installing-skills.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Installing &amp; Tuning Skills</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../agents/skills-reference.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Skill Reference</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../agents/agents-md.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">AGENTS.md</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../agents/maintainer-guide.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Maintainer Guide</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../Replication/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Replication Studies</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-23" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-23" class="collapse list-unstyled sidebar-section depth1 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Replication/pipeline.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">The replication pipeline</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Replication/custom-panels.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Custom figure panels</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../Replication/Jansen1995/Run_Jansen1995.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Jansen &amp; Rit (1995)</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item">
- <span class="menu-text">REFERENCE</span>
-  </li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../reference.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Quick reference</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../examples/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Examples</span></a>
-  </div>
-</li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../../ontology/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Ontology</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-24" class="collapse list-unstyled sidebar-section depth1 ">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Specification (Widoco)</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
- <span class="menu-text">WebVOWL visualisation</span></a>
   </div>
 </li>
       </ul>
@@ -1299,20 +1092,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="sidebar-item-container"> 
             <a href="../../datamodel/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data Model</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-25" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-23" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-25" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-23" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-26" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false">
  <span class="menu-text">Schemas</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-26" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-24" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-26" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-24" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/schemas/common.html" class="sidebar-item-text sidebar-link">
@@ -1371,13 +1164,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-25" role="navigation" aria-expanded="false">
  <span class="menu-text">Classes</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-25" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-27" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-25" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Activity.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Activity</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Aggregation.html" class="sidebar-item-text sidebar-link">
@@ -1424,6 +1223,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Argument.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Argument</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Assignment.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Assignment</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1478,12 +1283,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Callable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Callable</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/Case.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Case</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1596,12 +1395,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/DerivedObservation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Derived Observation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/DerivedParameter.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Derived Parameter</span></a>
   </div>
@@ -1622,6 +1415,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Differentiation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Differentiation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Digest.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Digest</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1788,6 +1587,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/LayoutTemplateVariant.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Layout Template Variant</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Likelihood.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Likelihood</span></a>
   </div>
@@ -1884,12 +1689,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/ParameterSpec.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Parameter Spec</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Parcellation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Parcellation</span></a>
   </div>
@@ -1968,6 +1767,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Reducer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reducer</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Reference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Reference</span></a>
   </div>
@@ -1994,6 +1799,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/ResultBinding.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Result Binding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/ResultEntity.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Result Entity</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2106,8 +1917,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/StudyCollection.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Study Collection</span></a>
+  <a href="../../datamodel/classes/StudyDirectory.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Directory</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StudyFile.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study File</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StudyLayout.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Layout</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2138,6 +1961,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/TimeSeries.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Time Series</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/ToolUnit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tool Unit</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2174,13 +2003,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-26" role="navigation" aria-expanded="true">
  <span class="menu-text">Slots</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-26" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-28" class="collapse list-unstyled sidebar-section depth2 show">  
+      <ul id="quarto-sidebar-section-26" class="collapse list-unstyled sidebar-section depth2 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/abbreviation.html" class="sidebar-item-text sidebar-link">
@@ -2225,8 +2054,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/acted_on_behalf_of.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">acted_on_behalf_of</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/active_contacts.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">active_contacts</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/activities.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">activities</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/add.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">add</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2309,6 +2156,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/alternative_identifier.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">alternative_identifier</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/amplitude.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">amplitude</span></a>
   </div>
@@ -2387,6 +2240,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/associated_with.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">associated_with</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/atlas.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">atlas</span></a>
   </div>
@@ -2447,6 +2306,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/backends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">backends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/baseline_value.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">baseline_value</span></a>
   </div>
@@ -2489,6 +2354,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/bids_version.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bids_version</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/bindings.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">bindings</span></a>
   </div>
@@ -2503,12 +2374,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/bothside.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">bothside</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/boundaries.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">boundaries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2569,12 +2434,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/capture.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">capture</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/cases.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">cases</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2669,6 +2528,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/codegen_format.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">codegen_format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/coefficient.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">coefficient</span></a>
   </div>
@@ -2689,6 +2554,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/colormap.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">colormap</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/command.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">command</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2731,12 +2602,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/condition_states.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">condition_states</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/conditional.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">conditional</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2897,12 +2762,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/coupling_terms.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">coupling_terms</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/coupling_variable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">coupling_variable</span></a>
   </div>
@@ -2969,8 +2828,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dataset_path.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dataset_path</span></a>
+  <a href="../../datamodel/slots/dataset_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dataset_type</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3059,12 +2918,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/derived_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">derived_observations</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/derived_parameters.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">derived_parameters</span></a>
   </div>
@@ -3139,6 +2992,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/differentiation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">differentiation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/digest.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">digest</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3341,6 +3200,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/emit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">emit</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/emit_kind.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">emit_kind</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/emit_provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">emit_provenance</span></a>
   </div>
@@ -3355,6 +3226,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/encoding.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">encoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/ended_at.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ended_at</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3413,6 +3290,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/evaluate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">evaluate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/evaluator.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">evaluator</span></a>
   </div>
@@ -3427,6 +3310,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/events.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">events</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/evict.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">evict</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3457,6 +3346,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/experiment_yaml_hash.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">experiment_yaml_hash</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/expires_with.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">expires_with</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3511,6 +3406,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/file.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">file</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/files.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">files</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3583,6 +3484,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/gaussian.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">gaussian</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/generated.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">generated</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3749,14 +3656,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/ifabsent.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ifabsent</span></a>
+  <a href="../../datamodel/slots/imaging_modality.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">imaging_modality</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/imaging_modality.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">imaging_modality</span></a>
+  <a href="../../datamodel/slots/in_templates.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">in_templates</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3839,12 +3746,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/intensity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">intensity</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/intermediate_expressions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">intermediate_expressions</span></a>
   </div>
@@ -3889,6 +3790,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/isVersionOf.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">is Version Of</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/jobs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">jobs</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3971,14 +3878,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/lefthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">lefthandside</span></a>
+  <a href="../../datamodel/slots/legend.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/legend.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">legend</span></a>
+  <a href="../../datamodel/slots/level.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">level</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4397,6 +4304,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/noise_draw.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">noise_draw</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/noise_type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">noise_type</span></a>
   </div>
@@ -4553,6 +4466,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/opaque.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">opaque</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/operating_system.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">operating_system</span></a>
   </div>
@@ -4615,6 +4534,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/output_equation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">output_equation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/outputs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">outputs</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4823,6 +4748,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/predicted.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">predicted</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/preprocessing.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">preprocessing</span></a>
   </div>
@@ -4853,6 +4784,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/produced_by.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">produced_by</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/producer.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">producer</span></a>
   </div>
@@ -4873,6 +4810,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">provenance</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/provenance_format.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">provenance_format</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4921,12 +4864,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/random_state.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">random_state</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/range.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">range</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5039,6 +4976,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/replaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">replaces</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/reported_optimum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">reported_optimum</span></a>
   </div>
@@ -5081,6 +5024,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/resync.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">resync</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/resync_masked.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">resync_masked</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/retries.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">retries</span></a>
   </div>
@@ -5089,12 +5044,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/rhs.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">rhs</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/righthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">righthandside</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5225,6 +5174,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/settle_seed.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">settle_seed</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/setup.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">setup</span></a>
   </div>
@@ -5239,6 +5194,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/shape.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">shape</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/share_x.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">share_x</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/share_y.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">share_y</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5263,12 +5230,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">size</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/skip_t.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">skip_t</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5333,12 +5294,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/source_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">source_observations</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/source_point.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_point</span></a>
   </div>
@@ -5389,6 +5344,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/stages.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">stages</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/started_at.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">started_at</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5473,6 +5434,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/subdir.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">subdir</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/subdirs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">subdirs</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5663,6 +5630,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/template_variants.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">template_variants</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tensor_coefficient.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tensor_coefficient</span></a>
   </div>
@@ -5711,12 +5684,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/time_scale.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">time_scale</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/time_unit.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">time_unit</span></a>
   </div>
@@ -5749,6 +5716,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tool_role.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tool_role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/traceable.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">traceable</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tracked.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tracked</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5819,6 +5798,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">units</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/update_expression.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">update_expression</span></a>
   </div>
@@ -5869,6 +5854,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/variable_of_interest.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">variable_of_interest</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/variant.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">variant</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5947,12 +5938,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/warmup_from.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">warmup_from</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/warmup_source.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">warmup_source</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6061,13 +6046,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-29" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false">
  <span class="menu-text">Enumerations</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-29" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-29" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-27" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/AggregationType.html" class="sidebar-item-text sidebar-link">
@@ -6084,6 +6069,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/AxisReductionStatistic.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Axis Reduction Statistic</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/BidsDatasetType.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">BIDS Dataset Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/BidsDirectoryStatus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">BIDS Directory Status</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6220,6 +6217,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/NoiseDraw.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Noise Draw</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/NoiseType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise Type</span></a>
   </div>
@@ -6256,12 +6259,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/enums/PhysicalDimension.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Physical Dimension</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/ProcedureStepType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Procedure Step Type</span></a>
   </div>
@@ -6274,6 +6271,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ProvenanceFormat.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Provenance Format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ReducerEmitKind.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reducer Emit Kind</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/ReductionType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Reduction Type</span></a>
   </div>
@@ -6282,6 +6291,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/ReportPart.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Report Part</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/RequirementLevel.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Requirement Level</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6328,6 +6343,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/StudyDirectoryRole.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Directory Role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/StudyFileRole.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study File Role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SubjectBatchMode.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Subject Batch Mode</span></a>
   </div>
@@ -6358,6 +6385,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/TrackedContent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tracked Content</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/Triangle.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Triangle</span></a>
   </div>
@@ -6382,11 +6415,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="sidebar-item-container"> 
             <a href="../../api/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">API Documentation</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-30" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-30" class="collapse list-unstyled sidebar-section depth1 ">  
+      <ul id="quarto-sidebar-section-28" class="collapse list-unstyled sidebar-section depth1 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../api/log.html" class="sidebar-item-text sidebar-link">
@@ -6405,12 +6438,1179 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Platform</span></a>
   </div>
 </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/adapters/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Adapters</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-29" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-29" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/base.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Base</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/bids.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">BIDS</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/bifurcationkit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">BifurcationKit</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/brian2.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Brian2</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/bsplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bsplot</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/colormaps.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Colormaps</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/diffeq.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">DiffEq</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/figure_workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Figure Workflow</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/gillespie.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Gillespie</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/julia.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Julia</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/julia_model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Julia Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/modelingtoolkit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ModelingToolkit</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/networkdynamics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NetworkDynamics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/neuroml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NeuroML</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/numcont.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">NumCont</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/observation_sampling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observation Sampling</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/openminds.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">openMINDS</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/pyrates.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PyRates</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/pyrates_bifurcation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PyRates (Bifurcation)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/tvb.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TVB</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/tvboptim.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvboptim</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/adapters/smallscale/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Shared small-scale network-lowering core.</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-30" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-30" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/adapters/smallscale/lowering.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lowering</span></a>
+  </div>
+</li>
       </ul>
+  </li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/analysis/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Analysis</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-31" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-31" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/analysis/bifurcation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bifurcation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/analysis/linear_response.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Linear Response</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/analysis/replication.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Replication</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/analysis/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/api/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">API</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-32" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-32" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/api/direct_ontology_api.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Direct Ontology Api</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/api/dynamics_api.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamics Api</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/api/experiment_api.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Experiment Api</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/api/main.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Main</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/api/network_api.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Network Api</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/api/ontology_api.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ontology Api</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/behaviour/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Hand-written behaviour attached to the generated model classes.</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-33" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-33" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/continuation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Continuation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/coupling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Coupling</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/dynamics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/dynamics_runtime.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamics Runtime</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/event.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Event</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/integrator.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Integrator</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/perturbation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Perturbation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/classes/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Classes</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-34" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-34" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/atlas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Atlas</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/continuation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Continuation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/correlated_noise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Correlated Noise</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/coupling.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Coupling</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/dynamics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/equation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Equation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/experiment.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Experiment</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/function.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Function</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/network.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Network</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/noise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Noise</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/observation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/parcellation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Parcellation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/perturbation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Perturbation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/phenotype.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phenotype</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/software.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Software</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/cli/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">CLI</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-35" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-35" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/brain.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Brain</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/cache.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cache</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/config.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/export.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Export</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/figures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Figures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/formats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Formats</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/import_.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Import</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/info.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Info</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/install.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Install</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/network.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Network</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/run.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Run</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/save.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Save</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/skills.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Skills</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/validate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Validate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/verify.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Verify</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/version.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Version</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/cli/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/codegen/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TVB-O Code Generation</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-36" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-36" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/code.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Code</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/cuda.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">CUDA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/functions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Functions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/lems.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">LEMS</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/prune.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Prune</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/pyrates.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PyRates</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/reducers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reducers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/streaming_reducers.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Streaming Reducers</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/style.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Style</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/templater.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Templater</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/transforms.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Transforms</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/data/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-37" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-37" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/analysis_io.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Analysis Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/connectome_build.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Connectome Build</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/converters.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Converters</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/dataref.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dataref</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/experiment_result_io.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Experiment Result Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/matrix_io.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Matrix Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/mesh_fem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mesh Fem</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/mesh_io.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mesh Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/network_io.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Network Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/param_io.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Param Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/provenance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Provenance</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/registry.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Registry</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/study_manifest.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Manifest</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/types.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Types</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/datamodel/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data Model</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-38" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-38" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/datamodel/dialect.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dialect</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/datamodel/dialect_tables.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dialect Tables</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/datamodel/pydantic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Pydantic</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/datamodel/schema.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Schema</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/export/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Export</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-39" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-39" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/export/formats.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Formats</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/export/registry.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Registry</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/graph_generators/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Graph Generators</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-40" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-40" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/graph_generators/catalog.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Catalog</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/graph_generators/procedural.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procedural</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/jax/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">JAX</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-41" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-41" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/jax/xarray_pytrees.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Xarray Pytrees</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/ontology/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TVB-O Ontology</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-42" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-42" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/ontology/config.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/ontology/constants.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Constants</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/ontology/db.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">DB</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/ontology/graph.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Graph</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/ontology/owl.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">OWL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/ontology/query.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Query</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/ontology/atlas/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Atlas</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-43" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-43" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/ontology/atlas/freesurfer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Freesurfer</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/ontology/semanticweb/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Semantic Web</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-44" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-44" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/ontology/semanticweb/tvbgo.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TVB-GO</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/parse/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Parse</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-45" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-45" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/parse/expression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Expression</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/parse/lems_loader.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lems Loader</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/parse/symbols.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Symbols</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/parse/system.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">System</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/plot/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Plot</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-46" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-46" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/animate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Animate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/dynamics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/dynamics_layout.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamics Layout</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/experiment_layout.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Experiment Layout</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/layout_mosaic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Layout Mosaic</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/network.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Network</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/network_graph.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Network Graph</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/ontology.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ontology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/phase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phase</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/schematic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Schematic</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/timeseries.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Timeseries</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/plot/utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Utils</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/run/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Run</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-47" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-47" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/compgraph.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Compgraph</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/graph.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Graph</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/julia.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Julia</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-48" role="navigation" aria-expanded="false">
+ <span class="menu-text">Templates</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-48" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-48" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/templates/pde/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PDE/FEM code-generation templates for TVBO field models.</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-49" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-49" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/templates/pde/utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Utils</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/templates/rateml/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">RateML</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-50" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-50" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/templates/rateml/utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Utils</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/templates/tvboptim/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvboptim</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-51" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-51" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/templates/tvboptim/callbacks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Callbacks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/templates/tvboptim/observations.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/templates/tvboptim/utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Utils</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="../../api/utils/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Utilities</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-52" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-52" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/auto.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Auto</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/figure_compare.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Figure Compare</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/pydantic_loader.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Pydantic Loader</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/report.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Report</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/study_layout.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Layout</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/units.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Units</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/yaml_loader.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Yaml Loader</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+ <span class="menu-text">DEVELOPER</span>
   </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../Developer/contributing.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Developer</span></a>
+ <span class="menu-text">Contributing</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Developer/DocsMachinery.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">How this documentation is built</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../agents/maintainer-guide.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Maintainer guide</span></a>
   </div>
 </li>
     </ul>
@@ -6425,7 +7625,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#slot-linear_solver" id="toc-slot-linear_solver" class="nav-link active" data-scroll-target="#slot-linear_solver">Slot: linear_solver</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/slots/linear_solver.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/virtual-twin/tvbo/edit/main/datamodel/slots/linear_solver.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/virtual-twin/tvbo/issues/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../datamodel/index.html">Data Model</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/abbreviation.html">Slots</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/linear_solver.html">linear_solver</a></li></ol></nav></header>
@@ -6433,6 +7633,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
+<nav class="tvbo-phase tvbo-phase--reference" style="--phase-color:#5c6f6e" aria-label="Documentation phase"><i class="fa-solid fa-book" aria-hidden="true"></i><span class="tvbo-phase__name">Reference</span><span class="tvbo-phase__sep">·</span><span class="tvbo-phase__section">Slots</span></nav>
 <section id="slot-linear_solver" class="level1">
 <h1>Slot: linear_solver</h1>
 <p><em>Linear solver for the Newton bordered system. E.g. COPBLS (collocation), MatrixBLS (shooting/poincaré).</em></p>
@@ -6981,7 +8182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </div>   
     <div class="nav-footer-center">
 <p>© Charité - Universitätsmedizin Berlin</p>
-<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/slots/linear_solver.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/virtual-twin/tvbo/edit/main/datamodel/slots/linear_solver.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/virtual-twin/tvbo/issues/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
     <li class="nav-item compact">
