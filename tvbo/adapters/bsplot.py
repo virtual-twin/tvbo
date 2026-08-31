@@ -167,23 +167,8 @@ def surface_panel(fig, ax, ctx):
     A brain map is the most-drawn panel in a network-neuroscience paper and needs no study code: the mesh is geometry the network already carries, the values are a layer like any other, and everything else is presentation. Registered here rather than shipped per study, so ``kind: surface`` works with no ``code_modules``.
 
     opts:
-        network / mesh: where the geometry comes from (see :func:`_surface_mesh`).
-        view: bsplot's camera name (lateral, medial, dorsal, ventral, anterior, posterior).
-        hemi: 'lh' | 'rh' (default 'lh').
-        cmap: colormap name; symmetric/vmin/vmax/percentile set the colour limits.
-        symmetric: centre the limits on zero so zero is the colormap's midpoint (default
-            true, because a map of signed deviations read on an off-centre scale is
-            misleading in a way no axis label catches).
-        percentile: clip the symmetric limit to this percentile of |values| (default 100),
-            so one outlier vertex cannot wash the map out.
-        mask: per-vertex 0/1 file; vertices OUTSIDE it (a medial wall) are drawn grey and
-            excluded from the colour range rather than being coloured as zeros.
-        color: draw the mesh itself in one flat colour instead of painting a map on it.
-            With no layer that is the bare geometry; with ``geometry: true`` the layer
-            supplies (V, 3) vertex COORDINATES, so what the panel shows is the surface a
-            reconstruction rebuilt rather than a field living on a fixed surface.
-        edgecolor / edge_linewidth: draw the triangulation, for a panel whose subject is
-            the mesh the model is solved on.
+        network / mesh: where the geometry comes from (see :func:`_surface_mesh`). view: bsplot's camera name (lateral, medial, dorsal, ventral, anterior, posterior). hemi: 'lh' | 'rh' (default 'lh'). cmap: colormap name; symmetric/vmin/vmax/percentile set the colour limits. symmetric: centre the limits on zero so zero is the colormap's midpoint (default true, because a map of signed deviations read on an off-centre scale is misleading in a way no axis label catches). percentile: clip the symmetric limit to this percentile of |values| (default 100), so one outlier vertex cannot wash the map out. mask: per-vertex 0/1 file; vertices OUTSIDE it (a medial wall) are drawn grey and excluded from the colour range rather than being coloured as zeros. color: draw the mesh itself in one flat colour instead of painting a map on it.
+            With no layer that is the bare geometry; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what the panel shows is the surface a reconstruction rebuilt rather than a field living on a fixed surface. edgecolor / edge_linewidth: draw the triangulation, for a panel whose subject is the mesh the model is solved on.
     """
     import bsplot
     import numpy as _np
@@ -328,7 +313,7 @@ def _atlas_segmentation(atlas: str, base_dir):
     if not raster.exists():
         raise FileNotFoundError(
             f"volume panel: atlas {atlas!r} has no segmentation beside its terminology (looked for "
-            f"{raster.name}). The labelled raster is a fetched asset rather than a tracked one."
+            f"{raster.name} in {raster.parent})."
         )
     names, entities = _atlas_crosswalk(atlas, base_dir)
     codes = {}
@@ -530,15 +515,7 @@ def colorbar_panel(fig, ax, ctx):
     Panels that share one scale cannot each own the bar: attaching it to any one of them steals that panel's width and implies the scale is local to it. The paper puts it in an empty cell instead, and so does this.
 
     opts:
-        cmap / vmin / vmax: the scale. With a layer bound and no explicit limits, the
-            limits are read from the data, so the bar cannot drift from what it describes.
-        center: the value the map's neutral colour sits at, resolved exactly as the mesh
-            resolves its own, so a bar keying centred heatmaps is the scale they were drawn on.
-        orientation: 'vertical' (default) or 'horizontal'.
-        width: fraction of the slot the bar itself occupies across its short axis.
-        ticks / ticklabels: the marks. A quantity in arbitrary units is labelled at its
-            ends (Minimum..Maximum) rather than with numbers that mean nothing.
-        label: the axis label beside the bar.
+        cmap / vmin / vmax: the scale. With a layer bound and no explicit limits, the limits are read from the data, so the bar cannot drift from what it describes. center: the value the map's neutral colour sits at, resolved exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. orientation: 'vertical' (default) or 'horizontal'. width: fraction of the slot the bar itself occupies across its short axis. ticks / ticklabels: the marks. A quantity in arbitrary units is labelled at its ends (Minimum..Maximum) rather than with numbers that mean nothing. label: the axis label beside the bar.
 
     Returns the bar's own axes, so a declared frame (ticks, formats, label padding) lands on the scale rather than on the blanked slot behind it.
     """
@@ -896,8 +873,7 @@ def _group_axis(opts, axis: str) -> dict | None:
     A paper labels 47 task contrasts as seven families, not as 47 tick labels: one name per family, centred on its block, with a rule between blocks. The same shape recurs wherever a categorical axis has structure — ROIs by system, nodes by module, subjects by cohort — so it is an axis feature rather than something a bespoke panel redraws each time.
 
     ``bounds`` are the cumulative COUNTS at which each group ends, which is what makes the group sizes readable off the declaration and the last bound the axis length. Entry *i* of a categorical axis is drawn centred on coordinate *i*, so the boundary after count
-    *n* lies half a unit below it — the rules and the label centres carry that shift, and a
-    bound is therefore declared as "how many", never as a plotted coordinate.
+    *n* lies half a unit below it — the rules and the label centres carry that shift, and a bound is therefore declared as "how many", never as a plotted coordinate.
     """
     spec = opts.get(f"{axis}groups")
     if not spec:
@@ -1009,8 +985,7 @@ def _container_path(iri, base_dir: Path) -> str:
 def load_layer(layer: dict):
     """Open a custom panel's resolved layer into a DataArray (public API).
 
-    A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``);
-    it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.
+    A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``); it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.
     """
     name, ref_name = layer.get("transform"), layer.get("ref_transform")
     fn = registered(TRANSFORMS, name, "transform") if name else None  # spec error before any IO
