@@ -364,8 +364,6 @@ website:
                         href: datamodel/classes/CachedArray.qmd
                       - text: "Callable"
                         href: datamodel/classes/Callable.qmd
-                      - text: "Case"
-                        href: datamodel/classes/Case.qmd
                       - text: "Class Reference"
                         href: datamodel/classes/ClassReference.qmd
                       - text: "Clinical Improvement"
@@ -402,8 +400,6 @@ website:
                         href: datamodel/classes/DBSProtocol.qmd
                       - text: "DBSSubject"
                         href: datamodel/classes/DBSSubject.qmd
-                      - text: "Derived Observation"
-                        href: datamodel/classes/DerivedObservation.qmd
                       - text: "Derived Parameter"
                         href: datamodel/classes/DerivedParameter.qmd
                       - text: "Derived Variable"
@@ -500,8 +496,6 @@ website:
                         href: datamodel/classes/Panel.qmd
                       - text: "Parameter"
                         href: datamodel/classes/Parameter.qmd
-                      - text: "Parameter Spec"
-                        href: datamodel/classes/ParameterSpec.qmd
                       - text: "Parcellation"
                         href: datamodel/classes/Parcellation.qmd
                       - text: "Parcellation Entity"
@@ -578,8 +572,6 @@ website:
                         href: datamodel/classes/Stimulus.qmd
                       - text: "Study"
                         href: datamodel/classes/Study.qmd
-                      - text: "Study Collection"
-                        href: datamodel/classes/StudyCollection.qmd
                       - text: "Study Directory"
                         href: datamodel/classes/StudyDirectory.qmd
                       - text: "Study File"
@@ -732,8 +724,6 @@ website:
                         href: datamodel/slots/block_size.qmd
                       - text: "bothside"
                         href: datamodel/slots/bothside.qmd
-                      - text: "boundaries"
-                        href: datamodel/slots/boundaries.qmd
                       - text: "boundary_conditions"
                         href: datamodel/slots/boundary_conditions.qmd
                       - text: "bounds"
@@ -754,8 +744,6 @@ website:
                         href: datamodel/slots/callable.qmd
                       - text: "capture"
                         href: datamodel/slots/capture.qmd
-                      - text: "cases"
-                        href: datamodel/slots/cases.qmd
                       - text: "category"
                         href: datamodel/slots/category.qmd
                       - text: "cell"
@@ -812,8 +800,6 @@ website:
                         href: datamodel/slots/condition_parameters.qmd
                       - text: "condition_states"
                         href: datamodel/slots/condition_states.qmd
-                      - text: "conditional"
-                        href: datamodel/slots/conditional.qmd
                       - text: "conditionals"
                         href: datamodel/slots/conditionals.qmd
                       - text: "conditions"
@@ -866,8 +852,6 @@ website:
                         href: datamodel/slots/coupling_function.qmd
                       - text: "coupling_inputs"
                         href: datamodel/slots/coupling_inputs.qmd
-                      - text: "coupling_terms"
-                        href: datamodel/slots/coupling_terms.qmd
                       - text: "coupling_variable"
                         href: datamodel/slots/coupling_variable.qmd
                       - text: "covariance"
@@ -890,8 +874,6 @@ website:
                         href: datamodel/slots/dataset.qmd
                       - text: "dataset_id"
                         href: datamodel/slots/dataset_id.qmd
-                      - text: "dataset_path"
-                        href: datamodel/slots/dataset_path.qmd
                       - text: "dataset_type"
                         href: datamodel/slots/dataset_type.qmd
                       - text: "datatype"
@@ -922,8 +904,6 @@ website:
                         href: datamodel/slots/derived_from.qmd
                       - text: "derived_from_model"
                         href: datamodel/slots/derived_from_model.qmd
-                      - text: "derived_observations"
-                        href: datamodel/slots/derived_observations.qmd
                       - text: "derived_parameters"
                         href: datamodel/slots/derived_parameters.qmd
                       - text: "derived_variables"
@@ -1170,8 +1150,6 @@ website:
                         href: datamodel/slots/hyperparameters.qmd
                       - text: "id"
                         href: datamodel/slots/id.qmd
-                      - text: "ifabsent"
-                        href: datamodel/slots/ifabsent.qmd
                       - text: "imaging_modality"
                         href: datamodel/slots/imaging_modality.qmd
                       - text: "in_templates"
@@ -1202,8 +1180,6 @@ website:
                         href: datamodel/slots/insets.qmd
                       - text: "integration"
                         href: datamodel/slots/integration.qmd
-                      - text: "intensity"
-                        href: datamodel/slots/intensity.qmd
                       - text: "intermediate_expressions"
                         href: datamodel/slots/intermediate_expressions.qmd
                       - text: "interoperates_with"
@@ -1248,8 +1224,6 @@ website:
                         href: datamodel/slots/learning_rate_schedule.qmd
                       - text: "learning_rate_warmup"
                         href: datamodel/slots/learning_rate_warmup.qmd
-                      - text: "lefthandside"
-                        href: datamodel/slots/lefthandside.qmd
                       - text: "legend"
                         href: datamodel/slots/legend.qmd
                       - text: "level"
@@ -1578,8 +1552,6 @@ website:
                         href: datamodel/slots/random_seed.qmd
                       - text: "random_state"
                         href: datamodel/slots/random_state.qmd
-                      - text: "range"
-                        href: datamodel/slots/range.qmd
                       - text: "recipe"
                         href: datamodel/slots/recipe.qmd
                       - text: "recon_path"
@@ -1640,8 +1612,6 @@ website:
                         href: datamodel/slots/retries.qmd
                       - text: "rhs"
                         href: datamodel/slots/rhs.qmd
-                      - text: "righthandside"
-                        href: datamodel/slots/righthandside.qmd
                       - text: "rng"
                         href: datamodel/slots/rng.qmd
                       - text: "role"
@@ -1704,8 +1674,6 @@ website:
                         href: datamodel/slots/simulation_period.qmd
                       - text: "size"
                         href: datamodel/slots/size.qmd
-                      - text: "skip_t"
-                        href: datamodel/slots/skip_t.qmd
                       - text: "slurm"
                         href: datamodel/slots/slurm.qmd
                       - text: "snakemake"
@@ -1726,8 +1694,6 @@ website:
                         href: datamodel/slots/source_experiment.qmd
                       - text: "source_network"
                         href: datamodel/slots/source_network.qmd
-                      - text: "source_observations"
-                        href: datamodel/slots/source_observations.qmd
                       - text: "source_point"
                         href: datamodel/slots/source_point.qmd
                       - text: "source_url"
@@ -1856,8 +1822,6 @@ website:
                         href: datamodel/slots/time_post_surgery.qmd
                       - text: "time_range"
                         href: datamodel/slots/time_range.qmd
-                      - text: "time_scale"
-                        href: datamodel/slots/time_scale.qmd
                       - text: "time_unit"
                         href: datamodel/slots/time_unit.qmd
                       - text: "timepoint"
@@ -1942,8 +1906,6 @@ website:
                         href: datamodel/slots/warmup.qmd
                       - text: "warmup_from"
                         href: datamodel/slots/warmup_from.qmd
-                      - text: "warmup_source"
-                        href: datamodel/slots/warmup_source.qmd
                       - text: "waves"
                         href: datamodel/slots/waves.qmd
                       - text: "weight"
@@ -2048,8 +2010,6 @@ website:
                         href: datamodel/enums/PanelKind.qmd
                       - text: "Parallel Mode"
                         href: datamodel/enums/ParallelMode.qmd
-                      - text: "Physical Dimension"
-                        href: datamodel/enums/PhysicalDimension.qmd
                       - text: "Procedure Step Type"
                         href: datamodel/enums/ProcedureStepType.qmd
                       - text: "Programming Language Enum"
