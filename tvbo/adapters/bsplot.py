@@ -1582,7 +1582,7 @@ def _sentence(text: str) -> str:
 def compose_caption(figure) -> str:
     """Compose a figure's caption from its spec — the authored lead plus one clause per panel.
 
-    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
+    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling's authored prose is not dropped with its letter. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
     """
     spec_by_key = {k: p for k, p in _items(figure.panels)}
     lead: list[str] = []
@@ -1592,18 +1592,33 @@ def compose_caption(figure) -> str:
     lead.append(_sentence(getattr(figure, "description", None) or ""))
     clauses: list[str] = []
     seen: set[str] = set()
+    group_clause: dict[str, int] = {}
     for key in _panel_layout_order(figure):
         panel = spec_by_key.get(key)
         if panel is None:
             continue
         ident = _letter_identity(getattr(panel, "number", None), key, seen)
-        if ident is None:
+        parts = [
+            _sentence(getattr(panel, "label", None) or ""),
+            _sentence(_panel_descriptor(panel)),
+            _sentence(getattr(panel, "description", None) or ""),
+        ]
+        group = _group_letter(key)
+        if ident is not None:
+            group_clause[group] = len(clauses)
+            clauses.append(f"**({ident})** {' '.join(s for s in parts if s)}".strip())
             continue
-        label = _sentence(getattr(panel, "label", None) or "")
-        struct = _sentence(_panel_descriptor(panel))
-        interp = _sentence(getattr(panel, "description", None) or "")
-        body = " ".join(s for s in (label, struct, interp) if s)
-        clauses.append(f"**({ident})** {body}".strip())
+        # A cell of a paper panel already lettered, or whose letter the author suppressed: it shares that panel's clause.
+        index = group_clause.get(group)
+        said = clauses[index] if index is not None else ""
+        fresh = " ".join(s for s in parts if s and s not in said)
+        if not fresh:
+            continue
+        if index is None:
+            group_clause[group] = len(clauses)
+            clauses.append(fresh)
+        else:
+            clauses[index] = f"{said} {fresh}".strip()
     return " ".join(s for s in (lead + clauses) if s).strip()
 
 
