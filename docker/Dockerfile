@@ -48,7 +48,7 @@ ENV UV_SYSTEM_PYTHON=1 \
 #    SimpleDict-shorthand fixes; remove once 1.11.0 is on PyPI.
 COPY pyproject.toml /app/pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra neuron --extra tvb --extra docs \
+    uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra neuron --extra tvb --extra docs --extra tvboptim \
         jupyterlab uvicorn fastapi \
         "tvboptim @ git+https://github.com/virtual-twin/tvboptim.git@main"
 
@@ -62,7 +62,12 @@ RUN echo "" > /tmp/jl-stub/tvbo/__init__.py \
     && chmod -R a+rw /opt/julia-depot
 ENV PYTHONPATH=""
 
-# 3. Copy real source and install tvbo only (deps already satisfied → fast).
+# 3. Pre-warm the surface templates a `template:` figure panel draws, which bsplot fetches from templateflow as it renders — a docs run has no network to fetch them over, and a render failure does not fail the run, so the page fails later reading back a figure that was never drawn.
+ENV TEMPLATEFLOW_HOME="/opt/templateflow"
+RUN python3 -c "import bsplot; from bsplot.data.surface import get_surface_geometry; [(get_surface_geometry(template='fsaverage', hemi=h, density='164k'), bsplot.load_atlas_labels(atlas='Desikan2006', hemi=h, template='fsaverage', density='164k')) for h in ('lh', 'rh')]" \
+    && chmod -R a+rw /opt/templateflow
+
+# 4. Copy real source and install tvbo only (deps already satisfied → fast).
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --no-deps .
