@@ -4278,8 +4278,13 @@ def _run_lems_example(lems_file: str, cwd: _Path) -> dict[str, _np.ndarray]:
         return env
 
     def _run(lems_name: str) -> _subprocess.CompletedProcess:
+        """Run one LEMS file through the jNeuroML jar.
+
+        `-nogui` suppresses the plot window but not AWT itself: on macOS the JVM still opens a WindowServer connection and blocks there forever, so a 1-second simulation hits the timeout instead. pyNeuroML adds the headless property for exactly this reason whenever it passes `-nogui`, and this path builds its own command line rather than going through it.
+        """
+        headless = [] if _os.name == "nt" else ["-Djava.awt.headless=true"]
         return _subprocess.run(
-            ["java", "-jar", str(jar), str(lems_name), "-nogui"],
+            ["java", *headless, "-jar", str(jar), str(lems_name), "-nogui"],
             capture_output=True,
             text=True,
             cwd=str(cwd),
