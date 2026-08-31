@@ -22,6 +22,7 @@ files:
     role: readme
     level: required
     template: README.md.tmpl
+    template_variants: {replication: README.replication.md.tmpl}
     description: What the study does, and how to run it.
   - name: CITATION.cff
     role: citation
@@ -78,6 +79,7 @@ subdirs:
         role: readme
         level: required
         template: sourcedata-README.md.tmpl
+        template_variants: {replication: sourcedata-README.replication.md.tmpl}
         description: Where each input comes from and how to obtain it.
     subdirs:
       - name: original_study
@@ -109,9 +111,11 @@ subdirs:
       - name: report.qmd
         level: recommended
         template: report.qmd.tmpl
+        template_variants: {replication: report.replication.qmd.tmpl}
         description: The report, every number computed from the run.
       - name: _quarto.yml
         template: _quarto.yml.tmpl
+        template_variants: {replication: _quarto.replication.yml.tmpl}
       - name: references.bib
         level: recommended
       - name: report_internal.qmd

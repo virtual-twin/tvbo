@@ -1,6 +1,6 @@
 ---
 name: writing-reports
-description: How to write a TVBO replication report — one IMRAD Quarto document whose every number is computed from the run (never transcribed), whose equations render natively from the recipe, that states negative results honestly, keeps a copyright-safe internal/public figure split, and holds its prose to a strict anti-slop standard.
+description: How to write a TVBO study report — one IMRAD Quarto document whose every number is computed from the run (never transcribed), whose equations render natively from the recipe, that states negative results honestly, and holds its prose to a strict anti-slop standard. Two sections marked "replication only" cover the scorecard and the copyright-safe figure split a replication adds.
 metadata:
   audience: user
   applies_to:
@@ -11,13 +11,11 @@ metadata:
 
 # Writing Reports in TVBO
 
-This skill owns the **report** for a study replication: one `docs/report.qmd` that
-reads like a paper and computes every number it prints. It is the reporting layer that
-**replicating-studies** composes; that skill decides *which* targets you replicate and
-their fidelity tier, and **running-simulations** covers how the runs produce the
-containers you read here. Start from the report template in the replicating-studies
-skeleton (`report.qmd.tmpl` + its thin `report_internal.qmd.tmpl` wrapper + `_quarto.yml.tmpl`)
-and keep its metrics cell, its A/B figure loop, and the two-entry render layout.
+This skill owns the **report** for any TVBO study: one `docs/report.qmd` that reads like a paper and computes every number it prints. **running-simulations** covers how the runs produce the containers you read here.
+
+A replication is one kind of study, and it adds exactly two things: a scorecard of targets declared before the first run, and a copyright-safe split between a public report and an internal build that shows the paper's figures. Both live below under headings that say **replication only**; everything else in this skill applies to every report. **replicating-studies** decides which targets a replication declares and their fidelity tier.
+
+`tvbo study init <Name>` seeds `docs/report.qmd` and `docs/_quarto.yml`, and `tvbo study init <Name> -t replication` seeds their replication variants plus `report_internal.qmd` and the `docs/analysis/` target declarations. Start from what it wrote and keep its metrics cell and its figure loop; do not write a report from scratch beside it.
 
 Four rules carry the whole report. Break any one and the report stops being trustworthy.
 
@@ -36,12 +34,8 @@ Results · Discussion · Conclusion**, then the bibliography Quarto appends auto
 - **Methods** carries the native equation render, the variants, coupling, network and
   data provenance, the analyses, the backend, and the verification against an
   independent reference.
-- **Results** opens with the computed comparison/scorecard table, then one subsection
-  per paper figure: a sentence or two on what the panel shows, the figure, its
-  **caption**, and a status callout.
-- **Discussion** interprets: what reproduced and why, the mechanism and downstream
-  consequences of any negative result, the reproduction-vs-replication framing, and the
-  accepted limitations.
+- **Results** opens with the computed summary table — in a replication, the comparison against the published values — then one subsection per figure: a sentence or two on what the panel shows, the figure, its **caption**, and a status callout.
+- **Discussion** interprets: what held and why, the mechanism and downstream consequences of any negative result, the accepted limitations, and in a replication the reproduction-versus-replication framing.
 
 State a negative result in **Results** (with the evidence) and interpret it in
 **Discussion**. When one modelling fact explains several panel mismatches, say so once
@@ -445,15 +439,7 @@ caption them from metadata wherever metadata exists.
 - **Figures**: `![{figure_caption(fig)}](path){#fig-name}` — the caption is the recipe's own
   `Figure.description`, so it cannot drift from the figure, and the `#fig-` id makes it
   cross-referenceable. Never retype the paper's caption.
-- **Say whose figure it is, in the caption, in every build.** A replication report shows two
-  kinds of picture and the reader cannot tell them apart from the image alone. Open each caption
-  with which original it reproduces (`**Reproducing Figure 3 of @Paper.**`, or nothing at all
-  when the figure is the replication's own addition), and close it with a provenance sentence
-  that is *derived from the build*, not written once: internally "the published original is on
-  the left and this replication on the right", publicly "every panel is this replication's own
-  output". One `figure()` helper emits both, so the two builds can never disagree about which
-  half of the image is whose. Do NOT hardcode the A/B wording — that composite exists only in
-  the internal build.
+- **Replication only — say whose figure it is, in the caption, in every build.** A replication report shows two kinds of picture and the reader cannot tell them apart from the image alone. Open each caption with which original it reproduces (`**Reproducing Figure 3 of @Paper.**`, or nothing at all when the figure is the replication's own addition), and close it with a provenance sentence that is *derived from the build*, not written once: internally "the published original is on the left and this replication on the right", publicly "every panel is this replication's own output". One `figure()` helper emits both, so the two builds can never disagree about which half of the image is whose. Do NOT hardcode the A/B wording — that composite exists only in the internal build.
 - **Tables with a computed caption**: the `tbl-cap` cell option takes a *literal* string, so a
   caption holding a computed value must use Quarto's **cross-reference div** — the div's last
   paragraph is the caption and is ordinary markdown. `crossref_div("tbl-x", table, caption)`
@@ -517,7 +503,7 @@ and hold to six rules.
 - **Spell verdicts out.** `out` in a narrow column is both cryptic and unwrappable; `out of
   scope` is clearer *and* earns the column enough width to typeset it.
 
-## A shortfall is one of three things — never one bucket
+## Replication only — a shortfall is one of three things, never one bucket
 
 `met / partial / out` collapses two unrelated judgements into one word, and the report then reads
 as if every shortfall were the same kind of shortfall. It is not. Score four verdicts:
@@ -541,7 +527,7 @@ can never be read as a failure. Carry the distinction into the per-figure callou
 lead a scope decision with the judgement ("a robustness sweep of T12 rather than a new claim"),
 not with a blocker that happens to also apply.
 
-## Copyright-safe internal/public split — one project, two entry files, ONE command
+## Replication only — copyright-safe internal/public split: one project, two entry files, ONE command
 
 The report shows A/B panels (the paper's published figure beside your reproduction), but
 the paper's figures are copyright-restricted and must never be committed or shared. So the
@@ -549,9 +535,7 @@ report renders two ways: a **PUBLIC** `report.pdf` (your reproduction only, shar
 **INTERNAL** `report_internal.pdf` (paper © figures beside yours, git-ignored). The
 Quarto-native way to get both from one command is a small **project with two entry files**:
 
-- **`report.qmd`** holds the *whole* report and carries **no YAML front matter** — every
-  format/title/bibliography setting lives in `docs/_quarto.yml` (seeded from
-  `_quarto.yml.tmpl`). This is the only file you write prose in.
+- **`report.qmd`** holds the *whole* report and carries **no YAML front matter** — every format/title/bibliography setting lives in `docs/_quarto.yml`, which `tvbo study init -t replication` seeds. This is the only file you write prose in.
 - **`report_internal.qmd`** is a four-line wrapper: its front matter overrides only the
   `output-file` (and title), then `{{< include report.qmd >}}` pulls in the real report.
 - **`docs/_quarto.yml`** lists both under `project: render:` and holds the shared
@@ -800,8 +784,8 @@ slipped in.
 ## Render and verify
 
 ```bash
-# from docs/ — ONE command renders BOTH report.pdf (public) and report_internal.pdf (A/B, local-only)
-PATH=<repo>/.venv/bin:$PATH quarto render     # no file arg -> the project render: list
+# from docs/ — no file arg, so quarto renders the project's own `render:` list (in a replication that is BOTH PDFs)
+PATH=<repo>/.venv/bin:$PATH quarto render
 ```
 
 **PATH, not `QUARTO_PYTHON`, decides which interpreter executes the cells.** Quarto runs the
@@ -813,9 +797,4 @@ just wrote rather than the one actually absent (`numpy`, imported by `tvbo/utils
 Check with `import sys; print(sys.executable)` in the first cell when a render fails on an import
 you are certain exists.
 
-The render must succeed and the public `report.pdf` must contain no copyrighted original (the
-internal PDF is the larger one, carrying the paper figures). Open the PDF and confirm the numbers
-rendered (an absent container shows as `—`, not a crash, so the em-dash grep above catches
-it), the math typeset (no dropped subscripts,
-no stray `\pm`), the citations resolved (no "Citation key not found", one auto-appended
-bibliography), and the prose passes the slop scan.
+The render must succeed. In a replication the public `report.pdf` must contain no copyrighted original, and the internal PDF is the larger one because it carries the paper's figures. Open the PDF and confirm the numbers rendered (an absent container shows as `—`, not a crash, so the em-dash grep above catches it), the math typeset (no dropped subscripts, no stray `\pm`), the citations resolved (no "Citation key not found", one auto-appended bibliography), and the prose passes the slop scan.

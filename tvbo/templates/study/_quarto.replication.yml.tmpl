@@ -1,10 +1,11 @@
-# Seeded as docs/_quarto.yml: every format setting lives here, so report.qmd stays one editable file with no front matter, and xelatex gets the longtable setup a wide computed table needs.
+# Seeded as docs/_quarto.yml: one project, two entries — report.qmd builds the public report.pdf and report_internal.qmd the git-ignored A/B build, which is why neither carries front matter (see the header of report.qmd).
 project:
   type: default
   render:
     - report.qmd
-title: "{study}"
-subtitle: "*<what the study establishes>*, specified as a single declarative tvbo recipe"
+    - report_internal.qmd
+title: "TVBO replication of <Author> et al. (<Year>)"
+subtitle: "*<Paper title>* (<venue>), replicated with a single declarative tvbo recipe"
 format:
   pdf:
     output-file: report.pdf

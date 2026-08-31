@@ -455,9 +455,13 @@ def figure_caption(figure, *studies) -> str:
 _FIGURE_ORDER = {"Fig": 0, "EDF": 1, "Supp": 2, "New": 3}
 
 
-def figures_in_paper_order(figures) -> list:
-    """The study's figures, ordered as the paper prints them, with ours after."""
+def figures_ordered(figures) -> list:
+    """The study's figures in reading order: numbered ones first, then extended data and supplement, then those carrying no number."""
     return sorted(figures, key=lambda f: (_FIGURE_ORDER[figure_label(f)[0]], figure_label(f)[1], slot(f, "name", "")))
+
+
+figures_in_paper_order = figures_ordered
+"""Alias: the same ordering, under the name a replication report reads better with, where the numbers are the paper's own."""
 
 
 def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list[dict]:
