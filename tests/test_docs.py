@@ -149,6 +149,21 @@ def _run(cmd, doc_name: str, timeout: int, **kwargs):
         )
 
 
+def _cell_streams(path: Path) -> str:
+    """The stdout and stderr the executed cells produced, which ``jupyter execute`` keeps only when asked to write the notebook back.
+
+    A failing cell's own traceback reaches stderr, but anything an EARLIER cell printed does not, and that is usually where the cause is: a study reports at WARNING that its figure never rendered, and the cell that fails is the later one reading that figure back. Without this the log carries only the second error.
+    """
+    try:
+        cells = json.loads(path.read_text(encoding="utf-8")).get("cells", [])
+    except (OSError, ValueError):
+        return ""
+    text = "".join(
+        "".join(out.get("text", "")) for cell in cells for out in cell.get("outputs", []) if out.get("output_type") == "stream"
+    )
+    return text.strip()
+
+
 @pytest.mark.docs
 @pytest.mark.parametrize("qmd_path,doc_name", test_params, ids=lambda x: x if isinstance(x, str) else Path(x).stem)
 def test_doc_executes(qmd_path, doc_name, docs_kernel):
@@ -198,7 +213,7 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
         env["PATH"] = os.pathsep.join([str(Path(sys.executable).parent), env.get("PATH", "")])
 
         result = _run(
-            [jupyter_executable(), "execute", "--kernel_name", KERNEL_NAME, str(ipynb_path)],
+            [jupyter_executable(), "execute", "--kernel_name", KERNEL_NAME, "--inplace", str(ipynb_path)],
             doc_name,
             timeout_for(doc_name),
             cwd=str(doc_dir),  # Run from doc's directory for correct relative paths
@@ -209,7 +224,11 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
         if result.returncode != 0:
             # Try to extract meaningful error message
             error_msg = result.stderr.strip().split("\n")[-1] if result.stderr else "Unknown error"
-            pytest.fail(f"Notebook execution failed: {error_msg}\n\nFull stderr:\n{result.stderr}")
+            streams = _cell_streams(ipynb_path)
+            pytest.fail(
+                f"Notebook execution failed: {error_msg}\n\nFull stderr:\n{result.stderr}"
+                + (f"\n\nCell output:\n{streams}" if streams else "")
+            )
     finally:
         # Clean up generated notebook
         if ipynb_path.exists():

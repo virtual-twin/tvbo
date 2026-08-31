@@ -588,7 +588,8 @@ def _render_study_figures(study, spec: str, *, base: Path | None = None) -> None
     try:
         render_figures(figs, fig_base, out_figs)
     except Exception as e:  # noqa: BLE001 - never lose a completed run over a plotting error
-        _common.info(
+        # At WARNING because the default level suppresses INFO: a failure reported below the threshold is one the run never mentions, and what follows is a reader failing on a figure that was never drawn.
+        _common.warn(
             f"figure rendering failed ({type(e).__name__}: {e}); the experiment "
             f"results are saved. Re-run `tvbo figure render {spec}` to retry."
         )

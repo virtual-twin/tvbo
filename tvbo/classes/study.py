@@ -127,16 +127,30 @@ class StudyResult(Mapping):
         """The rendered figures, keyed by their declared ``name``."""
         return dict(self._figures)
 
+    def _undrawn(self) -> str:
+        """The declared figures this run did not draw, named so a reader is not left to conclude the recipe declared none."""
+        from tvbo.utils import as_list
+
+        declared = {str(f.name) for f in as_list(getattr(self.study, "figures", None)) if getattr(f, "name", None)}
+        missing = sorted(declared - set(self._figures))
+        if not missing:
+            return ""
+        return f"; declared but not drawn: {', '.join(missing)} — rendering failed, and the run logged why at WARNING"
+
     def figure(self, name: str | None = None) -> FigureImage:
         """The rendered figure *name*, or the only one when the study declares a single figure."""
         if name is None:
             if len(self._figures) != 1:
-                raise KeyError(f"study declares {len(self._figures)} figures; name one of: {sorted(self._figures)}")
+                raise KeyError(
+                    f"this run drew {len(self._figures)} figures; name one of: {sorted(self._figures)}{self._undrawn()}"
+                )
             return next(iter(self._figures.values()))
         try:
             return self._figures[name]
         except KeyError:
-            raise KeyError(f"no figure {name!r} was rendered; this run drew: {sorted(self._figures)}") from None
+            raise KeyError(
+                f"no figure {name!r} was rendered; this run drew: {sorted(self._figures)}{self._undrawn()}"
+            ) from None
 
     def report(self, *args, **kwargs) -> str:
         """The study's Methods section — :meth:`SimulationStudy.report`, reached from the run that produced the numbers it describes."""
