@@ -842,8 +842,12 @@ def test_bayesian_likelihood_scores_noisy_data_against_a_noiseless_prediction():
     code = exp.render_code("tvboptim")
 
     assert "_pred = _oa_pred.data" in code, "prediction no longer hoisted; update the assertions below"
-    pred_sources = re.findall(r"_oa_pred = compute_all_observations\(\s*model_fn\(_cfg\), _cfg, settle=result_transient\s*\)\.(\w+)", code)
-    obs_sources = re.findall(r"_v_obs_\w+ = compute_all_observations\(\s*model_fn\(state\), state, settle=result_transient\s*\)\.(\w+)", code)
+    pred_sources = re.findall(
+        r"_oa_pred = compute_all_observations\(\s*model_fn\(_cfg\), _cfg, settle=result_transient\s*\)\.(\w+)", code
+    )
+    obs_sources = re.findall(
+        r"_v_obs_\w+ = compute_all_observations\(\s*model_fn\(state\), state, settle=result_transient\s*\)\.(\w+)", code
+    )
     assert pred_sources == ["recorded_ts"] * 3, pred_sources
     assert obs_sources == ["observed_ts"] * 3, obs_sources
 

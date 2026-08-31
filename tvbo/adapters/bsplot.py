@@ -1566,7 +1566,9 @@ def _panel_descriptor(panel) -> str:
         if body and body not in clauses:
             clauses.append(body)
     # A custom panel draws through registered code, so the spec holds nothing structural to say about it: its authored description is the whole clause.
-    return "; ".join(", ".join(c) + (f" from {s}" if s else "") for s, c in by_source.items()) or ("" if kind == "custom" else kind)
+    return "; ".join(", ".join(c) + (f" from {s}" if s else "") for s, c in by_source.items()) or (
+        "" if kind == "custom" else kind
+    )
 
 
 def _sentence(text: str) -> str:
