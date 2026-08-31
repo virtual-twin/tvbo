@@ -175,3 +175,6 @@ docs/Networks/_output/*.gif
 
 # Scratch renders left by `tvbo export pyrates` runs.
 pyrates_run__*.py
+
+# Kernelspec a docs run pins to the local checkout, so notebooks execute against it rather than whatever venv PATH finds.
+.docs-kernel/

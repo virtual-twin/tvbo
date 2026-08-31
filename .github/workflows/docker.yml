@@ -273,7 +273,7 @@ jobs:
       XLA_PYTHON_CLIENT_PREALLOCATE: "false"
       TVBO_XLA_DEVICE_COUNT: ${{ matrix.xla_device_count }}
       TVBO_NVMAP_AUTO_CAP: ${{ matrix.nvmap_auto_cap }}
-      # The shard's declared ceiling governs the notebook subprocess too, not only pytest -- the inner one is the lower of the two and so decides when a slow backend is called wedged.
+      # The shard's declared ceiling governs the notebook subprocess too, not only pytest; `timeout_for` holds the inner one below it so the inner is the timer that fires and names the doc.
       TVBO_DOC_EXECUTE_TIMEOUT_S: ${{ matrix.test_timeout }}
     steps:
       - uses: actions/checkout@v6
