@@ -294,6 +294,44 @@ def test_an_output_that_repeats_its_analysis_name_is_not_printed_twice(grid_figu
 
 
 @pytest.fixture
+def sibling_figure(tmp_path):
+    """Two cells of one paper panel — `f1` and `f2` share the letter (f) — each with its own authored prose."""
+    spec = tmp_path / "sib.yaml"
+    spec.write_text(
+        "title: Sibling test\ncitekey: sibtest\n"
+        "figures:\n"
+        "  - name: fig-s\n"
+        "    layout: [[f1, f2]]\n"
+        "    panels:\n"
+        "      f1:\n"
+        "        panel_key: f1\n"
+        "        kind: surface\n"
+        "        label: Left hemisphere\n"
+        "        description: the gradient runs anterior to posterior\n"
+        "        layers: [{used: {analysis: lag_data, output: lag_data}}]\n"
+        "      f2:\n"
+        "        panel_key: f2\n"
+        "        kind: surface\n"
+        "        label: Right hemisphere\n"
+        "        description: the mirror gradient is weaker\n"
+        "        layers: [{used: {analysis: lag_wave, output: lag_wave}}]\n",
+        encoding="utf-8",
+    )
+    return tvbo.SimulationStudy.from_file(str(spec)).figures[0]
+
+
+def test_a_sibling_cell_keeps_its_prose_even_though_it_draws_no_letter(sibling_figure):
+    """Only the first cell of a paper panel draws the letter, and the rest were dropped with it.
+
+    `f1` and `f2` are one panel (f) seen twice, so the figure letters it once — but the caption skipped every cell that drew no letter, and each one's authored label and description went with it. What a human wrote about the right hemisphere never reached the page.
+    """
+    caption = bsplot.compose_caption(sibling_figure)
+    assert caption.count("**(") == 1, caption
+    for phrase in ("Left hemisphere", "gradient runs anterior", "Right hemisphere", "mirror gradient is weaker"):
+        assert phrase in caption, f"{phrase!r} missing from {caption!r}"
+
+
+@pytest.fixture
 def multi_output_figure(tmp_path):
     """One analysis drawn three ways in a panel — a density with its mean and a reference."""
     spec = tmp_path / "multi.yaml"

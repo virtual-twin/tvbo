@@ -614,7 +614,8 @@ class BifurcationResult:
             coords[pname] = ("step", np.asarray(df["param"], dtype=float))
         data_vars = {}
         for col in df.columns:
-            if col in ("param", "step"):  # param → coord; step → the dimension
+            # param → coord; step → the dimension; the AUTO extractor also keeps the free parameter under its own name, which is the same column as the coordinate.
+            if col in ("param", "step") or (col == pname and pname in coords):
                 continue
             arr = df[col].to_numpy()
             if col == "specialpoint":

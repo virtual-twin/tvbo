@@ -1,26 +1,18 @@
 # Data provenance
 
-Replication of <Author> et al., *<Paper title>*, **<venue>** (<Year>)
-([preprint <arXiv id / DOI>]).
+The **one tracked pointer** to every input this study does not compute — **none of the data itself is in git.** Raw inputs live in `sourcedata/`, which is git-ignored. State exactly where every input comes from, name the **true upstream source** (never a derived intermediate), give the exact fetch and regenerate steps, and mark which quantities are **sourced** and which are **synthesised**.
 
-The **one tracked pointer** to every input — **none of the data itself is in git.** The
-paper's own material (its source-data + your extraction of it) lives in `original_study/`;
-third-party raw inputs live in `sourcedata/`; both are git-ignored. State exactly where every
-input comes from, name the **true upstream source** (never a derived intermediate), give the
-exact fetch + regenerate steps, and mark which quantities are **sourced** vs **synthesised**.
+A study that computes all of its own inputs says so here in one line and stops. That is a complete provenance record, not an empty one.
 
 ## Obtaining the data (nothing here is in git)
 
-1. **<paper source-data / dataset>** — download from `<url / DOI>` and save to
-   `original_study/<file>` (verify `md5 = <hash>`, `<bytes>`).
+1. **<dataset>** — download from `<url / DOI>` into `sourcedata/<file>` (verify `md5 = <hash>`, `<bytes>`).
 2. **Regenerate** the tvbo-ready inputs from it:
    ```bash
-   python code/prepare_<study>.py --all      # -> <git-ignored dest, e.g. sourcedata/original_study/source_data/>
+   python code/prepare_<study>.py --all      # -> <git-ignored destination>
    ```
-3. **<third-party connectomes / atlases>** (if any) — fetch into `sourcedata/` per the
-   table below.
 
-## <Dataset name> (paper's published data — in `original_study/`, git-ignored)
+## <Dataset name>
 
 | item | value |
 |------|-------|
@@ -29,30 +21,24 @@ exact fetch + regenerate steps, and mark which quantities are **sourced** vs **s
 | **Download** | `<url>` |
 | **Licence** | <e.g. ODbL / CC-BY-4.0> — attribute <Author> (<Year>). |
 | **Archive** | `<file>.zip`, `<bytes>` bytes, `md5 = <hash>` |
-| **Reference year** | <year the DATA describes, if different from the publication year — quote the documentation> |
+| **Reference year** | <the year the DATA describes, where it differs from the publication year — quote the documentation> |
 
-### Source → paper-quantity map (verified: files opened, headers read)
+### Source → study-quantity map (verified: files opened, headers read)
 
-| Paper quantity | File / sheet | How to obtain |
-|----------------|--------------|---------------|
-| <adjacency A_ij> | <sheet> | <exact steps: which rows/cols, how collapsed> |
-| <node coordinates> | <sheet> | <col names> |
+| Quantity the study reads | File / sheet | How to obtain |
+|--------------------------|--------------|---------------|
+| <adjacency A_ij> | <sheet> | <exact steps: which rows and columns, how collapsed> |
+| <node coordinates> | <sheet> | <column names> |
 | <per-node parameter> | <sheet> | <formula / aggregation> |
 
 ### Synthesised (not sourced)
 
-<Any quantity generated rather than sourced — e.g. an artificial distribution — with its
-exact generating parameters and seed, so it is reproducible.>
+<Any quantity generated rather than obtained — an artificial connectivity, a surrogate time series — with its exact generating parameters and seed, so it is reproducible.>
 
-## Open-data gaps (if any)
+## Gaps
 
-<Any target that has no openly-available machine-readable data (e.g. a topology only in a
-map image). State the gap honestly and the resolution options; scope that target as
-`extended`/`out` in the scorecard.>
+<Any input with no openly-available machine-readable source. State the gap and the resolution options; whatever depends on it inherits the limitation and the report says so.>
 
 ## Processed artifacts (git-ignored, regenerable)
 
-`code/prepare_<study>.py` reads the raw source and emits the tvbo-ready `Network` plus small
-human-readable `.npz`/`.csv` for inspection into a **git-ignored** location (regenerable from
-the raw per the steps above). These are **derived intermediates, not the source** — do not
-hand-edit them, and never commit them.
+`code/prepare_<study>.py` reads the raw source and emits the tvbo-ready `Network` plus small human-readable `.npz`/`.csv` for inspection, into a **git-ignored** location regenerable from the raw input by the steps above. These are **derived intermediates, not the source** — do not hand-edit them, and never commit them.

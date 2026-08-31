@@ -2,11 +2,8 @@
 
 Two subcommands, both reading the one layout record (``schema/study_layout.yaml``, see :mod:`tvbo.utils.study_layout`):
 
-* ``tvbo study init <Name>`` creates a BIDS study dataset: the directories, the two ignore
-  files derived from the record, ``dataset_description.json`` for the study and its derivative,
-  and a seed for every file the record gives a template.
-* ``tvbo study layout`` prints the tree or either ignore file, and ``--sync`` rewrites the
-  layout region of a document in place so no document retypes the tree.
+* ``tvbo study init <Name>`` creates a BIDS study dataset: the directories, the two ignore files derived from the record, ``dataset_description.json`` for the study and its derivative, and a seed for every file the record gives a template. ``-t <variant>`` adds the entries that variant declares, and swaps in any seed it names in place of the general one, so a replication gets a report about reproducing a paper and every other study does not.
+* ``tvbo study layout`` prints the tree or either ignore file, and ``--sync`` rewrites the layout region of a document in place so no document retypes the tree.
 """
 
 from __future__ import annotations
@@ -81,6 +78,8 @@ def init(
 
     Every directory, both ignore files and every ``dataset_description.json`` are derived from the record, so a study's shape is never typed out a second time. An empty directory gets a ``.gitkeep`` only when it is tracked; an untracked one is left for the run to create.
 
+    ``--template`` selects a layout variant. A variant both adds entries of its own and may supersede the seed of one every study has, since the same file needs different starting text once the variant says what kind of study this is: without one the study gets a report of its own results, and with ``-t replication`` it gets the report, the scorecard and the copyright-safe figure split a replication needs.
+
     ``--slim`` writes only what a human authors (:data:`SLIM_ROLES`), for a study that demonstrates something rather than being archived.
     """
     record = layout_rules.load_layout()
@@ -123,13 +122,13 @@ def init(
                 [{"URL": "../.."}] if nested else None,
             )
             write(rel, json.dumps(body, indent=2))
-        elif entry.template:
+        elif (seed := layout_rules.template_for(entry, templates)) is not None:
             target = root / rel
             if target.exists() and not force:
                 typer.echo(f"  skip     {rel} (exists; --force to overwrite)")
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
-                _seed(target, str(entry.template), name)
+                _seed(target, seed, name)
                 typer.echo(f"  write    {rel}")
 
     if not slim:

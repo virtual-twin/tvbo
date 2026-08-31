@@ -36,7 +36,7 @@ observations:
           seed:  {value: 42}
 ```
 
-Each scenario then names that observation as what its likelihood scores, and differs from the others in nothing but the width of its priors:
+Each scenario then names that observation as the data its likelihood scores, and `recorded_ts` as what the model predicts, and differs from the others in nothing but the width of its priors. The two have to be named apart: the noise is one deterministic draw, so applying it to the prediction as well would put it on both sides of the residual and cancel it, leaving an inference that fits noiseless data while the recipe says otherwise.
 
 ```yaml
 inferences:
@@ -44,7 +44,7 @@ inferences:
     priors:
       stimulus.amplitude:    {distribution: {name: Normal, parameters: {mean: {value: 0.2}, std: {value: 0.10}}}}
       Generic2dOscillator.I: {distribution: {name: Normal, parameters: {mean: {value: 0.0}, std: {value: 0.10}}}}
-    likelihood: {source: [observed_ts], name: Normal, sigma: 0.2}
+    likelihood: {source: [observed_ts], predicted: [recorded_ts], name: Normal, sigma: 0.2}
     sampler: nuts
 ```
 

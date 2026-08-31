@@ -80,6 +80,19 @@ def walk(layout: StudyLayout | None = None, templates: tuple[str, ...] | None = 
     return found
 
 
+def template_for(entry, templates: tuple[str, ...] | None = ()) -> str | None:
+    """The seed *entry* starts from under *templates*, or ``None`` when it has no seed.
+
+    A variant may supersede the default: the same file can need different starting text once the variant says what kind of study this is, and a variant that states only the difference keeps one record entry per file. Requested templates are consulted in the order the caller gave them, so the first one naming a seed wins and the choice does not depend on how the record happens to be ordered.
+    """
+    variants = getattr(entry, "template_variants", None) or {}
+    for name in templates or ():
+        chosen = variants.get(name) if hasattr(variants, "get") else None
+        if chosen is not None and getattr(chosen, "template", None):
+            return str(chosen.template)
+    return str(entry.template) if getattr(entry, "template", None) else None
+
+
 def iter_files(layout: StudyLayout | None = None, templates: tuple[str, ...] | None = ()) -> list[tuple[str, StudyFile]]:
     """Every file the layout accounts for as ``(relative_posix_path, file)``."""
     layout = layout or load_layout()

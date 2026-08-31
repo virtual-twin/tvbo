@@ -7,6 +7,7 @@ Two families depart from that eager default. Exploration and optimization workfl
 The TBPTT analysis diagnostics (Lyapunov, AD gradient) likewise run under JIT, because eager reverse-mode or JVP over the integration scan dispatches millions of primitives per step and is intractable. They still agree to float precision: the generated analysis code and the hand-written reference build the analysis solver with the identical plain Heun, the truncation window being an optimization knob that never touches the forward pass.
 """
 
+import re
 import types
 
 import pytest
@@ -815,17 +816,49 @@ def test_bayesian_forward_byte_identity(eager):
     assert_identical("Bayesian forward recorded_ts", rec_tvbo[:n], rec_ref[:n])
 
 
-def test_bayesian_inference_recovers_and_steers():
-    """MCMC smoke (reduced samples): both params recovered near truth, the amplitude/I degeneracy ridge (negative correlation), and prior-steering across scenarios."""
+def test_bayesian_observed_recording_byte_identity(eager):
+    """The recording the recipe declares is the one the reference notebook builds by hand.
+
+    The reference generates its data outside the model — `v_noiseless[obs_idx] + OBS_NOISE_SIGMA * normal(key(42))` — and the recipe reproduces it as an observation, so a reader gets the same data from the recipe alone.
+    """
     import jax
 
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Stimulation_Bayesian_Inference.yaml"))
+    exp.configure()
+    r = exp.run("tvboptim", mode="simulation")
+    rec = np.asarray(r.observations.recorded_ts.data).ravel()
+    observed = np.asarray(r.observations.observed_ts).ravel()
+    ref = rec + 0.1 * np.asarray(jax.random.normal(jax.random.key(42), (rec.shape[0],)))
+    assert_identical("Bayesian observed_ts", observed, ref)
+
+
+def test_bayesian_likelihood_scores_noisy_data_against_a_noiseless_prediction():
+    """The two sides of the residual must come from different observables.
+
+    A measurement-noise step is a deterministic draw at a fixed seed. Score the noisy observation against itself and that draw lands on both sides and subtracts away, so the run fits noiseless data while the recipe says otherwise — accepted, emitted, and wrong in a way no output reveals. The emitted `obs=` and prediction therefore have to name `observed_ts` and `recorded_ts` respectively.
+    """
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Stimulation_Bayesian_Inference.yaml"))
+    exp.configure()
+    code = exp.render_code("tvboptim")
+
+    assert "_pred = _oa_pred.data" in code, "prediction no longer hoisted; update the assertions below"
+    pred_sources = re.findall(
+        r"_oa_pred = compute_all_observations\(\s*model_fn\(_cfg\), _cfg, settle=result_transient\s*\)\.(\w+)", code
+    )
+    obs_sources = re.findall(
+        r"_v_obs_\w+ = compute_all_observations\(\s*model_fn\(state\), state, settle=result_transient\s*\)\.(\w+)", code
+    )
+    assert pred_sources == ["recorded_ts"] * 3, pred_sources
+    assert obs_sources == ["observed_ts"] * 3, obs_sources
+
+
+def test_bayesian_inference_recovers_and_steers():
+    """MCMC smoke (reduced samples): both params recovered near truth, the amplitude/I degeneracy ridge (negative correlation), and prior-steering across scenarios."""
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Stimulation_Bayesian_Inference.yaml"))
     for inf in exp.inferences.values():
         inf.num_warmup, inf.num_samples = 200, 400
     exp.configure()
-    rec = np.asarray(exp.run("tvboptim", mode="simulation").observations.recorded_ts.data).ravel()
-    observed = rec + 0.1 * np.asarray(jax.random.normal(jax.random.key(42), (rec.shape[0],)))
-    r = exp.run("tvboptim", mode="inference", recorded_ts=observed)
+    r = exp.run("tvboptim", mode="inference")
 
     post = {
         k: (

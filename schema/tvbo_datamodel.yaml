@@ -2295,12 +2295,13 @@ classes:
         exact_mappings:
             - prov:Plan
         description: >-
-            Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly for external library functions, OR inline an equation, OR use class_call for class instantiation. Mirrors Function attributes so pipeline steps can be self-contained. The `name` is an optional step label (used in pipelines for keyed access to step outputs); it is NOT a global identifier (singleton uses like `loss`, `observable` may omit it).
+            Invocation of a function in a pipeline. Can reference a defined Function by name, OR inline a callable directly for external library functions, OR inline an equation, OR use class_call for class instantiation, OR name a curated step with `iri` and state only what differs from it. Mirrors Function attributes so pipeline steps can be self-contained. The `name` is an optional step label (used in pipelines for keyed access to step outputs); it is NOT a global identifier (singleton uses like `loss`, `observable` may omit it).
         slots:
             - acronym
             - label
             - equation
             - description
+            - iri
         attributes:
             name:
                 slot_uri: schema:name
@@ -2915,7 +2916,7 @@ classes:
     Likelihood:
         class_uri: tvbo:Likelihood
         description: >-
-            Observation model for Bayesian inference: p(data | sim(theta)). Points at the observation holding the data and specifies the noise family + scale. `name` is the noise family (default Normal); `source` uses the same referencing as `Observation.source`, so the observed data can come from this experiment's integration, an empirical network measure, or a runtime-bound array — one flexible hook, no data-loading path of its own.
+            Observation model for Bayesian inference: p(data | sim(theta)). Points at the observation holding the data and specifies the noise family + scale. `name` is the noise family (default Normal); `source` uses the same referencing as `Observation.source`, so the observed data can come from this experiment's integration, an empirical network measure, or a runtime-bound array — one flexible hook, no data-loading path of its own. `predicted` names the other side of the residual when it differs from the data's own observable.
         slots:
             - name
             - description
@@ -2927,7 +2928,12 @@ classes:
                 multivalued: true
                 range: string
                 required: true
-                description: "Observation(s) providing the observed data."
+                description: "Observation(s) providing the observed data, evaluated once at the declared configuration."
+            predicted:
+                multivalued: true
+                range: string
+                description: >-
+                    Observation(s) the model PREDICTS, recomputed for every proposed theta. Defaults to `source`, which is right whenever the data enters from outside — a runtime-bound array or an empirical measure — because then the same observable serves both sides. Name it separately when the recording is itself declared in the forward pipeline: measurement noise applied to both sides is the same deterministic draw twice, so it cancels in the residual and the inference silently fits noiseless data.
             sigma:
                 range: float
                 description: >-

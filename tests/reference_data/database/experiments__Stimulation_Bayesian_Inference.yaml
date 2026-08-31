@@ -116,13 +116,40 @@ network:
 observations:
   recorded_ts:
     name: recorded_ts
-    label: Recorded fast variable V (subsampled)
-    description: 'The observed time series: V at node 0, subsampled every 15 steps.'
+    label: Simulated fast variable V (subsampled)
+    description: 'The noiseless forward run: V at node 0, subsampled every 15 steps.
+      This is what the model PREDICTS at a proposed theta, so it carries no measurement
+      noise.'
     source:
     - V
+    dims:
+    - time
     reconcile: by_label
     pipeline:
     - function: subsample_ts
+  observed_ts:
+    name: observed_ts
+    label: Observed recording (noisy)
+    description: 'The single recording all three scenarios are fitted to: the forward
+      run at the declared (true) parameters plus Gaussian measurement noise at sigma
+      0.1. Declared rather than synthesised at run time, so the data is reproducible
+      from this recipe alone. It is evaluated ONCE — the likelihood scores it against
+      the noiseless `recorded_ts`, never against itself, or the fixed noise draw would
+      appear on both sides of the residual and cancel.'
+    source:
+    - recorded_ts
+    dims:
+    - time
+    reconcile: by_label
+    pipeline:
+    - function: add_recording_noise
+      arguments:
+        sigma:
+          name: sigma
+          value: 0.1
+        seed:
+          name: seed
+          value: 42
 functions:
   subsample_ts:
     name: subsample_ts
@@ -131,6 +158,18 @@ functions:
       data:
         name: data
     source_code: data[::15, 0, 0]
+  add_recording_noise:
+    name: add_recording_noise
+    description: The measurement noise a real recording carries, at a fixed seed so
+      the recording is reproducible.
+    arguments:
+      data:
+        name: data
+      sigma:
+        name: sigma
+      seed:
+        name: seed
+    source_code: data + sigma * jax.random.normal(jax.random.key(seed), data.shape)
 events:
   stimulus:
     name: stimulus
@@ -164,8 +203,10 @@ inferences:
     name: scenario_A
     likelihood:
       source:
-      - recorded_ts
+      - observed_ts
       name: Normal
+      predicted:
+      - recorded_ts
       sigma: 0.2
     label: A — no hypothesis (wide priors)
     priors:
@@ -202,8 +243,10 @@ inferences:
     name: scenario_B
     likelihood:
       source:
-      - recorded_ts
+      - observed_ts
       name: Normal
+      predicted:
+      - recorded_ts
       sigma: 0.2
     label: 'B — H1: higher excitability (tight amplitude prior)'
     priors:
@@ -240,8 +283,10 @@ inferences:
     name: scenario_C
     likelihood:
       source:
-      - recorded_ts
+      - observed_ts
       name: Normal
+      predicted:
+      - recorded_ts
       sigma: 0.2
     label: 'C — H2: stronger stimulus (tight excitability prior)'
     priors:

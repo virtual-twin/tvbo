@@ -100,8 +100,40 @@ def test_every_required_file_survives_the_gate(record, tmp_path):
 def test_every_named_template_exists(record):
     """The scaffolder fails at run time on a template the record names but does not have."""
     for rel, entry in layout_rules.iter_files(record, REPLICATION):
-        if entry.template:
-            assert (TEMPLATE_DIR / str(entry.template)).is_file(), f"{rel} names a missing template"
+        seeds = [entry.template] if entry.template else []
+        seeds += [v.template for v in (entry.template_variants or {}).values() if v.template]
+        for seed in seeds:
+            assert (TEMPLATE_DIR / str(seed)).is_file(), f"{rel} names a missing template {seed}"
+
+
+def test_a_variant_supersedes_the_default_seed_only_for_itself(record):
+    """The whole point of a variant seed: the same entry, a different starting text."""
+    entry = dict(layout_rules.iter_files(record, REPLICATION))["docs/report.qmd"]
+    assert layout_rules.template_for(entry, ()) == "report.qmd.tmpl"
+    assert layout_rules.template_for(entry, REPLICATION) == "report.replication.qmd.tmpl"
+
+
+def test_a_general_study_is_never_seeded_with_replication_prose(tmp_path):
+    """A study that reproduces nothing must not be handed a report about reproducing something.
+
+    The scaffold is the first thing an author reads, and prose about a paper, a scorecard or a copyright split is not a placeholder they can fill in — there is nothing to fill it with. Replication is one variant of a study, so its text belongs to that variant and to nothing else.
+    """
+    result = CliRunner().invoke(app, ["study", "init", "Plain", "--in", str(tmp_path)])
+    assert result.exit_code == 0, result.output
+    for path in sorted((tmp_path / "Plain").rglob("*")):
+        if path.is_file() and path.suffix in {".md", ".qmd", ".yml", ".yaml", ".cff"}:
+            assert "replicat" not in path.read_text().lower(), f"{path.name} was seeded with replication prose"
+
+
+def test_the_general_quarto_project_renders_only_the_entries_the_study_has(tmp_path):
+    """`report_internal.qmd` belongs to the replication variant, so a general project that lists it fails the render on a file the record never created."""
+    result = CliRunner().invoke(app, ["study", "init", "Plain", "--in", str(tmp_path)])
+    assert result.exit_code == 0, result.output
+    docs = tmp_path / "Plain" / "docs"
+    listed = re.findall(r"^\s*-\s*(\S+\.qmd)\s*$", (docs / "_quarto.yml").read_text(), re.MULTILINE)
+    assert listed, "the project lists no entry to render"
+    for entry in listed:
+        assert (docs / entry).is_file(), f"_quarto.yml renders {entry}, which the general study has no seed for"
 
 
 def test_a_template_only_adds(record):
