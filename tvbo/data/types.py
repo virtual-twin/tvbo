@@ -2425,6 +2425,15 @@ class ExperimentResult:
             if fitted is not None:
                 for name, da in _numeric_leaves(f"optimization__{_san(opt_name)}__fitted", fitted):
                     data_vars[name] = da
+            # The path the fit walked, stacked per parameter so the artifact carries the trajectory and not only its endpoint, on the same `step` axis the loss trajectory uses so a panel can draw loss and parameters against each other. It shares `_get_param_trajectories` with the parameter plot — a second walk would name different parameters for one fit, since the state a fit hands back is an object pytree that only that walk descends — and skips the solver's `_`-prefixed bookkeeping, which is scaffolding rather than a fitted result.
+            _trajectories = getattr(opt, "_get_param_trajectories", None)
+            for traj_name, traj_arr in (_trajectories() if callable(_trajectories) else {}).items():
+                if any(seg.startswith("_") for seg in str(traj_name).split(".")):
+                    continue
+                traj_dims = ("step",) + tuple(f"{_san(traj_name)}_d{i}" for i in range(np.ndim(traj_arr) - 1))
+                traj_da = _numeric_da(_san(traj_name), traj_arr, dims=traj_dims)
+                if traj_da is not None:
+                    data_vars[f"optimization__{_san(opt_name)}__history__{_san(traj_name)}"] = traj_da
             # The `__observation__` infix keeps these clear of the sibling `optimization__<name>__final_loss` / `__fitted__*` keys, which share the prefix.
             _sim = getattr(opt, "simulation", None)
             _write_fit_observations(
@@ -2656,6 +2665,14 @@ class ExperimentResult:
             if self._extras.get("synapse_state"):
                 _attrs["synapse_recorded"] = [_san(k) for k in self._extras["synapse_state"]]
             ds = xr.Dataset(data_vars, attrs=_attrs)
+            # A counting axis with no coordinate is written by h5netcdf as a zero-filled placeholder scale, so a reader that opens the file finds the axis named and its index gone. Numbering it here makes an optimizer's step and an algorithm's iteration selectable by name, as the continuation branch's own `step` already is.
+            ds = ds.assign_coords(
+                {
+                    dim: np.arange(size)
+                    for dim, size in ds.sizes.items()
+                    if dim not in ds.coords and dim.rsplit("__", 1)[-1] in ("step", "iteration")
+                }
+            )
             h5 = os.path.join(out_dir, f"{stem}.h5")
             # Grids of trajectories/observations compress well (repeated structure, smooth fields), so gzip-deflate by default; `compress=False` opts out for max write speed. complevel 4 is the deflate speed/size sweet spot.
             encoding = {name: {"zlib": True, "complevel": 4} for name in ds.data_vars} if compress else None
