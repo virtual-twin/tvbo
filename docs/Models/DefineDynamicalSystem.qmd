@@ -30,6 +30,7 @@ bsplot.style.use('tvbo')
 ```{python}
 import yaml
 from tvbo import Dynamics, SimulationExperiment
+from tvbo.datamodel.schema import Integrator
 
 # Pendulum System
 pendulum_dynamics = """
@@ -79,6 +80,8 @@ output:
 
 pendulum = SimulationExperiment(
     dynamics=Dynamics.from_string(pendulum_dynamics),
+    # This pendulum swings with a period near 630 ms, so 0.1 ms resolves it finely. Left unset the step defaults to 0.0122 ms, which is sized for neural masses and puts fifty thousand steps in every swing.
+    integration=Integrator(step_size=0.1),
 )
 results = pendulum.run('tvboptim', duration=5_000)
 ```
