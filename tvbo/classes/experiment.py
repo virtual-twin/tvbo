@@ -2721,8 +2721,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _resolve_events(self) -> None:
         """Lower declarative stimulus/stimulation Event fields into the form the (shared) tvboptim codegen already consumes — done in Python at load time, exactly like graph-generator resolution, so no template change is needed and a sampled ``weight_distribution`` goes through the same printer-backed sampler a graph generator's `sample` step does.
 
-        Per stimulus-type event:
-        - ``event_type: stimulation`` is normalised to ``stimulus`` (synonym), so the codegen's ``'stimulus' in event_type`` filter matches.
+        Applies to every event the codegen emits as an external input: the stimulus synonyms and the condition-triggered ``continuous`` / ``discrete`` types. A condition-triggered event needs the same name and region lowering as a stimulus does, because it reaches the dfun through the same ``external_input[name]`` port; skipping it left such an event bound to nothing, computed each step and silently discarded.
+
+        Per event:
+        - ``event_type: stimulation`` is normalised to ``stimulus`` (synonym), so the codegen's ``'stimulus' in event_type`` filter matches; a condition-triggered type is normalised to its lower-case spelling, which is what the codegen's own branch dispatches on. Every downstream filter compares case-sensitively, so an ``event_type`` left as written is how a ``Continuous`` event would be lowered here and then dropped by the very filter this lowering exists to satisfy.
         - ``target_variable`` becomes the event's effective ``name`` — the codegen exposes ``external_input[name]`` as the dfun variable.
         - ``target_regions: all`` (or labels/indices) is lowered to integer ``regions``; ``weight_distribution`` is sampled (seeded, reproducible) into the ``weighting`` array via the canonical resolver. Both are the legacy fields the codegen reads.
         - equation-level ``parameters`` are merged onto the event so the stimulus equation's symbols (e.g. ``T_drive``) resolve. """
@@ -2742,9 +2744,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         items = events.items() if hasattr(events, "items") else []
         for _key, ev in items:
             et = str(getattr(ev, "event_type", "stimulus") or "stimulus").lower()
-            if "stimul" not in et:
+            is_stimulus = "stimul" in et
+            if not (is_stimulus or et in ("continuous", "discrete")):
                 continue
-            ev.event_type = "stimulus"  # normalise synonym for the codegen filter
+            ev.event_type = "stimulus" if is_stimulus else et  # the spelling every codegen filter compares against
 
             tv = getattr(ev, "target_variable", None)
             if tv:

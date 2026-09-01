@@ -100,7 +100,7 @@ def active_stimulus_events(experiment: Any) -> list:
     items = list(experiment.events.items()) if getattr(experiment, "events", None) else []
 
     def _is_input(ev):
-        et = str(getattr(ev, "event_type", "stimulus"))
+        et = str(getattr(ev, "event_type", "stimulus") or "stimulus").lower()
         return ("stimul" in et) or (et in ("continuous", "discrete"))
 
     targets = set()
