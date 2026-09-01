@@ -121,7 +121,7 @@ make docs-preview    # serve with it
 make docs-render     # full build with it
 ```
 
-`execute: {cache: true, freeze: auto}` re-executes a page only when its source changes. Commit `_freeze/` to share the cache.
+`execute: {cache: true, freeze: auto}` re-executes a page only when its source changes. `_freeze/` stays out of the repository: it is 70 MB of images and JSON that churns on every content edit, and the release build renders cold on purpose, so a shared cache would buy speed at the cost of the thing that build exists to prove.
 
 ## Generated, not typed
 

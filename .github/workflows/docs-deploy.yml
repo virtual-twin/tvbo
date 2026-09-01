@@ -1,10 +1,4 @@
-# Build and publish the TVB-O documentation.
-#
-# Called by docker.yml once the release image is pushed, so the pull cannot race the build; or dispatched manually against any tag.
-#
-# Renders inside the *exact* released container, so every backend is present with the locked dependency set, then publishes via `quarto publish gh-pages`.
-#
-# Cold build — no _freeze, no .quarto cache, no Actions cache — so the site is a faithful re-execution at the release version.
+# Build and publish the TVB-O documentation: called by docker.yml once the release image is pushed so the pull cannot race the build, or dispatched manually against any tag. It renders inside that exact released container — every backend present at the locked dependency set — with no _freeze, no .quarto and no Actions cache, so the site is a faithful cold re-execution rather than a replay, and then publishes via `quarto publish gh-pages`.
 
 name: Deploy Docs
 
@@ -17,12 +11,22 @@ on:
                 required: false
                 type: string
                 default: ""
+            publish:
+                description: "Publish the rendered site to gh-pages. A release publishes; a manual dispatch defaults to a dry run."
+                required: false
+                type: boolean
+                default: true
     workflow_dispatch:
         inputs:
             tag:
                 description: "Container tag to render against (e.g. '1.2.3' or 'latest'). Empty → 'latest'."
                 required: false
                 default: ""
+            publish:
+                description: "Publish to gh-pages on success. Off by default so a cold render can be verified without touching the live site."
+                required: false
+                type: boolean
+                default: false
 
 # Only ever one in-flight docs publish; never abort a publish mid-push.
 concurrency:
@@ -130,10 +134,10 @@ jobs:
                               curl -sSL -o /usr/local/bin/robot.jar https://github.com/ontodev/robot/releases/latest/download/robot.jar
                               chmod +x /usr/local/bin/robot
                           fi
-                          # An isolated venv, because the image ships runtime deps only and the schema-gen toolchain must not perturb the runtime the Quarto cells import.
+                          # An isolated venv, because the image ships runtime deps only and the schema-gen toolchain must not perturb the runtime the Quarto cells import. The list is exactly what `make gen-merged` imports — linkml, yaml, rdflib and pybtex — rather than an extra from pyproject, since the one declaring pybtex is `docs`, which would drag quarto, jupyter and mne in here and defeat the isolation.
                           "${UV_BIN}" venv /tmp/genenv
                           "${UV_BIN}" pip install --python /tmp/genenv/bin/python \
-                              "linkml==1.11.1" pyyaml rdflib bibtexparser
+                              "linkml==1.11.1" pyyaml rdflib pybtex
                           PATH="/tmp/genenv/bin:${PATH}" make gen-merged
                           cd docs
                           # Cold build: drop every cache so all code cells re-execute.
@@ -173,7 +177,9 @@ jobs:
             # `quarto publish gh-pages` owns the branch (orphan, force-push, .nojekyll); `--no-render` reuses the _site just built in the container.
             - uses: quarto-dev/quarto-actions/setup@v2
 
+            # A dispatch defaults to not publishing, so the cold build can be exercised on its own. Until this existed the workflow could only be tested by publishing, which is why four failed runs were never diagnosed.
             - name: Publish to gh-pages
+              if: ${{ inputs.publish }}
               working-directory: docs
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
