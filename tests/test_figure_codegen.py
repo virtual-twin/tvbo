@@ -648,6 +648,21 @@ def test_render_code_panel_numbers_toggle():
     assert "_panel_number(axd[" not in _emit(panel_numbers=False)
 
 
+def test_render_code_layout_engine_is_declared_or_falls_back():
+    """A declared engine is set outright; unset keeps the compressed-then-tight fallback.
+
+    The declared name has to reach the script as a bare string: the LinkML flavour holds a permissible-value object whose ``repr()`` is its whole constructor call, which would land in the emitted module as a NameError rather than as an engine name.
+    """
+    default = _emit()
+    assert 'fig.set_layout_engine("compressed")' in default and 'fig.set_layout_engine("tight")' in default
+
+    for declared in ("none", "constrained", "tight"):
+        code = _emit(layout_engine=declared)
+        ast.parse(code)
+        assert f"fig.set_layout_engine({declared!r})" in code
+        assert 'fig.set_layout_engine("compressed")' not in code, "a declared engine leaves no fallback to fall into"
+
+
 def test_render_code_auto_format_toggle():
     """``bsplot.style.format_fig`` appears iff auto_format is not disabled."""
     assert "bsplot.style.format_fig" in _emit(auto_format=True)

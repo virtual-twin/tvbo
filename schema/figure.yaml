@@ -65,6 +65,14 @@ enums:
       "lower left":  {description: "Bottom-left."}
       "lower right": {description: "Bottom-right."}
 
+  LayoutEngine:
+    description: "Which matplotlib layout engine positions the mosaic's axes. Unset lets the backend pick (bsplot asks for 'compressed' and falls back to 'tight'), which is right for a plain grid of plots. A figure whose panels carry their own absolute geometry — a schematic stepped out in axes fractions, or a mosaic dense enough that the constrained solver reports cells collapsed to zero and silently falls back — has to say so, because an engine that gives up still leaves the figure laid out by a fallback nobody declared."
+    permissible_values:
+      constrained: {description: "Solve the margins so no decoration overlaps another panel. The general-purpose engine."}
+      compressed:  {description: "Constrained, then pull fixed-aspect axes together so equal-aspect panels leave no gap between them."}
+      tight:       {description: "Adjust the subplot parameters after the fact to fit the decorations. No solver, so it cannot honour a shared aspect."}
+      none:        {description: "No engine: every axes keeps the position its gridspec cell gives it, and anything placed at absolute geometry survives the draw."}
+
 # ---------------------------------------------------------------------------- slots
 
 slots:
@@ -163,6 +171,9 @@ classes:
       spines:
         range: string
         description: "Axes spine style: 'box' (all 4 spines, closed boxes — e.g. Taher) or 'open' (left+bottom only). Unset defers to the active style. Pair 'box' with auto_format: false — bsplot's format_fig otherwise detaches and trims spines (the open 'nature' look)."
+      layout_engine:
+        range: LayoutEngine
+        description: "Which layout engine positions the panels. Unset lets the backend pick; name one to stop a dense mosaic being laid out by whatever the engine falls back to when its solver gives up, and 'none' to keep the gridspec's own positions when panels place their content at absolute geometry."
       spine_offset:
         range: float
         description: "How far the left and bottom spines sit outside the data area, in axes fractions. 0 makes them meet at the corner; the default detaches them slightly (bsplot's house look). Journals differ on this, so a replication states which one the paper uses."

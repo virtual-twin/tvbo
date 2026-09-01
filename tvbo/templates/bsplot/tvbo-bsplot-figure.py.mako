@@ -646,6 +646,16 @@ def _restore_fixed_axes(snap):
             a.yaxis.set_major_locator(yloc); a.yaxis.set_major_formatter(yfmt); a.set_ylim(ylim)
 
 
+<%def name="layout_engine_call(ind)">\
+% if layout_engine:
+${ind}fig.set_layout_engine(${repr(layout_engine)})   # the engine the figure declares, no fallback
+% else:
+${ind}try:                                            # prefer "compressed" (packs fixed-aspect axes tightly, less whitespace), falling back to "tight" where it cannot apply
+${ind}    fig.set_layout_engine("compressed")
+${ind}except Exception:
+${ind}    fig.set_layout_engine("tight")
+% endif
+</%def>\
 <%def name="colorbar(p)">\
 % if p['colorbar']:
     _cb = fig.colorbar(_im, ax=ax, **${repr(p['colorbar_kwargs'])})   # one scale per panel, not per layer
@@ -966,10 +976,7 @@ def main():
     plt.rcParams.update(${repr(spine_rcparams)})
 % endif
     fig, axd = bsplot.figure.subplots(**${repr(subplots_kwargs)})
-    try:                                            # tvbo prefers the "compressed" engine (packs
-        fig.set_layout_engine("compressed")         # fixed-aspect axes tightly, less whitespace);
-    except Exception:                               # fall back to "tight" where compressed can't apply.
-        fig.set_layout_engine("tight")
+${layout_engine_call('    ')}\
 % if animation:
     _POS = _frame_positions(${repr(animated_sources)}, ${repr(animation['over'])}, ${repr(animation['frames'])})
 
@@ -977,10 +984,7 @@ def main():
         """Rebuild the whole mosaic at frame *_i*, which is what lets every panel kind animate — including the ones that swap their own axes."""
         fig.clear()
         _reset_render_state()
-        try:
-            fig.set_layout_engine("compressed")
-        except Exception:
-            fig.set_layout_engine("tight")
+${layout_engine_call('        ')}\
         _compose(fig, fig.subplot_mosaic(**${repr(mosaic_kwargs)}), _POS[_i])
         return []
 

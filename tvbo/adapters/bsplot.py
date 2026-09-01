@@ -43,6 +43,19 @@ def register_transform(name):
     return deco
 
 
+def _enum_value(value):
+    """The plain string behind a schema enum member, or *value* unchanged when it is already one (or None).
+
+    The two loaders disagree on what an enum slot holds: the pydantic model (``use_enum_values``) gives the plain string, the LinkML runtime gives a permissible-value object carrying ``.text``. A value the template embeds by ``repr()`` must be collapsed here first — ``repr()`` of a permissible value is its whole constructor call, which lands in the emitted script as a ``NameError``. A value the adapter only compares or looks up needs no collapsing, since ``str()`` of a permissible value is already its text.
+    """
+    if value is None:
+        return None
+    for attr in ("text", "value"):
+        if hasattr(value, attr):
+            return str(getattr(value, attr))
+    return str(value)
+
+
 def expand_bare_axes(fig, axes, pad: float = 0.004) -> list:
     """Grow each of *axes* until it meets a neighbour's ink, and return the ones moved.
 
@@ -1676,7 +1689,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         keys = [str(p["key"]) for p in panels] or ["a"]
         layout = [keys] if any(len(k) > 1 for k in keys) else "".join(keys)
     fmt = getattr(figure, "panel_number_format", None) or "{}"
-    fig_loc = getattr(figure, "panel_number_loc", None)  # unset -> keep bsplot's own default placement
+    fig_loc = _enum_value(getattr(figure, "panel_number_loc", None))  # unset -> keep bsplot's own default placement
     font_size = getattr(figure, "font_size", None)
     number_size = getattr(figure, "panel_number_size", None) or (font_size * _PANEL_NUMBER_SCALE if font_size else None)
     offset = [float(v) for v in (getattr(figure, "panel_number_offset", None) or [])]
@@ -1753,6 +1766,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         "outfile": outfile,
         "panels": panels,
         "subplots_kwargs": subplots_kwargs,
+        "layout_engine": _enum_value(getattr(figure, "layout_engine", None)),
         "spine_rcparams": spine_rcparams,
         "dpi": dpi,
         "font_size": font_size,
