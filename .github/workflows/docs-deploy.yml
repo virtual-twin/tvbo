@@ -134,10 +134,10 @@ jobs:
                               curl -sSL -o /usr/local/bin/robot.jar https://github.com/ontodev/robot/releases/latest/download/robot.jar
                               chmod +x /usr/local/bin/robot
                           fi
-                          # An isolated venv, because the image ships runtime deps only and the schema-gen toolchain must not perturb the runtime the Quarto cells import.
+                          # An isolated venv, because the image ships runtime deps only and the schema-gen toolchain must not perturb the runtime the Quarto cells import. The list is exactly what `make gen-merged` imports — linkml, yaml, rdflib and pybtex — rather than an extra from pyproject, since the one declaring pybtex is `docs`, which would drag quarto, jupyter and mne in here and defeat the isolation.
                           "${UV_BIN}" venv /tmp/genenv
                           "${UV_BIN}" pip install --python /tmp/genenv/bin/python \
-                              "linkml==1.11.1" pyyaml rdflib bibtexparser
+                              "linkml==1.11.1" pyyaml rdflib pybtex
                           PATH="/tmp/genenv/bin:${PATH}" make gen-merged
                           cd docs
                           # Cold build: drop every cache so all code cells re-execute.
