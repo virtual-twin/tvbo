@@ -3,6 +3,8 @@
 
 """One file owns a project's colours, and every figure reads its roles from there."""
 
+import pathlib
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -12,6 +14,16 @@ import yaml
 
 from tvbo.adapters.bsplot import _style_entries
 from tvbo.plot import palette
+
+
+def _schema() -> dict:
+    """The exported JSON Schema, which is where the Palette class is written down."""
+    import json
+
+    import tvbo
+
+    return json.loads((pathlib.Path(tvbo.__file__).parent / "datamodel" / "tvbo_datamodel.schema.json").read_text())
+
 
 SHEET = {
     "ink": "#101010",
@@ -85,9 +97,49 @@ def test_a_colormap_no_one_registered_is_refused():
         palette.load({**SHEET, "colormaps": {"sequential": "not-a-colormap"}})
 
 
+def test_the_shipped_palette_is_what_the_defaults_are():
+    on_disk = yaml.safe_load(palette.PATH.read_text())
+    assert palette.load(palette.PATH) == palette.DEFAULT, "a hex written in the module rather than the file is a copy waiting to drift"
+    assert set(on_disk) - set(palette.DEFAULT) == {"tvbo_class"}, "the envelope annotates the file, and nothing else in it may be dropped"
+
+
+def test_the_shipped_palette_validates_as_a_palette_in_the_figure_spec():
+    import jsonschema
+
+    spec = yaml.safe_load(palette.PATH.read_text())
+    assert spec["tvbo_class"] == "tvbo:Palette", "the envelope is what `tvbo validate schema` reads to pick the class"
+    jsonschema.validate(spec, {"$defs": _schema()["$defs"], "$ref": "#/$defs/Palette"})
+
+
+def test_the_module_knows_exactly_the_slots_the_schema_declares():
+    assert set(palette.FIELDS) == set(_schema()["$defs"]["Palette"]["properties"]), "a slot added to the Palette class the reader does not know about is dropped on load"
+
+
+def test_a_misspelt_role_is_refused_rather_than_silently_defaulted():
+    with pytest.raises(ValueError, match="hilight"):
+        palette.load({**SHEET, "hilight": "#ff0000"})
+
+
+def test_a_palette_takes_the_same_yaml_extensions_as_every_other_document(tmp_path):
+    (tmp_path / "hues.yaml").write_text(yaml.safe_dump({"palette": ["#111111", "#222222", "#333333"]}))
+    path = tmp_path / "palette.yaml"
+    path.write_text("tvbo_class: tvbo:Palette\nhighlight: '#ff0000'\n<<: !include hues.yaml\n")
+    assert palette.load(path)["palette"] == ["#111111", "#222222", "#333333"]
+    assert palette.load(path)["highlight"] == "#ff0000"
+
+
 def test_a_yaml_style_layer_is_classified_as_a_palette(tmp_path):
     class Figure:
         style = ["tvbo", "style/sheet.mplstyle", "style/palette.yaml"]
 
     kinds = [entry["kind"] for entry in _style_entries(Figure(), tmp_path)]
     assert kinds == ["named", "mplstyle", "palette"]
+
+
+def test_the_shipped_palette_is_named_rather_than_pathed(tmp_path):
+    class Figure:
+        style = ["tvbo", "tvbo-palette"]
+
+    entries = _style_entries(Figure(), tmp_path)
+    assert [e["kind"] for e in entries] == ["named", "palette"]
+    assert entries[1]["value"] is None, "carrying this machine's path to the packaged palette would not survive the study moving"

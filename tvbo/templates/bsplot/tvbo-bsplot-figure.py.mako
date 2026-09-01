@@ -950,7 +950,11 @@ def main():
 % endfor
 % for s in style:
 % if s['kind'] == 'palette':
+% if s['value'] is None:
+    _palette.use(_palette.PATH)                     # TVB-O's own colours, shipped with the package
+% else:
     _palette.use(${repr(s['value'])})               # the palette owns every colour the sheet cannot name
+% endif
 % endif
 % endfor
 % if font_size:

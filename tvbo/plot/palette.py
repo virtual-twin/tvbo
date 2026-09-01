@@ -8,6 +8,8 @@ A style sheet carries only what matplotlib has an rcParam for. That covers the c
 The cycler is ``[base] + palette``: a plot that names no colour comes out in the neutral, and only a panel that means to separate conditions reaches into the hues. ``highlight`` is deliberately outside the cycle, because a colour that is handed to the second line of every plot cannot also mean emphasis.
 
 Continuous scales live here too, under ``colormaps``, so the two kinds of colour move together and a figure never names a colormap of its own: anything categorical takes a hue from ``palette``, anything ordinal or continuous takes a colormap role, and an ordinal scale drawn as discrete swatches samples one with :func:`ramp` rather than picking hues that imply no order.
+
+TVB-O's own palette is :data:`PATH`, the ``palette.yaml`` shipped beside this module, and it is what :data:`DEFAULT` reads and what a project's file falls back to role by role. It is a ``Palette`` in the figure spec (``schema/figure.yaml``), so it validates like any other TVB-O document and so a consumer outside Python — the documentation site's stylesheet, the manuscript's figures — reads those hexes rather than keeping a copy that drifts.
 """
 
 from __future__ import annotations
@@ -16,34 +18,53 @@ from pathlib import Path
 from typing import Any
 
 ROLES = ("ink", "base", "muted", "highlight", "background")
+FIELDS = (*ROLES, "palette", "colormaps")
 
-DEFAULT: dict[str, Any] = {
-    "ink": "#183231",
-    "base": "#3f5457",
-    "muted": "#c3cbcb",
-    "highlight": "#c0504d",
-    "background": "#ffffff",
-    "palette": ["#1f7d78", "#b5701a", "#5b5ea6", "#5f7d4f", "#7a5ea8"],
-    "colormaps": {"sequential": "viridis", "intensity": "magma", "diverging": "RdBu_r"},
-}
+PATH = Path(__file__).with_name("palette.yaml")
+
+
+def _shipped() -> dict[str, Any]:
+    """TVB-O's own colours, read from the palette that ships beside this module."""
+    import yaml
+
+    return _fields(yaml.safe_load(PATH.read_text()) or {})
+
+
+def _fields(raw: dict, where: str = "palette") -> dict[str, Any]:
+    """The palette's own slots, dropping the ``tvbo_class``/``schema_version`` envelope a file may carry.
+
+    Anything else is refused rather than ignored: a misspelt role reads exactly like an absent one, so silently dropping it would hand back the default and call it the project's colour.
+    """
+    from tvbo.utils.yaml_loader import ENVELOPE_KEYS
+
+    unknown = [k for k in raw if k not in FIELDS and k not in ENVELOPE_KEYS]
+    if unknown:
+        raise ValueError(f"{where}: {', '.join(map(repr, unknown))} is not a Palette slot; expected {', '.join(FIELDS)}")
+    return {k: v for k, v in raw.items() if k in FIELDS}
+
+
+DEFAULT: dict[str, Any] = _shipped()
 
 _current: dict[str, Any] = dict(DEFAULT)
 
 
 def load(source) -> dict:
-    """Read and validate a palette, from a YAML path or a mapping already in hand."""
-    import yaml
+    """Read and validate a palette, from a YAML path or a mapping already in hand.
+
+    A file is read through TVBO's own loader, so a palette takes ``!include`` and merge keys like every other TVBO document and may name its class in the usual envelope.
+    """
     from matplotlib.colors import is_color_like
 
+    from tvbo.utils.yaml_loader import load_as_dict
+
     if isinstance(source, (str, Path)):
-        raw = yaml.safe_load(Path(source).read_text()) or {}
-        where = str(source)
+        raw, where = load_as_dict(str(source)) or {}, str(source)
     else:
         raw, where = dict(source), "palette"
     if not isinstance(raw, dict):
         raise ValueError(f"{where}: a palette is a mapping of roles to colours")
 
-    spec = {**DEFAULT, **{k: v for k, v in raw.items() if k in ROLES or k in ("palette", "colormaps")}}
+    spec = {**DEFAULT, **_fields(raw, where)}
     if not isinstance(spec["palette"], list) or not spec["palette"]:
         raise ValueError(f"{where}: 'palette' must be a non-empty list of colours")
     spec["colormaps"] = {**DEFAULT["colormaps"], **(spec["colormaps"] or {})}

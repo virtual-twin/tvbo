@@ -105,7 +105,7 @@ classes:
       style:
         range: string
         multivalued: true
-        description: "Passed to bsplot.style.use, style names and/or .mplstyle paths, layered left to right. Owns figure sizing/DPI."
+        description: "Passed to bsplot.style.use, layered left to right: a registered style name, a path to an .mplstyle (which owns figure sizing/DPI), or a path to a YAML Palette, applied last so its colours win. The name 'tvbo-palette' is TVB-O's own palette, shipped with the package: naming it is how a project takes those colours without keeping a copy of the hexes that drifts from them. It is opt-in, because a replication whose sheet sets the colour cycle its paper used has to keep that cycle."
       format:
         range: string
         description: "Output format (pdf/svg/png). Unset defers to the renderer default."
@@ -420,6 +420,55 @@ classes:
         multivalued: true
         inlined: true
         description: "Raw backend passthrough (e.g. linewidth, linestyle); matplotlib implicit until a second backend lands."
+
+  Palette:
+    description: "A project's colours, named by role in one file a figure takes as a style layer (`style: [tvbo, sheet.mplstyle, palette.yaml]`). A style sheet carries only what matplotlib has an rcParam for, which stops short of the roles a figure reasons in: the one colour that means *this is the point*, the neutral everything unlabelled is drawn in, the hairline behind it. Naming them here is what makes recolouring a project one edit that every panel follows. The cycler is `[base] + palette`, so a plot that names no colour comes out neutral and only a panel meaning to separate conditions reaches into the hues; `highlight` sits outside the cycler, because a colour handed to the second line of every plot cannot also mean emphasis. Read by :mod:`tvbo.plot.palette`, which ships TVB-O's own as the palette in force until a project names one of its own."
+    attributes:
+      ink:
+        range: string
+        description: "Text, spines and ticks: the near-black everything is read against."
+      base:
+        range: string
+        description: "Standard lines, bars and markers, wherever the colour carries no meaning. Leads the cycler."
+      muted:
+        range: string
+        description: "Hairlines and de-emphasised strokes: present, and not competing."
+      highlight:
+        range: string
+        description: "The single emphasis colour, kept out of the cycler so it never lands on a panel by accident."
+      background:
+        range: string
+        description: "The page the figure is printed on."
+      palette:
+        range: string
+        multivalued: true
+        description: "The categorical hues, reached into only where a panel separates conditions. Ordered, and named by index from zero (`palette.0` is the first), so inserting a hue recolours every figure that names one after it."
+      colormaps:
+        range: Colormaps
+        inlined: true
+        description: "The continuous scales, so both kinds of colour move together and no figure names a colormap of its own."
+
+  Colormaps:
+    description: "Continuous colour scales by role: anything ordinal or continuous draws from one of these, anything categorical draws from `Palette.palette`, and an ordinal scale drawn as discrete swatches samples one rather than picking hues that imply no order. A role is either a registered colormap name (`viridis`) or the list of colours to ramp between (`['#000000', '#ffffff']`). The three roles below are the ones TVB-O resolves; a project may name further ones of its own."
+    attributes:
+      sequential:
+        range: string
+        any_of:
+          - range: string
+          - array: {}
+        description: "Ordered magnitudes with no meaningful zero. Also what `image.cmap` is set to, so an unstyled imshow lands here."
+      intensity:
+        range: string
+        any_of:
+          - range: string
+          - array: {}
+        description: "Strength or density read against a dark ground, where the scale should run to black rather than to a hue."
+      diverging:
+        range: string
+        any_of:
+          - range: string
+          - array: {}
+        description: "Signed quantities read against a midpoint, where the two directions must be told apart at a glance."
 
   RenderSpec:
     description: "A headless-browser capture recipe turning an `image` panel's HTML/URL `source` into the static file placed at its `path`. Mirrors one shot of code/capture-screenshots.py so a screenshot of the live platform (or any HTML render) is reproducible from the spec, not hand-captured. Only the `source` needs committing alongside the rendered `path`."

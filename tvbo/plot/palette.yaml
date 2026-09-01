@@ -1,0 +1,22 @@
+# TVB-O's own colours, and the shape every other palette takes: the authority for both kinds of colour, named by a figure as a style layer (`style: [tvbo, <sheet>.mplstyle, <this>]`) beside a sheet that carries sizes and weights and no colour at all. `base` is what a mark is drawn in when its colour carries no meaning, `highlight` is the one colour that means "this is the point" and is kept out of the cycler so it is never handed to a panel by accident, `palette` is reached into only where a panel separates conditions, and the cycler is `[base] + palette`. It ships in the wheel, so the documentation site and the manuscript's figures read these hexes instead of keeping copies that drift.
+tvbo_class: tvbo:Palette
+
+ink: "#183231"
+base: "#3f5457"
+muted: "#c3cbcb"
+highlight: "#c0504d"
+background: "#ffffff"
+
+# Chosen so the worst confusable pair stays apart in normal vision and in all three dichromacies: the previous set put two blue-purples 7.7 dE00 apart and collapsed amber onto the highlight at 1.8 for a deuteranope, where this one holds 8.8 everywhere. Teal stays put because the figures call it excitatory; the amber is lighter than it was, which is the only thing that separates it from a red highlight for a deuteranope.
+palette:
+  - "#1f7d78"
+  - "#d9922f"
+  - "#4a7fbf"
+  - "#7a5a8e"
+  - "#bf869c"
+
+# Continuous scales live here too, so a figure never names a colormap of its own. Anything ordinal or continuous draws from one of these; anything categorical draws from `palette` above.
+colormaps:
+  sequential: viridis
+  intensity: magma
+  diverging: RdBu_r

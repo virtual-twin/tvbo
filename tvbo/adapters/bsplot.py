@@ -900,15 +900,24 @@ def resolve_path(p, base_dir):
     return p if Path(p).is_absolute() else str((Path(base_dir) / p).resolve())
 
 
+_SHIPPED_PALETTE = "tvbo-palette"
+"""The style layer naming TVB-O's own palette, so a spec asks for it by name instead of by a path into the installed package."""
+
+
 def _style_entries(figure, base_dir) -> list:
     """Classify each figure style as a bsplot named style, an .mplstyle path, or a palette.
 
     bsplot.style.use only knows its registered names; a study's own .mplstyle is a filesystem path, applied via matplotlib's plt.style.use instead. This lets a study carry its own design rules (Figure.style: ['<path>/study.mplstyle']). A .yaml/.yml layer is a colour palette (see :mod:`tvbo.plot.palette`), which carries the roles a sheet has no rcParam for and is applied last so its colours win. Only the path forms are resolved against base_dir — a named style is not a filesystem reference.
+
+    The layer ``tvbo-palette`` is TVB-O's own palette, the one shipped beside :mod:`tvbo.plot.palette`, named rather than pathed so a project reads those hexes instead of keeping a copy of them that drifts. It is opt-in for the same reason a study's ``.mplstyle`` is: a replication whose sheet sets the cycler the paper used must keep it, and a palette applied last would overwrite it.
     """
     styles = list(getattr(figure, "style", None) or []) or ["tvbo"]
     out = []
     for s in styles:
         s = str(s)
+        if s == _SHIPPED_PALETTE:
+            out.append({"kind": "palette", "path": False, "value": None})  # the script resolves the packaged palette itself rather than carrying this machine's path to it
+            continue
         if s.endswith((".yaml", ".yml")):
             kind = "palette"
         elif s.endswith(".mplstyle") or "/" in s or "\\" in s:
