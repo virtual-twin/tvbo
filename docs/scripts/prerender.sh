@@ -38,6 +38,10 @@ esac
 echo "[pre-render] profile: ${QUARTO_PROFILE:-full} (api=$BUILD_API datamodel=$BUILD_DATAMODEL)"
 
 if [ "$BUILD_API" = 1 ]; then
+    if ! python -c "import quartodoc" 2>/dev/null; then
+        echo "FATAL: quartodoc is required to build the API reference. Install the docs extra: pip install -e '.[docs]'." >&2
+        exit 1
+    fi
     python scripts/tvbo_package_struct.py
     python -m quartodoc build --config api/_quartodoc_config.yml
     python scripts/update_toc_api.py
