@@ -1,0 +1,1011 @@
+@prefix tvbo:    <https://w3id.org/tvbo/> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix obo:     <http://purl.obolibrary.org/obo/> .
+@prefix dc:      <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix UBERON:  <http://purl.obolibrary.org/obo/UBERON_> .
+@prefix CL:      <http://purl.obolibrary.org/obo/CL_> .
+@prefix GO:      <http://purl.obolibrary.org/obo/GO_> .
+@prefix MESH:    <http://purl.bioontology.org/ontology/MESH/> .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Ontology header.
+# ─────────────────────────────────────────────────────────────────
+#
+
+<https://w3id.org/tvbo/axioms> a owl:Ontology ;
+    dcterms:title       "TVB-O hand-authored axioms layer"@en ;
+    dcterms:description "Axioms layered on top of `tvb-o-struct.owl` (LinkML-generated). Captures statements LinkML cannot express: SKOS anchoring of abstract concepts, backend/task/capability vocabulary, biological-substrate links, and dynamical-systems annotations."@en ;
+    dcterms:license     <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:creator     "TVB-O contributors" ;
+    rdfs:seeAlso        <https://w3id.org/tvbo/struct> .
+
+# Property declarations needed for OWL DL cleanliness.
+dcterms:subject     a owl:AnnotationProperty .
+dcterms:license     a owl:AnnotationProperty .
+dcterms:creator     a owl:AnnotationProperty .
+dcterms:title       a owl:AnnotationProperty .
+dcterms:description a owl:AnnotationProperty .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.0 SKOS anchoring of abstract concepts.
+# ─────────────────────────────────────────────────────────────────
+#
+# Seven abstract concepts that have no concrete YAML parameter to
+# attach a `grounding:` slot to. Anchored to upstream GO biological-
+# process terms via `skos:broadMatch` only when the GO term genuinely
+# subsumes the concept; otherwise no mapping is asserted.
+#
+
+tvbo:CouplingInput a skos:Concept ;
+    skos:prefLabel "CouplingInput"@en ;
+    rdfs:comment "Aggregate input arriving at a node from connected nodes; modelled as the postsynaptic potential induced by long-range projections."@en ;
+    rdfs:seeAlso tvbo:PostsynapticPotential .
+
+tvbo:Excitation a skos:Concept ;
+    rdfs:label "Excitation"@en ;
+    skos:prefLabel "Excitation"@en ;
+    rdfs:comment "Generic depolarising synaptic effect; abstract parent of model-specific excitatory currents and conductances."@en ;
+    skos:broadMatch obo:GO_0060079 .   # excitatory postsynaptic potential
+
+tvbo:Inhibition a skos:Concept ;
+    rdfs:label "Inhibition"@en ;
+    skos:prefLabel "Inhibition"@en ;
+    rdfs:comment "Generic hyperpolarising synaptic effect; abstract parent of model-specific inhibitory currents and conductances."@en ;
+    skos:broadMatch obo:GO_0060080 .   # inhibitory postsynaptic potential
+
+tvbo:EIBalance a skos:Concept ;
+    rdfs:label "E/I balance"@en ;
+    skos:prefLabel "E/I balance"@en ;
+    rdfs:comment "Dynamic equilibrium between excitatory and inhibitory drive."@en ;
+    skos:broadMatch obo:GO_0099177 .   # regulation of trans-synaptic signaling
+
+tvbo:FeedbackScaling a skos:Concept ;
+    rdfs:label "FeedbackScaling"@en ;
+    skos:prefLabel "FeedbackScaling"@en ;
+    rdfs:comment "Multiplicative gain applied to recurrent feedback. Control-theoretic concept with no faithful upstream GO mapping."@en .
+
+tvbo:InternalCoupling a skos:Concept ;
+    rdfs:label "InternalCoupling"@en ;
+    skos:prefLabel "InternalCoupling"@en ;
+    rdfs:comment "Within-population synaptic coupling, distinct from long-range inter-node coupling."@en ;
+    skos:broadMatch obo:GO_0007268 .   # chemical synaptic transmission
+
+tvbo:TimeScaling a skos:Concept ;
+    rdfs:label "TimeScaling"@en ;
+    skos:prefLabel "TimeScaling"@en ;
+    rdfs:comment "Time-constant or rate parameter that sets the temporal scale of a dynamical variable. No faithful upstream GO mapping (GO_0050789 was rejected as overly generic)."@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1 Technical axioms — backends, simulation tasks, capabilities.
+# ─────────────────────────────────────────────────────────────────
+#
+# Class hierarchy:
+#   Backend            (a backend / simulation engine)
+#   SimulationTask     (a computational job a user requests)
+#   BackendCapability  (a feature a backend either provides or lacks)
+#
+# Object properties:
+#   tvbo:supportsTask         Backend  -> SimulationTask
+#   tvbo:providesCapability   Backend  -> BackendCapability
+#   tvbo:executableOn         Dynamics | SimulationExperiment -> Backend
+#
+
+tvbo:Backend a owl:Class ;
+    rdfs:label "Backend"@en ;
+    rdfs:comment "A code-generation or simulation backend (JAX, TVB, PyRates, tvboptim, NetworkDynamics.jl, BifurcationKit.jl)."@en .
+
+tvbo:SimulationTask a owl:Class ;
+    rdfs:label "Simulation task"@en ;
+    rdfs:comment "A computational task: forward integration in some formalism, parameter exploration, gradient-based optimisation, numerical continuation, or bifurcation analysis."@en .
+
+tvbo:BackendCapability a owl:Class ;
+    rdfs:label "Backend capability"@en ;
+    rdfs:comment "A feature a backend either provides or lacks (autodiff, JIT, GPU, vectorised RNG, delay buffer, stochastic solver, stiff solver, continuation solver, code generation, etc.). Used to gate task support."@en .
+
+tvbo:supportsTask a owl:ObjectProperty ;
+    rdfs:domain tvbo:Backend ;
+    rdfs:range  tvbo:SimulationTask ;
+    rdfs:label  "supports task"@en .
+
+tvbo:providesCapability a owl:ObjectProperty ;
+    rdfs:domain tvbo:Backend ;
+    rdfs:range  tvbo:BackendCapability ;
+    rdfs:label  "provides capability"@en .
+
+tvbo:executableOn a owl:ObjectProperty ;
+    rdfs:range tvbo:Backend ;
+    rdfs:label "executable on"@en .
+
+# Simulation tasks (instances) — organised by mathematical formalism.
+
+tvbo:ODEIntegration         a tvbo:SimulationTask ; rdfs:label "ODE integration"@en ;
+    rdfs:comment "Forward integration of a deterministic ordinary differential equation."@en .
+tvbo:DDEIntegration         a tvbo:SimulationTask ; rdfs:label "DDE integration"@en ;
+    rdfs:comment "Forward integration of a delay differential equation (e.g. long-range axonal delays)."@en .
+tvbo:SDEIntegration         a tvbo:SimulationTask ; rdfs:label "SDE integration"@en ;
+    rdfs:comment "Forward integration of a stochastic differential equation."@en .
+tvbo:SDDEIntegration        a tvbo:SimulationTask ; rdfs:label "SDDE integration"@en ;
+    rdfs:comment "Forward integration of a stochastic delay differential equation."@en .
+tvbo:RDEIntegration         a tvbo:SimulationTask ; rdfs:label "RDE integration"@en ;
+    rdfs:comment "Forward integration of a random differential equation: parameters drawn from a distribution (Bayesian / ensemble simulation)."@en .
+tvbo:EventDrivenIntegration a tvbo:SimulationTask ; rdfs:label "Event-driven integration"@en ;
+    rdfs:comment "Spike-based or hybrid event-driven simulation of a neural network."@en .
+tvbo:NumericalContinuation  a tvbo:SimulationTask ; rdfs:label "Numerical continuation"@en ;
+    rdfs:comment "Tracking of equilibria, periodic orbits, or invariant manifolds as a parameter is varied."@en .
+tvbo:BifurcationAnalysis    a tvbo:SimulationTask ; rdfs:label "Bifurcation analysis"@en ;
+    rdfs:comment "Detection and classification of bifurcations along a continuation branch."@en .
+tvbo:ParameterExploration   a tvbo:SimulationTask ; rdfs:label "Parameter exploration"@en .
+tvbo:GradientBasedOptimization a tvbo:SimulationTask ; rdfs:label "Gradient-based optimisation"@en .
+
+# Backend capabilities (instances).
+
+tvbo:Autodiff             a tvbo:BackendCapability ; rdfs:label "Automatic differentiation"@en .
+tvbo:JITCompilation       a tvbo:BackendCapability ; rdfs:label "Just-in-time compilation"@en .
+tvbo:GPUSupport           a tvbo:BackendCapability ; rdfs:label "GPU execution"@en .
+tvbo:VectorizedRNG        a tvbo:BackendCapability ; rdfs:label "Vectorised RNG"@en .
+tvbo:NumPyExecution       a tvbo:BackendCapability ; rdfs:label "NumPy execution"@en .
+tvbo:BuiltinModelLibrary  a tvbo:BackendCapability ; rdfs:label "Built-in model library"@en .
+tvbo:CodeGeneration       a tvbo:BackendCapability ; rdfs:label "Symbolic code generation"@en ;
+    rdfs:comment "Backend emits standalone simulator source code from a model specification."@en .
+tvbo:NetworkXTopology     a tvbo:BackendCapability ; rdfs:label "NetworkX topology API"@en .
+tvbo:JuliaJIT             a tvbo:BackendCapability ; rdfs:label "Julia JIT"@en .
+tvbo:DiffEqIntegrators    a tvbo:BackendCapability ; rdfs:label "DifferentialEquations.jl integrators"@en .
+tvbo:ContinuationSolver   a tvbo:BackendCapability ; rdfs:label "Continuation solver"@en .
+tvbo:DelayHistoryBuffer   a tvbo:BackendCapability ; rdfs:label "Delay history buffer"@en ;
+    rdfs:comment "Storage and interpolation of past states required for DDE/SDDE integration."@en .
+tvbo:StochasticSolver     a tvbo:BackendCapability ; rdfs:label "Stochastic solver"@en .
+tvbo:StiffSolver          a tvbo:BackendCapability ; rdfs:label "Stiff solver"@en .
+tvbo:SpikingSimulation    a tvbo:BackendCapability ; rdfs:label "Spiking (point-neuron) simulation"@en ;
+    rdfs:comment "Integration of point-neuron populations with threshold-reset spiking and event-delivered synapses."@en .
+
+# Backends (instances) and their task / capability declarations.
+
+tvbo:JAX a tvbo:Backend ;
+    rdfs:label "JAX"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:SDEIntegration,
+                            tvbo:ParameterExploration, tvbo:GradientBasedOptimization ;
+    tvbo:providesCapability tvbo:Autodiff, tvbo:JITCompilation, tvbo:GPUSupport,
+                            tvbo:VectorizedRNG, tvbo:CodeGeneration .
+
+tvbo:TVB a tvbo:Backend ;
+    rdfs:label "TVB"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:DDEIntegration,
+                            tvbo:SDEIntegration, tvbo:SDDEIntegration,
+                            tvbo:ParameterExploration ;
+    tvbo:providesCapability tvbo:NumPyExecution, tvbo:BuiltinModelLibrary,
+                            tvbo:DelayHistoryBuffer, tvbo:StochasticSolver .
+
+tvbo:PyRates a tvbo:Backend ;
+    rdfs:label "PyRates"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:DDEIntegration ;
+    tvbo:providesCapability tvbo:CodeGeneration, tvbo:NetworkXTopology,
+                            tvbo:DelayHistoryBuffer .
+
+tvbo:tvboptim a tvbo:Backend ;
+    rdfs:label "tvboptim"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:SDEIntegration,
+                            tvbo:DDEIntegration, tvbo:SDDEIntegration,
+                            tvbo:ParameterExploration, tvbo:GradientBasedOptimization,
+                            tvbo:ConductionSpeedInference ;
+    tvbo:providesCapability tvbo:Autodiff, tvbo:JITCompilation, tvbo:StochasticSolver,
+                            tvbo:CodeGeneration, tvbo:DelayHistoryBuffer,
+                            tvbo:InterpolatedDelays, tvbo:StaticDelayBuffer .
+
+tvbo:NetworkDynamics a tvbo:Backend ;
+    rdfs:label "NetworkDynamics.jl"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:DDEIntegration,
+                            tvbo:SDEIntegration, tvbo:SDDEIntegration,
+                            tvbo:ParameterExploration ;
+    tvbo:providesCapability tvbo:JuliaJIT, tvbo:DiffEqIntegrators,
+                            tvbo:DelayHistoryBuffer, tvbo:StochasticSolver, tvbo:StiffSolver .
+
+tvbo:BifurcationKit a tvbo:Backend ;
+    rdfs:label "BifurcationKit.jl"@en ;
+    tvbo:supportsTask       tvbo:NumericalContinuation, tvbo:BifurcationAnalysis ;
+    tvbo:providesCapability tvbo:ContinuationSolver, tvbo:JuliaJIT .
+
+tvbo:Brian2 a tvbo:Backend ;
+    rdfs:label "Brian2"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:EventDrivenIntegration ;
+    tvbo:providesCapability tvbo:SpikingSimulation, tvbo:NumPyExecution,
+                            tvbo:CodeGeneration .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1b Differentiable conduction delays (interpolate_delays gating).
+# ─────────────────────────────────────────────────────────────────
+#
+# Gradient-based inference or exploration of conduction speed
+# (delay = tract_length / speed) is only well-posed when delayed states
+# are read by *linear interpolation* between the two bracketing history
+# steps — the coupling `interpolate_delays: true` slot. Nearest-step
+# (snapped) delays are piecewise-constant in the delay, so the gradient
+# w.r.t. conduction speed is identically zero. This layer makes that
+# requirement explicit and machine-checkable, so a SimulationExperiment
+# configured for conduction-speed inference on a tvboptim backend can
+# *materialise* `interpolate_delays: true` at configure() time instead of
+# requiring the user to set it by hand.
+
+tvbo:requiresCapability a owl:ObjectProperty ;
+    rdfs:domain tvbo:SimulationTask ;
+    rdfs:range  tvbo:BackendCapability ;
+    rdfs:label  "requires capability"@en ;
+    rdfs:comment "The task is only well-posed on a backend that provides the named capability."@en .
+
+tvbo:enabledByCouplingSlot a owl:AnnotationProperty ;
+    rdfs:label   "enabled by coupling slot"@en ;
+    rdfs:comment "Name of the concrete Coupling metadata slot a SimulationExperiment must set to True to realise this capability; read at configure() time to materialise the slot."@en .
+
+tvbo:enabledByGraphParameter a owl:AnnotationProperty ;
+    rdfs:label   "enabled by graph parameter"@en ;
+    rdfs:comment "Name of the concrete graph parameter a SimulationExperiment must set to realise this capability; read at configure() time to materialise the value."@en .
+
+tvbo:boundConstraint a owl:AnnotationProperty ;
+    rdfs:label   "bound constraint"@en ;
+    rdfs:comment "Numerical pre-condition the realised parameter must satisfy for the capability to stay correct."@en .
+
+tvbo:InterpolatedDelays a tvbo:BackendCapability ;
+    rdfs:label   "Interpolated (differentiable) delays"@en ;
+    rdfs:comment "Delayed states read by linear interpolation between the two bracketing history time-steps instead of snapping to the nearest step, making the coupling differentiable w.r.t. the continuous delay — hence w.r.t. conduction speed (delay = tract_length / speed)."@en ;
+    tvbo:enabledByCouplingSlot "interpolate_delays" .
+
+tvbo:StaticDelayBuffer a tvbo:BackendCapability ;
+    rdfs:label   "Static delay history buffer"@en ;
+    rdfs:comment "Fixed-length delay-history buffer (ceil(max_delay/dt) steps) whose size is set by an explicit max_delay bound and decoupled from the (possibly varying / traced) per-edge delays — the prerequisite for varying or differentiating delays under JIT. Delays exceeding max_delay are truncated (saturated at max_delay), so the bound must cover the slowest conduction speed explored."@en ;
+    tvbo:enabledByGraphParameter "max_delay" ;
+    tvbo:boundConstraint "max_delay >= max(tract_length) / min(conduction_speed)" .
+
+tvbo:ConductionSpeedInference a tvbo:SimulationTask ;
+    rdfs:label   "Conduction-speed inference"@en ;
+    rdfs:comment "Gradient-based optimisation or parameter exploration of conduction speed / per-edge conduction delays."@en ;
+    tvbo:requiresCapability tvbo:InterpolatedDelays, tvbo:StaticDelayBuffer .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1c Graph representation (sparse vs dense connectivity).
+# ─────────────────────────────────────────────────────────────────
+#
+# The connectome can be carried for coupling evaluation either as a dense
+# adjacency (coupling cost ~ nodes^2) or as an edge list (cost ~ edges).
+# Both compute the identical coupling, so the choice is a performance
+# contract, not a numerical one — exposed as the backend-independent
+# `Network.graph_representation` slot (auto | dense | sparse). It is
+# orthogonal to whether the coupling reads delayed states (§4.1b): the two
+# binary dimensions — edge-sparsity × delay — give the four concrete backend
+# graph kinds. `auto` resolves by connection density: the sparse
+# representation wins once the adjacency is sparse enough that summing over
+# existing edges is cheaper than the dense product — a large saving for
+# large, sparsely-connected connectomes (structural connectomes, power
+# grids), a loss for small or dense networks where dense linear algebra's
+# constant factor dominates.
+
+tvbo:SparseCoupling a tvbo:BackendCapability ;
+    rdfs:label   "Sparse (edge-list) coupling evaluation"@en ;
+    rdfs:comment "Evaluate network coupling by summing over the existing edges only (cost scales with the number of edges) rather than over the full dense adjacency (cost scales with nodes-squared). Numerically identical to the dense evaluation; a pure performance optimisation for sparsely-connected networks."@en ;
+    tvbo:enabledByGraphParameter "graph_representation" ;
+    tvbo:boundConstraint "edges << nodes^2  (connection density below the backend's sparse/dense crossover)" .
+
+tvbo:DenseCoupling a tvbo:BackendCapability ;
+    rdfs:label   "Dense (full-adjacency) coupling evaluation"@en ;
+    rdfs:comment "Evaluate network coupling as a product over the full nodes-by-nodes adjacency. Preferred for densely-connected or small networks, where dense linear algebra's constant-factor efficiency outweighs its nodes-squared scaling."@en ;
+    tvbo:enabledByGraphParameter "graph_representation" .
+
+# The four concrete backend graph kinds = {dense, sparse} × {instantaneous, delayed}.
+# Sparsity is chosen by `graph_representation`; the delay axis is chosen by whether
+# any coupling carries a conduction delay (§4.1b), independently.
+tvbo:DenseGraph a owl:Class ;
+    rdfs:label "DenseGraph"@en ;
+    rdfs:comment "Dense adjacency, instantaneous coupling. Used when graph_representation resolves to dense and no coupling carries a conduction delay."@en .
+
+tvbo:SparseGraph a owl:Class ;
+    rdfs:label "SparseGraph"@en ;
+    rdfs:comment "Edge-list adjacency, instantaneous coupling. Used when graph_representation resolves to sparse and no coupling carries a conduction delay."@en .
+
+tvbo:DenseDelayGraph a owl:Class ;
+    rdfs:label "DenseDelayGraph"@en ;
+    rdfs:comment "Dense adjacency with a delay-history buffer, used when any coupling carries a conduction delay and graph_representation resolves to dense. Required for interpolated (differentiable) delays (§4.1b)."@en .
+
+tvbo:SparseDelayGraph a owl:Class ;
+    rdfs:label "SparseDelayGraph"@en ;
+    rdfs:comment "Edge-list adjacency with a delay-history buffer, used when any coupling carries a conduction delay and graph_representation resolves to sparse."@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1d Analysis observables (Analysis.type vocabulary).
+# ─────────────────────────────────────────────────────────────────
+#
+# An Analysis derives a quantity by ANALYSING something rather than by transforming
+# a recorded trajectory. What it analyses need not be a model: empirical maps, an
+# atlas or a measured connectome are analysed in exactly the same sense as a solve.
+# The schema splits this into two forms by WHERE the analysis runs, and only one of
+# them carries a vocabulary:
+#
+#   * analysing a solve — runs inside the integration, named by the free string
+#     `Analysis.type` and dispatched by the backend. That vocabulary is the
+#     AnalysisObservable concepts below; it stays open (concepts here, not a closed
+#     schema enum) so backends can extend it. Each concept is backend-independent
+#     (says what is computed, not how); a backend with no equivalent emits a comment
+#     and skips rather than raising. Named backends below currently lower the type.
+#   * analysing saved data — runs on the host over result containers or empirical
+#     inputs, named by the `callable` it invokes. It has no closed vocabulary,
+#     because the identity of such an analysis is the function plus the data it
+#     `used:`, which the study records per instance.
+
+tvbo:Analysis
+    rdfs:label   "Analysis"@en ;
+    rdfs:comment "A quantity obtained by analysing a model, its solve, a derived loss, simulated results, or empirical data — as opposed to transforming a recorded trajectory. Analysing a solve is named by Analysis.type (see AnalysisObservable); analysing saved data is named by the callable invoked over the arrays it used."@en .
+
+tvbo:AnalysisObservable a owl:Class ;
+    rdfs:label   "Analysis observable"@en ;
+    rdfs:comment "A quantity obtained by analysing the model, its solve, or a derived loss — the vocabulary of Analysis.type, i.e. the form of Analysis that runs inside the integration. Analyses of saved results or empirical data take the callable form instead and are not drawn from this vocabulary."@en .
+
+tvbo:realisedByBackend a owl:AnnotationProperty ;
+    rdfs:label   "realised by backend"@en ;
+    rdfs:comment "Backend(s) whose codegen currently lowers this analysis observable to a concrete implementation."@en .
+
+tvbo:LyapunovAnalysis a tvbo:AnalysisObservable ;
+    rdfs:label   "Lyapunov analysis"@en ;
+    rdfs:comment "Benettin QR estimate of the tangent-dynamics Lyapunov spectrum: the leading exponents lambda_i (rate of trajectory divergence, chaos when lambda_1 > 0) and, for the leading direction, the per-node Lyapunov vector xi_i (which nodes drive the instability). Parameters: n_exponents, n_steps (rescaling segments), segment_time, mode (tangent-space jvp / two-trajectory sim). Independent per operating point, so it fans out across a parameter axis."@en ;
+    tvbo:realisedByBackend "tvboptim" .
+
+tvbo:GradientAnalysis a tvbo:AnalysisObservable ;
+    rdfs:label   "Gradient analysis"@en ;
+    rdfs:comment "Autodiff (forward/reverse) gradient of a target observable or loss with respect to named parameters — the untruncated sensitivity of the full solve. Parameters: mode. Binds via target + wrt."@en ;
+    tvbo:realisedByBackend "tvboptim" .
+
+tvbo:FiniteDifferenceAnalysis a tvbo:AnalysisObservable ;
+    rdfs:label   "Finite-difference analysis"@en ;
+    rdfs:comment "Seed-averaged central finite-difference sensitivity of a target with respect to a parameter; the mean is the gradient estimate, the sem its standard error. Parameters: delta, seeds, seed_base, stat. Binds via target + wrt."@en ;
+    tvbo:realisedByBackend "tvboptim" .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.1e Coupling-stage evaluation vs auxiliary-recording alignment.
+# ─────────────────────────────────────────────────────────────────
+#
+# A recorded auxiliary (a derived variable listed in `output` or flagged
+# `record: true`) is an algebraic function of the state at its recorded instant,
+# so at every sample it must equal that function of the state recorded alongside
+# it. Native multi-stage solvers (Heun, RK4) freeze the coupling once per step
+# (`coupling_evaluation: per_step`, the default), so the coupling term an
+# auxiliary sees is the step-START value — one integration step behind the
+# recorded post-step state. For an auxiliary whose equation reads a coupling
+# input, exact alignment of its state and coupling therefore requires the
+# coupling to be re-evaluated at the recorded state, i.e. `coupling_evaluation:
+# per_stage`. State-only auxiliaries are unaffected. This layer makes the
+# requirement explicit and machine-checkable, so a SimulationExperiment that
+# records a coupling-dependent auxiliary can materialise `per_stage` at
+# configure() time instead of silently recording a one-step-stale coupling.
+
+tvbo:enabledByIntegrationSlot a owl:AnnotationProperty ;
+    rdfs:label   "enabled by integration slot"@en ;
+    rdfs:comment "Name (optionally followed by ':' and the required value) of the Integration/Integrator metadata slot a SimulationExperiment must set to realise this capability; read at configure() time to materialise the slot."@en .
+
+tvbo:PerStageCouplingEvaluation a tvbo:BackendCapability ;
+    rdfs:label   "Per-stage coupling evaluation"@en ;
+    rdfs:comment "The network coupling is re-evaluated at every stage of a multi-stage integrator (a full part of the vector field) instead of being frozen once per step. Backend-independent numerical contract carried by `Integration.coupling_evaluation: per_stage` (tvboptim maps this to recompute_coupling_per_stage=True; diffrax recomputes the whole RHS per stage regardless)."@en ;
+    tvbo:enabledByIntegrationSlot "coupling_evaluation:per_stage" .
+
+tvbo:CouplingDependentAuxiliaryRecording a tvbo:SimulationTask ;
+    rdfs:label   "Coupling-dependent auxiliary recording"@en ;
+    rdfs:comment "Recording (via `output` or `record: true`) a derived/auxiliary variable whose equation reads a coupling input, with the auxiliary aligned to the state it is recorded alongside. Under the default per-step (frozen) coupling the recorded auxiliary carries the step-start coupling — one integration step behind the recorded post-step state — so exact state/coupling alignment requires per-stage coupling evaluation."@en ;
+    tvbo:requiresCapability tvbo:PerStageCouplingEvaluation .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.2 Biological substrate axioms.
+# ─────────────────────────────────────────────────────────────────
+#
+
+tvbo:surrogate_of a owl:ObjectProperty ;
+    rdfs:label "surrogate of"@en ;
+    rdfs:comment "General grounding relation: the subject (parameter, state variable, model, ...) is a surrogate / abstraction / model of an external ontology term (typically GO, ChEBI, UBERON, CL, MeSH). The target term's own ontology carries the specificity, so no per-domain relation is required. Populated inline from the LinkML `grounding` slot; the `models*` properties below are sub-properties that refine the range."@en .
+
+tvbo:modelsAnatomicalRegion a owl:ObjectProperty ;
+    rdfs:subPropertyOf tvbo:surrogate_of ;
+    rdfs:label "models anatomical region"@en ;
+    rdfs:comment "Anatomical region(s) the Dynamics model is intended to represent. Range: UBERON terms."@en .
+
+tvbo:modelsCellType a owl:ObjectProperty ;
+    rdfs:subPropertyOf tvbo:surrogate_of ;
+    rdfs:label "models cell type"@en ;
+    rdfs:comment "Cell type(s) whose collective dynamics the model represents. Range: CL terms."@en .
+
+tvbo:modelsNeurotransmitterSystem a owl:ObjectProperty ;
+    rdfs:subPropertyOf tvbo:surrogate_of ;
+    rdfs:label "models neurotransmitter system"@en ;
+    rdfs:comment "Neurotransmitter system(s) whose synaptic dynamics the model represents. Range: GO biological-process terms."@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.3 Dynamical-systems axioms.
+# ─────────────────────────────────────────────────────────────────
+#
+# All `DynamicalProperty` siblings and their named members (Excitable,
+# Hopf, FixedPoint, ...) are owl:Class entities so subtyping works
+# (e.g. SubcriticalHopf ⊑ Hopf) without OWL Full punning. Per-model
+# bifurcation events are reified through `tvbo:BifurcationEvent`.
+#
+
+tvbo:DynamicalProperty a owl:Class ;
+    rdfs:label "Dynamical property"@en ;
+    rdfs:comment "Top-level grouping for qualitative phase-space properties."@en .
+
+tvbo:DynamicalRegime a owl:Class ; rdfs:subClassOf tvbo:DynamicalProperty ;
+    rdfs:label "Dynamical regime"@en .
+tvbo:Bifurcation     a owl:Class ; rdfs:subClassOf tvbo:DynamicalProperty ;
+    rdfs:label "Bifurcation"@en .
+tvbo:Attractor       a owl:Class ; rdfs:subClassOf tvbo:DynamicalProperty ;
+    rdfs:label "Attractor"@en .
+tvbo:Stochasticity   a owl:Class ; rdfs:subClassOf tvbo:DynamicalProperty ;
+    rdfs:label "Stochasticity character"@en ;
+    rdfs:comment "Stochasticity character of the model definition itself, independent of any optional integrator-level noise injection."@en .
+
+# Regime classes.
+tvbo:Excitable    a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Excitable"@en .
+tvbo:Oscillatory  a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Oscillatory"@en .
+tvbo:Bistable     a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Bistable"@en .
+tvbo:Multistable  a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Multistable"@en .
+tvbo:Chaotic      a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Chaotic"@en .
+tvbo:Quiescent    a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Quiescent"@en .
+tvbo:Bursting     a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Bursting"@en .
+
+# Bifurcation type taxonomy (Fold/SaddleNode, BranchPoint, Hopf, PeriodDoubling,
+# NeimarkSacker, codim-2 organising centres, ...) is defined — with codimension /
+# eigenvalue-signature / branch-geometry axioms and backend label anchoring — in the
+# dedicated module `ontology/tvb-o-bifurcation.ttl`, merged alongside this file.
+# The parent `tvbo:Bifurcation` class remains declared above (§ DynamicalProperty).
+
+# Attractor classes.
+tvbo:FixedPoint       a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Fixed point"@en .
+tvbo:LimitCycle       a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Limit cycle"@en .
+tvbo:Torus            a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Torus"@en .
+tvbo:StrangeAttractor a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Strange attractor"@en .
+
+# Stochasticity classes.
+tvbo:Deterministic        a owl:Class ; rdfs:subClassOf tvbo:Stochasticity ; rdfs:label "Deterministic"@en .
+tvbo:AdditiveNoise        a owl:Class ; rdfs:subClassOf tvbo:Stochasticity ; rdfs:label "Additive noise"@en .
+tvbo:MultiplicativeNoise  a owl:Class ; rdfs:subClassOf tvbo:Stochasticity ; rdfs:label "Multiplicative noise"@en .
+tvbo:ColoredNoise         a owl:Class ; rdfs:subClassOf tvbo:Stochasticity ; rdfs:label "Coloured noise"@en .
+
+# Object / data properties on Dynamics models.
+tvbo:exhibitsRegime a owl:ObjectProperty ;
+    rdfs:label "exhibits regime"@en ;
+    rdfs:comment "Object is a Regime class (open-world: model may admit additional regimes for parameter values not yet catalogued)."@en .
+
+tvbo:exhibitsBifurcation a owl:ObjectProperty ;
+    rdfs:range tvbo:BifurcationEvent ;
+    rdfs:label "exhibits bifurcation"@en ;
+    rdfs:comment "Range is a reified BifurcationEvent that records the bifurcation type, the locus parameter, and (optionally) the critical value."@en .
+
+tvbo:hasAttractor a owl:ObjectProperty ;
+    rdfs:label "has attractor"@en .
+
+tvbo:hasStochasticityCharacter a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:label "has stochasticity character"@en ;
+    rdfs:comment "Intrinsic stochasticity of the model definition itself. A model whose equations are deterministic but is integrated with additive noise via the Integrator is still tvbo:Deterministic here."@en .
+
+tvbo:phaseSpaceDimension a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:range xsd:positiveInteger ;
+    rdfs:label "phase-space dimension"@en .
+
+tvbo:hasTimescaleSeparation a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "has timescale separation"@en .
+
+tvbo:hasConservedQuantity a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "has conserved quantity"@en .
+
+#
+# Reified bifurcation event.
+#
+# A bifurcation event ties (i) the bifurcation type, (ii) the parameter
+# along which the bifurcation occurs, and (iii) the model that exhibits
+# it. The parameter range is left open because parameter IRIs are minted
+# inside the per-model namespaces by the schema-generated struct OWL.
+#
+
+tvbo:BifurcationEvent a owl:Class ;
+    rdfs:label "Bifurcation event"@en ;
+    rdfs:comment "Reified record of a bifurcation in a specific model along a specific parameter."@en .
+
+tvbo:bifurcationType a owl:ObjectProperty ;
+    rdfs:domain tvbo:BifurcationEvent ;
+    rdfs:label "bifurcation type"@en ;
+    rdfs:comment "Object is a Bifurcation class (e.g. tvbo:Hopf). Encoded as a class so DL reasoners can use the subClassOf hierarchy on the Bifurcation tree."@en .
+
+tvbo:bifurcationParameter a owl:ObjectProperty ;
+    rdfs:domain tvbo:BifurcationEvent ;
+    rdfs:label "bifurcation parameter"@en ;
+    rdfs:comment "Parameter (CURIE into the per-model parameter namespace) along which the bifurcation is observed."@en .
+
+tvbo:criticalValue a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain tvbo:BifurcationEvent ;
+    rdfs:range xsd:double ;
+    rdfs:label "critical value"@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.4 Model features (intrinsic structural traits, distinct from
+# backend capabilities).
+# ─────────────────────────────────────────────────────────────────
+#
+
+tvbo:ModelFeature a owl:Class ;
+    rdfs:label "Model feature"@en ;
+    rdfs:comment "Intrinsic structural trait of a Dynamics model (e.g. sigmoid activation, fast-slow decomposition, E/I subpopulations). Distinct from BackendCapability: a feature is what the model has, a capability is what a backend provides."@en .
+
+tvbo:hasModelFeature a owl:ObjectProperty ;
+    rdfs:range tvbo:ModelFeature ;
+    rdfs:label "has model feature"@en .
+
+tvbo:requiresCoupling a owl:ObjectProperty ;
+    rdfs:domain tvbo:Dynamics ;
+    rdfs:range  tvbo:Coupling ;
+    rdfs:label  "requires coupling"@en ;
+    rdfs:comment "The model's dynamics are defined against this specific coupling function (e.g. a sigmoidal transform of afferent activity); substituting a different coupling yields a different model."@en .
+
+tvbo:SigmoidActivation             a tvbo:ModelFeature ; rdfs:label "Sigmoid activation"@en .
+tvbo:FastSlowDecomposition         a tvbo:ModelFeature ; rdfs:label "Fast-slow decomposition"@en .
+tvbo:ExcitatoryInhibitorySubpopulations
+                                   a tvbo:ModelFeature ; rdfs:label "Excitatory/inhibitory subpopulations"@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Per-model briefs (pilot: JansenRit, Epileptor, ReducedWongWang).
+# ─────────────────────────────────────────────────────────────────
+#
+
+tvbo:JansenRit
+    skos:prefLabel "Jansen-Rit"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;          # cerebral cortex
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;  # pyramidal, interneuron
+    tvbo:modelsNeurotransmitterSystem
+        GO:0035249,                                              # glutamatergic synaptic transmission
+        GO:0007214 ;                                             # GABAergic synaptic transmission
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation ;
+    tvbo:requiresCoupling              <https://w3id.org/tvbo/coupling_functions/SigmoidalJansenRit> .
+
+tvbo:Epileptor
+    rdfs:label "Epileptor"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0002728 ;          # hippocampus (mesial temporal lobe)
+    dcterms:subject                    MESH:D004827 ;            # Epilepsy
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ,
+                                       [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:HomoclinicBifurcation ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+tvbo:ReducedWongWang
+    skos:prefLabel "Reduced Wong-Wang"@en ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;  # pyramidal, interneuron
+    tvbo:modelsNeurotransmitterSystem  GO:0035249,               # glutamatergic
+                                       GO:0007214 ;              # GABAergic
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Bistable, tvbo:Multistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Per-model briefs (full coverage of canonical mean-field models).
+# ─────────────────────────────────────────────────────────────────
+#
+# Each brief asserts only properties that are supported by the
+# original publication and the YAML definition. Open-world semantics
+# apply: absence of an axiom does not imply its negation.
+#
+
+# Reduced Wong-Wang variants — share E/I architecture and cortical scope.
+tvbo:ReducedWongWangExcInh
+    skos:prefLabel "Reduced Wong-Wang (E/I)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Bistable, tvbo:Multistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+tvbo:ReducedWongWangFunc
+    rdfs:label     "Reduced Wong-Wang (functional)"@en ;
+    skos:prefLabel "Reduced Wong-Wang (functional)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Bistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+tvbo:ReducedWongWangTvboptim
+    skos:prefLabel "Reduced Wong-Wang (tvboptim)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Bistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Jansen-Rit family — 6-D cortical column with sigmoid activation.
+tvbo:Jansen1995
+    rdfs:label     "Jansen 1995"@en ;
+    skos:prefLabel "Jansen 1995"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+
+tvbo:JansenRit1995
+    skos:prefLabel "Jansen-Rit 1995"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+
+tvbo:ZetterbergJansen
+    skos:prefLabel "Zetterberg-Jansen"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+
+# Wilson-Cowan — 2-D E/I cortical mean field.
+tvbo:WilsonCowan
+    skos:prefLabel "Wilson-Cowan"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ,
+                                       [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation,
+                                       tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Generic 2-D oscillator (FitzHugh-Nagumo-like normal form).
+tvbo:Generic2dOscillator
+    skos:prefLabel "Generic 2-D oscillator"@en ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Excitable, tvbo:Oscillatory, tvbo:Bistable ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ,
+                                       [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true .
+
+# Generic linear — used as null/baseline reference.
+tvbo:GenericLinear
+    skos:prefLabel "Generic linear"@en ;
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Quiescent ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false .
+
+# Supercritical Hopf normal form.
+tvbo:SupHopf
+    skos:prefLabel "Supercritical Hopf"@en ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Quiescent, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SupercriticalHopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Hopfield-style continuous attractor network.
+tvbo:Hopfield
+    skos:prefLabel "Hopfield"@en ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Multistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:SigmoidActivation .
+
+# Kuramoto phase oscillator (per-node, 1 SV).
+tvbo:Kuramoto
+    skos:prefLabel "Kuramoto"@en ;
+    tvbo:phaseSpaceDimension           1 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory ;
+    tvbo:hasAttractor                  tvbo:LimitCycle, tvbo:Torus ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        false .
+
+tvbo:Kuramoto2
+    rdfs:label     "Kuramoto (extended)"@en ;
+    skos:prefLabel "Kuramoto (extended)"@en ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory ;
+    tvbo:hasAttractor                  tvbo:LimitCycle, tvbo:Torus ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Larter-Breakspear — 3-D conductance-based cortical mean field.
+tvbo:LarterBreakspear
+    skos:prefLabel "Larter-Breakspear"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           3 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Chaotic ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle, tvbo:StrangeAttractor ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Montbrio-Pazo-Roxin — exact mean field of QIF neurons.
+tvbo:MontbrioPazoRoxin
+    skos:prefLabel "Montbrio-Pazo-Roxin"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ,
+                                       [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Coombes-Byrne — next-generation neural mass (theta-neuron mean field).
+tvbo:CoombesByrne
+    skos:prefLabel "Coombes-Byrne"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           4 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+tvbo:CoombesByrne2D
+    skos:prefLabel "Coombes-Byrne 2D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Dumont-Gutkin — theta-neuron mean field with synaptic dynamics.
+tvbo:DumontGutkin
+    skos:prefLabel "Dumont-Gutkin"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           8 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Stefanescu-Jirsa reduced HH-like models.
+tvbo:StefanescuJirsa2D
+    skos:prefLabel "Stefanescu-Jirsa 2D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           4 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Bursting ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true .
+
+tvbo:StefanescuJirsa3D
+    skos:prefLabel "Stefanescu-Jirsa 3D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bursting, tvbo:Chaotic ;
+    tvbo:hasAttractor                  tvbo:LimitCycle, tvbo:StrangeAttractor ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true .
+
+# Cakan-Obermayer ALN (adaptive linear-nonlinear) cortical mean field.
+tvbo:CakanObermayer
+    skos:prefLabel "Cakan-Obermayer ALN"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           6 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Bistable, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Zerlaut adaptive exponential mean field, first-order.
+tvbo:ZerlautAdaptationFirstOrder
+    skos:prefLabel "Zerlaut (first-order adaptation)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsCellType                CL:0000598, CL:0000099 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249, GO:0007214 ;
+    tvbo:phaseSpaceDimension           5 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:ExcitatoryInhibitorySubpopulations .
+
+# Tsodyks-Markram short-term plasticity.
+tvbo:TsodyksMarkram
+    skos:prefLabel "Tsodyks-Markram"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249 ;
+    tvbo:phaseSpaceDimension           3 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# Epileptor variants — all model epileptic seizure dynamics.
+tvbo:Epileptor2D
+    skos:prefLabel "Epileptor 2D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           2 ;
+    tvbo:exhibitsRegime                tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+tvbo:Epileptor3DStefanescuMcDonald
+    skos:prefLabel "Epileptor 3D (Stefanescu-McDonald)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           3 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+tvbo:Epileptor5D
+    skos:prefLabel "Epileptor 5D"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           5 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+tvbo:EpileptorRestingState
+    skos:prefLabel "Epileptor (resting-state)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956, UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           8 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+# Gast-Schmidt-Knosche (synaptic depression / facilitation) variants.
+tvbo:GastSchmidtKnosche_SD
+    skos:prefLabel "Gast-Schmidt-Knosche (synaptic depression)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249 ;
+    tvbo:phaseSpaceDimension           4 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+tvbo:GastSchmidtKnosche_SF
+    skos:prefLabel "Gast-Schmidt-Knosche (synaptic facilitation)"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956 ;
+    tvbo:modelsNeurotransmitterSystem  GO:0035249 ;
+    tvbo:phaseSpaceDimension           4 ;
+    tvbo:exhibitsRegime                tvbo:Oscillatory, tvbo:Quiescent ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:Hopf ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic .
+
+# K-ion exchange model (extracellular potassium dynamics, seizure-like).
+tvbo:KIonEx
+    skos:prefLabel "K-ion exchange"@en ;
+    tvbo:modelsAnatomicalRegion        UBERON:0000956, UBERON:0002728 ;
+    dcterms:subject                    MESH:D004827 ;
+    tvbo:phaseSpaceDimension           5 ;
+    tvbo:exhibitsRegime                tvbo:Bursting, tvbo:Bistable, tvbo:Oscillatory ;
+    tvbo:exhibitsBifurcation           [ a tvbo:BifurcationEvent ;
+                                         tvbo:bifurcationType tvbo:SaddleNode ] ;
+    tvbo:hasAttractor                  tvbo:FixedPoint, tvbo:LimitCycle ;
+    tvbo:hasStochasticityCharacter     tvbo:Deterministic ;
+    tvbo:hasTimescaleSeparation        true ;
+    tvbo:hasModelFeature               tvbo:FastSlowDecomposition .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# §4.5 Observation axioms — hemodynamic warm-up requirement.
+# ─────────────────────────────────────────────────────────────────
+#
+# A BOLD signal is produced by convolving simulated neural activity
+# with a hemodynamic response function (HRF) of finite support. The
+# convolution is causal: BOLD at time t is a weighted sum of neural
+# activity over the preceding kernel window, so the first kernel-length
+# of the recorded signal depends on activity from *before* recording
+# starts. The integrator supplies that pre-roll from the discarded
+# transient (`tvbo:transient_time`). If the transient is shorter than
+# the HRF kernel, the convolution history buffer is under-filled, the
+# valid-mode output is truncated, and its time axis shifts earlier —
+# the BOLD then spuriously *precedes* the stimulus instead of lagging
+# it by the hemodynamic delay. OWL cannot state the numeric inequality;
+# it is documented here as an axiom and enforced in `tvb-o.shacl.ttl`.
+#
+
+tvbo:HemodynamicObservation a owl:Class ;
+    rdfs:subClassOf tvbo:Observation ;
+    rdfs:label "Hemodynamic observation"@en ;
+    rdfs:comment "An observation model that maps neural activity to a haemodynamic / BOLD signal by causal convolution with a finite-support HRF kernel."@en .
+
+<https://w3id.org/tvbo/observation_models/bold_double_exponential> a tvbo:HemodynamicObservation .
+<https://w3id.org/tvbo/observation_models/bold_gamma>              a tvbo:HemodynamicObservation .
+<https://w3id.org/tvbo/observation_models/bold_mixture_of_gammas>  a tvbo:HemodynamicObservation .
+<https://w3id.org/tvbo/observation_models/bold_region_roi>         a tvbo:HemodynamicObservation .
+
+tvbo:hrfKernelDuration a owl:DatatypeProperty ;
+    rdfs:domain tvbo:HemodynamicObservation ;
+    rdfs:range  xsd:decimal ;
+    rdfs:label  "HRF kernel duration (ms)"@en ;
+    rdfs:comment "Temporal support of the HRF convolution kernel, in milliseconds; the lower bound the simulated transient must satisfy."@en .
+
+tvbo:HemodynamicWarmupRequirement a skos:Concept ;
+    skos:prefLabel "Hemodynamic warm-up requirement"@en ;
+    rdfs:comment "Modelling axiom: for any tvbo:HemodynamicObservation, the discarded transient (tvbo:transient_time) MUST be ≥ the observation's HRF kernel duration (tvbo:hrfKernelDuration). Otherwise the causal HRF convolution is under-filled and the BOLD time axis shifts earlier, so the signal spuriously precedes the stimulus rather than lagging it by the hemodynamic delay. Example: the tvboptim BOLD pipeline uses a 20000 ms kernel (5000 samples at dt = 4 ms) via prepend_history + valid-mode convolution, so transient_time ≥ 20000 ms is required."@en ;
+    rdfs:seeAlso tvbo:HemodynamicObservation, tvbo:hrfKernelDuration, tvbo:transient_time ;
+    skos:scopeNote "Observed empirically (TVB-O acoustic-stimulation use-case, 2026): a 15000 ms transient (< 20000 ms kernel) made auditory BOLD precede the loudness by ~1 s with a mislabelled 1043 ms TR; transient ≥ 20000 ms restored a causal hemodynamic lag (≈ +1.5 s) and the correct 1000 ms TR."@en .
+
