@@ -2310,8 +2310,21 @@ def _rebuilt_on(network, graph):
 
     prepare() sizes the delay history buffer once from the graph it is handed, so an axis that
     can lengthen a delay is served by replacing the graph before the run rather than per cell.
+
+    The external inputs and the settled history travel with it. Both belong to the network rather
+    than to the graph, so a rebuild that dropped them left every cell of a delay-axis sweep running
+    unstimulated and cold — from the raw prepared state over a flat delay buffer — while a bare run
+    of the same experiment was driven from the settle's endpoint, the two disagreeing with nothing
+    to say so.
     """
-    return type(network)(network.dynamics, network.coupling, graph, noise=network.noise)
+    return type(network)(
+        network.dynamics,
+        network.coupling,
+        graph,
+        noise=network.noise,
+        history=getattr(network, "_history", None),
+        external_input=network.externals,
+    )
 
 
 def _obs_data(_o):
