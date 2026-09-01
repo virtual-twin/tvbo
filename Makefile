@@ -89,7 +89,7 @@ MERGED_OUT = ontology/tvbo.owl
 RUNTIME_GEN = tvbo/data/ontology/tvbo.owl
 # Deprecated class-based ontology — preserved as a parity reference, no longer loaded.
 RUNTIME_ONTO = tvbo/data/ontology/tvb-o.owl
-WIDOCO_OUT = docs/ontology/spec
+WIDOCO_OUT = docs/1-explore/ontology/spec
 ROBOT ?= robot
 WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.25
 

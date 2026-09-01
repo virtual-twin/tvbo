@@ -270,7 +270,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Or fully declarative exp = SimulationExperiment( dynamics={"iri": "tvbo:ReducedWongWangExcInh"}, network={"parcellation": {"atlas": {"iri": "tvbo:DesikanKilliany"}}, "tractogram":   {"iri": "tvbo:dTOR"}, "coupling":     {"long_range": {"iri": "tvbo:Linear"}}}, integration={"method": "Heun", "duration": 10_000, "noise": None}, )
         ```
 
-    See the [Simulation experiments](/Simulation/SimulationExperiments.qmd) page for the full constructor surface and the [`running-simulations`](../../../skills/running-simulations/SKILL.md) skill for backend choices. """
+    See the [Simulation experiments](/2-specify/SimulationExperiments.qmd) page for the full constructor surface and the [`running-simulations`](../../../skills/running-simulations/SKILL.md) skill for backend choices. """
 
     def __init__(self, **kwargs):
         """Initialize like the datamodel, but auto-assign an id when missing.

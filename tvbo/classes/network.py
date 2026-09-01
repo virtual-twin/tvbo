@@ -402,7 +402,7 @@ class Network(tvbo_datamodel.Network):
         )
         ```
 
-    See the [Network specification](/Specification/Network.qmd) for the slot-by-slot reference and the [`Connectome`](#tvbo.classes.network.Connectome) subclass for matrix-style networks without an explicit parcellation.
+    See the [Network specification](/2-specify/Networks/Network.qmd) for the slot-by-slot reference and the [`Connectome`](#tvbo.classes.network.Connectome) subclass for matrix-style networks without an explicit parcellation.
     """
 
     @property
