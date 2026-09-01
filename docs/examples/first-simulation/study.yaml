@@ -1,0 +1,78 @@
+# The landing page's first simulation, run by `tvbo run study.yaml` or by `SimulationStudy.from_file(...).run()`. Its directory is the study root.
+tvbo_class: tvbo:SimulationStudy
+
+citekey: FirstSimulation
+title: "A first whole-brain simulation"
+label: "Eighty-seven regions on a structural connectome, coupled through their tract lengths"
+description: >-
+  A Generic2dOscillator in its limit-cycle regime on the Desikan-Killiany connectome, coupled linearly through the tract lengths so regions oscillate at a phase lag set by how far apart they are. The figure it declares is one movie: the state on the graph, the same state on the cortical surface, and every region's course with a cursor on the instant the other two panels show.
+
+experiments:
+    - id: 1
+      label: "A whole-brain simulation"
+      dynamics:
+          name: Generic2dOscillator
+          iri: tvbo:Generic2dOscillator
+          # a = 2.0 is TVB's own limit-cycle setting for this model; the rest of the curated set stands.
+          parameters: {a: {value: 2.0}}
+      network:
+          iri: tvbo:DesikanKilliany
+          transforms:
+              - name: weight
+                equation: {rhs: "weight / mean(weight[weight > 0])"}
+          coupling:
+              c_glob:
+                  iri: tvbo:Linear
+                  delayed: true
+                  incoming_states: [V]
+                  parameters: {a: {value: 0.05}}
+      integration: {method: Heun, step_size: 0.1, duration: 800.0, transient_time: 300.0}
+
+figures:
+    - name: first_simulation
+      label: "A first whole-brain simulation"
+      layout: "ab/cc"
+      width: 170.0
+      height: 120.0
+      font_size: 7.0
+      dpi: 100
+      animation: {over: time, frames: 24, fps: 10, format: gif, still: 12}
+      panels:
+          a:
+              kind: network
+              label: "The connectome"
+              layers:
+                  - used: {experiment: 1, output: integration, sel: {variable: V}}
+              opts:
+                  network: tvbo:DesikanKilliany
+                  projection: axial
+                  cmap: magma
+          b:
+              kind: surface
+              label: "On the cortex"
+              layers:
+                  - used: {experiment: 1, output: integration, sel: {variable: V}}
+              opts:
+                  atlas: tvbo:atlas/DesikanKilliany
+                  template: fsaverage
+                  hemi: both
+                  view: dorsal
+                  cmap: magma
+                  symmetric: false
+          c:
+              kind: cartesian
+              label: "Regional activity"
+              layers:
+                  - used: {experiment: 1, output: integration, sel: {variable: V}}
+                    mark: line
+                    frame: static
+                    encoding: {x: time}
+                    style: {opts: {linewidth: 0.4, alpha: 0.6}}
+                  - used: {experiment: 1, output: integration, sel: {variable: V}}
+                    mark: rule
+                    frame: cursor
+                    encoding: {x: time}
+                    style: {color: "#111111", opts: {linewidth: 1.0}}
+              opts:
+                  xlabel: "Time [ms]"
+                  ylabel: "V [a.u.]"

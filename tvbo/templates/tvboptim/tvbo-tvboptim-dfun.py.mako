@@ -143,6 +143,10 @@ if 'experiment' in context.keys():
         ev_type = str(getattr(ev, 'event_type', 'stimulus'))
         if ('stimul' in ev_type) or (ev_type in ('continuous', 'discrete')):
             external_inputs_dict[str(ev.name)] = 1
+
+# An event named after a model symbol binds that symbol, which is how a drive reaches an equation that already carries an input term (Deco's `I_external`). An event named after a STATE VARIABLE is a current injected into that state, so it is bound under a private name and added to the state's derivative — binding it plainly would rebind the state itself and silently integrate a different model.
+injected_states = {name for name in external_inputs_dict if name in set(var_names)}
+external_local = {name: ('_ext_' + name if name in injected_states else name) for name in external_inputs_dict}
 %>
 
 class ${class_name}(AbstractDynamics):
@@ -240,7 +244,7 @@ class ${class_name}(AbstractDynamics):
         % endfor
 
         % for ei_name in external_inputs_dict:
-        ${ei_name} = jnp.atleast_1d(external.${ei_name})[0] if hasattr(external, '${ei_name}') else 0.0
+        ${external_local[ei_name]} = jnp.atleast_1d(external.${ei_name})[0] if hasattr(external, '${ei_name}') else 0.0
         % endfor
 
         % if model.functions:
@@ -260,7 +264,7 @@ ${_fdef}
         % endif
 
         % for sv in model.state_variables.values():
-        d${sv.name}_dt = ${jaxcode_obj(sv)}
+        d${sv.name}_dt = ${jaxcode_obj(sv)}${' + ' + external_local[sv.name] if sv.name in injected_states else ''}
         % endfor
 
         % if n_modes > 1:

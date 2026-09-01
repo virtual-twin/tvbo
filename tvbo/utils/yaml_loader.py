@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import warnings
 from pathlib import Path
 from typing import Any
@@ -61,6 +62,21 @@ ENVELOPE_KEYS = ("tvbo_class", "schema_version")
 """Keys that annotate a serialized FILE's class and schema version rather than the object's slots. TVBO writes them itself — every one of the 121 network sidecars in the
 database opens with ``tvbo_class: tvbo:Network`` — so its own loader has to accept them. They are dropped on every route into a class constructor — a document root, a plain
 ``!include``, and a fragment merged with ``<<: !include`` — and kept by :func:`load_as_dict`, whose callers dispatch on them."""
+
+_ENVELOPE_CLASS = re.compile(r"^tvbo_class:\s*[\"']?([\w:.-]+)", re.MULTILINE)
+
+
+def declared_class(source) -> str | None:
+    """The class a document names in its own ``tvbo_class`` envelope, or ``None``.
+
+    Accepts the parsed mapping or the raw YAML text, because a caller deciding WHICH class to parse as has not parsed yet — and a document that says what it is should never lose that argument to a guess about its shape. Only a root-level key counts, and the CURIE prefix is stripped, so ``tvbo:SimulationStudy`` answers ``SimulationStudy``.
+    """
+    if isinstance(source, dict):
+        declared = source.get("tvbo_class")
+    else:
+        match = _ENVELOPE_CLASS.search(str(source))
+        declared = match.group(1) if match else None
+    return str(declared).split(":")[-1] if declared else None
 
 
 def _flatten_map_constructor(loader: yaml.Loader, node: yaml.MappingNode, deep: bool = False) -> dict:
@@ -136,6 +152,27 @@ def _compose_included(loader: yaml.Loader, node: yaml.ScalarNode) -> yaml.Node:
     return composed
 
 
+class IncludedMapping(dict):
+    """A mapping spliced in by ``!include``, remembering the file it came from.
+
+    A fragment's relative paths mean what they say *in the fragment*: a figure record naming ``code_modules`` and a captured page states them relative to the study it belongs to, and that must not change because a second spec includes it. A plain dict loses that the moment it is spliced, so the whole fragment silently re-resolves against whoever included it. This is a dict in every other respect, so nothing downstream needs to know it exists.
+    """
+
+    def __init__(self, mapping, origin: Path):
+        super().__init__(mapping)
+        self.include_origin = Path(origin)
+
+
+for _dumper in (yaml.Dumper, yaml.SafeDumper):
+    # A dict subclass has no representer of its own, and the load path dumps the parsed document back to YAML for LinkML: without this an included fragment is a load-time crash rather than a mapping.
+    _dumper.add_representer(IncludedMapping, lambda dumper, data: dumper.represent_dict(data))
+
+
+def include_origin(value: Any) -> Path | None:
+    """The directory an ``!include``d value came from, or None for anything loaded in place."""
+    return getattr(value, "include_origin", None)
+
+
 def _include_path(rel: str, base_dir: Path) -> Path:
     """An ``!include`` target resolved against the including file's directory."""
     path = Path(rel)
@@ -161,7 +198,8 @@ def _make_include_constructor(base_dir: Path):
         path = _include_path(rel, base_dir)
         # Fresh loader instance for the included document so anchors are file-local (no name capture from or into the parent document).
         with open(path) as fh:
-            return strip_envelope(yaml.load(fh, _make_loader_class(path.parent)))
+            value = strip_envelope(yaml.load(fh, _make_loader_class(path.parent)))
+        return IncludedMapping(value, path.parent) if isinstance(value, dict) else value
 
     return _include
 

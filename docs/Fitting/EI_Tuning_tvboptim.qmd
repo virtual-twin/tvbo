@@ -4,6 +4,7 @@ description: "Three ways to tune a Reduced Wong-Wang network against the same em
 jupyter: python3
 aliases:
   - /Interoperability/tvboptim/EI_Tuning_tvboptim.html
+native: true
 ---
 
 A two-population Reduced Wong-Wang network has more free connectivity than one empirical functional connectome can pin down, and the tuning workflow of [Schirner et al. (2023)](https://doi.org/10.1038/s41467-023-38626-y) approaches that in stages. Feedback inhibition control (FIC) adjusts each region's inhibitory weight $J_i$ until excitatory activity sits at its target — a constraint on *activity*, which never looks at the empirical FC at all. The combined FIC+EIB loop adds the long-range and feed-forward-inhibition weights, $w^{LRE}$ and $w^{FFI}$, and scores them against that FC. A gradient fit tunes the same weights through the loss instead of through a hand-written update rule.

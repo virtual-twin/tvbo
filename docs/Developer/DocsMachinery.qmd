@@ -21,7 +21,7 @@ Edit outside those markers freely. Inside them, change the script.
 
 ## The phase badge
 
-`_static/phases.yml` declares the five numbered phases and the five unnumbered chapters, each with a name, an icon and a colour. It is the only place any of those are written down, so swapping an icon set is one edit here.
+`_static/phases.yml` declares the five numbered phases and the six unnumbered chapters, each with a name, an icon and a colour. It is the only place any of those are written down, so swapping an icon set is one edit here.
 
 `scripts/build_phase_map.py` walks `_toc.yml` against that file and writes two generated artifacts, both gitignored:
 
@@ -29,6 +29,22 @@ Edit outside those markers freely. Inside them, change the script.
 - `_static/phases.css`, the `--phase-1` … `--phase-5` custom properties the hero pipeline and the badge both read.
 
 `filters/phase-badge.lua` stamps the badge from that map. A page may override it with `phase:` in its own frontmatter, naming either the number or the key from `phases.yml`, and `phase-section:` sets the text after the separator. `phase: false` suppresses the badge entirely. A page that is in no PART and declares no `phase:` produces a build warning rather than a silently unbadged page, which is how the 38 NeuroML example pages were caught when the gallery took their place in the sidebar.
+
+## Overview cards
+
+An overview page lists the pages beneath it as a pipe table wrapped in `::: {.cards}`, and `filters/cards.lua` renders that table as a card grid. The table stays the editable form — a link, a sentence, and an optional cover — while the reader gets covers, titles and hover affordances.
+
+| Column | What it holds |
+|---|---|
+| 1 | The link. Its text is the card title and its target is where the card goes; a row with no link is skipped. |
+| 2 | The sentence under the title. |
+| 3 | The cover, optional: a markdown image, or a Font Awesome class such as `fa-solid fa-plug`. |
+
+A row that names no cover falls back to the icon of the phase its target sits in, so a grid always has covers. Colours come from the same `phase_map.lua` the badge reads, which is why a card pointing out of the current phase wears that other phase's colour.
+
+Cover images come from `_static/thumbs/`, written by `scripts/build_thumbnails.py` from the declaration in `_static/thumbs.yml`: a page path, and the label of the figure on that page that stands in for it. The figure is read out of `_freeze`, so a page whose label has changed or that has never been executed in the working tree produces a build note and a card that falls back to its phase icon.
+
+A table that compares several dimensions rather than indexing pages — the [integration matrix](../Interoperability/index.qmd) and the [bifurcation plan](../Bifurcation/index.qmd) — stays a table, because a card carries one sentence and would drop the other columns.
 
 ## The running-example thread
 

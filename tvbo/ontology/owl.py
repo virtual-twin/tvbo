@@ -115,6 +115,29 @@ def find_version() -> str:
 DATA_DIR = realpath(join(ROOT_DIR, "data"))
 ONTO_DIR = join(DATA_DIR, "ontology")
 
+ONTOLOGY_FILENAME = "tvb-o.owl"
+
+
+def _loaded_ontology_path() -> str:
+    """Absolute path of the ontology artifact this module parses."""
+    return join(ONTO_DIR, ONTOLOGY_FILENAME)
+
+
+def _assert_class_based(loaded_ontology) -> None:
+    """Fail loudly when the parsed artifact cannot serve this module's class-based API.
+
+    Every helper here — `search_class`, `.descendants()`, `get_property_annotation` — reads OWL classes and class axioms. The generated artifact `tvbo.owl` expresses the same knowledge as named individuals instead, so pointing this loader at it makes those helpers return empty results rather than raise, which surfaces downstream as a plausible but wrong answer. This check turns that silent mode into an error naming the file.
+    """
+    def _obo_count(entities) -> int:
+        return sum(1 for e in entities if "obolibrary.org/obo/" in (getattr(e, "iri", "") or ""))
+
+    if not _obo_count(loaded_ontology.classes()) and _obo_count(loaded_ontology.individuals()):
+        raise RuntimeError(
+            f"{_loaded_ontology_path()} carries its external ontology terms as named individuals, not OWL classes, "
+            "so the class-based API here returns empty results instead of raising. Query the generated ontology's "
+            "individuals and `tvbo:surrogate_of` triples directly, or load the class-based artifact."
+        )
+
 
 @functools.cache
 def _load_ontology():
@@ -124,7 +147,7 @@ def _load_ontology():
 
     The public surface is unchanged: `onto` still behaves like the loaded ontology for attribute access, item access, iteration and `with onto:`, `get_onto()` returns it, and `iri` and `namespace` stay importable module attributes, resolved lazily through PEP 562.
     """
-    with open(join(ONTO_DIR, "tvb-o.owl"), encoding="utf-8") as f:
+    with open(_loaded_ontology_path(), encoding="utf-8") as f:
         xml = f.read()
     # Drop the remote NIF-Ontology import so the load stays offline.
     xml = xml.replace(
@@ -136,6 +159,7 @@ def _load_ontology():
         tmp_path = tmp.name
     loaded_ontology = get_ontology("file://" + tmp_path).load()
     loaded_ontology.load()  # TODO: check if the redundant reload can be removed
+    _assert_class_based(loaded_ontology)
     return loaded_ontology
 
 
@@ -449,6 +473,8 @@ def search_class(
         The ontology class(es) that match the given label.
     """
     tvbo_classes = onto.search(label=label)
+    if not len(tvbo_classes):
+        raise LookupError(f"No ontology entity is labelled {label!r} in {_loaded_ontology_path()}.")
     if len(tvbo_classes) == 1:
         tvbo_classes = tvbo_classes.first()
     return tvbo_classes

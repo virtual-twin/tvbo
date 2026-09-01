@@ -131,11 +131,15 @@ def curated_entry(cls_name: str, name: str) -> dict | None:
 
     The entry's own ``iri`` is dropped: keeping it would make the expanded record ask to be
     expanded again on every later construction, and a self-referential entry would not
-    terminate.
+    terminate. So is its envelope: :func:`normalize` strips the recipe's own ``tvbo_class``
+    before expanding, and a curated record that carries one would put it back. Every network
+    sidecar in the database opens with ``tvbo_class: tvbo:Network``, so a recipe naming a
+    curated network by ``iri`` reached ``Network.__init__`` with a keyword it has no slot for.
     """
     import yaml
 
     from tvbo.data.registry import resolve
+    from tvbo.utils.yaml_loader import ENVELOPE_KEYS
 
     try:
         path = resolve(cls_name, name)
@@ -145,6 +149,8 @@ def curated_entry(cls_name: str, name: str) -> dict | None:
     if not isinstance(entry, dict):
         return None
     entry.pop("iri", None)
+    for envelope_key in ENVELOPE_KEYS:
+        entry.pop(envelope_key, None)
     return fold_aliases(cls_name, entry)
 
 
@@ -174,6 +180,12 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     An ``iri`` naming nothing is left alone: it may point at an entity that exists only in
     the ontology, and this pass cannot tell that from a typo. ``tvbo validate`` is where a
     name that resolves nowhere is reported.
+
+    Once a reference has expanded, the ``iri`` survives only for a class that keeps one as a
+    slot, where it is grounding worth recording. ``Network`` does not: its curated record is
+    reached through ``iri`` but its own connectivity is the ``data_file`` the expansion just
+    merged in, so keeping the key would hand ``Network.__init__`` a keyword it has no slot
+    for. That is what stopped a study from naming a curated connectome by ``iri`` at all.
     """
     from tvbo.data.registry import local_name
 
@@ -187,9 +199,26 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     from tvbo.utils import deep_merge
 
     merged = deep_merge(entry, data)
+    if not _keeps_iri_slot(cls_name):
+        merged.pop("iri", None)
     data.clear()
     data.update(merged)
     return data
+
+
+def _keeps_iri_slot(cls_name: str) -> bool:
+    """Whether the generated *cls_name* declares ``iri`` as a slot of its own.
+
+    Unknown classes answer True, so a name this module cannot resolve is left exactly as the recipe wrote it.
+    """
+    import dataclasses
+
+    from tvbo.datamodel import schema
+
+    cls = getattr(schema, cls_name, None)
+    if cls is None or not dataclasses.is_dataclass(cls):
+        return True
+    return any(field.name == "iri" for field in dataclasses.fields(cls))
 
 
 def key_members(cls_name: str, data: dict) -> dict:

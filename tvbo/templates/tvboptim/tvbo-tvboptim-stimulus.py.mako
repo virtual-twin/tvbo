@@ -156,8 +156,24 @@ def _time_axis_distribution(event):
     if is_data:
         sampling_rate = float(getattr(event, 'sampling_rate', None) or 1.0)
         interp_kind = str(getattr(event, 'interpolation', None) or 'linear')
+        if interp_kind not in ('linear', 'cubic'):
+            raise ValueError(
+                f"event {ev_name!r} declares interpolation {interp_kind!r}; the data-driven "
+                f"stimulus is interpolated by tvboptim's DataInput, which implements 'linear' and 'cubic'."
+            )
         # optional onset (ms): shifts when the waveform starts playing
         onset = float(ev_params['onset'].value) if ('onset' in ev_params and ev_params['onset'].value is not None) else 0.0
+        # `onset` positions the waveform on the clock and is consumed here; `amplitude` becomes a live parameter of the emitted input. A data-driven waveform has no equation whose symbols anything else could bind to, so any further parameter would be accepted and never read.
+        unsupported = sorted(k for k in ev_params if k not in ('onset', 'amplitude'))
+        if unsupported:
+            raise ValueError(
+                f"event {ev_name!r} reads its signal from {data_location!r} and declares "
+                f"parameter(s) {', '.join(unsupported)}, which nothing in a data-driven stimulus "
+                f"evaluates. Such a stimulus takes `onset` (where the waveform starts) and "
+                f"`amplitude` (its gain); a parameter the signal depends on belongs in an "
+                f"`equation:` stimulus instead."
+            )
+        amplitude = float(ev_params['amplitude'].value) if ('amplitude' in ev_params and ev_params['amplitude'].value is not None) else 1.0
     else:
         eq_rhs = str(event.equation.rhs) if event.equation else '0.0'
     # Per-step iid driver (symbolic branch only): an event parameter with
@@ -247,21 +263,30 @@ class ${class_name}(AbstractExternalInput):
             step=input_state.step + 1.0,
         )
 % elif is_data:
-class ${class_name}(AbstractExternalInput):
-    """Data-driven external input: ${ev_name}(t) interpolated from a file.
+class ${class_name}(DataInput):
+    """Data-driven external input: ${ev_name}(t), interpolated from a file.
 
     ${event.description or event.label or 'Data-driven stimulus.'}
 
     Source: ${data_location}  (sampling_rate=${sampling_rate}/ms, onset=${onset} ms, ${interp_kind})
+
+    The samples go to tvboptim's DataInput, which builds the diffrax interpolation object once in prepare() and evaluates it inside the scan, so the declared interpolation is the one the solver runs. Outside the sampled span the stimulus is silent. `amplitude` (${amplitude}) scales it as a live config leaf, so a sweep or a gradient fit can write the drive's gain.
     """
 
-    N_OUTPUT_DIMS = 1
-    DEFAULT_PARAMS = Bunch()
+    def __init__(self, **kwargs):
+        import numpy as _np
+        _samples = jnp.asarray(_np.load(r"${data_location}"), dtype=jnp.float32)
+        _samples = _samples.reshape(-1) if _samples.ndim == 1 else _samples.reshape(_samples.shape[0], -1)
+        _times = ${onset} + jnp.arange(_samples.shape[0], dtype=jnp.float32) / ${sampling_rate}
+        super().__init__(times=_times, data=_samples, interpolation="${interp_kind}")
+        # DataInput carries the samples and the interpolation kind; `amplitude` rides beside them as a live config leaf, which is what lets a sweep or a gradient fit write the drive's gain.
+        _gain = Bunch(amplitude=${amplitude})
+        _gain.update(kwargs)
+        self.DEFAULT_PARAMS = Bunch(self.DEFAULT_PARAMS, **_gain)
+        self.params = Bunch(self.params, **_gain)
 
     def prepare(self, network, dt: float):
-        import numpy as _np
-        _samples = jnp.asarray(_np.load(r"${data_location}"), dtype=jnp.float32).reshape(-1)
-        _times = ${onset} + jnp.arange(_samples.shape[0], dtype=jnp.float32) / ${sampling_rate}
+        input_data, input_state = super().prepare(network, dt)
         % if has_spatial:
         _mask = jnp.zeros(network.graph.n_nodes)
         _regions = [${', '.join(str(r) for r in ev_regions)}]
@@ -271,15 +296,16 @@ class ${class_name}(AbstractExternalInput):
         % else:
         _mask = jnp.ones(network.graph.n_nodes)
         % endif
-        return Bunch(times=_times, signal=_samples, mask=_mask), Bunch()
+        input_data.mask = _mask
+        input_data.t_lo = self.params.times[0]
+        input_data.t_hi = self.params.times[-1]
+        return input_data, input_state
 
     def compute(self, t, state, input_data, input_state, params):
-        # interpolate the waveform at time t; zero outside the data window
-        signal = jnp.interp(t, input_data.times, input_data.signal, left=0.0, right=0.0)
-        return (signal * input_data.mask)[None, :]
-
-    def update_state(self, input_data, input_state, new_state):
-        return input_state
+        # An interpolation holds its endpoint value beyond the sampled span; the stimulus is silent there.
+        signal = super().compute(t, state, input_data, input_state, params)
+        _sounding = (t >= input_data.t_lo) & (t <= input_data.t_hi)
+        return jnp.where(_sounding, signal, 0.0) * params.amplitude * input_data.mask
 % else:
 class ${class_name}(AbstractExternalInput):
     """External input: ${ev_name}(t).

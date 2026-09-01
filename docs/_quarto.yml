@@ -4,6 +4,7 @@ project:
     - bash scripts/prerender.sh
   render:
     - index.qmd
+    - phases/*.qmd
     - GettingStarted.qmd
     - installation.md
     - reference.qmd
@@ -44,6 +45,7 @@ metadata-files:
 # phase-badge stamps the spine phase; usecase-tags lists the published studies whose recipes exercise the page. Both read generated maps under _static/.
 filters:
     - filters/phase-badge.lua
+    - filters/cards.lua
     - filters/running-example.lua
     - filters/usecase-tags.lua
 

@@ -9,11 +9,13 @@ Running here and running there is a **dispatch** problem: the same specification
 
 ## Emitting work
 
-| Page | What it covers |
-|---|---|
-| [Distributed workflows](DistributedWorkflows.qmd) | Emitting, submitting and finalizing work across a cluster. |
-| [Workflow kits](../CLI/workflow-kits.qmd) | What a packaged kit contains, and why it is structured that way. |
-| [HPC patterns](../CLI/hpc.qmd) | Containers, sharding and engine dispatch. |
+::: {.cards}
+| Page | What it covers | Cover |
+|---|---|---|
+| [Distributed workflows](DistributedWorkflows.qmd) | Emitting, submitting and finalizing work across a cluster. | fa-solid fa-network-wired |
+| [Workflow kits](../CLI/workflow-kits.qmd) | What a packaged kit contains, and why it is structured that way. | fa-solid fa-box-open |
+| [HPC patterns](../CLI/hpc.qmd) | Containers, sharding and engine dispatch. | fa-solid fa-server |
+:::
 
 ## Deciding how work is split
 

@@ -20,7 +20,7 @@ imports:
 enums:
 
   PanelKind:
-    description: "What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); surface paints a layer on a mesh and volume projects one through a labelled volume; grid tiles a composite of sub-panels; colorbar/legend are shared keys in their own slot; image (external file) and custom (registered callable) are peer escape-hatch kinds. New kinds (network) are added when their bsplot leaf exists."
+    description: "What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); surface paints a layer on a mesh, volume projects one through a labelled volume and network draws one on a node-link graph; grid tiles a composite of sub-panels; colorbar/legend are shared keys in their own slot; image (external file) and custom (registered callable) are peer escape-hatch kinds. A new kind is added when its bsplot leaf exists."
     permissible_values:
       cartesian: {description: "Line/scatter/rule/band marks in a 2-D cartesian frame."}
       heatmap:   {description: "A 2-D array field drawn as pcolormesh/imshow."}
@@ -30,6 +30,7 @@ enums:
       grid:      {description: "A composite of sub-panels inside ONE lettered panel, labelled once per row and column. What a paper's lettered panel usually is: a row of mode surfaces under a single (a), or a Data/Reconstruction matrix whose task name is written once at the left. Declaring each cell as its own mosaic entry instead would repeat those labels in every cell and renumber panels the paper letters once. Cells come from `cells:` or, in the common case, from `layers:` — one cell per layer, all drawn by the shared `cell:` template."}
       colorbar:  {description: "A colour scale in its own slot, for panels that share one. Attaching it to any single panel steals that panel's width and implies the scale is local to it. Limits come from opts or, with a layer bound, from the data. Built in."}
       legend:    {description: "A key in its own slot, for a convention several panels share. Entries are parallel `labels`/`colors`/`linestyles` lists. Built in."}
+      network:   {description: "The connectome as a node-link graph: one marker per region at its anatomical centre, edges drawn for the connections that survive `edge_percentile`. A layer supplies one value per region and colours the markers with it, so what the panel shows is a state living ON the network rather than beside it. Geometry comes from the `network:` the panel names, values are placed BY LABEL through the node labels, and `projection` picks the anatomical plane the centres flatten onto. Needs no code_modules — the drawing is built in."}
       image:     {description: "An external raster/vector file placed in the grid cell."}
       custom:    {description: "A registered callable fn(container, ax, **opts)."}
 
@@ -42,6 +43,13 @@ enums:
       band:    {description: "Filled band between two series (an error band, a CI). Its layer's output carries a length-2 axis beside the swept one, holding the two edges in ONE array — binding a lower edge and an upper edge as separate layers lets them come from different runs."}
       area:    {description: "Series filled down to the baseline (a density/pdf, a cumulative share). Distinct from `band`, which spans two series, and from `bar`, which asserts the x values are discrete categories."}
       bar:     {description: "Vertical bars, one per x (spectrum, per-category magnitude). Distinct from `line` because a spectrum read as a line implies interpolation between mode numbers that do not exist."}
+
+  FrameRole:
+    description: "What a layer does while a figure animates. Read only under `Figure.animation`; a still figure ignores it. Unset, a layer whose data carries the animated dimension is sliced and one that does not is static, which is the reading that needs no annotation in the common case."
+    permissible_values:
+      slice:  {description: "Redraw the layer at the current frame's position along the animated dimension — the moving quantity itself."}
+      static: {description: "Draw the layer whole in every frame — the full trace a cursor sweeps across, or a fixed reference the moving quantity is read against."}
+      cursor: {description: "Draw a rule at the current frame's coordinate value rather than at the data. What marks *now* on a panel that shows the whole time course, so a reader can see which instant the other panels are at."}
 
   Triangle:
     description: "Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as one image. The conventional way to show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for the drawn halves: with the matrix convention (row 0 at top, set invert_y) 'upper' is the top-right triangle."
@@ -174,6 +182,10 @@ classes:
         range: string
         multivalued: true
         description: "Panel groups that share one y scale, each entry a comma-separated list of mosaic keys ('c,g,h'). Same rule as share_x."
+      animation:
+        range: Animation
+        inlined: true
+        description: "Turns the figure into a movie over one dimension of its data instead of a still. Every other field keeps its meaning — the mosaic, the panels, the sizing and the styling are the frame; the animation only says which dimension advances and how fast. Declaring it is what makes a figure whose subject is a *process* show the process rather than a snapshot of it, without a second, hand-written plotting path."
       panels:
         range: Panel
         multivalued: true
@@ -304,6 +316,9 @@ classes:
       triangle:
         range: Triangle
         description: "Fill only this triangle of a square matrix, masking the other half so a sibling layer fills it. Two layers then compose one matrix image whose halves are the quantities being compared."
+      frame:
+        range: FrameRole
+        description: "This layer's part in an animation: whether it advances with the frame, stays whole, or draws the cursor that marks the current frame. Ignored by a still figure."
       encoding:
         range: Encoding
         inlined: true
@@ -319,6 +334,26 @@ classes:
       z: {range: string, description: "Depth channel for a line3d panel (the third phase-space axis); ignored by 2-D kinds."}
       color: {range: string}
       detail: {range: string, description: "Non-visual grouping dim (e.g. the hue/iterate dim)."}
+
+  Animation:
+    description: "A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the frames advance along the axis the spec means rather than along whatever happens to be axis 0; and because the frame is the same mosaic the still would draw, an animated figure and its still cannot disagree about what they show."
+    attributes:
+      over:
+        range: string
+        required: true
+        description: "The dimension the frames advance along, by NAME (e.g. `time`). Every layer carrying it is sliced at the current frame unless its own `frame:` says otherwise."
+      frames:
+        range: integer
+        description: "How many frames to draw. Unset draws one per position along `over`, which for a simulation is one frame per integration sample and is almost never what a figure wants; a smaller number subsamples the axis evenly, so a 600 000-step run becomes a movie of the length declared here."
+      fps:
+        range: integer
+        description: "Playback rate of the saved movie in frames per second (default 20). Independent of `frames`: together they set how long the movie runs, and separately from how much of the data it shows."
+      format:
+        range: string
+        description: "Movie container: `gif` (default, needs nothing installed) or `mp4` (much smaller, needs ffmpeg on the machine that renders). The saved file takes this extension in place of the still's, so a figure cannot be half-written as both."
+      still:
+        range: integer
+        description: "Which frame is also saved as a still image beside the movie, for the contexts a movie cannot reach — a printed page, a PDF report, a thumbnail. Unset saves no still."
 
   Annotation:
     description: "A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it."

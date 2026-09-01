@@ -4,6 +4,7 @@ description: "Fit region-specific Jansen-Rit time constants to a cortical peak-f
 jupyter: python3
 aliases:
   - /Interoperability/tvboptim/JR_tvboptim.html
+native: true
 ---
 
 MEG resting-state activity is not one rhythm. Peak frequency falls from roughly 11 Hz in visual cortex to roughly 7 Hz in the association areas furthest from it [@Mahjoory2020]. This page fits region-specific Jansen-Rit time constants $a$ and $b$ so a whole-brain simulation reproduces that spatial gradient.

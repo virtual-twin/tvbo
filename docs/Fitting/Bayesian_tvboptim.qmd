@@ -4,6 +4,7 @@ description: "Recover a pulse amplitude and a node's excitability from one noisy
 jupyter: python3
 aliases:
   - /Interoperability/tvboptim/Bayesian_tvboptim.html
+native: true
 ---
 
 A 1 ms pulse drives a single `Generic2dOscillator` node out of its quiescent state, and one noisy recording of $V$ is all the evidence there is. Two unknowns produced it: the pulse **amplitude** and the node's **excitability** $I$. A weak pulse into an excitable node and a strong pulse into a quiet one leave almost the same trace, so the two are not separately identifiable from one recording, and a point estimate would report a number the data does not support. NUTS/MCMC reports the whole ridge instead, and the prior decides where on it the mass sits.
@@ -87,9 +88,9 @@ results.figure()
 print(results.figure().caption)
 ```
 
-Under wide priors **(b)** the posterior recovers the truth: amplitude $0.41 \pm 0.06$ against a true $0.40$, excitability $0.083 \pm 0.066$ against a true $0.10$. But the two are correlated at $-0.99$, so the cloud is a line, and its width along that line is the answer, not the marginal spread of either parameter on its own.
+Under wide priors **(b)** the posterior recovers the truth: amplitude $0.43 \pm 0.06$ against a true $0.40$, excitability $0.064 \pm 0.067$ against a true $0.10$. But the two are correlated at $-0.99$, so the cloud is a line, and its width along that line is the answer, not the marginal spread of either parameter on its own.
 
-That is what makes **(c)** and **(d)** the point of the page. Tightening the amplitude prior **(c)** does not pull the posterior towards the truth; it slides it down the ridge, to amplitude $0.37$ and excitability $0.13$. Tightening the excitability prior instead **(d)** slides it the other way, to $0.45$ and $0.037$. Each is a confident, well-mixed posterior, with all three scenarios returning $\hat{R} \approx 1.00$, and each is confident about a different place on the same ridge. The prior is doing the identifying that the recording cannot.
+That is what makes **(c)** and **(d)** the point of the page. Tightening the amplitude prior **(c)** does not pull the posterior towards the truth; it slides it down the ridge, to amplitude $0.38$ and excitability $0.12$. Tightening the excitability prior instead **(d)** slides it the other way, to $0.46$ and $0.027$. Each is a confident, well-mixed posterior, with all three scenarios returning $\hat{R} \approx 1.00$, and each is confident about a different place on the same ridge. The prior is doing the identifying that the recording cannot.
 
 ## See also
 

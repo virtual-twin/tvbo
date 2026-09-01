@@ -278,7 +278,7 @@ inferences:
     num_samples: 2000
     num_warmup: 500
     num_chains: 1
-    seed: 0
+    seed: 1
   scenario_C:
     name: scenario_C
     likelihood:
@@ -318,4 +318,4 @@ inferences:
     num_samples: 2000
     num_warmup: 500
     num_chains: 1
-    seed: 0
+    seed: 2

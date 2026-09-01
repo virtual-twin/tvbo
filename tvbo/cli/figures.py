@@ -43,20 +43,59 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
     return as_list(getattr(study, "figures", None)), "study"
 
 
+def figure_origins(spec_path: Path) -> dict[str, Path]:
+    """``{figure name: study root}`` for every figure the spec pulled in with ``!include``.
+
+    A figure record included from another study names its ``code_modules``, its captured ``source`` and the ``path`` it draws relative to *that* study, and including it somewhere else must not change what those mean. So an included figure renders against the study its fragment lives in, and one written inline renders against the spec, which is what each already says. A fragment that belongs to no study — a spec kept beside the manuscript that includes it — is left out, so it renders against the including spec exactly as if it had been written there.
+    """
+    from tvbo.utils import yaml_loader
+    from tvbo.utils.study_layout import study_root
+
+    try:
+        document = yaml_loader.load_as_dict(str(spec_path))
+    except Exception:  # noqa: BLE001 — the model loader below reports a malformed spec far better than this can
+        return {}
+    origins: dict[str, Path] = {}
+    for entry in as_list((document or {}).get("figures")):
+        origin = yaml_loader.include_origin(entry)
+        name = entry.get("name") if isinstance(entry, dict) else None
+        if not origin or not name:
+            continue
+        try:
+            origins[str(name)] = study_root(origin)
+        except FileNotFoundError:
+            continue  # no study of its own, so the includer's root is the only one its paths can mean
+    return origins
+
+
+def register_figure_code(base: Path) -> None:
+    """Put a root's ``code/`` on ``sys.path``, so a figure rendering against it can import the modules its ``code_modules`` names.
+
+    Called for whichever root a figure actually renders against: its own, or — for a record ``!include``d from another study — that study's, which the including spec knows nothing about. Without it a figure resolves against the right root and still cannot find its panels.
+    """
+    from tvbo.utils import register_recipe_code_paths
+    from tvbo.utils.study_layout import study_path
+
+    code_dir = study_path("code", root=base)
+    if code_dir.is_dir():
+        register_recipe_code_paths(None, {"path": str(code_dir)})
+
+
 def figure_outputs(figure, out_dir: Path) -> tuple[str, Path, Path]:
     """``(name, image, script)`` for *figure* under *out_dir* — where the render writes, named once.
 
     The renderer and every consumer that has to find a rendered figure afterwards ask this, so a figure's file name is derived in one place rather than re-spelled wherever it is looked up.
     """
+    from tvbo.adapters import bsplot
+
     name = getattr(figure, "name", None) or "figure"
-    fmt = (getattr(figure, "format", None) or "png").lstrip(".")
-    return name, out_dir / f"{name}.{fmt}", out_dir / "scripts" / f"plot_{sanitize_name(name)}.py"
+    return name, out_dir / f"{name}.{bsplot.output_format(figure)}", out_dir / "scripts" / f"plot_{sanitize_name(name)}.py"
 
 
-def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
+def render_figures(figures, base_dir: Path, out_dir: Path, origins: dict[str, Path] | None = None) -> list[Path]:
     """Emit + run each figure's render script and return the written images.
 
-    The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the study root each layer's ``used`` IRI resolves against, whose results directory holds the containers.
+    The single home for the per-figure render loop, shared by the ``figure render`` command and by ``tvbo run`` (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the study root each layer's ``used`` IRI resolves against, whose results directory holds the containers; ``origins`` overrides it per figure, for a record ``!include``d from another study (see :func:`figure_origins`).
 
     Every figure is attempted before anything is raised, so one broken declaration reports itself alongside the others rather than hiding the thirteen behind it; the run still fails, naming all of them.
 
@@ -73,8 +112,10 @@ def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
     for figure in figures:
         attempted += 1  # counted here, not re-derived: `figures` may be an iterator the loop has consumed
         name, outfile, script_path = figure_outputs(figure, out_dir)
+        base = (origins or {}).get(name, base_dir)
+        register_figure_code(Path(base))
         try:
-            bsplot.render(figure, base_dir=str(base_dir), outfile=str(outfile), script_path=str(script_path))
+            bsplot.render(figure, base_dir=str(base), outfile=str(outfile), script_path=str(script_path))
         except Exception as e:  # noqa: BLE001 — every figure is attempted, then the whole set of failures is raised at once
             failed.append(f"{name}: {type(e).__name__}: {e}")
             _common.info(f"{name} FAILED ({type(e).__name__}: {e})")
@@ -140,7 +181,7 @@ def render(
         return
 
     figures = _select(figures, name, spec_path)
-    render_figures(figures, base, out_dir)
+    render_figures(figures, base, out_dir, figure_origins(spec_path))
 
 
 def _select(figures, name: str | None, spec_path: Path) -> list:
@@ -244,9 +285,7 @@ def compare(
 
     sections, summary_rows = [], []
     for figure in figures:
-        fname = getattr(figure, "name", None) or "figure"
-        fmt = (getattr(figure, "format", None) or "png").lstrip(".")
-        ours = fig_dir / f"{fname}.{fmt}"
+        fname, ours, _ = figure_outputs(figure, fig_dir)
         theirs = ref if (ref and ref.is_file()) else reference_image_for(figure, ref or base)
         if not ours.exists():
             _common.info(f"skip {fname}: not rendered ({ours})")

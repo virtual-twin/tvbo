@@ -123,6 +123,16 @@ def active_stimulus_events(experiment: Any) -> list:
     return active
 
 
+def is_data_driven_event(event: Any) -> bool:
+    """True when an event's signal is read from a file and interpolated, rather than evaluated from an equation.
+
+    Such an event is emitted as a ``DataInput`` subclass, so the module that holds it needs that import; a condition-triggered event keeps its own bespoke class whatever it carries.
+    """
+    if str(getattr(event, "event_type", "stimulus")) in ("continuous", "discrete"):
+        return False
+    return bool(getattr(event, "dataLocation", None))
+
+
 #: One definition, shared with every other backend that has to emit an identifier.
 safe_name = _base_safe_name
 

@@ -35,6 +35,25 @@ class FigureImage:
     def _repr_svg_(self):
         return self.path.read_text(encoding="utf-8") if self.path.suffix.lower() == ".svg" and self.path.is_file() else None
 
+    def _repr_html_(self):
+        """An animated figure inline, for the movie kinds a notebook cannot show as a still image.
+
+        Embedded rather than linked: the page that displays it is rendered once and read from somewhere else, so a relative path out of a cached notebook would resolve against whatever directory the reader happens to be in.
+        """
+        import base64
+        from html import escape
+
+        suffix = self.path.suffix.lower()
+        if suffix not in (".gif", ".mp4") or not self.path.is_file():
+            return None
+        data = base64.b64encode(self.path.read_bytes()).decode("ascii")
+        if suffix == ".gif":
+            return f'<img src="data:image/gif;base64,{data}" alt="{escape(self.name)}" style="max-width:100%;height:auto" />'
+        return (
+            '<video controls loop muted playsinline style="max-width:100%;height:auto">'
+            f'<source src="data:video/mp4;base64,{data}" type="video/mp4"></video>'
+        )
+
 
 class StudyResult(Mapping):
     """What one :meth:`SimulationStudy.run` produced — the study-level counterpart of the :class:`~tvbo.data.types.ExperimentResult` a single experiment's ``run()`` returns.

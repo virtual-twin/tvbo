@@ -609,11 +609,11 @@ def test_render_code_inset_draws_inside_its_host():
     """
     code = bsplot.render_code(_inset_figure(), TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "def _a_inset0(fig, ax):" in code
+    assert "def _a_inset0(fig, ax, _pos=None):" in code
     assert "_iax = ax.inset_axes([0.55, 0.55, 0.4, 0.4])" in code
     # ...and it is called from the host panel, not from main().
-    host = code.split("def _panel_a(fig, ax):")[1].split("\ndef ")[0]
-    assert "_iax = ax.inset_axes(" in host and "_a_inset0(fig, _iax)" in host
+    host = code.split("def _panel_a(fig, ax, _pos=None):")[1].split("\ndef ")[0]
+    assert "_iax = ax.inset_axes(" in host and "_a_inset0(fig, _iax, _pos)" in host
 
 
 def test_render_code_inset_shares_the_panel_drawing_rules():
@@ -622,7 +622,7 @@ def test_render_code_inset_shares_the_panel_drawing_rules():
     fig.panels["a"].insets[0].layers[0].triangle = "upper"
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
-    inset = code.split("def _a_inset0(fig, ax):")[1].split("\ndef ")[0]
+    inset = code.split("def _a_inset0(fig, ax, _pos=None):")[1].split("\ndef ")[0]
     assert "_triangle(_C, 'upper'" in inset
     assert "fig.colorbar" not in inset  # declared off, as on a panel
 
@@ -1305,3 +1305,109 @@ def test_declared_colorbar_ticks_survive_the_shared_format_pass():
     body = code.split("def _format_colorbar(")[1].split("\ndef ")[0]
     shared, restore = body.index("bsplot.style.format_colorbar("), body.index("axis.set_ticks(list(declared))")
     assert shared < restore, "the declared ticks must be re-applied AFTER the pass that overwrites them"
+
+
+# --------------------------------------------------------------------------- animation
+
+
+def _animated_figure(**animation_kw):
+    """A two-panel figure animated over ``time``: a network map and the course a cursor sweeps."""
+    used = dict(iri=EXP3_IRI, output="delta_omega")
+    return P.Figure(
+        name="fig_anim",
+        layout="a/b",
+        animation=P.Animation(**{"over": "time", "frames": 5, "fps": 10, **animation_kw}),
+        panels={
+            "a": P.Panel(
+                panel_key="a",
+                kind="network",
+                layers=[P.Layer(used=P.DataRef(**used))],
+                opts={"network": P.Argument(name="network", value="tvbo:DesikanKilliany")},
+            ),
+            "b": P.Panel(
+                panel_key="b",
+                kind="cartesian",
+                layers=[
+                    P.Layer(used=P.DataRef(**used), mark="line", frame="static", encoding=P.Encoding(x="time")),
+                    P.Layer(used=P.DataRef(**used), mark="rule", frame="cursor", encoding=P.Encoding(x="time")),
+                ],
+            ),
+        },
+    )
+
+
+def test_output_format_is_the_movie_when_a_figure_animates():
+    """An animated figure's one output is its movie; a still beside it would be two artefacts claiming to be one figure."""
+    assert bsplot.output_format(_cartesian_figure()) == "png"
+    assert bsplot.output_format(_animated_figure()) == "gif"
+    assert bsplot.output_format(_animated_figure(format="mp4")) == "mp4"
+
+
+def test_animation_reaches_the_context_with_its_sources():
+    """The frame count is a property of the FIGURE, so every advancing layer is collected; a static or cursor layer says nothing about how long the movie is."""
+    ctx = bsplot.build_context(_animated_figure(), TAHER_BASE, "out.gif")
+    assert ctx["animation"] == {"over": "time", "frames": 5, "fps": 10, "format": "gif", "still": None}
+    assert ctx["mosaic_kwargs"]["mosaic"] == "a\nb"
+    assert len(ctx["animated_sources"]) == 1, "the static and cursor layers must not be measured"
+
+
+def test_a_still_figure_carries_no_animation_machinery():
+    """The animated path is emitted only when a figure declares one — a still keeps the plain savefig."""
+    code = bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "_FuncAnimation(" not in code
+    assert "_compose(fig, axd)" in code
+
+
+def test_render_code_emits_one_composition_shared_by_the_still_and_every_frame():
+    """A frame is a full re-composition of the same mosaic, which is what keeps a still and a movie from disagreeing."""
+    code = bsplot.render_code(_animated_figure(), TAHER_BASE, "out.gif")
+    ast.parse(code)
+    assert "def _compose(fig, axd, _pos=None):" in code
+    assert "fig.subplot_mosaic(**{'mosaic': 'a\\nb'})" in code
+    assert "_movie_writer('gif', 10)" in code
+
+
+def test_frame_roles_are_emitted_per_layer():
+    """`static` is drawn whole, `cursor` draws the frame's own coordinate, and everything else advances."""
+    code = bsplot.render_code(_animated_figure(), TAHER_BASE, "out.gif")
+    panel_a = code[code.index("def _panel_a") : code.index("def _panel_b")]
+    panel_b = code[code.index("def _panel_b") :]
+
+    assert "_frame_ctx(" in panel_a, "a drawer-kind panel must be handed the frame it draws"
+    assert "_frame_coord(_ds, _da, 'time'" in panel_b, "the cursor reads the frame's coordinate"
+    assert panel_b.count("_at(_da, 'time', _pos)") == 0, "neither a static layer nor a cursor is sliced"
+
+
+def test_a_declared_still_is_saved_beside_the_movie():
+    """A movie cannot reach a printed page, so `still:` names the frame that also becomes an image."""
+    code = bsplot.render_code(_animated_figure(still=2), TAHER_BASE, "out.gif")
+    ast.parse(code)
+    assert "_frame(min(2, len(_POS) - 1))" in code
+    assert "fig.savefig('out.png'" in code
+
+
+def test_an_unknown_movie_format_is_refused():
+    with pytest.raises(ValueError, match="not one of gif, mp4"):
+        bsplot.build_context(_animated_figure(format="webm"), TAHER_BASE, "out.webm")
+
+
+# --------------------------------------------------------------------------- network panel
+
+
+def test_network_is_a_builtin_panel_needing_no_code_modules():
+    """`kind: network` draws through the adapter's own registered panel, like surface and volume."""
+    assert "network" in bsplot.CUSTOM_PANELS
+    code = bsplot.render_code(_animated_figure(), TAHER_BASE, "out.gif")
+    assert "_registered(_CP, 'network', \"custom panel\")" in code
+
+
+def test_network_panel_without_a_connectome_says_so():
+    """The panel draws the network, not the result, so the connectome is named rather than guessed at."""
+    with pytest.raises(ValueError, match="declare `network:`"):
+        bsplot.network_panel(None, None, {"opts": {}, "layers": []})
+
+
+def test_network_panel_rejects_an_unknown_projection():
+    with pytest.raises(ValueError, match="projection 'oblique' is not one of"):
+        bsplot.network_panel(None, None, {"opts": {"network": "tvbo:DesikanKilliany", "projection": "oblique"}, "layers": []})

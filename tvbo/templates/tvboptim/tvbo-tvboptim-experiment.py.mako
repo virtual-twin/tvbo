@@ -113,6 +113,10 @@ has_coupling = bool(coupling_inputs_dict)
 # Resolved by TvboptimAdapter.resolve_couplings, in Python — see tvbo/adapters/tvboptim.py.
 all_couplings = context['all_couplings']
 
+# External-input scope keys for the shared dotted-ref resolver AND for exploration/free-parameter axes: a swept or fitted `<event>.<param>` writes to `state.external.<event>.<param>`, where the emitted ExternalInput reads it, not to `state.dynamics`. Resolved here because `parameter_keypath` needs it from its first caller onwards.
+from tvbo.templates.tvboptim.utils import active_stimulus_events as _active_stimulus_events
+external_input_keys = {str(ev.name) for ev in _active_stimulus_events(experiment)}
+
 # Coupling-input → coupling-function mapping (+ local-term drop) resolved in the
 # tvboptim Python layer, not here — see resolve_coupling_input_map.
 ci_coupling_map, func_to_first_ci = resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict)
@@ -298,7 +302,7 @@ if _ini is not None and str(getattr(_ini, 'method', '') or '') == 'from_working_
     _rnpts = int(_rn) if _rn else int(round((_rhi - _rlo) / float(_rdom.step))) + 1
     _rtr = float(getattr(integration, 'transient_time', 0.0) or 0.0)
     from_working_point = {
-        'path': parameter_keypath(_rax.parameter, couplings=all_couplings, coupling_key=_to_ci_key),
+        'path': parameter_keypath(_rax.parameter, couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys),
         'lo': _rlo, 'hi': _rhi, 'n': _rnpts,
         'settle': _rtr if _rtr > 0 else float(integration.duration),
     }
@@ -381,6 +385,8 @@ for sv_name, sv in model.state_variables.items():
 from tvbo.templates.tvboptim.utils import active_stimulus_events
 stimulus_events = active_stimulus_events(experiment)
 has_stimulus_events = len(stimulus_events) > 0
+from tvbo.templates.tvboptim.utils import is_data_driven_event
+has_data_events = any(is_data_driven_event(ev) for ev in stimulus_events)
 
 # A stimulus event whose signal is an iid per-step draw (an event parameter with
 # distribution.axis == 'time') needs the same step-time freeze as stochastic
@@ -400,8 +406,6 @@ subset_mask_events = [ev for ev in stimulus_events
                       if getattr(ev, 'weight_distribution', None) is not None
                       and str(getattr(ev.weight_distribution, 'name', '') or '').lower() == 'subset']
 
-# External-input scope keys for the shared dotted-ref resolver AND for exploration/free-parameter axes: a swept `<event>.<param>` writes to `state.external.<event>.<param>`, where the emitted ExternalInput reads it, not to `state.dynamics`.
-external_input_keys = {str(ev.name) for ev in stimulus_events}
 
 # === Optimization metadata ===
 # Schema: experiment.optimizations is multivalued dict, opt.stages is inlined_as_list
@@ -1104,7 +1108,7 @@ for expl in exploration_list:
             _adom = _axis.domain
             assert _adom is not None and _adom.lo is not None and _adom.hi is not None, \
                 f"nsga2 axis '{_axis.parameter}' requires domain lo/hi"
-            _apath = parameter_keypath(_axis.parameter, couplings=all_couplings, coupling_key=_to_ci_key)
+            _apath = parameter_keypath(_axis.parameter, couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys)
             _nsga_axes.append({
                 'path': _apath, 'lo': float(_adom.lo), 'hi': float(_adom.hi),
                 'transform': str(getattr(_axis, 'transform', None) or 'none'),
@@ -1210,7 +1214,7 @@ for _opt in optim_list:
     _fps = []
     for _fp in (_opt.free_parameters or []):
         _fpn = str(_fp.parameter).rsplit('.', 1)[-1]
-        _fpath = parameter_keypath(_fp.parameter, couplings=all_couplings, coupling_key=_to_ci_key)
+        _fpath = parameter_keypath(_fp.parameter, couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys)
         _dom = getattr(_fp, 'domain', None)
         def _bnd(v):
             if v is None:
@@ -1315,6 +1319,9 @@ from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamic
 from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCoupling, DelayedCoupling
 % if has_stimulus_events:
 from tvboptim.experimental.network_dynamics.external_input.base import AbstractExternalInput
+% endif
+% if has_data_events:
+from tvboptim.experimental.network_dynamics.external_input.data import DataInput
 % endif
 % if has_delay:
 from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph, DenseLengthGraph, SparseDelayGraph
@@ -2641,7 +2648,7 @@ fp_init = fp.get('initial_value', None)
 # State keypath the parameter is marked on, resolved from its declared scope (the parser split the reference on its last dot, so scope + name recovers it losslessly).
 _fp_scope = fp.get('coupling_key', None) or fp.get('dynamics_key', None)
 fp_path = parameter_keypath(f"{_fp_scope}.{fp_name}" if _fp_scope else fp_name,
-                            couplings=all_couplings, coupling_key=_to_ci_key)
+                            couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys)
 fp_scope_name = fp_path.rsplit('.', 1)[0]
 # Format bounds for code generation (None -> jnp.inf)
 lo_str = f'{fp_lo}' if fp_lo is not None else '-jnp.inf'
@@ -3528,10 +3535,10 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _tune_model_fn_${_algo['name']}, _tune_state_${_algo['name']} = prepare(_network, get_solver(), t1=${float(_algo['simulation_period'])}, dt=${dt})
 % endfor
     def _algo_point_fn(_pt_state):
-        import copy as _copy
-        _ps = _copy.deepcopy(_pt_state)
+        # Bunch.copy() rebuilds the containers and shares the leaves, which is what a deepcopy cannot do here: the state carries a PRNG key, and deep-copying one while it is traced asserts, so a deepcopy pins the whole sweep to the sequential path.
+        _ps = _pt_state.copy()
 % for _algo in expl['algorithms']:
-        _ts = _copy.deepcopy(_tune_state_${_algo['name']})
+        _ts = _tune_state_${_algo['name']}.copy()
         for _k in _ps.dynamics.keys():
             if not _k.startswith('_'):
                 _ts.dynamics[_k] = _ps.dynamics[_k]
@@ -3555,6 +3562,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endfor
             verbose=False,
             run_post_tuning=False,
+            raw=True,
         )
         _rs = _algo_res_${_algo['name']}.state
         for _k in _rs.dynamics.keys():
@@ -3568,8 +3576,22 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         return observable_fn(_ps)
 
 % if has_axes:
-    exec_runner = SequentialExecution(_algo_point_fn, grid)
+% if has_host_pipeline_obs or _rec_host:
+    # A host pipeline callable cannot trace, so the grid runs cell by cell with each tuning scan still jitted.
+    exec_runner = SequentialExecution(progress_ticker(grid.N, label="grid cell")(_algo_point_fn), grid)
     _grid_cells = exec_runner.run()
+% else:
+    # The tuning core is a jitted lax.scan, so the grid runs through the same mapped path a plain sweep uses rather than a host loop that re-enters JAX per cell. The win is compiling once for the whole grid, not the batch width: on CPU each cell's scan already spreads over several cores, so a wide vmap costs more intra-op parallelism than it gains. Measured on a 100-node network, four cells: host loop 228 s, mapped at width 1 107 s, mapped at width 4 182 s.  `n_parallel` sets the width, and `auto` resolves it against the memory budget.
+    _n_vmap = resolve_exploration_n_vmap(${repr(expl['n_parallel'])}, grid.N, _algo_point_fn, _expl_state)
+    _n_pmap = resolve_exploration_n_pmap(grid.N, _n_vmap)
+    _n_map = max(1, -(-grid.N // _n_pmap))
+    _n_batches = max(1, _n_pmap * -(-_n_map // _n_vmap))
+    exec_runner = ParallelExecution(
+        progress_ticker(_n_batches, label="grid batch")(_algo_point_fn),
+        grid, n_pmap=_n_pmap, n_vmap=_n_vmap,
+    )
+    _grid_cells = exec_runner.run()
+% endif
 % else:
     _grid_cells = [_algo_point_fn(_expl_state)]
 % endif
@@ -3598,6 +3620,19 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endif
     # Tree-aware stack, for array and pytree returns alike; a parallel run is already stacked on device, so this reshapes it rather than gathering cell by cell.
     _stacked = stack_grid_cells(_grid_cells)
+
+% if expl['algorithms']:
+    # The tuning's own non-finite guard cannot branch while traced, so a batched sweep asserts it here instead, where every cell is concrete.
+    _nf_cells = [
+        _p for _p, _l in jax.tree_util.tree_flatten_with_path(_stacked)[0]
+        if jnp.issubdtype(jnp.asarray(_l).dtype, jnp.inexact) and not bool(jnp.all(jnp.isfinite(jnp.asarray(_l))))
+    ]
+    if _nf_cells:
+        raise RuntimeError(
+            f"algorithm-wired exploration '${expl['name']}' produced non-finite values at {[jax.tree_util.keystr(_p) for _p in _nf_cells]}. "
+            "The tuning diverged at one or more grid cells; failing loud so a NaN sweep is not recorded as a successful result."
+        )
+% endif
 
     # The point count mirrors the grid's own ``kwargs.get('n_<axis>', <default>)``, so a runtime n override leaves the stacked result and its recorded coordinate agreeing.
     _axes_info = [

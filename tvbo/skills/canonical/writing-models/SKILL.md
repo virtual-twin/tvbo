@@ -17,8 +17,7 @@ A **Dynamics** is the smallest building block: a set of named parameters and sta
 
 ## First: is it already curated? (don't rewrite from a paper)
 
-TVBO ships 100+ curated models. Check before transcribing equations by hand — a
-match is one `from_db` call and is already unit-checked:
+TVBO ships 100+ curated models. Check before transcribing equations by hand — a match is one `from_db` call and is already unit-checked:
 
 ```python
 from tvbo import Dynamics
@@ -27,10 +26,7 @@ Dynamics.list_db()  # every curated model name
 dyn = Dynamics.from_db("JansenRit")  # load one
 ```
 
-Only write a new `Dynamics` when the catalog has no match. See the
-`running-simulations` skill for the rest of the discovery API (filtering by
-`model_type`, `db_overview`, the `tvbo info` CLI) and for finding networks,
-atlases, coupling, and whole curated experiments the same way.
+Only write a new `Dynamics` when the catalog has no match. See the `running-simulations` skill for the rest of the discovery API (filtering by `model_type`, `db_overview`, the `tvbo info` CLI) and for finding networks, atlases, coupling, and whole curated experiments the same way.
 
 ## YAML form
 
@@ -81,8 +77,7 @@ lorenz = Dynamics(
 
 ## Loading a curated model from a source
 
-TVBO components are declarative: a `Dynamics` is either specified inline (as
-above), loaded from YAML, or **pointed at semantically via an `iri`**.
+TVBO components are declarative: a `Dynamics` is either specified inline (as above), loaded from YAML, or **pointed at semantically via an `iri`**.
 
 ```python
 # Direct construction (Python API)
@@ -92,9 +87,7 @@ dyn = Dynamics.from_db("ReducedWongWangExcInh")
 dynamics = {"name": "ReducedWongWang", "iri": "tvbo:ReducedWongWangExcInh"}
 ```
 
-Always include the `iri` — a bare name string is **not** a semantic pointer. See
-the `running-simulations` skill for how a prefix resolves to a source and for
-the full sourcing rules (inline vs YAML vs `iri`).
+Always include the `iri` — a bare name string is **not** a semantic pointer. See the `running-simulations` skill for how a prefix resolves to a source and for the full sourcing rules (inline vs YAML vs `iri`).
 
 ## Conventions and pitfalls
 

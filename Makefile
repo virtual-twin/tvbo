@@ -279,6 +279,8 @@ docs-lint:
 	@$(DOCS_PYTHON) docs/scripts/check_pages.py --quiet $(DOCS_PAGES)
 	@$(DOCS_PYTHON) docs/scripts/check_cli_examples.py --quiet $(DOCS_PAGES)
 	@cd docs && $(abspath $(DOCS_PYTHON)) scripts/check_render_coverage.py
+	@cd docs && $(abspath $(DOCS_PYTHON)) scripts/check_citations.py
+	@cd docs && $(abspath $(DOCS_PYTHON)) scripts/check_native_pages.py
 
 docs-unwrap:
 	@$(DOCS_PYTHON) docs/scripts/unwrap_prose.py $(DOCS_PAGES)

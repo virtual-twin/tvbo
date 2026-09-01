@@ -42,7 +42,7 @@ TVBGO_DIR = join(constants.DATA_DIR, "tvb-go")
 
 KEYWORD_DIR = join(TVBGO_DIR, "Tripletts_with_keywords")
 
-df_tvbgo = pd.read_excel(join(TVBGO_DIR, "TVB-O_GO_list_curation_Julie_Courtiol.xlsx"))
+df_tvbgo = pd.read_excel(join(TVBGO_DIR, "TVB-O_GO_list_curation.xlsx"))
 
 kw2tvbo = pd.read_csv(join(KEYWORD_DIR, "Model_parameter_keywords_TVB3_2_final.csv"), sep=";")
 go2kw = pd.read_csv(join(KEYWORD_DIR, "GO_terms_keywords_TVBO3_2_final.csv"), sep=";")

@@ -13,12 +13,15 @@ import xarray as xr
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation as _FuncAnimation
 import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
+                                  expand_bare_axes as _expand_bare_axes,
                                   load_layer as _load_layer, registered as _registered,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient)
 from tvbo.data.dataref import match_output as _match_output, resolve_sel_keys as _sel_keys
+from tvbo.plot import palette as _palette
 % for m in code_modules:
 import ${m}  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
 % endfor
@@ -186,6 +189,67 @@ _PLACEHOLDER_AXES = []          # re-bared after the format pass, which re-deriv
 _INSET_POST = []                # (inset axes, declared frame) — the tidy-up must not win over it
 _COLORBAR_POST = []             # (colourbar, decimals) — same rule, for a bar whose scale is declared
 _SCALE_AXES = {}                # panel key -> the bar inside a `kind: colorbar` slot, which is what a declared frame is about
+
+
+def _movie_writer(fmt, fps):
+    """The writer a declared movie container needs, named so a missing encoder says which one."""
+    from matplotlib.animation import FFMpegWriter, PillowWriter
+
+    if fmt == "gif":
+        return PillowWriter(fps=fps)
+    if not FFMpegWriter.isAvailable():
+        raise RuntimeError("figure animation: format mp4 needs ffmpeg on this machine; install it, or declare `format: gif`.")
+    return FFMpegWriter(fps=fps)
+
+
+def _reset_render_state():
+    """Empty the per-composition registers, which an animation refills once per frame."""
+    _PLACEHOLDER_AXES.clear(); _INSET_POST.clear(); _COLORBAR_POST.clear(); _SCALE_AXES.clear()
+
+
+def _at(da, dim, pos):
+    """A layer at one frame of the animation.
+
+    A layer that does not carry the animated dimension is returned whole, which is what makes the
+    common case need no annotation: the moving quantity moves and the backdrop behind it does not.
+    """
+    return da.isel({dim: pos}) if pos is not None and dim in da.dims else da
+
+
+def _frame_coord(ds, da, dim, pos):
+    """The coordinate value the animation stands at, for the cursor that marks it."""
+    coord = da.coords[dim] if dim in da.coords else ds.coords[dim]
+    return float(np.asarray(coord.values)[pos])
+
+
+def _frame_ctx(ctx, dim, pos):
+    """A drawer's context bound to one frame, so a panel that knows nothing about animation still draws the instant the rest of the figure is at."""
+    return dict(ctx, layers=[dict(layer, frame_dim=dim, frame_pos=pos) for layer in (ctx.get("layers") or [])])
+
+
+def _frame_positions(sources, dim, frames):
+    """The index along *dim* that each frame draws, shared by every panel in the figure.
+
+    Read off the data rather than declared, because the length of a run is not known when this
+    script is generated. Every animated layer is measured and the shortest wins: drawing past the
+    end of one container to satisfy another would repeat its last sample as if it were data.
+    """
+    lengths = set()
+    for container, output in sources:
+        ds = _open(container)
+        da = _var(ds, output)
+        if dim in da.dims:
+            lengths.add(int(da.sizes[dim]))
+    if not lengths:
+        raise ValueError(
+            "figure animation: no layer carries the dimension {!r}, so there is nothing to advance. "
+            "Name the dimension the frames move along as it appears in the container.".format(dim))
+    n = min(lengths)
+    if frames is None or frames >= n:
+        return list(range(n))
+    if frames < 2:
+        return [0]
+    return [int(round(i * (n - 1) / (frames - 1))) for i in range(frames)]
 
 
 def _bare(ax):
@@ -481,10 +545,12 @@ def _panel_number(ax, label, kwargs):
     ``Axes3D.text`` takes (x, y, z, s), so the shared 2-D placement call raises there and a
     line3d panel would silently lose its letter — or, as it did, take the whole figure down.
     ``text2D`` is the 3-D axes' own flat-overlay call, which is what a panel letter is."""
+    # A letter whose size the spec does not fix takes the style sheet's figure title size, resolved here rather than at generation time so the declared sheet is already in force. Without it the letter falls through to bsplot's own 16 pt default, which no style sheet can reach.
+    kwargs = {"fontsize": plt.rcParams["figure.titlesize"], **kwargs}
     if hasattr(ax, "get_zlim"):   # defaults mirror add_panel_number, so 3-D letters match their 2-D siblings
         ax.text2D(kwargs.get("x_shift", 0.0), 1.0 + kwargs.get("y_shift", 0.0), str(label),
                   transform=ax.transAxes, ha=kwargs.get("ha", "center"), va=kwargs.get("va", "bottom"),
-                  fontsize=kwargs.get("fontsize", 16), fontweight="bold")
+                  fontsize=kwargs["fontsize"], fontweight="bold")
         return
     _bpanels.add_panel_number(ax, label, **kwargs)
 
@@ -593,20 +659,30 @@ def _restore_fixed_axes(snap):
     _COLORBAR_POST.append((_cb, ${repr(None if p['colorbar_decimals'] is None else int(p['colorbar_decimals']))}, ${repr(p['colorbar_ticks'])}))   # re-applied after the format pass
 % endif
 </%def>\
+<%def name="ctx_expr(p)">\
+% if animation:
+_frame_ctx(${repr(p['ctx'])}, ${repr(animation['over'])}, _pos)\
+% else:
+${repr(p['ctx'])}\
+% endif
+</%def>\
 <%def name="draw(p)">\
 % if p['placeholder_only']:
     _placeholder(ax, ${repr(p['placeholder'])})
 % elif p['kind'] == 'image':
     ax.imshow(plt.imread(${repr(p['path'])}), origin="upper")
+% if p['aspect']:
+    ax.set_aspect(${repr(p['aspect'])})          # declared: the picture fits the slot the layout gives it, instead of the slot being sized from the picture
+% endif
     ax.axis("off")
 % elif p['kind'] == 'grid':
     ax.axis("off")          # the cells below carry the drawing; this axes is only their frame
 % elif p['kind'] in ('colorbar', 'legend'):
-    _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
+    _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${ctx_expr(p)})
     if hasattr(_drawn, "xaxis"):
         _SCALE_AXES[${repr(p['key'])}] = _drawn   # the bar, not the slot: a declared frame belongs on it, the panel letter on the slot behind it
-% elif p['kind'] in ('custom', 'surface', 'volume'):
-    _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
+% elif p['kind'] in ('custom', 'surface', 'volume', 'network'):
+    _drawn = _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${ctx_expr(p)})
     if hasattr(_drawn, "get_subplotspec"):
         ax = _drawn        # the drawer replaced its axes (e.g. swapped the 2-D cell for a 3-D projection); everything downstream styles the replacement
 % elif p['kind'] == 'line3d':
@@ -623,6 +699,9 @@ def _restore_fixed_axes(snap):
 % endif
 % if L['ref_transform']:
     _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)
+% endif
+% if animation and L['frame'] not in ('static', 'cursor'):
+    _da = _at(_da, ${repr(animation['over'])}, _pos)
 % endif
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     _y = _channel(_ds, _da, ${repr(L['y'])}, 1)
@@ -652,7 +731,14 @@ ${colorbar(p)}\
 % if L['ref_transform']:
     _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)
 % endif
-% if L['mark'] == 'heatmap':
+% if animation and L['frame'] not in ('static', 'cursor'):
+    _da = _at(_da, ${repr(animation['over'])}, _pos)
+% endif
+% if animation and L['frame'] == 'cursor':
+    # The frame's own coordinate, drawn as a rule: what marks *now* on a panel showing the whole course.
+    (ax.axvline if ${repr(bool(L['x']))} else ax.axhline)(
+        _frame_coord(_ds, _da, ${repr(animation['over'])}, 0 if _pos is None else _pos), **${repr(L['style'])})
+% elif L['mark'] == 'heatmap':
     _C = np.asarray(_da.values)
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
     _y = _channel(_ds, _da, ${repr(L['y'])}, 1)
@@ -757,12 +843,12 @@ ${colorbar(p)}\
 % for ins in d['insets']:
 ${emit(ins, '_' + str(ins['key']), 'Sub-axes')}\
 % endfor
-def ${name}(fig, ax):
+def ${name}(fig, ax, _pos=None):
     """${what} ${d['key']} — ${d['kind']}."""
 ${draw(d)}\
 % for ins in d['insets']:
     _iax = ax.inset_axes(${repr(ins['bounds'])})   # drawn after the body, over it
-    _${ins['key']}(fig, _iax)
+    _${ins['key']}(fig, _iax, _pos)
 % if ins['post_axopts']:
     _INSET_POST.append((_SCALE_AXES.get(${repr(ins['key'])}, _iax), ${repr(ins['post_axopts'])}))   # re-applied after the format pass
 % endif
@@ -774,40 +860,22 @@ ${draw(d)}\
 % for p in panels:
 ${emit(p, '_panel_' + str(p['key']), 'Panel')}\
 % endfor
-def main():
-% for s in style:
-% if not s['path']:
-    bsplot.style.use(${repr(s['value'])})
-% endif
-% endfor
-% for s in style:
-% if s['path']:
-    plt.style.use(${repr(s['value'])})              # study .mplstyle supplies the defaults
-% endif
-% endfor
-% if font_size:
-    plt.rcParams.update({_k: ${font_size} for _k in (          # declared font_size WINS over the
-        "font.size", "axes.labelsize", "axes.titlesize",       # .mplstyle: it is the per-figure
-        "xtick.labelsize", "ytick.labelsize", "legend.fontsize", "figure.titlesize")})
-% endif
-% if spine_rcparams:
-    plt.rcParams.update(${repr(spine_rcparams)})
-% endif
-    fig, axd = bsplot.figure.subplots(**${repr(subplots_kwargs)})
-    try:                                            # tvbo prefers the "compressed" engine (packs
-        fig.set_layout_engine("compressed")         # fixed-aspect axes tightly, less whitespace);
-    except Exception:                               # fall back to "tight" where compressed can't apply.
-        fig.set_layout_engine("tight")
+def _compose(fig, axd, _pos=None):
+    """Draw every panel into *axd* and run the figure-wide passes over them.
 
+    One composition of the whole mosaic, so a still and one frame of a movie are the same drawing
+    at different positions along the animated dimension rather than two plotting paths that can
+    disagree. ``_pos`` is that position, and ``None`` is the still.
+    """
 % for p in panels:
 % if p['placeholder'] and not p['placeholder_only']:
     try:                                            # data declared but may be absent: fall back to the label
-        axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}])
+        axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}], _pos)
     except Exception as _e:
         print("panel ${p['key']}: placeholder ({}: {})".format(type(_e).__name__, _e))
         _placeholder(axd[${repr(p['key'])}], ${repr(p['placeholder'])})
 % else:
-    axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}])
+    axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}], _pos)
 % endif
 % endfor
 
@@ -854,6 +922,10 @@ def main():
     _share_scale(axd, ${repr(_group)}, ${repr(_axis)})
 % endfor
 % endfor
+<% _fill = [p['key'] for p in panels if p.get('fill_cell')] %>\
+% if _fill:
+    _expand_bare_axes(fig, [axd[_k] for _k in ${repr(_fill)}])   # declared fill_cell: take the margin no one draws in
+% endif
 % if panel_numbers:
 % for p in panels:
 % if p['letter'] is not None:
@@ -862,9 +934,68 @@ def main():
 % endfor
 % endif
     _distinct_ticks(fig)                                    # an axis whose ticks repeat one number carries no scale
+    return axd
+
+
+def main():
+% for s in style:
+% if s['kind'] == 'named':
+    bsplot.style.use(${repr(s['value'])})
+% endif
+% endfor
+% for s in style:
+% if s['kind'] == 'mplstyle':
+    plt.style.use(${repr(s['value'])})              # study .mplstyle supplies the defaults
+% endif
+% endfor
+% for s in style:
+% if s['kind'] == 'palette':
+    _palette.use(${repr(s['value'])})               # the palette owns every colour the sheet cannot name
+% endif
+% endfor
+% if font_size:
+    plt.rcParams.update({_k: ${font_size} for _k in (          # declared font_size WINS over the
+        "font.size", "axes.labelsize", "axes.titlesize",       # .mplstyle: it is the per-figure
+        "xtick.labelsize", "ytick.labelsize", "legend.fontsize", "figure.titlesize")})
+% endif
+% if spine_rcparams:
+    plt.rcParams.update(${repr(spine_rcparams)})
+% endif
+    fig, axd = bsplot.figure.subplots(**${repr(subplots_kwargs)})
+    try:                                            # tvbo prefers the "compressed" engine (packs
+        fig.set_layout_engine("compressed")         # fixed-aspect axes tightly, less whitespace);
+    except Exception:                               # fall back to "tight" where compressed can't apply.
+        fig.set_layout_engine("tight")
+% if animation:
+    _POS = _frame_positions(${repr(animated_sources)}, ${repr(animation['over'])}, ${repr(animation['frames'])})
+
+    def _frame(_i):
+        """Rebuild the whole mosaic at frame *_i*, which is what lets every panel kind animate — including the ones that swap their own axes."""
+        fig.clear()
+        _reset_render_state()
+        try:
+            fig.set_layout_engine("compressed")
+        except Exception:
+            fig.set_layout_engine("tight")
+        _compose(fig, fig.subplot_mosaic(**${repr(mosaic_kwargs)}), _POS[_i])
+        return []
+
+    _writer = _movie_writer(${repr(animation['format'])}, ${animation['fps']})
+    _FuncAnimation(fig, _frame, frames=len(_POS), interval=max(1, 1000 // ${animation['fps']}), blit=False).save(
+        ${repr(outfile)}, writer=_writer, dpi=${dpi})
+    print("wrote", ${repr(outfile)}, "({} frames)".format(len(_POS)))
+% if still_outfile:
+    _frame(min(${animation['still']}, len(_POS) - 1))       # the declared frame, also saved as a still
+    fig.savefig(${repr(still_outfile)}, **${repr(savefig_kwargs)})
+    _flatten_alpha(${repr(still_outfile)})
+    print("wrote", ${repr(still_outfile)})
+% endif
+% else:
+    _compose(fig, axd)
     fig.savefig(${repr(outfile)}, **${repr(savefig_kwargs)})
     _flatten_alpha(${repr(outfile)})
     print("wrote", ${repr(outfile)})
+% endif
     return fig
 
 

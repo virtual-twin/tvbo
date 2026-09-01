@@ -85,6 +85,8 @@ dynamics_class = entry_point_name(model, 'tvboptim')
 from tvbo.templates.tvboptim.utils import active_stimulus_events
 stimulus_events = active_stimulus_events(experiment)
 has_stimulus_events = len(stimulus_events) > 0
+from tvbo.templates.tvboptim.utils import is_data_driven_event
+has_data_events = any(is_data_driven_event(ev) for ev in stimulus_events)
 
 # accelerator -> JAX_PLATFORMS (set before `import jax`); 'auto' delegates to JAX detection.
 from tvbo.templates.tvboptim.utils import jax_platform as _jax_platform_of
@@ -124,6 +126,9 @@ from tvboptim.experimental.network_dynamics.core.bunch import Bunch
 from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
 % if has_stimulus_events:
 from tvboptim.experimental.network_dynamics.external_input.base import AbstractExternalInput
+% endif
+% if has_data_events:
+from tvboptim.experimental.network_dynamics.external_input.data import DataInput
 % endif
 % if has_delay:
 from tvboptim.experimental.network_dynamics.coupling.base import DelayedCoupling

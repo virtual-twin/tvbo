@@ -43,6 +43,91 @@ def register_transform(name):
     return deco
 
 
+def expand_bare_axes(fig, axes, pad: float = 0.004) -> list:
+    """Grow each of *axes* until it meets a neighbour's ink, and return the ones moved.
+
+    A layout engine sizes rows and columns uniformly and reserves each cell's margins for whichever panel in that row or column needs the most of them: ticks, tick labels, an axis label. A panel that draws none of that — a schematic, a chain diagram, a captured graph — is padded to match its neighbours and prints smaller than the slot it owns, which on a print figure is millimetres of a panel that had to fit in the first place.
+
+    The rule is about ink rather than about cells: a panel expands in each direction until it reaches the *drawn* extent of the nearest panel that could collide with it, so it can never overlap anything and needs to know nothing about how the grid was divided. Nothing shrinks, and only space no one draws in is taken. Panels are grown one at a time against where the previous one now ends, so two panels sharing a gap cannot both claim it. The layout engine is switched off first, since it would recompute these positions away on the next draw.
+
+    Opt-in per panel (``opts: {fill_cell: true}``): a panel whose position carries meaning — aligned with the one above it, or sized to match a sibling — must keep the position the engine gave it.
+    """
+    from matplotlib.transforms import Bbox
+
+    fig.canvas.draw()  # the engine has to settle before its result can be read or replaced
+    renderer = fig.canvas.get_renderer()
+    inverse = fig.transFigure.inverted()
+    boxes = {ax: ax.get_tightbbox(renderer).transformed(inverse) for ax in fig.axes}
+    fig.set_layout_engine("none")
+
+    moved = []
+    for ax in axes:
+        if hasattr(ax, "zaxis"):
+            continue
+        # The engine pinned this panel's axis labels at an offset measured for the box it is about to leave; only a panel that moves needs its labels placed again from scratch.
+        ax.xaxis._autolabelpos = True
+        ax.yaxis._autolabelpos = True
+        here = ax.get_position()
+        others = [box for other, box in boxes.items() if other is not ax]
+        beside = [b for b in others if b.y1 > here.y0 and b.y0 < here.y1]
+        stacked = [b for b in others if b.x1 > here.x0 and b.x0 < here.x1]
+        # With nothing in the way the panel stops at the figure's own ink, not at its edge: growing past everything else would enlarge the figure rather than fill it, and the panel would hang below its neighbours' axis labels.
+        edge = Bbox.union(others)
+        # A neighbour is a limit as soon as its ink reaches past this panel's edge, even where it already overlaps the cell: a panel whose labels hang into this one's slot must stop it here rather than be stepped over.
+        left = max([b.x1 for b in beside if b.x0 < here.x0], default=edge.x0) + pad
+        right = min([b.x0 for b in beside if b.x1 > here.x1], default=edge.x1) - pad
+        bottom = max([b.y1 for b in stacked if b.y0 < here.y0], default=edge.y0) + pad
+        top = min([b.y0 for b in stacked if b.y1 > here.y1], default=edge.y1) - pad
+        left, right = min(left, here.x0), max(right, here.x1)  # never shrink: the engine's box is the floor
+        bottom, top = min(bottom, here.y0), max(top, here.y1)
+        if right <= left or top <= bottom:
+            continue  # hemmed in on both sides: the engine's own box is already the honest one
+        ax.set_position([left, bottom, right - left, top - bottom])
+        if ax.get_aspect() != "auto" and ax.get_images():
+            ax.set_aspect("auto")  # a picture holding its own aspect re-shrinks inside the box it was just given, which is the opposite of filling the cell
+        # A label is placed below the lowest tick box among the axes it is aligned with, and these axes draw no ticks but still carry them. Left in place, a panel grown to the figure floor drags its neighbours' axis labels down there with it.
+        ax.set_xticks([])
+        ax.set_yticks([])
+        boxes[ax] = Bbox([[left, bottom], [right, top]])  # the next panel grows against where this one now ends
+        moved.append(ax)
+
+    _trim_to_content(fig, moved)
+    return moved
+
+
+def _trim_to_content(fig, moved: list) -> None:
+    """Give back any side of a grown panel that reaches past everything the figure draws.
+
+    A panel spanning several rows is handed the margin the bottom row keeps for its axis label, and a panel hanging past every label on the page is as wrong as one printed too small. The reference is measured only now, because clearing the grown panels' ticks lets their neighbours' axis labels rise back to where they belong, and a side is never given back so far that the panel leaves the cell it was dealt.
+    """
+    from matplotlib.transforms import Bbox
+
+    rest = [ax for ax in fig.axes if ax not in set(moved)]
+    if not moved or not rest:
+        return
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    inverse = fig.transFigure.inverted()
+    content = Bbox.union([ax.get_tightbbox(renderer).transformed(inverse) for ax in rest])
+    for ax in moved:
+        here = ax.get_position()
+        mid_x, mid_y = (here.x0 + here.x1) / 2, (here.y0 + here.y1) / 2
+        left = content.x0 if here.x0 < content.x0 < mid_x else here.x0
+        right = content.x1 if mid_x < content.x1 < here.x1 else here.x1
+        bottom = content.y0 if here.y0 < content.y0 < mid_y else here.y0
+        top = content.y1 if mid_y < content.y1 < here.y1 else here.y1
+        if right > left and top > bottom:
+            ax.set_position([left, bottom, right - left, top - bottom])
+
+
+def _recipe_dict(spec):
+    """A ``RenderSpec`` as a plain dict of the options it sets, so a capture recipe survives into the emitted plot script."""
+    if spec is None:
+        return None
+    fields = spec if isinstance(spec, dict) else getattr(spec, "__dict__", {})
+    return {k: v for k, v in fields.items() if v is not None and not k.startswith("_")} or None
+
+
 def register_panel(name):
     """Register a ``custom``-panel callable ``fn(fig, ax, ctx)`` under *name* (decorator)."""
 
@@ -257,7 +342,7 @@ def surface_panel(fig, ax, ctx):
                 )
             values = _np.where(grey, _np.nan, values)  # also keeps it out of the limits
 
-    vmin, vmax = _colour_limits(values, opts, True)
+    vmin, vmax = _colour_limits(_limits_source(layers, values), opts, True)
 
     edges = (
         {"edgecolor": str(opts["edgecolor"]), "linewidth": float(opts.get("edge_linewidth", 0.08))}
@@ -411,6 +496,19 @@ def _colour_limits(values, opts, symmetric_default: bool):
     return (lo if vmin is None else vmin), (hi if vmax is None else vmax)
 
 
+def _limits_source(layers, values):
+    """The values a brain map's colour limits are read from.
+
+    A map that animates takes them from the WHOLE animated range rather than from the frame on screen, because limits recomputed per frame make the same colour mean a different number in every frame — an animation that looks like activity spreading when nothing but the scale moved. A still figure has one frame, so this is what it draws.
+    """
+    import numpy as _np
+
+    layer = layers[0] if layers else None
+    if not layer or layer.get("frame_dim") is None or layer.get("frame_pos") is None:
+        return values
+    return _np.asarray(load_layer({**layer, "frame_pos": None}).values, dtype=float)
+
+
 def _region_labels(da):
     """The region name of each value in a per-region layer, or ``None`` when it carries none.
 
@@ -480,7 +578,7 @@ def volume_panel(fig, ax, ctx):
     painted = lookup[_np.where(seg >= 0, seg, 0)]
     painted[seg < 0] = _np.nan
 
-    vmin, vmax = _colour_limits(values, opts, False)
+    vmin, vmax = _colour_limits(_limits_source(layers, values), opts, False)
 
     view = str(opts.get("view", "sagittal")).lower()
     if view not in ("sagittal", "coronal", "horizontal"):
@@ -498,6 +596,163 @@ def volume_panel(fig, ax, ctx):
     ax.axis("off")
     if opts.get("title"):
         ax.set_title(str(opts["title"]))
+
+
+# --------------------------------------------------------------------------- network
+
+# Which two of a region centre's three coordinates a projection draws. Named for the radiological plane, so a spec says which view it wants rather than which array columns to keep.
+_PROJECTIONS = {"axial": (0, 1), "coronal": (0, 2), "sagittal": (1, 2)}
+
+
+@functools.cache
+def _network_geometry(ref: str, base_dir: Path):
+    """``(centres, weights, labels)`` of the connectome a ``network`` panel draws.
+
+    Cached because an animation redraws the panel once per frame and the connectome is the one thing in it that never moves. The reference is a curated IRI or a path to a network beside the study; a path that does not exist is not quietly retried as an IRI, so a mistyped file is an error rather than a silent fall-through to some other network.
+    """
+    import numpy as _np
+
+    from tvbo.classes.network import Network
+
+    candidate = Path(str(resolve_path(ref, base_dir)))
+    if ":" in str(ref) and not candidate.exists():
+        network = Network(iri=str(ref))
+    elif candidate.exists():
+        network = Network.from_file(str(candidate))
+    else:
+        raise FileNotFoundError(
+            f"network panel: {ref!r} is neither a curated IRI nor a file under {base_dir}. "
+            "Name the connectome the panel draws as an IRI (tvbo:DesikanKilliany) or as a path to a network beside the study."
+        )
+    labels = [str(nm) for nm in network.node_labels]
+    centres = network.get_centers()
+    coords = _np.asarray([centres[i] for i in range(len(labels))], dtype=float)
+    weights = _np.asarray(network.matrix("weight"), dtype=float)
+    return coords, weights, labels
+
+
+@register_panel("network")
+def network_panel(fig, ax, ctx):
+    """The connectome as a node-link graph, its nodes coloured by a layer — the built-in ``kind: network``.
+
+    The panel a whole-brain paper draws beside its time courses: the network the model actually ran on, with the state living on it. Registered here rather than shipped per study, so ``kind: network`` needs no ``code_modules``; the graph itself is built by bsplot's own ``create_network``, which is where the edge threshold and the node/edge attributes are defined.
+
+    opts:
+        network: the connectome, as a curated IRI or a path beside the study (required).
+        projection: which anatomical plane the centres flatten onto — axial (default), coronal or sagittal.
+        edge_percentile: keep only edges above this percentile of the weights (default 92); a dense connectome drawn whole is a filled square, not a graph.
+        edge_color / edge_alpha / edge_linewidth: how the kept edges are drawn; the widths scale with the weight, so the strong connections read as strong.
+        node_size / node_edgecolor / node_linewidth: the markers.
+        cmap: colormap for the layer's values; vmin/vmax/symmetric/percentile set the limits, and symmetric defaults to FALSE here because a state variable is not a signed deviation from zero the way a brain map of differences is.
+        color: one flat colour for every node, for a panel whose subject is the network rather than a state on it (with no layer, that is what it draws).
+        labels: annotate each node with its region name (default false — 87 names on one panel is a block of text, not a figure).
+    """
+    import numpy as _np
+    from bsplot.graph import create_network
+    from matplotlib.collections import LineCollection
+
+    from tvbo.adapters.colormaps import resolve as _resolve_cmap
+
+    opts, base = ctx.get("opts", {}), Path(ctx.get("base_dir") or ".")
+    ref = opts.get("network")
+    if not ref:
+        raise ValueError(
+            "network panel: declare `network:` — the connectome whose nodes and edges the panel draws, "
+            "as a curated IRI (tvbo:DesikanKilliany) or a path to a network beside the study."
+        )
+    coords, weights, labels = _network_geometry(str(ref), base)
+    plane = str(opts.get("projection", "axial"))
+    if plane not in _PROJECTIONS:
+        raise ValueError(f"network panel: projection {plane!r} is not one of {sorted(_PROJECTIONS)}.")
+    ix, iy = _PROJECTIONS[plane]
+
+    values = None
+    layers = ctx.get("layers") or []
+    if layers:
+        values = _node_values(load_layer(layers[0]), labels, str(ref))
+
+    graph = create_network(
+        {nm: tuple(coords[i]) for i, nm in enumerate(labels)},
+        weights,
+        labels=labels,
+        threshold_percentile=float(opts.get("edge_percentile", 92.0)),
+    )
+    index = {nm: i for i, nm in enumerate(labels)}
+    segments = [
+        [(coords[index[u], ix], coords[index[u], iy]), (coords[index[v], ix], coords[index[v], iy])]
+        for u, v in graph.edges()
+    ]
+    if segments:
+        strength = _np.asarray([float(d.get("weight", 1.0)) for _, _, d in graph.edges(data=True)])
+        span = float(strength.max()) or 1.0
+        ax.add_collection(
+            LineCollection(
+                segments,
+                colors=str(opts.get("edge_color", "#9aa7ab")),
+                # Width carries the weight, so the backbone reads as the backbone; the floor keeps a weak kept edge visible.
+                linewidths=float(opts.get("edge_linewidth", 0.7)) * (0.3 + 0.7 * strength / span),
+                alpha=float(opts.get("edge_alpha", 0.5)),
+                zorder=1,
+            )
+        )
+
+    marker = {
+        "s": float(opts.get("node_size", 26.0)),
+        "linewidths": float(opts.get("node_linewidth", 0.3)),
+        "edgecolors": str(opts.get("node_edgecolor", "#2f3437")),
+        "zorder": 2,
+    }
+    if values is None:
+        ax.scatter(coords[:, ix], coords[:, iy], c=str(opts.get("color", "#2a9d8f")), **marker)
+    else:
+        vmin, vmax = _colour_limits(_limits_source(layers, values), opts, False)
+        ax.scatter(
+            coords[:, ix],
+            coords[:, iy],
+            c=values,
+            cmap=_resolve_cmap(opts.get("cmap", "viridis")),
+            vmin=vmin,
+            vmax=vmax,
+            **marker,
+        )
+    if opts.get("labels"):
+        for i, nm in enumerate(labels):
+            ax.annotate(nm, (coords[i, ix], coords[i, iy]), fontsize=4, ha="center", va="bottom", xytext=(0, 4), textcoords="offset points")
+
+    ax.set_aspect("equal")  # a connectome's frame is anatomy, not a coordinate system
+    ax.margins(0.06)
+    ax.axis("off")
+    if opts.get("title"):
+        ax.set_title(str(opts["title"]))
+
+
+def _node_values(da, labels: list[str], ref: str):
+    """A layer's values in the network's own node order, placed BY LABEL.
+
+    A container writes its node labels alongside its values, so the two orders are reconciled by name rather than trusted to agree. A layer that carries no labels is accepted only when it already has one value per node, which is the one case where position cannot be wrong.
+    """
+    import numpy as _np
+
+    values = _np.asarray(da.values, dtype=float).squeeze()
+    if values.ndim != 1:
+        raise ValueError(
+            f"network panel: expected one value per node, got shape {values.shape} over dims {tuple(da.dims)}. "
+            "Add a `sel:` picking a single map, or animate the panel over the extra dimension."
+        )
+    names = _region_labels(da)
+    if names is None:
+        if values.size != len(labels):
+            raise ValueError(
+                f"network panel: the layer supplies {values.size} values for a network of {len(labels)} nodes "
+                "and carries no node-label coordinate to place them by."
+            )
+        return values
+    index = {nm: i for i, nm in enumerate(labels)}
+    _check_placeable(names, index, "network", ref)
+    placed = _np.full(len(labels), _np.nan)
+    for nm, value in zip(names, values, strict=True):
+        placed[index[nm]] = value
+    return placed
 
 
 def scale_colormap(name, lo=None, hi=None, center=None):
@@ -669,16 +924,22 @@ def resolve_path(p, base_dir):
 
 
 def _style_entries(figure, base_dir) -> list:
-    """Classify each figure style as a bsplot named style or an .mplstyle path.
+    """Classify each figure style as a bsplot named style, an .mplstyle path, or a palette.
 
-    bsplot.style.use only knows its registered names; a study's own .mplstyle is a filesystem path, applied via matplotlib's plt.style.use instead. This lets a study carry its own design rules (Figure.style: ['<path>/study.mplstyle']). Only the path form is resolved against base_dir — a named style is not a filesystem reference.
+    bsplot.style.use only knows its registered names; a study's own .mplstyle is a filesystem path, applied via matplotlib's plt.style.use instead. This lets a study carry its own design rules (Figure.style: ['<path>/study.mplstyle']). A .yaml/.yml layer is a colour palette (see :mod:`tvbo.plot.palette`), which carries the roles a sheet has no rcParam for and is applied last so its colours win. Only the path forms are resolved against base_dir — a named style is not a filesystem reference.
     """
     styles = list(getattr(figure, "style", None) or []) or ["tvbo"]
     out = []
     for s in styles:
         s = str(s)
-        is_path = s.endswith(".mplstyle") or "/" in s or "\\" in s
-        out.append({"path": is_path, "value": resolve_path(s, base_dir) if is_path else s})
+        if s.endswith((".yaml", ".yml")):
+            kind = "palette"
+        elif s.endswith(".mplstyle") or "/" in s or "\\" in s:
+            kind = "mplstyle"
+        else:
+            kind = "named"
+        value = resolve_path(s, base_dir) if kind != "named" else s
+        out.append({"kind": kind, "path": kind == "mplstyle", "value": value})
     return out
 
 
@@ -1011,6 +1272,8 @@ def load_layer(layer: dict):
 
     A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``);
     it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.
+
+    Under an animation the emitted script binds ``frame_dim``/``frame_pos`` onto each layer before handing the context over, so a drawer that knows nothing about animation still draws the frame the rest of the figure is at.
     """
     name, ref_name = layer.get("transform"), layer.get("ref_transform")
     fn = registered(TRANSFORMS, name, "transform") if name else None  # spec error before any IO
@@ -1025,6 +1288,9 @@ def load_layer(layer: dict):
         da = da.sel(layer["sel"], method=layer.get("sel_method"))
     if ref_fn:
         da = ref_fn(da)
+    dim, pos = layer.get("frame_dim"), layer.get("frame_pos")
+    if dim is not None and pos is not None and layer.get("frame") != "static" and dim in da.dims:
+        da = da.isel({dim: pos})
     return da
 
 
@@ -1069,8 +1335,11 @@ def _used_ref(used):
     return str(ana) if ana is not None else None
 
 
-def _resolve_layer(layer, panel_kind, base_dir):
-    """Resolve one ``Layer`` into the flat dict the template/callables consume."""
+def _resolve_layer(layer, panel_kind, base_dir, animation=None):
+    """Resolve one ``Layer`` into the flat dict the template/callables consume.
+
+    Under an ``animation`` the layer also gets its frame role. Undeclared, the role is read off the data: a layer carrying the animated dimension is what moves, one that does not is the fixed backdrop. That inference is the whole reason a two-panel movie needs no per-layer annotation, and a `frame:` on the layer overrides it.
+    """
     used, enc = layer.used, getattr(layer, "encoding", None)
     sel, method = _sel_dict(used)
     # str() collapses the MarkType enum (dataclass flavor) to a plain string the template compares.
@@ -1102,14 +1371,26 @@ def _resolve_layer(layer, panel_kind, base_dir):
         "sel_method": method,
         "triangle": str(triangle) if triangle else None,
         "style": kwargs,
+        "frame": _frame_role(layer, animation),
     }
 
 
+def _frame_role(layer, animation) -> str | None:
+    """This layer's declared frame role, or ``None`` for a figure that does not animate.
+
+    The role is resolved here rather than in the template so the emitted script carries a decision, not a rule to re-derive. An undeclared role stays ``None`` and the script reads it off the opened data — the dimension a layer carries is only knowable once the container is open, which is after codegen.
+    """
+    if animation is None:
+        return None
+    declared = getattr(layer, "frame", None)
+    return str(declared) if declared else None
+
+
 # Interior drawn by a callable or sub-axes, so its ticks must survive the format pass.
-_DRAWER_KINDS = {"custom", "surface", "volume", "grid", "line3d"}
+_DRAWER_KINDS = {"custom", "surface", "volume", "network", "grid", "line3d"}
 
 # Kinds whose interior is a built-in callable, needing no `render:` and no code_modules.
-_BUILTIN_PANELS = {"surface", "volume", "colorbar", "legend"}
+_BUILTIN_PANELS = {"surface", "volume", "network", "colorbar", "legend"}
 
 
 class _GridCell:
@@ -1257,7 +1538,7 @@ def _inset_bounds(inset, key, i) -> list:
     return bounds
 
 
-def _resolve_drawable(panel, key, base_dir) -> dict:
+def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
     """Resolve one drawable — a mosaic Panel or an Inset — into its template entry.
 
     An inset is a panel in everything that draws, so both go through this one function and the template emits both from one partial. Splitting them would let an inset's heatmap, triangle gap or colourbar quietly diverge from the identical panel beside it.
@@ -1267,11 +1548,21 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
     # A grid's `layers:` belong to its cells, so they are not also drawn on the host axes.
     cells, cell_labels = _grid_cells(panel, key, base_dir, opts) if kind == "grid" else ([], [])
     layers = (
-        [] if kind == "grid" else [_resolve_layer(layer, kind, base_dir) for layer in (getattr(panel, "layers", None) or [])]
+        []
+        if kind == "grid"
+        else [_resolve_layer(layer, kind, base_dir, animation) for layer in (getattr(panel, "layers", None) or [])]
     )
     # A callable-drawn kind gets the whole opts dict; grammar panels read the axis subset.
     ctx = (
-        {"layers": layers, "opts": opts, "key": key, "base_dir": str(base_dir)}
+        {
+            "layers": layers,
+            "opts": opts,
+            "key": key,
+            "base_dir": str(base_dir),
+            "path": resolve_path(getattr(panel, "path", None), base_dir),
+            "source": getattr(panel, "source", None),
+            "capture": _recipe_dict(getattr(panel, "capture", None)),
+        }
         if kind == "custom" or kind in _BUILTIN_PANELS
         else None
     )
@@ -1299,9 +1590,17 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
     # A built-in kind names no `render:` and falls back to the callable core registers.
     render = getattr(panel, "render", None) or (kind if kind in _BUILTIN_PANELS else None)
     path = resolve_path(getattr(panel, "path", None), base_dir)
+    source = getattr(panel, "source", None)
+    if kind == "image" and source and path:
+        # The panel draws a file; with a `source` it is a build product, re-rendered here so the figure cannot go out with a stale screenshot of a page that has since changed.
+        from tvbo.plot.capture import capture
+
+        capture(source, path, getattr(panel, "capture", None), base_dir=base_dir)
     return {
         "key": key,
         "kind": kind,
+        "fill_cell": bool(opts.get("fill_cell")),
+        "aspect": opts.get("aspect"),
         "drawer": kind in _DRAWER_KINDS,
         "title": getattr(panel, "label", None),
         "path": path,
@@ -1334,10 +1633,58 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
     }
 
 
+def output_format(figure) -> str:
+    """The file extension a figure's render writes, without the dot.
+
+    An animated figure's output is its movie, so the animation's container replaces the still's format rather than sitting beside it — a figure written as both a png and a gif is two artefacts claiming to be one figure. Asked by ``figure_outputs`` and by the renderer, so the name they agree on is derived once.
+    """
+    animation = _animation(figure)
+    if animation:
+        return animation["format"]
+    return str(getattr(figure, "format", None) or "png").lstrip(".")
+
+
+def _animated_sources(drawables) -> list:
+    """``(container, output)`` of every layer whose data the frames advance through.
+
+    Collected across panels, their insets and their grid cells, because the frame count is a property of the FIGURE: two panels reading different runs must not end up at different instants. A `static` layer is left out — it is the backdrop, and its length says nothing about how long the movie is.
+    """
+    sources: list = []
+    for drawable in drawables:
+        for layer in drawable.get("layers") or []:
+            if layer.get("frame") in ("static", "cursor"):
+                continue
+            pair = [layer["container"], layer["output"]]
+            if pair not in sources:
+                sources.append(pair)
+        sources.extend(pair for pair in _animated_sources(drawable.get("insets") or []) if pair not in sources)
+    return sources
+
+
+def _animation(figure) -> dict | None:
+    """The figure's animation as the flat dict the template consumes, or ``None`` for a still."""
+    spec = getattr(figure, "animation", None)
+    if spec is None:
+        return None
+    fmt = str(getattr(spec, "format", None) or "gif").lstrip(".").lower()
+    if fmt not in ("gif", "mp4"):
+        raise ValueError(f"figure animation: format {fmt!r} is not one of gif, mp4.")
+    frames = getattr(spec, "frames", None)
+    still = getattr(spec, "still", None)
+    return {
+        "over": str(spec.over),
+        "frames": int(frames) if frames is not None else None,
+        "fps": int(getattr(spec, "fps", None) or 20),
+        "format": fmt,
+        "still": int(still) if still is not None else None,
+    }
+
+
 def build_context(figure, base_dir, outfile: str) -> dict:
     """Resolve a ``Figure`` into the template context (all IO paths + names resolved)."""
     base_dir = Path(base_dir)
-    panels = [_resolve_drawable(panel, key, base_dir) for key, panel in _items(figure.panels)]
+    animation = _animation(figure)
+    panels = [_resolve_drawable(panel, key, base_dir, animation) for key, panel in _items(figure.panels)]
     if figure.layout:
         layout = _mosaic(str(figure.layout).replace("/", "\n"))  # bsplot mosaics split rows on newline
     else:
@@ -1412,6 +1759,11 @@ def build_context(figure, base_dir, outfile: str) -> dict:
 
     return {
         "name": figure.name or "figure",
+        "animation": animation,
+        "animated_sources": _animated_sources(panels) if animation else [],
+        "still_outfile": str(Path(outfile).with_suffix(".png")) if animation and animation["still"] is not None else None,
+        # A movie rebuilds the mosaic per frame, so the emitted script keeps the arguments that made it.
+        "mosaic_kwargs": {"mosaic": layout, **{k: v for k, v in subplots_kwargs.items() if k.endswith("_ratios")}},
         "shared_scales": shared,
         "style": _style_entries(figure, base_dir),
         "outfile": outfile,
@@ -1534,8 +1886,9 @@ def _panel_descriptor(panel) -> str:
     """
     kind = str(getattr(panel, "kind", "") or "")
     if kind == "image":
+        # Provenance, and only where nothing better was written: a filename in a journal caption is noise beside an authored sentence.
         src = getattr(panel, "source", None)
-        return f"rendered from {Path(str(src)).name}" if src else ""
+        return f"rendered from {Path(str(src)).name}" if src and not getattr(panel, "description", None) else ""
     # A grid's cells all draw the same kind, which names them better than "grid" does.
     cell_kind = str(getattr(getattr(panel, "cell", None), "kind", "") or "") if kind == "grid" else ""
 
@@ -1593,6 +1946,8 @@ def compose_caption(figure) -> str:
     clauses: list[str] = []
     seen: set[str] = set()
     group_clause: dict[str, int] = {}
+    # What each group's clause has already said, held as whole parts. Testing a part for containment in the clause TEXT instead drops any label that happens to be a substring of a sibling's prose, so a cell called "network" loses its name to an earlier sentence that merely used the word.
+    group_parts: dict[str, set[str]] = {}
     for key in _panel_layout_order(figure):
         panel = spec_by_key.get(key)
         if panel is None:
@@ -1604,21 +1959,23 @@ def compose_caption(figure) -> str:
             _sentence(getattr(panel, "description", None) or ""),
         ]
         group = _group_letter(key)
+        said = group_parts.setdefault(group, set())
         if ident is not None:
             group_clause[group] = len(clauses)
+            said.update(s for s in parts if s)
             clauses.append(f"**({ident})** {' '.join(s for s in parts if s)}".strip())
             continue
         # A cell of a paper panel already lettered, or whose letter the author suppressed: it shares that panel's clause.
         index = group_clause.get(group)
-        said = clauses[index] if index is not None else ""
         fresh = " ".join(s for s in parts if s and s not in said)
         if not fresh:
             continue
+        said.update(s for s in parts if s)
         if index is None:
             group_clause[group] = len(clauses)
             clauses.append(fresh)
         else:
-            clauses[index] = f"{said} {fresh}".strip()
+            clauses[index] = f"{clauses[index]} {fresh}".strip()
     return " ".join(s for s in (lead + clauses) if s).strip()
 
 

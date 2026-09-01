@@ -179,6 +179,34 @@ for coupling_key, coupling_obj in network_couplings(experiment.network).items():
     if coupling_obj.parameters:
         for param_name in coupling_obj.parameters.keys():
             coupling_param_to_key[param_name] = coupling_key
+
+import re as _re_sym
+model_param_names = list(model.parameters.keys()) if model and getattr(model, 'parameters', None) else []
+
+def rule_state_params(rule_rhs, target_name, observations, rule_params_dict):
+    """Model parameters other than the rule's own target that its right-hand side reads.
+
+    Without these an update rule sees only observations and hyperparameters, so it cannot carry search state of its own. The published feedback-inhibition routine does exactly that: it steps a region's weight by a per-region increment and shrinks that increment when the region overshoots, which is two rules over two parameters, each reading the other. They are passed by value from the state as it stands when the rule fires, so a rule reads what an earlier rule wrote this iteration and rules apply in declaration order.
+    """
+    taken = {str(target_name)} | {str(o) for o in observations} | {str(k) for k in rule_params_dict}
+    return [str(p) for p in model_param_names
+            if str(p) not in taken and _re_sym.search(r'\b%s\b' % _re_sym.escape(str(p)), rule_rhs)]
+
+def state_param_accessor(pname):
+    """Where a model parameter lives on the tuning state, coupling parameters included."""
+    _ck = coupling_param_to_key.get(pname)
+    return ('state.coupling.%s.%s' % (_ck, pname)) if _ck is not None else ('state.dynamics.%s' % pname)
+
+from tvbo.templates.tvboptim.utils import resolve_tail_samples as _resolve_tail
+_algo_step = float(experiment.integration.step_size)
+
+def obs_tail_start(obs_def):
+    """Start index of the trailing window an algorithm observation declares, over the tuning loop's own simulation.
+
+    The tuning loop reads the trajectory at the integration step, so a `tail_duration` converts against that step rather than a recording period. An objective measured on a settled mean states its own settling here: the published feedback-inhibition routine simulates ten seconds an iteration and averages the last nine.
+    """
+    _n = _resolve_tail(obs_def, _algo_step) if obs_def is not None else None
+    return ('-%d' % int(_n)) if _n else ''
 %>
 % if has_algorithms:
 
@@ -864,13 +892,14 @@ def _${algo_name}_tuning_core_impl(
     has_bounds = bounds is not None
     lo_bound = bounds.lo if has_bounds else None
     hi_bound = bounds.hi if has_bounds else None
-    all_known_symbols = [target_name] + list(observations) + list(rule_params_dict.keys())
+    rule_state = rule_state_params(rule_rhs, target_name, observations, rule_params_dict)
+    all_known_symbols = [target_name] + list(observations) + list(rule_params_dict.keys()) + rule_state
     rule_has_warmup = getattr(rule, 'warmup', False)
     needs_warmup = rule_has_warmup and has_eta_param
     if needs_warmup:
         all_known_symbols.append('eta_scale')
 %>
-    def ${rule_name}(${target_name}, ${', '.join(observations)}${', ' + ', '.join(rule_params_dict.keys()) if rule_params_dict else ''}${',' if needs_warmup else ''} ${'eta_scale=1.0' if needs_warmup else ''}):
+    def ${rule_name}(${target_name}, ${', '.join(observations)}${', ' + ', '.join(rule_params_dict.keys()) if rule_params_dict else ''}${', ' + ', '.join(rule_state) if rule_state else ''}${',' if needs_warmup else ''} ${'eta_scale=1.0' if needs_warmup else ''}):
 % if needs_warmup:
         _eta = ${eta_param_name} * eta_scale
 % for pn in rule_params_dict.keys():
@@ -1157,7 +1186,7 @@ def _${algo_name}_tuning_core_impl(
         # Call: ${direct_call}(buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
         ${obs} = ${direct_call}(_${src_obs_for_this}_buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
 % elif obs_def and obs_source and state_idx is not None:
-        ${obs} = jnp.mean(result.data[:, ${state_idx}], axis=0)  # Mean over time, per node
+        ${obs} = jnp.mean(result.data[${obs_tail_start(obs_def)}:, ${state_idx}], axis=0)  # Mean over the declared window, per node
 % elif has_pipeline and obs not in source_observations_needed:
         # Use observation monitor for pipeline (squeeze to remove state dimension)
         _${obs}_result = _${obs}_monitor(result)
@@ -1206,7 +1235,7 @@ def _${algo_name}_tuning_core_impl(
     obs_class_name = ''.join(w.capitalize() for w in obs.replace('_', ' ').split())
 %>
 % if obs_def and obs_source and state_idx is not None:
-        ${obs} = jnp.mean(result.data[:, ${state_idx}], axis=0)  # Mean over time, per node
+        ${obs} = jnp.mean(result.data[${obs_tail_start(obs_def)}:, ${state_idx}], axis=0)  # Mean over the declared window, per node
 % elif has_pipeline:
         # Use observation monitor for pipeline (squeeze to remove state dimension)
         _${obs}_result = _${obs}_monitor(result)
@@ -1315,6 +1344,8 @@ def _${algo_name}_tuning_core_impl(
         The enclosing scope binds ONE variable per hyperparameter name, and `get_all_hyperparams` lets the outer algorithm's own value win a collision. So an included rule whose hyperparameter shares a name with the outer's — `includes: [{algorithm: fic, arguments: [{name: eta, ...}]}]` under an algorithm that also has an `eta` — read the outer's number and the declared override was computed and then dropped at the call. Passing the declared value directly is what makes the override mean what it says; a name that collides with nothing still comes through the scope, so a staged schedule keeps varying it.
         """
         return repr(pval) if (_inc and hyperparam_dict.get(pname, pval) != pval) else pname
+
+    rule_state = rule_state_params(rule_rhs, target_name, observations, rule_params_dict)
 %>
         new_${target_name} = ${rule_name}(
 % if is_coupling_param:
@@ -1327,6 +1358,9 @@ def _${algo_name}_tuning_core_impl(
 % endfor
 % for pname, pval in rule_params_dict.items():
             ${rule_arg(pname, pval)},
+% endfor
+% for pname in rule_state:
+            ${state_param_accessor(pname)},
 % endfor
 % if needs_warmup:
             eta_scale,

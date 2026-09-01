@@ -6,7 +6,7 @@ Distinct from the repo-root ``scripts/check_prose.py``, which checks comment and
 Reports four defects that make a page read as machine-written:
 
 * **em-dash** — density above the budget. Ordinary technical prose sits near 1 per 1000 words; a page far above that is punctuating by reflex, usually where a colon, a comma or a full stop belongs.
-* **alt** — placeholder alternative text on an image. An empty markdown alt is fine when the attribute block supplies ``fig-alt``, which is how a figure carries accessible text without also printing a caption.
+* **alt** — placeholder alternative text on an image. An empty markdown alt is fine when the attribute block supplies ``fig-alt``, which is how a figure carries accessible text without also printing a caption, and inside a ``::: {.cards}`` block, whose cover images sit beside the card title they illustrate and are decorative by construction.
 * **tabset** — a tabset whose tabs are sequential steps rather than alternatives. Tabs are for choosing between equivalents; steps belong in order on the page.
 * **skeleton** — the templated Learn / Do / Understand / Look up / Related index shape, repeated across pages until every landing reads the same.
 
@@ -61,7 +61,14 @@ def check(path: pathlib.Path, budget: float) -> list[str]:
         if density > budget:
             found.append(f"{path}: em-dash: {density:.1f} per 1000 words ({count} in {n_words}), budget {budget:g}")
 
+    in_cards = False
     for i, line in enumerate(lines, 1):
+        if line.startswith(":::") and "cards" in line:
+            in_cards = True
+        elif in_cards and line.rstrip() == ":::":
+            in_cards = False
+        elif in_cards:
+            continue
         if PLACEHOLDER_ALT.search(line) and "](" in line and "fig-alt=" not in line:
             found.append(f"{path}:{i}: alt: placeholder alternative text")
 

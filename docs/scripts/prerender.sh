@@ -50,3 +50,4 @@ fi
 
 python scripts/update_toc_replication.py $REPL_GATE_ARGS
 python scripts/build_phase_map.py
+python scripts/build_thumbnails.py

@@ -6,20 +6,11 @@ from pathlib import Path
 
 import typer
 
+from tvbo.utils.yaml_loader import declared_class
+
 from . import _common
 
 app = typer.Typer(name="validate", no_args_is_help=True)
-
-
-def _declared_class(data: object) -> str | None:
-    """Target class named by the document's own file envelope, or None.
-
-    Reads ``tvbo_class`` (the envelope key every self-describing TVBO file carries, CURIE-prefixed as ``tvbo:Network``) and strips the prefix to the bare class name.
-    """
-    if not isinstance(data, dict):
-        return None
-    declared = data.get("tvbo_class")
-    return str(declared).split(":")[-1] if declared else None
 
 
 @app.command("schema", help="Structural JSON Schema validation of a YAML file.")
@@ -52,7 +43,7 @@ def schema(
     data = yaml_loader.load_as_dict(str(path))
 
     if target_class is None:
-        target_class = _declared_class(data) or "SimulationExperiment"
+        target_class = declared_class(data) or "SimulationExperiment"
 
     defs = full.get("$defs", {})
     if target_class not in defs:
@@ -201,7 +192,7 @@ def _suffix_problems(path: Path) -> list[str]:
         return [f"suffix {suffix!r} is not in the tvbo suffix vocabulary ({', '.join(sorted(SPEC_SUFFIXES))})"]
     # The include-aware loader, because a fragment may itself `!include` a sibling (a network naming its coupling), which a plain safe_load rejects as an unknown tag. A fragment that will not parse at all is one of this command's problems to report, not a traceback out of it.
     try:
-        declared = _declared_class(yaml_loader.load_as_dict(str(path)))
+        declared = declared_class(yaml_loader.load_as_dict(str(path)))
     except Exception as exc:
         return [f"cannot be parsed ({type(exc).__name__}: {exc})"]
     if declared is None:

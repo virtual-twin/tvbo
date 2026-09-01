@@ -76,10 +76,30 @@ Row/column ratios, panel-number format and placement, spine style, output format
 |---|---|---|
 | `cartesian` | line / scatter / rule / band marks | `layers:` (grammar) |
 | `heatmap` | a 2-D array field | `layers:` with `mark` omitted (implied) |
+| `surface` | per-vertex values painted on a mesh | `layers:` + `opts:` naming the geometry |
+| `volume` | per-region values projected through a labelled volume | `layers:` + `opts: {atlas: …}` |
+| `network` | the connectome as a node-link graph, nodes coloured by a layer | `layers:` + `opts: {network: …}` |
 | `image` | an external file | `path:` |
 | `custom` | a registered callable `fn(fig, ax, ctx)` | `render:` → [escape hatch](../Replication/custom-panels.qmd) |
 
-`cartesian`/`heatmap` are grammar-driven; `image`/`custom` are peer escape hatches. Every kind shares the label, `legend`, `annotations`, and honest-`placeholder` machinery.
+`cartesian`/`heatmap` are grammar-driven; `surface`, `volume` and `network` are built in and need no `code_modules`; `image`/`custom` are peer escape hatches. Every kind shares the label, `legend`, `annotations`, and honest-`placeholder` machinery. The full kind list, and each one's options, are [`PanelKind`](../datamodel/enums/PanelKind.qmd) and [`Panel`](../datamodel/classes/Panel.qmd).
+
+### The brain kinds
+
+Three kinds draw the same per-region quantity on three different geometries, and all three place values **by label** rather than by array position — a region's value cannot land on its neighbour:
+
+```yaml
+b:
+  kind: network                     # the graph the model ran on
+  layers: [{used: {experiment: 1, output: integration, sel: {variable: V}}}]
+  opts: {network: tvbo:DesikanKilliany, projection: axial, cmap: magma}
+c:
+  kind: surface                     # the same values on a cortical mesh
+  layers: [{used: {experiment: 1, output: integration, sel: {variable: V}}}]
+  opts: {atlas: tvbo:atlas/DesikanKilliany, template: fsaverage, hemi: both, view: dorsal}
+```
+
+A `network` panel needs the connectome named — a curated IRI or a path beside the study — because the panel draws the network, not the result; `edge_percentile` (default 92) keeps a dense connectome from drawing as a filled square, and `projection` picks the anatomical plane the region centres flatten onto.
 
 ## Binding data to a panel: layers
 
@@ -136,9 +156,53 @@ panels:
         style: {opts: {facecolors: none, edgecolors: k, s: 49}}
 ```
 
+## Animating a figure
+
+Some figures are about a *process*, and a still of one is a snapshot with the subject cut out. Declaring `animation:` turns the figure into a movie over one named dimension. Nothing else changes: the mosaic, the panels, the sizing and the styling are the frame, and the still and the movie cannot disagree about what they show because they are the same composition at different positions.
+
+```yaml
+figures:
+  - name: first_simulation
+    layout: "ab/cc"
+    animation: {over: time, frames: 40, fps: 12, format: gif, still: 20}
+```
+
+`over` names the dimension by name, never by position. `frames` subsamples it — unset draws one frame per integration sample, which for a 600 000-step run is not a movie anyone wants — and `fps` sets playback separately, so how much of the run you show and how fast it plays are two decisions. `format` is `gif` (needs nothing installed) or `mp4` (needs ffmpeg); the saved file takes that extension in place of the still's, so a figure is never written as both. `still:` names one frame to *also* save as an image, for the printed page a movie cannot reach.
+
+Each layer then has a part to play, and in the common case none of them has to say so:
+
+| `frame:` | The layer | Default for |
+|---|---|---|
+| `slice` | advances with the frame | a layer whose data carries `over` |
+| `static` | is drawn whole in every frame | a layer whose data does not |
+| `cursor` | draws a rule at the current frame's coordinate | nothing — always declared |
+
+So a brain map animates by declaring nothing, and a time-course panel that should *not* scroll away says `frame: static` and gets a moving cursor from a second layer:
+
+```yaml
+c:
+  kind: cartesian
+  layers:
+    - used: {experiment: 1, output: integration, sel: {variable: V}}
+      mark: line
+      frame: static                 # the whole course, in every frame
+      encoding: {x: time}
+    - used: {experiment: 1, output: integration, sel: {variable: V}}
+      mark: rule
+      frame: cursor                 # ...and the instant the other panels are at
+      encoding: {x: time}
+      style: {color: "#111111"}
+```
+
+Every animated layer is measured and the shortest wins, so two panels reading different runs cannot end up at different instants. The frame count is a property of the figure, not of a panel.
+
+::: {.callout-note}
+A frame is a full re-composition of the mosaic, which is what lets every panel kind animate — including the ones that swap their own axes. It also means a movie costs roughly one still per frame to render, so declare `frames:` deliberately.
+:::
+
 ## Rendering
 
-A `Figure` is **compiled, not interpreted**: the bsplot adapter resolves the layer context in Python and a Mako template emits a self-contained `plot.py`. That script is the deliverable: inspectable, editable, and runnable without TVBO.
+A `Figure` is **compiled, not interpreted**: the bsplot adapter resolves the layer context in Python and a Mako template emits a self-contained `plot.py`. That script is the deliverable: inspectable, editable, and re-runnable on its own against the containers the study already wrote.
 
 ```bash
 # Render every figure in a study (or a standalone Figure YAML)

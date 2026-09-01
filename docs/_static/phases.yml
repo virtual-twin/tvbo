@@ -9,6 +9,7 @@ phases:
 
 # Chapters are the unnumbered half of the sidebar: places you go when you need them rather than steps you walk. They carry an icon and no numeral, which is what keeps the numbered spine visually distinct.
 chapters:
+  - {key: start,    name: "Get Started",          part: "GET STARTED",          icon: "fa-solid fa-rocket",       color: "#5c6f6e"}
   - {key: examples, name: "Examples & Use-Cases", part: "EXAMPLES & USE-CASES", icon: "fa-solid fa-flask-vial",   color: "#5c6f6e"}
   - {key: agents,   name: "Agentic Coding",       part: "AGENTIC CODING",       icon: "fa-solid fa-robot",        color: "#5c6f6e"}
   - {key: interop,  name: "Interoperability",     part: "INTEROPERABILITY",     icon: "fa-solid fa-plug",         color: "#5c6f6e"}

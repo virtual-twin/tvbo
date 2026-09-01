@@ -5,6 +5,8 @@ aliases:
   - /Usage/index.html
 # The hero owns the page; a one-item ("Quickstart") right-rail adds nothing.
 toc: false
+# The first simulation runs a recipe and shows the figure that recipe declares; nothing on this page is drawn by hand.
+native: true
 ---
 
 ::: {.tvbo-home}
@@ -76,11 +78,11 @@ toc: false
 <section class="pipeline">
   <p class="section-eyebrow">The five steps this documentation follows</p>
   <ol class="steps">
-    <li class="step" style="--phase:var(--phase-1)"><span class="step__n">1</span><h3>Explore</h3><p>Find curated models, networks and published studies in the knowledge base.</p></li>
-    <li class="step" style="--phase:var(--phase-2)"><span class="step__n">2</span><h3>Specify</h3><p>Declare the experiment — dynamics, network, observations, figures.</p></li>
-    <li class="step" style="--phase:var(--phase-3)"><span class="step__n">3</span><h3>Generate</h3><p>Compile it to backend-native code, plots and a study directory.</p></li>
-    <li class="step" style="--phase:var(--phase-4)"><span class="step__n">4</span><h3>Run</h3><p>Execute on a laptop or a cluster, and read the result back.</p></li>
-    <li class="step" style="--phase:var(--phase-5)"><span class="step__n">5</span><h3>Share</h3><p>Publish to the platform, and export results as BIDS.</p></li>
+    <li class="step" style="--phase:var(--phase-1)"><a class="step__link" href="phases/explore.html"><span class="step__n">1</span><h3>Explore</h3><p>Find curated models, networks and published studies in the knowledge base.</p></a></li>
+    <li class="step" style="--phase:var(--phase-2)"><a class="step__link" href="phases/specify.html"><span class="step__n">2</span><h3>Specify</h3><p>Declare the experiment — dynamics, network, observations, figures.</p></a></li>
+    <li class="step" style="--phase:var(--phase-3)"><a class="step__link" href="phases/generate.html"><span class="step__n">3</span><h3>Generate</h3><p>Compile it to backend-native code, plots and a study directory.</p></a></li>
+    <li class="step" style="--phase:var(--phase-4)"><a class="step__link" href="phases/run.html"><span class="step__n">4</span><h3>Run</h3><p>Execute on a laptop or a cluster, and read the result back.</p></a></li>
+    <li class="step" style="--phase:var(--phase-5)"><a class="step__link" href="phases/share.html"><span class="step__n">5</span><h3>Share</h3><p>Publish to the platform, and export results as BIDS.</p></a></li>
   </ol>
   <div class="pipeline__targets">
     <span class="step__n step__n--sm" aria-hidden="true">3</span>
@@ -90,7 +92,7 @@ toc: false
       <li>TVB</li><li>JAX</li><li>Julia</li><li>C / CUDA</li><li>Brian2</li><li>PyRates</li><li>NeuroML</li>
     </ul>
   </div>
-  <p class="pipeline__note">Every page carries the number of the step it belongs to, in the top-left corner.</p>
+  <p class="pipeline__note">Each step opens an overview of the pages beneath it, and every page carries the number of the step it belongs to, in the top-left corner.</p>
 </section>
 
 <figure class="overview">
@@ -126,88 +128,103 @@ toc: false
 
 ## A first simulation
 
-Install it, then run a whole-brain model in one call. The specification is data — the same text runs on any backend TVB-O supports.
+Install it, then run a whole brain. What a region does, the connectome the regions sit on, and how the result is drawn are one document. This page runs that document and shows what it produced; it contains no plotting code of its own.
 
 ```{python}
 #| label: first-run
-from tvbo import SimulationExperiment
+from tvbo import SimulationStudy
 
-SPEC = """
-label: "A whole-brain simulation"
-dynamics:
-  iri: tvbo:Generic2dOscillator
-network:
-  iri: tvbo:DesikanKilliany
-  transforms:
-    - name: weight
-      equation: {rhs: "weight / mean(weight[weight > 0])"}
-  coupling:
-    c_glob: {iri: tvbo:Linear, delayed: false, incoming_states: [V]}
-integration: {method: Heun, step_size: 0.1, duration: 600.0, transient_time: 200.0}
-"""
-
-result = SimulationExperiment.from_string(SPEC).run()
-V = result.integration.data.sel(variable="V")
-print(f"{V.sizes['node']} regions x {V.sizes['time']} timepoints")
+study = SimulationStudy.from_file("examples/first-simulation/study.yaml")
+result = study.run(root="_build/first-simulation")
+result
 ```
 
 ```{python}
 #| label: fig-home
-#| fig-cap: "Eighty-seven cortical and subcortical regions, coupled through a structural connectome."
-#| code-fold: true
-result.integration.plot(type="raster")
+#| echo: false
+result.figure()
 ```
 
-## The same experiment, three ways
+Three panels of one movie, and not a line of plotting code behind them. **(a)** is the connectome the model actually ran on, its nodes coloured by the state they are in. **(b)** is that same state on the cortical surface, placed by region *name* rather than by array position, so a value cannot land on its neighbour. **(c)** is every region's course, with a cursor marking the instant the other two panels show.
 
-TVB-O keeps one specification and three ways to hold it. These are alternatives, not steps — pick whichever suits the task.
+### The document behind it
+
+Both halves below are read out of the file the cell above just ran, so this page cannot drift away from what it showed you.
 
 :::: {.panel-tabset}
 
-### YAML
+#### The experiment
 
-```yaml
-label: "A whole-brain simulation"
-dynamics:
-  iri: tvbo:Generic2dOscillator
-network:
-  iri: tvbo:DesikanKilliany
-  coupling:
-    c_glob: {iri: tvbo:Linear, delayed: false, incoming_states: [V]}
-integration: {method: Heun, step_size: 0.1, duration: 600.0}
+````{python}
+#| echo: false
+#| output: asis
+from pathlib import Path
+
+spec = Path("examples/first-simulation/study.yaml").read_text()
+experiment, _, figure = spec.partition("\nfigures:")
+print(f"```yaml\n{experiment.strip()}\n```")
+````
+
+#### The figure
+
+````{python}
+#| echo: false
+#| output: asis
+print(f"```yaml\nfigures:{figure.rstrip()}\n```")
+````
+
+::::
+
+A figure in TVB-O is data, not a script: a mosaic of panels whose layers bind a field of the result container to a visual channel. The binding that says *which data* is typed `prov:used`, so declaring where a mark's numbers come from **is** the provenance record. See [Specify a figure](Simulation/Figures.qmd).
+
+## The same specification, three ways to reach it
+
+The recipe above is a file, and a file is only one of the places a specification can live. These are alternatives, not steps.
+
+:::: {.panel-tabset}
+
+### From the shell
+
+```bash
+tvbo run examples/first-simulation/study.yaml     # run it, and render the figures it declares
+tvbo export jax examples/first-simulation/study.yaml -o solve.py
 ```
 
-### Python
+### From Python
+
+```python
+from tvbo import SimulationStudy
+
+result = SimulationStudy.from_file("examples/first-simulation/study.yaml").run()
+result["exp-1"].integration.sel(node="ctx-lh-precentral")
+```
+
+### Written inline
 
 ```python
 from tvbo import SimulationExperiment
 
 exp = SimulationExperiment(
     label="A whole-brain simulation",
-    dynamics={"iri": "tvbo:Generic2dOscillator"},
+    dynamics={"iri": "tvbo:Generic2dOscillator", "parameters": {"a": {"value": 2.0}}},
     network={
         "iri": "tvbo:DesikanKilliany",
-        "coupling": {"c_glob": {"iri": "tvbo:Linear", "delayed": False, "incoming_states": ["V"]}},
+        "coupling": {"c_glob": {"iri": "tvbo:Linear", "delayed": True, "incoming_states": ["V"]}},
     },
-    integration={"method": "Heun", "step_size": 0.1, "duration": 600.0},
+    integration={"method": "Heun", "step_size": 0.1, "duration": 800.0},
 )
 result = exp.run()
-```
-
-### CLI
-
-```bash
-tvbo run experiment.yaml -b jax -o ./out
-tvbo export jax experiment.yaml -o solve.py
 ```
 
 ::::
 
 ## Where to start
 
-| | |
-|---|---|
-| **New to TVB-O** | [Getting started](GettingStarted.qmd) walks one equation to a whole brain. |
-| **Want the spec** | [The SimulationExperiment object](Simulation/SimulationExperiments.qmd). |
-| **Replicating a paper** | [Linked experiments in a SimulationStudy](Simulation/SimulationStudies.qmd). |
-| **Coming from another tool** | [Interoperability](Interoperability/index.qmd) maps TVB, PyRates, NeuroML and the Julia backends. |
+::: {.cards}
+| Page | What it covers | Cover |
+|---|---|---|
+| [Getting started](GettingStarted.qmd) | New to TVB-O: one equation to a whole brain, in a single sitting. | fa-solid fa-rocket |
+| [The SimulationExperiment](Simulation/SimulationExperiments.qmd) | Want the spec: every top-level field, and which ones are required. | fa-solid fa-file-lines |
+| [Linked experiments in a SimulationStudy](Simulation/SimulationStudies.qmd) | Replicating a paper: many experiments, one study, shared figures. | fa-solid fa-diagram-project |
+| [Interoperability](Interoperability/index.qmd) | Coming from another tool: TVB, PyRates, NeuroML and the Julia backends. | fa-solid fa-plug |
+:::

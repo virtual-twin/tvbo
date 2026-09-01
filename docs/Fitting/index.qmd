@@ -11,24 +11,28 @@ These workflows run on the tvboptim JAX backend, which is JIT-compiled, differen
 
 ## What you declare
 
-| Page | What it covers |
-|---|---|
-| [Model fitting](ModelFitting.qmd) | How losses and gradients work here, and what makes a model differentiable. |
-| [Loss functions](../Specification/LossFunction.qmd) | Declaring the quantity being minimised, symbolically. |
-| [Algorithms (FIC, EIB)](../Specification/Algorithms.qmd) | Iterative tuning that reaches a regime without a loss. |
+::: {.cards}
+| Page | What it covers | Cover |
+|---|---|---|
+| [Model fitting](ModelFitting.qmd) | How losses and gradients work here, and what makes a model differentiable. | fa-solid fa-bullseye |
+| [Loss functions](../Specification/LossFunction.qmd) | Declaring the quantity being minimised, symbolically. | fa-solid fa-arrow-down-wide-short |
+| [Algorithms (FIC, EIB)](../Specification/Algorithms.qmd) | Iterative tuning that reaches a regime without a loss. | fa-solid fa-sliders |
+:::
 
 ## Worked examples
 
 Each of these is a complete study rather than a snippet, and they live in [Examples & Use-Cases](../examples/index.qmd):
 
-| Goal | Example |
-|---|---|
-| Match empirical BOLD functional connectivity | [Reduced Wong-Wang](RWW_tvboptim.qmd) |
-| Match a MEG frequency gradient | [Jansen-Rit](JR_tvboptim.qmd) |
-| Drive regions to a target firing rate | [E/I tuning](EI_Tuning_tvboptim.qmd) |
-| Estimate posteriors over parameters | [Bayesian inference](Bayesian_tvboptim.qmd) |
-| Trade off competing objectives | [Multi-objective Hopf-Pareto](Hopf_Pareto_tvboptim.qmd) |
-| Fit conduction speed and delays | [Delay & speed synchronization](Delay_Speed_Synchronization_tvboptim.qmd) |
+::: {.cards}
+| Example | Goal | Cover |
+|---|---|---|
+| [Reduced Wong-Wang](RWW_tvboptim.qmd) | Match empirical BOLD functional connectivity | ![](../_static/thumbs/Fitting-RWW_tvboptim.png) |
+| [Jansen-Rit](JR_tvboptim.qmd) | Match a MEG frequency gradient | ![](../_static/thumbs/Fitting-JR_tvboptim.png) |
+| [E/I tuning](EI_Tuning_tvboptim.qmd) | Drive regions to a target firing rate | ![](../_static/thumbs/Fitting-EI_Tuning_tvboptim.png) |
+| [Bayesian inference](Bayesian_tvboptim.qmd) | Estimate posteriors over parameters | ![](../_static/thumbs/Fitting-Bayesian_tvboptim.png) |
+| [Multi-objective Hopf-Pareto](Hopf_Pareto_tvboptim.qmd) | Trade off competing objectives | ![](../_static/thumbs/Fitting-Hopf_Pareto_tvboptim.png) |
+| [Delay & speed synchronization](Delay_Speed_Synchronization_tvboptim.qmd) | Fit conduction speed and delays | ![](../_static/thumbs/Fitting-Delay_Speed_Synchronization_tvboptim.png) |
+:::
 
 ## Before you trust a fit
 
