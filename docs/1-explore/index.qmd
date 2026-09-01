@@ -1,0 +1,27 @@
+---
+title: "Explore what already exists"
+description: "Step 1 of the TVB-O spine: find the curated dynamics, connectomes, atlases and published studies you can reference instead of rebuilding."
+aliases:
+  - /phases/explore.html
+---
+
+Most of a brain-network experiment has been written before. TVB-O ships a curated knowledge base — dynamical systems, connectomes, atlases, stimulation protocols and whole published studies — and every entry has an IRI you can point at. Exploring first is what keeps a specification three lines long instead of three hundred, and it is why two experiments that reference `tvbo:Generic2dOscillator` are comparable by construction rather than by inspection.
+
+This step ends when you know which curated entities your experiment will reuse and which parts you genuinely have to write yourself.
+
+## Find what is curated
+
+::: {.cards}
+| Page | What it covers | Cover |
+|---|---|---|
+| [The platform, feature by feature](platform.qmd) | Browse and search the knowledge base in the hosted web app, with no install. | fa-solid fa-desktop |
+| [Ontology](ontology/index.qmd) | The vocabulary the IRIs come from, and how a term grounds a parameter. | fa-solid fa-sitemap |
+| [Examples](../examples/index.qmd) | Runnable specs, from a single node to a fitted whole-brain model. | fa-solid fa-flask-vial |
+| [Replication studies](../Replication/index.qmd) | Published papers already encoded as TVB-O studies. | fa-solid fa-book-open-reader |
+:::
+
+Searching from the shell works too: `tvbo info dynamics:JansenRit` prints a curated entity's states, parameters, outputs and the backends it runs on.
+
+## Next
+
+Once you know what to reuse, [② Specify](../2-specify/index.qmd) turns it into a `SimulationExperiment`.

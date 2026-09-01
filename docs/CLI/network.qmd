@@ -66,7 +66,7 @@ tvbo network build TRACTOGRAM PARCELLATION
 4. Loads the two CSVs, assembles a `Network` (`descriptor: SC`, `distance_unit: mm`) with any `--labels` and the provided BIDS entities, and saves the sidecar + `.h5`.
 
 The result loads straight back through the normal DB path, e.g.
-`tvbo.Network(atlas=..., tractogram=...)` / `get_normative_connectome_data(...)` — see [Networks](../Specification/Network.qmd).
+`tvbo.Network(atlas=..., tractogram=...)` / `get_normative_connectome_data(...)` — see [Networks](../2-specify/Networks/Network.qmd).
 
 ## Examples
 
@@ -118,5 +118,5 @@ Edge weights are raw streamline counts and index the relative density of a conne
 ## See also
 
 - [`tvbo import`](import.qmd): load foreign network files into TVBO objects
-- [Networks](../Specification/Network.qmd): how connectomes are consumed at runtime
+- [Networks](../2-specify/Networks/Network.qmd): how connectomes are consumed at runtime
 - MRtrix3 `tck2connectome`: <https://mrtrix.readthedocs.io/en/latest/reference/commands/tck2connectome.html>

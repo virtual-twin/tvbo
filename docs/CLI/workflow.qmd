@@ -17,7 +17,7 @@ Sub-tree that turns a Study or Experiment into a self-contained, portable reprod
 | `tvbo workflow finalize` | Reassemble an array run's shard outputs into one result |
 | `tvbo workflow backends` | List backends and their ontology-derived capabilities |
 
-The three emitters (`slurm`/`snakemake`/`nextflow`) share the same flag surface and just write a kit; `run` and `submit` also launch it. The kit layout is documented on its own page: see [Workflow kits anatomy](workflow-kits.qmd).
+The three emitters (`slurm`/`snakemake`/`nextflow`) share the same flag surface and just write a kit; `run` and `submit` also launch it. The kit layout is documented on its own page: see [Workflow kits anatomy](../3-generate/workflows/workflow-kits.qmd).
 
 ## Common flags
 
@@ -30,7 +30,7 @@ The three emitters (`slurm`/`snakemake`/`nextflow`) share the same flag surface 
 | `--set KEY=VALUE` | _(none, repeatable)_ | Override a workflow spec key. Dotted keys nest, e.g. `--set slurm.account=foo`. Booleans/numbers are coerced. |
 | `--stdout` | _(off)_ | Print the artefact text only and skip kit creation. |
 | `--pack` | _(off)_ | Emit **only** `<kit>.tar.gz` (the kit dir at top level) and remove the loose dir, ready to `scp` + [`tvbo workflow submit`](#run-and-submit). Omit `--pack` for the loose dir. |
-| `--bundle-dataset` | _(off)_ | Copy the fan-out's per-subject dataset files (sidecar + payload) into `spec/dataset/` and rewrite `dataset.bids_root` to a relative path, so the kit is **self-contained** — no separate FC upload, no `$TVBO_BIDS_ROOT`. Selection is driven by the observation's declared `query`; scope subjects via `dataset.subjects`. See [Per-subject dataset fan-out](../ScaleOut/DistributedWorkflows.qmd#per-subject-dataset-fan-out). |
+| `--bundle-dataset` | _(off)_ | Copy the fan-out's per-subject dataset files (sidecar + payload) into `spec/dataset/` and rewrite `dataset.bids_root` to a relative path, so the kit is **self-contained** — no separate FC upload, no `$TVBO_BIDS_ROOT`. Selection is driven by the observation's declared `query`; scope subjects via `dataset.subjects`. See [Per-subject dataset fan-out](../3-generate/workflows/DistributedWorkflows.qmd#per-subject-dataset-fan-out). |
 | `--bundle-select KEY=VALUE` | _(none, repeatable)_ | Override to add BIDS entities **only** when a subject directory holds several files matching the query (the bundler otherwise errors with the ambiguous candidates). Not needed when the `query` already names one file. Implies `--bundle-dataset`. |
 
 ## `tvbo workflow plan`
@@ -76,7 +76,7 @@ tvbo workflow snakemake experiment:JR_MEG \
     -o ./kits/jr_meg_jax
 ```
 
-Resulting layout (see [Workflow kits anatomy](workflow-kits.qmd) for details):
+Resulting layout (see [Workflow kits anatomy](../3-generate/workflows/workflow-kits.qmd) for details):
 
 ```text
 kits/jr_meg_jax/
@@ -181,7 +181,7 @@ If a job dies at once with `conda: command not found` or `ModuleNotFoundError: t
 ## Chunking, dependencies, and notifications
 
 **Chunk a sweep into array tasks.** `--set chunk=N` shards the sweep across `N`
-Slurm array tasks. This applies even when every axis is *backend-vectorized* (the common `tvboptim` case): each task runs `--slurm-chunk=$SLURM_ARRAY_TASK_ID/N` over its share. See [HPC patterns](hpc.qmd), *Chunking a sweep into array tasks*.
+Slurm array tasks. This applies even when every axis is *backend-vectorized* (the common `tvboptim` case): each task runs `--slurm-chunk=$SLURM_ARRAY_TASK_ID/N` over its share. See [HPC patterns](../3-generate/workflows/hpc.qmd), *Chunking a sweep into array tasks*.
 
 **Environment files.** Declare deps on the experiment's schema-native `environment.requirements`; the kit emits `requirements.txt` (pip) and `environment.yml` (conda) from them:
 
@@ -204,7 +204,7 @@ tvbo workflow slurm … \
 
 ## `tvbo workflow backends`
 
-Prints the ontology-derived capability table (see [Backends](../Simulation/Backends.qmd) for the full discussion):
+Prints the ontology-derived capability table (see [Backends](../4-run/Backends.qmd) for the full discussion):
 
 ```bash
 tvbo workflow backends
@@ -234,7 +234,7 @@ jax  (JAX)
 
 ## See also
 
-- [Workflow kits anatomy](workflow-kits.qmd)
-- [Backends](../Simulation/Backends.qmd): what each backend vectorizes
-- [HPC patterns](hpc.qmd): sharding, containers, retries
+- [Workflow kits anatomy](../3-generate/workflows/workflow-kits.qmd)
+- [Backends](../4-run/Backends.qmd): what each backend vectorizes
+- [HPC patterns](../3-generate/workflows/hpc.qmd): sharding, containers, retries
 - [`tvbo run --engine`](run.qmd): one-command emit + submit

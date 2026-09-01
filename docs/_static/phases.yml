@@ -1,17 +1,21 @@
-# The documentation spine, declared once. `part` must match the PART header in `_toc.yml`; see docs/Developer/DocsMachinery.qmd.
+# The documentation spine, declared once. `part` must match the PART header in `_toc.yml`, and `dirs` the directories that part's pages live in — `scripts/build_phase_map.py` reports any page filed outside them. A `color` names a slot in the palette TVB-O ships (`tvbo/plot/palette.yaml`) — `palette.N` for a categorical hue, counting from zero, or a role such as `base` — never a hex, so the docs and the figures beside them cannot drift apart. See docs/Developer/DocsMachinery.qmd.
+
+# The five numbered phases share one sidebar heading, so the spine reads as a single chapter beside the unnumbered ones rather than as a continuation of the one above it.
+spine:
+  part: "SIMULATION EXPERIMENTS WITH TVB-O"
 
 phases:
-  - {number: 1, key: explore,  name: Explore,  part: "① EXPLORE",   icon: "fa-solid fa-compass",     color: "#2a9d8f"}
-  - {number: 2, key: specify,  name: Specify,  part: "② SPECIFY",   icon: "fa-solid fa-pen-ruler",   color: "#4361ee"}
-  - {number: 3, key: generate, name: Generate, part: "③ GENERATE",  icon: "fa-solid fa-gears",       color: "#7209b7"}
-  - {number: 4, key: run,      name: Run,      part: "④ RUN",       icon: "fa-solid fa-play",        color: "#e07a1f"}
-  - {number: 5, key: share,    name: Share,    part: "⑤ SHARE",     icon: "fa-solid fa-share-nodes", color: "#2d6a4f"}
+  - {number: 1, key: explore,  name: Explore,  part: "① EXPLORE",   icon: "fa-solid fa-compass",     color: palette.0, dirs: [1-explore]}
+  - {number: 2, key: specify,  name: Specify,  part: "② SPECIFY",   icon: "fa-solid fa-pen-ruler",   color: palette.1, dirs: [2-specify, Interoperability]}
+  - {number: 3, key: generate, name: Generate, part: "③ GENERATE",  icon: "fa-solid fa-gears",       color: palette.2, dirs: [3-generate, Interoperability]}
+  - {number: 4, key: run,      name: Run,      part: "④ RUN",       icon: "fa-solid fa-play",        color: palette.3, dirs: [4-run]}
+  - {number: 5, key: share,    name: Share,    part: "⑤ SHARE",     icon: "fa-solid fa-share-nodes", color: palette.4, dirs: [5-share, Interoperability]}
 
 # Chapters are the unnumbered half of the sidebar: places you go when you need them rather than steps you walk. They carry an icon and no numeral, which is what keeps the numbered spine visually distinct.
 chapters:
-  - {key: start,    name: "Get Started",          part: "GET STARTED",          icon: "fa-solid fa-rocket",       color: "#5c6f6e"}
-  - {key: examples, name: "Examples & Use-Cases", part: "EXAMPLES & USE-CASES", icon: "fa-solid fa-flask-vial",   color: "#5c6f6e"}
-  - {key: agents,   name: "Agentic Coding",       part: "AGENTIC CODING",       icon: "fa-solid fa-robot",        color: "#5c6f6e"}
-  - {key: interop,  name: "Interoperability",     part: "INTEROPERABILITY",     icon: "fa-solid fa-plug",         color: "#5c6f6e"}
-  - {key: reference,name: "Reference",            part: "REFERENCE",            icon: "fa-solid fa-book",         color: "#5c6f6e"}
-  - {key: developer,name: "Developer",            part: "DEVELOPER",            icon: "fa-solid fa-code-branch",  color: "#5c6f6e"}
+  - {key: start,    name: "Get Started",          part: "GET STARTED",          icon: "fa-solid fa-rocket",       color: base, dirs: [""]}
+  - {key: examples, name: "Examples & Use-Cases", part: "EXAMPLES & USE-CASES", icon: "fa-solid fa-flask-vial",   color: base, dirs: [examples, Replication]}
+  - {key: agents,   name: "Agentic Coding",       part: "AGENTIC CODING",       icon: "fa-solid fa-robot",        color: base, dirs: [agents]}
+  - {key: interop,  name: "Interoperability",     part: "INTEROPERABILITY",     icon: "fa-solid fa-plug",         color: base, dirs: [Interoperability]}
+  - {key: reference,name: "Reference",            part: "REFERENCE",            icon: "fa-solid fa-book",         color: base, dirs: ["", CLI, api, datamodel]}
+  - {key: developer,name: "Developer",            part: "DEVELOPER",            icon: "fa-solid fa-code-branch",  color: base, dirs: [Developer, agents]}

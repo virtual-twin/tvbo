@@ -1,0 +1,90 @@
+---
+title: "Integrators"
+subtitle: "Numerical integration schemes for ODE and SDE simulation"
+description: "Choose how the equations are stepped forward in time: method, step size, transient, noise, and the coupling-stage treatment that governs reference parity."
+# Redirect the pre-restructure URL so existing links keep resolving.
+aliases:
+  - /Models/Integrators.html
+  - /Usage/Integrators.html
+---
+
+The **integrator** steps the model's differential equations forward in time. In a [`SimulationExperiment`](../SimulationExperiments.qmd) it is the `integration:` block:
+
+```yaml
+integration:
+  method: Heun          # euler | heun | rk4
+  step_size: 0.1        # one step = 0.1 of the time_scale unit below
+  time_scale: ms        # s | ms | us  (default: ms)
+  duration: 1000.0      # total simulated time, in time_scale units
+  transient_time: 200.0 # discard this leading burn-in from the result
+```
+
+`dt` is accepted as a synonym for `step_size`. It means the same slot on every solver, a PDE solver's time step included, so one spelling never names two different things.
+
+## Time units
+
+`ms` is not baked in. `time_scale` sets what one unit of `step_size`, `duration`, and `transient_time` means; every time in the block is read in that unit. It defaults to `ms`, the convention for neural-mass models, so most examples leave it out. Set it explicitly whenever your parameters are in another unit:
+
+```yaml
+integration:
+  method: Heun
+  step_size: 0.0001   # 0.1 ms, written in seconds
+  time_scale: s       # now step_size / duration / transient_time are seconds
+  duration: 1.0       # 1 second
+```
+
+Accepted values are `s`, `ms`, and `us`. Pick the one your rate and time-constant parameters are already written in, so you never hand-convert. The backends stamp this unit onto the emitted `dt` and run length.
+
+`time_unit` is accepted as a synonym for `time_scale`, so the spelling a [`Network`](../Networks/index.qmd) uses for its own time unit works on the integrator too. A network carries its **own** `time_unit` for conduction delays and tract lengths (also `ms` by default). See [Unit validation](../Models/UnitValidation.qmd).
+Keep the two consistent unless you have a reason not to.
+
+## Methods
+
+| `method` | Order | When |
+|---|---|---|
+| `euler` | 1 | fastest; fine for smooth, well-behaved systems |
+| `heun` | 2 | the default in most examples, a good accuracy/speed trade-off |
+| `rk4` | 4 | higher accuracy per step, at more work per step |
+
+## Stochastic integration
+
+Deterministic by default. Add a `noise:` block to integrate the **stochastic** form: Euler becomes Euler–Maruyama, and Heun its stochastic counterpart:
+
+```yaml
+integration:
+  method: Heun
+  step_size: 0.1
+  duration: 1000.0
+  noise:
+    additive: true
+    # intensity and distribution are configured on the Noise — see below
+```
+
+The noise term's intensity, distribution, and per-state-variable targeting live on the `Noise` object, covered in full by [Noise & stochastic integration](../Models/Noise.qmd).
+
+## Coupling across integrator stages
+
+A multi-stage method (Heun, RK4) can re-evaluate the network coupling **at every stage** (`per_stage`, standard ODE accuracy) or compute it **once per step** and hold it across stages (`per_step`, a TVB-style efficiency shortcut). Single-stage `euler` ignores it.
+
+```yaml
+integration:
+  method: Heun
+  coupling_evaluation: per_stage   # match reference integrators on stiff /
+                                   # chaotic / multistable systems
+```
+
+`per_stage` matters when the frozen-coupling error could select a different trajectory or attractor. Use it when reproducing a reference result, and `per_step` for speed. See [Cross-backend numerical parity](CrossBackendParity.qmd).
+
+## Choosing
+
+- **Smooth deterministic run** → `heun` (or `euler` for speed).
+- **Stochastic run** → `heun` + a `noise:` block.
+- **Reproducing a reference / chaotic system** → `heun` or `rk4` with `coupling_evaluation: per_stage`; shrink `step_size` until the result stops changing.
+- **Discard startup transient** → set `transient_time` so the burn-in isn't in the result.
+
+## See also
+
+- [Noise & stochastic integration](../Models/Noise.qmd): configuring the noise term
+- [Cross-backend numerical parity](CrossBackendParity.qmd): why two backends can disagree
+- [The SimulationExperiment object](../SimulationExperiments.qmd): the full spec
+- Schema: [`Integrator`](../../datamodel/classes/Integrator.qmd), covering every field including tolerances, stages and differentiation

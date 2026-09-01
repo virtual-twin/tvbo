@@ -117,4 +117,4 @@ tvbo workflow slurm experiment:JR_MEG -b jax --stdout > run.sbatch
 - [Specs and resolution](specs.qmd)
 - [`tvbo run`](run.qmd)
 - [`tvbo workflow`](workflow.qmd)
-- [HPC patterns](hpc.qmd)
+- [HPC patterns](../3-generate/workflows/hpc.qmd)

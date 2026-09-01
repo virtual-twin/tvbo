@@ -4,25 +4,19 @@ project:
     - bash scripts/prerender.sh
   render:
     - index.qmd
-    - phases/*.qmd
     - GettingStarted.qmd
     - installation.md
     - reference.qmd
-    - platform.qmd
-    - Sharing.qmd
+    - 1-explore/**/*.qmd
+    - 2-specify/**/*.qmd
+    - 3-generate/**/*.qmd
+    - 4-run/*.qmd
+    - 5-share/*.qmd
     - api/**/*.qmd
     - datamodel/*.qmd
     - datamodel/**/*.qmd
-    - Models/*.qmd
-    - Simulation/*.qmd
-    - ScaleOut/*.qmd
-    - Bifurcation/*.qmd
-    - Networks/*.qmd
-    - BeyondMeanField/*.qmd
-    - Fitting/*.qmd
     - CLI/*.qmd
     - examples/**/*.qmd
-    - Specification/*.qmd
     - Interoperability/**/*.qmd
     - Interoperability/**/*.md
     - Interoperability/*.qmd
@@ -30,12 +24,11 @@ project:
     - Replication/**/*.qmd
     - Developer/*.md
     - Developer/*.qmd
-    - ontology/*.qmd
     - agents/*.qmd
     - "!_archive/**"
-    - "!ontology/spec/**"
+    - "!1-explore/ontology/spec/**"
   resources:
-    - ontology/spec/**
+    - 1-explore/ontology/spec/**
   output-dir: _site
 
 # Sidebar configuration lives in _toc.yml (single unified sidebar).
@@ -74,7 +67,7 @@ website:
             - text: "Reference"
               href: reference.qmd
             - text: "Platform"
-              href: platform.qmd
+              href: 1-explore/platform.qmd
 
         tools:
             - icon: github
@@ -98,6 +91,7 @@ format:
     html:
         theme: cosmo
         css:
+            - _static/palette.css
             - _static/phases.css
             - styles.css
         toc: true

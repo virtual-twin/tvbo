@@ -47,4 +47,4 @@ Until then, edit the TOML file by hand.
 
 ## See also
 
-- [HPC patterns](hpc.qmd): values planned to live under `slurm.*`, `container.*`
+- [HPC patterns](../3-generate/workflows/hpc.qmd): values planned to live under `slurm.*`, `container.*`

@@ -9,7 +9,11 @@ Most of what surrounds a page here is derived rather than typed. The phase badge
 
 ## One sidebar, one spine
 
-`_toc.yml` is the single sidebar. Its top-level PART headers are the five numbered phases followed by the unnumbered chapters, and everything else hangs beneath them. Three regions of the file are script-owned and marked as such:
+`_toc.yml` is the single sidebar. Its top level is a flat list of chapter headings — GET STARTED, SIMULATION EXPERIMENTS WITH TVB-O, EXAMPLES & USE-CASES, AGENTIC CODING, INTEROPERABILITY, REFERENCE, DEVELOPER — each a text-only row with no `href:`, and the pages of a chapter are the rows that follow it.
+
+SIMULATION EXPERIMENTS WITH TVB-O is the exception, and the reason the spine reads as one chapter rather than as a continuation of the one above it: the five numbered phases beneath it are `section:` entries, so each nests its own pages and collapses with the rest of the sidebar at `collapse-level: 1`. Quarto expands whichever section holds the current page. The spine's heading is declared in `_static/phases.yml` under `spine:`, which is how `scripts/build_phase_map.py` knows that row introduces the phases rather than owning pages of its own.
+
+Three regions of the file are script-owned and marked as such:
 
 | Region | Written by |
 |---|---|
@@ -19,9 +23,27 @@ Most of what surrounds a page here is derived rather than typed. The phase badge
 
 Edit outside those markers freely. Inside them, change the script.
 
+## The tree is the sidebar
+
+Every hand-written page lives under the part that owns it, so `ls` and the sidebar tell the same story:
+
+| Directory | Part |
+|---|---|
+| `index.qmd`, `installation.md`, `GettingStarted.qmd`, `reference.qmd` | GET STARTED, and the reference landing page |
+| `1-explore/` … `5-share/` | the five numbered phases, each with the part's overview page as its `index.qmd` |
+| `examples/`, `Replication/` | EXAMPLES & USE-CASES |
+| `agents/`, `Interoperability/`, `CLI/`, `Developer/` | AGENTIC CODING, INTEROPERABILITY, REFERENCE, DEVELOPER |
+| `api/`, `datamodel/` | REFERENCE, generated |
+
+A sidebar `section:` with an href becomes a directory whose `index.qmd` is that href's page, which is why `2-specify/Networks/index.qmd` holds what the sidebar calls *Networks & connectomes*.
+
+Each part declares the directories it owns in `_static/phases.yml`, and `scripts/build_phase_map.py` names every page filed outside them. Four pages are deliberate exceptions the declaration records: the SPECIFY, GENERATE and SHARE parts each link into `Interoperability/`, because that chapter's 26 pages are one tree and splitting BIDS or NeuroML across four phase directories would cost more than the misalignment.
+
+Moving a page means moving three things together: the page, its `_freeze/<path>/` results, and its directory's `.jupyter_cache`. Add the old URL to the page's `aliases:` so existing links keep resolving; `_freeze/<path>/execute-results/html.json` stores an md5 of the source, so repointing that hash after an edit is what keeps a moved page from re-executing.
+
 ## The phase badge
 
-`_static/phases.yml` declares the five numbered phases and the six unnumbered chapters, each with a name, an icon and a colour. It is the only place any of those are written down, so swapping an icon set is one edit here.
+`_static/phases.yml` declares the five numbered phases and the six unnumbered chapters, each with a name, an icon and a colour. It is the only place any of those are written down, so swapping an icon set is one edit here. A colour is named, never written: `palette.N` for a categorical hue or a role such as `base`, resolved through the palette TVB-O ships.
 
 `scripts/build_phase_map.py` walks `_toc.yml` against that file and writes two generated artifacts, both gitignored:
 
@@ -29,6 +51,12 @@ Edit outside those markers freely. Inside them, change the script.
 - `_static/phases.css`, the `--phase-1` … `--phase-5` custom properties the hero pipeline and the badge both read.
 
 `filters/phase-badge.lua` stamps the badge from that map. A page may override it with `phase:` in its own frontmatter, naming either the number or the key from `phases.yml`, and `phase-section:` sets the text after the separator. `phase: false` suppresses the badge entirely. A page that is in no PART and declares no `phase:` produces a build warning rather than a silently unbadged page, which is how the 38 NeuroML example pages were caught when the gallery took their place in the sidebar.
+
+## One palette
+
+`tvbo/plot/palette.yaml`, inside the package, is where the colours are decided — for the figures a study renders, for the manuscript's, and for these pages. It is a `Palette` in the figure spec, so `tvbo validate schema` checks it like any other TVB-O document, and `tvbo.plot.palette` is the one reader: a figure gets its roles by calling it, and `scripts/build_palette.py` writes the same five roles and five hues into `_static/palette.css` as `--palette-*`.
+
+`styles.css` maps the docs' own semantic names onto those in a single `:root` block and mixes every surface tint and hover state from them with `color-mix`, so a page cannot introduce a colour the palette has not approved, and a figure sitting on that page cannot disagree with it. A checkout of the manuscript is reported, not read: if its `figures/style/palette.yaml` has drifted, the pre-render says so and names the packaged file as the one to copy over it.
 
 ## Overview cards
 
@@ -44,11 +72,11 @@ A row that names no cover falls back to the icon of the phase its target sits in
 
 Cover images come from `_static/thumbs/`, written by `scripts/build_thumbnails.py` from the declaration in `_static/thumbs.yml`: a page path, and the label of the figure on that page that stands in for it. The figure is read out of `_freeze`, so a page whose label has changed or that has never been executed in the working tree produces a build note and a card that falls back to its phase icon.
 
-A table that compares several dimensions rather than indexing pages — the [integration matrix](../Interoperability/index.qmd) and the [bifurcation plan](../Bifurcation/index.qmd) — stays a table, because a card carries one sentence and would drop the other columns.
+A table that compares several dimensions rather than indexing pages — the [integration matrix](../Interoperability/index.qmd) and the [bifurcation plan](../2-specify/Models/Bifurcation/index.qmd) — stays a table, because a card carries one sentence and would drop the other columns.
 
 ## The running-example thread
 
-`_static/running_example.yml` maps each stage of [the running example](../Specification/RunningExample.qmd) onto the pages whose block that stage adds. `filters/running-example.lua` reads it from both ends: the pointer strip it inserts at the top of each listed page, and the stage that pointer links to. Because both come from one file, a pointer cannot outlive its stage. A page opts out with `running-example: false`.
+`_static/running_example.yml` maps each stage of [the running example](../2-specify/RunningExample.qmd) onto the pages whose block that stage adds. `filters/running-example.lua` reads it from both ends: the pointer strip it inserts at the top of each listed page, and the stage that pointer links to. Because both come from one file, a pointer cannot outlive its stage. A page opts out with `running-example: false`.
 
 ## Use-case tags
 
@@ -125,4 +153,4 @@ make docs-render     # full build with it
 
 ## Generated, not typed
 
-Three claims that used to rot are now read from the software at render time: the [CLI command tree](../CLI/index.qmd) from the Typer app, the [model count](../Models/index.qmd) from `Dynamics.list_db()`, and the [backend capability table](../ScaleOut/CodegenPhilosophy.qmd) from `tvbo.cli._backends.BACKENDS`. Prefer that pattern over a hand-kept list whenever the software already knows the answer.
+Three claims that used to rot are now read from the software at render time: the [CLI command tree](../CLI/index.qmd) from the Typer app, the [model count](../2-specify/Models/index.qmd) from `Dynamics.list_db()`, and the [backend capability table](../3-generate/CodegenPhilosophy.qmd) from `tvbo.cli._backends.BACKENDS`. Prefer that pattern over a hand-kept list whenever the software already knows the answer.

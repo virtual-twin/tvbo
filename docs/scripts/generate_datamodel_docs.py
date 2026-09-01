@@ -75,9 +75,9 @@ def main():
     # Ensure output directory exists
     output_dir.mkdir(exist_ok=True)
 
-    # Freshness check: skip only if the schema and *this generator script* are both unchanged since the last successful run. Including the script mtime ensures edits to ``convert_md_to_qmd`` (e.g. the LinkML-1.11 MkDocs-frontmatter stripper) re-process existing pages even when the schema itself is untouched.
+    # Freshness check: skip only if the schema and *this generator script* are both unchanged since the last successful run. Every file under schema/ counts, because tvbo_datamodel.yaml imports the rest and a class added to one of those would otherwise never reach these pages; the script's own mtime counts so edits to ``convert_md_to_qmd`` re-process existing pages.
     script_path = Path(__file__).resolve()
-    input_mtime = max(schema_path.stat().st_mtime, script_path.stat().st_mtime)
+    input_mtime = max(p.stat().st_mtime for p in [script_path, *sorted(schema_path.parent.rglob("*.yaml"))])
     if stamp_file.exists() and any(output_dir.rglob("*.qmd")):
         stamp_mtime = stamp_file.stat().st_mtime
         if input_mtime <= stamp_mtime:

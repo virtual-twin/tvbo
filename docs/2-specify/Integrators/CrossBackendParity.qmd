@@ -1,0 +1,148 @@
+---
+title: Cross-Backend Numerical Parity
+jupyter: python3
+# Redirect the pre-restructure URL so existing links keep resolving.
+aliases:
+  - /Models/CrossBackendParity.html
+  - /Usage/CrossBackendParity.html
+---
+
+A single TVBO `SimulationExperiment` can be executed on multiple code-generation backends: `tvboptim`, `jax` (autodiff) and `tvb`. When the experiment is fully deterministic, **all three backends produce the same trajectory to within float64 round-off** (rmse $\sim 10^{-14}$, corr $= 1.000000$).
+
+This page documents:
+
+1. The conditions a YAML must satisfy for bit-comparable cross-backend output.
+2. The two backend conventions you must align before computing rmse / correlation.
+3. A reusable `strip_stochastics` helper.
+
+## TL;DR
+
+```python
+import numpy as np
+from tvbo import SimulationExperiment
+
+def strip_stochastics(exp):
+    """Make an experiment fully deterministic for cross-backend comparison."""
+    for p in (exp.dynamics.parameters or {}).values():
+        for src_attr in ("noise", "distribution"):
+            src = getattr(p, src_attr, None)
+            if src is None:
+                continue
+            dom = getattr(src, "domain", None)
+            if dom is not None and dom.lo is not None and dom.hi is not None:
+                p.value = (float(dom.lo) + float(dom.hi)) / 2.0
+            setattr(p, src_attr, None)
+    if exp.integration.noise is not None:
+        exp.integration.noise = None
+    if exp.integration.state_wise_sigma:
+        exp.integration.state_wise_sigma = []
+    exp.integration.transient_time = 0.0
+
+results = {}
+for backend in ("tvboptim", "jax", "tvb"):
+    # A fresh copy per backend, so `strip_stochastics` never edits an object another run already read.
+    exp = SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization")
+    strip_stochastics(exp)
+    r = exp.run(backend)
+    d = r.integration.data
+    results[backend] = np.asarray(
+        d.sel(variable="y0") if "variable" in d.coords else d
+    ).flatten()
+
+# tvboptim records the IC at sample 0; jax/tvb start at post-first-step.
+# Align by dropping sample 0 from tvboptim and the last sample from the others.
+opt, jax_, tvb_ = results["tvboptim"][1:], results["jax"][:-1], results["tvb"][:-1]
+n = min(len(opt), len(jax_), len(tvb_))
+for ref_name, ref in (("jax", jax_[:n]), ("tvb", tvb_[:n])):
+    rmse = float(np.sqrt(np.mean((opt[:n] - ref) ** 2)))
+    corr = float(np.corrcoef(opt[:n], ref)[0, 1])
+    print(f"tvboptim vs {ref_name}: rmse={rmse:.2e}  corr={corr:.6f}")
+```
+
+Expected output on the curated Jansen-Rit experiment:
+
+```
+tvboptim vs jax: rmse=1.43e-14  corr=1.000000
+tvboptim vs tvb: rmse=3.32e-14  corr=1.000000
+```
+
+## What breaks parity
+
+If you run the same YAML on three backends and get rmse on the order of the signal magnitude (corr $< 0.5$), one of the following is in play.
+
+### 1. Stochastic time-varying parameter inputs
+
+A model parameter declared with `distribution: { axis: time }` is not a constant. tvboptim pre-generates a per-step random trajectory and indexes it inside the `dfun`. Other backends use a frozen scalar (`p.value`). See [Stochastic time-varying parameter inputs](../Models/Noise.qmd#stochastic-time-varying-parameter-inputs) for the YAML schema and code-generation details.
+
+The Jansen-Rit `p` parameter is the canonical example:
+
+```yaml
+parameters:
+  p:
+    value: 220
+    unit: s^-1
+    distribution:
+      name: Uniform
+      domain: { lo: 120, hi: 320 }
+      axis: time              # <-- resampled every integration step
+```
+
+To compare deterministically, replace `p.distribution = None` and freeze `p.value` to the domain midpoint (220), as `strip_stochastics` does.
+
+### 2. Integrator noise
+
+`integration.noise` and `integration.state_wise_sigma` add stochastic Wiener increments. Each backend uses its own RNG (jax PRNGKey vs numpy seed vs tvb-internal), so seeds are *not* portable. Strip both.
+
+### 3. Initial-condition distributions
+
+A state variable with a `distribution:` block samples a fresh IC per trial when an `Exploration(n_trials=N)` with $N > 1$ is active. For parity, run without trial-based explorations or strip the SV `distribution` similarly.
+
+### 4. Settling window (`integration.transient_time`)
+
+Every backend now reads this the same way: `duration` is the **measured** window, `transient_time` is prepended to it, and total integrated time is `transient_time + duration`. The settle is the head of one integration — never a separate pre-simulation — and it is cut where the run is consumed, so on every backend the settle carries non-positive timestamps, ends at `t = 0`, and the measured window opens one step later.
+
+That makes a run with a settle directly comparable across backends. It does not make it comparable to a run *without* one: a settle changes the state the measured window opens from, and on a stochastic model it also consumes noise. Compare like for like.
+
+## Backend sample-0 convention
+
+Even when the dynamics is deterministic and the ICs are identical, the first sample of the recorded trajectory differs between backends:
+
+| Backend    | Sample 0 in `result.integration.data` |
+| ---------- | ------------------------------------- |
+| `tvboptim` | The initial condition itself ($X_0$)  |
+| `jax`      | The state after one integration step ($X_1$) |
+| `tvb`      | The state after one integration step ($X_1$) |
+
+So a fair element-wise comparison is
+
+```
+tvboptim[1:]  ↔  jax[:-1]  ↔  tvb[:-1]
+```
+
+(All three then start at $X_1$ and run for $N-1$ samples.)
+
+`jax` and `tvb` use the same convention and align without the shift:
+`jax[:]  ↔  tvb[:]`.
+
+## Verifying ICs are identical
+
+Before debugging dynamics, confirm the ICs match. After `exp.configure()`, inspect `exp.dynamics.state_variables.<name>.initial_value`, since every backend reads from this single source.
+
+```python
+exp.configure()
+for n, sv in exp.dynamics.state_variables.items():
+    print(f"  {n}: {sv.initial_value}")
+```
+
+For the JR YAML used above, every `y0..y5` is `0.1`, and the first integrated sample of `v_pyr = y1 - y2` is `0.36244...` for both `jax` and `tvb`, matching `tvboptim[1]`.
+
+## Reference: full parity test
+
+The script lives at `tests/functional/test_simulation_backends_*.py`. The helper above (`strip_stochastics`) is the minimal kernel of those tests and is suitable for ad-hoc verification on any YAML in `tvbo/database/studies/` or `docs/Replication/`.
+
+## See also
+
+- [Noise & Stochastic Integration](../Models/Noise.qmd): `integration.noise`,
+  `state_wise_sigma`, and parameter-level stochastic inputs.
+- [Initial Conditions & Initial State](../Models/InitialConditions.qmd): IC resolution, per-trial sampling and transient warm-up.
+- [Code Generation](../../3-generate/CodeGeneration.qmd): inspect what each backend actually emits with `print(exp.render_code('tvboptim'))`.

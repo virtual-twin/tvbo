@@ -183,17 +183,17 @@ The documentation follows the shape of an experiment — **specify** it, **run**
 
 | You want to… | Go to |
 |---|---|
-| See the whole spec as one object | [The SimulationExperiment object](Simulation/SimulationExperiments.qmd) |
-| Write or pick a model | [Models & dynamics](Models/index.qmd) |
-| Build or load a connectome | [Networks & connectomes](Networks/index.qmd) |
-| Measure something (BOLD, FC, EEG) | [Observation models](Simulation/ObservationModels.qmd) |
-| Sweep parameters | [Parameter exploration](Simulation/ParameterExploration.qmd) |
-| Match a model to data | [Fitting, inference & optimization](Fitting/index.qmd) |
-| Run on JAX, TVB, Julia, … | [Run on a backend](Simulation/Backends.qmd) |
-| Find where behaviour changes | [Bifurcation & stability](Bifurcation/index.qmd) |
-| Add spiking or multi-scale detail | [Beyond the mean field](BeyondMeanField/index.qmd) |
-| Scale up to a cluster | [Reproducible workflows](ScaleOut/index.qmd) |
+| See the whole spec as one object | [The SimulationExperiment object](2-specify/SimulationExperiments.qmd) |
+| Write or pick a model | [Models & dynamics](2-specify/Models/index.qmd) |
+| Build or load a connectome | [Networks & connectomes](2-specify/Networks/index.qmd) |
+| Measure something (BOLD, FC, EEG) | [Observation models](2-specify/Observation/index.qmd) |
+| Sweep parameters | [Parameter exploration](2-specify/ParameterExploration.qmd) |
+| Match a model to data | [Fitting, inference & optimization](2-specify/Fitting/index.qmd) |
+| Run on JAX, TVB, Julia, … | [Run on a backend](4-run/Backends.qmd) |
+| Find where behaviour changes | [Bifurcation & stability](2-specify/Models/Bifurcation/index.qmd) |
+| Add spiking or multi-scale detail | [Beyond the mean field](2-specify/Models/BeyondMeanField/index.qmd) |
+| Scale up to a cluster | [Reproducible workflows](3-generate/workflows/index.qmd) |
 
-**New to the science itself?** The natural reading order follows the field's own arc: single-system dynamics and bifurcations → neuron and neural-mass models → whole-brain networks. Start with [Models & dynamics](Models/index.qmd), then [Bifurcation & stability](Bifurcation/index.qmd), then [Networks & connectomes](Networks/index.qmd).
+**New to the science itself?** The natural reading order follows the field's own arc: single-system dynamics and bifurcations → neuron and neural-mass models → whole-brain networks. Start with [Models & dynamics](2-specify/Models/index.qmd), then [Bifurcation & stability](2-specify/Models/Bifurcation/index.qmd), then [Networks & connectomes](2-specify/Networks/index.qmd).
 
 **Coming from another tool?** [Interoperability](Interoperability/index.qmd) maps TVBO onto TVB, PyRates, NeuroML, tvboptim, the Julia backends, BIDS and openMINDS.

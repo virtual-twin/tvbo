@@ -88,7 +88,7 @@ def check(path: pathlib.Path, budget: float) -> list[str]:
 def relative_to_docs(path: pathlib.Path) -> str:
     """The path as the sidebar names it: relative to ``docs/``, however the caller spelled it.
 
-    CI passes repo-relative paths (``docs/Models/index.qmd``) and a local run passes docs-relative ones (``Models/index.qmd``); the phase map is keyed the second way.
+    CI passes repo-relative paths (``docs/2-specify/Models/index.qmd``) and a local run passes docs-relative ones (``2-specify/Models/index.qmd``); the phase map is keyed the second way.
     """
     parts = path.as_posix().lstrip("./").split("/")
     if parts and parts[0] == "docs":

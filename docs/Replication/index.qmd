@@ -55,7 +55,7 @@ Markdown("\n".join(rows))
 
 ## Building one yourself
 
-The [replication pipeline](pipeline.qmd) covers how a study becomes generated simulations, figures and cluster jobs from one specification. The figures are declarative too: [specify a figure](../Simulation/Figures.qmd) is the grammar, and [custom figure panels](custom-panels.qmd) the escape hatch for a paper's bespoke layouts.
+The [replication pipeline](pipeline.qmd) covers how a study becomes generated simulations, figures and cluster jobs from one specification. The figures are declarative too: [specify a figure](../2-specify/Figures/index.qmd) is the grammar, and [custom figure panels](../2-specify/Figures/custom-panels.qmd) the escape hatch for a paper's bespoke layouts.
 
 The `replicating-studies` skill turns a paper into that specification plus an honest, fully computed report. See [installing and tuning skills](../agents/installing-skills.qmd).
 

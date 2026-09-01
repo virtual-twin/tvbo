@@ -1,11 +1,4 @@
-# ──────────────────────────────────────────────────────────────────────
-# Table of Contents / Sidebar configuration
-# Separated from _quarto.yml for maintainability.
-# Included via metadata-files in _quarto.yml.
-#
-# Single unified sidebar: Quarto auto-expands the section containing
-# the current page and keeps everything else collapsed.
-# ──────────────────────────────────────────────────────────────────────
+# The single unified sidebar, spliced into _quarto.yml through metadata-files; see docs/Developer/DocsMachinery.qmd.
 
 website:
     sidebar:
@@ -13,7 +6,7 @@ website:
           logo: _static/tvbo_logo.png
           collapse-level: 1
           contents:
-              # The sidebar IS the documentation's spine: five numbered PHASES a reader can walk end to end (Explore, Specify, Generate, Run, Share), then six unnumbered chapters you visit when you need them. A PART header is a text-only row Quarto renders as a plain label; scripts/update_toc_*.py splice the replication / datamodel / api blocks in under the preceding PART.
+              # The sidebar IS the documentation's spine. A chapter heading is a text-only row Quarto renders as a plain label; under SIMULATION EXPERIMENTS WITH TVB-O the five numbered phases are sections instead, so each one nests the pages of that phase. scripts/update_toc_*.py splice the replication / datamodel / api blocks in under the preceding heading.
               - text: "GET STARTED"
               - text: "Home"
                 href: index.qmd
@@ -21,134 +14,142 @@ website:
                 href: installation.md
               - text: "Getting started"
                 href: GettingStarted.qmd
-              - text: "① EXPLORE"
-                href: phases/explore.qmd
-              - text: "The platform, feature by feature"
-                href: platform.qmd
-              - section: "Ontology"
-                href: ontology/index.qmd
+              - text: "SIMULATION EXPERIMENTS WITH TVB-O"
+              - section: "① EXPLORE"
+                href: 1-explore/index.qmd
                 contents:
-                  - text: "Specification (Widoco)"
-                    href: ontology/spec/index-en.html
-                  - text: "WebVOWL visualisation"
-                    href: ontology/spec/webvowl/index.html#ontology
-              - text: "② SPECIFY"
-                href: phases/specify.qmd
-              - text: "The running example"
-                href: Specification/RunningExample.qmd
-              - text: "The SimulationExperiment"
-                href: Simulation/SimulationExperiments.qmd
-              - section: "Dynamical systems"
-                href: Models/index.qmd
-                contents:
-                  - text: "Defining dynamical systems"
-                    href: Models/DefineDynamicalSystem.qmd
-                  - text: "Initial conditions"
-                    href: Models/InitialConditions.qmd
-                  - text: "Noise & stochastic integration"
-                    href: Models/Noise.qmd
-                  - text: "Unit-aware computations"
-                    href: Models/UnitValidation.qmd
-                  - section: "Beyond the mean field"
-                    href: BeyondMeanField/index.qmd
+                  - text: "The platform, feature by feature"
+                    href: 1-explore/platform.qmd
+                  - section: "Ontology"
+                    href: 1-explore/ontology/index.qmd
                     contents:
-                      - text: "Multi-scale modelling"
-                        href: BeyondMeanField/MultiScaleModelling.qmd
-                      - text: "NeuroML component mapping"
-                        href: Interoperability/NeuroML/index.qmd
-                  - section: "Bifurcation & continuation"
-                    href: Bifurcation/index.qmd
+                      - text: "Specification (Widoco)"
+                        href: 1-explore/ontology/spec/index-en.html
+                      - text: "WebVOWL visualisation"
+                        href: 1-explore/ontology/spec/webvowl/index.html#ontology
+              - section: "② SPECIFY"
+                href: 2-specify/index.qmd
+                contents:
+                  - text: "The running example"
+                    href: 2-specify/RunningExample.qmd
+                  - text: "The SimulationExperiment"
+                    href: 2-specify/SimulationExperiments.qmd
+                  - section: "Dynamical systems"
+                    href: 2-specify/Models/index.qmd
                     contents:
-                      - text: "Run a continuation"
-                        href: Bifurcation/BifurcationAnalysis.qmd
-                      - text: "Numerical continuation"
-                        href: Bifurcation/07-NumericalContinuation.qmd
-              - section: "Networks & connectomes"
-                href: Networks/index.qmd
+                      - text: "Defining dynamical systems"
+                        href: 2-specify/Models/DefineDynamicalSystem.qmd
+                      - text: "Initial conditions"
+                        href: 2-specify/Models/InitialConditions.qmd
+                      - text: "Noise & stochastic integration"
+                        href: 2-specify/Models/Noise.qmd
+                      - text: "Unit-aware computations"
+                        href: 2-specify/Models/UnitValidation.qmd
+                      - section: "Beyond the mean field"
+                        href: 2-specify/Models/BeyondMeanField/index.qmd
+                        contents:
+                          - text: "Multi-scale modelling"
+                            href: 2-specify/Models/BeyondMeanField/MultiScaleModelling.qmd
+                          - text: "NeuroML component mapping"
+                            href: Interoperability/NeuroML/index.qmd
+                      - section: "Bifurcation & continuation"
+                        href: 2-specify/Models/Bifurcation/index.qmd
+                        contents:
+                          - text: "Run a continuation"
+                            href: 2-specify/Models/Bifurcation/BifurcationAnalysis.qmd
+                          - text: "Numerical continuation"
+                            href: 2-specify/Models/Bifurcation/NumericalContinuation.qmd
+                  - section: "Networks & connectomes"
+                    href: 2-specify/Networks/index.qmd
+                    contents:
+                      - text: "Network specification"
+                        href: 2-specify/Networks/Network.qmd
+                      - text: "Build a connectome from tractography"
+                        href: 2-specify/Networks/BuildConnectomeFromTractography.qmd
+                      - text: "Coupling functions"
+                        href: 2-specify/Networks/CouplingFunctions.qmd
+                      - text: "Hierarchical & surface networks"
+                        href: 2-specify/Networks/HierarchicalSurfaceNetworks.qmd
+                      - text: "Heterogeneous nodes"
+                        href: 2-specify/Networks/HeterogeneousNodes.qmd
+                      - text: "Heterogeneous edges"
+                        href: 2-specify/Networks/HeterogeneousEdges.qmd
+                  - text: "Events & stimulation"
+                    href: 2-specify/Events.qmd
+                  - section: "Observation models"
+                    href: 2-specify/Observation/index.qmd
+                    contents:
+                      - text: "Output specification"
+                        href: 2-specify/Observation/Output.qmd
+                  - text: "Parameter exploration"
+                    href: 2-specify/ParameterExploration.qmd
+                  - section: "Fitting, inference & optimization"
+                    href: 2-specify/Fitting/index.qmd
+                    contents:
+                      - text: "Model fitting"
+                        href: 2-specify/Fitting/ModelFitting.qmd
+                      - text: "Loss functions"
+                        href: 2-specify/Fitting/LossFunction.qmd
+                      - text: "Algorithms (FIC, EIB)"
+                        href: 2-specify/Fitting/Algorithms.qmd
+                  - text: "Analyses"
+                    href: 2-specify/Analyses.qmd
+                  - text: "Calling your own code"
+                    href: 2-specify/CodeSource.qmd
+                  - section: "Figures"
+                    href: 2-specify/Figures/index.qmd
+                    contents:
+                      - text: "Styling & colour"
+                        href: 2-specify/Figures/Styling.qmd
+                      - text: "Custom figure panels"
+                        href: 2-specify/Figures/custom-panels.qmd
+                      - text: "Plot a result directly"
+                        href: 2-specify/Figures/Visualization.qmd
+                  - section: "Solving a network of DDEs"
+                    href: 2-specify/Integrators/index.qmd
+                    contents:
+                      - text: "Cross-backend numerical parity"
+                        href: 2-specify/Integrators/CrossBackendParity.qmd
+                  - text: "Linked experiments in a SimulationStudy"
+                    href: 2-specify/SimulationStudies.qmd
+                  - text: "Fan-out over subjects and phenotypes"
+                    href: 2-specify/FanOut.qmd
+                  - text: "Writing TVB-O YAML"
+                    href: 2-specify/YAML.qmd
+              - section: "③ GENERATE"
+                href: 3-generate/index.qmd
                 contents:
-                  - text: "Network specification"
-                    href: Specification/Network.qmd
-                  - text: "Build a connectome from tractography"
-                    href: Networks/BuildConnectomeFromTractography.qmd
-                  - text: "Coupling functions"
-                    href: Networks/CouplingFunctions.qmd
-                  - text: "Hierarchical & surface networks"
-                    href: Networks/HierarchicalSurfaceNetworks.qmd
-                  - text: "Heterogeneous nodes"
-                    href: Networks/HeterogeneousNodes.qmd
-                  - text: "Heterogeneous edges"
-                    href: Networks/HeterogeneousEdges.qmd
-              - text: "Events & stimulation"
-                href: Models/Events.qmd
-              - section: "Observation models"
-                href: Simulation/ObservationModels.qmd
+                  - text: "How code generation works"
+                    href: 3-generate/CodegenPhilosophy.qmd
+                  - text: "Code generation & export"
+                    href: 3-generate/CodeGeneration.qmd
+                  - section: "Reproducible workflows"
+                    href: 3-generate/workflows/index.qmd
+                    contents:
+                      - text: "Distributed workflows"
+                        href: 3-generate/workflows/DistributedWorkflows.qmd
+                      - text: "Workflow kits anatomy"
+                        href: 3-generate/workflows/workflow-kits.qmd
+                      - text: "HPC patterns & containers"
+                        href: 3-generate/workflows/hpc.qmd
+                  - text: "The study directory"
+                    href: Interoperability/BIDS/index.qmd
+              - section: "④ RUN"
+                href: 4-run/index.qmd
                 contents:
-                  - text: "Output specification"
-                    href: Specification/Output.qmd
-              - text: "Parameter exploration"
-                href: Simulation/ParameterExploration.qmd
-              - section: "Fitting, inference & optimization"
-                href: Fitting/index.qmd
+                  - text: "Run on a backend"
+                    href: 4-run/Backends.qmd
+                  - text: "The experiment result"
+                    href: 4-run/Results.qmd
+              - section: "⑤ SHARE"
+                href: 5-share/index.qmd
                 contents:
-                  - text: "Model fitting"
-                    href: Fitting/ModelFitting.qmd
-                  - text: "Loss functions"
-                    href: Specification/LossFunction.qmd
-                  - text: "Algorithms (FIC, EIB)"
-                    href: Specification/Algorithms.qmd
-              - text: "Analyses"
-                href: Specification/Analyses.qmd
-              - text: "Calling your own code"
-                href: Specification/CodeSource.qmd
-              - section: "Specify a figure"
-                href: Simulation/Figures.qmd
-                contents:
-                  - text: "Custom figure panels"
-                    href: Replication/custom-panels.qmd
-              - section: "Solving a network of DDEs"
-                href: Models/Integrators.qmd
-                contents:
-                  - text: "Cross-backend numerical parity"
-                    href: Models/CrossBackendParity.qmd
-              - text: "Linked experiments in a SimulationStudy"
-                href: Simulation/SimulationStudies.qmd
-              - text: "Fan-out over subjects and phenotypes"
-                href: Specification/FanOut.qmd
-              - text: "Writing TVB-O YAML"
-                href: Specification/YAML.qmd
-              - text: "③ GENERATE"
-                href: phases/generate.qmd
-              - text: "How code generation works"
-                href: ScaleOut/CodegenPhilosophy.qmd
-              - text: "Code generation & export"
-                href: ScaleOut/CodeGeneration.qmd
-              - section: "Reproducible workflows"
-                href: ScaleOut/index.qmd
-                contents:
-                  - text: "Distributed workflows"
-                    href: ScaleOut/DistributedWorkflows.qmd
-                  - text: "Workflow kits anatomy"
-                    href: CLI/workflow-kits.qmd
-                  - text: "HPC patterns & containers"
-                    href: CLI/hpc.qmd
-              - text: "The study directory"
-                href: Interoperability/BIDS/index.qmd
-              - text: "④ RUN"
-                href: phases/run.qmd
-              - text: "Run on a backend"
-                href: Simulation/Backends.qmd
-              - text: "The experiment result"
-                href: Simulation/Results.qmd
-              - text: "Visualization"
-                href: Simulation/Visualization.qmd
-              - text: "⑤ SHARE"
-                href: phases/share.qmd
-              - text: "Share and publish your work"
-                href: Sharing.qmd
-              - text: "Results in BIDS"
-                href: Interoperability/BIDS/BIDS_comp_modelling.md
-              - text: "openMINDS"
-                href: Interoperability/OpenMINDS.qmd
+                  - text: "Share and publish your work"
+                    href: 5-share/Sharing.qmd
+                  - text: "Results in BIDS"
+                    href: Interoperability/BIDS/BIDS_comp_modelling.md
+                  - text: "openMINDS"
+                    href: Interoperability/OpenMINDS.qmd
               - text: "EXAMPLES & USE-CASES"
               - section: "Quick examples"
                 href: examples/index.qmd
@@ -162,35 +163,35 @@ website:
               - section: "Worked experiments"
                 contents:
                   - text: "Fit functional connectivity (RWW)"
-                    href: Fitting/RWW_tvboptim.qmd
+                    href: examples/fitting/RWW_tvboptim.qmd
                   - text: "Fit a MEG frequency gradient (Jansen-Rit)"
-                    href: Fitting/JR_tvboptim.qmd
+                    href: examples/fitting/JR_tvboptim.qmd
                   - text: "Tune E/I balance"
-                    href: Fitting/EI_Tuning_tvboptim.qmd
+                    href: examples/fitting/EI_Tuning_tvboptim.qmd
                   - text: "Bayesian inference"
-                    href: Fitting/Bayesian_tvboptim.qmd
+                    href: examples/fitting/Bayesian_tvboptim.qmd
                   - text: "Multi-objective (Hopf-Pareto)"
-                    href: Fitting/Hopf_Pareto_tvboptim.qmd
+                    href: examples/fitting/Hopf_Pareto_tvboptim.qmd
                   - text: "Delay & speed synchronization"
-                    href: Fitting/Delay_Speed_Synchronization_tvboptim.qmd
+                    href: examples/fitting/Delay_Speed_Synchronization_tvboptim.qmd
                   - text: "Gradient stability & TBPTT"
-                    href: Fitting/TBPTT_tvboptim.qmd
+                    href: examples/fitting/TBPTT_tvboptim.qmd
                   - text: "Surface & PDE simulation"
-                    href: Networks/PDESimulation.qmd
+                    href: examples/PDESimulation.qmd
               - section: "Bifurcation track"
                 contents:
                   - text: "1. Linear stability"
-                    href: Bifurcation/01-LinearStability.qmd
+                    href: examples/bifurcation/01-LinearStability.qmd
                   - text: "2. 2D phase portraits"
-                    href: Bifurcation/02-PhasePortrait2D.qmd
+                    href: examples/bifurcation/02-PhasePortrait2D.qmd
                   - text: "3. Saddle-node"
-                    href: Bifurcation/03-SaddleNode.qmd
+                    href: examples/bifurcation/03-SaddleNode.qmd
                   - text: "4. Pitchfork"
-                    href: Bifurcation/04-Pitchfork.qmd
+                    href: examples/bifurcation/04-Pitchfork.qmd
                   - text: "5. Hysteresis"
-                    href: Bifurcation/05-Hysteresis.qmd
+                    href: examples/bifurcation/05-Hysteresis.qmd
                   - text: "6. Hopf"
-                    href: Bifurcation/06-Hopf.qmd
+                    href: examples/bifurcation/06-Hopf.qmd
 # BEGIN:replication-autogen
               - section: "Replication Studies"
                 href: Replication/index.qmd
@@ -384,6 +385,8 @@ website:
                         href: datamodel/classes/ClinicalScore.qmd
                       - text: "Code Source"
                         href: datamodel/classes/CodeSource.qmd
+                      - text: "Colormaps"
+                        href: datamodel/classes/Colormaps.qmd
                       - text: "Common Coordinate Space"
                         href: datamodel/classes/CommonCoordinateSpace.qmd
                       - text: "Conditional Block"
@@ -506,6 +509,8 @@ website:
                         href: datamodel/classes/OptimizationStage.qmd
                       - text: "Option"
                         href: datamodel/classes/Option.qmd
+                      - text: "Palette"
+                        href: datamodel/classes/Palette.qmd
                       - text: "Panel"
                         href: datamodel/classes/Panel.qmd
                       - text: "Parameter"
@@ -722,6 +727,10 @@ website:
                         href: datamodel/slots/backend.qmd
                       - text: "backends"
                         href: datamodel/slots/backends.qmd
+                      - text: "background"
+                        href: datamodel/slots/background.qmd
+                      - text: "base"
+                        href: datamodel/slots/base.qmd
                       - text: "baseline_value"
                         href: datamodel/slots/baseline_value.qmd
                       - text: "batch_mode"
@@ -808,6 +817,8 @@ website:
                         href: datamodel/slots/color.qmd
                       - text: "colormap"
                         href: datamodel/slots/colormap.qmd
+                      - text: "colormaps"
+                        href: datamodel/slots/colormaps.qmd
                       - text: "command"
                         href: datamodel/slots/command.qmd
                       - text: "comment"
@@ -986,6 +997,8 @@ website:
                         href: datamodel/slots/distribute.qmd
                       - text: "distribution"
                         href: datamodel/slots/distribution.qmd
+                      - text: "diverging"
+                        href: datamodel/slots/diverging.qmd
                       - text: "doi"
                         href: datamodel/slots/doi.qmd
                       - text: "domain"
@@ -1178,6 +1191,8 @@ website:
                         href: datamodel/slots/heterogeneous.qmd
                       - text: "hi"
                         href: datamodel/slots/hi.qmd
+                      - text: "highlight"
+                        href: datamodel/slots/highlight.qmd
                       - text: "histogram"
                         href: datamodel/slots/histogram.qmd
                       - text: "history"
@@ -1208,6 +1223,8 @@ website:
                         href: datamodel/slots/initial_state.qmd
                       - text: "initial_value"
                         href: datamodel/slots/initial_value.qmd
+                      - text: "ink"
+                        href: datamodel/slots/ink.qmd
                       - text: "inner_coupling"
                         href: datamodel/slots/inner_coupling.qmd
                       - text: "inner_iterations"
@@ -1260,6 +1277,8 @@ website:
                         href: datamodel/slots/layers.qmd
                       - text: "layout"
                         href: datamodel/slots/layout.qmd
+                      - text: "layout_engine"
+                        href: datamodel/slots/layout_engine.qmd
                       - text: "learning_rate"
                         href: datamodel/slots/learning_rate.qmd
                       - text: "learning_rate_schedule"
@@ -1368,6 +1387,8 @@ website:
                         href: datamodel/slots/modules.qmd
                       - text: "mtime"
                         href: datamodel/slots/mtime.qmd
+                      - text: "muted"
+                        href: datamodel/slots/muted.qmd
                       - text: "n"
                         href: datamodel/slots/n.qmd
                       - text: "n_inversion"
@@ -1498,6 +1519,8 @@ website:
                         href: datamodel/slots/package.qmd
                       - text: "pad"
                         href: datamodel/slots/pad.qmd
+                      - text: "palette"
+                        href: datamodel/slots/palette.qmd
                       - text: "panel_key"
                         href: datamodel/slots/panel_key.qmd
                       - text: "panel_number_format"
@@ -1698,6 +1721,8 @@ website:
                         href: datamodel/slots/segmentation.qmd
                       - text: "sel"
                         href: datamodel/slots/sel.qmd
+                      - text: "sequential"
+                        href: datamodel/slots/sequential.qmd
                       - text: "session_id"
                         href: datamodel/slots/session_id.qmd
                       - text: "sessions"
@@ -2054,6 +2079,8 @@ website:
                         href: datamodel/enums/ImagingModality.qmd
                       - text: "Initial State Method"
                         href: datamodel/enums/InitialStateMethod.qmd
+                      - text: "Layout Engine"
+                        href: datamodel/enums/LayoutEngine.qmd
                       - text: "Mark Type"
                         href: datamodel/enums/MarkType.qmd
                       - text: "Model Paradigm"

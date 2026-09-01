@@ -70,7 +70,7 @@ native: true
   <div class="hero__bar">
     <div class="hero__cta">
       <a class="btn btn--primary" href="GettingStarted.html">Get started <span aria-hidden="true">&rarr;</span></a>
-      <a class="btn btn--ghost" href="platform.html">Explore the platform <span aria-hidden="true">&rarr;</span></a>
+      <a class="btn btn--ghost" href="1-explore/platform.html">Explore the platform <span aria-hidden="true">&rarr;</span></a>
     </div>
   </div>
 </section>
@@ -78,11 +78,11 @@ native: true
 <section class="pipeline">
   <p class="section-eyebrow">The five steps this documentation follows</p>
   <ol class="steps">
-    <li class="step" style="--phase:var(--phase-1)"><a class="step__link" href="phases/explore.html"><span class="step__n">1</span><h3>Explore</h3><p>Find curated models, networks and published studies in the knowledge base.</p></a></li>
-    <li class="step" style="--phase:var(--phase-2)"><a class="step__link" href="phases/specify.html"><span class="step__n">2</span><h3>Specify</h3><p>Declare the experiment — dynamics, network, observations, figures.</p></a></li>
-    <li class="step" style="--phase:var(--phase-3)"><a class="step__link" href="phases/generate.html"><span class="step__n">3</span><h3>Generate</h3><p>Compile it to backend-native code, plots and a study directory.</p></a></li>
-    <li class="step" style="--phase:var(--phase-4)"><a class="step__link" href="phases/run.html"><span class="step__n">4</span><h3>Run</h3><p>Execute on a laptop or a cluster, and read the result back.</p></a></li>
-    <li class="step" style="--phase:var(--phase-5)"><a class="step__link" href="phases/share.html"><span class="step__n">5</span><h3>Share</h3><p>Publish to the platform, and export results as BIDS.</p></a></li>
+    <li class="step" style="--phase:var(--phase-1)"><a class="step__link" href="1-explore/index.html"><span class="step__n">1</span><h3>Explore</h3><p>Find curated models, networks and published studies in the knowledge base.</p></a></li>
+    <li class="step" style="--phase:var(--phase-2)"><a class="step__link" href="2-specify/index.html"><span class="step__n">2</span><h3>Specify</h3><p>Declare the experiment — dynamics, network, observations, figures.</p></a></li>
+    <li class="step" style="--phase:var(--phase-3)"><a class="step__link" href="3-generate/index.html"><span class="step__n">3</span><h3>Generate</h3><p>Compile it to backend-native code, plots and a study directory.</p></a></li>
+    <li class="step" style="--phase:var(--phase-4)"><a class="step__link" href="4-run/index.html"><span class="step__n">4</span><h3>Run</h3><p>Execute on a laptop or a cluster, and read the result back.</p></a></li>
+    <li class="step" style="--phase:var(--phase-5)"><a class="step__link" href="5-share/index.html"><span class="step__n">5</span><h3>Share</h3><p>Publish to the platform, and export results as BIDS.</p></a></li>
   </ol>
   <div class="pipeline__targets">
     <span class="step__n step__n--sm" aria-hidden="true">3</span>
@@ -175,7 +175,7 @@ print(f"```yaml\nfigures:{figure.rstrip()}\n```")
 
 ::::
 
-A figure in TVB-O is data, not a script: a mosaic of panels whose layers bind a field of the result container to a visual channel. The binding that says *which data* is typed `prov:used`, so declaring where a mark's numbers come from **is** the provenance record. See [Specify a figure](Simulation/Figures.qmd).
+A figure in TVB-O is data, not a script: a mosaic of panels whose layers bind a field of the result container to a visual channel. The binding that says *which data* is typed `prov:used`, so declaring where a mark's numbers come from **is** the provenance record. See [Specify a figure](2-specify/Figures/index.qmd).
 
 ## The same specification, three ways to reach it
 
@@ -224,7 +224,7 @@ result = exp.run()
 | Page | What it covers | Cover |
 |---|---|---|
 | [Getting started](GettingStarted.qmd) | New to TVB-O: one equation to a whole brain, in a single sitting. | fa-solid fa-rocket |
-| [The SimulationExperiment](Simulation/SimulationExperiments.qmd) | Want the spec: every top-level field, and which ones are required. | fa-solid fa-file-lines |
-| [Linked experiments in a SimulationStudy](Simulation/SimulationStudies.qmd) | Replicating a paper: many experiments, one study, shared figures. | fa-solid fa-diagram-project |
+| [The SimulationExperiment](2-specify/SimulationExperiments.qmd) | Want the spec: every top-level field, and which ones are required. | fa-solid fa-file-lines |
+| [Linked experiments in a SimulationStudy](2-specify/SimulationStudies.qmd) | Replicating a paper: many experiments, one study, shared figures. | fa-solid fa-diagram-project |
 | [Interoperability](Interoperability/index.qmd) | Coming from another tool: TVB, PyRates, NeuroML and the Julia backends. | fa-solid fa-plug |
 :::

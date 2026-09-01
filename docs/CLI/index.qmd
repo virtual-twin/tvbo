@@ -63,9 +63,9 @@ Each page below documents one verb or sub-tree, with its flags, exit codes and w
 - [`tvbo network`](network.qmd): build connectomes from a tractogram and a parcellation, wrapping MRtrix
 - [`tvbo workflow`](workflow.qmd): emit Slurm, Snakemake or Nextflow kits
 - [`tvbo skills`](skills.qmd): install AI-assistant skills for Claude Code, Cursor and Copilot
-- [Workflow kits anatomy](workflow-kits.qmd): what a generated kit contains
-- [Backends](../Simulation/Backends.qmd): the capability table, and vectorize versus fan-out
-- [HPC patterns](hpc.qmd): containers, sharding and engine dispatch
+- [Workflow kits anatomy](../3-generate/workflows/workflow-kits.qmd): what a generated kit contains
+- [Backends](../4-run/Backends.qmd): the capability table, and vectorize versus fan-out
+- [HPC patterns](../3-generate/workflows/hpc.qmd): containers, sharding and engine dispatch
 - [Recipes](recipes.qmd): a copy-paste cookbook
 
 Six command groups have no guide page yet and are documented only by their generated API reference: [`tvbo figure`](../api/cli/figures.qmd), [`tvbo study`](../api/cli/study.qmd), [`tvbo units`](../api/cli/units.qmd), [`tvbo cache`](../api/cli/cache.qmd), [`tvbo verify`](../api/cli/verify.qmd) and [`tvbo install`](../api/cli/install.qmd).
@@ -77,7 +77,7 @@ The CLI exposes two complementary execution paths:
 1. **Direct execution.** `tvbo run` invokes the requested backend in-process and saves the results. Best for laptops, CI and short experiments.
 2. **Workflow emission.** `tvbo workflow {slurm,snakemake,nextflow}` writes a self-contained reproducibility kit and exits. The kit holds the workflow artefact, the frozen backend script, the frozen YAML spec and a README, so it can be archived, moved to a cluster and run without `tvbo` installed.
 
-The same study YAML produces a *different* DAG on different backends. The planner consults the [backend capability table](../Simulation/Backends.qmd), mirrored from `ontology/tvb-o-axioms.ttl §4.1`, to decide which sweep axes vectorize inside the backend and which fan out across workflow tasks.
+The same study YAML produces a *different* DAG on different backends. The planner consults the [backend capability table](../4-run/Backends.qmd), mirrored from `ontology/tvb-o-axioms.ttl §4.1`, to decide which sweep axes vectorize inside the backend and which fan out across workflow tasks.
 
 ## Quick start
 

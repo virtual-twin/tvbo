@@ -6,180 +6,213 @@ studies:
   doi: 10.1073/pnas.1316071110
   year: '2013'
   documents:
-  - Bifurcation/BifurcationAnalysis.qmd
-  - Models/InitialConditions.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ParameterExploration.qmd
-  - Specification/Analyses.qmd
-  - Specification/CodeSource.qmd
-  - Specification/YAML.qmd
+  - 2-specify/Analyses.qmd
+  - 2-specify/CodeSource.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Models/Bifurcation/BifurcationAnalysis.qmd
+  - 2-specify/Models/InitialConditions.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 4-run/Backends.qmd
 - key: Deco2014
   title: How Local Excitation-Inhibition Ratio Impacts the Whole Brain Dynamics
   doi: 10.1523/JNEUROSCI.5068-13.2014
   year: '2014'
   documents:
-  - Bifurcation/BifurcationAnalysis.qmd
-  - Models/Events.qmd
-  - Models/InitialConditions.qmd
-  - Models/Noise.qmd
-  - Networks/CouplingFunctions.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ObservationModels.qmd
-  - Simulation/ParameterExploration.qmd
-  - Specification/Algorithms.qmd
-  - Specification/Network.qmd
-  - Specification/YAML.qmd
+  - 2-specify/Events.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Fitting/Algorithms.qmd
+  - 2-specify/Models/Bifurcation/BifurcationAnalysis.qmd
+  - 2-specify/Models/InitialConditions.qmd
+  - 2-specify/Models/Noise.qmd
+  - 2-specify/Networks/CouplingFunctions.qmd
+  - 2-specify/Networks/Network.qmd
+  - 2-specify/Observation/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 4-run/Backends.qmd
+- key: Deco2018
+  title: Whole-Brain Multimodal Neuroimaging Model Using Serotonin Receptor Maps Explains
+    Non-linear Functional Effects of LSD
+  doi: 10.1016/j.cub.2018.07.083
+  year: '2018'
+  documents:
+  - 2-specify/Analyses.qmd
+  - 2-specify/CodeSource.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Fitting/Algorithms.qmd
+  - 2-specify/Models/Noise.qmd
+  - 2-specify/Networks/CouplingFunctions.qmd
+  - 2-specify/Networks/Network.qmd
+  - 2-specify/Observation/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 4-run/Backends.qmd
+- key: Herzog2024
+  title: 'Neural mass modeling for the masses: Democratizing access to whole-brain
+    biophysical modeling with FastDMF'
+  doi: 10.1162/netn_a_00410
+  year: '2024'
+  documents:
+  - 2-specify/Analyses.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Fitting/Algorithms.qmd
+  - 2-specify/Models/Noise.qmd
+  - 2-specify/Networks/CouplingFunctions.qmd
+  - 2-specify/Networks/Network.qmd
+  - 2-specify/Observation/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 4-run/Backends.qmd
 - key: Jansen1993
   title: A neurophysiologically based mathematical model of flash visual evoked potentials
   doi: 10.1007/BF00224863
   year: '1993'
   documents:
-  - Models/Events.qmd
-  - Models/InitialConditions.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ParameterExploration.qmd
-  - Simulation/SimulationStudies.qmd
-  - Specification/Analyses.qmd
-  - Specification/CodeSource.qmd
-  - Specification/FanOut.qmd
-  - Specification/YAML.qmd
+  - 2-specify/Analyses.qmd
+  - 2-specify/CodeSource.qmd
+  - 2-specify/Events.qmd
+  - 2-specify/FanOut.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Models/InitialConditions.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/SimulationStudies.qmd
+  - 2-specify/YAML.qmd
+  - 4-run/Backends.qmd
 - key: Jansen1995
   title: Electroencephalogram and visual evoked potential generation in a mathematical
     model of coupled cortical columns
   doi: 10.1007/BF00199471
   year: '1995'
   documents:
-  - Models/Events.qmd
-  - Models/InitialConditions.qmd
-  - Networks/CouplingFunctions.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ParameterExploration.qmd
-  - Simulation/SimulationStudies.qmd
-  - Specification/Analyses.qmd
-  - Specification/CodeSource.qmd
-  - Specification/FanOut.qmd
+  - 2-specify/Analyses.qmd
+  - 2-specify/CodeSource.qmd
+  - 2-specify/Events.qmd
+  - 2-specify/FanOut.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Models/InitialConditions.qmd
+  - 2-specify/Networks/CouplingFunctions.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/SimulationStudies.qmd
+  - 4-run/Backends.qmd
 - key: Kadak2025
   title: Alpha rhythm subharmonics underlie responsiveness to theta burst stimulation
     via calcium metaplasticity
   doi: 10.1101/2025.06.17.660153
   year: '2025'
   documents:
-  - Models/Events.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ObservationModels.qmd
-  - Simulation/ParameterExploration.qmd
-  - Specification/Analyses.qmd
-  - Specification/CodeSource.qmd
-  - Specification/YAML.qmd
+  - 2-specify/Analyses.qmd
+  - 2-specify/CodeSource.qmd
+  - 2-specify/Events.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Observation/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
 - key: Koller2024
   title: Human connectome topology directs cortical traveling waves and shapes frequency
     gradients
   doi: 10.1038/s41467-024-47860-x
   year: '2024'
   documents:
-  - Fitting/ModelFitting.qmd
-  - Models/InitialConditions.qmd
-  - Models/Integrators.qmd
-  - Models/Noise.qmd
-  - Networks/CouplingFunctions.qmd
-  - ScaleOut/DistributedWorkflows.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ObservationModels.qmd
-  - Simulation/ParameterExploration.qmd
-  - Specification/CodeSource.qmd
-  - Specification/FanOut.qmd
-  - Specification/LossFunction.qmd
-  - Specification/Network.qmd
-  - Specification/YAML.qmd
+  - 2-specify/CodeSource.qmd
+  - 2-specify/FanOut.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Fitting/LossFunction.qmd
+  - 2-specify/Fitting/ModelFitting.qmd
+  - 2-specify/Integrators/index.qmd
+  - 2-specify/Models/InitialConditions.qmd
+  - 2-specify/Models/Noise.qmd
+  - 2-specify/Networks/CouplingFunctions.qmd
+  - 2-specify/Networks/Network.qmd
+  - 2-specify/Observation/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 3-generate/workflows/DistributedWorkflows.qmd
+  - 4-run/Backends.qmd
 - key: Mongillo2008
   title: Synaptic Theory of Working Memory
   doi: 10.1126/science.1150769
   year: '2008'
   documents:
-  - Models/Events.qmd
-  - Models/Noise.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Specification/YAML.qmd
+  - 2-specify/Events.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Models/Noise.qmd
+  - 2-specify/YAML.qmd
+  - 4-run/Backends.qmd
 - key: Pang2023
   title: Geometric constraints on human brain function
   doi: 10.1038/s41586-023-06098-1
   year: '2023'
   documents:
-  - Models/Events.qmd
-  - Models/Noise.qmd
-  - Networks/CouplingFunctions.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ObservationModels.qmd
-  - Simulation/ParameterExploration.qmd
-  - Specification/Analyses.qmd
-  - Specification/CodeSource.qmd
-  - Specification/Network.qmd
-  - Specification/YAML.qmd
+  - 2-specify/Analyses.qmd
+  - 2-specify/CodeSource.qmd
+  - 2-specify/Events.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Models/Noise.qmd
+  - 2-specify/Networks/CouplingFunctions.qmd
+  - 2-specify/Networks/Network.qmd
+  - 2-specify/Observation/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 4-run/Backends.qmd
 - key: Schirner2023
   title: Learning how network structure shapes decision-making for bio-inspired computing
   doi: 10.1038/s41467-023-38626-y
   year: '2023'
   documents:
-  - Models/Events.qmd
-  - Models/InitialConditions.qmd
-  - Models/Noise.qmd
-  - Networks/CouplingFunctions.qmd
-  - ScaleOut/DistributedWorkflows.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ObservationModels.qmd
-  - Simulation/ParameterExploration.qmd
-  - Specification/Algorithms.qmd
-  - Specification/Analyses.qmd
-  - Specification/CodeSource.qmd
-  - Specification/FanOut.qmd
-  - Specification/Network.qmd
-  - Specification/YAML.qmd
+  - 2-specify/Analyses.qmd
+  - 2-specify/CodeSource.qmd
+  - 2-specify/Events.qmd
+  - 2-specify/FanOut.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Fitting/Algorithms.qmd
+  - 2-specify/Models/InitialConditions.qmd
+  - 2-specify/Models/Noise.qmd
+  - 2-specify/Networks/CouplingFunctions.qmd
+  - 2-specify/Networks/Network.qmd
+  - 2-specify/Observation/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 3-generate/workflows/DistributedWorkflows.qmd
+  - 4-run/Backends.qmd
 - key: Stefanovski2019
   title: Linking Molecular Pathways and Large-Scale Computational Modeling to Assess
     Candidate Disease Mechanisms and Pharmacodynamics in Alzheimer's Disease
   doi: 10.3389/fncom.2019.00054
   year: '2019'
   documents:
-  - Networks/CouplingFunctions.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ObservationModels.qmd
-  - Simulation/ParameterExploration.qmd
-  - Specification/Analyses.qmd
-  - Specification/YAML.qmd
+  - 2-specify/Analyses.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Networks/CouplingFunctions.qmd
+  - 2-specify/Observation/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 4-run/Backends.qmd
 - key: Taher2019
   title: Enhancing power grid synchronization and stability through time-delayed feedback
     control
   doi: 10.1103/PhysRevE.100.062306
   year: '2019'
   documents:
-  - Models/Events.qmd
-  - Models/InitialConditions.qmd
-  - Networks/CouplingFunctions.qmd
-  - ScaleOut/DistributedWorkflows.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ObservationModels.qmd
-  - Simulation/ParameterExploration.qmd
-  - Specification/CodeSource.qmd
-  - Specification/Network.qmd
-  - Specification/YAML.qmd
+  - 2-specify/CodeSource.qmd
+  - 2-specify/Events.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/Models/InitialConditions.qmd
+  - 2-specify/Networks/CouplingFunctions.qmd
+  - 2-specify/Networks/Network.qmd
+  - 2-specify/Observation/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 3-generate/workflows/DistributedWorkflows.qmd
+  - 4-run/Backends.qmd
 - key: TsodyksMarkram1997
   title: The neural code between neocortical pyramidal neurons depends on neurotransmitter
     release probability
   doi: 10.1073/pnas.94.2.719
   year: '1997'
   documents:
-  - Models/Events.qmd
-  - Simulation/Backends.qmd
-  - Simulation/Figures.qmd
-  - Simulation/ParameterExploration.qmd
-  - Specification/YAML.qmd
+  - 2-specify/Events.qmd
+  - 2-specify/Figures/index.qmd
+  - 2-specify/ParameterExploration.qmd
+  - 2-specify/YAML.qmd
+  - 4-run/Backends.qmd

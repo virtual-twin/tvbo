@@ -1,0 +1,105 @@
+---
+title: "Fan-out over subjects and phenotypes"
+description: "Run one experiment across a cohort: where the subjects come from, how each one's data binds to the model, and whether the cohort runs as one device job or many."
+subtitle: "One recipe, many subjects"
+aliases:
+  - /Specification/FanOut.html
+---
+
+A model fitted to one person is a case study. Fitting the same model to a thousand people is a result, and it must not become a thousand recipes. In TVB-O the recipe stays single: an experiment declares a **dataset**, and the cohort is fanned out from it at run time.
+
+```text
+experiment
+  dataset:       ← who the subjects are, and where their data lives
+  observations:  ← what each subject contributes, bound per subject
+  execution:     ← whether the cohort runs as one job or many
+```
+
+## Declaring the cohort
+
+`dataset:` names a BIDS root and lets the layout enumerate the subjects, rather than listing them by hand in a file that goes stale the moment the derivative tree grows.
+
+```yaml
+dataset:
+  dataset_id: hcp_ya_fc_schaefer1000
+  bids_root: /data/hcp/derivatives/functional_connectomes
+  bundle: true
+```
+
+| Field | Meaning |
+|---|---|
+| `dataset_id` | The identifier the results are keyed by. |
+| `bids_root` | Where the per-subject derivatives live. The cohort is every subject under it that satisfies the observation's `query`. |
+| `subjects` | An explicit list, when you want a subset rather than everything the root holds. |
+| `bundle` | Carry each subject's data into the emitted workflow kit, so a cluster job needs no access to the original root. |
+| `batch_mode` | `fan_out` for one job per subject, `on_device` to vectorize the cohort inside a single job. |
+| `batch_size` | How many subjects per job when batching. |
+| `conditions` | Task or condition labels, when a subject contributes more than one. |
+
+## Binding a subject's data
+
+The cohort is only useful if each shard knows which subject's numbers it is fitting against. An observation reads them through `dataset.subject.<measure>`, and `query:` selects which of that subject's derivatives is the target.
+
+```yaml
+observations:
+  empirical_fc:
+    label: "Empirical functional connectivity (per subject)"
+    source: [dataset.subject.fc]
+    query: {desc: FCavg, atlas: Schaefer1000, suffix: relmat}
+    reconcile: by_label
+    min_coverage: 0.99
+```
+
+::: {.callout-important}
+## `reconcile: by_label`, not a positional slice
+
+A group structural connectome and a subject's functional connectome rarely carry the same node set — a subject's FC may be missing the medial-wall parcels that the SC still has. `reconcile: by_label` restricts both sides to the parcels they share **by name**. A positional slice would misalign every parcel after the first missing one and still produce a plausible-looking correlation, which is the worst possible failure. `min_coverage` is the floor below which the mismatch is an error rather than an accepted trim.
+:::
+
+## Running the cohort
+
+The same recipe runs one subject or all of them; what changes is the shard.
+
+:::: {.panel-tabset}
+
+### One subject
+
+```bash
+tvbo run study.yaml --experiment 60 --subject 100206
+```
+
+Use this first, always. A cohort array that fails on subject 700 has burned 699 jobs proving that the recipe was wrong on subject 1.
+
+### The whole cohort
+
+```bash
+tvbo workflow snakemake study.yaml --experiment 60 --bundle-dataset -o kit-cohort
+tvbo workflow submit kit-cohort --array
+```
+
+`fan_out` emits one task per subject, and the workflow engine schedules them. Each shard writes its own result container; `tvbo workflow finalize` reassembles them into one keyed artifact.
+
+::::
+
+## Choosing fan-out or on-device
+
+`batch_mode` is a resource decision, not a modelling one, and it is worth making deliberately.
+
+| | `fan_out` | `on_device` |
+|---|---|---|
+| Shape | One job per subject | The cohort vectorized inside one job |
+| Best when | Each fit is launch-bound and modest in memory | Each subject is cheap and the cohort fits in device memory |
+| Fails by | Scheduler overhead on very short jobs | Out-of-memory, because cost scales with cohort size |
+
+A per-subject fit that peaks near 10 GB and spends most of its time in launch overhead belongs on `fan_out` across CPU nodes, not vectorized onto one accelerator. The reverse is true for a short forward simulation over a few dozen subjects.
+
+## Phenotypes
+
+A `Phenotype` is the per-subject measurement table BIDS keeps in `phenotype/` — cognitive scores, clinical scales, demographics, task outputs. It carries `subjects`, `measures`, a `cohort` and a `data_file`, so a study can group or stratify by a measured variable instead of hard-coding subject lists into the recipe.
+
+## Related
+
+- [Linked experiments in a SimulationStudy](SimulationStudies.qmd): the object a fanned experiment sits in.
+- [Distributed workflows](../3-generate/workflows/DistributedWorkflows.qmd): how shards become cluster jobs.
+- [Observation models](Observation/index.qmd): what `source:` and `pipeline:` can express.
+- [`Dataset`](../datamodel/classes/Dataset.qmd) · [`Phenotype`](../datamodel/classes/Phenotype.qmd) — the schema.

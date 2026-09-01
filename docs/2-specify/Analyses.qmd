@@ -1,0 +1,83 @@
+---
+title: "Analyses"
+description: "Reduce results to the numbers a paper reports, declaratively, as a persisted container a figure or a later analysis can read."
+subtitle: "What turns a run into a result"
+aliases:
+  - /Specification/Analyses.html
+---
+
+A simulation produces trajectories. A paper reports numbers: a correlation, a spectrum, a table of gains, a permutation *p*-value. An `analysis` is the declared step between the two, and TVB-O treats it as a first-class product rather than something a script does afterwards.
+
+The consequence is the point. An analysis result is persisted in its own container, `derivatives/tvbo/ana-<name>_result.h5`, so a figure binds to it exactly as it binds to a run, and a second analysis can consume the first. A study therefore needs no driver script for its non-simulation figures.
+
+## Two forms, and which one you want
+
+An `Analysis` is an invocation with two mutually exclusive ways of saying what is analysed.
+
+| | **Of the solve** | **Of saved data** |
+|---|---|---|
+| Declared on | `Observation.analysis` | `SimulationStudy.analyses` |
+| Says what with | `type`, `target`, `wrt` | `callable` (or `class_call`) + `arguments` |
+| Evaluated | inside the integration, by the same codegen | on its own, before or after the runs |
+| Limited by | what the backend can trace | nothing; it reads containers |
+| Use it for | gradients, sensitivities, Lyapunov spectra | tables, spectra, contrasts, permutation tests |
+
+The second form is the one a study uses most, and the one below.
+
+## An analysis over saved results
+
+`name` keys the container, so it is required and must be unique. Each argument is either a literal `value` or a `used:` pointer into some other container.
+
+```yaml
+analyses:
+  - name: power_table
+    label: "Spectral outcomes per protocol"
+    callable: {name: power_table, module: kadak2025_analysis}
+    arguments:
+      power_modulation: {used: {experiment: 4, output: power_modulation}}
+      psd_pre:          {used: {experiment: 4, output: psd_pre}}
+      iaf_nominal:      {value: 10.5}
+```
+
+The callable is found by bare `module:` name because the study declares [where its code lives](CodeSource.qmd). It returns a mapping of name to labelled array; each key becomes an `observation__<key>` data-variable that keeps its dims and coordinates, which is what lets a figure's `encoding` name them.
+
+::: {.callout-note}
+## Declare `dims`, never infer them
+
+`dims` names the axes of the analysis output, in order. It is declared rather than read off the result's shape, because a shape cannot distinguish a `(node, node)` matrix from a `(time, time)` one, and a square result silently transposed is a bug no assertion catches.
+:::
+
+## `used:`, the reference that is also the provenance
+
+`used:` is the single cross-container reference primitive, and the same edge doubles as the PROV record of what a result was computed from.
+
+```yaml
+used: {experiment: 4, output: psd_post}      # a run in this study
+used: {analysis: power_table, output: gain}  # another analysis
+used: {iri: "tvbo:..."}                      # a curated entity, or another study's result
+```
+
+| Field | What it does |
+|---|---|
+| `experiment` / `analysis` / `iri` | **Where** the array lives. |
+| `output` | **Which** array: a recorded state variable, an observation, or an analysis key. |
+| `sel` | **Slice** it, by label, keyed by dimension, exactly as an xarray `.sel` does. |
+| `transform` | A registered reduction applied after `sel`. |
+| `reconcile` | Align nodes to the consuming network `by_label`, or take them as-is. |
+
+::: {.callout-important}
+## `sel` is label-based, and that is not a detail
+
+Selecting by position is how a result gets silently misaligned: a dropped parcel, a reordered node set, and every downstream number is wrong but plausible. `sel` keys on dimension and coordinate label, so a name that is not there raises instead of returning the wrong slice.
+:::
+
+## Ordering
+
+There is no ordering field, and there should not be. An analysis runs once the containers it `used:` exist, so the reference graph *is* the schedule. An analysis that reads only experiments runs after those experiments; one that reads another analysis runs after it; one that reads only empirical data can run before anything is simulated at all.
+
+## Related
+
+- [Linked experiments in a SimulationStudy](SimulationStudies.qmd): where `analyses:` is declared.
+- [Calling your own code](CodeSource.qmd): how `module:` resolves.
+- [Specify a figure](Figures/index.qmd): the consumer that binds an analysis with `used:`.
+- [`Analysis`](../datamodel/classes/Analysis.qmd) · [`DataRef`](../datamodel/classes/DataRef.qmd) · [`Argument`](../datamodel/classes/Argument.qmd): the schema.
