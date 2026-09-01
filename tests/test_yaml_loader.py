@@ -286,3 +286,29 @@ def test_document_root_envelope_never_reaches_the_target_class(tmp_path: Path) -
     )
     assert yaml_loader.load(doc, SimulationStudy).key == "Probe"
     assert yaml_loader.load_as_dict(doc)["tvbo_class"] == "tvbo:SimulationStudy"
+
+
+def test_scalar_with_unit_splits_into_the_two_slots(tmp_path: Path) -> None:
+    """A quantity written as one string reaches the class as a number and a unit.
+
+    The split is refused where the tail is not a curated unit, and where a unit is already declared beside the value: in both cases the string survives, so a contradiction is visible rather than silently resolved.
+    """
+    doc = _write(
+        tmp_path / "params.yaml",
+        """
+        parameters:
+          A: {name: A, value: 3.25 mV}
+          B: {name: B, value: 22 mV}
+          C: {name: C, value: 1.0 millivolt}
+          D: {name: D, value: 3.25 mV, unit: ms}
+          E: {name: E, value: 3 blorks}
+          F: {name: F, value: alpha band}
+    """,
+    )
+    params = yaml_loader.load_as_dict(doc)["parameters"]
+    assert (params["A"]["value"], params["A"]["unit"]) == (3.25, "mV")
+    assert (params["B"]["value"], params["B"]["unit"]) == (22, "mV")
+    assert (params["C"]["value"], params["C"]["unit"]) == (1.0, "mV")
+    assert (params["D"]["value"], params["D"]["unit"]) == ("3.25 mV", "ms")
+    assert params["E"]["value"] == "3 blorks" and "unit" not in params["E"]
+    assert params["F"]["value"] == "alpha band" and "unit" not in params["F"]

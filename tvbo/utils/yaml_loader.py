@@ -300,7 +300,7 @@ def _lift_one_distribution(obj: dict) -> None:
     A ``Distribution`` carries its support under ``domain``; a bare ``lo``/``hi``/``step`` on any ``*distribution`` slot is lifted into ``domain``, and the distribution ``name`` is materialised as ``Uniform`` so the lifted form is a complete, valid ``{name: Uniform, domain: {lo, hi}}``. Any other keys (seed, axis, …) are preserved; a value that already states a ``domain`` is left untouched.
 
     One level, so the dialect can apply it to each object as it is constructed;
-    :func:`_lift_distribution_shortcut` walks a whole document with it.
+    :func:`_apply_dict_shorthands` walks a whole document with it.
     """
     for key, value in list(obj.items()):
         if (
@@ -317,15 +317,45 @@ def _lift_one_distribution(obj: dict) -> None:
             obj[key] = lifted
 
 
-def _lift_distribution_shortcut(obj: Any) -> Any:
-    """Apply :func:`_lift_one_distribution` at every depth of *obj*."""
+_SCALAR_WITH_UNIT = re.compile(r"^([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s+(\S.*)$")
+
+
+def _split_one_scalar_unit(obj: dict) -> None:
+    """Split a ``value:`` written as one quantity — ``value: 3.25 mV`` — into the number and the unit that are separate slots, in place.
+
+    A quantity carries its magnitude and its unit in two slots, and writing it as a single string keeps neither: the number arrives as text, so nothing downstream can compute with it and the dimensional check has no unit to check. Reading the shorthand here means the terse form a person writes and the explicit form the schema stores are the same document.
+
+    The split is taken only where the tail names a unit the vocabulary already knows and no ``unit`` is declared beside it, so a value whose tail is not a curated unit stays the string it was written as rather than being read as a unit nobody curated, and a declared unit is never overridden by one hidden inside the value.
+    """
+    value = obj.get("value")
+    if not isinstance(value, str) or obj.get("unit") is not None:
+        return
+    match = _SCALAR_WITH_UNIT.match(value.strip())
+    if not match:
+        return
+    from tvbo.utils.units import normalize_unit
+
+    unit = normalize_unit(match.group(2))
+    if not unit:
+        return
+    number = match.group(1)
+    obj["value"] = float(number) if {".", "e", "E"} & set(number) else int(number)
+    obj["unit"] = unit
+
+
+def _apply_dict_shorthands(obj: Any) -> Any:
+    """Apply every one-level dict convenience at every depth of *obj*: :func:`_lift_one_distribution` on the way down, :func:`_split_one_scalar_unit` on the way back up.
+
+    One walk rather than one per convenience, so a document is traversed once however many of them there are. In place, because an ``!include``d fragment is a dict SUBCLASS carrying the file it came from, and rebuilding it as a plain dict is how that origin gets lost.
+    """
     if isinstance(obj, dict):
         _lift_one_distribution(obj)
         for value in obj.values():
-            _lift_distribution_shortcut(value)
+            _apply_dict_shorthands(value)
+        _split_one_scalar_unit(obj)
     elif isinstance(obj, list):
         for item in obj:
-            _lift_distribution_shortcut(item)
+            _apply_dict_shorthands(item)
     return obj
 
 
@@ -554,7 +584,7 @@ def _expand_pipeline_references(data: Any) -> Any:
 def _normalize_loaded(data: Any) -> Any:
     """Apply the dict-level TVBO conveniences shared by every load path.
 
-    Slot aliases are folded at construction by the generated datamodel (see ``hatch_build._alias_support``), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``, loads a study's curated-experiment IRI references from the database, and splices the curated observation a pipeline step names by ``iri``. Both the string path (``load``/``loads`` → LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes, and the experiments are expanded first so the folds reach inside them.
+    Slot aliases are folded at construction by the generated datamodel (see ``hatch_build._alias_support``), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``, splits a ``value`` written as one quantity (``3.25 mV``) into the number and unit slots, loads a study's curated-experiment IRI references from the database, and splices the curated observation a pipeline step names by ``iri``. Both the string path (``load``/``loads`` → LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes, and the experiments are expanded first so the folds reach inside them.
     """
     import copy
 
@@ -564,7 +594,7 @@ def _normalize_loaded(data: Any) -> Any:
     data = _expand_pipeline_references(data)
     data = _fold_edge_var_aliases(data)
     data = _fold_state_variable_domains(data)
-    data = _lift_distribution_shortcut(data)
+    data = _apply_dict_shorthands(data)
     return data
 
 
