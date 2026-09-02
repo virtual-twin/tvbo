@@ -4,6 +4,13 @@ from tvbo.codegen import render_expression
 def get_callable_info(func):
     return func.callable.module, func.callable.name
 
+def pipeline_local(name):
+    """The Python local a pipeline step's declared ``output`` is bound to.
+
+    Prefixed rather than used verbatim: a step whose output carries its own function's name emits ``raw = raw(ts)``, which binds the name as a local for the whole function body and so raises ``UnboundLocalError`` on the call that was meant to produce it. Curated observations name a step after what it produces, so that collision is the normal case rather than an exotic one.
+    """
+    return f"_pipe_{name}" if name else None
+
 def get_parameters(func, pipeline_outputs, obs_period=None, dt=None, sampling_overrides=None):
     """Return {arg_name: value_str} for arguments that have a resolved value.
 
@@ -44,8 +51,9 @@ def get_parameters(func, pipeline_outputs, obs_period=None, dt=None, sampling_ov
         # Quote string values that aren't numeric or pipeline references
         if isinstance(value, str):
             is_numeric = value.replace('.','').replace('-','').isdigit()
-            is_pipeline_ref = value in pipeline_outputs
-            if not is_numeric and not is_pipeline_ref:
+            if value in pipeline_outputs:
+                value = pipeline_local(value)
+            elif not is_numeric:
                 value = f"'{value}'"
         params[arg.name] = value
     return params
@@ -221,7 +229,7 @@ from ${jax_module} import ${name} as ${name}
 
     func_name_to_output = {get_func_name(func): func.output for func in resolved_pipeline if get_func_name(func)}
     # `output:` is optional; an unnamed step needs a name anyway (`None = f(...)` is not Python).
-    step_names = [f.output or f"_step{i}" for i, f in enumerate(resolved_pipeline)]
+    step_names = [pipeline_local(f.output) or f"_step{i}" for i, f in enumerate(resolved_pipeline)]
     # Resolve temporal-sampling step counts once, backend-independently.
     sampling_overrides_map = build_sampling_overrides(resolved_pipeline, obs_sampling)
     # Resolved once for both the definition and the call: a name here is a signature parameter, one absent is bound from the TimeSeries.
@@ -284,13 +292,13 @@ def ${observation.name}(ts: TimeSeries, state=${_state_default}):
 
     if _func_input:
         if _func_input in pipeline_outputs:
-            # Direct reference to an output variable name — use as-is.
-            input_name = _func_input
+            # Direct reference to an output variable name.
+            input_name = pipeline_local(_func_input)
         elif _func_input in func_name_to_output:
             # Reference to a *function* name — resolve to its output variable.
             # e.g. YAML says  input: temporal_average_interim
             #       → should use  interim_averaged  (that function's output var)
-            input_name = func_name_to_output[_func_input]
+            input_name = pipeline_local(func_name_to_output[_func_input])
         # Check if input matches the observation's source_observation (cross-observation dependency)
         elif hasattr(observation, 'source_observation') and _func_input == observation.source_observation:
             # Need to call the source observation function

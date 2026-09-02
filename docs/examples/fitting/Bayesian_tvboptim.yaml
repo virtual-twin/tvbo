@@ -48,12 +48,13 @@ figures:
                     label: "Observed (noisy)"
                     encoding: {x: time}
                     style: {color: "#000000", opts: {s: 8, zorder: 3}}
-              opts:
-                  xlabel: "Time [ms]"
-                  ylabel: "V [a.u.]"
-                  xticks: [0, 50, 100, 150]
-                  axvline: [10.0, 11.0]
-                  legend: "upper right"
+              xlabel: "Time [ms]"
+              ylabel: "V [a.u.]"
+              legend: "upper right"
+              xticks: [0, 50, 100, 150]
+              rules:
+                  - {orientation: vertical, at: [10.0]}
+                  - {orientation: vertical, at: [11.0]}
 
           b:
               kind: cartesian
@@ -67,15 +68,15 @@ figures:
                     mark: scatter
                     encoding: {x: inference__scenario_A__posterior__stimulus.amplitude}
                     style: {color: "#0a5170", opacity: 0.2, opts: {s: 3}}
-              opts:
-                  xlabel: "Stimulus amplitude"
-                  ylabel: "Excitability I"
-                  xlim: [0.18, 0.62]
-                  ylim: [-0.12, 0.42]
-                  xticks: [0.2, 0.3, 0.4, 0.5, 0.6]
-                  yticks: [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4]
-                  axvline: [0.4]
-                  axhline: [0.1]
+              xlabel: "Stimulus amplitude"
+              ylabel: "Excitability I"
+              xlim: [0.18, 0.62]
+              ylim: [-0.12, 0.42]
+              xticks: [0.2, 0.3, 0.4, 0.5, 0.6]
+              yticks: [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4]
+              rules:
+                  - {orientation: vertical, at: [0.4]}
+                  - {orientation: horizontal, at: [0.1]}
 
           c:
               kind: cartesian
@@ -89,16 +90,16 @@ figures:
                     mark: scatter
                     encoding: {x: inference__scenario_B__posterior__stimulus.amplitude}
                     style: {color: "#3E8E68", opacity: 0.2, opts: {s: 3}}
-              opts:
-                  xlabel: "Stimulus amplitude"
-                  ylabel: ""
-                  xlim: [0.18, 0.62]
-                  ylim: [-0.12, 0.42]
-                  xticks: [0.2, 0.3, 0.4, 0.5, 0.6]
-                  yticks: [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4]
-                  axvline: [0.4]
-                  axhline: [0.1]
-                  hide_yticklabels: true
+              xlabel: "Stimulus amplitude"
+              ylabel: ""
+              xlim: [0.18, 0.62]
+              ylim: [-0.12, 0.42]
+              xticks: [0.2, 0.3, 0.4, 0.5, 0.6]
+              yticks: [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4]
+              hide_yticklabels: true
+              rules:
+                  - {orientation: vertical, at: [0.4]}
+                  - {orientation: horizontal, at: [0.1]}
 
           d:
               kind: cartesian
@@ -109,13 +110,13 @@ figures:
                     mark: scatter
                     encoding: {x: inference__scenario_C__posterior__stimulus.amplitude}
                     style: {color: "#d98a00", opacity: 0.2, opts: {s: 3}}
-              opts:
-                  xlabel: "Stimulus amplitude"
-                  ylabel: ""
-                  xlim: [0.18, 0.62]
-                  ylim: [-0.12, 0.42]
-                  xticks: [0.2, 0.3, 0.4, 0.5, 0.6]
-                  yticks: [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4]
-                  axvline: [0.4]
-                  axhline: [0.1]
-                  hide_yticklabels: true
+              xlabel: "Stimulus amplitude"
+              ylabel: ""
+              xlim: [0.18, 0.62]
+              ylim: [-0.12, 0.42]
+              xticks: [0.2, 0.3, 0.4, 0.5, 0.6]
+              yticks: [-0.1, 0.0, 0.1, 0.2, 0.3, 0.4]
+              hide_yticklabels: true
+              rules:
+                  - {orientation: vertical, at: [0.4]}
+                  - {orientation: horizontal, at: [0.1]}

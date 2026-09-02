@@ -2,12 +2,9 @@
 
 Implements the cardinal HPC contract:
 
-* ``--engine slurm`` re-emits via :mod:`tvbo.cli.workflow` and submits
-  through ``sbatch`` rather than running locally.
-* ``--container IMAGE`` re-execs the run inside the named OCI image
-  (Singularity if ``SINGULARITY_BIND`` is set in the environment, else Docker).
-* ``--shard i/N`` runs one shard of the sweep in-process (no scheduler):
-  cell index ``j`` runs iff ``j %% N == i``. This is what the generated sbatch script invokes for every array index.
+* ``--engine slurm`` re-emits via :mod:`tvbo.cli.workflow` and submits through ``sbatch`` rather than running locally.
+* ``--container IMAGE`` re-execs the run inside the named OCI image (Singularity if ``SINGULARITY_BIND`` is set in the environment, else Docker).
+* ``--shard i/N`` runs one shard of the sweep in-process (no scheduler): cell index ``j`` runs iff ``j %% N == i``. This is what the generated sbatch script invokes for every array index.
 """
 
 from __future__ import annotations
@@ -154,27 +151,21 @@ def run(
     skip: list[str] = typer.Option(
         [],
         "--skip",
-        help="When SPEC declares members, skip these member studies (by label or recipe "
-        "stem), comma-separated/repeatable — their committed figures/results are reused "
-        "as-is. Members flagged `optional:` are skipped by default; pass --all-members "
-        "to include them.",
-    ),
-    all_members: bool = typer.Option(
-        False,
-        "--all-members",
-        help="When SPEC declares members, also run members flagged `optional:` (the heavy studies skipped by default).",
+        help="When SPEC nests studies, skip these sub-studies by label, at any depth, "
+        "comma-separated/repeatable — their committed figures/results are reused as-is. "
+        "Skipping a study skips the studies it holds.",
     ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
-        help="When SPEC declares members, list the members, analyses and result keys that "
-        "WOULD run (honouring --skip / --all-members) and emit nothing.",
+        help="When SPEC nests studies, list the studies, analyses and result keys that "
+        "WOULD run (honouring --skip) and emit nothing.",
     ),
     manifest_only: bool = typer.Option(
         False,
         "--manifest-only",
-        help="When SPEC declares members, emit the results manifest from existing containers "
-        "and authored values only — run no members or experiments. The fast refresh for the "
+        help="When SPEC nests studies, emit the results manifest from existing containers "
+        "and authored values only — run no study or experiment. The fast refresh for the "
         "two-tier build (the heavy `tvbo run` produces the containers; this restamps the "
         "manifest the manuscript reads).",
     ),
@@ -202,7 +193,7 @@ def run(
     kind, obj = _common.resolve_spec(spec)
     requested_out_dir = out_dir
     # Resolved once, so every writer and reader below is handed the same concrete directory and a run persists whether or not -o was passed.
-    if not _has_members(obj):
+    if not _has_nested(obj):
         out_dir = _results_root(spec, out_dir)
 
     # Flags that select or reshape SIMULATION work.
@@ -223,12 +214,15 @@ def run(
         if v is not None
     ]
 
-    if _has_members(obj):
-        # A study-of-studies runs every member end to end with fixed save options, so any of these is silently dropped — turning a one-container request into the whole study, or reporting success for a --save-all that saved record-only.
+    # A study-of-studies owns analyses of its own — the ones reading what its nested studies committed — and `--analysis` names them, so it selects the owning study's own content rather than running the tree. Everything else about the run is unchanged.
+    if _has_nested(obj) and analysis is not None:
+        out_dir = _results_root(spec, out_dir)
+
+    if _has_nested(obj) and analysis is None:
+        # A study-of-studies runs every nested study end to end with fixed save options, so any of these is silently dropped — turning a one-container request into the whole tree, or reporting success for a --save-all that saved record-only.
         rejected = _sim_flags + [
             f
             for f, v in (
-                ("--analysis", analysis),
                 ("--save-all", save_all or None),
                 ("--no-compress", None if compress else True),
                 ("--results-root", results_root),
@@ -237,18 +231,17 @@ def run(
         ]
         if rejected:
             _common.die(
-                f"{spec} declares members, so it runs every member study end to end; "
-                f"{', '.join(rejected)} would be ignored. Point the flag at the member "
+                f"{spec} nests studies, so it runs every one of them end to end; "
+                f"{', '.join(rejected)} would be ignored. Point the flag at the "
                 "study that declares the work."
             )
-        _run_with_members(
+        _run_tree(
             obj,
             spec,
             out_dir,
             backend=backend,
             figures=figures,
             skip=skip,
-            all_members=all_members,
             dry_run=dry_run,
             manifest_only=manifest_only,
         )
@@ -400,8 +393,7 @@ def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experimen
 
     Both partial modes need this and they need it identically. ``--experiment`` re-runs a simulation, ``--analysis`` re-derives a container, and in each case everything downstream keeps the PREVIOUS numbers while the thing it reads is fresh. Nothing raises, so a figure or report built next mixes the two.
 
-    ``recomputed`` names what this run actually produced, which both seeds the walk and drops out of its result. It is the CLOSURE, not what was asked for on the command line:
-    a named analysis pulls a never-produced upstream in with it, and seeding on the request would miss every dependent of that upstream.
+    ``recomputed`` names what this run actually produced, which both seeds the walk and drops out of its result. It is the CLOSURE, not what was asked for on the command line: a named analysis pulls a never-produced upstream in with it, and seeding on the request would miss every dependent of that upstream.
     """
     from tvbo.data.analysis_io import container_path, dependents_of
 
@@ -490,11 +482,14 @@ def _provenance_root(spec: str, out_dir: Path | None) -> Path:
 
 
 def _provenance_ctx(spec: str, obj, out_dir: Path | None = None) -> dict | None:
-    """How this run records what it did, or ``None`` when the study switches it off."""
+    """How this run records what it did, or ``None`` unless the study asks for it.
+
+    Off unless ``workflow.emit_provenance`` is explicitly true: the ``prov/`` records serialize a BEP that is not merged, and a recipe already states what each result was derived from through its ``used:`` edges, so writing them by default duplicated the spec's own account in thousands of files.
+    """
     from tvbo.data import provenance
 
     workflow = getattr(obj, "workflow", None)
-    if workflow is not None and getattr(workflow, "emit_provenance", None) is False:
+    if getattr(workflow, "emit_provenance", None) is not True:
         return None
     return {
         "study_root": _provenance_root(spec, out_dir),
@@ -505,7 +500,7 @@ def _provenance_ctx(spec: str, obj, out_dir: Path | None = None) -> dict | None:
     }
 
 
-def _emit_provenance(ctx: dict | None, container: Path, produced_by: str, outputs=()) -> None:
+def _emit_provenance(ctx: dict | None, container: Path, produced_by: str, outputs=(), used=()) -> None:
     """Record one container's run, reporting rather than raising if it cannot be written.
 
     A run that computed its result has succeeded; failing it afterwards over its own bookkeeping would throw away the compute. The warning names what is missing so the gap is visible rather than silent.
@@ -520,12 +515,27 @@ def _emit_provenance(ctx: dict | None, container: Path, produced_by: str, output
             study_root=ctx["study_root"],
             produced_by=produced_by,
             outputs=outputs,
+            used=used,
             started_at=ctx.get("started_at"),
             requires=ctx.get("requires", ()),
             fmt=ctx["fmt"],
         )
     except Exception as e:  # noqa: BLE001 — the result stands; only its record is missing
         _common.warn(f"provenance for {Path(container).name} not written ({type(e).__name__}: {e})")
+
+
+def _analysis_inputs(analysis, results_root, ctx: dict | None):
+    """The containers an analysis's ``used:`` arguments read, so its activity records what it consumed and not only what it produced.
+
+    Without these the records describe each run in isolation; with them a study's provenance is the derivation graph its analyses actually form.
+    """
+    if analysis is None or ctx is None:
+        return ()
+    from tvbo.data.provenance import input_containers
+    from tvbo.utils import as_list
+
+    refs = [getattr(arg, "used", None) for arg in as_list(getattr(analysis, "arguments", None))]
+    return input_containers(refs, results_root=results_root, study_root=ctx["study_root"])
 
 
 def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str) -> bool:
@@ -543,9 +553,17 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
     root = _results_root(spec, out_dir)
     ctx = _provenance_ctx(spec, obj, out_dir) if (obj := _analysis_owner(spec)) is not None else None
 
+    by_name = {str(getattr(a, "name", "")): a for a in analyses}
+
     def _done(name, path):
         _common.info(f"  wrote {path.relative_to(base) if path.is_relative_to(base) else path}")
-        _emit_provenance(ctx, path, f"tvbo:ana/{ctx['study']}/{name}" if ctx else "", _container_vars(path))
+        _emit_provenance(
+            ctx,
+            path,
+            f"tvbo:ana/{ctx['study']}/{name}" if ctx else "",
+            _container_vars(path),
+            _analysis_inputs(by_name.get(name), root, ctx),
+        )
 
     try:
         run_analyses(
@@ -600,9 +618,7 @@ def _run_whole_study(
 ) -> bool:
     """Run a study's WHOLE pipeline — every experiment, its before/after analyses, its figures.
 
-    The subset of the ``kind == "study"`` branch with no per-run selectors (no --experiment /
-    --shard / --pin / --set), reused for each member study and for the aggregating study's
-    own demo content. Returns whether the after-analysis stage held (figures are skipped if it did not), mirroring the study branch. ``out_dir`` is resolved against this study's own root, so a collection member writes into its own results directory rather than the collection's.
+    The subset of the ``kind == "study"`` branch with no per-run selectors (no --experiment / --shard / --pin / --set), reused for each nested study and for the aggregating study's own demo content. Returns whether the after-analysis stage held (figures are skipped if it did not), mirroring the study branch. ``out_dir`` is resolved against this study's own root, so a nested study writes into its own results directory rather than its holder's.
     """
     base = Path(base).resolve() if base is not None else _spec_base(spec)
     out_dir = Path(out_dir).resolve() if out_dir is not None else study_path_for("results", base)
@@ -633,22 +649,44 @@ def _run_whole_study(
     return ok
 
 
-def _has_members(obj) -> bool:
+def _has_nested(obj) -> bool:
     """Whether this study aggregates others, which is the only thing that changes how a run proceeds."""
     from tvbo.utils import as_list
 
-    return bool(as_list(getattr(obj, "members", None)))
+    return bool(as_list(getattr(obj, "studies", None)))
 
 
-def member_root(base: Path, recipe_dir: Path, recipe: Path) -> Path | None:
-    """Where the member whose recipe is *recipe* writes, for a collection writing into *base*.
+def nested_root(base: Path, recipe_dir: Path, recipe: Path) -> Path | None:
+    """Where the study whose recipe is *recipe* writes, for a tree writing into *base*.
 
-    ``None`` — the member's own directory — whenever the collection has not been redirected, which is the CLI's behaviour and keeps a member's results in its own layout. A redirected collection gives each member a subdirectory named for its recipe, so a run that must not write into the source tree does not write into a member's either.
+    ``None`` — the study's own directory — whenever the run has not been redirected, which is the CLI's behaviour and keeps a nested study's results in its own layout. A redirected run gives each study a subdirectory named for its recipe, so a run that must not write into the source tree does not write into a nested study's either.
     """
     return None if Path(base) == Path(recipe_dir) else Path(base) / Path(recipe).stem
 
 
-def _run_with_members(
+def _tree_to_run(inv, skip: tuple) -> tuple[list, list[str]]:
+    """The studies a run covers and the labels it drops.
+
+    Walks the whole tree depth first, so a study's own analyses and figures run after everything they may read. A skipped label takes the studies it holds with it: dropping a group without dropping what it holds would run those studies while claiming the group was skipped.
+    """
+    skip_set = {s.strip() for part in skip for s in str(part).split(",") if s.strip()}
+    if not skip_set:
+        return list(inv.walk_studies(include_self=False)), []
+    kept, dropped = [], []
+
+    def walk(study) -> None:
+        for label, nested in study.nested_studies():
+            if label in skip_set:
+                dropped.append(label)
+                continue
+            walk(nested)
+            kept.append((label, nested))
+
+    walk(inv)
+    return kept, dropped
+
+
+def _run_tree(
     inv,
     spec: str,
     out_dir: Path | None,
@@ -656,16 +694,15 @@ def _run_with_members(
     backend: str | None = None,
     figures: bool = True,
     skip=(),
-    all_members: bool = False,
     dry_run: bool = False,
     manifest_only: bool = False,
     base: Path | None = None,
 ) -> None:
-    """Run a study-of-studies: every member study, then this study's own content, then the results manifest the manuscript reads.
+    """Run a study-of-studies: every nested study depth first, then this study's own content, then the results manifest the manuscript reads.
 
-    Optional members are skipped unless ``all_members``; ``skip`` drops named members (by label or recipe stem); ``dry_run`` lists what would run and emits nothing. Each member runs in its own directory, so its results land in its own layout rather than the aggregating study's. The manifest lands at ``<study-dir>/manuscript_results.yml`` — a committed derived artifact (the seam Quarto reads as ``{{< meta results.* >}}``), so the build never needs the generated run containers; an unresolved result key hard-fails the run.
+    ``skip`` drops named studies at any depth (and everything they hold); ``dry_run`` lists what would run and emits nothing. Each nested study runs in its own directory, so its results land in its own layout rather than the aggregating study's. The manifest lands at ``<study-dir>/manuscript_results.yml`` — a committed derived artifact (the seam Quarto reads as ``{{< meta results.* >}}``), so the build never needs the generated run containers; an unresolved result key hard-fails the run.
 
-    ``base`` redirects everything this run WRITES, leaving what it READS alone: member recipes still resolve against the recipe's own directory, while each member's results land in a subdirectory of ``base`` named for its recipe. Defaults to the recipe's directory, which is the CLI's behaviour.
+    ``base`` redirects everything this run WRITES, leaving what it READS alone: nested recipes still resolve against their own directories, while each one's results land in a subdirectory of ``base`` named for its recipe. Defaults to the recipe's directory, which is the CLI's behaviour.
     """
     from tvbo.data.analysis_io import analysis_name, study_analyses
     from tvbo.data.study_manifest import MANIFEST_NAME, emit_manifest
@@ -673,19 +710,16 @@ def _run_with_members(
 
     recipe_dir = Path(getattr(inv, "_source_file", spec)).resolve().parent
     base = Path(base).resolve() if base is not None else recipe_dir
-    skip_set = {s.strip() for part in skip for s in str(part).split(",") if s.strip()}
-    members = inv.member_recipes(recipe_dir, include_optional=all_members)
-    to_run = [(label, p) for label, p in members if label not in skip_set and Path(p).stem not in skip_set]
-    skipped = [label for label, p in members if (label, p) not in to_run]
+    to_run, skipped = _tree_to_run(inv, tuple(skip))
     own_analyses = [analysis_name(a) for a in study_analyses(inv)]
     n_results = len(as_list(getattr(inv, "results", None)))
 
     if dry_run:
         _common.info(f"[dry-run] study of studies: {getattr(inv, 'title', None) or spec}")
-        for label, p in to_run:
-            _common.info(f"  member: {label}  ({p})")
+        for label, nested in to_run:
+            _common.info(f"  study: {label}  ({getattr(nested, '_source_file', '?')})")
         for label in skipped:
-            _common.info(f"  member skipped: {label}")
+            _common.info(f"  study skipped: {label}")
         if own_analyses:
             _common.info(f"  own analyses: {', '.join(own_analyses)}")
         _common.info(f"  own figures: {len(as_list(getattr(inv, 'figures', None)))}")
@@ -704,15 +738,14 @@ def _run_with_members(
         _emit()
         return
 
-    # A failed analysis stage means the containers the manifest reads are stale or absent, so emitting from them would report a number the run did not produce. Members are all attempted first — one broken member should not hide the state of the others.
+    # A failed analysis stage means the containers the manifest reads are stale or absent, so emitting from them would report a number the run did not produce. Every study is attempted first — one broken study should not hide the state of the others.
     failed: list[str] = []
-    for label, p in to_run:
-        _common.info(f"=== member: {label} ({p}) ===")
-        kind, mobj = _common.resolve_spec(str(p))
-        if kind != "study":
-            _common.warn(f"member {label!r} resolves to a {kind}, not a study; skipping.")
-            continue
-        if not _run_whole_study(mobj, str(p), None, backend=backend, figures=figures, base=member_root(base, recipe_dir, p)):
+    for label, nested in to_run:
+        source = getattr(nested, "_source_file", None) or spec
+        _common.info(f"=== study: {label} ({source}) ===")
+        if not _run_whole_study(
+            nested, str(source), None, backend=backend, figures=figures, base=nested_root(base, recipe_dir, Path(source))
+        ):
             failed.append(label)
 
     if not _run_whole_study(inv, spec, inv_out, backend=backend, figures=figures, base=base):

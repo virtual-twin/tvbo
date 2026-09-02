@@ -86,9 +86,12 @@ This is not hypothetical. In Herzog2024 the tuning rule was replaced with the pu
 
 ```python
 newest_exp = max(locate_exp_container(results, e.id).stat().st_mtime for e in study.experiments)
-stale = [a.name for a in study.analyses
-         if not analysis_container_path(results, str(a.name)).exists()
-         or analysis_container_path(results, str(a.name)).stat().st_mtime < newest_exp]
+stale = [
+    a.name
+    for a in study.analyses
+    if not analysis_container_path(results, str(a.name)).exists()
+    or analysis_container_path(results, str(a.name)).stat().st_mtime < newest_exp
+]
 ```
 
 Two deliberate choices. **A missing container counts as stale, not as skipped** — otherwise deleting a result turns a failure into a silent pass, which is the aborting-harness bug wearing different clothes. And **compare against the newest experiment rather than walking the dependency graph**: a graph is more code and more places to miss an edge (an analysis reading another analysis reading the experiment), while the cost of the coarse rule is only that it asks you to recompute an analysis that did not need it, and analyses are cheap. State in the docstring that it is coarse and why that is sufficient, so the next reader does not "improve" it into something that misses a transitive edge.

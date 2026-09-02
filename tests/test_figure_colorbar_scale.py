@@ -34,11 +34,11 @@ def study(tmp_path):
     return tmp_path
 
 
-def _figure(*, center=None, bar_opts=None, panel_opts=None):
+def _figure(*, center=None, bar=None, panel_slots=None):
     """A heatmap beside a standalone scale, both bound to the same layer and centred alike."""
     ref = P.DataRef(iri="tvbo:synth", output="corr")
     style_opts = {} if center is None else {"center": P.Argument(name="center", value=center)}
-    bar_opts = {**style_opts, **(bar_opts or {})}
+    bar = {"colormap": "RdBu_r", **({} if center is None else {"center": center}), **(bar or {})}
     return P.Figure(
         name="scale",
         layout="ab",
@@ -54,13 +54,14 @@ def _figure(*, center=None, bar_opts=None, panel_opts=None):
                         style=P.Style(colormap="RdBu_r", opts=style_opts),
                     )
                 ],
-                opts={"colorbar": P.Argument(name="colorbar", value=False), **(panel_opts or {})},
+                colorbar={"show": False},
+                **(panel_slots or {}),
             ),
             "b": P.Panel(
                 panel_key="b",
                 kind="colorbar",
                 layers=[P.Layer(used=ref, encoding=P.Encoding(x="node", y="node2"))],
-                opts={"cmap": P.Argument(name="cmap", value="RdBu_r"), **bar_opts},
+                colorbar=bar,
             ),
         },
     )
@@ -88,8 +89,7 @@ def test_the_panel_letter_lands_on_the_slot_not_on_the_bar(study):
 
 def test_a_declared_frame_lands_on_the_bar(study):
     """Ticks are a property of the scale; the slot behind it carries no axis at all."""
-    bar_opts = {"ticks": P.Argument(name="ticks", value=[-0.4, 0.0, 0.2])}
-    fig = bsplot.render(_figure(bar_opts=bar_opts), str(study), str(study / "out.png"))
+    fig = bsplot.render(_figure(bar={"ticks": [-0.4, 0.0, 0.2]}), str(study), str(study / "out.png"))
     _slot, bar = _slot_and_bar(fig)
     np.testing.assert_allclose(bar.get_yticks(), [-0.4, 0.0, 0.2])
 
@@ -111,8 +111,7 @@ def test_an_uncentred_scale_spans_the_whole_map(study):
 
 
 def test_tick_prune_stands_on_its_own(study):
-    """``tick_prune`` is a first-class tick directive, not a modifier of ``nbins``: declared alone it dropped no tick and raised nothing."""
-    opts = {"tick_prune": P.Argument(name="tick_prune", value="upper")}
+    """``tick_prune`` is a declared panel slot, not a modifier of ``nbins``: stated alone it drops the end tick and raises nothing."""
     plain = bsplot.render(_figure(), str(study), str(study / "plain.png")).axes[0]
-    pruned = bsplot.render(_figure(panel_opts=opts), str(study), str(study / "pruned.png")).axes[0]
+    pruned = bsplot.render(_figure(panel_slots={"tick_prune": "upper"}), str(study), str(study / "pruned.png")).axes[0]
     assert max(pruned.get_xticks()) < max(plain.get_xticks())

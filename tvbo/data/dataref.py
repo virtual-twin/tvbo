@@ -75,7 +75,9 @@ def locate_exp_container(results_root, source_id) -> Path:
     import re
 
     root = Path(results_root) if results_root else Path.cwd()
-    cands = sorted(p for p in root.glob(f"**/*exp-{source_id}_*.h5") if "network" not in p.name)
+    from tvbo.utils.study_layout import is_network_companion
+
+    cands = sorted(p for p in root.glob(f"**/*exp-{source_id}_*.h5") if not is_network_companion(p))
     if not cands:
         raise FileNotFoundError(
             f"cross-experiment sourcing: no saved result for experiment {source_id} "
@@ -177,7 +179,13 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Pat
         p = Path(str(iri))
         if p.exists():
             return p
-        kind, _study, name = iri_scope(iri)
+        kind, owner, name = iri_scope(iri)
+        # A reference naming a study names a container in THAT study's results; resolving its experiment number against the referring study's root is how a binding silently reads the wrong run.
+        if owner and results_root is not None:
+            from tvbo.utils.study_layout import sibling_study_root, study_path
+
+            owned = sibling_study_root(owner, results_root)
+            results_root = study_path("results", root=owned) if owned else results_root
         if kind == "ana":
             return locate_analysis_container(results_root, name)
         eid = experiment_id(iri)

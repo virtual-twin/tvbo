@@ -241,9 +241,13 @@ def ran(tmp_path):
     return _run
 
 
+ON = "workflow:\n  emit_provenance: true\n"
+"""What a study that wants the BEP028 records declares. Every test below asks for them explicitly, because a run does not write them unless the recipe says so."""
+
+
 def test_a_run_leaves_its_provenance_beside_the_study(ran):
     """The records describe a run, so a run has to be what writes them."""
-    root = ran()
+    root = ran(ON)
     prov = root / relpath("provenance", load_layout())
     assert sorted(p.name for p in prov.glob("*")) == [f"prov-exp3_{k}.yaml" for k in ("act", "ent", "env", "soft")]
 
@@ -252,7 +256,7 @@ def test_the_recorded_container_is_the_one_the_run_wrote(ran):
     """A record naming a file the run did not produce is worse than no record."""
     import yaml
 
-    root = ran()
+    root = ran(ON)
     entity = yaml.safe_load((root / relpath("provenance", load_layout()) / "prov-exp3_ent.yaml").read_text())
     assert (root / entity["container"]).is_file()
 
@@ -261,13 +265,100 @@ def test_the_outputs_are_read_from_the_container_not_the_spec(ran):
     """A run that recorded less than it declared must be visible in the record."""
     import yaml
 
-    root = ran()
+    root = ran(ON)
     entity = yaml.safe_load((root / relpath("provenance", load_layout()) / "prov-exp3_ent.yaml").read_text())
     with xr.open_dataset(root / entity["container"], engine="h5netcdf") as ds:
         assert entity["outputs"] == sorted(str(v) for v in ds.data_vars)
 
 
-def test_a_study_can_switch_provenance_off(ran):
-    """Declared in the spec, so the choice travels with the recipe rather than with the machine."""
-    root = ran("workflow:\n  emit_provenance: false\n")
+def test_a_run_writes_no_provenance_unless_the_study_asks(ran):
+    """Off by default: BEP028 is not merged, and the recipe's own `used:` edges already say what each result came from, so writing the records unasked duplicates that account across thousands of files."""
+    root = ran()
     assert not (root / relpath("provenance", load_layout())).exists()
+
+
+def test_a_study_can_switch_provenance_on(ran):
+    """Declared in the spec, so the choice travels with the recipe rather than with the machine."""
+    root = ran(ON)
+    assert (root / relpath("provenance", load_layout())).is_dir()
+
+
+# ------------------------------------------------------- read back as a graph
+
+
+def test_a_record_set_is_read_back_under_its_own_label(study):
+    """The label is the join between the four kinds, so reading has to key on it and not on the filename."""
+    root, _ = _records(study)
+    sets = provenance.read_records(root / relpath("provenance", load_layout()))
+    assert sorted(sets) == ["exp3"]
+    assert sorted(sets["exp3"]) == ["act", "ent", "env", "soft"]
+
+
+def test_a_half_written_set_is_still_read(study):
+    """A run interrupted between two records still describes what it did up to then."""
+    root, files = _records(study)
+    files["prov-exp3_ent.yaml"].unlink()
+    sets = provenance.read_records(root / relpath("provenance", load_layout()))
+    assert sorted(sets["exp3"]) == ["act", "env", "soft"]
+
+
+def test_an_absent_provenance_directory_reads_as_no_records(tmp_path):
+    """A study that switched provenance off has no records, which is not an error."""
+    assert provenance.read_records(tmp_path / "nowhere") == {}
+
+
+def test_every_node_carries_its_prov_o_type(study):
+    """A consumer draws the graph by what a node IS, so the type cannot be left to the caller to infer."""
+    root, _ = _records(study)
+    graph = provenance.provenance_graph(root / relpath("provenance", load_layout()))
+    kinds = {node["type"] for node in graph["nodes"]}
+    assert kinds <= {provenance.PROV_ACTIVITY, provenance.PROV_ENTITY, provenance.PROV_AGENT}
+    assert provenance.PROV_ACTIVITY in kinds and provenance.PROV_ENTITY in kinds
+
+
+def test_the_entity_was_generated_by_the_activity_of_its_own_label(study):
+    """The one edge the records state outright; getting it wrong would misattribute every artifact."""
+    root, _ = _records(study)
+    graph = provenance.provenance_graph(root / relpath("provenance", load_layout()))
+    generated = [e for e in graph["edges"] if e["relation"] == "prov:wasGeneratedBy"]
+    assert len(generated) == 1
+    assert generated[0]["target"] == "activity:exp3"
+
+
+def test_a_used_reference_becomes_a_derivation_edge(study):
+    """`prov:used` is what makes a set of runs one derivation rather than a pile of independent ones."""
+    root, container = study
+    provenance.emit(
+        container=container,
+        study_root=root,
+        produced_by="tvbo:ana/Demo/summary",
+        outputs=["theta"],
+        used=[str(relpath("results", load_layout())) + "/exp-3_model-Kuramoto_result.h5"],
+    )
+    graph = provenance.provenance_graph(root / relpath("provenance", load_layout()))
+    used = [e for e in graph["edges"] if e["relation"] == "prov:used"]
+    assert len(used) == 1
+    assert used[0]["source"] == "activity:anasummary"
+
+
+def test_an_input_this_study_never_produced_is_still_a_node(study):
+    """An entity that is only ever used is exactly what an external input looks like, and dropping it hides one."""
+    root, container = study
+    provenance.emit(
+        container=container,
+        study_root=root,
+        produced_by="tvbo:ana/Demo/summary",
+        outputs=["theta"],
+        used=["sourcedata/an-external-input.h5"],
+    )
+    graph = provenance.provenance_graph(root / relpath("provenance", load_layout()))
+    entities = {n["label"] for n in graph["nodes"] if n["type"] == provenance.PROV_ENTITY}
+    assert "sourcedata/an-external-input.h5" in entities
+
+
+def test_an_unresolvable_used_binding_is_a_missing_edge_not_a_failed_run(tmp_path):
+    """Provenance describes a run that already succeeded; a binding it never read cannot fail it afterwards."""
+    from types import SimpleNamespace
+
+    refs = [SimpleNamespace(experiment=None, analysis=None, iri="tvbo:exp/Nowhere/exp-99")]
+    assert provenance.input_containers(refs, results_root=tmp_path, study_root=tmp_path) == []

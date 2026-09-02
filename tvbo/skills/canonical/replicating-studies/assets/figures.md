@@ -15,8 +15,9 @@ Then measure both sides and make the aspect match before drawing anything:
 
 ```python
 from PIL import Image
+
 w, h = Image.open("sourcedata/original_study/img/fig_03.png").size
-print(w, h, h / w)          # 1611 889 0.5518  -> a single landscape row, not a portrait
+print(w, h, h / w)  # 1611 889 0.5518  -> a single landscape row, not a portrait
 ```
 
 `height = width * (h/w)`, with `trim_margins: false`, and the mosaic laid out the way the paper lays it out. Herzog2024 declared `layout: "ab/cc"` at aspect 1.10 against an original at 0.55 and carried the wrong shape through every review, because nothing ever put the two side by side.
@@ -24,10 +25,9 @@ print(w, h, h / w)          # 1611 889 0.5518  -> a single landscape row, not a 
 Stage the composites from a `code/compare_figures.py` the study runs itself, not only from the report's internal build:
 
 ```python
-os.environ.setdefault("QUARTO_DOCUMENT_FILE", "report_internal.qmd")   # the internal-build marker report_figure checks
+os.environ.setdefault("QUARTO_DOCUMENT_FILE", "report_internal.qmd")  # the internal-build marker report_figure checks
 for figure in study.figures:
-    report_figure(rendered / f"{figure.name}.png", reference_image_for(figure, ROOT),
-                  credit="<Authors> <year> (c)")
+    report_figure(rendered / f"{figure.name}.png", reference_image_for(figure, ROOT), credit="<Authors> <year> (c)")
 ```
 
 Composites land in the layout's `figures_restricted` role — `sourcedata/original_study/fig_comparisons/` — which the `sourcedata/*` ignore rule already covers, so the publisher's material never enters the repository. Run it after every `tvbo figure render` and look at the result.
@@ -35,8 +35,7 @@ Composites land in the layout's `figures_restricted` role — `sourcedata/origin
 **Guard the binding, because its failure is silent.** `reference_image_for` falls back to a file named after our figure at the study root; no replication has one, so an undeclared binding returns `None` and every consumer reads that as "no original to show" rather than "the binding is missing". Put it in the standing harness:
 
 ```python
-unbound = [f.name for f in study.figures
-           if (p := reference_image_for(f, ROOT)) is None or not Path(p).is_file()]
+unbound = [f.name for f in study.figures if (p := reference_image_for(f, ROOT)) is None or not Path(p).is_file()]
 rep.check("every figure names the published original it reproduces", "identity", not unbound, ...)
 ```
 
@@ -59,8 +58,8 @@ A placeholder is not a defect to drive to zero — it states the extent of the r
 ```python
 drawn = [t.get_fontsize() for t in fig.findobj(plt.Text) if t.get_visible() and t.get_text().strip()]
 modal = collections.Counter(round(x, 2) for x in drawn).most_common(1)[0][0]
-assert abs(modal - declared_font_size) <= 0.5      # nothing silently overrode the declaration
-assert min(drawn) >= 6.0                           # nothing is below what a reader can follow in print
+assert abs(modal - declared_font_size) <= 0.5  # nothing silently overrode the declaration
+assert min(drawn) >= 6.0  # nothing is below what a reader can follow in print
 ```
 
 Two failures with two different fixes: a modal size that is not the declared one means an override you did not write, and a minimum below the floor means a crowding problem a smaller type size was hiding — spend a label budget, not a font step.
@@ -81,7 +80,8 @@ Two failures with two different fixes: a modal size that is not the declared one
   2. **A point size is meaningless without the width it was measured at.** Apparent size is the ratio of glyph height to figure WIDTH. Pixel forensics on a 120 mm (1.5-column) original that you then reproduce at 183 mm yields type ~1.5× too small — and the same error scales every `linewidth`, `markersize` and tick length in the file. If a `.mplstyle` is derived from measurements, record the width they were taken at and rescale by `target_mm / measured_mm`.
 
   **The check (do it, don't assume):** binarise the rendered PNG and the paper's own scan, take connected components with `5 <= h <= 40 px`, and compare the modal glyph height as a PERCENTAGE OF IMAGE WIDTH. That ratio is resolution-independent, so it compares a 953 px scan with a 2161 px render directly. Journals run ~0.7–0.85 %; land within that or slightly above. **Aim a little above the original** — a Nature figure's 6 pt labels are legible at 183 mm in print and illegible on screen at 2000 px, and every replication we have shipped erred small, three of them after this rule was already written down.
-- **Grammar panels need zero code.** A `cartesian` or `heatmap` panel binds data through its `layers`: `used: {iri: tvbo:exp/<Study>/exp-3, output: <var|observation__name>, sel: {dim: label}}` (label-keyed, never positional — this binding **is** the PROV `used` edge), plus `mark` (`line`/`scatter`/`rule`/`band`/`area`/`bar`; implied for heatmap) and `encoding: {x, y, color}` naming container dims/coords. **`band` draws a spread** (`fill_between`) and its output must carry a length-2 axis beside the swept one — the analysis returns `mean ± sd` as ONE `(n, 2)` array with a `bound: [lo, hi]` coordinate, so a figure cannot bind a lower edge from one run and an upper edge from another. Draw the band layer BEFORE its mean line, or the fill covers the curve it belongs to. **`rule` draws a reference line at a value the CONTAINER holds** — an ensemble mean, a published number the recipe declared as an analysis argument and the analysis echoed back — with the encoded channel picking the orientation (`x:` vertical). Prefer it to the `axvline`/`axhline` opts, which take a literal typed into the spec and render as subdued gridlines: a marker the figure exists to make is worth a styleable layer and a PROV edge. `transform:` names an optional presentation-only reduction. Bind an **in-study** experiment by id — `used: {experiment: 3}` — rather than spelling a full `iri`: it needs no hardcoded study key and registers the run-order dependency (that experiment runs before the figure). Reserve an explicit `iri` for a curated/external container.
+- **Grammar panels need zero code.** A `cartesian` or `heatmap` panel binds data through its `layers`: `used: {iri: tvbo:exp/<Study>/exp-3, output: <var|observation__name>, sel: {dim: label}}` (label-keyed, never positional — this binding **is** the PROV `used` edge), plus `mark` (`line`/`scatter`/`rule`/`band`/`area`/`bar`; implied for heatmap) and `encoding: {x, y, color}` naming container dims/coords. **`band` draws a spread** (`fill_between`) and its output must carry a length-2 axis beside the swept one — the analysis returns `mean ± sd` as ONE `(n, 2)` array with a `bound: [lo, hi]` coordinate, so a figure cannot bind a lower edge from one run and an upper edge from another. Draw the band layer BEFORE its mean line, or the fill covers the curve it belongs to. **`rule` draws a reference line at a value the CONTAINER holds** — an ensemble mean, a published number the recipe declared as an analysis argument and the analysis echoed back — with the encoded channel picking the orientation (`x:` vertical). Prefer it to a `rules:` entry, which takes a literal typed into the spec and renders as a subdued gridline: a marker the figure exists to make is worth a styleable layer and a PROV edge. `transform:` names an optional presentation-only reduction. Bind an **in-study** experiment by id — `used: {experiment: 3}` — rather than spelling a full `iri`: it needs no hardcoded study key and registers the run-order dependency (that experiment runs before the figure). Reserve an explicit `iri` for a curated/external container.
+- **Every axis directive, and every built-in kind's options, are declared slots — `opts:` is a custom callable's keywords.** Labels, limits, scales, shape, ticks, `legend`, `rules`, `regions` and `camera` sit on the panel; a built-in kind's own options are the object named after it (`surface:`, `volume:`, `network:`, `grid:`, `colorbar:`). A retired spelling is refused by name, per kind — `color`/`cmap`/`labels` stay good keywords for a `custom` panel. `python scripts/migrate_panel_marks.py <study>` converts a tree.
 - **Only a bespoke interior is code.** A `custom` panel sets `render: <fn>` + `opts:`, where `<fn>` is a `@bsplot.register_panel` callable `fn(fig, ax, ctx)` in a module named in the figure's `code_modules:` (a flat file in `code/`, e.g. `code/<study>_figures.py`). It reads its resolved layers with `bsplot.load_layer(ctx["layers"][i])` and draws. A reused reduction is a `@bsplot.register_transform` `fn(da)->da`. This is the escape hatch — reach for it only when the grammar genuinely can't express the panel (twin axes, connectome, brain surface, dense nested subgrids), not by default.
 - **A bespoke panel that builds its OWN sub-grid uses `fig.subplot_mosaic` + the compressed engine — never `add_gridspec` + `canvas.draw()` + `get_position()` + `fig.add_axes`/`fig.text` at hand-computed figure coordinates.** A custom panel takes over the whole figure and its single `ax` is unused, so drop it first (`for a in list(fig.axes): a.remove()`), then lay the whole panel out as ONE mosaic — heatmap cells, a per-row colorbar cell, and a thin spanning header row for group titles — with `width_ratios`/`height_ratios` and `empty_sentinel="."` gutters; let `layout: compressed` pack it. Put the shared axis titles on `fig.supxlabel` / `fig.supylabel`, not `fig.text`. The manual-coordinate approach (`canvas.draw()` to read boxes, then `add_axes`/`text` off `get_position()`) is fragile, breaks under a resize or a different DPI, and is what makes a grid figure look "off". **And do NOT rely on the base style moving the spines**: if the panel wants a clean data-box (a heatmap), reset each axes' spines explicitly (`s.set_visible(True); s.set_position(("outward", 0))`) so an offset-spine base style can't detach them from the axes.
 

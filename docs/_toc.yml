@@ -373,6 +373,8 @@ website:
                         href: datamodel/classes/CachedArray.qmd
                       - text: "Callable"
                         href: datamodel/classes/Callable.qmd
+                      - text: "Camera"
+                        href: datamodel/classes/Camera.qmd
                       - text: "Case"
                         href: datamodel/classes/Case.qmd
                       - text: "Class Reference"
@@ -385,8 +387,12 @@ website:
                         href: datamodel/classes/ClinicalScore.qmd
                       - text: "Code Source"
                         href: datamodel/classes/CodeSource.qmd
+                      - text: "Colorbar"
+                        href: datamodel/classes/Colorbar.qmd
                       - text: "Colormaps"
                         href: datamodel/classes/Colormaps.qmd
+                      - text: "Color Scale"
+                        href: datamodel/classes/ColorScale.qmd
                       - text: "Common Coordinate Space"
                         href: datamodel/classes/CommonCoordinateSpace.qmd
                       - text: "Conditional Block"
@@ -467,8 +473,12 @@ website:
                         href: datamodel/classes/Function.qmd
                       - text: "Function Call"
                         href: datamodel/classes/FunctionCall.qmd
+                      - text: "Graph"
+                        href: datamodel/classes/Graph.qmd
                       - text: "Graph Generator"
                         href: datamodel/classes/GraphGenerator.qmd
+                      - text: "Grid"
+                        href: datamodel/classes/Grid.qmd
                       - text: "Inference"
                         href: datamodel/classes/Inference.qmd
                       - text: "Initial State"
@@ -481,6 +491,8 @@ website:
                         href: datamodel/classes/Layer.qmd
                       - text: "Layout Template Variant"
                         href: datamodel/classes/LayoutTemplateVariant.qmd
+                      - text: "Legend"
+                        href: datamodel/classes/Legend.qmd
                       - text: "Likelihood"
                         href: datamodel/classes/Likelihood.qmd
                       - text: "Loss Function"
@@ -549,6 +561,8 @@ website:
                         href: datamodel/classes/Reference.qmd
                       - text: "Reference Fingerprint"
                         href: datamodel/classes/ReferenceFingerprint.qmd
+                      - text: "Region"
+                        href: datamodel/classes/Region.qmd
                       - text: "Region Mapping"
                         href: datamodel/classes/RegionMapping.qmd
                       - text: "Render Spec"
@@ -557,6 +571,8 @@ website:
                         href: datamodel/classes/ResultBinding.qmd
                       - text: "Result Entity"
                         href: datamodel/classes/ResultEntity.qmd
+                      - text: "Rule"
+                        href: datamodel/classes/Rule.qmd
                       - text: "Sample"
                         href: datamodel/classes/Sample.qmd
                       - text: "Scalar Value"
@@ -607,8 +623,12 @@ website:
                         href: datamodel/classes/Style.qmd
                       - text: "Subject"
                         href: datamodel/classes/Subject.qmd
+                      - text: "Surface"
+                        href: datamodel/classes/Surface.qmd
                       - text: "Surrogate"
                         href: datamodel/classes/Surrogate.qmd
+                      - text: "Theme"
+                        href: datamodel/classes/Theme.qmd
                       - text: "Time Series"
                         href: datamodel/classes/TimeSeries.qmd
                       - text: "Tool Unit"
@@ -619,6 +639,8 @@ website:
                         href: datamodel/classes/TuningObjective.qmd
                       - text: "Update Rule"
                         href: datamodel/classes/UpdateRule.qmd
+                      - text: "Volume"
+                        href: datamodel/classes/Volume.qmd
                       - text: "Workflow Config"
                         href: datamodel/classes/WorkflowConfig.qmd
                       - text: "Workflow Engine Config"
@@ -703,8 +725,12 @@ website:
                         href: datamodel/slots/array_chunk.qmd
                       - text: "arrow"
                         href: datamodel/slots/arrow.qmd
+                      - text: "aspect"
+                        href: datamodel/slots/aspect.qmd
                       - text: "associated_with"
                         href: datamodel/slots/associated_with.qmd
+                      - text: "at"
+                        href: datamodel/slots/at.qmd
                       - text: "atlas"
                         href: datamodel/slots/atlas.qmd
                       - text: "author"
@@ -723,6 +749,10 @@ website:
                         href: datamodel/slots/axesOrigin.qmd
                       - text: "axis"
                         href: datamodel/slots/axis.qmd
+                      - text: "axis_width"
+                        href: datamodel/slots/axis_width.qmd
+                      - text: "azimuth"
+                        href: datamodel/slots/azimuth.qmd
                       - text: "backend"
                         href: datamodel/slots/backend.qmd
                       - text: "backends"
@@ -739,6 +769,8 @@ website:
                         href: datamodel/slots/batch_size.qmd
                       - text: "bc_type"
                         href: datamodel/slots/bc_type.qmd
+                      - text: "between"
+                        href: datamodel/slots/between.qmd
                       - text: "bids"
                         href: datamodel/slots/bids.qmd
                       - text: "bids_dir"
@@ -753,12 +785,16 @@ website:
                         href: datamodel/slots/block_size.qmd
                       - text: "bothside"
                         href: datamodel/slots/bothside.qmd
+                      - text: "bottom"
+                        href: datamodel/slots/bottom.qmd
                       - text: "boundaries"
                         href: datamodel/slots/boundaries.qmd
                       - text: "boundary_conditions"
                         href: datamodel/slots/boundary_conditions.qmd
                       - text: "bounds"
                         href: datamodel/slots/bounds.qmd
+                      - text: "box_aspect"
+                        href: datamodel/slots/box_aspect.qmd
                       - text: "branches"
                         href: datamodel/slots/branches.qmd
                       - text: "build_hash"
@@ -773,6 +809,8 @@ website:
                         href: datamodel/slots/call_args.qmd
                       - text: "callable"
                         href: datamodel/slots/callable.qmd
+                      - text: "camera"
+                        href: datamodel/slots/camera.qmd
                       - text: "capture"
                         href: datamodel/slots/capture.qmd
                       - text: "cases"
@@ -813,12 +851,24 @@ website:
                         href: datamodel/slots/coefficient.qmd
                       - text: "cohort"
                         href: datamodel/slots/cohort.qmd
+                      - text: "col_label_pad"
+                        href: datamodel/slots/col_label_pad.qmd
+                      - text: "col_label_size"
+                        href: datamodel/slots/col_label_size.qmd
+                      - text: "col_labels"
+                        href: datamodel/slots/col_labels.qmd
                       - text: "color"
                         href: datamodel/slots/color.qmd
+                      - text: "colorbar"
+                        href: datamodel/slots/colorbar.qmd
                       - text: "colormap"
                         href: datamodel/slots/colormap.qmd
                       - text: "colormaps"
                         href: datamodel/slots/colormaps.qmd
+                      - text: "colors"
+                        href: datamodel/slots/colors.qmd
+                      - text: "columns"
+                        href: datamodel/slots/columns.qmd
                       - text: "command"
                         href: datamodel/slots/command.qmd
                       - text: "comment"
@@ -845,6 +895,8 @@ website:
                         href: datamodel/slots/connectivity.qmd
                       - text: "connectivity_ref"
                         href: datamodel/slots/connectivity_ref.qmd
+                      - text: "connectome"
+                        href: datamodel/slots/connectome.qmd
                       - text: "constructor_args"
                         href: datamodel/slots/constructor_args.qmd
                       - text: "contact_id"
@@ -901,6 +953,8 @@ website:
                         href: datamodel/slots/cse.qmd
                       - text: "curvature"
                         href: datamodel/slots/curvature.qmd
+                      - text: "dash"
+                        href: datamodel/slots/dash.qmd
                       - text: "data"
                         href: datamodel/slots/data.qmd
                       - text: "data_file"
@@ -923,6 +977,8 @@ website:
                         href: datamodel/slots/date_created.qmd
                       - text: "date_modified"
                         href: datamodel/slots/date_modified.qmd
+                      - text: "decimals"
+                        href: datamodel/slots/decimals.qmd
                       - text: "default"
                         href: datamodel/slots/default.qmd
                       - text: "default Image"
@@ -937,6 +993,8 @@ website:
                         href: datamodel/slots/delayed.qmd
                       - text: "delta_p"
                         href: datamodel/slots/delta_p.qmd
+                      - text: "density"
+                        href: datamodel/slots/density.qmd
                       - text: "depends_on"
                         href: datamodel/slots/depends_on.qmd
                       - text: "derivative_initial_value"
@@ -1021,10 +1079,18 @@ website:
                         href: datamodel/slots/dynamics.qmd
                       - text: "ecosystem"
                         href: datamodel/slots/ecosystem.qmd
+                      - text: "edge_alpha"
+                        href: datamodel/slots/edge_alpha.qmd
+                      - text: "edge_color"
+                        href: datamodel/slots/edge_color.qmd
                       - text: "edge_matrix_files"
                         href: datamodel/slots/edge_matrix_files.qmd
+                      - text: "edge_percentile"
+                        href: datamodel/slots/edge_percentile.qmd
                       - text: "edge_template"
                         href: datamodel/slots/edge_template.qmd
+                      - text: "edge_width"
+                        href: datamodel/slots/edge_width.qmd
                       - text: "edges"
                         href: datamodel/slots/edges.qmd
                       - text: "efield"
@@ -1043,6 +1109,8 @@ website:
                         href: datamodel/slots/element_type.qmd
                       - text: "elements"
                         href: datamodel/slots/elements.qmd
+                      - text: "elevation"
+                        href: datamodel/slots/elevation.qmd
                       - text: "emit"
                         href: datamodel/slots/emit.qmd
                       - text: "emit_kind"
@@ -1115,14 +1183,22 @@ website:
                         href: datamodel/slots/file.qmd
                       - text: "files"
                         href: datamodel/slots/files.qmd
+                      - text: "fill"
+                        href: datamodel/slots/fill.qmd
+                      - text: "fill_cell"
+                        href: datamodel/slots/fill_cell.qmd
                       - text: "find_fixpoint"
                         href: datamodel/slots/find_fixpoint.qmd
+                      - text: "font_family"
+                        href: datamodel/slots/font_family.qmd
                       - text: "font_size"
                         href: datamodel/slots/font_size.qmd
                       - text: "format"
                         href: datamodel/slots/format.qmd
                       - text: "fps"
                         href: datamodel/slots/fps.qmd
+                      - text: "fraction"
+                        href: datamodel/slots/fraction.qmd
                       - text: "frame"
                         href: datamodel/slots/frame.qmd
                       - text: "frames"
@@ -1161,6 +1237,10 @@ website:
                         href: datamodel/slots/graph_representation.qmd
                       - text: "gres"
                         href: datamodel/slots/gres.qmd
+                      - text: "grid"
+                        href: datamodel/slots/grid.qmd
+                      - text: "grid_lines"
+                        href: datamodel/slots/grid_lines.qmd
                       - text: "grounding"
                         href: datamodel/slots/grounding.qmd
                       - text: "group"
@@ -1171,6 +1251,8 @@ website:
                         href: datamodel/slots/ha.qmd
                       - text: "handedness"
                         href: datamodel/slots/handedness.qmd
+                      - text: "handle_length"
+                        href: datamodel/slots/handle_length.qmd
                       - text: "has_reference"
                         href: datamodel/slots/has_reference.qmd
                       - text: "hash"
@@ -1191,6 +1273,10 @@ website:
                         href: datamodel/slots/heterogeneous.qmd
                       - text: "hi"
                         href: datamodel/slots/hi.qmd
+                      - text: "hide_xticklabels"
+                        href: datamodel/slots/hide_xticklabels.qmd
+                      - text: "hide_yticklabels"
+                        href: datamodel/slots/hide_yticklabels.qmd
                       - text: "highlight"
                         href: datamodel/slots/highlight.qmd
                       - text: "histogram"
@@ -1199,12 +1285,16 @@ website:
                         href: datamodel/slots/history.qmd
                       - text: "homepage"
                         href: datamodel/slots/homepage.qmd
+                      - text: "hspace"
+                        href: datamodel/slots/hspace.qmd
                       - text: "hyperparameters"
                         href: datamodel/slots/hyperparameters.qmd
                       - text: "id"
                         href: datamodel/slots/id.qmd
                       - text: "ifabsent"
                         href: datamodel/slots/ifabsent.qmd
+                      - text: "image"
+                        href: datamodel/slots/image.qmd
                       - text: "imaging_modality"
                         href: datamodel/slots/imaging_modality.qmd
                       - text: "in_templates"
@@ -1239,6 +1329,8 @@ website:
                         href: datamodel/slots/integration.qmd
                       - text: "intensity"
                         href: datamodel/slots/intensity.qmd
+                      - text: "intensity_projection"
+                        href: datamodel/slots/intensity_projection.qmd
                       - text: "intermediate_expressions"
                         href: datamodel/slots/intermediate_expressions.qmd
                       - text: "interoperates_with"
@@ -1247,6 +1339,12 @@ website:
                         href: datamodel/slots/interpolate_delays.qmd
                       - text: "interpolation"
                         href: datamodel/slots/interpolation.qmd
+                      - text: "invert_x"
+                        href: datamodel/slots/invert_x.qmd
+                      - text: "invert_y"
+                        href: datamodel/slots/invert_y.qmd
+                      - text: "invert_z"
+                        href: datamodel/slots/invert_z.qmd
                       - text: "iri"
                         href: datamodel/slots/iri.qmd
                       - text: "is_accessible_for_free"
@@ -1267,6 +1365,10 @@ website:
                         href: datamodel/slots/kind.qmd
                       - text: "label"
                         href: datamodel/slots/label.qmd
+                      - text: "label_pad"
+                        href: datamodel/slots/label_pad.qmd
+                      - text: "labels"
+                        href: datamodel/slots/labels.qmd
                       - text: "labels_dimensions"
                         href: datamodel/slots/labels_dimensions.qmd
                       - text: "labels_ordering"
@@ -1285,10 +1387,18 @@ website:
                         href: datamodel/slots/learning_rate_schedule.qmd
                       - text: "learning_rate_warmup"
                         href: datamodel/slots/learning_rate_warmup.qmd
+                      - text: "left"
+                        href: datamodel/slots/left.qmd
                       - text: "lefthandside"
                         href: datamodel/slots/lefthandside.qmd
                       - text: "legend"
                         href: datamodel/slots/legend.qmd
+                      - text: "legend_frame"
+                        href: datamodel/slots/legend_frame.qmd
+                      - text: "legend_handle_length"
+                        href: datamodel/slots/legend_handle_length.qmd
+                      - text: "legend_pad"
+                        href: datamodel/slots/legend_pad.qmd
                       - text: "level"
                         href: datamodel/slots/level.qmd
                       - text: "lhs"
@@ -1299,8 +1409,12 @@ website:
                         href: datamodel/slots/license.qmd
                       - text: "likelihood"
                         href: datamodel/slots/likelihood.qmd
+                      - text: "line_width"
+                        href: datamodel/slots/line_width.qmd
                       - text: "linear_solver"
                         href: datamodel/slots/linear_solver.qmd
+                      - text: "linestyles"
+                        href: datamodel/slots/linestyles.qmd
                       - text: "lo"
                         href: datamodel/slots/lo.qmd
                       - text: "loader"
@@ -1313,6 +1427,8 @@ website:
                         href: datamodel/slots/local_coupling_term.qmd
                       - text: "local_states"
                         href: datamodel/slots/local_states.qmd
+                      - text: "location"
+                        href: datamodel/slots/location.qmd
                       - text: "log_scale"
                         href: datamodel/slots/log_scale.qmd
                       - text: "lookup Label"
@@ -1329,6 +1445,12 @@ website:
                         href: datamodel/slots/manufacturer.qmd
                       - text: "mark"
                         href: datamodel/slots/mark.qmd
+                      - text: "marker_size"
+                        href: datamodel/slots/marker_size.qmd
+                      - text: "markers"
+                        href: datamodel/slots/markers.qmd
+                      - text: "mask"
+                        href: datamodel/slots/mask.qmd
                       - text: "max_bisection_steps"
                         href: datamodel/slots/max_bisection_steps.qmd
                       - text: "max_iterations"
@@ -1363,6 +1485,12 @@ website:
                         href: datamodel/slots/metric.qmd
                       - text: "min_coverage"
                         href: datamodel/slots/min_coverage.qmd
+                      - text: "minor_tick_length"
+                        href: datamodel/slots/minor_tick_length.qmd
+                      - text: "minor_tick_width"
+                        href: datamodel/slots/minor_tick_width.qmd
+                      - text: "minor_ticks"
+                        href: datamodel/slots/minor_ticks.qmd
                       - text: "modality"
                         href: datamodel/slots/modality.qmd
                       - text: "mode"
@@ -1413,6 +1541,10 @@ website:
                         href: datamodel/slots/name.qmd
                       - text: "native Unit"
                         href: datamodel/slots/nativeUnit.qmd
+                      - text: "nbins"
+                        href: datamodel/slots/nbins.qmd
+                      - text: "ncols"
+                        href: datamodel/slots/ncols.qmd
                       - text: "network"
                         href: datamodel/slots/network.qmd
                       - text: "nev"
@@ -1423,8 +1555,14 @@ website:
                         href: datamodel/slots/newton_tol.qmd
                       - text: "nextflow"
                         href: datamodel/slots/nextflow.qmd
+                      - text: "node_edge_color"
+                        href: datamodel/slots/node_edge_color.qmd
+                      - text: "node_edge_width"
+                        href: datamodel/slots/node_edge_width.qmd
                       - text: "node_mapping"
                         href: datamodel/slots/node_mapping.qmd
+                      - text: "node_size"
+                        href: datamodel/slots/node_size.qmd
                       - text: "node_template"
                         href: datamodel/slots/node_template.qmd
                       - text: "nodes"
@@ -1441,6 +1579,8 @@ website:
                         href: datamodel/slots/normals.qmd
                       - text: "notes"
                         href: datamodel/slots/notes.qmd
+                      - text: "nrows"
+                        href: datamodel/slots/nrows.qmd
                       - text: "num_chains"
                         href: datamodel/slots/num_chains.qmd
                       - text: "num_samples"
@@ -1501,6 +1641,8 @@ website:
                         href: datamodel/slots/options.qmd
                       - text: "opts"
                         href: datamodel/slots/opts.qmd
+                      - text: "orientation"
+                        href: datamodel/slots/orientation.qmd
                       - text: "original Lookup Label"
                         href: datamodel/slots/originalLookupLabel.qmd
                       - text: "out_dir"
@@ -1559,6 +1701,8 @@ website:
                         href: datamodel/slots/path.qmd
                       - text: "percent_change"
                         href: datamodel/slots/percent_change.qmd
+                      - text: "percentile"
+                        href: datamodel/slots/percentile.qmd
                       - text: "period"
                         href: datamodel/slots/period.qmd
                       - text: "permutations"
@@ -1599,6 +1743,8 @@ website:
                         href: datamodel/slots/producer.qmd
                       - text: "programming_language"
                         href: datamodel/slots/programming_language.qmd
+                      - text: "projection"
+                        href: datamodel/slots/projection.qmd
                       - text: "protocols"
                         href: datamodel/slots/protocols.qmd
                       - text: "provenance"
@@ -1683,6 +1829,8 @@ website:
                         href: datamodel/slots/retries.qmd
                       - text: "rhs"
                         href: datamodel/slots/rhs.qmd
+                      - text: "right"
+                        href: datamodel/slots/right.qmd
                       - text: "righthandside"
                         href: datamodel/slots/righthandside.qmd
                       - text: "rng"
@@ -1691,6 +1839,12 @@ website:
                         href: datamodel/slots/role.qmd
                       - text: "rotation"
                         href: datamodel/slots/rotation.qmd
+                      - text: "row_label_rotation"
+                        href: datamodel/slots/row_label_rotation.qmd
+                      - text: "row_labels"
+                        href: datamodel/slots/row_labels.qmd
+                      - text: "rules"
+                        href: datamodel/slots/rules.qmd
                       - text: "run_id"
                         href: datamodel/slots/run_id.qmd
                       - text: "runtime_platform"
@@ -1741,6 +1895,8 @@ website:
                         href: datamodel/slots/share_x.qmd
                       - text: "share_y"
                         href: datamodel/slots/share_y.qmd
+                      - text: "show"
+                        href: datamodel/slots/show.qmd
                       - text: "sigma"
                         href: datamodel/slots/sigma.qmd
                       - text: "simulation_experiments"
@@ -1819,6 +1975,8 @@ website:
                         href: datamodel/slots/strategy.qmd
                       - text: "structural_measures"
                         href: datamodel/slots/structural_measures.qmd
+                      - text: "studies"
+                        href: datamodel/slots/studies.qmd
                       - text: "style"
                         href: datamodel/slots/style.qmd
                       - text: "subdir"
@@ -1833,6 +1991,10 @@ website:
                         href: datamodel/slots/subnetwork.qmd
                       - text: "suffix"
                         href: datamodel/slots/suffix.qmd
+                      - text: "surface"
+                        href: datamodel/slots/surface.qmd
+                      - text: "surface_atlas"
+                        href: datamodel/slots/surface_atlas.qmd
                       - text: "surrogate"
                         href: datamodel/slots/surrogate.qmd
                       - text: "sweep_direction"
@@ -1841,6 +2003,8 @@ website:
                         href: datamodel/slots/sweep_seeding.qmd
                       - text: "symbol"
                         href: datamodel/slots/symbol.qmd
+                      - text: "symmetric"
+                        href: datamodel/slots/symmetric.qmd
                       - text: "symmetry"
                         href: datamodel/slots/symmetry.qmd
                       - text: "system_size"
@@ -1895,8 +2059,26 @@ website:
                         href: datamodel/slots/terminology.qmd
                       - text: "text"
                         href: datamodel/slots/text.qmd
+                      - text: "theme"
+                        href: datamodel/slots/theme.qmd
                       - text: "threshold_applied"
                         href: datamodel/slots/threshold_applied.qmd
+                      - text: "tick_direction"
+                        href: datamodel/slots/tick_direction.qmd
+                      - text: "tick_length"
+                        href: datamodel/slots/tick_length.qmd
+                      - text: "tick_pad"
+                        href: datamodel/slots/tick_pad.qmd
+                      - text: "tick_prune"
+                        href: datamodel/slots/tick_prune.qmd
+                      - text: "tick_size"
+                        href: datamodel/slots/tick_size.qmd
+                      - text: "tick_width"
+                        href: datamodel/slots/tick_width.qmd
+                      - text: "ticklabels"
+                        href: datamodel/slots/ticklabels.qmd
+                      - text: "ticks"
+                        href: datamodel/slots/ticks.qmd
                       - text: "time"
                         href: datamodel/slots/time.qmd
                       - text: "time_dependent"
@@ -1915,16 +2097,22 @@ website:
                         href: datamodel/slots/timing_info.qmd
                       - text: "title"
                         href: datamodel/slots/title.qmd
+                      - text: "title_pad"
+                        href: datamodel/slots/title_pad.qmd
                       - text: "tol_stability"
                         href: datamodel/slots/tol_stability.qmd
                       - text: "tool_role"
                         href: datamodel/slots/tool_role.qmd
+                      - text: "top"
+                        href: datamodel/slots/top.qmd
                       - text: "traceable"
                         href: datamodel/slots/traceable.qmd
                       - text: "tracked"
                         href: datamodel/slots/tracked.qmd
                       - text: "tractogram"
                         href: datamodel/slots/tractogram.qmd
+                      - text: "trailing"
+                        href: datamodel/slots/trailing.qmd
                       - text: "trajectory"
                         href: datamodel/slots/trajectory.qmd
                       - text: "transform"
@@ -1935,6 +2123,8 @@ website:
                         href: datamodel/slots/transient_time.qmd
                       - text: "triangle"
                         href: datamodel/slots/triangle.qmd
+                      - text: "triangle_gap"
+                        href: datamodel/slots/triangle_gap.qmd
                       - text: "trigger_times"
                         href: datamodel/slots/trigger_times.qmd
                       - text: "trim_margins"
@@ -1983,8 +2173,16 @@ website:
                         href: datamodel/slots/vertex_to_region.qmd
                       - text: "vertices_field"
                         href: datamodel/slots/vertices_field.qmd
+                      - text: "view"
+                        href: datamodel/slots/view.qmd
+                      - text: "vmax"
+                        href: datamodel/slots/vmax.qmd
+                      - text: "vmin"
+                        href: datamodel/slots/vmin.qmd
                       - text: "voi"
                         href: datamodel/slots/voi.qmd
+                      - text: "volume"
+                        href: datamodel/slots/volume.qmd
                       - text: "volume_data"
                         href: datamodel/slots/volume_data.qmd
                       - text: "wait_selector"
@@ -2021,14 +2219,60 @@ website:
                         href: datamodel/slots/workflow_overrides.qmd
                       - text: "wrt"
                         href: datamodel/slots/wrt.qmd
+                      - text: "wspace"
+                        href: datamodel/slots/wspace.qmd
                       - text: "x"
                         href: datamodel/slots/x.qmd
+                      - text: "xlabel"
+                        href: datamodel/slots/xlabel.qmd
+                      - text: "xlabel_pad"
+                        href: datamodel/slots/xlabel_pad.qmd
+                      - text: "xlabel_side"
+                        href: datamodel/slots/xlabel_side.qmd
+                      - text: "xlim"
+                        href: datamodel/slots/xlim.qmd
+                      - text: "xscale"
+                        href: datamodel/slots/xscale.qmd
+                      - text: "xtick_format"
+                        href: datamodel/slots/xtick_format.qmd
+                      - text: "xtick_rotation"
+                        href: datamodel/slots/xtick_rotation.qmd
+                      - text: "xtick_side"
+                        href: datamodel/slots/xtick_side.qmd
+                      - text: "xticks"
+                        href: datamodel/slots/xticks.qmd
                       - text: "y"
                         href: datamodel/slots/y.qmd
                       - text: "year"
                         href: datamodel/slots/year.qmd
+                      - text: "ylabel"
+                        href: datamodel/slots/ylabel.qmd
+                      - text: "ylabel_pad"
+                        href: datamodel/slots/ylabel_pad.qmd
+                      - text: "ylabel_side"
+                        href: datamodel/slots/ylabel_side.qmd
+                      - text: "ylim"
+                        href: datamodel/slots/ylim.qmd
+                      - text: "yscale"
+                        href: datamodel/slots/yscale.qmd
+                      - text: "ytick_format"
+                        href: datamodel/slots/ytick_format.qmd
+                      - text: "ytick_rotation"
+                        href: datamodel/slots/ytick_rotation.qmd
+                      - text: "ytick_side"
+                        href: datamodel/slots/ytick_side.qmd
+                      - text: "yticks"
+                        href: datamodel/slots/yticks.qmd
                       - text: "z"
                         href: datamodel/slots/z.qmd
+                      - text: "zlabel"
+                        href: datamodel/slots/zlabel.qmd
+                      - text: "zlabel_pad"
+                        href: datamodel/slots/zlabel_pad.qmd
+                      - text: "zlim"
+                        href: datamodel/slots/zlim.qmd
+                      - text: "zoom"
+                        href: datamodel/slots/zoom.qmd
                   - section: "Enumerations"
                     contents:
                       - text: "Aggregation Type"
@@ -2037,6 +2281,12 @@ website:
                         href: datamodel/enums/AlgorithmCompositionMode.qmd
                       - text: "Axis Reduction Statistic"
                         href: datamodel/enums/AxisReductionStatistic.qmd
+                      - text: "Axis Scale"
+                        href: datamodel/enums/AxisScale.qmd
+                      - text: "Axis Side"
+                        href: datamodel/enums/AxisSide.qmd
+                      - text: "Bar Orientation"
+                        href: datamodel/enums/BarOrientation.qmd
                       - text: "BIDS Dataset Type"
                         href: datamodel/enums/BidsDatasetType.qmd
                       - text: "BIDS Directory Status"
@@ -2081,6 +2331,8 @@ website:
                         href: datamodel/enums/InitialStateMethod.qmd
                       - text: "Layout Engine"
                         href: datamodel/enums/LayoutEngine.qmd
+                      - text: "Legend Loc"
+                        href: datamodel/enums/LegendLoc.qmd
                       - text: "Mark Type"
                         href: datamodel/enums/MarkType.qmd
                       - text: "Model Paradigm"
@@ -2109,6 +2361,8 @@ website:
                         href: datamodel/enums/ProcedureStepType.qmd
                       - text: "Programming Language Enum"
                         href: datamodel/enums/ProgrammingLanguageEnum.qmd
+                      - text: "Projection"
+                        href: datamodel/enums/Projection.qmd
                       - text: "Provenance Format"
                         href: datamodel/enums/ProvenanceFormat.qmd
                       - text: "Reducer Emit Kind"
@@ -2121,6 +2375,8 @@ website:
                         href: datamodel/enums/RequirementLevel.qmd
                       - text: "Requirement Role"
                         href: datamodel/enums/RequirementRole.qmd
+                      - text: "Rule Orientation"
+                        href: datamodel/enums/RuleOrientation.qmd
                       - text: "Sampling Axis"
                         href: datamodel/enums/SamplingAxis.qmd
                       - text: "Sex Enum"
@@ -2139,12 +2395,20 @@ website:
                         href: datamodel/enums/StudyFileRole.qmd
                       - text: "Subject Batch Mode"
                         href: datamodel/enums/SubjectBatchMode.qmd
+                      - text: "Surface View"
+                        href: datamodel/enums/SurfaceView.qmd
                       - text: "Sweep Direction"
                         href: datamodel/enums/SweepDirection.qmd
                       - text: "Sweep Seeding"
                         href: datamodel/enums/SweepSeeding.qmd
                       - text: "System Type"
                         href: datamodel/enums/SystemType.qmd
+                      - text: "Tick Direction"
+                        href: datamodel/enums/TickDirection.qmd
+                      - text: "Tick Format"
+                        href: datamodel/enums/TickFormat.qmd
+                      - text: "Tick Prune"
+                        href: datamodel/enums/TickPrune.qmd
                       - text: "Tool Role"
                         href: datamodel/enums/ToolRole.qmd
                       - text: "Tracked Content"
@@ -2153,6 +2417,8 @@ website:
                         href: datamodel/enums/Triangle.qmd
                       - text: "Unit Enum"
                         href: datamodel/enums/UnitEnum.qmd
+                      - text: "Volume View"
+                        href: datamodel/enums/VolumeView.qmd
                       - text: "Workflow Distribute By"
                         href: datamodel/enums/WorkflowDistributeBy.qmd
 # END:datamodel-autogen
@@ -2480,6 +2746,8 @@ website:
                         href: api/plot/network_graph.qmd
                       - text: "Ontology"
                         href: api/plot/ontology.qmd
+                      - text: "Palette"
+                        href: api/plot/palette.qmd
                       - text: "Phase"
                         href: api/plot/phase.qmd
                       - text: "Schematic"

@@ -2876,7 +2876,7 @@ def build_lems_context(experiment):
 
     **Resolving the top-level dynamics.** A network-only experiment has none, and gets an empty placeholder: its cell types live in `experiment.network.dynamics` and render separately. A bare `model: ModelName` reference that names a row in the TVBO database is loaded from it. A NeuroML or otherwise external reference — an `iri` starting with `neuroml:`, or a name the database does not hold — is left alone and emitted through the network template.
 
-    **Whether the equations need `/ SEC`.** Dimensionless state variables mean the TimeDerivative right-hand side is pure numerics, so it must be divided by SEC, a time constant, for `d(x)/dt` to come out as `per_time`. When every parameter and state variable instead carries a real LEMS dimension, LEMS converts natively — `tau="30 ms"` becomes 0.03 s internally — and dividing again would double-count. Parameter units alone do not settle it: a model may annotate `A = 3.25 mV` and `a = 0.1 per_ms`, as JansenRit does, without its equations being dimensionally consistent, which is why the test looks at the state variables. Real LEMS dimensions and symbols are used throughout so jNeuroML outputs SI; a YAML value is in model units and its symbol suffix is what tells LEMS how to convert.
+    **Dimensions are all-or-nothing, and decide `/ SEC`.** When every parameter, state variable and derived variable carries a LEMS dimension, the model is emitted with them and LEMS converts natively — `tau="30 ms"` becomes 0.03 s internally — so the TimeDerivative right-hand side already comes out as `per_time` and dividing by SEC again would double-count. Otherwise every quantity is emitted dimensionless with a bare value in model units, and each right-hand side is divided by SEC, a one-model-time-unit constant, to make `d(x)/dt` a rate. The mixed form — real dimensions on the parameters that have units, `none` on the rest — is never emitted: a `tau` in ms against a dimensionless state, or a `mV` state fed by a derivative whose unit LEMS has no name for (JansenRit's `mV_per_s`), fails jLEMS's dimension check at the first equation. A YAML value is in model units and its symbol suffix, when emitted, is what tells LEMS how to convert.
 
     **Spike events.** An event carrying both a condition and an affect — spike plus reset — renders as LEMS Regimes, integrating and refractory, rather than a flat `OnCondition`, matching the reference NeuroML execution model. A single-cell model keeps the flat form unless it declares a `refract` parameter, which follows NeuroML's own convention: `izhikevichCell` is flat where `adExIaFCell` and `iafRefCell` use a Regime with an explicit refractory period. The distinction matters because a Regime adds a one-timestep delay that drifts the phase of a flat-reference model. Network mode always uses Regimes, so `EventOut` is correct.
 
@@ -2913,7 +2913,8 @@ def build_lems_context(experiment):
 
     params = dyn.parameters or {}
     svs = dyn.state_variables or {}
-    dvs = dyn.in_dependency_order("derived_variables")
+    # A derived parameter is a DerivedVariable to LEMS: an expression over constants, resolved before the derived variables that may read it.
+    dvs = {**dyn.in_dependency_order("derived_parameters"), **dyn.in_dependency_order("derived_variables")}
     events = dyn.events
     coupling_inputs = dyn.coupling_inputs
 
@@ -3072,17 +3073,19 @@ def build_lems_context(experiment):
     if regime_data and net_ctx is None and not has_refract_param:
         regime_data = None
 
-    def _lems_dim(unit):
-        return unit_to_lems_dimension(unit)
-
-    def _lems_sym(unit):
-        return unit_to_lems_symbol(unit)
-
     _all_dimensioned = all(
         unit_to_lems_dimension(getattr(p, "unit", None)) != "none"
         for p in list(params.values()) + list(svs.values()) + list(dvs.values())
     )
     _needs_sec = (time_scale != "s") and not _all_dimensioned
+
+    def _lems_dim(unit):
+        """The dimension a Parameter, Constant or StateVariable is emitted with: its real one only when every quantity in the model has one, else `none`, because a mixed export — a `tau` in ms driving a dimensionless state — fails jLEMS's dimension check at the first TimeDerivative."""
+        return unit_to_lems_dimension(unit) if _all_dimensioned else "none"
+
+    def _lems_sym(unit):
+        """The unit symbol appended to a value, blank whenever the dimension above is `none`: a dimensionless equation expects bare numbers in model units."""
+        return unit_to_lems_symbol(unit) if _all_dimensioned else ""
 
     ctx = dict(
         dyn=dyn,
@@ -3664,6 +3667,9 @@ class NeuroMLAdapter(BaseAdapter):
             sv_names = list(ctx["svs"].keys())
             net_ctx = ctx.get("net_ctx")
             cell_contexts = ctx.get("cell_contexts", {})
+            if net_ctx is None:
+                # Only explicit populations and edges are lowered to LEMS; a connectome declared as a matrix or a generator would be emitted as one population.
+                self.refuse_network("the populations a network declares node by node")
 
         xml = self.render_code(use_standard_types=True, **kwargs)
 

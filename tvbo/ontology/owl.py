@@ -128,6 +128,7 @@ def _assert_class_based(loaded_ontology) -> None:
 
     Every helper here — `search_class`, `.descendants()`, `get_property_annotation` — reads OWL classes and class axioms. The generated artifact `tvbo.owl` expresses the same knowledge as named individuals instead, so pointing this loader at it makes those helpers return empty results rather than raise, which surfaces downstream as a plausible but wrong answer. This check turns that silent mode into an error naming the file.
     """
+
     def _obo_count(entities) -> int:
         return sum(1 for e in entities if "obolibrary.org/obo/" in (getattr(e, "iri", "") or ""))
 

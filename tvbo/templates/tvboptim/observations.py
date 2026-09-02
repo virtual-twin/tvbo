@@ -3,9 +3,10 @@
 import math
 
 import equinox as eqx
+import jax.numpy as jnp
 import numpy as np
 from tvboptim.experimental.network_dynamics.result import NativeSolution
-from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor, _slice_variable_names
+from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor, SubSampling, _slice_variable_names
 
 # Canonical, backend-shared rounding + sampling resolution. Imported here so the tvboptim runtime (the reference) and the jax/tvb code-gen paths compute identical step counts from the same declarative observation and integration dt.
 from tvbo.adapters.observation_sampling import _tvb_iround
@@ -37,6 +38,29 @@ class TVBTemporalAverage(AbstractMonitor):
             ys=averaged,
             dt=self.period,
             variable_names=_slice_variable_names(sol, self.voi),
+        )
+
+
+class TVBGlobalAverage(AbstractMonitor):
+    """Spatial mean over nodes at each sampling period, with TVB monitor window indexing.
+
+    TVB's ``GlobalAverage`` samples on the same grid as ``SubSample`` and then averages the node axis, keeping it at width one so the output stays a ``(time, variable, node, mode)`` series rather than collapsing to a per-variable trace.
+    """
+
+    period: float = eqx.field(static=True)
+
+    def __init__(self, voi=None, period=4.0):
+        self.voi = self._normalize_voi(voi)
+        self.period = period
+
+    def __call__(self, sol):
+        """Sample *sol* every ``period`` and return the mean across its nodes."""
+        sampled = SubSampling(voi=self.voi, period=self.period)(sol)
+        return NativeSolution(
+            ts=sampled.ts,
+            ys=jnp.mean(sampled.ys, axis=2, keepdims=True),
+            dt=self.period,
+            variable_names=sampled.variable_names,
         )
 
 

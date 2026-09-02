@@ -121,18 +121,14 @@ def _load_from_file(path: Path) -> tuple[str, Any]:
         obj = _load(fmt.key, path)
         return _classify(obj), obj
 
-    # YAML — try Study (it can contain Experiments, and a study-of-studies is just one with `members:`), falling back to Experiment. A file that names its own class in the `tvbo_class:` envelope is taken at its word; the shape heuristics below are for the files that do not.
+    # YAML — try Study (it can contain Experiments, and a study-of-studies is just one with `studies:`), falling back to Experiment. A file that names its own class in the `tvbo_class:` envelope is taken at its word; the shape heuristics below are for the files that do not.
     from tvbo.utils.yaml_loader import declared_class
 
     text = path.read_text(encoding="utf-8")
     declared = declared_class(text)
     looks_like_study = declared == "SimulationStudy" or (
         declared is None
-        and (
-            "simulation_experiments" in text
-            or ("experiments:" in text and "title:" in text)
-            or ("members:" in text and ("recipe:" in text or "results:" in text))
-        )
+        and ("simulation_experiments" in text or ("experiments:" in text and "title:" in text) or "studies:" in text)
     )
     # Each fallback's error is kept: when they all fail, the last one (Dynamics) is about the least likely interpretation, so reporting only that sends the reader chasing a "bad Dynamics" that was never what the file is. A spec the running tvbo is too old to parse looked exactly like a malformed Dynamics until the earlier errors were surfaced.
     attempts: list[tuple[str, Exception]] = []

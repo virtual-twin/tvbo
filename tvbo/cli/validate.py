@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import typer
@@ -178,6 +179,27 @@ def _entity_problems(name: str) -> list[str]:
     return bad
 
 
+FIGURE_NAME = re.compile(r"^fig-[A-Za-z0-9]+_desc-[a-z][A-Za-z0-9]*$")
+"""The one naming rule for a rendered display item: ``fig-<id>_desc-<descriptor>``, the identifier the document prints and a camelCase descriptor, so the record, the script that draws it, the image and the caption all carry the same name."""
+
+
+def _figure_name_problems(name: str) -> list[str]:
+    """Whether a file in the figures role is named by the central rule.
+
+    Checked here rather than left to each study because the name is the join between a figure's record, its generated script, its image and its caption: when one study invents its own spelling, that figure exists under two names at once and neither side can tell which is current.
+    """
+    stem = name.split(".")[0]
+    if FIGURE_NAME.match(stem):
+        return []
+    return ["not named `fig-<id>_desc-<descriptor>` (descriptor camelCase)"]
+
+
+def _is_rule(line: str) -> bool:
+    """Whether a generated ignore line carries a rule, as opposed to the blank lines and commentary that only make the file readable."""
+    stripped = line.strip()
+    return bool(stripped) and not stripped.startswith("#")
+
+
 def _suffix_problems(path: Path) -> list[str]:
     """Whether ``path``'s BIDS suffix agrees with the class its own envelope declares.
 
@@ -222,7 +244,7 @@ def study(
 ) -> None:
     """Check a study dataset against the one layout record.
 
-    Three things, none of which any other check catches: the tree matches the record (:mod:`tvbo.utils.study_layout`), each spec fragment's BIDS suffix agrees with the class its envelope declares, and its entity values are legal BIDS. The generated ignore files are compared against what the record produces now, so a hand-edited copy is reported rather than trusted.
+    Three things, none of which any other check catches: the tree matches the record (:mod:`tvbo.utils.study_layout`), each spec fragment's BIDS suffix agrees with the class its envelope declares, and its entity values are legal BIDS. Every rule the record generates must still be present in the ignore files; a study may add its own rules and order them as git requires, but silently dropping one of the record's is reported.
     """
     import json
 
@@ -253,9 +275,15 @@ def study(
         ("bidsignore", layout_rules.bidsignore_lines(record, templates, name)),
     ):
         generated = root / layout_rules.file_relpath(role, name, record)
-        if generated.is_file() and generated.read_text(encoding="utf-8").splitlines() != lines:
+        if not generated.is_file():
+            continue
+        present = set(generated.read_text(encoding="utf-8").splitlines())
+        dropped = [rule for rule in lines if _is_rule(rule) and rule not in present]
+        if dropped:
+            shown = ", ".join(dropped[:3]) + (", ..." if len(dropped) > 3 else "")
             problems.append(
-                f"{generated.name}: no longer matches the layout record — regenerate with `tvbo study init --force`"
+                f"{generated.name}: {len(dropped)} rule(s) the layout record declares are missing ({shown}) — "
+                "restore them, or change schema/study_layout.yaml if the record is what is wrong"
             )
 
     spec_dir = root / layout_rules.relpath("spec", record)
@@ -264,6 +292,15 @@ def study(
         for fp in sorted(spec_dir.rglob("*.yaml")):
             n_spec += 1
             problems.extend(f"{fp.relative_to(root)}: {p}" for p in _suffix_problems(fp) + _entity_problems(fp.name))
+
+    figures_dir = root / layout_rules.relpath("figures", record)
+    n_figures = 0
+    if figures_dir.is_dir():
+        for fp in sorted(figures_dir.iterdir()):
+            if not fp.is_file() or fp.name.startswith("."):
+                continue
+            n_figures += 1
+            problems.extend(f"{fp.relative_to(root)}: {p}" for p in _figure_name_problems(fp.name))
 
     results_dir = root / layout_rules.relpath("results", record)
     n_results = 0

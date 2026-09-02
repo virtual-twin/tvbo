@@ -1270,6 +1270,8 @@ ${obs_name} = jnp.asarray(_bids_network.observations['${network_obs_key}'])
     call_args = class_ref['call_args']
     if class_ref.get('accepts_voi') and 'voi' not in constructor_arg_codes:
         constructor_arg_codes['voi'] = 'voi'
+    # An external monitor records every variable unless the observation narrows it, which is what `voi=None` means to these classes and what TVB's own monitors do. Defaulting to column 0 instead recorded one state variable of a multi-variable model and returned a well-formed series of it, so the same declaration produced a 2-variable series on tvb and jax and a 1-variable series here.
+    _ref_voi = state_idx if obs_source else None
     # The settle's share of THIS monitor's output grid, counted from the declared reporting period rather than from a time axis that is a tracer under jit. A period below one step, or one that is not a number, reports on the integration grid.
     _ext_period = to_numeric(constructor_args.get('period') or obs.get('period'))
     _ext_grid = max(1, int(round(float(_ext_period) / dt))) if isinstance(_ext_period, (int, float)) else 1
@@ -1300,11 +1302,11 @@ class ${class_name}(eqx.Module):
     # External monitor instance
     _monitor: eqx.Module
 
-    def __init__(self, voi: int = ${state_idx}, dt: float = ${dt}, **kwargs):
+    def __init__(self, voi=${repr(_ref_voi)}, dt: float = ${dt}, **kwargs):
         """Initialize observation using external class.
 
         Args:
-            voi: Variable of interest index (default: ${state_idx})
+            voi: Variable of interest index, or None for every recorded variable (default: ${repr(_ref_voi)})
             dt: Time step (default: ${dt})
             **kwargs: Additional arguments passed to ${ext_class_name}
         """
@@ -1963,4 +1965,15 @@ _STREAMING_REDUCERS = {
     ${repr(_sname)}: (_reduction_${_sname}, ${_sidx}),
 % endfor
 }
+
+
+def _stream_reduction(names, dt, skip=0, settle=None, progress=False):
+    """The fused reduction a set of streamed observables folds through, and the one place that builds it.
+
+    Every site that streams -- a base run's measured window, an exploration cell, a bundle of trajectory-free observables, the fold after tuning -- differs only in which names it folds, where its settle rows come from, and whether it reports progress; each one composing the triples itself is how the four came to pass `skip` and `settle` in three different combinations. *names* are folded in the order given, which is the order `_compose_reducers` returns their values in, so a caller may zip its own name list against the result. Each factory takes `skip`, `settle` and `progress` whether or not it has any use for them, so no site has to know which kind of reducer a name resolves to.
+    """
+    return _compose_reducers(*[
+        _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], dt, skip=skip, settle=settle, progress=progress)
+        for _n in names
+    ])
 % endif

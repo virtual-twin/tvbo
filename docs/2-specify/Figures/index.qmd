@@ -78,9 +78,9 @@ Row/column ratios, panel-number format and placement, spine style, output format
 |---|---|---|
 | `cartesian` | line / scatter / rule / band marks | `layers:` (grammar) |
 | `heatmap` | a 2-D array field | `layers:` with `mark` omitted (implied) |
-| `surface` | per-vertex values painted on a mesh | `layers:` + `opts:` naming the geometry |
-| `volume` | per-region values projected through a labelled volume | `layers:` + `opts: {atlas: …}` |
-| `network` | the connectome as a node-link graph, nodes coloured by a layer | `layers:` + `opts: {network: …}` |
+| `surface` | per-vertex values painted on a mesh | `layers:` + `surface: {…}` |
+| `volume` | per-region values projected through a labelled volume | `layers:` + `volume: {atlas: …}` |
+| `network` | the connectome as a node-link graph, nodes coloured by a layer | `layers:` + `network: {connectome: …}` |
 | `image` | an external file | `path:` |
 | `custom` | a registered callable `fn(fig, ax, ctx)` | `render:` → [escape hatch](custom-panels.qmd) |
 
@@ -94,14 +94,16 @@ Three kinds draw the same per-region quantity on three different geometries, and
 b:
   kind: network                     # the graph the model ran on
   layers: [{used: {experiment: 1, output: integration, sel: {variable: V}}}]
-  opts: {network: tvbo:DesikanKilliany, projection: axial, cmap: magma}
+  network: {connectome: tvbo:DesikanKilliany, projection: axial, colormap: magma}
 c:
   kind: surface                     # the same values on a cortical mesh
   layers: [{used: {experiment: 1, output: integration, sel: {variable: V}}}]
-  opts: {atlas: tvbo:atlas/DesikanKilliany, template: fsaverage, hemi: both, view: dorsal}
+  surface: {atlas: tvbo:atlas/DesikanKilliany, template: fsaverage, hemi: both, view: dorsal}
 ```
 
 A `network` panel needs the connectome named — a curated IRI or a path beside the study — because the panel draws the network, not the result; `edge_percentile` (default 92) keeps a dense connectome from drawing as a filled square, and `projection` picks the anatomical plane the region centres flatten onto.
+
+Each kind's options are the object named after the kind, and only a panel of that kind may state one. `view` on a surface is one of six camera positions; `view` on a volume is one of three anatomical planes; both are enums, so the wrong vocabulary is a validation error rather than a figure that renders from a default nobody was told about. The colour scale is the same five words wherever a field is painted — `colormap`, `vmin`, `vmax`, `symmetric`, `percentile` — on a surface, a volume, a graph and a colour bar alike.
 
 ## Binding data to a panel: layers
 
@@ -157,6 +159,69 @@ panels:
         encoding: {x: KuramotoInertia.K}
         style: {opts: {facecolors: none, edgecolors: k, s: 49}}
 ```
+
+## What a panel's axes say
+
+Everything about how a panel's axes are drawn is a slot on the panel. There is no options bag for it, and a name the schema does not know is a validation error rather than a keyword that reaches matplotlib and raises there:
+
+```yaml
+d:
+  kind: cartesian
+  xlabel: "Target [Hz]"
+  ylabel: "Simulated [Hz]"
+  xlim: [6, 12]
+  ylim: [6, 12]
+  aspect: equal                     # one unit of x is one unit of y
+  legend: upper left
+  rules:
+    - {orientation: diagonal, at: [1.0, 0.0]}     # the agreement line
+```
+
+| Family | Slots |
+|---|---|
+| What the axes say | `xlabel`, `ylabel`, `zlabel`, `title`, and `*_pad` / `*_side` for where each label sits |
+| How far they run | `xlim`, `ylim`, `zlim`, `xscale`, `yscale` |
+| What shape they are | `aspect` (the data), `box_aspect` (the frame), `invert_x` / `invert_y` / `invert_z`, `frame` |
+| Their ticks | `xticks`, `yticks`, `nbins`, `tick_prune`, `tick_size`, `tick_length`, `*tick_rotation`, `*tick_format`, `*tick_side`, `hide_*ticklabels` |
+| Marks that carry a colour | `rules`, `regions`, `camera`, `annotations` |
+| The key | `legend` |
+
+A limit is a declared pair of numbers, not text: two panels a figure asks the reader to compare must not end up on whatever ranges their own data happened to reach, and a range written as `[1.0e-4, 1.0e4]` reaches the axis as two numbers rather than as one number and one string. A `title` is the panel's own words; the letter a journal prints beside it is `number`, which the layout places and sizes.
+
+**The legend is one slot with three spellings.** `legend: true` draws a key wherever the backend finds room, `legend: upper left` fixes the corner, and the object states the rest — so a panel that starts with a corner and later wants two columns keeps the word it had:
+
+```yaml
+legend: {loc: lower right, columns: 2, title: Route, frame: true}
+```
+
+Whether the key is boxed is the [theme's](Styling.qmd) `legend_frame` unless the panel says otherwise; TVB-O's own theme draws it unboxed. `kind: legend` is a different thing — a standalone key occupying its own cell of the mosaic, for a convention several panels share.
+
+**`opts:` is a custom callable's keywords, and nothing else** — plus the one thing that cannot be a slot: a `row.<name>` / `col.<name>` entry on a grid, which supplies one value per row or column of *any* directive. Everything else a panel is drawn from is declared. A spec written against the older flat spelling is rewritten by `python scripts/migrate_panel_marks.py <study>`, which reports the files it will not touch by itself rather than reflowing a hand-authored spec around a ten-line change.
+
+Because those keywords belong to a callable, a name is only retired for the kind that owns it: `color`, `labels` and `cmap` are a surface panel's options *and* good keywords for a `custom` one, so a `custom` panel keeps every word it has always taken.
+
+
+## The colour bar, and each kind's own options
+
+A panel's colour bar is one object, not nine loose options that could style a bar the panel never draws:
+
+```yaml
+g:
+  kind: heatmap
+  colorbar: {label: "FC", ticks: [-0.3, 0.3, 0.9], decimals: 2}
+```
+
+`show` overrides the default, which is on for a heatmap — unreadable without one — and off for a scatter shaded by a third quantity, since a row of those conventionally shares one bar. `kind: colorbar` is that shared bar: a standalone panel in its own cell of the mosaic, and the only case that states its own `colormap` and limits rather than taking them from the field beside it.
+
+The other built-in kinds work the same way. A `grid` panel declares its tiling in `grid:`, and `kind: legend` states its entries in the same `legend:` slot every other panel uses for its key:
+
+```yaml
+e:
+  kind: grid
+  grid: {ncols: 3, col_labels: [Initial, Target, Fitted], wspace: 0.05}
+  cell: {kind: volume, volume: {atlas: tvbo:atlas/DesikanKilliany, view: sagittal, colormap: cividis_r}}
+```
+
 
 ## Animating a figure
 

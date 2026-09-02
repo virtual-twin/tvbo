@@ -386,8 +386,7 @@ def _pin_accelerator(execution) -> None:
 def _device_plan(analysis, n_items, per_lane_bytes):
     """``(n_pmap, n_vmap)`` for the mapped axis — how many shards, how wide each batch.
 
-    ``n_workers`` is the shard count, exactly as it is for an experiment: the devices the mapped axis spreads across. It is clamped to the devices that actually exist (and to the item count), and a shortfall is logged rather than raised — a recipe declaring 8 shards must still run on a one-device laptop, just not silently as if it had 8. ``batch_size`` is the per-device vmap width; unset means ``auto``, which resolves against the same per-cell memory budget an exploration's ``n_parallel:
-    auto`` uses. The live batch is ``n_pmap x n_vmap`` lanes in whatever RAM those devices share, which is what :func:`shared_ram_device_count` accounts for on host-replicated CPU devices.
+    ``n_workers`` is the shard count, exactly as it is for an experiment: the devices the mapped axis spreads across. It is clamped to the devices that actually exist (and to the item count), and a shortfall is logged rather than raised — a recipe declaring 8 shards must still run on a one-device laptop, just not silently as if it had 8. ``batch_size`` is the per-device vmap width; unset means ``auto``, which resolves against the same per-cell memory budget an exploration's ``n_parallel: auto`` uses. The live batch is ``n_pmap x n_vmap`` lanes in whatever RAM those devices share, which is what :func:`shared_ram_device_count` accounts for on host-replicated CPU devices.
     """
     import jax
 
@@ -680,6 +679,20 @@ def _strings_or_raise(name: str, key: str, arr):
     )
 
 
+def _plain(value):
+    """A declared literal as plain Python, whatever container the loader built it in.
+
+    A nested mapping in an argument's ``value:`` arrives as a ``JsonObj``, which PyYAML refuses to represent — so an analysis whose argument is a mapping used to run to completion and then lose its whole run to a serialization error while writing the sidecar. Recursive because the nesting is: a mapping of mappings is one declaration, not two.
+    """
+    if hasattr(value, "_as_dict"):
+        value = value._as_dict
+    if isinstance(value, dict):
+        return {str(k): _plain(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_plain(v) for v in value]
+    return value
+
+
 def _provenance(analysis, produced_keys: Iterable[str]) -> dict:
     """The sidecar record: what was called, with what, producing which arrays."""
     call = _slot(analysis, "callable")
@@ -687,7 +700,7 @@ def _provenance(analysis, produced_keys: Iterable[str]) -> dict:
     for key, arg in _arg_items(_slot(analysis, "arguments")):
         used = _slot(arg, "used")
         if used is None:
-            args[key] = {"value": _slot(arg, "value")}
+            args[key] = {"value": _plain(_slot(arg, "value"))}
             continue
         ref = {k: _slot(used, k) for k in ("experiment", "analysis", "iri", "output", "transform")}
         args[key] = {"used": {k: v for k, v in ref.items() if v is not None}}

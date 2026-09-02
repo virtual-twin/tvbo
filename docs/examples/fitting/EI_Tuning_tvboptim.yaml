@@ -41,11 +41,11 @@ figures:
                   - used: {experiment: 3, output: algorithm__fic__history__mean_S_e}
                     mark: line
                     style: {color: "#0a5170", opts: {linewidth: 1.2}}
-              opts:
-                  title: ""
-                  xlabel: "FIC iteration"
-                  ylabel: "Mean S_e"
-                  axhline: [0.25]
+              title: ""
+              xlabel: "FIC iteration"
+              ylabel: "Mean S_e"
+              rules:
+                  - {orientation: horizontal, at: [0.25]}
           b:
               kind: cartesian
               label: "FIC+EIB convergence (in-loop)"
@@ -62,11 +62,10 @@ figures:
                     mark: line
                     label: "FC RMSE"
                     style: {color: "#d98a00", opts: {linewidth: 1.2}}
-              opts:
-                  title: ""
-                  xlabel: "FIC+EIB iteration"
-                  ylabel: ""
-                  legend: "lower right"
+              title: ""
+              xlabel: "FIC+EIB iteration"
+              ylabel: ""
+              legend: "lower right"
 
           c:
               kind: cartesian
@@ -76,10 +75,9 @@ figures:
                   - used: {experiment: 3, output: optimization__gradient_eib__loss_trajectory}
                     mark: line
                     style: {color: "#3E8E68", opts: {linewidth: 1.2}}
-              opts:
-                  title: ""
-                  xlabel: "Optimization step"
-                  ylabel: "Combined loss"
+              title: ""
+              xlabel: "Optimization step"
+              ylabel: "Combined loss"
 
           d:
               kind: heatmap
@@ -92,7 +90,7 @@ figures:
                   - used: {experiment: 3, output: algorithm__fic_eib__fc_target}
                     encoding: {x: node_j, y: node_i}
                     style: &fc_scale {colormap: cividis, opts: {vmin: -0.3, vmax: 0.9}}
-              opts: &fc_axes
+              <<: &fc_axes
                   title: ""
                   xlabel: ""
                   ylabel: "Region"
@@ -100,7 +98,7 @@ figures:
                   invert_y: true
                   hide_xticklabels: true
                   hide_yticklabels: true
-                  colorbar: false
+                  colorbar: {show: false}
 
           e:
               kind: heatmap
@@ -112,7 +110,7 @@ figures:
                   - used: {experiment: 3, output: algorithm__fic__fc}
                     encoding: {x: node_j, y: node_i}
                     style: *fc_scale
-              opts: *fc_axes
+              <<: *fc_axes
 
           f:
               kind: heatmap
@@ -122,7 +120,7 @@ figures:
                   - used: {experiment: 3, output: algorithm__fic_eib__fc}
                     encoding: {x: node_j, y: node_i}
                     style: *fc_scale
-              opts: *fc_axes
+              <<: *fc_axes
 
           g:
               kind: heatmap
@@ -132,11 +130,11 @@ figures:
                   - used: {experiment: 3, output: optimization__gradient_eib__observation__fc}
                     encoding: {x: node_j, y: node_i}
                     style: *fc_scale
-              opts:
-                  <<: *fc_axes
-                  colorbar: true
-                  colorbar_label: "FC"
-                  colorbar_ticks: [-0.3, 0.3, 0.9]
+              <<: *fc_axes
+              colorbar:
+                  show: true
+                  label: "FC"
+                  ticks: [-0.3, 0.3, 0.9]
 
           h:
               kind: heatmap
@@ -146,11 +144,11 @@ figures:
                   - used: {experiment: 3, output: estimate__wLRE}
                     encoding: {x: node_j, y: node_i}
                     style: {colormap: cividis}
-              opts:
-                  <<: *fc_axes
-                  colorbar: true
-                  colorbar_label: "w_LRE"
-                  colorbar_ticks: [0.9, 1.4, 1.9]
+              <<: *fc_axes
+              colorbar:
+                  show: true
+                  label: "w_LRE"
+                  ticks: [0.9, 1.4, 1.9]
 
           i:
               kind: heatmap
@@ -160,8 +158,8 @@ figures:
                   - used: {experiment: 3, output: estimate__wFFI}
                     encoding: {x: node_j, y: node_i}
                     style: {colormap: cividis}
-              opts:
-                  <<: *fc_axes
-                  colorbar: true
-                  colorbar_label: "w_FFI"
-                  colorbar_ticks: [0.1, 0.6, 1.1]
+              <<: *fc_axes
+              colorbar:
+                  show: true
+                  label: "w_FFI"
+                  ticks: [0.1, 0.6, 1.1]

@@ -64,7 +64,7 @@
     <Parameter name="I_amp" dimension="none"/>
     <Parameter name="Q10_early" dimension="none"/>
     <Parameter name="Q10_late" dimension="none"/>
-    <Parameter name="switch_time" dimension="time"/>
+    <Parameter name="switch_time" dimension="none"/>
     <!-- Coupling inputs -->
     <!-- Initial condition parameters -->
     <Parameter name="v_0" dimension="none"/>
@@ -134,7 +134,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="HH_Tissue_Q10_inst" type="HH_Tissue_Q10" C="10.0" g_Na="1200.0" g_K="360.0" g_L="3.0" E_Na="50.0" E_K="-77.0" E_L="-54.3" I_amp="0.08" Q10_early="0.333333" Q10_late="0.172414" switch_time="500.0 ms" v_0="-65.0" m_0="0.052932" h_0="0.596121" n_0="0.317677"/>
+  <Component id="HH_Tissue_Q10_inst" type="HH_Tissue_Q10" C="10.0" g_Na="1200.0" g_K="360.0" g_L="3.0" E_Na="50.0" E_K="-77.0" E_L="-54.3" I_amp="0.08" Q10_early="0.333333" Q10_late="0.172414" switch_time="500.0" v_0="-65.0" m_0="0.052932" h_0="0.596121" n_0="0.317677"/>
 
 
 

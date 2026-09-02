@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-neuroml gen-all all check-runtime-onto
+.PHONY: help build save run docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-neuroml gen-all all check-runtime-onto
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -30,10 +30,6 @@ help: ## Show this help
 	@echo "  make docs-publish       Publish docs to GitHub Pages (full render)"
 	@echo "  make docs-publish-changed Render only changed .qmd files, then publish"
 	@echo "  make docs-gen-datamodel Generate LinkML datamodel documentation"
-	@echo "  make docs-quarto        Convert Usage notebooks (.ipynb) to .qmd"
-	@echo "  make docs-jupyter       Convert Usage .qmd files to .ipynb"
-	@echo "  make docs-to-py         Convert Usage notebooks to .py (percent format)"
-	@echo "  make docs-rm-py         Remove .py files from Usage"
 	@echo ""
 	@echo "Documentation Testing:"
 	@echo "  make docs-test          Test all .qmd files, slow ones included"
@@ -220,18 +216,6 @@ save:
 run:
 	docker run -it --rm -e MODE=jupyter -p 8888:8888 $(IMAGE_FULL)
 
-docs-quarto:
-	find ./docs/Usage -name '*.ipynb' -exec quarto convert {} \; && find ./docs/Usage -name '*.ipynb' -exec rm {} \;
-
-docs-jupyter:
-	find ./docs/Usage -name '*.qmd' -exec quarto convert {} \; && find ./docs/Usage -name '*.qmd' -exec rm {} \;
-
-docs-to-py:
-	find ./docs/Usage -name '*.ipynb' -exec jupytext --to py:percent {} \;
-
-docs-rm-py:
-	find ./docs/Usage -name '*.py' -exec rm {} \;
-
 DOCS_TEST_JOBS ?= 4
 # Docs live in one module, so the default loadscope would pin them all to one worker.
 DOCS_PYTEST = pytest tests/test_docs.py -v --tb=short -n $(DOCS_TEST_JOBS) --dist=load
@@ -251,7 +235,7 @@ docs-pytest-all:
 	@echo "Running all documentation tests ($(DOCS_TEST_JOBS) workers, no early exit)..."
 	$(DOCS_PYTEST)
 
-docs-test-all: docs-jupyter docs-test docs-quarto
+docs-test-all: docs-test
 	@echo "Full test pipeline completed!"
 
 docs-gen-datamodel:
@@ -346,7 +330,6 @@ docs-publish-changed:
 	@cd docs && quarto publish gh-pages --no-render --no-prompt
 
 docs-test-to-debug:
-	@mkdir -p ./docs/Usage
 	@echo "Testing debugged files in docs/to_debug..."
 	@echo "========================================"
 	@passed=0; failed=0; \
@@ -354,15 +337,7 @@ docs-test-to-debug:
 		echo ""; \
 		echo "Testing: $$notebook"; \
 		if MPLBACKEND=Agg jupyter nbconvert --execute --to notebook --inplace "$$notebook" > /dev/null 2>&1; then \
-			echo "✓ PASSED - Moving back to docs/Usage"; \
-			relpath=$$(echo "$$notebook" | sed 's|./docs/to_debug/||'); \
-			targetdir=$$(dirname "./docs/Usage/$$relpath"); \
-			mkdir -p "$$targetdir"; \
-			mv "$$notebook" "./docs/Usage/$$relpath"; \
-			qmdfile="$${notebook%.ipynb}.qmd"; \
-			if [ -f "$$qmdfile" ]; then \
-				mv "$$qmdfile" "$${targetdir}/$$(basename $$qmdfile)"; \
-			fi; \
+			echo "✓ PASSED - leaving it in to_debug for you to file"; \
 			passed=$$((passed + 1)); \
 		else \
 			echo "✗ STILL FAILING - Keeping in to_debug"; \
@@ -372,7 +347,7 @@ docs-test-to-debug:
 	echo ""; \
 	echo "========================================"; \
 	echo "Debug Test Summary:"; \
-	echo "  Fixed & Moved: $$passed"; \
+	echo "  Now passing: $$passed"; \
 	echo "  Still Failing: $$failed"; \
 	echo "========================================"
 

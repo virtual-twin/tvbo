@@ -79,8 +79,11 @@ class DiffEqAdapter:
             solution_to_dataarray,
         )
 
+        from tvbo.adapters.base import refuse_network
+
         exp = self.experiment
         model = exp.dynamics
+        refuse_network(exp, "julia", "the dynamics alone")
 
         # 1. Ensure required Julia packages
         ensure_packages(*REQUIRED_PACKAGES)

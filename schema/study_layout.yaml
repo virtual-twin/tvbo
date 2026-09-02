@@ -145,7 +145,9 @@ subdirs:
         role: figures
         tracked: none
         description: >-
-          Render target for the declarative figures, named as the study names them. Untracked,
+          Render target for the declarative figures, each named `fig-<id>_desc-<descriptor>` --
+          the identifier the document prints and a camelCase descriptor -- so a figure's record,
+          the script that draws it, its image and its caption all carry one name. Untracked,
           because a run reproduces them. Inside the report's own project directory, so a report
           embeds a figure where it was rendered rather than staging a second copy of it.
         subdirs:
@@ -221,8 +223,11 @@ subdirs:
       `prov-<label>_{act,ent,env,soft}.json`. The remaining gap is the extension: these are
       written as YAML by default, which BEP028 does not yet accept, and as JSON on request.
     description: >-
-      What was run, when, in what environment, by what software, over what inputs. Tracked,
-      unlike everything else a run produces: it is the evidence, it is small, and a record no
+      What was run, when, in what environment, by what software, over what inputs. Written only
+      where a study sets `workflow.emit_provenance` true, because BEP028 is not merged and a
+      recipe already states what each result was derived from through its `used:` edges -- so by
+      default these records would restate the spec's own account across thousands of files.
+      Tracked when present, unlike everything else a run produces: it is small, and a record no
       one can read without re-running the study cannot be cited or reviewed. Serialized from
       the datamodel's own provenance classes, so the records cannot drift from the metadata a
       run already carries.

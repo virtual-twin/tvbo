@@ -54,13 +54,13 @@
   <ComponentType name="ReducedWongWang">
 
     <!-- Parameters -->
-    <Parameter name="I_o" dimension="current"/>
-    <Parameter name="J_N" dimension="current"/>
+    <Parameter name="I_o" dimension="none"/>
+    <Parameter name="J_N" dimension="none"/>
     <Parameter name="a" dimension="none"/>
-    <Parameter name="b" dimension="per_time"/>
-    <Parameter name="d" dimension="time"/>
+    <Parameter name="b" dimension="none"/>
+    <Parameter name="d" dimension="none"/>
     <Parameter name="gamma" dimension="none"/>
-    <Parameter name="tau_s" dimension="time"/>
+    <Parameter name="tau_s" dimension="none"/>
     <Parameter name="w" dimension="none"/>
     <!-- Coupling inputs -->
     <Parameter name="c_glob" dimension="none"/>
@@ -109,7 +109,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="ReducedWongWang_inst" type="ReducedWongWang" I_o="0.33 nA" J_N="0.2609 nA" a="0.27" b="0.108 per_ms" d="154.0 ms" gamma="0.641" tau_s="100.0 ms" w="0.6" c_glob="0" local_coupling="0" S_0="0.1"/>
+  <Component id="ReducedWongWang_inst" type="ReducedWongWang" I_o="0.33" J_N="0.2609" a="0.27" b="0.108" d="154.0" gamma="0.641" tau_s="100.0" w="0.6" c_glob="0" local_coupling="0" S_0="0.1"/>
 
 
 

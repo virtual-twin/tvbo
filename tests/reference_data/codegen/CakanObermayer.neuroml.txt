@@ -54,10 +54,10 @@
   <ComponentType name="CakanObermayer">
 
     <!-- Parameters -->
-    <Parameter name="C" dimension="capacitance"/>
-    <Parameter name="E_L" dimension="voltage"/>
-    <Parameter name="E_A" dimension="voltage"/>
-    <Parameter name="I_A" dimension="conductance"/>
+    <Parameter name="C" dimension="none"/>
+    <Parameter name="E_L" dimension="none"/>
+    <Parameter name="E_A" dimension="none"/>
+    <Parameter name="I_A" dimension="none"/>
     <Parameter name="J_EE" dimension="none"/>
     <Parameter name="J_EI" dimension="none"/>
     <Parameter name="J_IE" dimension="none"/>
@@ -68,10 +68,10 @@
     <Parameter name="s_EI" dimension="none"/>
     <Parameter name="s_IE" dimension="none"/>
     <Parameter name="s_II" dimension="none"/>
-    <Parameter name="tau_se" dimension="time"/>
-    <Parameter name="tau_si" dimension="time"/>
-    <Parameter name="tau_A" dimension="time"/>
-    <Parameter name="r_max" dimension="per_time"/>
+    <Parameter name="tau_se" dimension="none"/>
+    <Parameter name="tau_si" dimension="none"/>
+    <Parameter name="tau_A" dimension="none"/>
+    <Parameter name="r_max" dimension="none"/>
     <Parameter name="mu_th" dimension="none"/>
     <Parameter name="k_phi" dimension="none"/>
     <!-- Coupling inputs -->
@@ -79,7 +79,7 @@
     <!-- Initial condition parameters -->
     <Parameter name="mu_se_0" dimension="none"/>
     <Parameter name="mu_si_0" dimension="none"/>
-    <Parameter name="I_A_var_0" dimension="current"/>
+    <Parameter name="I_A_var_0" dimension="none"/>
 
     <!-- Time conversion for derivatives.
          When all parameters and state variables carry proper LEMS dimensions,
@@ -93,14 +93,14 @@
     <!-- Exposures (one per state variable) -->
     <Exposure name="mu_se" dimension="none"/>
     <Exposure name="mu_si" dimension="none"/>
-    <Exposure name="I_A_var" dimension="current"/>
+    <Exposure name="I_A_var" dimension="none"/>
 
     <Dynamics>
 
       <!-- State variables -->
       <StateVariable name="mu_se" dimension="none" exposure="mu_se"/>
       <StateVariable name="mu_si" dimension="none" exposure="mu_si"/>
-      <StateVariable name="I_A_var" dimension="current" exposure="I_A_var"/>
+      <StateVariable name="I_A_var" dimension="none" exposure="I_A_var"/>
 
       <!-- Derived variables (simple and conditional/piecewise) -->
       <DerivedVariable name="r_E" dimension="none" value="r_max/(1 + exp(-k_phi*(mu_se - mu_th)))"/>
@@ -130,7 +130,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="CakanObermayer_inst" type="CakanObermayer" C="200.0 pF" E_L="-65.0 mV" E_A="-80.0 mV" I_A="0.0 nS" J_EE="2.43" J_EI="-3.3" J_IE="2.6" J_II="-1.64" mu_E="0.4" mu_I="0.3" s_EE="1.5" s_EI="1.5" s_IE="1.5" s_II="1.5" tau_se="2.0 ms" tau_si="5.0 ms" tau_A="200.0 ms" r_max="0.2 per_ms" mu_th="1.0" k_phi="1.0" c_glob="0" mu_se_0="0.0" mu_si_0="0.0" I_A_var_0="0.0 pA"/>
+  <Component id="CakanObermayer_inst" type="CakanObermayer" C="200.0" E_L="-65.0" E_A="-80.0" I_A="0.0" J_EE="2.43" J_EI="-3.3" J_IE="2.6" J_II="-1.64" mu_E="0.4" mu_I="0.3" s_EE="1.5" s_EI="1.5" s_IE="1.5" s_II="1.5" tau_se="2.0" tau_si="5.0" tau_A="200.0" r_max="0.2" mu_th="1.0" k_phi="1.0" c_glob="0" mu_se_0="0.0" mu_si_0="0.0" I_A_var_0="0.0"/>
 
 
 

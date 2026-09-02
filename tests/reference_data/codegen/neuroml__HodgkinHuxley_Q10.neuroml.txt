@@ -62,8 +62,8 @@
     <Parameter name="E_K" dimension="none"/>
     <Parameter name="E_L" dimension="none"/>
     <Parameter name="I_amp" dimension="none"/>
-    <Parameter name="pulse_delay" dimension="time"/>
-    <Parameter name="pulse_duration" dimension="time"/>
+    <Parameter name="pulse_delay" dimension="none"/>
+    <Parameter name="pulse_duration" dimension="none"/>
     <Parameter name="Q10" dimension="none"/>
     <!-- Coupling inputs -->
     <!-- Initial condition parameters -->
@@ -133,7 +133,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="HodgkinHuxley_Q10_inst" type="HodgkinHuxley_Q10" C="10.0" g_Na="1200.0" g_K="360.0" g_L="3.0" E_Na="50.0" E_K="-77.0" E_L="-54.3" I_amp="0.08" pulse_delay="100.0 ms" pulse_duration="100.0 ms" Q10="0.333333" v_0="-65.0" m_0="0.052932" h_0="0.596121" n_0="0.317677"/>
+  <Component id="HodgkinHuxley_Q10_inst" type="HodgkinHuxley_Q10" C="10.0" g_Na="1200.0" g_K="360.0" g_L="3.0" E_Na="50.0" E_K="-77.0" E_L="-54.3" I_amp="0.08" pulse_delay="100.0" pulse_duration="100.0" Q10="0.333333" v_0="-65.0" m_0="0.052932" h_0="0.596121" n_0="0.317677"/>
 
 
 

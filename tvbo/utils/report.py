@@ -303,7 +303,9 @@ def _result_files(out_dir, experiment: str | None, suffix: str) -> list[Path]:
     if not root.is_dir():
         return []
     pattern = f"exp-{experiment}_*result{suffix}" if experiment else f"*result{suffix}"
-    return [f for f in sorted(root.glob(pattern)) if "network" not in f.name]
+    from tvbo.utils.study_layout import is_network_companion
+
+    return [f for f in sorted(root.glob(pattern)) if not is_network_companion(f)]
 
 
 def open_result(out_dir, experiment: str | None = None):

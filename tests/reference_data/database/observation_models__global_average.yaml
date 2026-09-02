@@ -6,9 +6,35 @@ period: 0.9765625
 reconcile: by_label
 pipeline:
 - equation:
+    parameters:
+      step:
+        name: step
+        description: Integration steps between recorded samples, so the decimation
+          tracks the grid the experiment declares rather than the one this file was
+          written on.
+        equation:
+          rhs: iround(period / dt)
+          latex: false
+    rhs: subsample(X, step)
+    latex: false
+  description: Decimation to the reporting period, taken before the spatial mean.
+    TVB's GlobalAverage emits on `step % istep == 0` and averages what it emits, so
+    a pipeline that only averages reports one sample per integration step and ignores
+    the declared period entirely.
+  name: subsample
+  output: subsampled
+  apply_on_dimension: time
+  arguments:
+    step:
+      name: step
+      description: Decimation factor. Its value is declared on the equation parameter
+        of the same name; a backend that has not yet been migrated to read that still
+        derives it here.
+- equation:
     rhs: global_mean(X)
     latex: false
   name: global_mean
+  input: subsample
   output: global_averaged
   apply_on_dimension: node
   aggregate:

@@ -105,6 +105,12 @@
       <StateVariable name="beta" dimension="none" exposure="beta"/>
 
       <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="IE_i" dimension="none" value="sqrt(sigma)*(iV0*mu + iZV*sigma)"/>
+      <DerivedVariable name="II_i" dimension="none" value="sqrt(sigma)*(iU0*mu + iZU*sigma)"/>
+      <DerivedVariable name="e_i" dimension="none" value="iV4/sigma"/>
+      <DerivedVariable name="f_i" dimension="none" value="iU4/sigma"/>
+      <DerivedVariable name="m_i" dimension="none" value="a*iV0*sqrt(sigma)"/>
+      <DerivedVariable name="n_i" dimension="none" value="a*iU0*sqrt(sigma)"/>
 
       <!-- ── Flat dynamics (no spike events) ── -->
 

@@ -34,6 +34,9 @@ _CATEGORIES = {
     "Continuation": "continuations",
     "GraphGenerator": "graph_generators",
     "SimulationTool": "software",
+    # A Theme is_a Palette, so a document declaring either resolves to the same directory.
+    "Theme": "themes",
+    "Palette": "themes",
 }
 
 
@@ -59,6 +62,7 @@ _IRI_SCOPES = {
     "continuation": "Continuation",
     "graph_generator": "GraphGenerator",
     "software": "SimulationTool",
+    "theme": "Theme",
 }
 
 _IRI_RE = re.compile(r"^(?P<prefix>[A-Za-z][\w.-]*):(?P<scope>[a-z_]+)/(?P<name>[^/].*)$")

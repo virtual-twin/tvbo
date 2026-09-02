@@ -52,7 +52,9 @@ def colour(slot: str) -> str:
     return palette.color(str(slot))
 
 
-def walk(items: list, part: str | None, section: str | None, out: dict, parts: set[str], index_pages: dict, group: str | None = None) -> str | None:
+def walk(
+    items: list, part: str | None, section: str | None, out: dict, parts: set[str], index_pages: dict, group: str | None = None
+) -> str | None:
     """Descend the sidebar, remembering the PART header and the nearest enclosing section.
 
     A chapter heading is a text-only row and the pages under it are its siblings. The five numbered phases are sections instead: the label is a declared part, the href is that phase's overview page, and the contents are the phase's pages. Either form names the part everything beneath it belongs to, and a linked one has its href recorded for ``write_css``.
@@ -90,7 +92,9 @@ def main() -> None:
     group = (yaml.safe_load((DOCS / "_static" / "phases.yml").read_text()).get("spine") or {}).get("part")
     contents = toc["website"]["sidebar"][0]["contents"]
     walk(contents, None, None, pages, set(by_part), index_pages, group)
-    first_part = next((i for i in contents if isinstance(i, dict) and i.get("text") in by_part and not i.get("contents")), None)
+    first_part = next(
+        (i for i in contents if isinstance(i, dict) and i.get("text") in by_part and not i.get("contents")), None
+    )
 
     reference = next((e for e in by_part.values() if e["key"] == "reference"), None)
     if reference is None:
@@ -183,8 +187,7 @@ def write_css(by_part: dict[str, dict], index_pages: dict[str, str], first_href:
             lines += [
                 "",
                 "/* The topmost part header needs no rule or gap above it. */",
-                selectors_for(first_href, " > span.menu-text")
-                + " { margin-top: 0.25rem; padding-top: 0; border-top: none; }",
+                selectors_for(first_href, " > span.menu-text") + " { margin-top: 0.25rem; padding-top: 0; border-top: none; }",
                 "",
             ]
     (DOCS / "_static" / "phases.css").write_text("\n".join(lines))

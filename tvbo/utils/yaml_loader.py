@@ -156,11 +156,14 @@ class IncludedMapping(dict):
     """A mapping spliced in by ``!include``, remembering the file it came from.
 
     A fragment's relative paths mean what they say *in the fragment*: a figure record naming ``code_modules`` and a captured page states them relative to the study it belongs to, and that must not change because a second spec includes it. A plain dict loses that the moment it is spliced, so the whole fragment silently re-resolves against whoever included it. This is a dict in every other respect, so nothing downstream needs to know it exists.
+
+    ``include_origin`` is the directory, which is what a relative path inside the fragment resolves against; ``include_source`` is the file itself, which a spliced-in object needs when it is a specification in its own right — a nested ``SimulationStudy`` records it as its ``_source_file`` and so keeps its own results root and code directory.
     """
 
-    def __init__(self, mapping, origin: Path):
+    def __init__(self, mapping, source: Path):
         super().__init__(mapping)
-        self.include_origin = Path(origin)
+        self.include_source = Path(source)
+        self.include_origin = Path(source).parent
 
 
 for _dumper in (yaml.Dumper, yaml.SafeDumper):
@@ -171,6 +174,11 @@ for _dumper in (yaml.Dumper, yaml.SafeDumper):
 def include_origin(value: Any) -> Path | None:
     """The directory an ``!include``d value came from, or None for anything loaded in place."""
     return getattr(value, "include_origin", None)
+
+
+def include_source(value: Any) -> Path | None:
+    """The file an ``!include``d value came from, or None for anything loaded in place."""
+    return getattr(value, "include_source", None)
 
 
 def _include_path(rel: str, base_dir: Path) -> Path:
@@ -199,7 +207,7 @@ def _make_include_constructor(base_dir: Path):
         # Fresh loader instance for the included document so anchors are file-local (no name capture from or into the parent document).
         with open(path) as fh:
             value = strip_envelope(yaml.load(fh, _make_loader_class(path.parent)))
-        return IncludedMapping(value, path.parent) if isinstance(value, dict) else value
+        return IncludedMapping(value, path) if isinstance(value, dict) else value
 
     return _include
 
@@ -343,13 +351,26 @@ def _split_one_scalar_unit(obj: dict) -> None:
     obj["unit"] = unit
 
 
+def _lift_one_legend(obj: dict) -> None:
+    """Expand a terse ``legend`` written directly on *obj* into the object the schema stores, in place.
+
+    A panel's key is a `Legend`: whether it is drawn, where it sits, whether it is boxed, how many columns it runs to. Most panels want only the corner, so ``legend: upper right``, ``legend: true`` and ``legend: false`` stay writable and mean ``{loc: upper right}``, ``{show: true}`` and ``{show: false}``. Reading them here means the terse form a person writes and the object the datamodel holds are the same document, and a panel that later needs two columns keeps the word it had.
+    """
+    value = obj.get("legend")
+    if isinstance(value, str):
+        obj["legend"] = {"loc": value}
+    elif isinstance(value, bool):
+        obj["legend"] = {"show": value}
+
+
 def _apply_dict_shorthands(obj: Any) -> Any:
-    """Apply every one-level dict convenience at every depth of *obj*: :func:`_lift_one_distribution` on the way down, :func:`_split_one_scalar_unit` on the way back up.
+    """Apply every one-level dict convenience at every depth of *obj*: :func:`_lift_one_distribution` and :func:`_lift_one_legend` on the way down, :func:`_split_one_scalar_unit` on the way back up.
 
     One walk rather than one per convenience, so a document is traversed once however many of them there are. In place, because an ``!include``d fragment is a dict SUBCLASS carrying the file it came from, and rebuilding it as a plain dict is how that origin gets lost.
     """
     if isinstance(obj, dict):
         _lift_one_distribution(obj)
+        _lift_one_legend(obj)
         for value in obj.values():
             _apply_dict_shorthands(value)
         _split_one_scalar_unit(obj)

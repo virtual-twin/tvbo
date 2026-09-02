@@ -3880,7 +3880,7 @@ classes:
             emit_provenance:
                 range: boolean
                 description: >-
-                    Whether a run writes the ``prov/`` records (BEP028's activity, entity, environment and software sets). Unset means enabled, and it applies to any run, not only a workflow kit. Named apart from the ``provenance`` slot carrying PROV-O metadata (Network, Figure, ...): LinkML maps every slot of a given name onto one property, so a boolean here and a ``Provenance`` object there would make ``tvbo:provenance`` both an owl:DatatypeProperty and an owl:ObjectProperty — not OWL-DL.
+                    Whether a run writes the ``prov/`` records (BEP028's activity, entity, environment and software sets). Unset means disabled, and it applies to any run, not only a workflow kit: BEP028 is not merged, and a recipe already records what each result was derived from through its ``used:`` edges, so the records restate the spec's own account across thousands of files. Set it true where an external consumer needs the BEP028 serialization. Named apart from the ``provenance`` slot carrying PROV-O metadata (Network, Figure, ...): LinkML maps every slot of a given name onto one property, so a boolean here and a ``Provenance`` object there would make ``tvbo:provenance`` both an owl:DatatypeProperty and an owl:ObjectProperty — not OWL-DL.
             provenance_format:
                 range: ProvenanceFormat
                 ifabsent: string(yaml)
@@ -4109,20 +4109,20 @@ classes:
                 inlined: true
                 description: >-
                     Packages this study's own code needs beyond what tvbo itself installs, keyed by package name and carrying the version it was reproduced against. A replication that matches a paper's method often has to use the paper's tool — a spectral parameterisation, a specific solver — and a study whose report imports one that nothing declares runs only on the machine that happens to have it. This states what is required; ``prov-<label>_soft`` records what actually ran, so the two can be compared rather than assumed equal.
-            members:
-                range: StudyMember
+            studies:
+                range: SimulationStudy
                 multivalued: true
                 inlined: true
                 inlined_as_list: true
                 description: >-
-                    Other studies this one aggregates, each a reference to a study recipe (``recipe``) plus whether it is ``optional`` (skipped unless requested, for runs too heavy to recompute per build). A study with members is a study-of-studies — a whole manuscript as one runnable specification — and recursion comes through the pointer: a member's own recipe may declare members of its own. ``tvbo run`` executes each member's experiments, analyses and figures, then the owning study's own, which are the paper-native demos belonging to no member. Legitimized by COMBINE/OMEX, SED-ML and the ISA ``Investigation`` top-level container it parallels.
+                    Other studies this one aggregates, each a ``SimulationStudy`` in its own right — so a study-of-studies is the same class as the studies it holds, and nesting recurses to any depth without a wrapper class standing between a study and the studies it holds. A whole manuscript is then one runnable specification whose sub-studies are runnable specifications. Written as ``!include <path>`` so each sub-study keeps its own recipe file and therefore its own directory: its ``code_source``, its results root and its relative references all resolve against where it lives, not against whoever included it. ``tvbo run`` walks the nested studies depth first, then runs the owning study's own experiments, analyses and figures — the paper-native content belonging to no sub-study. Legitimized by COMBINE/OMEX, SED-ML and the ISA ``Investigation`` top-level container it parallels.
             results:
                 range: ResultBinding
                 multivalued: true
                 inlined: true
                 inlined_as_list: true
                 description: >-
-                    The named numbers the prose cites, each keyed by the manuscript token that stands in for it (``key``) and bound either to a computed value (``used:`` a DataRef into this study's or a member's analysis) or to an authored constant quoted from prior work (``value`` + ``source``). ``tvbo run`` collects these into a results manifest the document reads, so no reported figure is transcribed by hand and a stale or missing key fails the build rather than printing a wrong number.
+                    The named numbers the prose cites, each keyed by the manuscript token that stands in for it (``key``) and bound either to a computed value (``used:`` a DataRef into this study's or a nested study's analysis) or to an authored constant quoted from prior work (``value`` + ``source``). ``tvbo run`` collects these into a results manifest the document reads, so no reported figure is transcribed by hand and a stale or missing key fails the build rather than printing a wrong number.
             archive:
                 range: ArchiveConfig
                 inlined: true
@@ -4151,27 +4151,10 @@ classes:
                 description: >-
                     Subdirectory within the source to place on the import path (defaults to the source root).
 
-    StudyMember:
-        class_uri: tvbo:StudyMember
-        description: >-
-            One member of a study-of-studies: a reference to a study recipe on disk (or by IRI) and whether it is optional. The recipe carries its own experiments, analyses, figures and code_source; the member only states where it is and how heavy it is to run.
-        slots:
-            - label
-        attributes:
-            recipe:
-                range: string
-                required: true
-                description: >-
-                    Path to the member's study recipe YAML, relative to this owning study's recipe, or an IRI resolving to one.
-            optional:
-                range: boolean
-                description: >-
-                    When true the member is skipped unless explicitly requested — for runs too heavy to recompute on every build (a full-atlas or long-simulation study whose derived artifacts ship in the archive). Defaults to false. ``tvbo run --dry-run`` lists it; ``--skip`` drops other members down to it.
-
     ResultBinding:
         class_uri: tvbo:ResultBinding
         description: >-
-            One entry in a study's results manifest: a manuscript key bound to the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN — ``used:`` a DataRef reading a scalar out of a member's or the collection's own analysis/experiment, formatted through ``format`` — COMPUTED FROM THE SPEC — ``count:`` a structural tally of a collection (e.g. the figures a member regenerates), needing no run — or AUTHORED — a literal ``value`` quoted from prior work and attributed by ``source``. So a number printed in prose is computed or an authored constant marked as such, never transcribed by hand.
+            One entry in a study's results manifest: a manuscript key bound to the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN — ``used:`` a DataRef reading a scalar out of a nested study's or this study's own analysis/experiment, formatted through ``format`` — COMPUTED FROM THE SPEC — ``count:`` a structural tally of a collection (e.g. the figures a nested study regenerates), needing no run — or AUTHORED — a literal ``value`` quoted from prior work and attributed by ``source``. So a number printed in prose is computed or an authored constant marked as such, never transcribed by hand.
         slots:
             - description
         attributes:
@@ -4191,7 +4174,7 @@ classes:
             count:
                 range: string
                 description: >-
-                    A structural tally computed from the specification, not a run: ``<member>.<collection>`` counts a collection on a member study (e.g. ``Jansen1995.figures``), or a bare ``<collection>`` counts one on the collection itself (e.g. ``members``). Mutually exclusive with ``used`` and ``value``.
+                    A structural tally computed from the specification, not a run: ``<study>.<collection>`` counts a collection on a nested study named by its citekey or label (e.g. ``Jansen1995.figures``), resolved at any depth, or a bare ``<collection>`` counts one on the study holding the binding (e.g. ``studies``). Mutually exclusive with ``used`` and ``value``.
             format:
                 range: string
                 description: >-

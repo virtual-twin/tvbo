@@ -1535,6 +1535,32 @@ def emission_period_steps(red: dict[str, Any] | None) -> int | None:
     return int(red["ds_steps"]) * int(red.get("tr_stride", 1))
 
 
+def streaming_block_size(reductions: Any, declared: Any = None, default: int = 1000) -> int:
+    """The solver block a set of streamed reductions folds on, and the one place that decides it.
+
+    A reducer that writes into a sample-indexed buffer emits once per :func:`emission_period_steps`, so a block that is not a whole number of that period puts a slot boundary inside a block. The reducer's own guard then reads every block as the short *final* tail -- the branch that exists so a run may end mid-period -- which advances the observer, emits nothing, and hands back the buffer it preallocated: right shape, right dimensions, right sweep coordinates, no signal and no error. The unit is therefore the least common multiple over every slotted reducer, and a stream that folds time away carries no period and takes ``default``.
+
+    ``declared`` is a recipe's own ``block_size``. It is honoured only as a whole multiple of that unit, which is the invariant the schema already states for it, and a violation raises here at codegen rather than emitting a run that quietly produces zeros.
+    """
+    import math
+
+    slotted = [_p for _p in (emission_period_steps(r) for r in (reductions or [])) if _p]
+    unit = 1
+    for step in slotted:
+        unit = unit * step // math.gcd(unit, step)
+    unit = unit if slotted else int(default)
+    if not declared:
+        return unit
+    declared = int(declared)
+    if slotted and declared % unit:
+        raise ValueError(
+            f"block_size={declared} is not a whole number of the {unit}-step emission period the streamed "
+            f"observations fold on, so every block would be read as a partial tail and emit nothing. "
+            f"Declare {unit} or a multiple of it."
+        )
+    return declared
+
+
 def emission_times(red: dict[str, Any] | None, n_samples: int, dt: float) -> list[float] | None:
     """The measurement-clock timestamp of each of ``n_samples`` output samples, or ``None`` for a reduction with no time axis.
 
@@ -2065,14 +2091,9 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
 
     A ``reduce: streaming`` observation (currently HRF-Volterra BOLD) is folded into the integrator carry via ``prepare(reduce=...)`` in the algorithm post-tuning evaluation, so the full-length fit trajectory is never materialised (the memory bomb an FC group fit hits at the paper's real per-stage duration). This resolves, once for the whole experiment:
 
-    - ``names``: the streaming observations to fold (empty => no streaming post-eval; the
-      materialise path is unchanged, so every non-opted-in experiment is untouched);
-    - ``deliverables``: the derived observations computable from the streamed values plus
-      the static network observations ALONE — i.e. WITHOUT the raw trajectory (the FC family: ``fc`` from streamed ``bold``, then ``fc_corr``/``fc_rmse`` from ``fc`` and
-      the empirical target). Observations that need the raw trajectory (e.g. a post-scan
-      ``mean`` over a state variable) are intentionally absent — at fit scale they cannot be materialised anyway;
-    - ``period_in_steps``: the block-size unit — a multiple of every reducer's
-      ``ds_steps * tr_stride`` — so BOLD TR boundaries align to integrator block boundaries (a partial-TR block would misalign the reducer's slot writing).
+    - ``names``: the streaming observations to fold (empty => no streaming post-eval; the materialise path is unchanged, so every non-opted-in experiment is untouched);
+    - ``deliverables``: the derived observations computable from the streamed values plus the static network observations ALONE — i.e. WITHOUT the raw trajectory (the FC family: ``fc`` from streamed ``bold``, then ``fc_corr``/``fc_rmse`` from ``fc`` and the empirical target). Observations that need the raw trajectory (e.g. a post-scan ``mean`` over a state variable) are intentionally absent — at fit scale they cannot be materialised anyway;
+    - ``period_in_steps``: the block-size unit — a multiple of every reducer's ``ds_steps * tr_stride`` — so BOLD TR boundaries align to integrator block boundaries (a partial-TR block would misalign the reducer's slot writing).
 
     Observation AXIS NAMES are not part of this plan: they describe every observation an experiment declares, streamed or materialised, so :func:`observation_dims` answers that independently and the caller asks it directly.
 
@@ -2085,12 +2106,19 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
         _rm = get_attr(o, "reduce")
         return _rm is not None and str(getattr(_rm, "value", _rm)) == "streaming"
 
+    def _obs_sources(o):
+        return [str(get_attr(s, "name", s)) for s in as_list(get_attr(o, "source"))]
+
     streaming = {}
     for n, o in obs_by_name.items():
         r = resolve_reduction(o, experiment)
-        # Fold in-carry reducers: a reduce: streaming observation (BOLD / stat stream) OR a `partition` grouped reduction (kind 'wave'), which writes per-group metrics into a sample-indexed carry the same way — so the base/post-eval run never materialises the trajectory to vmap every frame at once. A plain dynamics observer stays materialised.
-        if r is not None and not r.get("windowed") and (_is_streaming(o) or r.get("kind") == "wave"):
-            streaming[str(n)] = r
+        # Fold in-carry reducers: a reduce: streaming observation (BOLD / stat stream) OR a `partition` grouped reduction (kind 'wave'), which writes per-group metrics into a sample-indexed carry the same way — so the base/post-eval run never materialises the trajectory to vmap every frame at once. A plain dynamics observer stays materialised. An observation whose every source is another observation or a static network/dataset reference is never a fold, whatever it declares: only the raw trajectory has reducers, so such an observation is served by the deliverables closure below, computed from the streamed values it sources.
+        if r is None or r.get("windowed") or not (_is_streaming(o) or r.get("kind") == "wave"):
+            continue
+        srcs = _obs_sources(o)
+        if srcs and all(s in obs_by_name or s.startswith("network.") or s.startswith("dataset.") for s in srcs):
+            continue
+        streaming[str(n)] = r
     if not streaming:
         return {"names": [], "deliverables": [], "period_in_steps": None}
 
@@ -2098,9 +2126,6 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
         s = as_list(get_attr(o, "source"))
         s0 = str(get_attr(s[0], "name", s[0])) if s else ""
         return s0.startswith("network.observations.") or s0.startswith("dataset.subject")
-
-    def _obs_sources(o):
-        return [str(get_attr(s, "name", s)) for s in as_list(get_attr(o, "source"))]
 
     # Transitive closure of derived observations reachable from the streamed values and the static (trajectory-free) network observations: a derived obs is computable iff every observation it sources is already available.
     available = set(streaming) | {str(n) for n, o in obs_by_name.items() if _is_static_source(o)}
@@ -2120,18 +2145,10 @@ def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
                 deliverables.append(n)
                 changed = True
 
-    import math
-
-    # A reducer that writes into a sample-indexed buffer carries a block to align to, so that a slot boundary never falls inside a block. A scalar stat stream has no period, so default the block to a plain 1000 steps.
-    slotted = [_p for _p in (emission_period_steps(r) for r in streaming.values()) if _p]
-    pis = 1
-    for step in slotted:
-        pis = pis * step // math.gcd(pis, step)
-    period = pis if slotted else 1000
     return {
         "names": sorted(streaming),
         "deliverables": deliverables,
-        "period_in_steps": period,
+        "period_in_steps": streaming_block_size(streaming.values()),
     }
 
 
@@ -2182,19 +2199,27 @@ def adapt_class_reference_for_tvboptim(class_info: dict[str, Any], obs: Any, dt:
 
     if class_name == "Bold":
         return _adapt_tvb_bold_reference(class_info, obs, dt)
-    if class_name == "TemporalAverage":
-        return _adapt_tvb_downsampling_reference(class_info, obs, "TemporalAverage")
-    if class_name == "SubSample":
-        return _adapt_tvb_downsampling_reference(class_info, obs, "SubSampling")
-    return class_info
+    if class_name in _TVBOPTIM_PERIOD_MONITORS:
+        return _adapt_tvb_period_reference(class_info, obs, *_TVBOPTIM_PERIOD_MONITORS[class_name])
+    if getattr(obs, "pipeline", None):
+        return None
+    raise NotImplementedError(
+        f"the tvboptim backend has no equivalent of tvb.simulator.monitors.{class_name}, which the observation "
+        f"'{getattr(obs, 'name', None) or class_name}' names, and that observation declares no pipeline to compute instead. "
+        "A TVB monitor is a stateful NumPy object driven step by step by TVB's own loop, so it cannot be called on a "
+        "tvboptim trajectory; curate a pipeline for the observation or run it on the tvb backend."
+    )
 
 
-def _adapt_tvb_downsampling_reference(class_info: dict[str, Any], obs: Any, tvboptim_class_name: str) -> dict[str, Any]:
-    if tvboptim_class_name == "TemporalAverage":
-        tvboptim_class_name = "TVBTemporalAverage"
-        module = "tvbo.templates.tvboptim.observations"
-    else:
-        module = "tvboptim.observations.tvb_monitors.downsampling"
+_TVBOPTIM_PERIOD_MONITORS = {
+    "TemporalAverage": ("tvbo.templates.tvboptim.observations", "TVBTemporalAverage"),
+    "SubSample": ("tvboptim.observations.tvb_monitors.downsampling", "SubSampling"),
+    "GlobalAverage": ("tvbo.templates.tvboptim.observations", "TVBGlobalAverage"),
+}
+"""TVB monitors that a tvboptim class reproduces, keyed by TVB class name and valued by the ``(module, name)`` that replaces it. Each takes ``voi`` and a sampling ``period`` and nothing else."""
+
+
+def _adapt_tvb_period_reference(class_info: dict[str, Any], obs: Any, module: str, tvboptim_class_name: str) -> dict[str, Any]:
     adapted = _base_class_info(
         module,
         tvboptim_class_name,

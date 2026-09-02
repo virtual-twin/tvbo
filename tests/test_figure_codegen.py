@@ -399,8 +399,8 @@ def test_render_code_emits_study_code_module_imports():
     )
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "import taher2019_figures" in code
-    assert "import myextra" in code
+    assert '_importlib.import_module("taher2019_figures")' in code
+    assert '_importlib.import_module("myextra")' in code
     # no code_modules -> no study-import block
     assert "registers this study" not in bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
 
@@ -618,7 +618,7 @@ def test_render_code_inset_draws_inside_its_host():
 
 def test_render_code_inset_shares_the_panel_drawing_rules():
     """An inset resolves through the same path as a panel, so a heatmap inset gets the triangle/colourbar treatment a heatmap panel gets rather than a reduced copy of it."""
-    fig = _inset_figure(kind="heatmap", opts={"colorbar": P.Argument(name="colorbar", value=False)})
+    fig = _inset_figure(kind="heatmap", colorbar={"show": False})
     fig.panels["a"].insets[0].layers[0].triangle = "upper"
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
@@ -711,33 +711,67 @@ def test_placeholder_fallback_does_not_redraw_the_declared_frame():
     """A panel that declares a paper frame (xticks/xlim) AND a placeholder must stay bare when its data is absent: the post-format frame re-apply is guarded on ``_PLACEHOLDER_AXES`` so it never draws real ticks over the honest bare box that ``_bare`` just stripped."""
     figure = _cartesian_figure(iri=MISSING_IRI)
     figure.panels["a"].placeholder = "no data"
-    figure.panels["a"].opts = {"xticks": P.Argument(name="xticks", value=[0, 1, 2])}
+    figure.panels["a"].xticks = [0, 1, 2]
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
-    assert ctx["panels"][0]["post_axopts"] == {"xticks": [0, 1, 2]}  # a real fallback keeps its declared frame
+    assert ctx["panels"][0]["post_axopts"] == {"xticks": [0.0, 1.0, 2.0]}  # a real fallback keeps its declared frame
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
     assert "if axd['a'] not in _PLACEHOLDER_AXES:" in code
 
 
-def test_axvline_and_axhline_accept_scalar_or_list():
-    """Reference lines are declarative axis directives: the paper's dashed verticals at N = 10/100/200 are one ``axvline`` list, not three hand-drawn calls."""
+def test_reference_lines_are_declared_objects_carrying_their_own_colour():
+    """A rule and the colour it is drawn in are one object: the paper's dashed verticals at N = 10/100/200 are three ``rules``, not an ``axvline`` list with a colour option loose beside it."""
     figure = _cartesian_figure()
-    figure.panels["a"].opts = {
-        "axvline": P.Argument(name="axvline", value=[10, 100, 200]),
-        "axhline": P.Argument(name="axhline", value=0.0),
-    }
+    figure.panels["a"].rules = [
+        *(P.Rule(orientation="vertical", at=[v], color="muted", dash="dashed") for v in (10, 100, 200)),
+        P.Rule(orientation="horizontal", at=[0.0]),
+    ]
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
-    assert ctx["panels"][0]["axopts"]["axvline"] == [10, 100, 200]
-    assert ctx["panels"][0]["axopts"]["axhline"] == 0.0
+    axopts = ctx["panels"][0]["axopts"]
+    assert axopts["axvline"] == [10.0, 100.0, 200.0], (
+        "`Rule.at` is a float slot, so the spec's integers arrive as the numbers they are"
+    )
+    assert axopts["axhline"] == [0.0], "one entry per rule, always, so two rules keep two colours"
+    assert axopts["axvline_color"] == ["#c3cbcb"] * 3, (
+        "a role names the theme's colour, and is resolved before it reaches the script"
+    )
+    assert axopts["axvline_dash"] == ["dashed"] * 3 and "axhline_dash" not in axopts, (
+        "a rule's weight and dash reach the drawing, and an unstated one leaves the default alone"
+    )
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "'axvline': [10, 100, 200]" in code
+    assert "'axvline': [10.0, 100.0, 200.0]" in code
+
+
+def test_the_retired_option_spelling_names_what_replaced_it():
+    """A spec written against the old flat options fails where it is written, naming the object that replaced it — not as a matplotlib TypeError from inside the emitted script."""
+    figure = _cartesian_figure()
+    figure.panels["a"].opts = {"axvline": P.Argument(name="axvline", value=[10]), "elev": P.Argument(name="elev", value=30)}
+    with pytest.raises(ValueError, match=r"axvline, elev are declared objects now"):
+        bsplot.build_context(figure, TAHER_BASE, "out.png")
+
+
+def test_a_diagonal_rule_is_the_identity_line_a_scatter_is_read_against():
+    """``axline`` takes slope and intercept, which the horizontal and vertical forms cannot express; [1, 0] is the agreement line of a target-versus-simulated panel."""
+    figure = _cartesian_figure()
+    figure.panels["a"].rules = [P.Rule(orientation="diagonal", at=[1.0, 0.0], color="palette.0")]
+    axopts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
+    assert axopts["axline"] == [[1.0, 0.0]]
+    assert axopts["axline_color"] == ["#1f7d78"]
+
+
+def test_a_camera_states_a_viewpoint_as_one_thing():
+    """Three loose options let a figure state two of its three numbers; one object does not."""
+    figure = _cartesian_figure()
+    figure.panels["a"].camera = P.Camera(elevation=22, azimuth=-60, zoom=1.4)
+    axopts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
+    assert (axopts["elev"], axopts["azim"], axopts["zoom"]) == (22.0, -60.0, 1.4)
 
 
 def test_invert_x_is_restored_after_the_format_pass():
     """``format_fig`` re-normalises every numeric axis to ascending (``min/max`` + ``set_xlim``), so a declared ``invert_x`` is re-applied afterwards — guarded like ``invert_y`` so it is idempotent — or the declared x-direction silently flips back."""
     figure = _cartesian_figure()
-    figure.panels["a"].opts = {"invert_x": P.Argument(name="invert_x", value=True)}
+    figure.panels["a"].invert_x = True
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
     assert "_iax.invert_xaxis()" in code
@@ -753,7 +787,8 @@ def _matrix_figure():
             "a": P.Panel(
                 panel_key="a",
                 kind="heatmap",
-                opts={"invert_y": P.Argument(name="invert_y", value=True), "aspect": P.Argument(name="aspect", value="equal")},
+                invert_y=True,
+                aspect="equal",
                 layers=[
                     P.Layer(
                         used=P.DataRef(iri=EXP3_IRI, output="fc_data"),
@@ -836,7 +871,7 @@ def test_annotations_default_base_dir_resolves_a_used_binding():
 def test_triangle_gap_separates_the_two_halves():
     """`triangle_gap` slides the halves apart along the diagonal, so the two quantities do not touch — without it a data/model matrix reads as one continuous field."""
     figure = _matrix_figure()
-    figure.panels["a"].opts["triangle_gap"] = P.Argument(name="triangle_gap", value=7)
+    figure.panels["a"].triangle_gap = 7
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
     assert ctx["panels"][0]["triangle_gap"] == 7
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
@@ -871,17 +906,15 @@ def test_triangle_masks_the_other_half():
 def test_declared_ticks_survive_the_format_pass():
     """Bsplot's format pass re-derives evenly spaced ticks; a DECLARED tick set is the paper's own frame and must win, so it is re-applied afterwards."""
     figure = _cartesian_figure()
-    figure.panels["a"].opts = {
-        "xticks": P.Argument(name="xticks", value=[50, 100, 150, 200]),
-        "xlabel": P.Argument(name="xlabel", value="modes"),
-    }
+    figure.panels["a"].xlabel = "modes"
+    figure.panels["a"].xticks = [50, 100, 150, 200]
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
     post = ctx["panels"][0]["post_axopts"]
-    assert post == {"xticks": [50, 100, 150, 200]}  # labels are not clobbered, ticks are
+    assert post == {"xticks": [50.0, 100.0, 150.0, 200.0]}  # labels are not clobbered, ticks are
 
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert code.index("format_fig") < code.index("{'xticks': [50, 100, 150, 200]}")
+    assert code.index("format_fig") < code.index("{'xticks': [50.0, 100.0, 150.0, 200.0]}")
     # A placeholder-only panel has no frame to restore.
     assert bsplot.build_context(_placeholder_figure(), TAHER_BASE, "o.png")["panels"][0]["post_axopts"] == {}
 
@@ -972,7 +1005,7 @@ def test_color_encoding_draws_one_line_per_entry():
 def test_colorbar_suppressed_by_opt():
     """`colorbar: false` drops the scale where the paper prints none."""
     figure = _matrix_figure()
-    figure.panels["a"].opts["colorbar"] = P.Argument(name="colorbar", value=False)
+    figure.panels["a"].colorbar = P.Colorbar(show=False)
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
     assert ctx["panels"][0]["colorbar"] is False
     assert "fig.colorbar(" not in bsplot.render_code(figure, TAHER_BASE, "out.png")
@@ -1310,10 +1343,7 @@ def test_declared_colorbar_ticks_survive_the_shared_format_pass():
     fig = _cartesian_figure()
     panel = fig.panels["a"]
     panel.kind = "heatmap"
-    panel.opts = {
-        "colorbar": P.Argument(name="colorbar", value=True),
-        "colorbar_ticks": P.Argument(name="colorbar_ticks", value=[-0.3, 0.3, 0.9]),
-    }
+    panel.colorbar = P.Colorbar(show=True, ticks=[-0.3, 0.3, 0.9])
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
     assert "_COLORBAR_POST.append((_cb, None, [-0.3, 0.3, 0.9]))" in code
@@ -1337,7 +1367,7 @@ def _animated_figure(**animation_kw):
                 panel_key="a",
                 kind="network",
                 layers=[P.Layer(used=P.DataRef(**used))],
-                opts={"network": P.Argument(name="network", value="tvbo:DesikanKilliany")},
+                network={"connectome": "tvbo:DesikanKilliany"},
             ),
             "b": P.Panel(
                 panel_key="b",
@@ -1426,3 +1456,386 @@ def test_network_panel_without_a_connectome_says_so():
 def test_network_panel_rejects_an_unknown_projection():
     with pytest.raises(ValueError, match="projection 'oblique' is not one of"):
         bsplot.network_panel(None, None, {"opts": {"network": "tvbo:DesikanKilliany", "projection": "oblique"}, "layers": []})
+
+
+def test_every_axis_directive_the_adapter_applies_comes_from_a_declared_slot():
+    """`Panel.opts` carries a custom callable's keywords and nothing else, so no part of how an axis is drawn may live there. Each directive the renderer applies traces either to a flat slot the schema declares — on Panel and on Inset alike, because a grid cell routes through the same code as the panel around it — or to one of the objects that keep a mark and its decoration together.
+
+    Nothing else pins the two vocabularies together, so a directive added to one side and not the other would go unnoticed until a spec quietly stopped working.
+    """
+    import yaml
+
+    classes = yaml.safe_load((Path(__file__).resolve().parent.parent / "schema" / "figure.yaml").read_text())["classes"]
+    declared = {*bsplot._AXIS_SLOTS, *bsplot._TICK_SLOTS, "legend"}
+    for name in ("Panel", "Inset"):
+        missing = declared - set(classes[name]["attributes"])
+        assert not missing, f"the adapter reads {sorted(missing)} off a {name} the schema does not declare them on"
+    assert declared <= set(bsplot.retired_options()) | set(bsplot._RESHAPED_OPTS), (
+        "a promoted directive still written as an option must be refused by name, not passed into the emitted script"
+    )
+    assert set(bsplot._RULE_DECOR) == set(classes["Rule"]["attributes"]) - {"orientation", "at"}
+    assert set(bsplot._REGION_DECOR) == set(classes["Region"]["attributes"]) - {"bounds"}
+    assert {d.removeprefix("legend_") for d in bsplot._LEGEND_DIRECTIVES} - {"legend"} <= set(classes["Legend"]["attributes"])
+
+
+def test_each_kinds_vocabulary_is_the_schemas():
+    """`_KIND_ATTRS` is the adapter's copy of what each kind object may declare, and every other part of the retirement is derived from it — what a drawer is handed, what the old spelling was, what the migration rewrites. An attribute added to one of these classes and not to that table would be accepted by the schema and then quietly dropped, so the two are pinned."""
+    import yaml
+
+    classes = yaml.safe_load((Path(__file__).resolve().parent.parent / "schema" / "figure.yaml").read_text())["classes"]
+
+    def declared(name):
+        own = set(classes[name]["attributes"])
+        return own | (declared(classes[name]["is_a"]) if classes[name].get("is_a") else set())
+
+    for kind, cls in (
+        ("surface", "Surface"),
+        ("volume", "Volume"),
+        ("network", "Graph"),
+        ("grid", "Grid"),
+        ("colorbar", "Colorbar"),
+        ("legend", "Legend"),
+    ):
+        assert set(bsplot._KIND_ATTRS[kind]) == declared(cls), (
+            f"{cls} and the adapter's vocabulary for `{kind}:` have drifted apart"
+        )
+    assert set(bsplot._KIND_ATTRS) - {"legend"} == set(bsplot._KIND_SLOTS), (
+        "every kind object is resolved by _declared_kind except the legend, whose slot _declared_legend owns because a panel-attached key shares it"
+    )
+    for kind, renames in bsplot._KIND_RENAMES.items():
+        assert set(renames) <= set(bsplot._KIND_ATTRS[kind]), f"{kind} renames an attribute it does not declare"
+
+
+def test_the_migration_rewrites_the_retired_options_into_objects_the_adapter_accepts():
+    """`scripts/migrate_panel_marks.py` is what turns a spec written against the flat options into one the adapter reads, so the retirement is a command to run rather than a hand edit of every panel."""
+    import sys
+
+    import yaml
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    from migrate_panel_marks import convert
+
+    spec = yaml.safe_load(
+        "panels:\n"
+        "  a:\n    kind: cartesian\n    opts: {axvline: {value: [10, 200]}, axvline_color: {value: muted}, xlabel: {value: N}, k: {value: 3}}\n"
+        "  b:\n    kind: line3d\n    opts: {elev: {value: 22}, azim: {value: -60}, zoom: {value: 1.4}}\n"
+        "  c:\n    kind: heatmap\n    opts: {region: {value: [0.1, 0.4, 0.2, 0.9]}, region_color: {value: highlight}}\n"
+    )
+    assert convert(spec)
+    a, b, c = (spec["panels"][k] for k in "abc")
+    assert a["rules"] == [{"orientation": "vertical", "at": [v], "color": "muted"} for v in (10, 200)]
+    assert a["xlabel"] == "N", "a promoted directive becomes a slot of the panel"
+    assert a["opts"] == {"k": {"value": 3}}, "a custom callable's own keyword stays where it was"
+    assert b["camera"] == {"elevation": 22, "azimuth": -60, "zoom": 1.4} and "opts" not in b
+    assert c["regions"] == [{"bounds": [0.1, 0.4, 0.2, 0.9], "color": "highlight"}]
+
+    figure = _cartesian_figure()
+    figure.panels["a"].rules = [P.Rule(**r) for r in a["rules"]]
+    axopts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
+    assert axopts["axvline"] == [10.0, 200.0] and axopts["axvline_color"] == ["#c3cbcb"] * 2
+
+
+def test_the_tick_family_is_declared_and_shares_the_theme_s_words():
+    """A panel's ticks are slots, not strings in a free-form bag — and they carry the theme's own names, so a figure-wide default and a panel's override are the same word rather than two vocabularies that have to be mapped."""
+    figure = _cartesian_figure()
+    panel = figure.panels["a"]
+    panel.tick_length, panel.tick_size, panel.nbins = 3.0, 7.0, 4
+    panel.xtick_rotation, panel.xtick_format, panel.tick_prune = 45.0, "sci", "upper"
+    panel.hide_yticklabels = True
+    axopts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
+    assert axopts["tick_length"] == 3.0 and axopts["tick_size"] == 7.0 and axopts["nbins"] == 4
+    assert axopts["xtick_format"] == "sci" and axopts["tick_prune"] == "upper", "an enum arrives as its value, not as its repr"
+    assert axopts["xtick_rotation"] == 45.0 and axopts["hide_yticklabels"] is True
+    assert set(bsplot._TICK_SLOTS) <= set(bsplot.retired_options()), (
+        "the option spelling is retired, so there is one route and not two"
+    )
+
+
+def test_the_theme_names_every_tick_slot_a_panel_can_override():
+    """The theme is the default a panel overrides, so a panel tick slot the theme cannot state would have no figure-wide setting — and a theme slot no panel can override could not be varied per panel."""
+    from tvbo.plot import palette
+
+    per_panel = {"tick_size", "nbins", "tick_prune"}  # answer to one panel's neighbours, not to the house look
+    shared = {s for s in bsplot._TICK_SLOTS if not s.startswith(("x", "y", "hide_"))} - per_panel
+    assert shared <= set(palette.GEOMETRY), (
+        f"panel tick slots with no theme-wide default: {sorted(shared - set(palette.GEOMETRY))}"
+    )
+    assert per_panel.isdisjoint(palette.GEOMETRY), (
+        "a theme stating one of these would be fixing a decision that belongs to a single panel"
+    )
+
+
+def test_a_panel_declares_its_labels_limits_and_scales_rather_than_listing_them_as_options():
+    """The axis family is slots on the panel, so a label is validated as a string and a limit as a pair of numbers. `opts` is left holding a custom callable's keywords and nothing else."""
+    figure = _cartesian_figure()
+    panel = figure.panels["a"]
+    panel.xlabel, panel.ylabel, panel.title = "K", "r", "order"
+    panel.xlim, panel.ylim = [0.0, 2.0], [0.0, 1.0]
+    panel.yscale, panel.aspect, panel.invert_y, panel.frame = "log", "equal", True, False
+    panel.ylabel_side = "right"
+    axopts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
+    assert axopts["xlabel"] == "K" and axopts["title"] == "order"
+    assert axopts["xlim"] == [0.0, 2.0] and axopts["ylim"] == [0.0, 1.0]
+    assert (axopts["yscale"], axopts["ylabel_side"]) == ("log", "right"), "an enum reaches the script as its value"
+    assert axopts["aspect"] == "equal" and axopts["invert_y"] is True and axopts["frame"] is False
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    ast.parse(code)
+
+
+def test_a_declared_limit_written_as_a_quoted_exponent_is_a_number():
+    """`xlim` is a float slot, so YAML 1.1's forced quoting of an unsigned exponent cannot reach matplotlib as text and turn the axis categorical."""
+    figure = _cartesian_figure()
+    figure.panels["a"].xlim = ["1.0e-4", "1.0e4"]
+    axopts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
+    assert axopts["xlim"] == [1e-4, 1e4]
+
+
+def test_the_legend_shorthands_and_the_object_are_one_slot():
+    """A corner, a bare `true` and the object all reach the renderer as the same directives, so a panel that starts with a corner and later needs two columns keeps the word it had."""
+    from tvbo.utils.yaml_loader import _apply_dict_shorthands
+
+    assert _apply_dict_shorthands({"legend": "upper right"})["legend"] == {"loc": "upper right"}
+    assert _apply_dict_shorthands({"legend": True})["legend"] == {"show": True}
+
+    figure = _cartesian_figure()
+    for declared, expected in (
+        (P.Legend(loc="upper right"), "upper right"),
+        (P.Legend(show=True), True),
+        (P.Legend(loc="lower left", columns=2, title="Route", frame=True), "lower left"),
+    ):
+        figure.panels["a"].legend = declared
+        axopts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
+        assert axopts["legend"] == expected
+    assert axopts["legend_columns"] == 2 and axopts["legend_title"] == "Route" and axopts["legend_frame"] is True
+
+
+def test_a_legend_switched_off_draws_none():
+    """`show: false` is how one panel opts out of a key a shared inclusion turned on, without deleting what that inclusion says."""
+    figure = _cartesian_figure()
+    figure.panels["a"].legend = P.Legend(show=False, loc="upper right")
+    assert "legend" not in bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
+
+
+def test_an_unstated_legend_frame_is_the_theme_s():
+    """The renderer used to box no key at all, whatever the theme said. The frame is the theme's now — TVB-O's own states `legend_frame: false`, which is why its keys are unboxed — and a panel overrides it only where it says so."""
+    figure = _cartesian_figure()
+    figure.panels["a"].legend = P.Legend(loc="best")
+    ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
+    assert "legend_frame" not in ctx["panels"][0]["axopts"]
+    assert ctx["spine_rcparams"]["legend.frameon"] is False, "the curated theme is the base under a figure that declares none"
+
+
+def test_two_rules_of_one_orientation_keep_their_own_colours():
+    """Every rule directive is one entry per rule, so a spec cannot state two thresholds and have the second one's colour win for both."""
+    figure = _cartesian_figure()
+    figure.panels["a"].rules = [
+        P.Rule(orientation="horizontal", at=[0.25], color="muted"),
+        P.Rule(orientation="horizontal", at=[0.75], color="highlight", width=1.4),
+    ]
+    axopts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["axopts"]
+    assert axopts["axhline"] == [0.25, 0.75]
+    assert axopts["axhline_color"] == ["#c3cbcb", "#c0504d"]
+    assert axopts["axhline_width"] == [None, 1.4], "a rule that states no weight leaves the default to its neighbour's"
+
+
+def test_an_inset_declares_the_same_axis_surface_as_the_panel_around_it():
+    """A grid cell and an inset resolve through the same code as a mosaic panel, so a directive a panel can declare must be declarable there too — or a cell would be refused with nowhere to move its option."""
+    figure = _cartesian_figure()
+    panel = figure.panels["a"]
+    panel.insets = [
+        P.Inset(
+            bounds=[0.6, 0.6, 0.35, 0.35],
+            kind="cartesian",
+            xlabel="K",
+            xlim=[0.0, 1.0],
+            hide_yticklabels=True,
+            legend=P.Legend(loc="upper left"),
+            layers=panel.layers,
+        )
+    ]
+    inset = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["insets"][0]
+    assert inset["axopts"]["xlabel"] == "K" and inset["axopts"]["xlim"] == [0.0, 1.0]
+    assert inset["axopts"]["hide_yticklabels"] is True and inset["axopts"]["legend"] == "upper left"
+
+
+def test_the_migration_rewrites_the_promoted_axis_options():
+    """The 21 axis options that became slots migrate the same way the marks did — including the two spellings `frame` and `legend` each carried, which the promotion collapses into one."""
+    import sys
+
+    import yaml
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    from migrate_panel_marks import convert
+
+    spec = yaml.safe_load(
+        "panels:\n"
+        '  a:\n    kind: cartesian\n    opts: {xlabel: {value: K}, ylim: {value: ["1.0e-4", 1.0]}, yscale: {value: log}, legend: {value: "upper right"}}\n'
+        "  b:\n    kind: heatmap\n    opts: {frame: {value: off}, aspect: {value: equal}, invert_y: {value: true}, colorbar: {value: true}}\n"
+        "  c:\n    kind: cartesian\n    opts: {legend: {value: true}, legend_loc: {value: upper left}}\n"
+    )
+    assert convert(spec)
+    a, b, c = (spec["panels"][k] for k in "abc")
+    assert a["xlabel"] == "K" and a["yscale"] == "log" and a["legend"] == "upper right"
+    assert a["ylim"] == [1e-4, 1.0], "a quoted exponent becomes the number the float slot holds"
+    assert b["frame"] is False and b["aspect"] == "equal" and b["invert_y"] is True
+    assert b["colorbar"] == {"show": True}, "the colorbar family moved into an object of its own"
+    assert c["legend"] == "upper left", "a corner invented as a second option folds into the one slot"
+
+
+def test_a_grid_cell_may_declare_the_slots_its_panel_can():
+    """A cell's declared slots are resolved into the flat directives its drawable carries, and those must not then be read back as the retired option spelling — the refusal is for what a person wrote, not for what the resolution produced."""
+    figure = _cartesian_figure()
+    panel = figure.panels["a"]
+    figure.panels["a"] = P.Panel(
+        panel_key="a",
+        kind="grid",
+        grid={"ncols": 1},
+        cell=P.Inset(kind="cartesian", ylabel="r"),
+        cells=[
+            P.Inset(kind="cartesian", layers=panel.layers, hide_xticklabels=True),
+            P.Inset(kind="cartesian", layers=panel.layers, xlabel="K"),
+        ],
+    )
+    cells = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["insets"]  # a grid's cells ride the inset slot
+    assert [c["axopts"]["ylabel"] for c in cells] == ["r", "r"], "the template's slot reaches every cell"
+    assert cells[0]["axopts"]["hide_xticklabels"] is True and cells[1]["axopts"]["xlabel"] == "K"
+
+
+def test_a_builtin_kind_declares_its_geometry_as_one_object():
+    """Each built-in kind's options are the object named after it, so the three mutually exclusive places a mesh comes from sit together with the settings that apply only to each, and an attribute the schema does not know is a validation error rather than a default nobody was told about."""
+    figure = _cartesian_figure()
+    panel = figure.panels["a"]
+    figure.panels["a"] = P.Panel(
+        panel_key="a",
+        kind="surface",
+        surface=P.Surface(
+            template="fsaverage", hemi="both", view="dorsal", colormap="sequential", percentile=95.0, edge_color="muted"
+        ),
+        layers=panel.layers,
+    )
+    opts = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]["ctx"]["opts"]
+    assert opts["hemi"] == "lh" or opts["hemi"] == "both", "the schema's hemisphere vocabulary, in the backend's spelling"
+    assert (opts["view"], opts["template"], opts["percentile"]) == ("dorsal", "fsaverage", 95.0)
+    assert opts["cmap"] == "viridis", "a theme colormap key resolves before the script is written"
+    assert opts["edgecolor"] == "#c3cbcb", "a palette role resolves, and lands under the name the drawer reads"
+
+
+def test_the_hemisphere_vocabulary_is_the_schema_s_own():
+    """`left`/`right`/`both` is what every other part of the schema calls a hemisphere; the surface backend's `lh`/`rh` is a spelling, not a second vocabulary."""
+    figure = _cartesian_figure()
+    for declared, expected in (("left", "lh"), ("right", "rh"), ("both", "both")):
+        figure.panels["a"] = P.Panel(
+            panel_key="a", kind="surface", surface=P.Surface(template="fsaverage", hemi=declared), layers=[]
+        )
+        assert bsplot._declared_kind(figure.panels["a"])["hemi"] == expected
+
+
+def test_the_colour_bar_is_one_object_wherever_it_is_drawn():
+    """Nine loose `colorbar_*` options were nine chances to style a bar that is not drawn. The standalone `kind: colorbar` panel IS the bar, so the same object resolves to the unprefixed names its own drawer reads."""
+    figure = _cartesian_figure()
+    figure.panels["a"].kind = "heatmap"
+    figure.panels["a"].colorbar = P.Colorbar(show=True, label="FC", ticks=[-0.3, 0.3, 0.9], decimals=2, fraction=0.03)
+    panel = bsplot.build_context(figure, TAHER_BASE, "out.png")["panels"][0]
+    assert panel["colorbar"] is True and panel["colorbar_label"] == "FC"
+    assert panel["colorbar_ticks"] == [-0.3, 0.3, 0.9] and panel["colorbar_decimals"] == 2
+    assert panel["colorbar_kwargs"]["fraction"] == 0.03
+
+    standalone = P.Panel(panel_key="b", kind="colorbar", colorbar=P.Colorbar(label="FC", ticks=[0.0, 1.0], width=0.3))
+    assert bsplot._declared_kind(standalone) == {"label": "FC", "ticks": [0.0, 1.0], "width": 0.3}
+
+
+def test_a_kind_s_words_are_refused_only_for_that_kind():
+    """`color`, `labels` and `cmap` are a built-in kind's options AND perfectly good keywords for a custom callable. Retiring them everywhere would refuse the callable that has always taken them, so the refusal is per kind."""
+    with pytest.raises(ValueError, match=r"surface: \{connectome: <value>\}"):
+        bsplot._panel_opts(P.Panel(panel_key="a", kind="surface", opts={"network": P.Argument(name="network", value="x")}))
+    with pytest.raises(ValueError, match=r"volume: \{image: <value>\}"):
+        bsplot._panel_opts(P.Panel(panel_key="a", kind="volume", opts={"volume": P.Argument(name="volume", value="x")}))
+    kept = bsplot._panel_opts(
+        P.Panel(
+            panel_key="a",
+            kind="custom",
+            render="f",
+            opts={"color": P.Argument(name="color", value="red"), "cmap": P.Argument(name="cmap", value="magma")},
+        )
+    )
+    assert kept == {"color": "red", "cmap": "magma"}, "a custom callable keeps every keyword it has always taken"
+
+
+def test_a_grid_declares_its_tiling_but_a_per_row_directive_stays_an_option():
+    """A grid's fixed geometry is slots; `row.<name>`/`col.<name>` supplies one value per row or column of ANY directive, so it cannot be a slot of anything and stays where it was."""
+    figure = _cartesian_figure()
+    panel = figure.panels["a"]
+    figure.panels["a"] = P.Panel(
+        panel_key="a",
+        kind="grid",
+        grid=P.Grid(ncols=2, col_labels=["Initial", "Fitted"], wspace=0.05),
+        opts={"row.view": P.Argument(name="row.view", value=["lateral", "medial"])},
+        cell=P.Inset(kind="cartesian"),
+        layers=panel.layers * 2,
+    )
+    opts = bsplot._panel_opts(figure.panels["a"])
+    assert opts["ncols"] == 2 and opts["col_labels"] == ["Initial", "Fitted"] and opts["wspace"] == 0.05
+    assert opts["row.view"] == ["lateral", "medial"], "a per-row directive is not a fixed slot of anything"
+
+
+def test_the_standalone_legend_panel_reads_the_slot_it_is():
+    """A `kind: legend` panel IS the key rather than carrying one, so its entries are the same `legend:` slot every other panel uses — not a second vocabulary for the same word."""
+    panel = P.Panel(
+        panel_key="k",
+        kind="legend",
+        legend=P.Legend(labels=["up", "down"], colors=["palette.0", "muted"], loc="center", handle_length=2.2),
+    )
+    got = bsplot._declared_legend(panel)
+    assert got["labels"] == ["up", "down"] and got["colors"] == ["palette.0", "muted"]
+    assert got["loc"] == "center" and got["handlelength"] == 2.2
+    assert "legend" not in got, "the panel is the key; it does not also ask for one of its own"
+
+
+def test_the_migration_rewrites_a_builtin_kind_s_options_into_its_object():
+    """A study written against the loose per-kind options is converted, and a `custom` panel's identically-named keywords are left exactly where they are."""
+    import sys
+
+    import yaml
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    from migrate_panel_marks import convert
+
+    spec = yaml.safe_load(
+        "panels:\n"
+        "  a:\n    kind: heatmap\n    opts: {colorbar: {value: true}, colorbar_label: {value: FC}, colorbar_ticks: {value: [-0.3, 0.3, 0.9]}}\n"
+        "  b:\n    kind: surface\n    opts: {hemi: {value: both}, view: {value: dorsal}, cmap: {value: cividis}, edgecolor: {value: muted}}\n"
+        "  c:\n    kind: grid\n    opts: {ncols: {value: 3}, 'row.view': {value: [lateral, medial]}}\n"
+        "  d:\n    kind: custom\n    render: f\n    opts: {color: {value: red}, cmap: {value: magma}}\n"
+    )
+    assert convert(spec)
+    a, b, c, d = (spec["panels"][k] for k in "abcd")
+    assert a["colorbar"] == {"show": True, "label": "FC", "ticks": [-0.3, 0.3, 0.9]}
+    assert b["surface"] == {"hemi": "both", "view": "dorsal", "edge_color": "muted", "colormap": "cividis"}
+    assert c["grid"] == {"ncols": 3} and c["opts"] == {"row.view": {"value": ["lateral", "medial"]}}
+    assert d["opts"] == {"color": {"value": "red"}, "cmap": {"value": "magma"}}, "a callable's keywords are untouched"
+
+
+def test_a_scale_on_a_panel_s_own_bar_is_refused_where_it_is_written():
+    """`Colorbar` carries the scale fields for the standalone `kind: colorbar` panel, which is the only one that has a scale of its own. A bar attached to a panel keys the field beside it, so a `colormap` there would be read by nothing — it is refused, naming where it belongs."""
+    with pytest.raises(ValueError, match=r"keys the field beside it"):
+        bsplot._declared_kind(P.Panel(panel_key="a", kind="heatmap", colorbar=P.Colorbar(label="FC", colormap="viridis")))
+    assert bsplot._declared_kind(
+        P.Panel(panel_key="b", kind="colorbar", colorbar=P.Colorbar(colormap="diverging", vmin=-1.0))
+    ) == {"cmap": "RdBu_r", "vmin": -1.0}
+
+
+def test_an_inherited_scale_word_is_not_retired_everywhere():
+    """`Colorbar is_a ColorScale`, so `vmin` is one of its attributes — but it was never spelled `colorbar_vmin`, and it is a perfectly good keyword for a layer's style or a custom callable. Only what a spec literally wrote as `colorbar_*` is retired for every panel; the scale half belongs to the standalone bar alone."""
+    universal = bsplot.retired_options()
+    assert "colorbar_ticks" in universal and "colorbar" in universal
+    assert not {"vmin", "vmax", "symmetric", "percentile", "colormap", "center"} & set(universal)
+    assert {"vmin", "vmax"} <= set(bsplot.retired_options("colorbar")), "a standalone bar did write them loose"
+    kept = bsplot._panel_opts(
+        P.Panel(
+            panel_key="a",
+            kind="custom",
+            render="f",
+            opts={"vmin": P.Argument(name="vmin", value=-1.0), "vmax": P.Argument(name="vmax", value=1.0)},
+        )
+    )
+    assert kept == {"vmin": -1.0, "vmax": 1.0}

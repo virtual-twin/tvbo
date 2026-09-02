@@ -1,4 +1,4 @@
-# The documentation spine, declared once. `part` must match the PART header in `_toc.yml`, and `dirs` the directories that part's pages live in — `scripts/build_phase_map.py` reports any page filed outside them. A `color` names a slot in the palette TVB-O ships (`tvbo/plot/palette.yaml`) — `palette.N` for a categorical hue, counting from zero, or a role such as `base` — never a hex, so the docs and the figures beside them cannot drift apart. See docs/Developer/DocsMachinery.qmd.
+# The documentation spine, declared once. `part` must match the PART header in `_toc.yml`, and `dirs` the directories that part's pages live in — `scripts/build_phase_map.py` reports any page filed outside them. A `color` names a slot in the palette TVB-O ships (`tvbo/database/themes/default.yaml`) — `palette.N` for a categorical hue, counting from zero, or a role such as `base` — never a hex, so the docs and the figures beside them cannot drift apart. See docs/Developer/DocsMachinery.qmd.
 
 # The five numbered phases share one sidebar heading, so the spine reads as a single chapter beside the unnumbered ones rather than as a continuation of the one above it.
 spine:

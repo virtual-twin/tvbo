@@ -54,7 +54,7 @@
   <ComponentType name="Kuramoto">
 
     <!-- Parameters -->
-    <Parameter name="omega" dimension="per_time"/>
+    <Parameter name="omega" dimension="none"/>
     <!-- Coupling inputs -->
     <Parameter name="c_glob" dimension="none"/>
     <Parameter name="local_coupling" dimension="none"/>

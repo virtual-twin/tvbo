@@ -172,7 +172,7 @@ time_si_factor = unit_to_si_factor(time_unit)
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
-from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, resolve_reduction, streaming_post_eval_plan, edge_label, edge_const, node_label, node_const
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, resolve_reduction, streaming_block_size, streaming_post_eval_plan, edge_label, edge_const, node_label, node_const
 solver_kwargs_str = resolve_solver_kwargs(integration, dt)
 # A forward scan honours coupling_evaluation but not the gradient kwargs, so only this one is passed.
 _ce = getattr(integration, 'coupling_evaluation', None) if integration else None
@@ -1927,7 +1927,7 @@ def _realign_state_auxiliaries(sol, params):
                     and str(solver_class) in ('Euler', 'Heun', 'RungeKutta4')
                     and set(_raw_obs) == set(_base_stream_names)
                     and set(derived_observation_names) <= set(_base_plan['deliverables']))
-    _base_bs = _base_plan['period_in_steps'] or 1000
+    _base_bs = _base_plan['period_in_steps'] or streaming_block_size([])
     # Axis names for EVERY observation, from the reduction each one declares — independent of which reducers stream, so a materialised observer is labelled too.
     _obs_dims = observation_dims(experiment) or {}
 %>
@@ -2088,10 +2088,7 @@ def run_simulation(
         _stream_fn, _ = prepare(   # folds in-carry over ${_base_bs}-step blocks; no trajectory
             network, get_solver(block_size=${_base_bs}),
             t0=t0, t1=t0 + t1, dt=dt,
-            reduce=_compose_reducers(*[
-                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], dt, skip=0, settle=_settle_for_streams)
-                for _n in ${repr(_base_stream_names)}
-            ]),
+            reduce=_stream_reduction(${repr(_base_stream_names)}, dt, settle=_settle_for_streams),
         )
         _stream_vals = dict(zip(${repr(_base_stream_names)}, _run_compiled(_stream_fn, state)))
         observations = Bunch(**_stream_vals)
@@ -2834,7 +2831,7 @@ def run_optimization(
         and not expl.get('algorithms')
     )
     _stream_names = _rec_stream
-    _stream_bs = expl.get('block_size') or 1000
+    _stream_bs = streaming_block_size([resolve_reduction(_all_observations.get(r), experiment) for r in _rec_stream], declared=expl.get('block_size'))
     # The scan is the measured window now that the settle is its own, so a reducer folds every sample it sees.
     _stream_skip = 0
     # An exploration bundling every declared observation streams only when all of them are trajectory-free; one that needs the raw trajectory keeps the whole set on the materialise path.
@@ -2850,7 +2847,7 @@ def run_optimization(
         and not analysis_observation_names
         and _bundled_all <= _bundle_covered
     )
-    _bundle_bs = _bundle_plan['period_in_steps'] or 1000
+    _bundle_bs = _bundle_plan['period_in_steps'] or streaming_block_size([])
     # prepare() sizes the delay buffer once from the base graph, so every axis that can lengthen a delay is read here, outside jit. A swept weight feeds no delay.
     _speed_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'speed']
     _length_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'lengths']
@@ -3092,10 +3089,7 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
         _stream_model_fn, _ = prepare(
             _network, get_solver(block_size=${_stream_bs}),
             t0=${scan_t0}, t1=${t1_default}, dt=${dt},
-            reduce=_compose_reducers(*[
-                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt}, skip=${_stream_skip}, settle=_settle_rows(settle))
-                for _n in ${repr(_stream_names)}
-            ]),
+            reduce=_stream_reduction(${repr(_stream_names)}, ${dt}, skip=${_stream_skip}, settle=_settle_rows(settle)),
         )
         @jax.jit
         def observable_fn(s):
@@ -3228,10 +3222,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         _bundle_model_fn, _ = prepare(
             _network, get_solver(block_size=${_bundle_bs}),
             t0=${scan_t0}, t1=${t1_default}, dt=${dt},
-            reduce=_compose_reducers(*[
-                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt}, skip=${_stream_skip}, settle=_settle_rows(settle))
-                for _n in ${repr(_bundle_stream_names)}
-            ]),
+            reduce=_stream_reduction(${repr(_bundle_stream_names)}, ${dt}, skip=${_stream_skip}, settle=_settle_rows(settle)),
         )
         @jax.jit
         def observable_fn(s):
@@ -4286,14 +4277,8 @@ def run_experiment(
                 # Folds ${', '.join(_pp_names)} into the carry so the ${t1_default}ms trajectory is never materialised; block size ${_pp_bs} is a multiple of the reducer period, aligning TR boundaries to block boundaries.
                 post_model_fn, post_state = prepare(
                     network, get_solver(block_size=${_pp_bs}), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
-                    reduce=_compose_reducers(*[
-                        _STREAMING_REDUCERS[_n][0](
-                            _STREAMING_REDUCERS[_n][1], ${dt}, skip=0, settle=_settle_rows(result_transient),
-                            # A single non-vmapped long fold, so progress streams live from inside the scan.
-                            progress=True,
-                        )
-                        for _n in ${repr(_pp_names)}
-                    ]),
+                    # A single non-vmapped long fold, so progress streams live from inside the scan.
+                    reduce=_stream_reduction(${repr(_pp_names)}, ${dt}, settle=_settle_rows(result_transient), progress=True),
                 )
 % else:
                 # Create post-tuning model_fn/state using experiment-level integration duration

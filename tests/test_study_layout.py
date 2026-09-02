@@ -321,6 +321,47 @@ def test_a_study_validates_without_being_told_its_variant(scaffold):
     assert result.exit_code == 0, result.output
 
 
+def test_a_study_may_add_and_reorder_its_own_ignore_rules(scaffold):
+    """Every real study needs project-specific ignores, and git gives a negation effect only after the rule it negates, so verbatim equality with the record would fail every study that uses one."""
+    ignore = scaffold / ".gitignore"
+    rules = ignore.read_text().splitlines()
+    ignore.write_text("\n".join([*reversed(rules), ".venv", "!docs/figures/"]) + "\n")
+    result = CliRunner().invoke(app, ["validate", "study", str(scaffold)])
+    assert result.exit_code == 0, result.output
+
+
+def test_dropping_a_declared_ignore_rule_is_reported(scaffold):
+    """What the gate is actually for: the record's rules are the copyright and provenance boundary, so losing one has to surface."""
+    ignore = scaffold / ".gitignore"
+    rules = ignore.read_text().splitlines()
+    dropped = next(r for r in rules if r.strip() and not r.startswith("#"))
+    ignore.write_text("\n".join(r for r in rules if r != dropped) + "\n")
+    result = CliRunner().invoke(app, ["validate", "study", str(scaffold)])
+    assert result.exit_code != 0
+    assert dropped in result.output
+
+
+def test_a_display_item_must_follow_the_one_naming_rule(scaffold, record):
+    """The figures role is the join between a figure's record, its script, its image and its caption, so one spelling is enforced centrally rather than left to each study."""
+    figures = scaffold / layout_rules.relpath("figures", record)
+    figures.mkdir(parents=True, exist_ok=True)
+    (figures / "fig-01_desc-spikingOnset.png").write_bytes(b"")
+    assert CliRunner().invoke(app, ["validate", "study", str(scaffold)]).exit_code == 0
+
+    (figures / "Fig1_demo1999.png").write_bytes(b"")
+    result = CliRunner().invoke(app, ["validate", "study", str(scaffold)])
+    assert result.exit_code != 0
+    assert "Fig1_demo1999.png" in result.output
+
+
+def test_the_naming_rule_rejects_a_descriptor_that_is_not_camel_case(scaffold, record):
+    """`fig-01_desc-spiking_onset` reads as two entities to a BIDS parser and as one name to a person, so the underscore is the ambiguity the rule exists to remove."""
+    figures = scaffold / layout_rules.relpath("figures", record)
+    figures.mkdir(parents=True, exist_ok=True)
+    (figures / "fig-01_desc-spiking_onset.png").write_bytes(b"")
+    assert CliRunner().invoke(app, ["validate", "study", str(scaffold)]).exit_code != 0
+
+
 def test_the_seeded_recipe_declares_its_class(scaffold):
     recipe = (scaffold / "Demo1999.yaml").read_text()
     assert "tvbo_class: tvbo:SimulationStudy" in recipe

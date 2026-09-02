@@ -81,6 +81,7 @@
       <StateVariable name="v" dimension="none" exposure="v"/>
 
       <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="omega" dimension="none" value="sqrt(k/m)"/>
 
       <!-- ── Flat dynamics (no spike events) ── -->
 

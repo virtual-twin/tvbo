@@ -28,9 +28,8 @@ figures:
       a:                         # heatmap: mark is implied by the kind; a colorbar is drawn automatically
         kind: heatmap
         label: "order parameter R(K, node)"
-        opts:                    # grammar-panel axis directives: xlabel/ylabel/title/xlim/ylim/xticks/yticks/legend
-          xlabel: {name: xlabel, value: "coupling K"}
-          ylabel: {name: ylabel, value: "node"}
+        xlabel: "coupling K"     # every axis directive is a declared slot: labels, limits, scales, ticks, legend
+        ylabel: node
         layers:
           - used: {iri: tvbo:exp/<Study>/exp-2, output: order_param}
             encoding: {x: K, y: node, color: order_param}
@@ -68,10 +67,10 @@ figures:
         kind: custom
         label: "λ₁ vs K"
         render: lyapunov_vs_k              # a @bsplot.register_panel callable fn(fig, ax, ctx)
-        opts:                              # typed keyword options passed as ctx["opts"]
+        xlabel: "coupling K"
+        opts:                              # the callable's own keywords, passed as ctx["opts"]
           k_max: {name: k_max, value: 650.0}
           color: {name: color, value: "#ff7f0e"}
-          xlabel: {name: xlabel, value: "coupling K"}
         layers:                            # ctx["layers"] — the panel reads these with load_layer
           - used: {iri: tvbo:exp/<Study>/exp-3, output: order_param}   # x axis + sweep reversal
           - used: {iri: tvbo:exp/<Study>/exp-4, output: lyapunov_1, sel: {branch: up}}

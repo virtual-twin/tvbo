@@ -56,8 +56,8 @@
     <!-- Parameters -->
     <Parameter name="C" dimension="none"/>
     <Parameter name="I_ext" dimension="none"/>
-    <Parameter name="Q_Vmax" dimension="per_time"/>
-    <Parameter name="Q_Zmax" dimension="per_time"/>
+    <Parameter name="Q_Vmax" dimension="none"/>
+    <Parameter name="Q_Zmax" dimension="none"/>
     <Parameter name="T_Ca" dimension="none"/>
     <Parameter name="T_K" dimension="none"/>
     <Parameter name="T_Na" dimension="none"/>
@@ -147,7 +147,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="LarterBreakspear_inst" type="LarterBreakspear" C="0.1" I_ext="0.3" Q_Vmax="1.0 per_ms" Q_Zmax="1.0 per_ms" T_Ca="-0.01" T_K="0.0" T_Na="0.3" V_Ca="1.0" V_K="-0.7" V_L="-0.5" V_Na="0.53" V_T="0.0" Z_T="0.0" a_ee="0.4" a_ei="2.0" a_ie="2.0" a_ne="1.0" a_ni="0.4" b="0.1" delta_Ca="0.15" delta_K="0.3" delta_Na="0.15" delta_V="0.65" delta_Z="0.7" g_Ca="1.1" g_K="2.0" g_L="0.5" g_Na="6.7" phi="0.7" r_NMDA="0.25" t_scale="1.0" tau_K="1.0" c_glob="0" local_coupling="0" V_0="0.1" W_0="0.1" Z_0="0.1"/>
+  <Component id="LarterBreakspear_inst" type="LarterBreakspear" C="0.1" I_ext="0.3" Q_Vmax="1.0" Q_Zmax="1.0" T_Ca="-0.01" T_K="0.0" T_Na="0.3" V_Ca="1.0" V_K="-0.7" V_L="-0.5" V_Na="0.53" V_T="0.0" Z_T="0.0" a_ee="0.4" a_ei="2.0" a_ie="2.0" a_ne="1.0" a_ni="0.4" b="0.1" delta_Ca="0.15" delta_K="0.3" delta_Na="0.15" delta_V="0.65" delta_Z="0.7" g_Ca="1.1" g_K="2.0" g_L="0.5" g_Na="6.7" phi="0.7" r_NMDA="0.25" t_scale="1.0" tau_K="1.0" c_glob="0" local_coupling="0" V_0="0.1" W_0="0.1" Z_0="0.1"/>
 
 
 

@@ -56,22 +56,22 @@
     <!-- Parameters -->
     <Parameter name="G" dimension="none"/>
     <Parameter name="I_ext" dimension="none"/>
-    <Parameter name="I_o" dimension="current"/>
+    <Parameter name="I_o" dimension="none"/>
     <Parameter name="J_N" dimension="none"/>
     <Parameter name="J_i" dimension="none"/>
     <Parameter name="W_e" dimension="none"/>
     <Parameter name="W_i" dimension="none"/>
     <Parameter name="a_e" dimension="none"/>
     <Parameter name="a_i" dimension="none"/>
-    <Parameter name="b_e" dimension="per_time"/>
-    <Parameter name="b_i" dimension="per_time"/>
-    <Parameter name="d_e" dimension="time"/>
-    <Parameter name="d_i" dimension="time"/>
+    <Parameter name="b_e" dimension="none"/>
+    <Parameter name="b_i" dimension="none"/>
+    <Parameter name="d_e" dimension="none"/>
+    <Parameter name="d_i" dimension="none"/>
     <Parameter name="gamma_e" dimension="none"/>
     <Parameter name="gamma_i" dimension="none"/>
     <Parameter name="lamda" dimension="none"/>
-    <Parameter name="tau_e" dimension="time"/>
-    <Parameter name="tau_i" dimension="time"/>
+    <Parameter name="tau_e" dimension="none"/>
+    <Parameter name="tau_i" dimension="none"/>
     <Parameter name="w_p" dimension="none"/>
     <!-- Coupling inputs -->
     <Parameter name="c_glob" dimension="none"/>
@@ -129,7 +129,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="ReducedWongWangExcInh_inst" type="ReducedWongWangExcInh" G="2.0" I_ext="0.0" I_o="0.382 nA" J_N="0.15" J_i="1.0" W_e="1.0" W_i="0.7" a_e="310.0" a_i="615.0" b_e="125.0 per_s" b_i="177.0 per_s" d_e="0.16 s" d_i="0.087 s" gamma_e="0.000641" gamma_i="0.001" lamda="0.0" tau_e="100.0 ms" tau_i="10.0 ms" w_p="1.4" c_glob="0" local_coupling="0" S_e_0="0.1" S_i_0="0.1"/>
+  <Component id="ReducedWongWangExcInh_inst" type="ReducedWongWangExcInh" G="2.0" I_ext="0.0" I_o="0.382" J_N="0.15" J_i="1.0" W_e="1.0" W_i="0.7" a_e="310.0" a_i="615.0" b_e="125.0" b_i="177.0" d_e="0.16" d_i="0.087" gamma_e="0.000641" gamma_i="0.001" lamda="0.0" tau_e="100.0" tau_i="10.0" w_p="1.4" c_glob="0" local_coupling="0" S_e_0="0.1" S_i_0="0.1"/>
 
 
 

@@ -56,6 +56,28 @@ def _enum_value(value):
     return str(value)
 
 
+def _style_dpi(entries, fallback: int = 200) -> int:
+    """The resolution a figure that declares none inherits from its style sheets.
+
+    A spec's own `dpi:` still wins. Without one the sheet decides, because the sheet is where every other size in the figure comes from and a resolution set there was silently ignored before.
+    """
+    import matplotlib as mpl
+    import matplotlib.style  # noqa: F401 — `mpl.style` is a submodule, and reaching it off the package alone is an AttributeError the loop below would swallow
+
+    dpi = None
+    for entry in entries or ():
+        if entry.get("kind") != "mplstyle":
+            continue
+        try:
+            with mpl.rc_context():
+                mpl.style.use(entry["value"])
+                found = mpl.rcParams.get("savefig.dpi")
+                dpi = float(found) if isinstance(found, (int, float)) else dpi
+        except Exception:
+            continue
+    return int(dpi) if dpi else fallback
+
+
 def expand_bare_axes(fig, axes, pad: float = 0.004) -> list:
     """Grow each of *axes* until it meets a neighbour's ink, and return the ones moved.
 
@@ -97,7 +119,9 @@ def expand_bare_axes(fig, axes, pad: float = 0.004) -> list:
             continue  # hemmed in on both sides: the engine's own box is already the honest one
         ax.set_position([left, bottom, right - left, top - bottom])
         if ax.get_aspect() != "auto" and ax.get_images():
-            ax.set_aspect("auto")  # a picture holding its own aspect re-shrinks inside the box it was just given, which is the opposite of filling the cell
+            ax.set_aspect(
+                "auto"
+            )  # a picture holding its own aspect re-shrinks inside the box it was just given, which is the opposite of filling the cell
         # A label is placed below the lowest tick box among the axes it is aligned with, and these axes draw no ticks but still carry them. Left in place, a panel grown to the figure floor drags its neighbours' axis labels down there with it.
         ax.set_xticks([])
         ax.set_yticks([])
@@ -264,9 +288,9 @@ def surface_panel(fig, ax, ctx):
 
     A brain map is the most-drawn panel in a network-neuroscience paper and needs no study code: the mesh is geometry the network already carries, the values are a layer like any other, and everything else is presentation. Registered here rather than shipped per study, so ``kind: surface`` works with no ``code_modules``.
 
-    opts:
-        network / mesh: where the geometry comes from (see :func:`_surface_mesh`). view: bsplot's camera name (lateral, medial, dorsal, ventral, anterior, posterior). hemi: 'lh' | 'rh' (default 'lh'). cmap: colormap name; symmetric/vmin/vmax/percentile set the colour limits. symmetric: centre the limits on zero so zero is the colormap's midpoint (default true, because a map of signed deviations read on an off-centre scale is misleading in a way no axis label catches). percentile: clip the symmetric limit to this percentile of |values| (default 100), so one outlier vertex cannot wash the map out. mask: per-vertex 0/1 file; vertices OUTSIDE it (a medial wall) are drawn grey and excluded from the colour range rather than being coloured as zeros. color: draw the mesh itself in one flat colour instead of painting a map on it.
-            With no layer that is the bare geometry; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what the panel shows is the surface a reconstruction rebuilt rather than a field living on a fixed surface. edgecolor / edge_linewidth: draw the triangulation, for a panel whose subject is the mesh the model is solved on.
+    A spec declares all of this as ``surface:`` — the `Surface` class names and documents every attribute, and ``_KIND_RENAMES`` says where one reaches this callable under a different word. What is only true here:
+
+    ``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`). With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one.
     """
     import bsplot
     import numpy as _np
@@ -356,7 +380,7 @@ def surface_panel(fig, ax, ctx):
         # A merged bilateral mesh is already whole, and the backend reads `hemi` as an instruction to go find one hemisphere's geometry — which it then cannot resolve.
         hemi="lh" if str(opts.get("hemi", "lh")) == "both" else str(opts.get("hemi", "lh")),
         view=str(opts.get("view", "lateral")),
-        cmap=_resolve_cmap(opts.get("cmap", "viridis")),
+        cmap=_resolve_cmap(resolve_colormap(opts.get("cmap"))),
         vmin=vmin,
         vmax=vmax,
         color=opts.get("color"),
@@ -528,13 +552,7 @@ def volume_panel(fig, ax, ctx):
 
     Values are placed BY LABEL through the atlas crosswalk, never by array position — a per-region array ordered differently from the atlas would otherwise paint every region with its neighbour's number and still look like a brain.
 
-    opts:
-        - atlas / volume: where the segmentation comes from (a curated atlas IRI, or a dseg file).
-        - view: bsplot's camera name (sagittal, coronal, horizontal).
-        - intensity_projection: how voxels collapse along the view axis (default 'absmax').
-        - cmap: colormap name; symmetric/percentile/vmin/vmax set the colour limits.
-        - symmetric: centre the limits on zero (default false — unlike a surface map of signed deviations, a volume panel is as often a positive quantity such as a frequency).
-        - percentile: clip the limit to this percentile of |values| (default 100).
+    A spec declares all of this as ``volume:`` — the `Volume` class names and documents every attribute. What is only true here: ``symmetric`` defaults to FALSE, because unlike a surface map of signed deviations a volume panel is as often a positive quantity such as a frequency; ``percentile`` defaults to 100 and ``intensity_projection`` to ``absmax``.
     """
     import bsplot
     import nibabel as nib
@@ -585,7 +603,7 @@ def volume_panel(fig, ax, ctx):
         nib.Nifti1Image(painted, img.affine),
         ax=ax,
         view=view,
-        cmap=_resolve_cmap(opts.get("cmap", "viridis")),
+        cmap=_resolve_cmap(resolve_colormap(opts.get("cmap"))),
         intensity_projection=str(opts.get("intensity_projection", "absmax")),
         vmin=vmin,
         vmax=vmax,
@@ -635,15 +653,7 @@ def network_panel(fig, ax, ctx):
 
     The panel a whole-brain paper draws beside its time courses: the network the model actually ran on, with the state living on it. Registered here rather than shipped per study, so ``kind: network`` needs no ``code_modules``; the graph itself is built by bsplot's own ``create_network``, which is where the edge threshold and the node/edge attributes are defined.
 
-    opts:
-        network: the connectome, as a curated IRI or a path beside the study (required).
-        projection: which anatomical plane the centres flatten onto — axial (default), coronal or sagittal.
-        edge_percentile: keep only edges above this percentile of the weights (default 92); a dense connectome drawn whole is a filled square, not a graph.
-        edge_color / edge_alpha / edge_linewidth: how the kept edges are drawn; the widths scale with the weight, so the strong connections read as strong.
-        node_size / node_edgecolor / node_linewidth: the markers.
-        cmap: colormap for the layer's values; vmin/vmax/symmetric/percentile set the limits, and symmetric defaults to FALSE here because a state variable is not a signed deviation from zero the way a brain map of differences is.
-        color: one flat colour for every node, for a panel whose subject is the network rather than a state on it (with no layer, that is what it draws).
-        labels: annotate each node with its region name (default false — 87 names on one panel is a block of text, not a figure).
+    A spec declares all of this as ``network:`` — the `Graph` class names and documents every attribute, ``connectome`` being the only required one. What is only true here: ``symmetric`` defaults to FALSE, because a state variable is not a signed deviation from zero the way a brain map of differences is; ``projection`` defaults to axial, ``edge_percentile`` to 92, and ``labels`` to off, since 87 region names on one panel is a block of text rather than a figure. Edge widths scale with the weight on top of ``edge_width``, so a strong connection reads as strong. With no layer the panel draws the bare graph in ``color``.
     """
     import numpy as _np
     from bsplot.graph import create_network
@@ -677,8 +687,7 @@ def network_panel(fig, ax, ctx):
     )
     index = {nm: i for i, nm in enumerate(labels)}
     segments = [
-        [(coords[index[u], ix], coords[index[u], iy]), (coords[index[v], ix], coords[index[v], iy])]
-        for u, v in graph.edges()
+        [(coords[index[u], ix], coords[index[u], iy]), (coords[index[v], ix], coords[index[v], iy])] for u, v in graph.edges()
     ]
     if segments:
         strength = _np.asarray([float(d.get("weight", 1.0)) for _, _, d in graph.edges(data=True)])
@@ -708,14 +717,22 @@ def network_panel(fig, ax, ctx):
             coords[:, ix],
             coords[:, iy],
             c=values,
-            cmap=_resolve_cmap(opts.get("cmap", "viridis")),
+            cmap=_resolve_cmap(resolve_colormap(opts.get("cmap"))),
             vmin=vmin,
             vmax=vmax,
             **marker,
         )
     if opts.get("labels"):
         for i, nm in enumerate(labels):
-            ax.annotate(nm, (coords[i, ix], coords[i, iy]), fontsize=4, ha="center", va="bottom", xytext=(0, 4), textcoords="offset points")
+            ax.annotate(
+                nm,
+                (coords[i, ix], coords[i, iy]),
+                fontsize=4,
+                ha="center",
+                va="bottom",
+                xytext=(0, 4),
+                textcoords="offset points",
+            )
 
     ax.set_aspect("equal")  # a connectome's frame is anatomy, not a coordinate system
     ax.margins(0.06)
@@ -756,6 +773,8 @@ def _node_values(da, labels: list[str], ref: str):
 def scale_colormap(name, lo=None, hi=None, center=None):
     """A declared colormap name as the map a field is drawn with, pinned to *center* where one is asked for.
 
+    An undeclared map takes the theme's, and which of the theme's depends on what the field is: a centred scale is signed, so it takes ``diverging``; anything else takes ``sequential``. That is the rule the ``symmetric`` default already encodes for the limits, applied to the map as well, so a field of signed deviations is not drawn on a one-directional ramp.
+
     ``center`` fixes the map's neutral colour at a value — zero for a signed change, where the sign is the reading. The limits stay the data's own and the map is truncated to the half-range the data actually reaches, so a unit of change is the same colour distance either side of the centre and the scale carries no colour the field never takes.
 
     The mesh and the bar that keys it both resolve here. A bar built from the untruncated map would put the neutral colour at the middle of a scale whose field crosses the centre anywhere else, and every value the reader looks up would be wrong.
@@ -766,7 +785,7 @@ def scale_colormap(name, lo=None, hi=None, center=None):
 
     from tvbo.adapters.colormaps import resolve as _resolve_cmap
 
-    cmap = _resolve_cmap(name)
+    cmap = _resolve_cmap(resolve_colormap(name, "diverging" if center is not None else "sequential"))
     if center is None:
         return cmap
     base = plt.get_cmap(cmap)
@@ -782,8 +801,7 @@ def colorbar_panel(fig, ax, ctx):
 
     Panels that share one scale cannot each own the bar: attaching it to any one of them steals that panel's width and implies the scale is local to it. The paper puts it in an empty cell instead, and so does this.
 
-    opts:
-        cmap / vmin / vmax: the scale. With a layer bound and no explicit limits, the limits are read from the data, so the bar cannot drift from what it describes. center: the value the map's neutral colour sits at, resolved exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. orientation: 'vertical' (default) or 'horizontal'. width: fraction of the slot the bar itself occupies across its short axis. ticks / ticklabels: the marks. A quantity in arbitrary units is labelled at its ends (Minimum..Maximum) rather than with numbers that mean nothing. label: the axis label beside the bar.
+    A spec declares all of this as ``colorbar:`` — the `Colorbar` class names and documents every attribute. This is the one panel that states its own scale: a bar attached to another panel keys the field beside it and is refused a ``colormap`` of its own. With a layer bound and no explicit limits the limits are read from the data, so the bar cannot drift from what it describes, and ``center`` resolves exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. A quantity in arbitrary units is labelled at its ends (Minimum..Maximum) rather than with numbers that mean nothing.
 
     Returns the bar's own axes, so a declared frame (ticks, formats, label padding) lands on the scale rather than on the blanked slot behind it.
     """
@@ -807,7 +825,7 @@ def colorbar_panel(fig, ax, ctx):
     box = [0.0, 0.18, frac, 0.64] if vertical else [0.18, 0.0, 0.64, frac]
     lo, hi = float(vmin if vmin is not None else 0.0), float(vmax if vmax is not None else 1.0)
     norm = mpl.colors.Normalize(vmin=lo, vmax=hi)
-    mappable = mpl.cm.ScalarMappable(norm=norm, cmap=scale_colormap(opts.get("cmap", "viridis"), lo, hi, opts.get("center")))
+    mappable = mpl.cm.ScalarMappable(norm=norm, cmap=scale_colormap(opts.get("cmap"), lo, hi, opts.get("center")))
     cb = fig.colorbar(mappable, cax=ax.inset_axes(box), orientation="vertical" if vertical else "horizontal")
     cb.outline.set_linewidth(0.6)
     cb.ax.tick_params(direction="in", labelsize=plt.rcParams["ytick.labelsize"])
@@ -828,7 +846,7 @@ def legend_panel(fig, ax, ctx):
 
     The entries are parallel declared lists rather than one encoded string per entry, so each is a typed value the spec can validate: ``labels`` names them and ``colors`` / ``linestyles`` / ``markers`` style them, each falling back to a sensible default when shorter than ``labels``.
 
-    opts: labels, colors, linestyles, markers, title, loc, handlelength.
+    A spec declares all of this as ``legend:`` — the same slot every other panel uses for its own key, because this panel IS one. The `Legend` class names and documents every attribute; here the entry lists are what it is for.
     """
     from matplotlib.lines import Line2D
 
@@ -854,13 +872,14 @@ def legend_panel(fig, ax, ctx):
             )
         )
     ax.axis("off")
+    extra = {k: opts[k] for k in ("ncols", "frameon") if opts.get(k) is not None}
     ax.legend(
         handles,
         labels,
         loc=str(opts.get("loc", "center")),
-        frameon=False,
         title=opts.get("title"),
         handlelength=float(opts.get("handlelength", 2.2)),
+        **extra,
     )
 
 
@@ -914,31 +933,162 @@ def resolve_path(p, base_dir):
 
 
 _SHIPPED_PALETTE = "tvbo-palette"
-"""The style layer naming TVB-O's own palette, so a spec asks for it by name instead of by a path into the installed package."""
+"""A style layer spelling ``theme: {iri: tvbo:theme/default}``, kept because it reads well in a list of layers."""
+
+_SHIPPED_THEME = "tvbo:theme/default"
+
+COLOR_OPTS = frozenset(
+    {
+        "color",
+        "axhline_color",
+        "axvline_color",
+        "axline_color",
+        "region_color",
+        "edge_color",
+        "edgecolor",
+        "node_edgecolor",
+        "facecolor",
+    }
+)
+"""Every option whose value is a colour, and so the only ones a palette role is resolved in.
+
+An allowlist rather than a name match, because a match on ``color`` would also catch ``colorbar_label`` (display text), ``colorbar_ticks`` and six more ``colorbar_*`` options that are not colours — a project key could then silently replace a caption with a hex. ``edgecolors`` is deliberately absent: a scatter takes a sequence there, which no role can name.
+"""
+
+
+def resolve_color(value):
+    """A declared colour as a drawn one — public API, and the only place the translation happens.
+
+    A palette role (``highlight``) or hue (``palette.2``) resolves against the palette in force; a hex, a backend colour name, a sequence or ``None`` passes through untouched, so a spec written before the palette existed draws exactly as it did. A ``custom`` panel colouring by role should call this rather than reading the palette itself, so one rule covers the grammar and the escape hatch alike.
+    """
+    from tvbo.plot import palette
+
+    return palette.as_color(value)
+
+
+def resolve_colormap(value, default: str = "sequential"):
+    """A declared colormap as a resolvable name — public API, and the only place the translation happens.
+
+    A key the project's theme declares (``diverging``, or its own ``meg``) becomes whatever that key holds; anything else is left for the backend's own registry, so ``cividis`` and ``parula`` are untouched. ``None`` takes *default*, which is how a mark that names no scale lands on the project's rather than on matplotlib's.
+    """
+    from tvbo.plot import palette
+
+    return palette.as_colormap(value, default)
+
+
+def fan_colors(n: int) -> list:
+    """Colours for a categorical line fan — public API, imported by the emitted plot script.
+
+    A fan over a categorical dim asserts unrelated entries, and the palette's own doctrine (see ``palette.ramp``) gives unrelated entries hues rather than samples of an ordered ramp. Beyond the distinct hues a cycle would hand two categories one colour, so a larger fan falls back to even samples of the sequential scale, which stay pairwise distinct.
+    """
+    from tvbo.plot import palette
+
+    hues = palette.palette()
+    if n <= len(hues):
+        return list(hues[:n])
+    import matplotlib.pyplot as plt
+
+    cmap = plt.get_cmap(resolve_colormap(None))
+    return [cmap(i / max(n - 1, 1)) for i in range(n)]
+
+
+def _resolve_colors(kw: dict) -> dict:
+    """*kw* with every colour-bearing option resolved against the palette."""
+    return {k: (resolve_color(v) if k in COLOR_OPTS else v) for k, v in kw.items()}
+
+
+def theme_spec(figure, base_dir) -> dict:
+    """The look a figure declares, with the curated theme it names merged underneath it.
+
+    Returns the whole Theme as a plain dict — colours and geometry together — because both halves travel to the same place: the colours become the palette the emitted script puts in force, the geometry becomes the rcParams applied after every style layer. The curated theme is the base under both halves, so a figure that declares nothing, and one that declares a single tick length, get the same look everywhere it did not speak.
+    """
+    from tvbo.plot import palette
+    from tvbo.utils.yaml_loader import load_as_dict, strip_envelope
+
+    declared = {k: v for k, v in (_plain(getattr(figure, "theme", None)) or {}).items() if v is not None}
+    iri = declared.pop("iri", None) or (_SHIPPED_THEME if _names_shipped_palette(figure) or not declared else None)
+    curated = {}
+    if iri:
+        from tvbo.data.registry import resolve_iri
+
+        curated = strip_envelope(load_as_dict(str(resolve_iri(str(iri)))))
+        curated.pop("iri", None)
+    merged = {**palette.DEFAULT, **palette.DEFAULT_GEOMETRY, **curated, **declared}
+    merged["colormaps"] = {
+        **palette.DEFAULT["colormaps"],
+        **(curated.get("colormaps") or {}),
+        **(declared.get("colormaps") or {}),
+    }
+    return merged
+
+
+def _names_shipped_palette(figure) -> bool:
+    """Whether the figure asks for TVB-O's own colours through the ``tvbo-palette`` style layer."""
+    return _SHIPPED_PALETTE in [str(s) for s in (getattr(figure, "style", None) or [])]
+
+
+_THEME_RCPARAMS = {
+    "tick_length": ("xtick.major.size", "ytick.major.size"),
+    "tick_width": ("xtick.major.width", "ytick.major.width"),
+    "tick_direction": ("xtick.direction", "ytick.direction"),
+    "tick_pad": ("xtick.major.pad", "ytick.major.pad"),
+    "minor_ticks": ("xtick.minor.visible", "ytick.minor.visible"),
+    "minor_tick_length": ("xtick.minor.size", "ytick.minor.size"),
+    "minor_tick_width": ("xtick.minor.width", "ytick.minor.width"),
+    "axis_width": ("axes.linewidth",),
+    "label_pad": ("axes.labelpad",),
+    "title_pad": ("axes.titlepad",),
+    "line_width": ("lines.linewidth",),
+    "marker_size": ("lines.markersize",),
+    "legend_frame": ("legend.frameon",),
+    "legend_handle_length": ("legend.handlelength",),
+    "legend_pad": ("legend.borderaxespad",),
+    "grid_lines": ("axes.grid",),
+}
+"""Which rcParams each Theme slot fixes. The one place the spec's vocabulary meets matplotlib's, so a second backend replaces this table rather than the schema."""
+
+_GENERIC_FONT_FAMILIES = ("sans-serif", "serif", "monospace", "cursive", "fantasy")
+
+
+def theme_rcparams(theme: dict) -> dict:
+    """The Theme's geometry as rcParams, applied after every style layer so a declared look always wins.
+
+    Only what the theme states: a slot left unset is not a value, so the layer underneath keeps it.
+    """
+    out: dict = {}
+    for slot, params in _THEME_RCPARAMS.items():
+        value = theme.get(slot)
+        if value is None:
+            continue
+        out.update(dict.fromkeys(params, value))
+    faces = [str(f) for f in (theme.get("font_family") or [])]
+    if faces:
+        if faces[0] in _GENERIC_FONT_FAMILIES:
+            out["font.family"] = faces[0]
+            if len(faces) > 1:
+                out[f"font.{faces[0]}"] = faces[1:]
+        else:
+            out["font.family"] = "sans-serif"
+            out["font.sans-serif"] = faces
+    return out
 
 
 def _style_entries(figure, base_dir) -> list:
-    """Classify each figure style as a bsplot named style, an .mplstyle path, or a palette.
+    """Classify each style layer as a registered bsplot style or a path to an .mplstyle.
 
-    bsplot.style.use only knows its registered names; a study's own .mplstyle is a filesystem path, applied via matplotlib's plt.style.use instead. This lets a study carry its own design rules (Figure.style: ['<path>/study.mplstyle']). A .yaml/.yml layer is a colour palette (see :mod:`tvbo.plot.palette`), which carries the roles a sheet has no rcParam for and is applied last so its colours win. Only the path forms are resolved against base_dir — a named style is not a filesystem reference.
-
-    The layer ``tvbo-palette`` is TVB-O's own palette, the one shipped beside :mod:`tvbo.plot.palette`, named rather than pathed so a project reads those hexes instead of keeping a copy of them that drifts. It is opt-in for the same reason a study's ``.mplstyle`` is: a replication whose sheet sets the cycler the paper used must keep it, and a palette applied last would overwrite it.
+    These are the looks TVB-O does not own: bsplot's registered styles, a journal's sheet, the rcParams of a paper being reproduced. Colour is not among them — a figure's colours come from its ``theme``, which is applied after every layer here, so a sheet cannot quietly reintroduce a cycle the project has replaced. ``tvbo-palette`` is read as the theme rather than as a layer, and is dropped here. Only the path form is resolved against base_dir; a registered name is not a filesystem reference.
     """
-    styles = list(getattr(figure, "style", None) or []) or ["tvbo"]
+    styles = [s for s in (list(getattr(figure, "style", None) or []) or ["tvbo"]) if str(s) != _SHIPPED_PALETTE]
     out = []
     for s in styles:
         s = str(s)
-        if s == _SHIPPED_PALETTE:
-            out.append({"kind": "palette", "path": False, "value": None})  # the script resolves the packaged palette itself rather than carrying this machine's path to it
-            continue
         if s.endswith((".yaml", ".yml")):
-            kind = "palette"
-        elif s.endswith(".mplstyle") or "/" in s or "\\" in s:
-            kind = "mplstyle"
-        else:
-            kind = "named"
-        value = resolve_path(s, base_dir) if kind != "named" else s
-        out.append({"kind": kind, "path": kind == "mplstyle", "value": value})
+            raise ValueError(
+                f"figure style {s!r}: a palette is no longer a style layer. Declare it as the figure's theme instead "
+                f"— `theme: {{iri: {_SHIPPED_THEME}}}` for TVB-O's own, or `theme: !include {s}` for this file."
+            )
+        kind = "mplstyle" if (s.endswith(".mplstyle") or "/" in s or "\\" in s) else "named"
+        out.append({"kind": kind, "path": kind == "mplstyle", "value": resolve_path(s, base_dir) if kind == "mplstyle" else s})
     return out
 
 
@@ -967,7 +1117,7 @@ def _arg_dict(coll) -> dict:
 
 
 def _style_kwargs(style) -> dict:
-    """Resolve a layer/panel Style into matplotlib kwargs."""
+    """Resolve a layer/panel Style into matplotlib kwargs, colours included."""
     if style is None:
         return {}
     kw: dict = {}
@@ -976,7 +1126,7 @@ def _style_kwargs(style) -> dict:
     if getattr(style, "opacity", None) is not None:
         kw["alpha"] = style.opacity
     kw.update(_arg_dict(getattr(style, "opts", None)))
-    return kw
+    return _resolve_colors(kw)
 
 
 def _heatmap_kwargs(style) -> dict:
@@ -994,91 +1144,397 @@ def _heatmap_kwargs(style) -> dict:
     if getattr(style, "opacity", None) is not None:
         kw["alpha"] = style.opacity
     kw.update(_arg_dict(getattr(style, "opts", None)))
-    return kw
+    if kw.get("cmap") is not None:
+        kw["cmap"] = resolve_colormap(kw["cmap"])
+    return _resolve_colors(kw)
 
 
-# Grammar-panel axis directives on ``Panel.opts`` — a small backend-independent set the template applies uniformly (a ``custom`` panel routes ``opts`` to its callable; see ``build_context``).
-_AXIS_OPTS = {
+_AXIS_SLOTS = (
     "xlabel",
     "ylabel",
+    "zlabel",
     "title",
+    "xlabel_pad",
+    "ylabel_pad",
+    "zlabel_pad",
+    "xlabel_side",
+    "ylabel_side",
     "xlim",
     "ylim",
-    "xticks",
-    "yticks",
-    "hide_xticklabels",
-    "hide_yticklabels",
-    "axhline",
-    "axvline",
-    "axline",
-    "axhline_color",
-    "axvline_color",
-    "axline_color",
-    "xtick_side",
-    "ytick_side",
-    "xlabel_side",  # the axis label alone crosses to the far side, leaving the tick numbers where they are
-    "ylabel_side",
-    "region",  # [x0, x1, y0, y1] outline: the window a paper rings on a field
-    "region_color",
-    "legend",
+    "zlim",
     "xscale",
-    "yscale",  # axis scale (log/symlog/linear): part of the claim, not cosmetic
-    "nbins",  # tick budget: a small multi-panel slot cannot hold the automatic count
-    "tick_size",  # tick-label type size, when the figure's own would crowd the cell out
-    "tick_length",  # tick mark length, the same concern as tick_size on the other axis of the gap
-    "xtick_rotation",  # slant the tick labels of a dense row of panels so neighbours stop running together
-    "ytick_rotation",
-    "xtick_format",  # 'sci' moves a shared exponent to the axis corner; 'plain' writes every tick in full
-    "ytick_format",
-    "tick_prune",  # drop the first/last tick ('lower'|'upper'|'both') where a neighbouring panel starts
-    "xlabel_pad",  # gap in points between an axis label and its tick numbers, when the default lets them touch
-    "ylabel_pad",
+    "yscale",
     "aspect",
     "box_aspect",
     "invert_x",
     "invert_y",
-    "frame",  # frame geometry/direction/visibility
-    "zlabel",
-    "zlabel_pad",  # 3-D axis labels land where matplotlib puts them, which on a narrow slot is over the neighbour
-    "zlim",
-    "elev",
-    "azim",
     "invert_z",
-    "zoom",  # line3d only
-}
-
-
-# Axis directives the format pass can overwrite, so they are re-applied after it.
-_POST_FORMAT_OPTS = {
-    "xtick_side",
-    "ytick_side",
-    "xlabel_side",  # re-applied beside the tick side, which also moves the label and would win alone
-    "ylabel_side",
-    "xticks",
-    "yticks",
-    "xlim",
-    "ylim",
-    "xscale",
-    "yscale",
-    "hide_xticklabels",
-    "hide_yticklabels",
-    "aspect",
-    "box_aspect",
     "frame",
-    "nbins",
+)
+"""What a panel's axes say, how far they run and what shape they are drawn in — declared outright, beside the tick family. Each is named as the renderer's own directive, so the slot and the thing it sets are one word."""
+
+_AXIS_ENUMS = frozenset({"xlabel_side", "ylabel_side", "xscale", "yscale"})
+_AXIS_LIMITS = frozenset({"xlim", "ylim", "zlim"})
+_TICK_SLOTS = (
     "tick_size",
     "tick_length",
+    "tick_prune",
+    "nbins",
+    "xticks",
+    "yticks",
+    "hide_xticklabels",
+    "hide_yticklabels",
     "xtick_rotation",
     "ytick_rotation",
     "xtick_format",
     "ytick_format",
-    "tick_prune",
+    "xtick_side",
+    "ytick_side",
+)
+"""The tick directives a panel declares outright. Named exactly as the theme's own, so a figure-wide default and a panel's override are the same word."""
+
+_TICK_ENUMS = frozenset({"tick_prune", "xtick_format", "ytick_format", "xtick_side", "ytick_side"})
+
+_PANEL_SLOTS = ("fill_cell", "triangle_gap")
+"""Directives belonging to no family: one panel's answer to a layout question, declared on the panel itself."""
+
+_FLAT_SLOTS = (*_TICK_SLOTS, *_AXIS_SLOTS, *_PANEL_SLOTS)
+"""Every directive a panel declares as a plain value rather than inside an object. One loop resolves them all; the two sets below say which need converting on the way."""
+
+_SLOT_ENUMS = _AXIS_ENUMS | _TICK_ENUMS
+_SLOT_FLOATS = _AXIS_LIMITS | {"xticks", "yticks"}
+
+_RULE_DECOR = ("color", "width", "dash", "label")
+_REGION_DECOR = ("color", "fill", "opacity")
+_RULE_DIRECTIVES = tuple(f"{k}{s}" for k in ("axhline", "axvline", "axline") for s in ("", *(f"_{d}" for d in _RULE_DECOR)))
+_REGION_DIRECTIVES = ("region", *(f"region_{d}" for d in _REGION_DECOR))
+_LEGEND_DIRECTIVES = ("legend", "legend_frame", "legend_columns", "legend_title")
+_CAMERA_DIRECTIVES = ("elev", "azim", "zoom")
+
+# The flat directives a grammar panel's axes are drawn from — the backend-independent set the template applies uniformly. Every one now has a declared slot behind it; the names survive as the renderer's own vocabulary, which is where the spec's words stop and matplotlib's begin.
+_AXIS_OPTS = {
+    *_AXIS_SLOTS,
+    *_TICK_SLOTS,
+    *_RULE_DIRECTIVES,
+    *_REGION_DIRECTIVES,
+    *_LEGEND_DIRECTIVES,
+    *_CAMERA_DIRECTIVES,
+}
+
+_RESHAPED_OPTS = {
+    "axhline": "rules: [{orientation: horizontal, at: <value>}]",
+    "axvline": "rules: [{orientation: vertical, at: <value>}]",
+    "axline": "rules: [{orientation: diagonal, at: [<slope>, <intercept>]}]",
+    "axhline_color": "the `color` of the rule it belongs to",
+    "axvline_color": "the `color` of the rule it belongs to",
+    "axline_color": "the `color` of the rule it belongs to",
+    "region": "regions: [{bounds: [x0, x1, y0, y1]}]",
+    "region_color": "the `color` of the region it belongs to",
+    "elev": "camera: {elevation: <deg>}",
+    "azim": "camera: {azimuth: <deg>}",
+    "zoom": "camera: {zoom: <factor>}",
+    "legend": "legend: <corner>, or legend: {loc: <corner>, frame: <bool>, columns: <n>} — a panel slot either way",
+    "legend_loc": "legend: {loc: <corner>}",
+}
+"""The retirements that changed a spec's SHAPE rather than a name, so there is no attribute to point at and the replacement is spelled out. Every retirement that IS a rename is derived by :func:`retired_options`.
+
+Kept as a lookup rather than dropped silently: a retired option would otherwise be carried into the emitted script as an unknown keyword and surface as a matplotlib TypeError with nothing pointing back at the spec that wrote it.
+"""
+
+
+# Axis directives the format pass can overwrite, so they are re-applied after it. The whole tick family plus the frame the panel declared: what a paper prints ranges and tick marks for is intent, and a tidy-up pass must not quietly replace it.
+_POST_FORMAT_OPTS = {
+    *_TICK_SLOTS,
+    "xlabel_side",  # re-applied beside the tick side, which also moves the label and would win alone
+    "ylabel_side",
+    "xlim",
+    "ylim",
+    "zlim",
+    "xscale",
+    "yscale",
+    "aspect",
+    "box_aspect",
+    "frame",
 }
 
 
+_KIND_SLOTS = ("surface", "volume", "network", "grid", "colorbar")
+"""The panel slots that carry a whole kind's options as one object. Ordered, so what a panel resolves to does not depend on the order its slots happen to be declared in."""
+
+_SCALE_ATTRS = ("colormap", "vmin", "vmax", "symmetric", "percentile")
+"""What a `ColorScale` answers, spliced into each kind below exactly as `is_a ColorScale` splices it in the schema."""
+
+_KIND_ATTRS = {
+    "surface": (
+        *_SCALE_ATTRS,
+        "connectome",
+        "mesh",
+        "mesh_format",
+        "template",
+        "density",
+        "hemi",
+        "view",
+        "atlas",
+        "surface_atlas",
+        "mask",
+        "geometry",
+        "color",
+        "edge_color",
+        "edge_width",
+    ),
+    "volume": (*_SCALE_ATTRS, "atlas", "image", "view", "intensity_projection"),
+    "network": (
+        *_SCALE_ATTRS,
+        "connectome",
+        "projection",
+        "labels",
+        "color",
+        "node_size",
+        "node_edge_color",
+        "node_edge_width",
+        "edge_color",
+        "edge_alpha",
+        "edge_width",
+        "edge_percentile",
+    ),
+    "grid": (
+        "ncols",
+        "nrows",
+        "left",
+        "right",
+        "top",
+        "bottom",
+        "wspace",
+        "hspace",
+        "col_labels",
+        "row_labels",
+        "col_label_size",
+        "col_label_pad",
+        "row_label_rotation",
+        "between",
+        "trailing",
+    ),
+    "colorbar": (
+        *_SCALE_ATTRS,
+        "center",
+        "show",
+        "label",
+        "ticks",
+        "ticklabels",
+        "decimals",
+        "fraction",
+        "pad",
+        "aspect",
+        "orientation",
+        "location",
+        "width",
+    ),
+    "legend": ("show", "loc", "frame", "columns", "title", "labels", "colors", "linestyles", "markers", "handle_length"),
+}
+"""Every attribute of the object each built-in kind's loose options became, in the schema's own words. The one list per kind: what a panel may declare, what the drawing code is handed, and what the retired spelling was are all read off it below."""
+
+_KIND_RENAMES = {
+    "surface": {"connectome": "network", "colormap": "cmap", "edge_color": "edgecolor", "edge_width": "edge_linewidth"},
+    "volume": {"image": "volume", "colormap": "cmap"},
+    "network": {
+        "connectome": "network",
+        "colormap": "cmap",
+        "edge_width": "edge_linewidth",
+        "node_edge_color": "node_edgecolor",
+        "node_edge_width": "node_linewidth",
+    },
+    "grid": {},
+    "colorbar": {
+        "show": "colorbar",
+        **{
+            a: f"colorbar_{a}"
+            for a in ("label", "ticks", "ticklabels", "decimals", "fraction", "pad", "aspect", "orientation", "location")
+        },
+    },
+    "legend": {"handle_length": "handlelength", "columns": "ncols", "frame": "frameon"},
+}
+"""Only where a drawer spells an attribute differently from the spec. Everything absent here keeps the word the spec uses, which is most of them."""
+
+
+def _directives(kind: str, renames: dict) -> dict:
+    """One kind's attributes mapped to the names its drawing code reads."""
+    return {attr: renames.get(attr, attr) for attr in _KIND_ATTRS[kind]}
+
+
+_KIND_DIRECTIVES = {kind: _directives(kind, _KIND_RENAMES[kind]) for kind in _KIND_ATTRS}
+
+# The standalone `kind: colorbar` panel IS the bar, so its drawer reads the unprefixed names. Same object and same words in the spec; only where they land differs.
+_COLORBAR_PANEL_DIRECTIVES = _directives("colorbar", {"colormap": "cmap"})
+
+# What the drawing code reads for a panel OF that kind, which is where the standalone bar parts company with an attached one.
+_KIND_SPELLING = {**_KIND_DIRECTIVES, "colorbar": _COLORBAR_PANEL_DIRECTIVES}
+
+_RETIRED_BY_KIND = {kind: {v: a for a, v in spelling.items()} for kind, spelling in _KIND_SPELLING.items()}
+"""Each kind's retired option, and the attribute that replaced it. Derived, so a kind's vocabulary is stated once and the refusal cannot fall behind it. Per kind because `color`, `cmap` and `labels` are still perfectly good keywords for a `custom` callable and must not be refused there."""
+
+HEMISPHERES = {"left": "lh", "right": "rh", "both": "both"}
+"""The schema's hemisphere vocabulary in the surface backend's spelling. One vocabulary in the spec, whatever each backend calls it."""
+
+
+def retired_options(kind: str = "") -> dict[str, tuple[str, str]]:
+    """Every panel option of *kind* that is a declared slot now, mapped to the ``(slot, attribute)`` that replaced it.
+
+    An empty ``slot`` means the option became a slot of the panel itself. This is the single statement of the renaming half of the retirement: :func:`_panel_opts` refuses from it and ``scripts/migrate_panel_marks.py`` rewrites from it, so what a spec is converted into is exactly what the renderer will accept. The retirements that are a change of SHAPE rather than of name — a rule, a region, a viewpoint — are ``_RESHAPED_OPTS``, because there is no attribute to point at.
+    """
+    return {
+        **{name: ("", name) for name in _FLAT_SLOTS},
+        **{
+            option: ("colorbar", attr)
+            for attr, option in _KIND_DIRECTIVES["colorbar"].items()
+            if option.startswith(
+                "colorbar"
+            )  # only what was literally spelled `colorbar_*`: the scale half is a standalone bar's alone, and `vmin` is a perfectly good keyword anywhere else
+        },
+        **{option: (kind, attr) for option, attr in _RETIRED_BY_KIND.get(kind, {}).items()},
+    }
+
+
+def _declared_kind(panel) -> dict:
+    """A panel's kind object — its surface, volume, graph, tiling or colour bar — as the flat directives its drawer reads.
+
+    One object per kind rather than loose options, so the three mutually exclusive places a mesh comes from sit together with the settings that apply only to each, and so a misspelt attribute is a validation error instead of a default nobody was told about.
+    """
+    out: dict = {}
+    kind = _enum_value(getattr(panel, "kind", None))
+    for slot in _KIND_SLOTS:
+        obj = getattr(panel, slot, None)
+        if obj is None:
+            continue
+        renames = _COLORBAR_PANEL_DIRECTIVES if (slot == "colorbar" and kind == "colorbar") else _KIND_DIRECTIVES[slot]
+        items = obj.items() if isinstance(obj, dict) else vars(obj).items()
+        if slot == "colorbar" and kind != "colorbar":
+            stated = [a for a in _SCALE_ATTRS if dict(items).get(a) is not None]
+            if stated:
+                raise ValueError(
+                    f"panel colorbar: {', '.join(stated)} names a colour scale, and a bar attached to a panel keys the "
+                    f"field beside it rather than a scale of its own — state it on that layer's `style:`, or use a "
+                    f"standalone `kind: colorbar` panel, which does carry its own."
+                )
+        for attr, raw in items:
+            if attr.startswith("_") or raw is None:
+                continue
+            if isinstance(raw, (list, tuple)):
+                if not raw:
+                    continue  # a multivalued slot nobody declared arrives as [], which is not a declaration of nothing
+                value = [_plain(v) for v in raw]
+            elif isinstance(raw, (bool, int, float)):
+                value = raw
+            else:
+                value = _enum_value(raw)  # an enum member, whichever of the two loaders produced it
+            out[renames.get(attr, attr)] = HEMISPHERES.get(value, value) if attr == "hemi" else value
+    if out.get("cmap") is not None:
+        out["cmap"] = resolve_colormap(out["cmap"])
+    return _resolve_colors(out)
+
+
+# What each kind's own options were before they became one object, per kind, because most of these words — `color`, `labels`, `cmap`, `width` — are still perfectly good keywords for a `custom` callable and must not be refused there.
 def _panel_opts(panel) -> dict:
-    """Resolve ``Panel.opts`` (Argument dict) into a plain ``{name: value}`` dict."""
-    return _arg_dict(getattr(panel, "opts", None))
+    """Resolve ``Panel.opts`` (Argument dict) into a plain ``{name: value}`` dict, refusing the retired spellings.
+
+    The refusal is for what a person wrote. A grid cell arrives with its directives already resolved out of the slots the template and the cell declared, so it says so and is passed through — checking a machine-built dict against the retired names would reject the very spelling the resolution produces.
+    """
+    opts = _arg_dict(getattr(panel, "opts", None))
+    kind = _enum_value(getattr(panel, "kind", None)) or ""
+    renamed = {
+        option: f"{slot}: {{{attr}: <value>}}" if slot else f"{attr}: <value> as a panel slot, not an option"
+        for option, (slot, attr) in retired_options(kind).items()
+    }
+    replaced = {**_RESHAPED_OPTS, **renamed}
+    retired = [] if getattr(panel, "opts_are_resolved", False) else [k for k in opts if k in replaced]
+    if retired:
+        lines = "\n  ".join(f"{k}: → {replaced[k]}" for k in sorted(retired))
+        raise ValueError(f"panel opts {', '.join(sorted(retired))} are declared objects now, not options:\n  {lines}")
+    return {**opts, **_declared_marks(panel)}
+
+
+def _per_mark(marks: list, prefix: str, decor: tuple) -> dict:
+    """One entry per mark for each decoration any of them states, keyed ``<prefix>_<attribute>``.
+
+    Parallel lists rather than one value, so two marks of a family keep the different colours they were given instead of the last one winning for both. A decoration none of them states is left out entirely, so the renderer's own default stands.
+    """
+    out = {}
+    for attr in decor:
+        given = [m.get(attr) for m in marks]
+        if any(v is not None for v in given):
+            out[f"{prefix}_{attr}"] = [resolve_color(v) if attr == "color" and v is not None else v for v in given]
+    return out
+
+
+def _declared_marks(panel) -> dict:
+    """A panel's declared axes, ticks, legend, rules, regions and camera as the directives the renderer draws them with.
+
+    The spec states them outright — a rule carries the colour it is drawn in, so the two cannot be given apart; a label, a limit and a scale are slots the schema declares rather than strings in a free-form bag — and this is the one place that shape meets the flat directives the drawing code takes.
+
+    Rules and regions come out as parallel lists, one entry per mark, so two rules of the same orientation keep the different colours they were given rather than the last one winning for both.
+
+    A multivalued slot cannot tell "unset" from "empty": both arrive as ``[]``. Empty is therefore read as unset, because the alternative silently strips every tick from every axis of every figure whose panels declare none. A panel that wants a bare axis says ``hide_xticklabels``, which is a slot of its own.
+    """
+    out: dict = {}
+    rules = _plain(getattr(panel, "rules", None)) or []
+    for orientation, kind in (("horizontal", "axhline"), ("vertical", "axvline"), ("diagonal", "axline")):
+        drawn = [r for r in rules if str(r["orientation"]) == orientation and r.get("at")]
+        if not drawn:
+            continue
+        at = [[float(v) for v in r["at"]] for r in drawn]
+        out[kind] = at if kind == "axline" else [a[0] for a in at]
+        out.update(_per_mark(drawn, kind, _RULE_DECOR))
+    regions = _plain(getattr(panel, "regions", None)) or []
+    if regions:
+        out["region"] = [[float(v) for v in r["bounds"]] for r in regions]
+        out.update(_per_mark(regions, "region", _REGION_DECOR))
+    for slot in _FLAT_SLOTS:
+        raw = getattr(panel, slot, None)
+        if raw is None or (slot in _SLOT_FLOATS and len(raw) == 0):
+            continue  # a multivalued slot nobody declared arrives as [], which must not read as a declaration of nothing
+        out[slot] = (
+            [float(v) for v in raw] if slot in _SLOT_FLOATS else (_enum_value(raw) if slot in _SLOT_ENUMS else _plain(raw))
+        )
+    out.update(_declared_kind(panel))
+    out.update(_declared_legend(panel))
+    camera = _plain(getattr(panel, "camera", None)) or {}
+    for slot, key in (("elevation", "elev"), ("azimuth", "azim"), ("zoom", "zoom")):
+        if camera.get(slot) is not None:
+            out[key] = float(camera[slot])
+    return out
+
+
+def _declared_legend(panel) -> dict:
+    """A panel's ``legend`` slot as the renderer's legend directives, in whichever of its three spellings it was written.
+
+    ``legend: true`` asks for a key wherever the backend finds room, ``legend: upper right`` fixes the corner, and the object states the rest. Absent, ``false`` and ``show: false`` all mean no key — the last so a panel can switch off what a shared inclusion turned on without deleting what it says.
+
+    ``frame`` is deliberately absent from the result when the spec does not state it: the renderer then leaves ``legend.frameon`` to the theme, rather than boxing or unboxing a key nobody asked about.
+
+    A standalone ``kind: legend`` panel IS the key rather than carrying one, so the same object resolves to the entries and placement its drawer reads directly. One word in the spec either way.
+    """
+    raw = getattr(panel, "legend", None)
+    if raw is None or raw is False:
+        return {}
+    if isinstance(raw, str):
+        spec = {"loc": raw}
+    elif raw is True:
+        spec = {}
+    else:
+        items = raw.items() if isinstance(raw, dict) else vars(raw).items()
+        spec = {k: v for k, v in items if not k.startswith("_") and v is not None and v != []}
+    if spec.get("show") is False:
+        return {}
+    if _enum_value(getattr(panel, "kind", None)) == "legend":
+        return {  # the panel IS the key, so its drawer reads the entries and the placement unprefixed
+            _KIND_DIRECTIVES["legend"].get(k, k): (_enum_value(v) if k == "loc" else _plain(v))
+            for k, v in spec.items()
+            if k != "show"
+        }
+    out: dict = {"legend": _enum_value(spec["loc"]) if spec.get("loc") is not None else True}
+    for slot, key in (("frame", "legend_frame"), ("columns", "legend_columns"), ("title", "legend_title")):
+        if spec.get(slot) is not None:
+            out[key] = _plain(spec[slot])
+    return out
 
 
 # Axis directives whose only sensible value is a number, so a numeric-looking string is a parse accident rather than an intent. `aspect: equal` and the tick-format words are deliberately absent.
@@ -1122,12 +1578,9 @@ def _as_number(v):
 def _axopts(panel) -> dict:
     """Axis-level directives for a grammar panel (labels, limits, ticks, legend).
 
-    Draws from ``Panel.opts`` (the recognised ``_AXIS_OPTS`` keys) plus the boolean ``Panel.legend`` slot. This is the minimal per-panel label/limit override: the paper's LaTeX axis labels and shared ranges live here rather than defaulting to the bare variable name.
+    Every one of them is a declared slot, resolved by :func:`_declared_marks`; ``Panel.opts`` reaches this only for a figure whose custom callable shares a name with one, and is filtered to the same recognised set. The paper's LaTeX axis labels and its shared ranges live here rather than defaulting to the bare variable name.
     """
-    o = {k: (_as_number(v) if k in _NUMERIC_AXIS_OPTS else v) for k, v in _panel_opts(panel).items() if k in _AXIS_OPTS}
-    if getattr(panel, "legend", None):
-        o.setdefault("legend", "best")
-    return o
+    return {k: (_as_number(v) if k in _NUMERIC_AXIS_OPTS else v) for k, v in _panel_opts(panel).items() if k in _AXIS_OPTS}
 
 
 _ANNOT_LOC = {
@@ -1237,14 +1690,20 @@ def _container_path(iri, base_dir: Path) -> str:
 
     One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. The ``_`` boundary keeps ``exp-1`` from matching ``exp-10`` and the network companion is skipped by name.
 
+    An IRI that names a study (``tvbo:exp/<study>/exp-N``) is resolved against that study's root rather than ``base_dir``, so a figure owned by a study-of-studies can read a member's run; the name is matched within the tree the referring study belongs to and an unmatched or ambiguous one raises.
+
     Returns ``""`` when the container is not there, which a panel declaring a ``placeholder`` relies on: the generated script draws the honest label instead of a plot, so a partially-run study still renders. A panel without a placeholder gets a named error from ``_open`` at render time. What is gone is the guessing — four candidate layouts tried in turn, which is how a figure came to read one run's experiments against another run's analyses.
     """
     if not iri:
         return ""
     from tvbo.adapters.bids import entity_value
-    from tvbo.data.dataref import experiment_id as _experiment_id
-    from tvbo.utils.study_layout import study_path
+    from tvbo.data.dataref import experiment_id as _experiment_id, iri_scope
+    from tvbo.utils.study_layout import is_network_companion, sibling_study_root, study_path
 
+    # An IRI naming a study names a container in THAT study's results, not in the referring study's: `tvbo:exp/Jansen1995/exp-1` read from the manuscript root must not find the root's own exp-1.
+    _kind, owner, _name = iri_scope(iri)
+    if owner:
+        base_dir = sibling_study_root(owner, base_dir) or base_dir
     key = re.split(r"[:/#]", str(iri))[-1]  # last IRI segment (e.g. "exp-3" or "fig3")
     # Only an experiment reference (exp-N / expN / bare N) yields an exp-<id> stem. A digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
     eid = _experiment_id(iri)
@@ -1256,7 +1715,7 @@ def _container_path(iri, base_dir: Path) -> str:
         stems = ([f"ana-{written}"] if written else []) + [f"ana-{key}", key]
     results = study_path("results", root=base_dir)
     for stem in stems:
-        files = [f for f in sorted(results.glob(f"{stem}_*result.h5")) if "network" not in f.name]
+        files = [f for f in sorted(results.glob(f"{stem}_*result.h5")) if not is_network_companion(f)]
         if files:
             return str(files[0].resolve())
     return ""
@@ -1361,7 +1820,8 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None):
         "y": getattr(enc, "y", None),
         "z": getattr(enc, "z", None),
         "color": color,
-        "cmap": getattr(style, "colormap", None),
+        "cmap": resolve_colormap(getattr(style, "colormap", None)),
+        "cmap_declared": bool(getattr(style, "colormap", None)),
         "transform": getattr(layer, "transform", None),
         "ref_transform": getattr(used, "transform", None),
         "sel": sel,
@@ -1395,6 +1855,9 @@ class _GridCell:
 
     Shaped like a Panel so it resolves through :func:`_resolve_drawable` — a grid cell must draw exactly as the same kind draws in a mosaic slot, and a second resolution path is how the two would drift apart.
     """
+
+    opts_are_resolved = True
+    """Its ``opts`` are the directives the template's and the cell's declared slots resolved to, not what anyone wrote."""
 
     def __init__(self, template, cell, layers, opts):
         self.kind = getattr(cell, "kind", None) or getattr(template, "kind", None)
@@ -1679,7 +2142,13 @@ def _animation(figure) -> dict | None:
 
 def build_context(figure, base_dir, outfile: str) -> dict:
     """Resolve a ``Figure`` into the template context (all IO paths + names resolved)."""
+    from tvbo.plot import palette as _palette_mod
+
     base_dir = Path(base_dir)
+    theme = theme_spec(figure, base_dir)
+    _palette_mod.use(
+        {k: v for k, v in theme.items() if k in _palette_mod.FIELDS}
+    )  # in force while the panels resolve, so a role a layer names becomes a colour here
     animation = _animation(figure)
     panels = [_resolve_drawable(panel, key, base_dir, animation) for key, panel in _items(figure.panels)]
     if figure.layout:
@@ -1718,7 +2187,8 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         p["number_kwargs"] = place  # resolved here; the template just splats it
 
     # bsplot.figure.subplots kwargs, resolved here so the template just splats them.
-    dpi = getattr(figure, "dpi", None) or 200
+    style_entries = _style_entries(figure, base_dir)
+    dpi = getattr(figure, "dpi", None) or _style_dpi(style_entries)
     subplots_kwargs = {"layout": layout, "dpi": dpi}
     width, height = getattr(figure, "width", None), getattr(figure, "height", None)
     if width and height:  # physical size in mm -> inches
@@ -1745,6 +2215,10 @@ def build_context(figure, base_dir, outfile: str) -> dict:
     if getattr(figure, "trim_margins", None) is False:
         # matplotlib reads `bbox_inches=None` as "use rcParams['savefig.bbox']", which the stylesheet sets to "tight" — so the declared `trim_margins: false` only takes effect if the rcParam itself is cleared.
         spine_rcparams = {**spine_rcparams, "savefig.bbox": None}
+    spine_rcparams = {
+        **theme_rcparams(theme),
+        **spine_rcparams,
+    }  # the theme is declared too, and a spine the figure states beats the theme's own
 
     offset = getattr(figure, "spine_offset", None)  # undeclared defers to bsplot's own offset, as the slot documents
     format_kwargs = {} if offset is None else {"shift_left_spine": -float(offset), "shift_bottom_spine": -float(offset)}
@@ -1762,7 +2236,8 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         # A movie rebuilds the mosaic per frame, so the emitted script keeps the arguments that made it.
         "mosaic_kwargs": {"mosaic": layout, **{k: v for k, v in subplots_kwargs.items() if k.endswith("_ratios")}},
         "shared_scales": shared,
-        "style": _style_entries(figure, base_dir),
+        "style": style_entries,
+        "palette": {k: v for k, v in theme.items() if k in _palette_mod.FIELDS},
         "outfile": outfile,
         "panels": panels,
         "subplots_kwargs": subplots_kwargs,
@@ -1933,7 +2408,7 @@ def _sentence(text: str) -> str:
 def compose_caption(figure) -> str:
     """Compose a figure's caption from its spec — the authored lead plus one clause per panel.
 
-    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling's authored prose is not dropped with its letter. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
+    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling's authored prose is not dropped with its letter. A sibling that authors no prose and derives no descriptor contributes nothing at all: its drawn title is a label on the figure, not a sentence in the caption. The structural descriptor is derived from the panel's layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
     """
     spec_by_key = {k: p for k, p in _items(figure.panels)}
     lead: list[str] = []
@@ -1965,7 +2440,9 @@ def compose_caption(figure) -> str:
             continue
         # A cell of a paper panel already lettered, or whose letter the author suppressed: it shares that panel's clause.
         index = group_clause.get(group)
-        fresh = " ".join(s for s in parts if s and s not in said)
+        # A sibling joins the clause for what it SAYS, never for its own title: a grid whose cells are titled and whose prose is authored once on the lettered cell would otherwise append a run of bare labels ("... power grid. spiking neurons. mean field.") that reads as debris rather than as caption.
+        carried = [s for s in parts[1:] if s and s not in said]
+        fresh = " ".join([s for s in parts[:1] if s and s not in said] + carried) if carried else ""
         if not fresh:
             continue
         said.update(s for s in parts if s)

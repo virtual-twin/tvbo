@@ -87,11 +87,17 @@ class IriEnrichable:
         return self
 
     def _named_entity(self) -> str | None:
-        """The entity this record names: its ``iri``'s local name, else its ``name``."""
-        from tvbo.data.registry import local_name
+        """The entity this record names: the curated key its ``iri`` addresses, else its ``name``.
+
+        A scoped IRI — `tvbo:observation/bold_tvb`, the spelling `_IRI_SCOPES` defines and the pipeline splice in `yaml_loader` documents — names the record after the scope, so the prefix alone is not what to strip. `iri_target` is what knows the scopes, and it declines a `result/` reference or an unknown one, which then falls back to the bare local name rather than being looked up as a curated key that does not exist.
+        """
+        from tvbo.data.registry import iri_target, local_name
 
         iri = getattr(self, "iri", None)
-        return local_name(iri) if iri else getattr(self, "name", None)
+        if not iri:
+            return getattr(self, "name", None)
+        target = iri_target(iri)
+        return target[1] if target else local_name(iri)
 
     def _from_database(self, key: str) -> bool:
         """Gap-fill from the curated record *key* names. True when one was found.

@@ -29,7 +29,7 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
     if not isinstance(data, dict):
         _common.die(f"{spec_path} is not a Figure or SimulationStudy spec (got {type(data).__name__}).")
 
-    study_markers = ("experiments", "simulation_experiments", "figures", "members")
+    study_markers = ("experiments", "simulation_experiments", "figures", "studies")
     if "panels" in data and not any(k in data for k in study_markers):
         from tvbo.datamodel import schema as dm
 

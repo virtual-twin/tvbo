@@ -54,29 +54,29 @@
   <ComponentType name="ZerlautAdaptationSecondOrder">
 
     <!-- Parameters -->
-    <Parameter name="g_L" dimension="conductance"/>
-    <Parameter name="E_L_e" dimension="voltage"/>
-    <Parameter name="E_L_i" dimension="voltage"/>
-    <Parameter name="C_m" dimension="capacitance"/>
-    <Parameter name="b_e" dimension="current"/>
-    <Parameter name="a_e" dimension="conductance"/>
-    <Parameter name="b_i" dimension="current"/>
-    <Parameter name="a_i" dimension="conductance"/>
-    <Parameter name="tau_w_e" dimension="time"/>
-    <Parameter name="tau_w_i" dimension="time"/>
-    <Parameter name="E_e" dimension="voltage"/>
-    <Parameter name="E_i" dimension="voltage"/>
-    <Parameter name="Q_e" dimension="conductance"/>
-    <Parameter name="Q_i" dimension="conductance"/>
-    <Parameter name="tau_e" dimension="time"/>
-    <Parameter name="tau_i" dimension="time"/>
+    <Parameter name="g_L" dimension="none"/>
+    <Parameter name="E_L_e" dimension="none"/>
+    <Parameter name="E_L_i" dimension="none"/>
+    <Parameter name="C_m" dimension="none"/>
+    <Parameter name="b_e" dimension="none"/>
+    <Parameter name="a_e" dimension="none"/>
+    <Parameter name="b_i" dimension="none"/>
+    <Parameter name="a_i" dimension="none"/>
+    <Parameter name="tau_w_e" dimension="none"/>
+    <Parameter name="tau_w_i" dimension="none"/>
+    <Parameter name="E_e" dimension="none"/>
+    <Parameter name="E_i" dimension="none"/>
+    <Parameter name="Q_e" dimension="none"/>
+    <Parameter name="Q_i" dimension="none"/>
+    <Parameter name="tau_e" dimension="none"/>
+    <Parameter name="tau_i" dimension="none"/>
     <Parameter name="N_tot" dimension="none"/>
     <Parameter name="p_connect_e" dimension="none"/>
     <Parameter name="p_connect_i" dimension="none"/>
     <Parameter name="g" dimension="none"/>
     <Parameter name="K_ext_e" dimension="none"/>
     <Parameter name="K_ext_i" dimension="none"/>
-    <Parameter name="T" dimension="time"/>
+    <Parameter name="T" dimension="none"/>
     <Parameter name="P_e0" dimension="none"/>
     <Parameter name="P_e1" dimension="none"/>
     <Parameter name="P_e2" dimension="none"/>
@@ -101,7 +101,7 @@
     <Parameter name="external_input_ex_in" dimension="none"/>
     <Parameter name="external_input_in_ex" dimension="none"/>
     <Parameter name="external_input_in_in" dimension="none"/>
-    <Parameter name="tau_OU" dimension="time"/>
+    <Parameter name="tau_OU" dimension="none"/>
     <Parameter name="weight_noise" dimension="none"/>
     <Parameter name="S_i" dimension="none"/>
     <!-- Coupling inputs -->
@@ -210,7 +210,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="ZerlautAdaptationSecondOrder_inst" type="ZerlautAdaptationSecondOrder" g_L="10.0 nS" E_L_e="-65.0 mV" E_L_i="-65.0 mV" C_m="200.0 pF" b_e="60.0 pA" a_e="4.0 nS" b_i="0.0 pA" a_i="0.0 nS" tau_w_e="500.0 ms" tau_w_i="1.0 ms" E_e="0.0 mV" E_i="-80.0 mV" Q_e="1.5 nS" Q_i="5.0 nS" tau_e="5.0 ms" tau_i="5.0 ms" N_tot="10000" p_connect_e="0.05" p_connect_i="0.05" g="0.2" K_ext_e="400" K_ext_i="0" T="20.0 ms" P_e0="-0.04983106" P_e1="0.005063550882777035" P_e2="-0.023470121807314552" P_e3="0.0022951513725067503" P_e4="-0.0004105302652029825" P_e5="0.010547051343547399" P_e6="-0.03659252821136933" P_e7="0.007437487505797858" P_e8="0.001265064721846073" P_e9="-0.04072161294490446" P_i0="-0.05149122024209484" P_i1="0.004003689190271077" P_i2="-0.008352013668528155" P_i3="0.0002414237992765705" P_i4="-0.0005070645080016026" P_i5="0.0014345394104282397" P_i6="-0.014686689498949967" P_i7="0.004502706285435741" P_i8="0.0028472190352532454" P_i9="-0.015357804594594548" external_input_ex_ex="0.0" external_input_ex_in="0.0" external_input_in_ex="0.0" external_input_in_in="0.0" tau_OU="5.0 ms" weight_noise="10.5" S_i="1.0" c_glob="0" local_coupling="0" E_0="0.0" I_0="0.0" C_ee_0="0.0" C_ei_0="0.0" C_ii_0="0.0" W_e_0="0.0" W_i_0="0.0" ou_drift_0="0.0"/>
+  <Component id="ZerlautAdaptationSecondOrder_inst" type="ZerlautAdaptationSecondOrder" g_L="10.0" E_L_e="-65.0" E_L_i="-65.0" C_m="200.0" b_e="60.0" a_e="4.0" b_i="0.0" a_i="0.0" tau_w_e="500.0" tau_w_i="1.0" E_e="0.0" E_i="-80.0" Q_e="1.5" Q_i="5.0" tau_e="5.0" tau_i="5.0" N_tot="10000" p_connect_e="0.05" p_connect_i="0.05" g="0.2" K_ext_e="400" K_ext_i="0" T="20.0" P_e0="-0.04983106" P_e1="0.005063550882777035" P_e2="-0.023470121807314552" P_e3="0.0022951513725067503" P_e4="-0.0004105302652029825" P_e5="0.010547051343547399" P_e6="-0.03659252821136933" P_e7="0.007437487505797858" P_e8="0.001265064721846073" P_e9="-0.04072161294490446" P_i0="-0.05149122024209484" P_i1="0.004003689190271077" P_i2="-0.008352013668528155" P_i3="0.0002414237992765705" P_i4="-0.0005070645080016026" P_i5="0.0014345394104282397" P_i6="-0.014686689498949967" P_i7="0.004502706285435741" P_i8="0.0028472190352532454" P_i9="-0.015357804594594548" external_input_ex_ex="0.0" external_input_ex_in="0.0" external_input_in_ex="0.0" external_input_in_in="0.0" tau_OU="5.0" weight_noise="10.5" S_i="1.0" c_glob="0" local_coupling="0" E_0="0.0" I_0="0.0" C_ee_0="0.0" C_ei_0="0.0" C_ii_0="0.0" W_e_0="0.0" W_i_0="0.0" ou_drift_0="0.0"/>
 
 
 

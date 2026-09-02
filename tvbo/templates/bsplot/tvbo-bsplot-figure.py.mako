@@ -18,12 +18,16 @@ import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   expand_bare_axes as _expand_bare_axes,
+                                  fan_colors as _fan_colors,
                                   load_layer as _load_layer, registered as _registered,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient)
 from tvbo.data.dataref import match_output as _match_output, resolve_sel_keys as _sel_keys
 from tvbo.plot import palette as _palette
+% if code_modules:
+import importlib as _importlib
+% endif
 % for m in code_modules:
-import ${m}  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
+_importlib.import_module("${m}")  # registers this study's panels/transforms into _CP / _TF; import_module, not `import`, so a module may be named for the figure it draws
 % endfor
 
 
@@ -407,20 +411,63 @@ def _apply_tick_rotation(ax, o):
                 _lab.set_ha("right" if _rot > 0 else "left")
 
 
-def _apply_axopts(ax, o):
-    """Apply a grammar panel's resolved axis directives (labels, limits, ticks, legend)."""
-    for _key, _draw in (("axhline", ax.axhline), ("axvline", ax.axvline)):
+def _per_mark(value, i):
+    """The *i*-th entry of a per-mark directive, or the directive itself where one value covers every mark."""
+    if isinstance(value, (list, tuple)):
+        return value[min(i, len(value) - 1)] if value else None
+    return value
+
+
+_RULE_DEFAULTS = {"axhline": ("0.6", 0.7, ":"), "axvline": ("0.6", 0.7, ":"), "axline": ("0.4", 0.8, "--")}
+
+
+def _apply_rules(ax, o):
+    """Draw a panel's declared reference lines, each in the colour, weight and dash it carries.
+
+    A diagonal rule is ``[slope, intercept]`` -- the identity ``[1, 0]`` a target-versus-simulated panel is read
+    against. Every directive arrives as one entry per rule, so two rules of an orientation keep the different
+    colours they were given.
+    """
+    for _key, (_dc, _dw, _dd) in _RULE_DEFAULTS.items():
         _at = o.get(_key)
         if _at is None:
             continue
-        _at = list(_at) if isinstance(_at, (list, tuple)) else [_at]
-        _c = o.get(_key + "_color", "0.6")   # one colour, or one per rule where they name different things
-        _c = list(_c) if isinstance(_c, (list, tuple)) else [_c]
-        for _i, _v in enumerate(_at):
-            _draw(_v, color=_c[min(_i, len(_c) - 1)], lw=0.7, ls=":", zorder=0)
-    if o.get("axline") is not None:
-        _ab = list(o["axline"])   # [slope, intercept]; identity is [1, 0], the agreement line of a target-vs-simulated panel
-        ax.axline((0.0, _ab[1]), slope=_ab[0], color=o.get("axline_color", "0.4"), lw=0.8, ls="--", zorder=0)
+        for _i, _v in enumerate(_at if isinstance(_at, (list, tuple)) else [_at]):
+            _decor = {_d: _per_mark(o.get(f"{_key}_{_d}"), _i) for _d in ("color", "width", "dash", "label")}
+            _st = {"color": _decor["color"] if _decor["color"] is not None else _dc,
+                   "lw": _decor["width"] if _decor["width"] is not None else _dw,
+                   "ls": _decor["dash"] if _decor["dash"] is not None else _dd,
+                   "zorder": 0}
+            if _decor["label"] is not None:
+                _st["label"] = _decor["label"]
+            if _key == "axline":
+                ax.axline((0.0, float(_v[1])), slope=float(_v[0]), **_st)
+            else:
+                (ax.axhline if _key == "axhline" else ax.axvline)(float(_v), **_st)
+
+
+def _apply_regions(ax, o):
+    """Ring (or shade) the windows a panel calls out. Outlined by default: a filled box hides the field underneath."""
+    _boxes = o.get("region")
+    if _boxes is None:
+        return
+    from matplotlib.patches import Rectangle
+    _boxes = _boxes if _boxes and isinstance(_boxes[0], (list, tuple)) else [_boxes]
+    for _i, _box in enumerate(_boxes):
+        _x0, _x1, _y0, _y1 = [float(v) for v in _box]
+        _fill = bool(_per_mark(o.get("region_fill"), _i))
+        _c = _per_mark(o.get("region_color"), _i) or "w"
+        _st = {"facecolor": _c, "edgecolor": "none", "zorder": 0} if _fill else \
+              {"fill": False, "edgecolor": _c, "linewidth": 0.8, "linestyle": (0, (3, 2)), "zorder": 5}
+        _alpha = _per_mark(o.get("region_opacity"), _i)
+        if _fill and _alpha is not None:
+            _st["alpha"] = float(_alpha)
+        ax.add_patch(Rectangle((_x0, _y0), _x1 - _x0, _y1 - _y0, **_st))
+
+
+def _apply_axopts(ax, o):
+    """Apply a grammar panel's resolved axis directives (labels, limits, ticks, legend)."""
+    _apply_rules(ax, o)
     for _ax, _key, _far in ((ax.xaxis, "xtick_side", "top"), (ax.yaxis, "ytick_side", "right")):
         _side = o.get(_key)
         if _side:                       # ticks and label on the named side, as the paper prints them
@@ -431,13 +478,7 @@ def _apply_axopts(ax, o):
     for _ax, _key in ((ax.xaxis, "xlabel_side"), (ax.yaxis, "ylabel_side")):
         if o.get(_key):                 # the label alone crosses the axis; the tick numbers stay put
             _ax.set_label_position(str(o[_key]))
-    _reg = o.get("region")
-    if _reg is not None:                            # a window RINGED on the field, not shaded over it
-        from matplotlib.patches import Rectangle
-        _x0, _x1, _y0, _y1 = [float(v) for v in _reg]
-        ax.add_patch(Rectangle((_x0, _y0), _x1 - _x0, _y1 - _y0, fill=False, zorder=5,
-                               edgecolor=o.get("region_color", "w"), linewidth=0.8,
-                               linestyle=(0, (3, 2))))
+    _apply_regions(ax, o)
     if o.get("xlabel") is not None:
         ax.set_xlabel(o["xlabel"], **({"labelpad": float(o["xlabel_pad"])} if o.get("xlabel_pad") is not None else {}))
     if o.get("ylabel") is not None:
@@ -482,8 +523,14 @@ def _apply_axopts(ax, o):
     _apply_tick_format(ax, o)
     _apply_tick_rotation(ax, o)
     if o.get("legend"):
-        ax.legend(loc=o["legend"] if isinstance(o["legend"], str) else "best",
-                  frameon=False)
+        _leg = {"loc": o["legend"] if isinstance(o["legend"], str) else "best"}
+        if o.get("legend_frame") is not None:
+            _leg["frameon"] = bool(o["legend_frame"])   # unset leaves legend.frameon to the theme
+        if o.get("legend_columns"):
+            _leg["ncols"] = int(o["legend_columns"])
+        if o.get("legend_title"):
+            _leg["title"] = o["legend_title"]
+        ax.legend(**_leg)
 
 
 def _channel(ds, da, name, axis=0):
@@ -637,13 +684,31 @@ def _snapshot_fixed_axes(ax):
     return snap
 
 
+def _retrim_spine(a, axis):
+    """Clip one spine to the outermost tick now on ``axis``, so it begins and ends on a tick.
+
+    bsplot's format pass trims each spine to the ticks *it* derived; restoring a drawer's own
+    ticks afterwards leaves those bounds describing ticks that no longer exist, which is what
+    makes a discrete or log axis draw a spine running past its last label. Re-trimming after the
+    restore keeps the two in step. An axis the drawer deliberately left bare has no tick to trim
+    to and is left alone."""
+    spine = a.spines["bottom" if axis == "x" else "left"]
+    lo, hi = sorted(a.get_xlim() if axis == "x" else a.get_ylim())
+    ticks = [float(t) for t in (a.get_xticks() if axis == "x" else a.get_yticks())
+             if lo - 1e-9 <= float(t) <= hi + 1e-9]
+    if len(ticks) > 1:
+        spine.set_bounds(min(ticks), max(ticks))
+
+
 def _restore_fixed_axes(snap):
     """Put back the drawer's own fixed ticks/limits captured by ``_snapshot_fixed_axes``."""
     for a, x_fixed, y_fixed, xlim, ylim, xloc, xfmt, yloc, yfmt in snap:
         if x_fixed:
             a.xaxis.set_major_locator(xloc); a.xaxis.set_major_formatter(xfmt); a.set_xlim(xlim)
+            _retrim_spine(a, "x")
         if y_fixed:
             a.yaxis.set_major_locator(yloc); a.yaxis.set_major_formatter(yfmt); a.set_ylim(ylim)
+            _retrim_spine(a, "y")
 
 
 <%def name="layout_engine_call(ind)">\
@@ -718,7 +783,7 @@ ${repr(p['ctx'])}\
     _z = _channel(_ds, _da, ${repr(L['z'])}, 2)
 % if L['mark'] == 'scatter' and L['color']:
     _im = ax.scatter(_x, _y, _z, c=_channel(_ds, _da, ${repr(L['color'])}),
-                     cmap=${repr(L['cmap'] or 'viridis')}, **${repr(L['style'])})
+                     cmap=${repr(L['cmap'])}, **${repr(L['style'])})
 % elif L['mark'] == 'scatter':
     ax.scatter(_x, _y, _z, **${repr(L['style'])})
 % else:
@@ -764,7 +829,7 @@ ${colorbar(p)}\
     # Colour is a THIRD QUANTITY per point, not a fan of artists: one cloud shaded by the variable it is not plotted against.
     _im = ax.scatter(_x, np.asarray(_da.values).squeeze(),
                      c=_channel(_ds, _da, ${repr(L['color'])}),
-                     cmap=${repr(L['cmap'] or 'viridis')}, **${repr(L['style'])})
+                     cmap=${repr(L['cmap'])}, **${repr(L['style'])})
 % else:
     ax.scatter(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
 % endif
@@ -787,11 +852,13 @@ ${colorbar(p)}\
         _line(_v, label=(_rule_label if _i == 0 else None), **_rule_style)
 % elif L['color']:
     _dim, _labels, _cvals = _color_dim(_ds, _da, ${repr(L['color'])})   # one line per entry
-    _cmap = plt.get_cmap(${repr(L['cmap'] or 'viridis')})
+    _cmap = plt.get_cmap(${repr(L['cmap'])})
     _cnorm = None if _cvals is None else matplotlib.colors.Normalize(vmin=float(np.nanmin(_cvals)), vmax=float(np.nanmax(_cvals)))
+    # A categorical fan takes the palette's hues unless the layer declared its own scale; a NUMERIC fan is ordered, which is exactly what the ramp is for.
+    _fan = None if (_cnorm is not None or ${repr(bool(L.get('cmap_declared')))}) else _fan_colors(len(_labels))
     for _i, _lab in enumerate(_labels):
         _line = _da.isel({_dim: _i})
-        _colour = _cmap(_cnorm(_cvals[_i])) if _cnorm is not None else _cmap(_i / max(len(_labels) - 1, 1))
+        _colour = _cmap(_cnorm(_cvals[_i])) if _cnorm is not None else (_fan[_i] if _fan is not None else _cmap(_i / max(len(_labels) - 1, 1)))
         ax.plot(_channel(_ds, _line, ${repr(L['x'])}, 0), np.asarray(_line.values).squeeze(),
                 color=_colour, label=_lab, **${repr(L['style'])})
 % else:
@@ -958,15 +1025,7 @@ def main():
     plt.style.use(${repr(s['value'])})              # study .mplstyle supplies the defaults
 % endif
 % endfor
-% for s in style:
-% if s['kind'] == 'palette':
-% if s['value'] is None:
-    _palette.use(_palette.PATH)                     # TVB-O's own colours, shipped with the package
-% else:
-    _palette.use(${repr(s['value'])})               # the palette owns every colour the sheet cannot name
-% endif
-% endif
-% endfor
+    _palette.use(${repr(palette)})                  # the figure's declared colours, applied over every sheet above
 % if font_size:
     plt.rcParams.update({_k: ${font_size} for _k in (          # declared font_size WINS over the
         "font.size", "axes.labelsize", "axes.titlesize",       # .mplstyle: it is the per-figure

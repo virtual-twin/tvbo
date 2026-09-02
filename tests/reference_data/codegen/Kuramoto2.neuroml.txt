@@ -79,6 +79,7 @@
       <StateVariable name="theta" dimension="none" exposure="theta"/>
 
       <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="f" dimension="none" value="500*omega/pi"/>
       <DerivedVariable name="lc_0" dimension="none" value="sin(local_coupling*theta)"/>
       <DerivedVariable name="phase" dimension="none" value="theta/(2*pi)"/>
       <DerivedVariable name="signal" dimension="none" value="sin(theta)"/>

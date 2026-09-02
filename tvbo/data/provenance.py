@@ -10,6 +10,7 @@ One serialization per record, never two: :class:`ProvenanceFormat` chooses ``yam
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import platform
 import sys
@@ -201,3 +202,106 @@ def emit(
         requires=requires,
     )
     return write_records(records, study_path("provenance", root=study_root), prov_label(produced_by), fmt)
+
+
+def input_containers(refs, *, results_root, study_root) -> list[str]:
+    """The containers a set of ``used:`` DataRefs point at, named the way an entity record names its own.
+
+    Both ends of a ``prov:used`` edge have to spell a container identically or the graph reads one artifact as two, so this relativises against the study root exactly as :func:`build_records` does. A reference that cannot be resolved is dropped rather than raising: provenance describes a run that already succeeded, and a binding this run never had to read is not a reason to fail it.
+    """
+    from tvbo.data import dataref
+    from tvbo.utils import as_list
+
+    out: list[str] = []
+    root = Path(study_root).resolve()
+    for ref in as_list(refs):
+        if ref is None:
+            continue
+        try:
+            path = Path(dataref.locate_container(ref, results_root=results_root)).resolve()
+        except Exception:  # noqa: BLE001 — an unresolvable binding is a missing edge, never a failed run
+            continue
+        name = str(path.relative_to(root)) if _under(path, root) else str(path)
+        if name not in out:
+            out.append(name)
+    return out
+
+
+PROV_ACTIVITY = "prov:Activity"
+PROV_ENTITY = "prov:Entity"
+PROV_AGENT = "prov:SoftwareAgent"
+"""The three PROV-O node types these records describe: what ran, what came out, and what it ran with."""
+
+
+def read_records(prov_dir: Path | str) -> dict[str, dict]:
+    """Every record set under *prov_dir*, keyed by its BEP028 label, each holding whichever of the four kinds is on disk.
+
+    A set is read for what it has rather than validated against what it should have: a run interrupted between writing its activity and its entity still describes an activity, and refusing to read it would lose the only record that the run happened at all.
+    """
+    import yaml
+
+    prov_dir = Path(prov_dir)
+    sets: dict[str, dict] = {}
+    if not prov_dir.is_dir():
+        return sets
+    for path in sorted(prov_dir.iterdir()):
+        stem = path.stem
+        if not stem.startswith("prov-") or path.suffix.lower() not in (".yaml", ".yml", ".json"):
+            continue
+        label, _, kind = stem[len("prov-") :].rpartition("_")
+        if kind not in RECORD_KINDS:
+            continue
+        loader = json.loads if path.suffix.lower() == ".json" else yaml.safe_load
+        sets.setdefault(label, {})[kind] = loader(path.read_text(encoding="utf-8"))
+    return sets
+
+
+def provenance_graph(prov_dir: Path | str) -> dict:
+    """The records under *prov_dir* as one PROV-O typed graph of nodes and edges.
+
+    The inverse of :func:`emit`: the records say what happened one container at a time, and this reads the set back as the derivation it collectively describes. Every node carries its PROV-O type so a consumer draws or queries the graph by what a node IS — an activity, the entity it generated, the software agent it ran with — rather than by where the filename put it.
+
+    Three relations come out of the four record kinds. An entity ``prov:wasGeneratedBy`` the activity of its own label; that activity ``prov:wasAssociatedWith`` each package named in ``associated_with``, versioned from the software record (written either as a bare list or under a ``packages`` key); and it ``prov:used`` each entity its ``used`` list points at, which is what makes a chain of runs one graph rather than a pile of independent ones. An entity that is only ever used and never generated here still becomes a node, because a reference to something this study did not produce is exactly what an external input looks like.
+    """
+    sets = read_records(prov_dir)
+    nodes: dict[str, dict] = {}
+    edges: list[dict] = []
+
+    def node(node_id: str, node_type: str, label: str, **attrs) -> str:
+        existing = nodes.setdefault(node_id, {"id": node_id, "type": node_type, "label": label})
+        existing.update({k: v for k, v in attrs.items() if v is not None})
+        return node_id
+
+    for label, record in sorted(sets.items()):
+        activity, entity, software = record.get("act"), record.get("ent"), record.get("soft")
+        act_id = None
+        if activity:
+            act_id = node(
+                f"activity:{label}",
+                PROV_ACTIVITY,
+                label,
+                command=activity.get("command"),
+                started_at=activity.get("started_at"),
+                ended_at=activity.get("ended_at"),
+            )
+        if entity:
+            ent_id = node(
+                f"entity:{entity.get('container', label)}",
+                PROV_ENTITY,
+                str(entity.get("container", label)),
+                outputs=entity.get("outputs"),
+                produced_by=entity.get("produced_by"),
+            )
+            if act_id:
+                edges.append({"source": ent_id, "target": act_id, "relation": "prov:wasGeneratedBy"})
+        if act_id:
+            listed = software.get("packages", ()) if isinstance(software, dict) else (software or ())
+            versions = {p.get("name"): p.get("version") for p in listed if isinstance(p, dict)}
+            for package in activity.get("associated_with", []) or []:
+                agent = node(f"agent:{package}", PROV_AGENT, str(package), version=versions.get(package))
+                edges.append({"source": act_id, "target": agent, "relation": "prov:wasAssociatedWith"})
+            for used in activity.get("used", []) or []:
+                edges.append(
+                    {"source": act_id, "target": node(f"entity:{used}", PROV_ENTITY, str(used)), "relation": "prov:used"}
+                )
+    return {"nodes": list(nodes.values()), "edges": edges}

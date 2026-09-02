@@ -58,7 +58,9 @@ def test_a_grown_panel_gives_back_the_space_beyond_every_label():
     fig.set_layout_engine("none")
     inverse = fig.transFigure.inverted()
     floor = axd["a"].get_tightbbox(fig.canvas.get_renderer()).transformed(inverse).y0
-    axd["b"].set_position([0.55, floor - 0.2, 0.4, 0.95])  # as the engine deals it, reaching past the label below its neighbour
+    axd["b"].set_position(
+        [0.55, floor - 0.2, 0.4, 0.95]
+    )  # as the engine deals it, reaching past the label below its neighbour
     _trim_to_content(fig, [axd["b"]])
     assert axd["b"].get_position().y0 >= floor - 1e-6, "kept the margin it hangs below every label to hold"
     plt.close(fig)
@@ -70,7 +72,9 @@ def test_the_trim_never_pulls_a_panel_off_its_own_cell():
     fig.set_layout_engine("none")
     inverse = fig.transFigure.inverted()
     ink = axd["a"].get_tightbbox(fig.canvas.get_renderer()).transformed(inverse)
-    axd["b"].set_position([ink.x1 - 0.25, 0.1, 0.55, 0.8])  # reaching back over the neighbour, so a trim to its ink would move the panel rather than fit it
+    axd["b"].set_position(
+        [ink.x1 - 0.25, 0.1, 0.55, 0.8]
+    )  # reaching back over the neighbour, so a trim to its ink would move the panel rather than fit it
     _trim_to_content(fig, [axd["b"]])
     assert axd["b"].get_position().x1 > ink.x1, "trimmed to a neighbour that ends before the panel begins"
     plt.close(fig)

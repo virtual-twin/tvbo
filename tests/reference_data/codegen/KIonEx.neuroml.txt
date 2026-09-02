@@ -69,27 +69,27 @@
     <Parameter name="gamma" dimension="none"/>
     <Parameter name="tau_n" dimension="none"/>
     <Parameter name="Chn" dimension="none"/>
-    <Parameter name="Ckp" dimension="concentration"/>
-    <Parameter name="Cl_i0" dimension="concentration"/>
-    <Parameter name="Cl_o0" dimension="concentration"/>
-    <Parameter name="Cmna" dimension="voltage"/>
-    <Parameter name="Cnap" dimension="concentration"/>
-    <Parameter name="Cnk" dimension="voltage"/>
+    <Parameter name="Ckp" dimension="none"/>
+    <Parameter name="Cl_i0" dimension="none"/>
+    <Parameter name="Cl_o0" dimension="none"/>
+    <Parameter name="Cmna" dimension="none"/>
+    <Parameter name="Cnap" dimension="none"/>
+    <Parameter name="Cnk" dimension="none"/>
     <Parameter name="DChn" dimension="none"/>
-    <Parameter name="DCkp" dimension="concentration"/>
-    <Parameter name="DCmna" dimension="voltage"/>
-    <Parameter name="DCnap" dimension="concentration"/>
-    <Parameter name="DCnk" dimension="voltage"/>
-    <Parameter name="K_i0" dimension="concentration"/>
-    <Parameter name="K_o0" dimension="concentration"/>
-    <Parameter name="Na_i0" dimension="concentration"/>
-    <Parameter name="Na_o0" dimension="concentration"/>
-    <Parameter name="g_Cl" dimension="conductance"/>
-    <Parameter name="g_K" dimension="conductance"/>
-    <Parameter name="g_Kl" dimension="conductance"/>
-    <Parameter name="g_Na" dimension="conductance"/>
-    <Parameter name="g_Nal" dimension="conductance"/>
-    <Parameter name="rho" dimension="current"/>
+    <Parameter name="DCkp" dimension="none"/>
+    <Parameter name="DCmna" dimension="none"/>
+    <Parameter name="DCnap" dimension="none"/>
+    <Parameter name="DCnk" dimension="none"/>
+    <Parameter name="K_i0" dimension="none"/>
+    <Parameter name="K_o0" dimension="none"/>
+    <Parameter name="Na_i0" dimension="none"/>
+    <Parameter name="Na_o0" dimension="none"/>
+    <Parameter name="g_Cl" dimension="none"/>
+    <Parameter name="g_K" dimension="none"/>
+    <Parameter name="g_Kl" dimension="none"/>
+    <Parameter name="g_Na" dimension="none"/>
+    <Parameter name="g_Nal" dimension="none"/>
+    <Parameter name="rho" dimension="none"/>
     <Parameter name="w_i" dimension="none"/>
     <Parameter name="w_o" dimension="none"/>
     <!-- Coupling inputs -->
@@ -181,7 +181,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="KIonEx_inst" type="KIonEx" Cm="1.0" Delta="1.0" E="0.0" J="0.1" K_bath="5.5" R_minus="0.5" R_plus="-0.5" Vstar="-31.0" c_minus="-40.0" c_plus="-20.0" epsilon="0.001" eta="0.0" gamma="0.04" tau_n="4.0" Chn="0.4" Ckp="5.5" Cl_i0="5.0" Cl_o0="112.0" Cmna="-24.0 mV" Cnap="21.0" Cnk="-19.0 mV" DChn="-8.0" DCkp="1.0" DCmna="12.0 mV" DCnap="2.0" DCnk="18.0 mV" K_i0="130.0" K_o0="4.8" Na_i0="16.0" Na_o0="138.0" g_Cl="7.5 nS" g_K="22.0 nS" g_Kl="0.12 nS" g_Na="40.0 nS" g_Nal="0.02 nS" rho="250.0 pA" w_i="2160.0" w_o="720.0" c_glob="0" DKi_0="0.1" Kg_0="0.1" V_0="0.1" n_0="0.1" x_0="0.1"/>
+  <Component id="KIonEx_inst" type="KIonEx" Cm="1.0" Delta="1.0" E="0.0" J="0.1" K_bath="5.5" R_minus="0.5" R_plus="-0.5" Vstar="-31.0" c_minus="-40.0" c_plus="-20.0" epsilon="0.001" eta="0.0" gamma="0.04" tau_n="4.0" Chn="0.4" Ckp="5.5" Cl_i0="5.0" Cl_o0="112.0" Cmna="-24.0" Cnap="21.0" Cnk="-19.0" DChn="-8.0" DCkp="1.0" DCmna="12.0" DCnap="2.0" DCnk="18.0" K_i0="130.0" K_o0="4.8" Na_i0="16.0" Na_o0="138.0" g_Cl="7.5" g_K="22.0" g_Kl="0.12" g_Na="40.0" g_Nal="0.02" rho="250.0" w_i="2160.0" w_o="720.0" c_glob="0" DKi_0="0.1" Kg_0="0.1" V_0="0.1" n_0="0.1" x_0="0.1"/>
 
 
 

@@ -16,7 +16,8 @@ One record covers every kind of study: an entry carrying ``in_templates`` belong
 
 from __future__ import annotations
 
-from functools import lru_cache
+import re
+from functools import cache, lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -142,6 +143,76 @@ def study_root(inside: Path | str, layout: StudyLayout | None = None) -> Path:
         f"{start} is not inside a study dataset: no {marker} in it or any parent. "
         f"Create one with `tvbo study init`, or pass the study root explicitly."
     )
+
+
+def outermost_study_root(inside: Path | str, layout: StudyLayout | None = None) -> Path:
+    """The outermost study dataset *inside* belongs to — the holder of a study-of-studies, not the member.
+
+    :func:`study_root` answers "which study is this file in", which is what a member's own paths resolve against. This answers "which tree is it part of", which is what a reference from one member to another has to be resolved within: searching wider than the shared root is how a binding silently finds a same-named study in an unrelated checkout.
+    """
+    marker = file_relpath("dataset_description", layout=layout)
+    start = Path(inside).resolve()
+    found = None
+    for candidate in (start, *start.parents):
+        if (candidate / marker).is_file():
+            found = candidate
+    if found is None:
+        raise FileNotFoundError(f"{start} is not inside a study dataset: no {marker} in it or any parent.")
+    return found
+
+
+_DECLARED_CITEKEY = re.compile(r"^citekey:\s*[\"']?([\w.-]+)", re.MULTILINE)
+"""A recipe's own identity, read from its root-level ``citekey``. Anchored at column zero so a nested slot cannot be mistaken for the document's."""
+
+
+def study_names(root: Path | str, layout: StudyLayout | None = None) -> set[str]:
+    """Every name a study answers to: its directory, the stem of each entry recipe in it, and the ``citekey`` each recipe declares.
+
+    A reference names a study the way its author knows it, which is the recipe stem (`Jansen1995.yaml`) far more often than anything else, and the directory usually agrees. The declared ``citekey`` is accepted too, because it is the only one of the three the study states about itself rather than inheriting from where it happens to sit: `tvbo-manuscript.yaml` in `tvbo-manuscript/` declares `citekey: tvbo_manuscript`, and its own results are named by that.
+    """
+    root = Path(root)
+    names = {root.name}
+    if not (root / file_relpath("dataset_description", layout=layout)).is_file():
+        return names
+    for entry in root.glob("*.yaml"):
+        names.add(entry.stem)
+        names.update(_DECLARED_CITEKEY.findall(entry.read_text(encoding="utf-8", errors="ignore")))
+    return names
+
+
+@cache
+def sibling_study_root(name: str, inside: Path | str) -> Path | None:
+    """The root of the study called *name*, resolved from a path inside the tree that holds it.
+
+    A cross-study reference (``tvbo:exp/<study>/exp-N``) names a study rather than a directory, so the name has to be matched against the tree the referring study is itself part of. The search is bounded by :func:`outermost_study_root` and matches on :func:`study_names`, which is the same rule `study_manifest._owning_results_root` applies to a prose binding — the difference is only that this one has no loaded tree to walk and reads the filesystem instead.
+
+    Returns ``None`` when *inside* is not part of a study dataset at all: there is then no tree for the name to be resolved within and none for it to contradict, so the caller reads its own results exactly as it did before study segments meant anything.
+
+    Raises on no match within a real tree, and on an ambiguous one. Both are cases where continuing would bind the reference to *a* container rather than to the one it names, and a figure drawn from the wrong study's run is the failure this whole path exists to prevent.
+    """
+    start = Path(inside).resolve()
+    try:
+        own = study_root(start)
+    except FileNotFoundError:
+        return None
+    if name in study_names(own):
+        return own
+    outer = outermost_study_root(start)
+    marker = file_relpath("dataset_description")
+    matches = sorted(
+        {d.parent for d in outer.rglob(marker) if name in study_names(d.parent)},
+        key=lambda p: str(p),
+    )
+    if not matches:
+        raise FileNotFoundError(
+            f"cross-study reference names study {name!r}, which is not in the tree under {outer}. "
+            "A reference resolves within the study-of-studies that holds the referring study; "
+            "a study outside it has to be included as a member before its results can be named."
+        )
+    if len(matches) > 1:
+        listed = ", ".join(str(m.relative_to(outer)) for m in matches)
+        raise FileNotFoundError(f"cross-study reference names study {name!r}, which matches more than one member: {listed}.")
+    return matches[0]
 
 
 def file_relpath(
@@ -450,3 +521,11 @@ def sync_layout(
         return False
     dest.write_text(after, encoding="utf-8")
     return True
+
+
+def is_network_companion(path) -> bool:
+    """Whether *path* is the connectome companion a run writes beside its result, rather than a result itself.
+
+    The companion is named by its trailing ``_network`` entity, so that is what this tests. Matching the bare substring instead — which three call sites did — hides every container whose own name happens to contain the word: an analysis called ``network_scaling`` writes ``ana-networkscaling_result.h5``, and a figure binding it silently found no container at all.
+    """
+    return Path(path).name.split(".")[0].endswith("_network")

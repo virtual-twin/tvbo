@@ -1,6 +1,6 @@
 """The study-of-studies container: manifest resolution, verify gates, and composed captions.
 
-Phase 0 of the native-manuscript design. A study-of-studies is a `SimulationStudy` with `members:` whose `results:` are the numbers the prose cites (computed from a container or authored from prior work), whose figures carry `Panel.description` so captions compose from the spec, and whose buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship a wrong number, an orphan figure, or a caption that disagrees with its panels.
+Phase 0 of the native-manuscript design. A study-of-studies is a `SimulationStudy` nesting `studies:` whose `results:` are the numbers the prose cites (computed from a container or authored from prior work), whose figures carry `Panel.description` so captions compose from the spec, and whose buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship a wrong number, an orphan figure, or a caption that disagrees with its panels.
 """
 
 from pathlib import Path
@@ -37,24 +37,25 @@ def _write_digest(root: Path, name: str, analysis) -> None:
     sidecar.write_text(yaml.safe_dump({"declaration_digest": I._analysis_fingerprint(analysis)}))
 
 
-def _member_results(tmp_path: Path) -> Path:
-    """Where the ``toy`` member keeps its results, asked of the layout rather than spelled out."""
+def _nested_results(tmp_path: Path) -> Path:
+    """Where the ``toy`` sub-study keeps its results, asked of the layout rather than spelled out."""
     from tvbo.utils.study_layout import study_path
 
-    return study_path("results", root=tmp_path / "members")
+    return study_path("results", root=tmp_path / "nested")
 
 
 @pytest.fixture
 def collection(tmp_path):
-    (tmp_path / "members").mkdir()
-    (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\nsimulation_experiments: []\n", encoding="utf-8")
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "toy.yaml").write_text("title: Toy\nlabel: toy\nkey: toy\nexperiments: []\n", encoding="utf-8")
+    (tmp_path / "nested" / "heavy.yaml").write_text("title: Heavy\nlabel: heavy\nkey: heavy\n", encoding="utf-8")
     spec = tmp_path / "tvbo_manuscript.yaml"
     spec.write_text(
         "title: TVB-O\n"
         "citekey: tvbo_manuscript\n"
-        "members:\n"
-        "  - {recipe: members/toy.yaml, label: toy}\n"
-        "  - {recipe: members/heavy.yaml, label: heavy, optional: true}\n"
+        "studies:\n"
+        "  - !include nested/toy.yaml\n"
+        "  - !include nested/heavy.yaml\n"
         "results:\n"
         "  - {key: n_errors, used: {iri: 'tvbo:ana/toy/tally', output: n_errors}, format: '{:d}'}\n"
         "  - {key: parcels, value: '379', source: Glasser2016, description: HCP parcels}\n",
@@ -63,18 +64,43 @@ def collection(tmp_path):
     return tvbo.SimulationStudy.from_file(str(spec))
 
 
-def test_from_file_loads_members_results_archive(collection):
+def test_from_file_loads_nested_studies_results_archive(collection):
     inv = collection
     assert isinstance(inv, tvbo.SimulationStudy)
-    assert [m.label for m in inv.members] == ["toy", "heavy"]
+    assert [label for label, _ in inv.nested_studies()] == ["toy", "heavy"]
     assert {r.key for r in inv.results} == {"n_errors", "parcels"}
 
 
-def test_optional_member_dropped_unless_requested(collection):
-    light = [lbl for lbl, _ in collection.member_recipes(include_optional=False)]
-    full = [lbl for lbl, _ in collection.member_recipes(include_optional=True)]
-    assert light == ["toy"]
-    assert full == ["toy", "heavy"]
+def test_a_nested_study_keeps_its_own_source_file(collection, tmp_path):
+    """The reason nesting goes through ``!include`` rather than a copy: a sub-study's paths stay its own.
+
+    Its results root, its code directory and every relative reference resolve against where the sub-study lives, not against whoever included it.
+    """
+    for label, nested in collection.nested_studies():
+        assert Path(nested._source_file) == tmp_path / "nested" / f"{label}.yaml"
+
+
+def test_nesting_recurses_to_any_depth(tmp_path):
+    """A sub-study may nest sub-studies of its own, and the walk reaches all of them.
+
+    Depth first with each holder after what it holds, because a study's own analyses and figures may read what its sub-studies produced and never the other way round.
+    """
+    (tmp_path / "leaf").mkdir()
+    (tmp_path / "leaf" / "leaf.yaml").write_text("title: Leaf\nlabel: leaf\nkey: leaf\n", encoding="utf-8")
+    (tmp_path / "group.yaml").write_text(
+        "title: Group\nlabel: group\nkey: group\nstudies:\n  - !include leaf/leaf.yaml\n", encoding="utf-8"
+    )
+    spec = tmp_path / "root.yaml"
+    spec.write_text(
+        "title: Root\ncitekey: root\nstudies:\n  - !include group.yaml\n"
+        "results:\n  - {key: n_leaves, count: 'group.studies'}\n",
+        encoding="utf-8",
+    )
+    inv = tvbo.SimulationStudy.from_file(str(spec))
+    assert [label for label, _ in inv.walk_studies()] == ["leaf", "group", "root"]
+    results, _prov, problems = I.resolve_results(inv, tmp_path / "output")
+    assert problems == []
+    assert results["n_leaves"] == "1"  # a grandchild collection, counted through the tree
 
 
 def test_authored_value_resolves_without_a_container(collection, tmp_path):
@@ -85,7 +111,7 @@ def test_authored_value_resolves_without_a_container(collection, tmp_path):
 
 
 def test_computed_value_resolves_and_formats(collection, tmp_path):
-    _write_container(_member_results(tmp_path), "tally", "n_errors", 17)
+    _write_container(_nested_results(tmp_path), "tally", "n_errors", 17)
     results, prov, problems = I.resolve_results(collection, tmp_path / "derivatives" / "tvbo")
     assert problems == []
     assert results["n_errors"] == "17"
@@ -93,7 +119,7 @@ def test_computed_value_resolves_and_formats(collection, tmp_path):
 
 
 def test_emit_manifest_writes_quarto_meta_shape(collection, tmp_path):
-    _write_container(_member_results(tmp_path), "tally", "n_errors", 17)
+    _write_container(_nested_results(tmp_path), "tally", "n_errors", 17)
     out, problems = I.emit_manifest(
         collection, tmp_path / "derivatives" / "tvbo", tmp_path / "_output" / "manuscript_results.yml"
     )
@@ -104,17 +130,15 @@ def test_emit_manifest_writes_quarto_meta_shape(collection, tmp_path):
     assert payload["results"] == {"n_errors": "17", "parcels": "379"}
 
 
-def test_verify_flags_missing_members_and_dead_keys(collection, tmp_path):
-    (tmp_path / "members" / "heavy.yaml").write_text("title: Heavy\nkey: heavy\n", encoding="utf-8")
+def test_verify_flags_dead_keys(collection, tmp_path):
     problems = I.verify(collection, tmp_path)
     assert any("n_errors" in p for p in problems)  # container missing -> dead key
-    _write_container(_member_results(tmp_path), "tally", "n_errors", 17)
+    _write_container(_nested_results(tmp_path), "tally", "n_errors", 17)
     assert I.verify(collection, tmp_path) == []
 
 
 def test_verify_coverage_is_bidirectional(collection, tmp_path):
-    (tmp_path / "members" / "heavy.yaml").write_text("title: Heavy\nkey: heavy\n", encoding="utf-8")
-    _write_container(_member_results(tmp_path), "tally", "n_errors", 17)
+    _write_container(_nested_results(tmp_path), "tally", "n_errors", 17)
     problems = I.verify(collection, tmp_path, manuscript_keys={"n_errors", "ghost"})
     assert any("ghost" in p and "cited in the manuscript" in p for p in problems)
     assert any("parcels" in p and "never cited" in p for p in problems)
@@ -123,7 +147,6 @@ def test_verify_coverage_is_bidirectional(collection, tmp_path):
 def test_verify_against_committed_manifest_is_container_free(collection, tmp_path):
     import yaml
 
-    (tmp_path / "members" / "heavy.yaml").write_text("title: Heavy\nkey: heavy\n", encoding="utf-8")
     manifest = tmp_path / "manuscript_results.yml"
     manifest.write_text(yaml.safe_dump({"results": {"n_errors": "17", "parcels": "379"}}), encoding="utf-8")
     # NO container is written; offline verify would fail on n_errors, but a committed manifest skips resolution
@@ -133,7 +156,6 @@ def test_verify_against_committed_manifest_is_container_free(collection, tmp_pat
 def test_verify_manifest_flags_binding_absent_from_manifest(collection, tmp_path):
     import yaml
 
-    (tmp_path / "members" / "heavy.yaml").write_text("title: Heavy\nkey: heavy\n", encoding="utf-8")
     manifest = tmp_path / "manuscript_results.yml"
     manifest.write_text(yaml.safe_dump({"results": {"parcels": "379"}}), encoding="utf-8")  # n_errors not regenerated
     problems = I.verify(collection, tmp_path, manifest_path=manifest)
@@ -145,8 +167,8 @@ def test_verify_manifest_flags_binding_absent_from_manifest(collection, tmp_path
 
 @pytest.fixture
 def count_investigation(tmp_path):
-    (tmp_path / "members").mkdir()
-    (tmp_path / "members" / "toy.yaml").write_text(
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "toy.yaml").write_text(
         "title: Toy\nkey: toy\n"
         "figures:\n"
         "  - {name: f1, layout: a, panels: {a: {panel_key: a, kind: image}}}\n"
@@ -157,30 +179,30 @@ def count_investigation(tmp_path):
     spec = tmp_path / "tvbo_manuscript.yaml"
     spec.write_text(
         "title: TVB-O\ncitekey: tvbo_manuscript\n"
-        "members:\n  - {recipe: members/toy.yaml, label: toy}\n"
+        "studies:\n  - !include nested/toy.yaml\n"
         "results:\n"
-        "  - {key: n_members, count: members}\n"
+        "  - {key: n_studies, count: studies}\n"
         "  - {key: n_toy_figs, count: 'toy.figures'}\n",
         encoding="utf-8",
     )
     return tvbo.SimulationStudy.from_file(str(spec))
 
 
-def test_count_tallies_member_and_investigation_collections(count_investigation, tmp_path):
+def test_count_tallies_nested_and_own_collections(count_investigation, tmp_path):
     results, prov, problems = I.resolve_results(count_investigation, tmp_path / "output")
     assert problems == []
-    assert results["n_members"] == "1"  # bare collection on the collection
-    assert results["n_toy_figs"] == "3"  # counted from the loaded member spec
+    assert results["n_studies"] == "1"  # bare collection on the study holding the binding
+    assert results["n_toy_figs"] == "3"  # counted from the nested study's spec
     assert prov["n_toy_figs"] == {"computed": True, "count": "toy.figures"}
 
 
 def test_count_unknown_collection_is_a_build_problem(tmp_path):
-    (tmp_path / "members").mkdir()
-    (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\n", encoding="utf-8")
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "toy.yaml").write_text("title: Toy\nkey: toy\n", encoding="utf-8")
     spec = tmp_path / "tvbo_manuscript.yaml"
     spec.write_text(
         "title: TVB-O\ncitekey: tvbo_manuscript\n"
-        "members:\n  - {recipe: members/toy.yaml, label: toy}\n"
+        "studies:\n  - !include nested/toy.yaml\n"
         "results:\n  - {key: oops, count: 'toy.bogus'}\n",
         encoding="utf-8",
     )
@@ -190,13 +212,13 @@ def test_count_unknown_collection_is_a_build_problem(tmp_path):
 
 
 def test_count_value_used_are_mutually_exclusive(tmp_path):
-    (tmp_path / "members").mkdir()
-    (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\n", encoding="utf-8")
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "toy.yaml").write_text("title: Toy\nkey: toy\n", encoding="utf-8")
     spec = tmp_path / "tvbo_manuscript.yaml"
     spec.write_text(
         "title: TVB-O\ncitekey: tvbo_manuscript\n"
-        "members:\n  - {recipe: members/toy.yaml, label: toy}\n"
-        "results:\n  - {key: bad, count: members, value: '5'}\n",
+        "studies:\n  - !include nested/toy.yaml\n"
+        "results:\n  - {key: bad, count: studies, value: '5'}\n",
         encoding="utf-8",
     )
     inv = tvbo.SimulationStudy.from_file(str(spec))
@@ -374,30 +396,30 @@ def test_a_rule_is_described_by_the_value_it_stands_at(multi_output_figure):
 # ------------------------------------------------- gaps the code review surfaced
 
 
-def test_a_member_container_resolves_from_the_members_own_layout(collection, tmp_path):
-    """A ``used:`` binding into a MEMBER, which the schema documents as supported.
+def test_a_nested_container_resolves_from_that_studys_own_layout(collection, tmp_path):
+    """A ``used:`` binding into a NESTED STUDY, which the schema documents as supported.
 
-    The IRI's ``<study>`` segment names the member; the member's own directory then answers where its results live. Nothing searches, so a member's container is found in exactly one place — its own.
+    The IRI's ``<study>`` segment names the sub-study; that study's own directory then answers where its results live. Nothing searches, so its container is found in exactly one place — its own.
     """
-    _write_container(_member_results(tmp_path), "tally", "n_errors", 7)
+    _write_container(_nested_results(tmp_path), "tally", "n_errors", 7)
     results, _prov, problems = I.resolve_results(collection, tmp_path / "derivatives" / "tvbo")
     assert not problems, problems
     assert results["n_errors"] == "7"
 
 
-def test_a_container_in_the_owning_studys_root_is_not_used_for_a_member_binding(collection, tmp_path):
+def test_a_container_in_the_owning_studys_root_is_not_used_for_a_nested_binding(collection, tmp_path):
     """The failure the search order used to hide: a same-named container in the wrong study.
 
-    Both studies can declare an analysis called ``tally``. Resolving by identity means the member's binding reads the member's number, never whichever root happened to be searched first.
+    Both studies can declare an analysis called ``tally``. Resolving by identity means the binding reads the nested study's number, never whichever root happened to be searched first.
     """
     _write_container(tmp_path / "derivatives" / "tvbo", "tally", "n_errors", 1)
-    _write_container(_member_results(tmp_path), "tally", "n_errors", 99)
+    _write_container(_nested_results(tmp_path), "tally", "n_errors", 99)
     results, _prov, problems = I.resolve_results(collection, tmp_path / "derivatives" / "tvbo")
     assert not problems, problems
     assert results["n_errors"] == "99"
 
 
-def test_a_binding_naming_a_study_that_is_not_a_member_fails(collection, tmp_path):
+def test_a_binding_naming_a_study_outside_the_tree_fails(collection, tmp_path):
     """Rather than falling back to the owning study's root and reporting someone else's number."""
     collection.results[0].used.iri = "tvbo:ana/stranger/tally"
     _write_container(tmp_path / "derivatives" / "tvbo", "tally", "n_errors", 1)
@@ -522,10 +544,43 @@ def test_cited_keys_are_read_from_a_file_and_a_tree(tmp_path):
     from tvbo.cli.verify import _scan_meta_keys
 
     (tmp_path / "a.qmd").write_text("we found {{< meta results.n_errors >}} errors\n")
-    assert _scan_meta_keys(tmp_path / "a.qmd") == {"n_errors"}
+    assert _scan_meta_keys(tmp_path / "a.qmd") == {"results.n_errors"}
     (tmp_path / "sub").mkdir()
-    (tmp_path / "sub" / "b.md").write_text("across {{< meta results.parcels >}} parcels\n")
-    assert _scan_meta_keys(tmp_path) == {"n_errors", "parcels"}
+    (tmp_path / "sub" / "b.md").write_text("across {{< meta counts.parcels >}} parcels\n")
+    assert _scan_meta_keys(tmp_path) == {"results.n_errors", "counts.parcels"}, "every namespace is scanned, not only results"
+
+
+def test_a_namespace_outside_results_names_its_own_fix(collection, tmp_path):
+    """The manifest supplies one namespace, so a token in any other renders empty on the page.
+
+    Reported with the remedy named, because the author's next question is always where the number should have come from.
+    """
+    manifest = tmp_path / "m.yml"
+    manifest.write_text("results:\n  n_errors: '3'\n  parcels: '7'\n")
+    problems = I.verify(
+        collection,
+        tmp_path,
+        manuscript_keys={"results.n_errors", "results.parcels", "counts.models"},
+        manifest_path=manifest,
+    )
+    assert any("counts" in p and "results:" in p for p in problems)
+
+
+def test_an_ungated_namespace_is_itself_a_problem(collection, tmp_path):
+    """Citing a namespace with no metadata file behind it fails rather than passing unchecked."""
+    manifest = tmp_path / "m.yml"
+    manifest.write_text("results:\n  n_errors: '3'\n  parcels: '7'\n")
+    problems = I.verify(
+        collection, tmp_path, manuscript_keys={"results.n_errors", "results.parcels", "go.n_terms"}, manifest_path=manifest
+    )
+    assert any("go" in p for p in problems), "an ungated namespace must be reported, not silently trusted"
+
+
+def test_a_bare_key_still_means_the_results_namespace(collection, tmp_path):
+    """Callers predating namespaces pass bare keys; they must keep working."""
+    manifest = tmp_path / "m.yml"
+    manifest.write_text("results:\n  n_errors: '3'\n  parcels: '7'\n")
+    assert I.verify(collection, tmp_path, manuscript_keys={"n_errors", "parcels"}, manifest_path=manifest) == []
 
 
 # ------------------------------------------ a caption must never lose a rendered figure
@@ -563,15 +618,14 @@ def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monke
     monkeypatch.setattr(run_cli, "emit_manifest", lambda *a, **k: emitted.append(a) or (tmp_path / "m.yml", []), raising=False)
 
     spec = tmp_path / "collection.yaml"
-    (tmp_path / "members").mkdir()
-    (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nsimulation_experiments: []\n")
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "toy.yaml").write_text("title: Toy\nexperiments: []\n")
     spec.write_text(
-        "title: Demo\nmembers:\n  - {recipe: members/toy.yaml, label: toy}\n"
-        "results:\n  - {key: parcels, value: '379', source: s}\n"
+        "title: Demo\nstudies:\n  - !include nested/toy.yaml\nresults:\n  - {key: parcels, value: '379', source: s}\n"
     )
     obj = tvbo.SimulationStudy.from_file(str(spec))
     with pytest.raises((SystemExit, typer.Exit, typer.BadParameter)):
-        run_cli._run_with_members(obj, str(spec), tmp_path / "output")
+        run_cli._run_tree(obj, str(spec), tmp_path / "output")
     assert not emitted, "the manifest was written from a failed run"
 
 

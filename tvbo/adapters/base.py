@@ -25,6 +25,41 @@ from tvbo.templates.base.utils import (
 from tvbo.utils import noise_sigma
 
 
+def declared_node_count(network) -> int:
+    """How many nodes a network declares, whichever of the equivalent forms declared them.
+
+    A matrix-only or parcellation-only connectome must not read as a single node, so every form `to_yaml_with_network` accepts is consulted: an explicit count, explicit node objects, edges, a data file, a parcellation, or a weight matrix with more than one entry. A network declaring none of them, or no network at all, is one node.
+    """
+    if network is None:
+        return 1
+    count = int(getattr(network, "number_of_nodes", None) or getattr(network, "number_of_regions", None) or 0)
+    if count > 1:
+        return count
+    nodes = getattr(network, "nodes", None) or []
+    if len(nodes) > 1:
+        return len(nodes)
+    if getattr(network, "edges", None) or getattr(network, "data_file", None) or getattr(network, "parcellation", None):
+        return max(count, 2)
+    matrix = getattr(network, "matrix", None)
+    weights = matrix("weight") if callable(matrix) else None
+    if weights is not None and np.asarray(weights).size > 1:
+        return int(np.asarray(weights).shape[0])
+    return max(count, 1)
+
+
+def refuse_network(experiment, backend: str, reach: str) -> None:
+    """Raise where *backend* would accept a declared network and integrate one node of it.
+
+    A backend whose emitted code carries no connectome returns a well-formed one-node trajectory for a network experiment, which no caller can tell from support; refusing is the contract the Brian2 and NetworkDynamics adapters already state for the forms they cannot lower. *reach* names what the backend does integrate, for the message.
+    """
+    n = declared_node_count(getattr(experiment, "network", None))
+    if n > 1:
+        raise NotImplementedError(
+            f"the {backend} backend integrates {reach}, so the {n}-node network this experiment declares would be accepted and ignored. "
+            "Run it on a backend that lowers a connectome (tvb, tvboptim, jax, python, pyrates)."
+        )
+
+
 class BaseAdapter:
     """Base class for backend adapters.
 
@@ -65,6 +100,7 @@ class BaseAdapter:
                 f"{type(self).__name__} declares no TEMPLATE. Set one, or override "
                 "render_code where the backend chooses its template per experiment."
             )
+        self.refuse_unrenderable()
         context = self.prepare_context()
         context.update(kwargs)
         return templates.lookup.get_template(self.TEMPLATE).render(**context)
@@ -192,8 +228,21 @@ class BaseAdapter:
 
     # ── Graph / network ──────────────────────────────────────────────────
 
+    def refuse_unrenderable(self) -> None:
+        """Raise where this backend's templates would drop part of the declaration and emit well-formed code for the rest.
+
+        Accepts everything by default. A backend overrides it to name what its templates do not lower — a delayed coupling with no history path, a declared observation with no monitor path — because rendering is not evidence: code that compiles and then answers a different question is indistinguishable from support to every caller that does not already know the answer.
+        """
+
+    def refuse_network(self, reach: str) -> None:
+        """This adapter's :func:`refuse_network`: raise if the experiment declares a network the backend would integrate one node of."""
+        refuse_network(self.experiment, type(self).__name__.removesuffix("Adapter"), reach)
+
     def get_network_info(self) -> dict:
-        """Extract network metadata: n_nodes, graph generator, edges, etc."""
+        """Extract network metadata: n_nodes, graph generator, edges, etc.
+
+        ``has_graph_generator`` is the question a template actually asks, resolved once here: can this generator be lowered to a constructor call in the generated code? Only a generator naming a curated ``type`` can, because the lowering reads that entry's ``bindings:`` block. A generator declared by a Python ``builder:`` has already run and left its result in the weight and length matrices, so a template that treats the bare presence of a generator as "emit a constructor call" raises on it instead of emitting the matrices it was handed.
+        """
         network = self.experiment.network
         n_nodes = getattr(network, "number_of_nodes", None) or getattr(
             network, "number_of_regions", 1
@@ -224,6 +273,7 @@ class BaseAdapter:
             "n_nodes": n_nodes,
             "nodes": nodes,
             "graph_gen": graph_gen,
+            "has_graph_generator": bool(graph_gen and getattr(graph_gen, "type", None)),
             "edges_list": edges_list,
             "emf_names": emf_names,
             "has_edge_matrix": has_edge_matrix,
@@ -232,8 +282,16 @@ class BaseAdapter:
         }
 
     def build_weight_matrix(self, edges_list, n_nodes: int, threshold: int = 50) -> np.ndarray | None:
-        """Build a dense weight matrix from explicit edges if over threshold."""
-        if not edges_list or len(edges_list) <= threshold:
+        """The dense weight matrix a template emits when it cannot name a graph generator.
+
+        Explicit edges are densified once there are more than *threshold* of them, below which a template lists them one by one. A network that carries its connectome as a matrix has no edge objects at all — every builder-generated one is like this — so the matrix is read from the network itself. Without that fallback the templates find no weights, no edges and no nameable generator, and the last branch of each builds an unweighted complete graph: the run succeeds and integrates a different network.
+        """
+        if not edges_list:
+            matrix = getattr(getattr(self.experiment, "network", None), "matrix", None)
+            W = matrix("weight") if callable(matrix) else None
+            W = np.asarray(W, dtype=float) if W is not None else None
+            return W if W is not None and W.size > 1 else None
+        if len(edges_list) <= threshold:
             return None
         W = np.zeros((n_nodes, n_nodes))
         for e in edges_list:
@@ -248,13 +306,37 @@ class BaseAdapter:
 
     # ── Integration ──────────────────────────────────────────────────────
 
+    # Solvers that advance by a step the caller supplies. A backend whose solver interface is adaptive by default (DifferentialEquations.jl) refuses one of these unless it is also handed `dt`, so every template that emits a solve call needs the distinction.
+    FIXED_STEP_METHODS = frozenset({"Euler", "Heun", "Midpoint", "RK4", "RungeKutta4thOrder", "Identity", "EulerHeun"})
+
+    @classmethod
+    def is_fixed_step(cls, method) -> bool:
+        """Whether *method* advances by a supplied step rather than choosing its own."""
+        return cls.canonical_integration_method(method) in cls.FIXED_STEP_METHODS
+
+    @staticmethod
+    def canonical_integration_method(method, default: str = "Tsit5") -> str:
+        """*method* under the curated integrator's own name, matched case-insensitively.
+
+        An unrecognised name is returned unchanged rather than replaced: a backend may legitimately name a solver TVB-O does not curate (``Tsit5``, ``TRBDF2``), and silently rewriting it would be worse than passing it through.
+        """
+        from tvbo.data.registry import list_entries
+
+        name = str(method) if method else default
+        for entry in list_entries("Integrator"):
+            if entry.lower() == name.lower():
+                return entry
+        return name
+
     def get_integration_info(self) -> dict:
         """The window a backend integrates, and which part of it is settling rather than measurement.
 
         ``duration`` is the MEASURED window and ``transient_time`` is prepended to it, so the total a backend integrates is ``transient_time + duration`` and raising the settle never silently shortens the data. Resolved once here, because the settle is a property of the experiment rather than of any one backend: every backend that needs it in steps wants the same ``round(transient_time / dt)``, and three copies of that arithmetic is how two of them came to disagree about what ``duration`` meant.
 
+        ``method`` is returned in the curated integrator's own spelling. Backends that emit the method name as an identifier -- every Julia template names the solver as a symbol -- cannot each carry their own casing table, and the declared name reaches here in whatever case it was written: the default is ``euler`` while the curated entry is ``Euler``, which lowered to an undefined Julia symbol in the NetworkDynamics and ModelingToolkit templates alike.
+
         Returns:
-            ``dt``, ``duration`` (measured), ``method``, ``transient_time``, ``total_duration`` (``transient_time + duration``, the window to integrate), and the same split in integration steps as ``n_transient`` and ``n_measured`` -- the first of which is the cut index between the two.
+            ``dt``, ``duration`` (measured), ``method`` (canonicalised), ``transient_time``, ``total_duration`` (``transient_time + duration``, the window to integrate), and the same split in integration steps as ``n_transient`` and ``n_measured`` -- the first of which is the cut index between the two.
         """
         from tvbo.adapters.observation_sampling import tvb_iround
 
@@ -265,7 +347,7 @@ class BaseAdapter:
         return {
             "dt": dt,
             "duration": duration,
-            "method": (getattr(integration, "method", "Tsit5") if integration else "Tsit5"),
+            "method": self.canonical_integration_method(getattr(integration, "method", None) if integration else None),
             "transient_time": transient,
             "total_duration": transient + duration,
             "n_transient": tvb_iround(transient / dt) if dt else 0,
@@ -477,6 +559,7 @@ class BaseAdapter:
             "n_nodes": network_info["n_nodes"],
             "nodes": network_info["nodes"],
             "graph_gen": network_info["graph_gen"],
+            "has_graph_generator": network_info["has_graph_generator"],
             "edges_list": network_info["edges_list"],
             "emf_names": network_info["emf_names"],
             "has_edge_matrix": network_info["has_edge_matrix"],
@@ -495,6 +578,7 @@ class BaseAdapter:
             "n_transient": integration_info["n_transient"],
             "n_measured": integration_info["n_measured"],
             "solver_method": integration_info["method"],
+            "fixed_step": self.is_fixed_step(integration_info["method"]),
             "needs_stiff": ("auto" in str(integration_info["method"]).lower()),
             # Graph
             "needs_weighted": network_info["has_edge_matrix"],

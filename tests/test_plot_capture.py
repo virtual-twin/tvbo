@@ -66,7 +66,9 @@ def test_an_authored_description_replaces_the_image_panels_filename():
     """A caption says what the panel shows; the file it was rendered from is provenance and only stands in when nothing was written."""
     from tvbo.adapters.bsplot import _panel_descriptor
 
-    assert _panel_descriptor(_Spec(kind="image", source="full-graph.html", description=None)) == "rendered from full-graph.html"
+    assert (
+        _panel_descriptor(_Spec(kind="image", source="full-graph.html", description=None)) == "rendered from full-graph.html"
+    )
     assert _panel_descriptor(_Spec(kind="image", source="full-graph.html", description="Both resources at full size.")) == ""
 
 

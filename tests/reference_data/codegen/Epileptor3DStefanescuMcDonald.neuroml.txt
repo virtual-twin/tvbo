@@ -56,7 +56,7 @@
     <!-- Parameters -->
     <Parameter name="N" dimension="none"/>
     <Parameter name="x_0" dimension="none"/>
-    <Parameter name="tau_z" dimension="time"/>
+    <Parameter name="tau_z" dimension="none"/>
     <!-- Coupling inputs -->
     <Parameter name="c_glob" dimension="none"/>
     <!-- Initial condition parameters -->
@@ -106,7 +106,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="Epileptor3DStefanescuMcDonald_inst" type="Epileptor3DStefanescuMcDonald" N="1.0" x_0="-1.6" tau_z="2857.0 ms" c_glob="0" x1_0="-1.5" z_0="3.0"/>
+  <Component id="Epileptor3DStefanescuMcDonald_inst" type="Epileptor3DStefanescuMcDonald" N="1.0" x_0="-1.6" tau_z="2857.0" c_glob="0" x1_0="-1.5" z_0="3.0"/>
 
 
 

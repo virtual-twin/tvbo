@@ -217,8 +217,16 @@ class BifurcationKitAdapter(ContinuationAdapter):
         po_cp.append("save_sol_every_step = 1")
         po_cp_str = ", ".join(po_cp)
 
-        # Source point
+        # Source point. This path emits a periodic-orbit continuation, which BifurcationKit starts from a Hopf point; a branch naming any other kind is refused here rather than being emitted as a Hopf switch that finds nothing and reports nothing.
         source = br.source_point
+        kind = str(source).split(":")[0] if source else "hopf"
+        if kind != "hopf":
+            raise ValueError(
+                f"periodic-orbit branch {getattr(br, 'name', '?')!r} declares source_point {source!r}, and a "
+                "periodic orbit is continued from a Hopf point. Equilibrium branch switching at a branch point "
+                "or a fold is not emitted by this backend; declare `hopf:<n>` or `hopf:all`, or continue the "
+                "other equilibrium directly by seeding it (`initial_state: {method: given}`)."
+            )
         all_hopf = source == "hopf:all" if source else False
         if source and ":" in source:
             hopf_idx_str = source.split(":")[1]

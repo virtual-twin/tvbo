@@ -19,9 +19,12 @@ class _Layer:
 
 
 class _Panel:
-    def __init__(self, kind="surface", opts=None, layers=(), render=None):
+    def __init__(self, kind="surface", opts=None, layers=(), render=None, **declared):
         self.kind = kind
         self.opts = opts or {}
+        self.surface = self.volume = self.network = self.grid = self.colorbar = self.legend = None
+        for name, value in declared.items():  # the kind objects a panel declares, as the schema holds them
+            setattr(self, name, value)
         self.layers = list(layers)
         self.render = render
         self.label = self.placeholder = self.path = self.number = None
@@ -71,7 +74,7 @@ def test_registered_as_a_builtin_so_no_code_modules_are_needed():
 
 def test_a_surface_panel_gets_a_ctx_and_the_builtin_render_name():
     """`kind: surface` resolves like `custom` — opts and base_dir reach the callable."""
-    entry = _resolve_drawable(_Panel(opts={"view": "medial"}), "a", ".")
+    entry = _resolve_drawable(_Panel(surface={"view": "medial"}), "a", ".")
     assert entry["render"] == "surface"
     assert entry["ctx"]["opts"]["view"] == "medial"
 

@@ -109,6 +109,18 @@
       <StateVariable name="uB" dimension="none" exposure="uB"/>
 
       <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="G0" dimension="none" value="mu2_Ain/sqrt(mu1_Ain^2 + mu2_Ain^2 + nu_Ain^2)"/>
+      <DerivedVariable name="G1" dimension="none" value="-mu1_Ain/sqrt(mu1_Ain^2 + mu2_Ain^2 + nu_Ain^2)"/>
+      <DerivedVariable name="G2" dimension="none" value="nu_Ain/sqrt(mu1_Ain^2 + mu2_Ain^2 + nu_Ain^2)"/>
+      <DerivedVariable name="H0" dimension="none" value="(mu1_Ain*(mu1_Ain*mu2_Aend - mu1_Aend*mu2_Ain) + nu_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))/sqrt((mu1_Ain*(mu1_Ain*mu2_Aend - mu1_Aend*mu2_Ain) + nu_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))^2 + (mu2_Ain*(mu1_Ain*mu2_Aend - mu1_Aend*mu2_Ain) - nu_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend))^2 + (-mu1_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend) - mu2_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))^2)"/>
+      <DerivedVariable name="H1" dimension="none" value="(mu2_Ain*(mu1_Ain*mu2_Aend - mu1_Aend*mu2_Ain) - nu_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend))/sqrt((mu1_Ain*(mu1_Ain*mu2_Aend - mu1_Aend*mu2_Ain) + nu_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))^2 + (mu2_Ain*(mu1_Ain*mu2_Aend - mu1_Aend*mu2_Ain) - nu_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend))^2 + (-mu1_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend) - mu2_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))^2)"/>
+      <DerivedVariable name="H2" dimension="none" value="(-mu1_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend) - mu2_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))/sqrt((mu1_Ain*(mu1_Ain*mu2_Aend - mu1_Aend*mu2_Ain) + nu_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))^2 + (mu2_Ain*(mu1_Ain*mu2_Aend - mu1_Aend*mu2_Ain) - nu_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend))^2 + (-mu1_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend) - mu2_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))^2)"/>
+      <DerivedVariable name="L0" dimension="none" value="mu2_Bin/sqrt(mu1_Bin^2 + mu2_Bin^2 + nu_Bin^2)"/>
+      <DerivedVariable name="L1" dimension="none" value="-mu1_Bin/sqrt(mu1_Bin^2 + mu2_Bin^2 + nu_Bin^2)"/>
+      <DerivedVariable name="L2" dimension="none" value="nu_Bin/sqrt(mu1_Bin^2 + mu2_Bin^2 + nu_Bin^2)"/>
+      <DerivedVariable name="M0" dimension="none" value="(mu1_Bin*(mu1_Bin*mu2_Bend - mu1_Bend*mu2_Bin) + nu_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))/sqrt((mu1_Bin*(mu1_Bin*mu2_Bend - mu1_Bend*mu2_Bin) + nu_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))^2 + (mu2_Bin*(mu1_Bin*mu2_Bend - mu1_Bend*mu2_Bin) - nu_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend))^2 + (-mu1_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))^2)"/>
+      <DerivedVariable name="M1" dimension="none" value="(mu2_Bin*(mu1_Bin*mu2_Bend - mu1_Bend*mu2_Bin) - nu_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend))/sqrt((mu1_Bin*(mu1_Bin*mu2_Bend - mu1_Bend*mu2_Bin) + nu_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))^2 + (mu2_Bin*(mu1_Bin*mu2_Bend - mu1_Bend*mu2_Bin) - nu_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend))^2 + (-mu1_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))^2)"/>
+      <DerivedVariable name="M2" dimension="none" value="(-mu1_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))/sqrt((mu1_Bin*(mu1_Bin*mu2_Bend - mu1_Bend*mu2_Bin) + nu_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))^2 + (mu2_Bin*(mu1_Bin*mu2_Bend - mu1_Bend*mu2_Bin) - nu_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend))^2 + (-mu1_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))^2)"/>
       <DerivedVariable name="A0" dimension="none" value="R*(G0*cos(uA) + H0*sin(uA))"/>
       <DerivedVariable name="A1" dimension="none" value="R*(G1*cos(uA) + H1*sin(uA))"/>
       <DerivedVariable name="A2" dimension="none" value="R*(G2*cos(uA) + H2*sin(uA))"/>

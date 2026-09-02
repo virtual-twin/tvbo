@@ -13,11 +13,13 @@ import typer
 
 from . import _common
 
-_META_KEY = re.compile(r"\{\{<\s*meta\s+results\.([A-Za-z0-9_]+)\s*>\}\}")
+_META_KEY = re.compile(r"\{\{<\s*meta\s+([A-Za-z0-9_]+)\.([A-Za-z0-9_]+)\s*>\}\}")
 
 
 def _scan_meta_keys(target: Path) -> set[str]:
-    """The ``results.<key>`` tokens cited across a manuscript file or directory tree.
+    """The ``<namespace>.<key>`` tokens cited across a manuscript file or directory tree, namespace included.
+
+    Every namespace is scanned, not just ``results``: the manifest supplies only ``results``, so a token in any other namespace renders empty, and scanning for it is the only way that failure is caught before it reaches the page.
 
     A path that does not exist is an error, not an empty scan. Swallowing it produced the worst possible diagnostic: every declared key reported as "never cited", burying the one real problem (the typo) under a wall of wrong ones.
     """
@@ -31,7 +33,7 @@ def _scan_meta_keys(target: Path) -> set[str]:
     unreadable: list[str] = []
     for f in files:
         try:
-            keys.update(_META_KEY.findall(f.read_text(encoding="utf-8")))
+            keys.update(f"{ns}.{key}" for ns, key in _META_KEY.findall(f.read_text(encoding="utf-8")))
         except OSError as e:
             unreadable.append(f"{f}: {e.strerror or e}")
     if unreadable:
@@ -40,18 +42,19 @@ def _scan_meta_keys(target: Path) -> set[str]:
 
 
 def verify(
-    spec: str = typer.Argument(..., help="Path to a study YAML that declares `members:`."),
+    spec: str = typer.Argument(..., help="Path to a study YAML that nests `studies:`."),
     results_root: Path = typer.Option(
         None,
         "--results-root",
         help="Directory holding the run's result containers (default: <collection-dir>/output).",
     ),
-    manuscript: Path = typer.Option(
+    manuscript: list[Path] = typer.Option(
         None,
         "--manuscript",
         help="A .qmd/.md file or directory whose `{{< meta results.* >}}` keys are cross-checked "
         "against the declared `results:` — a cited-but-undeclared or declared-but-uncited "
-        "key is a failure.",
+        "key is a failure. Repeat for each, so prose split across a body and a supplement is gated "
+        "as one manuscript rather than one of the two silently going unchecked.",
     ),
     manifest: Path = typer.Option(
         None,
@@ -71,20 +74,25 @@ def verify(
 ) -> None:
     """Verify a study-of-studies' completeness, staleness and manifest coverage."""
     kind, obj = _common.resolve_spec(spec)
-    if kind != "study" or not (getattr(obj, "members", None) or []):
-        detail = "declares no `members:`" if kind == "study" else f"resolves to a {kind}"
+    if kind != "study" or not (getattr(obj, "studies", None) or []):
+        detail = "nests no `studies:`" if kind == "study" else f"resolves to a {kind}"
         _common.die(
             f"`tvbo verify` needs a study-of-studies; {spec} {detail}. "
-            f"Point it at the tvbo_manuscript.yaml (the study that declares `members:`)."
+            f"Point it at the tvbo_manuscript.yaml (the study that nests `studies:`)."
         )
 
     from tvbo.data.study_manifest import verify as _verify
 
     base = Path(getattr(obj, "_source_file", spec)).resolve().parent
-    keys = _scan_meta_keys(manuscript) if manuscript is not None else None
+    keys = set().union(*(_scan_meta_keys(p) for p in manuscript)) if manuscript else None
     problems = _verify(
-        obj, base, results_root=results_root, manuscript_keys=keys, manifest_path=manifest, captions_dir=captions
+        obj,
+        base,
+        results_root=results_root,
+        manuscript_keys=keys,
+        manifest_path=manifest,
+        captions_dir=captions,
     )
     if problems:
         _common.die("verification failed:\n  - " + "\n  - ".join(problems))
-    _common.info(f"verification passed ({len(list(getattr(obj, 'members', None) or []))} member(s)).")
+    _common.info(f"verification passed ({len(obj.walk_studies(include_self=False))} nested stud(ies)).")

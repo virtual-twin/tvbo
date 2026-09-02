@@ -770,7 +770,7 @@ def plan(
         container_args=(spec.get("container_args") or None),
         retries=int(spec.get("retries") or 0),
         rng=str(spec.get("rng") or "deterministic"),
-        provenance=bool(spec.get("emit_provenance", True)),
+        provenance=bool(spec.get("emit_provenance", False)),
         vectorize_axes=vectorize,
         workflow_axes=workflow,
         cohort_subjects=cohort_subjects,

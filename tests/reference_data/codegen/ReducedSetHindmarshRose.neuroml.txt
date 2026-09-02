@@ -117,6 +117,18 @@
       <StateVariable name="gamma" dimension="none" exposure="gamma"/>
 
       <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="IE_i" dimension="none" value="sqrt(sigma)*(iV0*mu + iZV*sigma)"/>
+      <DerivedVariable name="II_i" dimension="none" value="sqrt(sigma)*(iU0*mu + iZU*sigma)"/>
+      <DerivedVariable name="a_i" dimension="none" value="a*iV4/sigma"/>
+      <DerivedVariable name="b_i" dimension="none" value="b*iV3/sqrt(sigma)"/>
+      <DerivedVariable name="c_i" dimension="none" value="c*iV0*sqrt(sigma)"/>
+      <DerivedVariable name="d_i" dimension="none" value="d*iV3/sqrt(sigma)"/>
+      <DerivedVariable name="e_i" dimension="none" value="a*iU4/sigma"/>
+      <DerivedVariable name="f_i" dimension="none" value="b*iU3/sqrt(sigma)"/>
+      <DerivedVariable name="h_i" dimension="none" value="c*iU0*sqrt(sigma)"/>
+      <DerivedVariable name="m_i" dimension="none" value="iV0*r*s*xo*sqrt(sigma)"/>
+      <DerivedVariable name="n_i" dimension="none" value="iU0*r*s*xo*sqrt(sigma)"/>
+      <DerivedVariable name="p_i" dimension="none" value="d*iU3/sqrt(sigma)"/>
 
       <!-- ── Flat dynamics (no spike events) ── -->
 

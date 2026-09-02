@@ -69,14 +69,14 @@ class StudyResult(Mapping):
     :meth:`dataset` hands back the underlying :class:`xarray.Dataset` for anyone who wants the flat names, :meth:`analysis` reaches an analysis container by name, :meth:`figure` a rendered figure by name, and :meth:`report` the study's Methods section. Containers are read on first access and cached.
     """
 
-    def __init__(self, study, root: Path, results_root: Path, experiments, figures, members=None):
+    def __init__(self, study, root: Path, results_root: Path, experiments, figures, studies=None):
         from tvbo.data.dataref import experiment_id
 
         self.study = study
-        self.members = dict(members or {})
-        """Each member study's own result, keyed by the label the recipe gives it — empty unless this is a study-of-studies.
+        self.studies = dict(studies or {})
+        """Each nested study's own result, keyed by the label it goes by — empty unless this is a study-of-studies.
 
-        Nested rather than merged into this mapping, because that is the shape the recipe has and the shape the results have on disk: a member keeps its own results root, and two members both declaring ``exp-1`` are two different experiments.
+        Nested rather than merged into this mapping, because that is the shape the recipe has and the shape the results have on disk: a sub-study keeps its own results root, and two sub-studies both declaring ``exp-1`` are two different experiments.
         """
         self.root = Path(root)
         self.results_root = Path(results_root)
@@ -183,8 +183,47 @@ class StudyResult(Mapping):
             root = rel if len(rel) < len(root) else root
         except ValueError:
             pass
-        members = f", members={sorted(self.members)}" if self.members else ""
-        return f"StudyResult(experiments={self._keys}, figures={sorted(self._figures)}{members}, results_root={root!r})"
+        nested = f", studies={sorted(self.studies)}" if self.studies else ""
+        return f"StudyResult(experiments={self._keys}, figures={sorted(self._figures)}{nested}, results_root={root!r})"
+
+
+def _as_user_facing(nested):
+    """A nested study promoted from the generated datamodel class to this one, in place.
+
+    The object the parent's constructor built already holds exactly the right data; what it lacks is the behaviour — ``run``, ``get_experiment``, the nesting walk. Since this class adds no state of its own, rebinding the class supplies that without copying anything. Rebuilding through ``from_datamodel`` instead would re-run the constructor over the whole sub-tree, which a study rich enough to carry enums inside inlined objects does not survive.
+    """
+    if not isinstance(nested, SimulationStudy) and isinstance(nested, tvbo_datamodel.SimulationStudy):
+        nested.__class__ = SimulationStudy
+    return nested
+
+
+def _wire_nested(study, raw: dict | None) -> None:
+    """Give every study nested under *study* the identity its own recipe gives it, recursively.
+
+    ``!include`` splices a sub-study's content into the parent document and the parent's constructor turns it into a plain datamodel object, which knows neither which file it came from nor how to run. This walks the constructed tree beside the raw document it was built from — the raw mapping is where the loader recorded the origin — and hands each nested study its source file, the code directory that file implies, and the raw experiment dicts its own experiments materialise from. Reloading each recipe would produce the same objects by parsing the whole tree a second time.
+    """
+    from tvbo.utils import as_list, register_recipe_code_paths
+    from tvbo.utils.yaml_loader import include_source
+
+    raw_nested = (raw or {}).get("studies") or []
+    wired = []
+    for index, nested in enumerate(as_list(getattr(study, "studies", None))):
+        nested_raw = raw_nested[index] if index < len(raw_nested) else None
+        source = include_source(nested_raw)
+        child = _as_user_facing(nested)
+        if source:
+            child._source_file = str(Path(source).resolve())
+            register_recipe_code_paths(child._source_file, getattr(child, "code_source", None))
+        elif getattr(child, "_source_file", None) is None:
+            child._source_file = getattr(study, "_source_file", None)
+        object.__setattr__(
+            child,
+            "_raw_experiments",
+            {e.get("id"): e for e in (nested_raw or {}).get("experiments") or [] if isinstance(e, dict)},
+        )
+        _wire_nested(child, nested_raw)
+        wired.append(child)
+    object.__setattr__(study, "_nested", wired)
 
 
 class SimulationStudy(tvbo_datamodel.SimulationStudy):
@@ -193,26 +232,58 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     Aggregates the experiments behind a published paper or analysis (model, DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
     Load with `from_db(name)` for curated studies, `from_file(path)` for local YAML, or `from_openminds(...)` for JSON-LD provenance graphs.
 
-    A study that declares `members` is a study-of-studies: it aggregates other studies' recipes and owns whatever experiments, analyses and figures belong to no member. Recursion runs through the pointer, so a member's own recipe may declare members of its own.
+    A study that declares `studies` is a study-of-studies: it aggregates other studies and owns whatever experiments, analyses and figures belong to none of them. The nested studies are `SimulationStudy` objects like this one, so the nesting is self-similar and recurses to any depth.
 
     The most-used entry points are [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment) to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite) for the formatted citation, and [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for JSON-LD export.
     """
 
-    def member_recipes(self, base=None, *, include_optional: bool = True) -> list[tuple[str, "Path"]]:
-        """The member study recipes as ``(label, resolved_path)`` pairs.
+    def study_label(self) -> str:
+        """The name this study is addressed by — in a `--skip` list, a `count:` binding, or a run's progress line.
 
-        A study with ``members`` is a study-of-studies. Each ``recipe`` is resolved relative to *base* (this study's own directory) when it is not an IRI or an absolute path, so a member keeps its own directory and therefore its own results root. ``optional`` members are dropped when *include_optional* is False (a ``--skip``-style light run).
+        The citekey first, then the recipe's own filename, and only then ``label``: a study's ``label`` is a human-readable title and is frequently a whole sentence, which no one can type into ``--skip`` and which reads as noise in a progress line.
         """
-        base = Path(base) if base is not None else Path(getattr(self, "_source_file", ".")).resolve().parent
-        out: list[tuple[str, Path]] = []
-        for m in getattr(self, "members", None) or []:
-            if getattr(m, "optional", None) and not include_optional:
-                continue
-            recipe = str(getattr(m, "recipe", ""))
-            label = getattr(m, "label", None) or Path(recipe).stem
-            path = Path(recipe)
-            resolved = path if path.is_absolute() or "://" in recipe else (base / recipe)
-            out.append((str(label), resolved))
+        for attr in ("citekey", "key"):
+            value = getattr(self, attr, None)
+            if value:
+                return str(value)
+        source = getattr(self, "_source_file", None)
+        if source:
+            return Path(source).stem
+        return str(self.label) if getattr(self, "label", None) else "study"
+
+    def nested_studies(self) -> list[tuple[str, "SimulationStudy"]]:
+        """This study's immediate sub-studies as ``(label, study)`` pairs.
+
+        A sub-study spliced in by ``!include`` carries the file it came from, so it keeps its own ``_source_file`` and therefore its own results root, code directory and relative references — which is the whole point of nesting by pointer rather than by copy. A sub-study written inline has no file of its own and inherits this study's.
+
+        Wired once when the study is loaded, so the tree is parsed exactly once however often it is walked.
+        """
+        from tvbo.utils import as_list
+
+        wired = getattr(self, "_nested", None)
+        if wired is None:
+            wired = [self._adopt_inline(nested) for nested in as_list(getattr(self, "studies", None))]
+            object.__setattr__(self, "_nested", wired)
+        return [(study.study_label(), study) for study in wired]
+
+    def _adopt_inline(self, nested) -> "SimulationStudy":
+        """An inline sub-study as a user-facing study sharing this one's source file."""
+        study = _as_user_facing(nested)
+        if getattr(study, "_source_file", None) is None:
+            study._source_file = getattr(self, "_source_file", None)
+        return study
+
+    def walk_studies(self, *, include_self: bool = True) -> list[tuple[str, "SimulationStudy"]]:
+        """Every study in this tree, each sub-study before the study that holds it.
+
+        Depth first with the holder last, because that is the order the content depends in: a study's own analyses and figures may read what its sub-studies produced, never the other way round. *include_self* drops the outermost study, which is how a caller runs the tree without re-running the study it started from.
+        """
+        out: list[tuple[str, SimulationStudy]] = []
+        for label, nested in self.nested_studies():
+            out.extend(nested.walk_studies(include_self=False))
+            out.append((label, nested))
+        if include_self:
+            out.append((self.study_label(), self))
         return out
 
     def __repr__(self) -> str:
@@ -223,8 +294,10 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         exps = getattr(self, "experiments", {}) or {}
         n_exp = len(exps)
         model_name = str(self.model) if self.model else "n/a"
-        n_members = len(getattr(self, "members", None) or [])
-        members = f", members={n_members}" if n_members else ""
+        from tvbo.utils import as_list
+
+        n_nested = len(as_list(getattr(self, "studies", None)))
+        members = f", studies={n_nested}" if n_nested else ""
         return (
             f"SimulationStudy(\n"
             f"  key={key!r},\n"
@@ -260,6 +333,8 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             _raw_exps = {}
         # Store as a plain dict (bypass the JsonObj setattr that would wrap it).
         object.__setattr__(study, "_raw_experiments", _raw_exps)
+        # Wire the nested studies from the content already parsed, rather than reloading each recipe: `!include` has read every one of them, and a tree of twenty-odd studies parsed twice costs seconds on every command that only wants to know what it contains.
+        _wire_nested(study, _raw)
         return study
 
     @classmethod
@@ -311,12 +386,12 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             backend: Backend for each experiment that does not declare its own.
             figures: Render the study's declared ``figures:`` once the experiments finish.
 
-        A study-of-studies runs through the same branch the CLI takes: every member first, in its own directory, then this study's own content, then the results manifest — and each member's own `StudyResult` comes back under `StudyResult.members`.
+        A study-of-studies runs through the same branch the CLI takes: every nested study first, in its own directory, then this study's own content, then the results manifest — and each nested study's own `StudyResult` comes back under `StudyResult.studies`.
 
         Returns:
-            A [`StudyResult`](#tvbo.classes.study.StudyResult) — the experiments' containers by id, the analyses by name, the rendered figures, and any member studies.
+            A [`StudyResult`](#tvbo.classes.study.StudyResult) — the experiments' containers by id, the analyses by name, the rendered figures, and any nested studies.
         """
-        from tvbo.cli.run import _has_members, _run_whole_study, _run_with_members, member_root
+        from tvbo.cli.run import _has_nested, _run_tree, _run_whole_study, nested_root
 
         spec = getattr(self, "_source_file", None)
         if not spec:
@@ -328,21 +403,21 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         base = Path(root).resolve() if root is not None else recipe_dir
         base.mkdir(parents=True, exist_ok=True)
 
-        if not _has_members(self):
+        if not _has_nested(self):
             _run_whole_study(self, str(spec), None, backend=backend, figures=figures, base=base)
             return self._collect(base)
 
-        _run_with_members(self, str(spec), None, backend=backend, figures=figures, base=base)
-        members = {}
-        for label, recipe in self.member_recipes(recipe_dir):
-            member = SimulationStudy.from_file(str(recipe))
-            members[label] = member._collect(member_root(base, recipe_dir, recipe) or Path(recipe).resolve().parent)
-        return self._collect(base, members=members)
+        _run_tree(self, str(spec), None, backend=backend, figures=figures, base=base)
+        nested_results = {}
+        for label, nested in self.nested_studies():
+            recipe = Path(getattr(nested, "_source_file", None) or spec)
+            nested_results[label] = nested._collect(nested_root(base, recipe_dir, recipe) or recipe.resolve().parent)
+        return self._collect(base, studies=nested_results)
 
-    def _collect(self, base: Path, members=None) -> "StudyResult":
+    def _collect(self, base: Path, studies=None) -> "StudyResult":
         """The `StudyResult` describing what a completed run left under *base*.
 
-        Reading the outcome is separated from causing it so that a member study, whose run this object did not drive, is described by exactly the same code as the study that owns it.
+        Reading the outcome is separated from causing it so that a nested study, whose run this object did not drive, is described by exactly the same code as the study that owns it.
         """
         from tvbo.adapters.bsplot import compose_caption
         from tvbo.cli.figures import figure_outputs
@@ -368,7 +443,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             study_path_for("results", base),
             getattr(self, "experiments", None) or [],
             drawn,
-            members=members,
+            studies=studies,
         )
 
     def report(

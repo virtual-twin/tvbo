@@ -159,6 +159,12 @@ def ${name}(
     stimulus=False,
 ):
     stim_t = stimulus(t) if stimulus else 0.0
+% if coupling_as_argument:
+<%doc>The network runtime hands one coupling vector indexed by state variable, so each global input reads the row of the state it is gathered from; without this the body's `c_glob` is unbound and the first step raises NameError.</%doc>\
+% for i, ct in enumerate(global_terms):
+    ${ct} = coupling[${gsi[i]}]
+% endfor
+% endif
 % for ct in local_terms:
     ${ct} = 0.0
 % endfor

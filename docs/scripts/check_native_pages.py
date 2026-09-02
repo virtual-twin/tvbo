@@ -21,7 +21,9 @@ BANNED = {
     "matplotlib": re.compile(r"\b(?:import\s+matplotlib|from\s+matplotlib\b)"),
     "pyplot call": re.compile(r"\bplt\s*\."),
     "seaborn": re.compile(r"\b(?:import\s+seaborn|from\s+seaborn\b)"),
-    "axes call": re.compile(r"\bax(?:es)?\s*\.\s*(?:plot|scatter|hist|imshow|bar|errorbar|contour|axvline|axhline|fill_between|pcolormesh)\b"),
+    "axes call": re.compile(
+        r"\bax(?:es)?\s*\.\s*(?:plot|scatter|hist|imshow|bar|errorbar|contour|axvline|axhline|fill_between|pcolormesh)\b"
+    ),
 }
 
 

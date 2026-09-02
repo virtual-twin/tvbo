@@ -43,12 +43,11 @@ figures:
               description: >-
                 The y0 trajectory of every region, shaded by node: the approach from the initial
                 state, and the settled activity the spectra are computed from.
-              opts:
+              grid:
                   ncols: 1
               cell:
                   kind: cartesian
-                  opts:
-                      ylabel: "y0 [a.u.]"
+                  ylabel: "y0 [a.u.]"
               cells:
                   - kind: cartesian
                     layers:
@@ -59,9 +58,8 @@ figures:
                     annotations:
                         - text: Transient
                           loc: "upper right"
-                    opts:
-                        ylabel: "y0 [a.u.]"
-                        hide_xticklabels: true
+                    ylabel: "y0 [a.u.]"
+                    hide_xticklabels: true
                   - kind: cartesian
                     layers:
                         - used: {experiment: 1, output: integration__y0_trace}
@@ -71,9 +69,8 @@ figures:
                     annotations:
                         - text: Stabilized
                           loc: "upper right"
-                    opts:
-                        xlabel: "Sample"
-                        ylabel: "y0 [a.u.]"
+                    xlabel: "Sample"
+                    ylabel: "y0 [a.u.]"
 
           b:
               kind: cartesian
@@ -92,11 +89,10 @@ figures:
                   - text: "Peak @ {:.1f} Hz"
                     used: {experiment: 1, output: integration__peak_frequency}
                     loc: "upper right"
-              opts:
-                  xlabel: "Frequency [Hz]"
-                  ylabel: "Power"
-                  yscale: log
-                  xlim: [0, 20]
+              xlabel: "Frequency [Hz]"
+              ylabel: "Power"
+              yscale: log
+              xlim: [0, 20]
 
           c:
               kind: heatmap
@@ -110,11 +106,11 @@ figures:
                     mark: scatter
                     encoding: {x: optimization__spectral_gradient_fit__fitted__dynamics__a}
                     style: {color: white, opts: {s: 14, edgecolors: black, linewidths: 0.4, zorder: 5}}
-              opts:
-                  xlabel: "a [ms^-1]"
-                  ylabel: "b [ms^-1]"
-                  colorbar: true
-                  colorbar_label: "Peak frequency [Hz]"
+              xlabel: "a [ms^-1]"
+              ylabel: "b [ms^-1]"
+              colorbar:
+                  show: true
+                  label: "Peak frequency [Hz]"
 
           d:
               kind: cartesian
@@ -133,27 +129,27 @@ figures:
                     label: After
                     encoding: {x: optimization__spectral_gradient_fit__observation__target_peak_frequencies}
                     style: {color: royalblue, opts: {s: 12, alpha: 0.7, edgecolors: k, linewidths: 0.3}}
-              opts:
-                  xlabel: "Target [Hz]"
-                  ylabel: "Simulated [Hz]"
-                  xlim: [6, 12]
-                  ylim: [6, 12]
-                  aspect: equal
-                  axline: [1.0, 0.0]
-                  legend: "upper left"
+              xlabel: "Target [Hz]"
+              ylabel: "Simulated [Hz]"
+              xlim: [6, 12]
+              ylim: [6, 12]
+              aspect: equal
+              legend: "upper left"
+              rules:
+                  - {orientation: diagonal, at: [1.0, 0.0]}
 
           e:
               kind: grid
               label: "Brain frequency maps"
               description: "Initial, target and fitted peak frequency painted into the Desikan-Killiany volume."
-              opts:
+              grid:
                   col_labels: [Initial, Target, Fitted]
               cell:
                   kind: volume
-                  opts:
+                  volume:
                       atlas: tvbo:atlas/DesikanKilliany
                       view: sagittal
-                      cmap: cividis_r
+                      colormap: cividis_r
                       vmin: 6.5
                       vmax: 11.5
               layers:
@@ -167,12 +163,12 @@ figures:
               description: "The target gradient on the fsaverage cortical surface."
               layers:
                   - used: {experiment: 1, output: integration__target_peak_frequencies}
-              opts:
+              surface:
                   atlas: tvbo:atlas/DesikanKilliany
                   template: fsaverage
                   hemi: both
                   view: dorsal
-                  cmap: cividis_r
+                  colormap: cividis_r
                   symmetric: false
                   vmin: 6.5
                   vmax: 11.5
@@ -183,12 +179,12 @@ figures:
               description: "The fitted gradient on the same surface and colour scale."
               layers:
                   - used: {experiment: 1, output: optimization__spectral_gradient_fit__observation__peak_frequencies}
-              opts:
+              surface:
                   atlas: tvbo:atlas/DesikanKilliany
                   template: fsaverage
                   hemi: both
                   view: dorsal
-                  cmap: cividis_r
+                  colormap: cividis_r
                   symmetric: false
                   vmin: 6.5
                   vmax: 11.5

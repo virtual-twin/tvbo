@@ -2,12 +2,9 @@
 
 The simplest streamable pipeline keeps every ``k``-th sample of its source and drops the rest (``SubSampling(period=TR)``). Materialised it costs a whole trajectory to produce a ``1/k`` slice of it; folded into the integrator carry it costs only the slice. Because the reducer keeps exactly the samples the pipeline keeps, the streamed value is bit-identical rather than merely close. These tests pin:
 
-* the resolver recognises a stride pipeline whether the stride is declared as a ``period``
-  (with the integration ``step_size``) or as an explicit ``step``, is opt-in, and leaves a non-stride pipeline to the BOLD path;
-* the emitted reducer equals a from-scratch ``data[ds-1::ds]`` exactly, under ANY
-  stride-aligned block decomposition (the ``prepare(reduce=...)`` path feeds blocks);
-* ``streaming_post_eval_plan`` aligns its block size to the stride, so no write slot ever
-  straddles a block boundary.
+* the resolver recognises a stride pipeline whether the stride is declared as a ``period`` (with the integration ``step_size``) or as an explicit ``step``, is opt-in, and leaves a non-stride pipeline to the BOLD path;
+* the emitted reducer equals a from-scratch ``data[ds-1::ds]`` exactly, under ANY stride-aligned block decomposition (the ``prepare(reduce=...)`` path feeds blocks);
+* ``streaming_post_eval_plan`` aligns its block size to the stride, so no write slot ever straddles a block boundary.
 """
 
 import jax
@@ -92,6 +89,41 @@ def test_post_eval_plan_aligns_the_block_to_the_stride():
     plan = streaming_post_eval_plan(exp)
     assert plan["names"] == ["bold_frames"]
     assert plan["period_in_steps"] == 1440
+
+
+def _fc_observation(name, source):
+    return Observation(
+        name=name,
+        source=[source],
+        reduce="streaming",
+        pipeline=[
+            FunctionCall(
+                callable={"name": "compute_fc", "module": "tvboptim.observations.observation"},
+                arguments={"skip_t": Argument(name="skip_t", value=10)},
+            )
+        ],
+    )
+
+
+def test_an_observation_sourcing_another_observation_is_a_deliverable_not_a_fold():
+    """``fc`` declared ``reduce: streaming`` over a streamed ``bold`` is served by the deliverables closure.
+
+    Only the raw trajectory has reducers, so however such an observation is declared it cannot be a fold: binning it into ``names`` plans a reducer the observation template never builds, and the generated evaluation dies with ``KeyError`` on the reducer table. It is computed from the streamed values it sources instead.
+    """
+    bold, exp = _stride_observation(period=0.72)
+    exp.observations = {"bold_frames": bold, "fc": _fc_observation("fc", "bold_frames")}
+    plan = streaming_post_eval_plan(exp)
+    assert plan["names"] == ["bold_frames"]
+    assert plan["deliverables"] == ["fc"]
+
+
+def test_a_raw_source_comoment_observation_stays_a_fold():
+    """The same ``compute_fc`` pipeline over a raw state variable keeps the in-carry co-moment path."""
+    _, exp = _stride_observation()
+    exp.observations = {"inp_corr": _fc_observation("inp_corr", "x_e_pre")}
+    plan = streaming_post_eval_plan(exp)
+    assert plan["names"] == ["inp_corr"]
+    assert plan["deliverables"] == []
 
 
 # ── Declared axis names ─────────────────────────────────────────────────────────────────

@@ -955,6 +955,11 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
     try:
         obs.enrich(source="database")
     except LookupError:
+        if not any(getattr(obs, slot, None) for slot in ("pipeline", "class_reference", "dynamics")):
+            raise LookupError(
+                f"Observation {getattr(obs, 'name', None)!r} names {obs.iri!r}, which no curated record answers, "
+                "and declares no pipeline, class reference or dynamics of its own; every backend would render it as something else."
+            ) from None
         return False
 
     if functions_sink is not None:

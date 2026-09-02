@@ -359,14 +359,14 @@ def test_analysis_is_refused_when_the_spec_is_an_experiment(monkeypatch, tmp_pat
 
 @pytest.fixture
 def collection_spec(tmp_path: Path) -> str:
-    """A minimal study-of-studies on disk, with one member and one authored result."""
-    (tmp_path / "members").mkdir()
-    (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\nsimulation_experiments: []\n", encoding="utf-8")
+    """A minimal study-of-studies on disk, with one nested study and one authored result."""
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "toy.yaml").write_text("title: Toy\nlabel: toy\nkey: toy\nexperiments: []\n", encoding="utf-8")
     spec = tmp_path / "collection.yaml"
     spec.write_text(
         "title: Demo\n"
-        "members:\n"
-        "  - {recipe: members/toy.yaml, label: toy}\n"
+        "studies:\n"
+        "  - !include nested/toy.yaml\n"
         "results:\n"
         "  - {key: parcels, value: '379', source: Glasser2016}\n",
         encoding="utf-8",
@@ -377,7 +377,6 @@ def collection_spec(tmp_path: Path) -> str:
 @pytest.mark.parametrize(
     "flag",
     [
-        "--analysis=fc_summary",
         "--experiment=41",
         "--save-all",
         "--no-compress",
@@ -387,7 +386,7 @@ def collection_spec(tmp_path: Path) -> str:
     ],
 )
 def test_a_flag_a_collection_cannot_honour_is_refused(collection_spec, flag):
-    """A study-of-studies runs every member with fixed save options.
+    """A study-of-studies runs every nested study with fixed save options.
 
     Accepting one of these and dropping it turns a one-container request into the whole study — hours of cluster time — or reports success for a ``--save-all`` that in fact wrote record-only. Each must fail fast, naming the flag.
 
@@ -401,6 +400,19 @@ def test_a_flag_a_collection_cannot_honour_is_refused(collection_spec, flag):
     assert res.exit_code != 0
     assert "would be ignored" in res.output
     assert flag.split("=")[0] in res.output
+
+
+def test_analysis_selects_a_collections_own_analyses(collection_spec):
+    """A study-of-studies owns analyses reading what its nested studies committed, and `--analysis` names them.
+
+    Refusing the flag would leave those analyses unreachable: the only alternative is running the whole tree, which is hours of work to re-derive numbers whose inputs are already on disk.
+    """
+    from typer.testing import CliRunner
+
+    from tvbo.cli import app
+
+    res = CliRunner().invoke(app, ["run", collection_spec, "--analysis", "nothing_declared"])
+    assert "would be ignored" not in res.output
 
 
 def test_a_plain_collection_run_is_not_refused(collection_spec):

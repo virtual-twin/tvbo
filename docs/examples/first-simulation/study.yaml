@@ -43,21 +43,21 @@ figures:
               label: "The connectome"
               layers:
                   - used: {experiment: 1, output: integration, sel: {variable: V}}
-              opts:
-                  network: tvbo:DesikanKilliany
+              network:
+                  connectome: tvbo:DesikanKilliany
                   projection: axial
-                  cmap: magma
+                  colormap: magma
           b:
               kind: surface
               label: "On the cortex"
               layers:
                   - used: {experiment: 1, output: integration, sel: {variable: V}}
-              opts:
+              surface:
                   atlas: tvbo:atlas/DesikanKilliany
                   template: fsaverage
                   hemi: both
                   view: dorsal
-                  cmap: magma
+                  colormap: magma
                   symmetric: false
           c:
               kind: cartesian
@@ -73,6 +73,5 @@ figures:
                     frame: cursor
                     encoding: {x: time}
                     style: {color: "#111111", opts: {linewidth: 1.0}}
-              opts:
-                  xlabel: "Time [ms]"
-                  ylabel: "V [a.u.]"
+              xlabel: "Time [ms]"
+              ylabel: "V [a.u.]"

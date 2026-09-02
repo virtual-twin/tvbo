@@ -350,7 +350,8 @@ class Brian2Adapter(BaseAdapter):
         pulse_of_node = {}  # node_id -> (dyn_name, dyn_obj)  (timed current pulse)
         populations = {}  # pop name -> descriptor
         for dyn_name, gnodes in groups.items():
-            dyn_obj = dyn_lib.get(dyn_name)
+            # An experiment with no node library — one population declared by `dynamics:` alone — names its cell type by the default name.
+            dyn_obj = dyn_lib.get(dyn_name) or (exp.dynamics if dyn_name == default_name else None)
             role, nml = classify_node_role(dyn_name, dyn_obj, _BRIAN2_ROLE_VOCAB)
             if role == "event_source":
                 if nml not in _POISSON_TYPES:

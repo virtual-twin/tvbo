@@ -1,6 +1,6 @@
 """The results manifest and the ``tvbo verify`` checks.
 
-A study that declares ``members`` is a study-of-studies: it aggregates the member studies a paper reports and owns the paper's own demonstration content. Two capabilities belong to that shape, though any :class:`~tvbo.classes.study.SimulationStudy` may use them:
+A study that nests ``studies`` is a study-of-studies: it aggregates the studies a paper reports and owns the paper's own demonstration content. Two capabilities belong to that shape, though any :class:`~tvbo.classes.study.SimulationStudy` may use them:
 
 * a **results manifest** (``results:``): the named numbers the prose cites, each bound to a
   computed value (``used:`` a DataRef) or an authored constant (``value:`` + ``source:``).
@@ -39,33 +39,43 @@ def _format(value: Any, fmt: str | None) -> str:
     return fmt.format(value) if fmt else str(value)
 
 
-def _count_target(inv: Any, member_label: str | None) -> Any:
-    """The object a ``count:`` binding tallies: the study itself, or a loaded member."""
-    if member_label is None:
-        if inv is None:
-            raise ValueError("a bare `count:` collection needs a study-of-studies context")
-        return inv
-    if inv is None:
-        raise ValueError(f"count references member {member_label!r} but no study-of-studies context was given")
-    from tvbo.classes.study import SimulationStudy
+def _tree(inv: Any) -> list:
+    """Every study reachable from *inv*, itself included, as ``(label, study)`` pairs.
 
-    for label, path in inv.member_recipes():
-        if label == member_label:
-            if "://" in str(path):
-                raise ValueError(f"cannot count a collection on IRI member {member_label!r}")
-            return SimulationStudy.from_file(str(path))
-    raise ValueError(f"count references unknown member {member_label!r}")
+    A malformed nesting yields nothing rather than raising, because the caller's own diagnostic — an unresolvable binding named by its key — says more than a traceback from the walk.
+    """
+    if inv is None:
+        return []
+    try:
+        return list(inv.walk_studies())
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _count_target(inv: Any, study_label: str | None) -> Any:
+    """The object a ``count:`` binding tallies: the study holding the binding, or one nested anywhere beneath it."""
+    if inv is None:
+        context = "a bare `count:` collection needs a study context"
+        if study_label is not None:
+            context = f"count references study {study_label!r} but no study context was given"
+        raise ValueError(context)
+    if study_label is None:
+        return inv
+    for label, nested in _tree(inv):
+        if label == study_label:
+            return nested
+    raise ValueError(f"count references study {study_label!r}, which is nowhere in this study's tree")
 
 
 def _count(spec: str, inv: Any) -> int:
     """Length of the collection a ``count:`` binding names.
 
-    ``<member>.<collection>`` counts the collection on that member study (loaded from its recipe); a bare ``<collection>`` counts one on the collection itself. An unknown collection slot raises, so a typo fails the build rather than tallying to zero.
+    ``<study>.<collection>`` counts the collection on that nested study, found at any depth; a bare ``<collection>`` counts one on the study holding the binding. An unknown collection slot raises, so a typo fails the build rather than tallying to zero.
     """
-    member_label, _, coll = str(spec).rpartition(".")
-    target = _count_target(inv, member_label or None)
+    study_label, _, coll = str(spec).rpartition(".")
+    target = _count_target(inv, study_label or None)
     if not hasattr(target, coll):
-        where = member_label or "the collection"
+        where = study_label or "this study"
         raise ValueError(f"count collection {coll!r} is not a slot on {where}")
     return len(as_list(getattr(target, coll)))
 
@@ -80,22 +90,22 @@ def _owning_results_root(used: Any, results_root: Path | None, inv: Any) -> Path
 
     _kind, owner, _name = iri_scope(getattr(used, "iri", None))
     if owner:
-        try:
-            members = list(inv.member_recipes()) if inv is not None else []
-        except Exception:  # noqa: BLE001 — a malformed member list is reported by _missing_members
-            members = []
-        for label, path in members:
-            if owner in (label, Path(path).stem):
-                return study_path("results", root=Path(path).resolve().parent)
-        raise ValueError(f"binding names study {owner!r}, which is not a member of this study")
+        for label, nested in _tree(inv):
+            source = getattr(nested, "_source_file", None)
+            if owner == label or (source and owner == Path(source).stem):
+                # An inline sub-study has no file and so no results root of its own; it writes into its holder's, which is the root the caller already handed in.
+                if not source:
+                    return Path(results_root) if results_root else None
+                return study_path("results", root=Path(source).resolve().parent)
+        raise ValueError(f"binding names study {owner!r}, which is nowhere in this study's tree")
     return Path(results_root) if results_root else None
 
 
 def resolve_binding(binding: Any, results_root: Path | None, *, inv: Any = None) -> tuple[str, dict]:
     """Resolve one ``ResultBinding`` to ``(rendered_string, provenance)``.
 
-    Three mutually exclusive forms: ``used:`` reads a scalar out of a result container and formats it; ``count:`` tallies a collection on a member or the collection itself (no run);
-    ``value:`` (+ ``source:``) passes an authored literal through untouched. Raises ``ValueError`` for a malformed binding (zero or more than one form set), and lets a resolution failure (missing container, dead reference, non-scalar, unknown member) propagate to the caller, which turns it into a build-failing problem keyed by ``binding.key``.
+    Three mutually exclusive forms: ``used:`` reads a scalar out of a result container and formats it; ``count:`` tallies a collection on a nested study or on this one (no run);
+    ``value:`` (+ ``source:``) passes an authored literal through untouched. Raises ``ValueError`` for a malformed binding (zero or more than one form set), and lets a resolution failure (missing container, dead reference, non-scalar, unknown study) propagate to the caller, which turns it into a build-failing problem keyed by ``binding.key``.
     """
     used = getattr(binding, "used", None)
     value = getattr(binding, "value", None)
@@ -195,18 +205,6 @@ def _figure_ids(inv: Any) -> list[str]:
         if name:
             ids.append(str(name))
     return ids
-
-
-def _missing_members(inv: Any, base: Path) -> list[str]:
-    """Member recipes whose file does not exist (an IRI member is left to the loader)."""
-    missing: list[str] = []
-    recipes = inv.member_recipes(base) if hasattr(inv, "member_recipes") else []
-    for label, path in recipes:
-        if "://" in str(path):
-            continue
-        if not Path(path).exists():
-            missing.append(f"{label}: member recipe not found: {path}")
-    return missing
 
 
 def _analysis_fingerprint(analysis: Any) -> str:
@@ -316,7 +314,6 @@ def verify(
     source_file = Path(getattr(inv, "_source_file", "")) if getattr(inv, "_source_file", None) else None
     problems: list[str] = []
 
-    problems += _missing_members(inv, base)
     for fig in as_list(getattr(inv, "figures", None)):
         if not getattr(fig, "name", None):
             label = getattr(fig, "label", None) or "?"
@@ -352,10 +349,27 @@ def verify(
 
     if manuscript_keys is not None:
         where = "the committed manifest" if manifest_path is not None else "`results:`"
-        cited = set(manuscript_keys)
+        cited_all = {
+            tuple(k.split(".", 1)) if "." in k else ("results", k) for k in manuscript_keys
+        }  # a bare key is a `results` key, which is what every caller meant before namespaces existed
+        cited = {key for ns, key in cited_all if ns == "results"}
         for key in sorted(cited - available):
             problems.append(f"results.{key}: cited in the manuscript but not in {where}")
         for key in sorted(available - cited):
             problems.append(f"results.{key}: in {where} but never cited in the manuscript")
+        problems += _other_namespaces(cited_all)
 
     return problems
+
+
+def _other_namespaces(cited: set) -> list[str]:
+    """Every cited key outside ``results`` is a problem, because nothing else supplies one.
+
+    A study's results manifest is the one channel the document reads, so ``{{< meta results.x >}}`` is the only form that can resolve. Anything else renders empty — silently, as a blank where a number should be — which is exactly the failure the manifest exists to prevent. Reported by namespace rather than by key, since the fix is the same for all of them: bind the number in ``results:``.
+    """
+    outside = sorted({ns for ns, _ in cited if ns != "results"})
+    return [
+        f"{ns}.*: cited in the manuscript but only the `results` namespace is supplied by the manifest — "
+        f"bind {ns} keys in the study's `results:` so they are computed and gated like every other number"
+        for ns in outside
+    ]

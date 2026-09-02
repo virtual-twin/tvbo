@@ -20,18 +20,21 @@ class _Opt:
 
 
 class _Cell:
-    def __init__(self, kind=None, opts=None, layers=None, render=None):
+    def __init__(self, kind=None, opts=None, layers=None, render=None, **declared):
         self.kind = kind
         self.opts = {k: _Opt(v) for k, v in (opts or {}).items()}
         self.layers = list(layers or [])
         self.render = render
         self.path = self.label = self.annotations = self.legend = None
         self.bounds = self.cell = self.cells = None
+        self.surface = self.volume = self.network = self.grid = self.colorbar = None
+        for name, value in declared.items():  # the kind objects a panel declares, as the schema holds them
+            setattr(self, name, value)
 
 
 class _Panel(_Cell):
-    def __init__(self, kind="grid", opts=None, layers=None, cell=None, cells=None):
-        super().__init__(kind=kind, opts=opts, layers=layers)
+    def __init__(self, kind="grid", opts=None, layers=None, cell=None, cells=None, **declared):
+        super().__init__(kind=kind, opts=opts, layers=layers, **declared)
         self.cell = cell
         self.cells = cells
         self.placeholder = self.number = self.number_loc = self.insets = None
@@ -49,7 +52,7 @@ class _Layer:
 
 
 def _surface_cell(**opts):
-    return _Cell(kind="surface", opts={"mesh": "m.npz", **opts})
+    return _Cell(kind="surface", surface={"mesh": "m.npz", **opts})
 
 
 # ------------------------------------------------------------------ geometry
@@ -114,7 +117,7 @@ def test_a_rotated_row_label_is_centred_rather_than_right_aligned():
 
 
 def test_layers_fill_the_grid_one_cell_each_through_the_shared_template():
-    panel = _Panel(opts={"nrows": 1, "ncols": 2}, cell=_surface_cell(view="lateral"), layers=[_Layer("a"), _Layer("b")])
+    panel = _Panel(grid={"nrows": 1, "ncols": 2}, cell=_surface_cell(view="lateral"), layers=[_Layer("a"), _Layer("b")])
     got = _resolve_drawable(panel, "p", Path("."))
     assert len(got["insets"]) == 2
     assert all(c["kind"] == "surface" for c in got["insets"])
@@ -123,16 +126,16 @@ def test_layers_fill_the_grid_one_cell_each_through_the_shared_template():
 
 
 def test_a_grid_draws_nothing_itself_so_its_layers_are_not_drawn_twice():
-    panel = _Panel(opts={"ncols": 1}, cell=_surface_cell(), layers=[_Layer("a")])
+    panel = _Panel(grid={"ncols": 1}, cell=_surface_cell(), layers=[_Layer("a")])
     assert _resolve_drawable(panel, "p", Path("."))["layers"] == []
 
 
 def test_declared_cells_may_differ_and_are_merged_over_the_template():
     """The common shape: a first cell showing the bare mesh the rest are maps on."""
     panel = _Panel(
-        opts={"nrows": 1, "ncols": 2},
+        grid={"nrows": 1, "ncols": 2},
         cell=_surface_cell(view="lateral"),
-        cells=[_Cell(kind="surface", opts={"color": "w"}), _Cell(kind="surface", layers=[_Layer("a")])],
+        cells=[_Cell(kind="surface", surface={"color": "w"}), _Cell(kind="surface", layers=[_Layer("a")])],
     )
     cells = _resolve_drawable(panel, "p", Path("."))["insets"]
     assert cells[0]["ctx"]["opts"] == {"mesh": "m.npz", "view": "lateral", "color": "w"}
@@ -141,7 +144,8 @@ def test_declared_cells_may_differ_and_are_merged_over_the_template():
 
 def test_a_row_scoped_opt_is_declared_once_for_the_row():
     panel = _Panel(
-        opts={"nrows": 2, "ncols": 2, "row.view": ["lateral", "medial"]},
+        grid={"nrows": 2, "ncols": 2},
+        opts={"row.view": ["lateral", "medial"]},
         cell=_surface_cell(),
         layers=[_Layer(str(i)) for i in range(4)],
     )
@@ -151,7 +155,8 @@ def test_a_row_scoped_opt_is_declared_once_for_the_row():
 
 def test_a_column_scoped_opt_advances_across_instead_of_down():
     panel = _Panel(
-        opts={"nrows": 2, "ncols": 2, "col.cmap": ["viridis", "seismic"]},
+        grid={"nrows": 2, "ncols": 2},
+        opts={"col.cmap": ["viridis", "seismic"]},
         cell=_surface_cell(),
         layers=[_Layer(str(i)) for i in range(4)],
     )
@@ -160,25 +165,25 @@ def test_a_column_scoped_opt_advances_across_instead_of_down():
 
 
 def test_cells_and_layers_together_are_refused():
-    panel = _Panel(opts={"ncols": 1}, cell=_surface_cell(), cells=[_Cell(kind="surface")], layers=[_Layer("a")])
+    panel = _Panel(grid={"ncols": 1}, cell=_surface_cell(), cells=[_Cell(kind="surface")], layers=[_Layer("a")])
     with pytest.raises(ValueError, match="not both"):
         _resolve_drawable(panel, "p", Path("."))
 
 
 def test_a_grid_with_nothing_to_draw_says_so():
     with pytest.raises(ValueError, match="nothing to draw"):
-        _resolve_drawable(_Panel(opts={"ncols": 1}, cell=_surface_cell()), "p", Path("."))
+        _resolve_drawable(_Panel(grid={"ncols": 1}, cell=_surface_cell()), "p", Path("."))
 
 
 def test_the_compact_form_needs_the_template_that_says_what_a_cell_is():
     with pytest.raises(ValueError, match="`cell:`"):
-        _resolve_drawable(_Panel(opts={"ncols": 1}, layers=[_Layer("a")]), "p", Path("."))
+        _resolve_drawable(_Panel(grid={"ncols": 1}, layers=[_Layer("a")]), "p", Path("."))
 
 
 def test_grid_cell_keys_are_unique_so_nesting_cannot_collide():
-    inner = _Panel(opts={"ncols": 2}, cell=_surface_cell(), layers=[_Layer("a"), _Layer("b")])
+    inner = _Panel(grid={"ncols": 2}, cell=_surface_cell(), layers=[_Layer("a"), _Layer("b")])
     inner.bounds = [0.0, 0.0, 0.5, 0.5]
-    outer = _Panel(opts={"ncols": 1}, cell=_surface_cell(), layers=[_Layer("c")])
+    outer = _Panel(grid={"ncols": 1}, cell=_surface_cell(), layers=[_Layer("c")])
     outer.insets = [inner]
     got = _resolve_drawable(outer, "p", Path("."))
     keys = [c["key"] for c in got["insets"]] + [c["key"] for c in got["insets"][-1]["insets"]]
@@ -187,7 +192,7 @@ def test_grid_cell_keys_are_unique_so_nesting_cannot_collide():
 
 def test_a_grid_is_a_drawer_so_the_format_pass_leaves_its_cells_alone():
     """A grid of heatmaps sets deliberate ticks; re-deriving them would undo the panel."""
-    panel = _Panel(opts={"ncols": 1}, cell=_surface_cell(), layers=[_Layer("a")])
+    panel = _Panel(grid={"ncols": 1}, cell=_surface_cell(), layers=[_Layer("a")])
     assert _resolve_drawable(panel, "p", Path("."))["drawer"] is True
 
 

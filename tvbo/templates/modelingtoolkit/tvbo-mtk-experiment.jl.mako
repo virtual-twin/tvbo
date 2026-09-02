@@ -19,7 +19,7 @@ Context: Pre-computed dict from BaseAdapter.prepare_context()
 </%doc>
 <%page args="experiment, model, integration, \
 dynamics_dict, sv_names, n_sv, \
-is_stochastic, dt, duration, solver_method, needs_stiff, \
+is_stochastic, dt, duration, solver_method, fixed_step, needs_stiff, \
 tstops, \
 **kwargs"/>
 <%!
@@ -270,7 +270,7 @@ tspan = (0.0, ${duration})
         tstops_str = ", tstops=[" + ", ".join(str(t) for t in tstops) + "]"
 %>\
 prob = ODEProblem(sys, u0, tspan, jac=true)
-sol = solve(prob, ${solver_method}(); saveat=${dt}${tstops_str})
+sol = solve(prob, ${solver_method}(); ${'dt=%s, ' % dt if fixed_step else ''}saveat=${dt}${tstops_str})
 
 ## ── Plot ────────────────────────────────────────────────────────────────────
 using Plots

@@ -91,6 +91,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         )
 
         exp = self.experiment
+        self.refuse_network("a single model")
 
         # 1. Ensure required Julia packages
         ensure_packages(*MTK_PACKAGES)
@@ -122,13 +123,14 @@ class ModelingToolkitAdapter(BaseAdapter):
 
         # Pure MTK: single model, n_nodes=1 typically u shape from MTK: (n_unknowns, n_t) n_unknowns may differ from n_sv if mtkcompile introduced auxiliary variables (e.g., higher-order ODE lowering)
         n_unknowns = u.shape[0] if u.ndim == 2 else 1
-        if n_unknowns != n_sv * n_nodes:
-            try:
-                unknowns = run_julia_code("string.(unknowns(sys))")
-                state_labels = [_mtk_to_python_name(str(s).replace("(t)", "")) for s in list(unknowns)]
-            except Exception:
-                state_labels = [f"x_{i}" for i in range(n_unknowns)]
-            # Flat unknowns — treat as n_unknowns variables, 1 node
+        try:
+            state_labels = [_mtk_to_python_name(str(s).replace("(t)", "")) for s in list(run_julia_code("string.(unknowns(sys))"))]
+        except Exception:
+            state_labels = [f"x_{i}" for i in range(n_unknowns)]
+        if u.ndim == 2 and n_nodes == 1 and sorted(state_labels) == sorted(sv_names):
+            # mtkcompile orders the unknowns as it likes, so rows are matched to the declared state variables by name; by position, a two-variable model came back with its variables swapped.
+            da = solution_to_dataarray(t, u[[state_labels.index(name) for name in sv_names]], sv_names, 1)
+        elif n_unknowns != n_sv * n_nodes:
             da = solution_to_dataarray(t, u, state_labels, 1)
         else:
             da = solution_to_dataarray(t, u, sv_names, n_nodes)

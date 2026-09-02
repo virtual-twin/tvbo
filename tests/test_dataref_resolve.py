@@ -492,3 +492,105 @@ def test_locate_prefers_the_flat_container_over_the_legacy_one(tmp_path):
     flat = dr.analysis_container_path(tmp_path, "edf9_lag_wave")
     flat.write_bytes(b"")
     assert dr.locate_analysis_container(tmp_path, "edf9_lag_wave") == flat
+
+
+# ------------------------------------------------------- cross-STUDY, not just cross-experiment
+
+
+@pytest.fixture
+def two_studies(tmp_path):
+    """A study-of-studies holding two members, each with its own `exp-1` under its own results root."""
+    from tvbo.utils.study_layout import file_relpath, study_path
+
+    marker = file_relpath("dataset_description")
+    (tmp_path / marker).write_text('{"Name": "Holder", "BIDSVersion": "1.10.1", "DatasetType": "study"}')
+    for name, value in (("Alpha", 1.0), ("Beta", 2.0)):
+        root = tmp_path / "members" / name
+        results = study_path("results", root=root)
+        results.mkdir(parents=True)
+        (root / marker).write_text(f'{{"Name": "{name}", "BIDSVersion": "1.10.1", "DatasetType": "study"}}')
+        (root / f"{name}.yaml").write_text("tvbo_class: tvbo:SimulationStudy\n")
+        xr.Dataset({"signal": xr.DataArray(np.full(3, value), dims=["time"])}).to_netcdf(
+            results / "exp-1_result.h5", engine="h5netcdf"
+        )
+    return tmp_path
+
+
+def _results(root):
+    from tvbo.utils.study_layout import study_path
+
+    return study_path("results", root=root)
+
+
+def test_a_reference_naming_another_study_reads_that_studys_run(two_studies):
+    """Both members have an `exp-1`; the study segment is the only thing that tells them apart."""
+    beta = _results(two_studies / "members" / "Beta")
+    da = dr.resolve_dataref(_ref(iri="tvbo:exp/Alpha/exp-1", output="signal"), results_root=beta)
+    assert float(da.values[0]) == 1.0
+
+
+def test_a_reference_naming_its_own_study_still_reads_locally(two_studies):
+    """The same-study spelling is what an in-study figure already uses, so it cannot change meaning."""
+    beta = _results(two_studies / "members" / "Beta")
+    da = dr.resolve_dataref(_ref(iri="tvbo:exp/Beta/exp-1", output="signal"), results_root=beta)
+    assert float(da.values[0]) == 2.0
+
+
+def test_a_reference_with_no_study_segment_reads_locally(two_studies):
+    """A bare `exp-1` means this study's, which is the ergonomic the short forms exist for."""
+    beta = _results(two_studies / "members" / "Beta")
+    da = dr.resolve_dataref(_ref(iri="exp-1", output="signal"), results_root=beta)
+    assert float(da.values[0]) == 2.0
+
+
+def test_a_study_outside_the_tree_raises_rather_than_binding_locally(two_studies):
+    """Silently reading the referring study's own `exp-1` is the failure this resolution exists to prevent."""
+    beta = _results(two_studies / "members" / "Beta")
+    with pytest.raises(FileNotFoundError, match="Nowhere"):
+        dr.resolve_dataref(_ref(iri="tvbo:exp/Nowhere/exp-1", output="signal"), results_root=beta)
+
+
+def test_an_ambiguous_study_name_raises_rather_than_picking(two_studies):
+    """Two members answering to one name is a tree the reference cannot disambiguate, so neither can the resolver."""
+    from tvbo.utils.study_layout import file_relpath, sibling_study_root
+
+    duplicate = two_studies / "members" / "Gamma"
+    duplicate.mkdir()
+    (duplicate / file_relpath("dataset_description")).write_text('{"Name": "Gamma", "BIDSVersion": "1.10.1"}')
+    (duplicate / "Alpha.yaml").write_text("tvbo_class: tvbo:SimulationStudy\n")
+    sibling_study_root.cache_clear()
+    with pytest.raises(FileNotFoundError, match="more than one member"):
+        sibling_study_root("Alpha", str(_results(two_studies / "members" / "Beta")))
+
+
+def test_a_study_is_named_by_the_citekey_it_declares(tmp_path):
+    """A study answers to the identity it states, not only to where it happens to sit.
+
+    The manuscript root is the case in the wild: the directory and the recipe are both `tvbo-manuscript`, the recipe declares `citekey: tvbo_manuscript`, and every one of its own bindings names it by that. Matching only the directory and the stem made a study unable to name its own results.
+    """
+    from tvbo.utils.study_layout import file_relpath, study_path
+
+    marker = file_relpath("dataset_description")
+    root = tmp_path / "hyphen-named"
+    results = study_path("results", root=root)
+    results.mkdir(parents=True)
+    (root / marker).write_text('{"Name": "Root", "BIDSVersion": "1.10.1", "DatasetType": "study"}')
+    (root / "hyphen-named.yaml").write_text("citekey: underscore_named\ntvbo_class: tvbo:SimulationStudy\n")
+    xr.Dataset({"signal": xr.DataArray(np.full(3, 7.0), dims=["time"])}).to_netcdf(
+        results / "ana-fidelity_result.h5", engine="h5netcdf"
+    )
+
+    da = dr.resolve_dataref(_ref(iri="tvbo:ana/underscore_named/fidelity", output="signal"), results_root=results)
+    assert float(da.values[0]) == 7.0
+
+
+def test_a_nested_citekey_is_not_mistaken_for_the_documents(tmp_path):
+    """Only a root-level `citekey` names the document; one indented under a member describes that member."""
+    from tvbo.utils.study_layout import file_relpath, study_names
+
+    root = tmp_path / "outer"
+    root.mkdir()
+    (root / file_relpath("dataset_description")).write_text('{"Name": "Outer", "BIDSVersion": "1.10.1"}')
+    (root / "outer.yaml").write_text("citekey: outer_study\nstudies:\n  - citekey: inner_study\n")
+    assert "outer_study" in study_names(root)
+    assert "inner_study" not in study_names(root)

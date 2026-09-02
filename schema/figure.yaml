@@ -14,6 +14,7 @@ default_prefix: tvbo
 imports:
   - linkml:types
   - common
+  - SANDS   # `Hemisphere` — one hemisphere vocabulary for the whole schema, not a second one for figures
 
 # ---------------------------------------------------------------------------- enums
 
@@ -50,6 +51,94 @@ enums:
       slice:  {description: "Redraw the layer at the current frame's position along the animated dimension — the moving quantity itself."}
       static: {description: "Draw the layer whole in every frame — the full trace a cursor sweeps across, or a fixed reference the moving quantity is read against."}
       cursor: {description: "Draw a rule at the current frame's coordinate value rather than at the data. What marks *now* on a panel that shows the whole time course, so a reader can see which instant the other panels are at."}
+
+  TickPrune:
+    description: "Which end ticks to drop where a corner tick would collide with its neighbour panel's."
+    permissible_values:
+      lower: {description: "Drop the first tick."}
+      upper: {description: "Drop the last tick."}
+      both: {description: "Drop both end ticks."}
+
+  TickFormat:
+    description: "How a tick number is written."
+    permissible_values:
+      sci: {description: "Scientific notation, always."}
+      plain: {description: "Plain decimals, never scientific notation."}
+
+  AxisSide:
+    description: "Which edge of the axes a label or tick row sits on."
+    permissible_values:
+      left: {description: "The left edge."}
+      right: {description: "The right edge."}
+      top: {description: "The top edge."}
+      bottom: {description: "The bottom edge."}
+
+  AxisScale:
+    description: "How an axis maps values to distance. Part of what a panel claims, not decoration: a straight line on a log axis is a power law, and the same points on a linear axis are not."
+    permissible_values:
+      linear: {description: "Equal value, equal distance."}
+      log:    {description: "Equal ratio, equal distance. Refuses non-positive data."}
+      symlog: {description: "Logarithmic either side of zero, linear across it, so a quantity that changes sign still spans decades."}
+      logit:  {description: "For a probability: stretches both ends of [0, 1] so behaviour near 0 and 1 is visible."}
+
+  LegendLoc:
+    description: "Where a panel's key sits. `best` lets the backend find the emptiest corner, which is right while a figure is still moving and wrong once it is printed — a key that relocates between two renders of the same figure is a difference the spec never stated."
+    permissible_values:
+      best:           {description: "Wherever the backend finds the least data underneath."}
+      "upper right":  {description: "Top-right inside the axes."}
+      "upper left":   {description: "Top-left inside the axes."}
+      "lower left":   {description: "Bottom-left inside the axes."}
+      "lower right":  {description: "Bottom-right inside the axes."}
+      right:          {description: "Centred on the right edge."}
+      "center left":  {description: "Centred on the left edge."}
+      "center right": {description: "Centred on the right edge, inside."}
+      "lower center": {description: "Centred on the bottom edge."}
+      "upper center": {description: "Centred on the top edge."}
+      center:         {description: "The middle of the axes."}
+
+  SurfaceView:
+    description: "Where the camera sits for a cortical surface. Distinct from `VolumeView`: a mesh is viewed from a side of the brain, a volume is sliced along an anatomical axis, and the two vocabularies do not overlap."
+    permissible_values:
+      lateral:   {description: "From the side, outward face."}
+      medial:    {description: "From the side, inward face."}
+      dorsal:    {description: "From above."}
+      ventral:   {description: "From below."}
+      anterior:  {description: "From the front."}
+      posterior: {description: "From behind."}
+
+  VolumeView:
+    description: "Which anatomical plane a labelled volume is projected along."
+    permissible_values:
+      sagittal:   {description: "Along the left-right axis."}
+      coronal:    {description: "Along the front-back axis."}
+      horizontal: {description: "Along the top-bottom axis."}
+
+  Projection:
+    description: "Which anatomical plane a network's region centres flatten onto."
+    permissible_values:
+      axial:    {description: "Seen from above — the default, and what most connectome figures print."}
+      coronal:  {description: "Seen from the front."}
+      sagittal: {description: "Seen from the side."}
+
+  BarOrientation:
+    description: "Which way a colour bar runs."
+    permissible_values:
+      vertical:   {description: "Upright, beside the panel."}
+      horizontal: {description: "Flat, under or over the panel."}
+
+  TickDirection:
+    description: "Which side of the axes a tick mark is drawn on."
+    permissible_values:
+      out: {description: "Outward, away from the data. The convention in most journals."}
+      in: {description: "Inward, over the data. Saves the margin a dense mosaic needs."}
+      inout: {description: "Crossing the spine in both directions."}
+
+  RuleOrientation:
+    description: "Which way a reference line runs."
+    permissible_values:
+      horizontal: {description: "Constant y, at a single value."}
+      vertical: {description: "Constant x, at a single value."}
+      diagonal: {description: "Slope and intercept — the identity line `[1, 0]` a target-versus-simulated panel is read against."}
 
   Triangle:
     description: "Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as one image. The conventional way to show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for the drawn halves: with the matrix convention (row 0 at top, set invert_y) 'upper' is the top-right triangle."
@@ -110,10 +199,14 @@ classes:
       layout:
         range: string
         description: "bsplot mosaic string; letters = panel keys, slash (or newline) = new row, repeated letters span cells, dot = empty. e.g. aab/ccb."
+      theme:
+        range: Theme
+        inlined: true
+        description: "The look this figure declares: its colours and the geometry a style sheet used to own. Whatever it states beats every layer in `style`, always — declared beats layered, so a figure's look can be read off its own spec instead of reconstructed from the sheets underneath it. Start from the curated one with `theme: {iri: tvbo:theme/default}` and state only the differences."
       style:
         range: string
         multivalued: true
-        description: "Passed to bsplot.style.use, layered left to right: a registered style name, a path to an .mplstyle (which owns figure sizing/DPI), or a path to a YAML Palette, applied last so its colours win. The name 'tvbo-palette' is TVB-O's own palette, shipped with the package: naming it is how a project takes those colours without keeping a copy of the hexes that drifts from them. It is opt-in, because a replication whose sheet sets the colour cycle its paper used has to keep that cycle."
+        description: "Style layers underneath the theme, applied left to right: a registered bsplot style name (`tvbo`, `nature`) or a path to an .mplstyle. This is where a look TVB-O has no field for goes — another project's house style, a journal's sheet, the rcParams of a paper being reproduced. Anything `theme` states wins over all of it. The name 'tvbo-palette' is an alias for `theme: {iri: tvbo:theme/default}`, kept because it reads well in a list."
       format:
         range: string
         description: "Output format (pdf/svg/png). Unset defers to the renderer default."
@@ -242,9 +335,6 @@ classes:
         inlined: true
         inlined_as_list: true
         description: "Marks sharing this panel's axes (overlay). Grammar kinds only."
-      legend:
-        range: boolean
-        description: "Show a legend for this panel."
       path:
         range: string
         description: "External image file (image kind)."
@@ -255,7 +345,167 @@ classes:
         range: Argument
         multivalued: true
         inlined: true
-        description: "A panel's axis directives, and the keyword options of a custom callable (reuses Argument; typed values). The axis family is applied by the renderer's `_apply_axopts`: labels (`xlabel`, `ylabel`, `title`, `*_side`), scales and limits (`xscale`, `xlim`, `aspect`, `box_aspect`, `invert_x`), ticks (`xticks`, `nbins`, `hide_xticklabels`, `tick_size`, `tick_length`, `xtick_rotation`/`ytick_rotation` in degrees counter-clockwise, `xtick_format`/`ytick_format` of `sci`|`plain`, `tick_prune` of `lower`|`upper`|`both`), label spacing (`xlabel_pad`/`ylabel_pad` in points, for the case where an axis label would sit on its own tick numbers), reference rules (`axhline`, `axvline`, and `axline` as `[slope, intercept]` for a diagonal — `[1, 0]` is the agreement line of a target-versus-simulated panel, which the horizontal/vertical rules cannot draw), and `legend`. Rotate x tick labels when a dense row of panels would otherwise run its numbers together — a slanted label is anchored at its tick rather than centred under it, so it costs width it would otherwise steal from its neighbour."
+        description: "The keyword options of a `custom` callable, and of the kinds that carry their own option family — a `surface`/`volume`/`network` panel's geometry, a colorbar's. No part of how an axis is DRAWN belongs here: the labels, limits, scales, shape and legend are slots on the panel itself, the tick family sits beside them, and `rules`, `regions` and `camera` carry the marks that travel with a colour. The renderer refuses a retired name here rather than passing it into the emitted script, and names the slot that replaced it."
+      tick_size:
+        range: float
+        description: "Tick-label size in points, overriding the figure's `font_size` for this panel's ticks alone."
+      tick_length:
+        range: float
+        description: "Length of this panel's tick marks in points, overriding the theme's."
+      tick_prune:
+        range: TickPrune
+        description: "Drop the first, last, or both end ticks, for the case where a corner tick collides with its neighbour panel's."
+      nbins:
+        range: integer
+        description: "Upper bound on the number of ticks per axis. The lever to reach for when a dense mosaic runs its numbers together."
+      xticks:
+        range: float
+        multivalued: true
+        description: "The x tick positions, stated outright. Unset lets the locator choose them."
+      yticks:
+        range: float
+        multivalued: true
+        description: "The y tick positions, stated outright."
+      hide_xticklabels:
+        range: boolean
+        description: "Draw the x ticks without their numbers. Declare `share_x` on the figure alongside it: hiding the numbers alone asserts a shared scale the axes may not have, and a reader then compares two panels drawn at different ranges."
+      hide_yticklabels:
+        range: boolean
+        description: "Draw the y ticks without their numbers. Same rule as `hide_xticklabels`, with `share_y`."
+      xtick_rotation:
+        range: float
+        description: "Rotate the x tick labels, in degrees counter-clockwise. Worth reaching for when a dense row would otherwise run its numbers together: a slanted label is anchored at its tick rather than centred under it, so it costs width it would otherwise steal from its neighbour."
+      ytick_rotation:
+        range: float
+        description: "Rotate the y tick labels, in degrees counter-clockwise."
+      xtick_format:
+        range: TickFormat
+        description: "How x tick numbers are written: `sci` forces scientific notation, `plain` forbids it."
+      ytick_format:
+        range: TickFormat
+        description: "How y tick numbers are written."
+      xtick_side:
+        range: AxisSide
+        description: "Which edge the x ticks sit on."
+      ytick_side:
+        range: AxisSide
+        description: "Which edge the y ticks sit on."
+      xlabel:
+        range: string
+        description: "The x axis label, as the figure prints it — unit included, LaTeX included. Unset leaves the renderer's own, which is the encoded field's bare name: right for a working figure, wrong for a printed one."
+      ylabel:
+        range: string
+        description: "The y axis label. See `xlabel`."
+      zlabel:
+        range: string
+        description: "The depth axis label of a 3-D panel. Ignored by every flat kind."
+      title:
+        range: string
+        description: "A heading above the panel, in the panel's own words. A panel LETTER is not a title — that is `number`, which the layout places and sizes to the journal's convention."
+      xlabel_pad:
+        range: float
+        description: "Gap in points between the x axis label and its tick numbers, for where the default lets the two touch. Unset takes the theme's `label_pad`."
+      ylabel_pad:
+        range: float
+        description: "Gap in points between the y axis label and its tick numbers. See `xlabel_pad`."
+      zlabel_pad:
+        range: float
+        description: "Gap in points between the z axis label and its tick numbers. See `xlabel_pad`."
+      xlabel_side:
+        range: AxisSide
+        description: "Which edge the x axis LABEL sits on. The tick numbers stay where `xtick_side` puts them, so a label can cross to the far side of a panel whose ticks do not follow it."
+      ylabel_side:
+        range: AxisSide
+        description: "Which edge the y axis LABEL sits on. See `xlabel_side`."
+      xlim:
+        range: float
+        multivalued: true
+        description: "The x range, `[min, max]`. Declared rather than inferred, because two panels a figure asks the reader to compare must not end up on whatever ranges their own data happened to reach."
+      ylim:
+        range: float
+        multivalued: true
+        description: "The y range, `[min, max]`. See `xlim`."
+      zlim:
+        range: float
+        multivalued: true
+        description: "The depth range of a 3-D panel, `[min, max]`. Ignored by every flat kind."
+      xscale:
+        range: AxisScale
+        description: "How the x axis maps values to distance."
+      yscale:
+        range: AxisScale
+        description: "How the y axis maps values to distance."
+      aspect:
+        range: string
+        any_of:
+          - range: string
+          - range: float
+        description: "The DATA aspect ratio: `equal` — one unit of x is one unit of y, what a matrix or a spatial map needs — or `auto` to fill the cell, or a number. `box_aspect` shapes the frame instead."
+      box_aspect:
+        range: float
+        description: "The frame's height over its width, independent of the data ranges: a square panel over data that is not square. `aspect` constrains the data instead."
+      invert_x:
+        range: boolean
+        description: "Draw the x axis descending."
+      invert_y:
+        range: boolean
+        description: "Draw the y axis descending — the matrix convention, row 0 at the top."
+      invert_z:
+        range: boolean
+        description: "Draw the depth axis of a 3-D panel descending."
+      frame:
+        range: boolean
+        description: "Whether the panel keeps its frame and its ticks. `false` strips both, for a panel with no measurable axis: an image, a schematic, a connectivity matrix shown as a picture. Unset keeps them."
+      legend:
+        range: Legend
+        inlined: true
+        any_of:
+          - range: Legend
+          - range: boolean
+          - range: string
+        description: "A key for this panel's own marks. `legend: true` draws it wherever the backend finds room, `legend: upper right` fixes the corner, and the object form states the rest — frame, columns, title. All three are one slot, so a panel that starts with a corner and later needs two columns keeps the word it had. Distinct from `kind: legend`, a standalone legend PANEL that occupies a cell of its own."
+      colorbar:
+        range: Colorbar
+        inlined: true
+        description: "The colour scale printed beside this panel's field."
+      surface:
+        range: Surface
+        inlined: true
+        description: "Geometry and colour scale of a `kind: surface` panel. Ignored by every other kind."
+      volume:
+        range: Volume
+        inlined: true
+        description: "Geometry and colour scale of a `kind: volume` panel. Ignored by every other kind."
+      network:
+        range: Graph
+        inlined: true
+        description: "Graph and colour scale of a `kind: network` panel. Ignored by every other kind."
+      grid:
+        range: Grid
+        inlined: true
+        description: "How a `kind: grid` panel tiles its cells. Ignored by every other kind."
+      fill_cell:
+        range: boolean
+        description: "Keep the position the layout engine gave this panel, rather than letting a later pass move it. For a panel whose position carries meaning — aligned with the one above it, or sized to match a sibling."
+      triangle_gap:
+        range: integer
+        description: "Cells of blank left along the diagonal between two `triangle` layers, so the two halves of a split matrix read as two quantities rather than one image."
+      rules:
+        range: Rule
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        description: "Straight reference lines drawn across the panel: a zero, a threshold, the identity line of a target-versus-simulated plot. Each carries its own colour and dash, so a rule and the way it is drawn cannot be stated apart."
+      regions:
+        range: Region
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        description: "Rectangles ringing the windows this panel calls out — the parameter band a regime lives in, the interval a statistic was taken over."
+      camera:
+        range: Camera
+        inlined: true
+        description: "Viewpoint for a 3-D panel or a surface. Ignored by every flat kind."
       annotations:
         range: Annotation
         multivalued: true
@@ -292,11 +542,171 @@ classes:
       render:
         range: string
         description: "Name of a registered custom-panel callable (custom kind) — the same registry the host panel draws from."
+      tick_size:
+        range: float
+        description: "Tick-label size in points, overriding the figure's `font_size` for this panel's ticks alone."
+      tick_length:
+        range: float
+        description: "Length of this panel's tick marks in points, overriding the theme's."
+      tick_prune:
+        range: TickPrune
+        description: "Drop the first, last, or both end ticks, for the case where a corner tick collides with its neighbour panel's."
+      nbins:
+        range: integer
+        description: "Upper bound on the number of ticks per axis. The lever to reach for when a dense mosaic runs its numbers together."
+      xticks:
+        range: float
+        multivalued: true
+        description: "The x tick positions, stated outright. Unset lets the locator choose them."
+      yticks:
+        range: float
+        multivalued: true
+        description: "The y tick positions, stated outright."
+      hide_xticklabels:
+        range: boolean
+        description: "Draw the x ticks without their numbers. Declare `share_x` on the figure alongside it: hiding the numbers alone asserts a shared scale the axes may not have, and a reader then compares two panels drawn at different ranges."
+      hide_yticklabels:
+        range: boolean
+        description: "Draw the y ticks without their numbers. Same rule as `hide_xticklabels`, with `share_y`."
+      xtick_rotation:
+        range: float
+        description: "Rotate the x tick labels, in degrees counter-clockwise. Worth reaching for when a dense row would otherwise run its numbers together: a slanted label is anchored at its tick rather than centred under it, so it costs width it would otherwise steal from its neighbour."
+      ytick_rotation:
+        range: float
+        description: "Rotate the y tick labels, in degrees counter-clockwise."
+      xtick_format:
+        range: TickFormat
+        description: "How x tick numbers are written: `sci` forces scientific notation, `plain` forbids it."
+      ytick_format:
+        range: TickFormat
+        description: "How y tick numbers are written."
+      xtick_side:
+        range: AxisSide
+        description: "Which edge the x ticks sit on."
+      ytick_side:
+        range: AxisSide
+        description: "Which edge the y ticks sit on."
+      xlabel:
+        range: string
+        description: "The x axis label, as the figure prints it — unit included, LaTeX included. Unset leaves the renderer's own, which is the encoded field's bare name: right for a working figure, wrong for a printed one."
+      ylabel:
+        range: string
+        description: "The y axis label. See `xlabel`."
+      zlabel:
+        range: string
+        description: "The depth axis label of a 3-D panel. Ignored by every flat kind."
+      title:
+        range: string
+        description: "A heading above the panel, in the panel's own words. A panel LETTER is not a title — that is `number`, which the layout places and sizes to the journal's convention."
+      xlabel_pad:
+        range: float
+        description: "Gap in points between the x axis label and its tick numbers, for where the default lets the two touch. Unset takes the theme's `label_pad`."
+      ylabel_pad:
+        range: float
+        description: "Gap in points between the y axis label and its tick numbers. See `xlabel_pad`."
+      zlabel_pad:
+        range: float
+        description: "Gap in points between the z axis label and its tick numbers. See `xlabel_pad`."
+      xlabel_side:
+        range: AxisSide
+        description: "Which edge the x axis LABEL sits on. The tick numbers stay where `xtick_side` puts them, so a label can cross to the far side of a panel whose ticks do not follow it."
+      ylabel_side:
+        range: AxisSide
+        description: "Which edge the y axis LABEL sits on. See `xlabel_side`."
+      xlim:
+        range: float
+        multivalued: true
+        description: "The x range, `[min, max]`. Declared rather than inferred, because two panels a figure asks the reader to compare must not end up on whatever ranges their own data happened to reach."
+      ylim:
+        range: float
+        multivalued: true
+        description: "The y range, `[min, max]`. See `xlim`."
+      zlim:
+        range: float
+        multivalued: true
+        description: "The depth range of a 3-D panel, `[min, max]`. Ignored by every flat kind."
+      xscale:
+        range: AxisScale
+        description: "How the x axis maps values to distance."
+      yscale:
+        range: AxisScale
+        description: "How the y axis maps values to distance."
+      aspect:
+        range: string
+        any_of:
+          - range: string
+          - range: float
+        description: "The DATA aspect ratio: `equal` — one unit of x is one unit of y, what a matrix or a spatial map needs — or `auto` to fill the cell, or a number. `box_aspect` shapes the frame instead."
+      box_aspect:
+        range: float
+        description: "The frame's height over its width, independent of the data ranges: a square panel over data that is not square. `aspect` constrains the data instead."
+      invert_x:
+        range: boolean
+        description: "Draw the x axis descending."
+      invert_y:
+        range: boolean
+        description: "Draw the y axis descending — the matrix convention, row 0 at the top."
+      invert_z:
+        range: boolean
+        description: "Draw the depth axis of a 3-D panel descending."
+      frame:
+        range: boolean
+        description: "Whether the panel keeps its frame and its ticks. `false` strips both, for a panel with no measurable axis: an image, a schematic, a connectivity matrix shown as a picture. Unset keeps them."
+      legend:
+        range: Legend
+        inlined: true
+        any_of:
+          - range: Legend
+          - range: boolean
+          - range: string
+        description: "A key for this panel's own marks. `legend: true` draws it wherever the backend finds room, `legend: upper right` fixes the corner, and the object form states the rest — frame, columns, title. All three are one slot, so a panel that starts with a corner and later needs two columns keeps the word it had. Distinct from `kind: legend`, a standalone legend PANEL that occupies a cell of its own."
+      colorbar:
+        range: Colorbar
+        inlined: true
+        description: "The colour scale printed beside this panel's field."
+      surface:
+        range: Surface
+        inlined: true
+        description: "Geometry and colour scale of a `kind: surface` panel. Ignored by every other kind."
+      volume:
+        range: Volume
+        inlined: true
+        description: "Geometry and colour scale of a `kind: volume` panel. Ignored by every other kind."
+      network:
+        range: Graph
+        inlined: true
+        description: "Graph and colour scale of a `kind: network` panel. Ignored by every other kind."
+      grid:
+        range: Grid
+        inlined: true
+        description: "How a `kind: grid` panel tiles its cells. Ignored by every other kind."
+      fill_cell:
+        range: boolean
+        description: "Keep the position the layout engine gave this panel, rather than letting a later pass move it. For a panel whose position carries meaning — aligned with the one above it, or sized to match a sibling."
+      triangle_gap:
+        range: integer
+        description: "Cells of blank left along the diagonal between two `triangle` layers, so the two halves of a split matrix read as two quantities rather than one image."
+      rules:
+        range: Rule
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        description: "Straight reference lines drawn across the panel: a zero, a threshold, the identity line of a target-versus-simulated plot. Each carries its own colour and dash, so a rule and the way it is drawn cannot be stated apart."
+      regions:
+        range: Region
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        description: "Rectangles ringing the windows this panel calls out — the parameter band a regime lives in, the interval a statistic was taken over."
+      camera:
+        range: Camera
+        inlined: true
+        description: "Viewpoint for a 3-D panel or a surface. Ignored by every flat kind."
       opts:
         range: Argument
         multivalued: true
         inlined: true
-        description: "Keyword options for the custom callable, and the axis directives for a grammar inset."
+        description: "The keyword options of a `custom` callable, and of the kinds that carry their own option family — a `surface`/`volume`/`network` panel's geometry, a colorbar's. No part of how an axis is DRAWN belongs here: the labels, limits, scales, shape and legend are slots on the panel itself, the tick family sits beside them, and `rules`, `regions` and `camera` carry the marks that travel with a colour. The renderer refuses a retired name here rather than passing it into the emitted script, and names the slot that replaced it."
       path:
         range: string
         description: "External image file (image kind)."
@@ -343,7 +753,7 @@ classes:
       x: {range: string}
       y: {range: string}
       z: {range: string, description: "Depth channel for a line3d panel (the third phase-space axis); ignored by 2-D kinds."}
-      color: {range: string}
+      color: {range: string, description: "Dim/coord/var whose values SEPARATE the marks by colour — a field name, never a colour. `color: node` draws one line per node from the cycler; to fix a mark's colour, use `Style.color`."}
       detail: {range: string, description: "Non-visual grouping dim (e.g. the hue/iterate dim)."}
 
   Animation:
@@ -433,7 +843,7 @@ classes:
         description: "Raw backend passthrough (e.g. linewidth, linestyle); matplotlib implicit until a second backend lands."
 
   Palette:
-    description: "A project's colours, named by role in one file a figure takes as a style layer (`style: [tvbo, sheet.mplstyle, palette.yaml]`). A style sheet carries only what matplotlib has an rcParam for, which stops short of the roles a figure reasons in: the one colour that means *this is the point*, the neutral everything unlabelled is drawn in, the hairline behind it. Naming them here is what makes recolouring a project one edit that every panel follows. The cycler is `[base] + palette`, so a plot that names no colour comes out neutral and only a panel meaning to separate conditions reaches into the hues; `highlight` sits outside the cycler, because a colour handed to the second line of every plot cannot also mean emphasis. Read by :mod:`tvbo.plot.palette`, which ships TVB-O's own as the palette in force until a project names one of its own."
+    description: "A project's colours, named by role. The colour half of a `Theme`, and a document in its own right for a consumer that wants colours and nothing else (:mod:`tvbo.plot.palette`, the documentation site's stylesheet). A style sheet carries only what matplotlib has an rcParam for, which stops short of the roles a figure reasons in: the one colour that means *this is the point*, the neutral everything unlabelled is drawn in, the hairline behind it. Naming them here is what makes recolouring a project one edit that every panel follows. The cycler is `[base] + palette`, so a plot that names no colour comes out neutral and only a panel meaning to separate conditions reaches into the hues; `highlight` sits outside the cycler, because a colour handed to the second line of every plot cannot also mean emphasis. TVB-O's own is curated at `tvbo:theme/default`, and is the palette in force until a project names one of its own."
     attributes:
       ink:
         range: string
@@ -459,27 +869,393 @@ classes:
         inlined: true
         description: "The continuous scales, so both kinds of colour move together and no figure names a colormap of its own."
 
+  Theme:
+    description: "A project's whole look in one declarable object: its colours (inherited from `Palette`) and the geometry a style sheet used to own — tick shape, axis weight, line weights, legend, grid, font. Declared on a figure, it beats every layer in `Figure.style`, so a look a spec states cannot be quietly overridden by a sheet underneath it. It is the reason a study need not ship a `.mplstyle`: a sheet is a backend's vocabulary written outside the spec, where nothing validates it and no other backend can read it. TVB-O's own is curated at `tvbo:theme/default`; a project names that in `iri` and states only what it changes, exactly as an `Observation` or a `Coupling` reuses a curated one. A slot left unset is not a value — the layer underneath keeps it, so a theme states the look it means to fix and nothing else."
+    is_a: Palette
+    slots:
+      - iri
+    slot_usage:
+      iri:
+        description: "The curated theme this one starts from (`tvbo:theme/default`). Its slots are merged under this document's own, so a theme states only its differences."
+    attributes:
+      tick_length:
+        range: float
+        description: "Length of a major tick mark, in points. The default for a panel's own `tick_length`."
+      tick_width:
+        range: float
+        description: "Line weight of a major tick mark, in points."
+      tick_direction:
+        range: TickDirection
+        description: "Whether tick marks point out of the axes, into them, or both."
+      tick_pad:
+        range: float
+        description: "Distance from a tick mark to its label, in points."
+      minor_ticks:
+        range: boolean
+        description: "Draw minor tick marks between the major ones."
+      minor_tick_length:
+        range: float
+        description: "Length of a minor tick mark, in points. Ignored unless `minor_ticks` is set."
+      minor_tick_width:
+        range: float
+        description: "Line weight of a minor tick mark, in points. Ignored unless `minor_ticks` is set."
+      axis_width:
+        range: float
+        description: "Line weight of the axes frame, in points. A figure whose spines are heavier than its data is drawn the wrong way round."
+      label_pad:
+        range: float
+        description: "Distance from an axis label to its axis, in points. The default for a panel's own `xlabel_pad`/`ylabel_pad`."
+      title_pad:
+        range: float
+        description: "Distance from a panel title to the axes, in points."
+      line_width:
+        range: float
+        description: "Default weight of a drawn line, in points, for any layer whose own style does not fix one."
+      marker_size:
+        range: float
+        description: "Default marker size, in points, for any layer whose own style does not fix one."
+      legend_frame:
+        range: boolean
+        description: "Draw the box around a legend."
+      legend_handle_length:
+        range: float
+        description: "Length of a legend's sample line, in font-size units."
+      legend_pad:
+        range: float
+        description: "Distance from a legend to the axes it sits against, in font-size units."
+      grid_lines:
+        range: boolean
+        description: "Draw the axes grid. Off in most journals, and worth stating either way rather than inheriting."
+      font_family:
+        range: string
+        multivalued: true
+        description: "The typefaces to set text in, most-wanted first (`[Helvetica, Arial, DejaVu Sans]`). A generic family (`sans-serif`, `serif`, `monospace`) as the first entry selects that family outright; otherwise the list is taken as the concrete faces to try within `sans-serif`, which is how a person means it. Type SIZE is not here: `Figure.font_size` owns it, because it is a property of the figure's print size rather than of the project's look."
+
+  ColorScale:
+    description: "How values become colours, and where the scale starts and stops. Shared by everything that paints a field rather than drawing marks — a colour bar, a cortical surface, a labelled volume, a connectome — so the same question is answered with the same words wherever it is asked, and a limit means the same thing on all four. Every slot here reaches all four; a scale concern only one of them can answer is declared on that one, which is why `center` sits on `Colorbar`."
+    attributes:
+      colormap:
+        range: string
+        description: "The scale, as a key of the theme's `colormaps` (`sequential`, `diverging`, or one a project added) or a name the backend knows. Unset takes the theme's `sequential`, or its `diverging` where the scale is centred."
+      vmin:
+        range: float
+        description: "The value the scale starts at. A declared end is honoured as given; the other is still derived from the data."
+      vmax:
+        range: float
+        description: "The value the scale ends at. See `vmin`."
+      symmetric:
+        range: boolean
+        description: "Centre the limits on zero, so zero is the map's midpoint. What a field of signed deviations needs — read on an off-centre scale it is misleading in a way no axis label catches."
+      percentile:
+        range: float
+        description: "Clip the limit to this percentile of the values (100 = no clipping), so one outlier region cannot wash the whole map out. Applies whether or not the scale is centred."
+
+  Colorbar:
+    description: "The colour scale a panel prints beside its field. Declared as one object because nine loose `colorbar_*` options were nine chances to style a bar that is not drawn, and because a tick list written in an options bag is not a list of numbers to anything that reads it.\n\nA heatmap carries one unasked, since it is unreadable without one; a scatter shaded by a third quantity asks with `show: true`, because a row of them conventionally shares ONE bar. `kind: colorbar` is the standalone form — a bar occupying its own cell of the mosaic, keying the panels around it, and the only case that states its own `colormap` and limits rather than taking them from the field it sits beside."
+    is_a: ColorScale
+    attributes:
+      show:
+        range: boolean
+        description: "Whether the bar is drawn. Unset means yes for a heatmap and no for a scatter."
+      label:
+        range: string
+        description: "What the scale measures, printed along the bar."
+      ticks:
+        range: float
+        multivalued: true
+        description: "The values to mark. A declared tick list is the paper's own; unset lets the backend choose."
+      ticklabels:
+        range: string
+        multivalued: true
+        description: "Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`."
+      decimals:
+        range: integer
+        description: "How many decimal places the tick numbers are written to."
+      fraction:
+        range: float
+        description: "Width of the bar as a fraction of the panel. The default is slim on purpose: matplotlib's own steals about a fifth of a small panel."
+      pad:
+        range: float
+        description: "Gap between the panel and its bar, in the same fraction."
+      aspect:
+        range: float
+        description: "The bar's length over its width."
+      orientation:
+        range: BarOrientation
+        description: "Which way the bar runs."
+      location:
+        range: AxisSide
+        description: "Which side of the panel it sits on."
+      width:
+        range: float
+        description: "Width of a STANDALONE `kind: colorbar` panel's bar within its own cell, as a fraction of that cell."
+      center:
+        range: float
+        description: "Pin the map's neutral colour to this value and truncate the map to the half-range the data reaches, keeping the data's own limits: a unit of change is the same colour distance either side, and the bar shows no colour the field never takes."
+
+  Surface:
+    description: "A cortical surface panel's geometry and how a field is painted on it. One object, so the three mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination."
+    is_a: ColorScale
+    attributes:
+      connectome:
+        range: string
+        description: "A tvbo `Network` whose companion carries a mesh group. Geometry belongs to the network, so a study that has one needs no mesh file beside it."
+      mesh:
+        range: string
+        description: "A surface mesh file — GIFTI, VTK, FreeSurfer, or an `.npz` holding `vertices`/`faces` for a mesh an analysis derived rather than measured."
+      mesh_format:
+        range: string
+        description: "The mesh file's format, where the extension does not say."
+      template:
+        range: string
+        description: "A named template surface (`fsaverage`), fetched rather than committed, so a parcellated map needs no mesh checked in beside the page."
+      density:
+        range: string
+        description: "The template's vertex density (`164k`). Applies only to `template`."
+      hemi:
+        range: Hemisphere
+        description: "Which hemisphere to draw (`left`, `right`, or `both` joined into one mesh — what a paper prints for a dorsal view). Applies only to `template`. The vocabulary is the schema's own, shared with everything else that names a hemisphere."
+      view:
+        range: SurfaceView
+        description: "Where the camera sits."
+      atlas:
+        range: string
+        description: "The parcellation the layer's per-region values are placed through, BY LABEL — a per-region array ordered differently would otherwise paint every region with its neighbour's number and still look like a brain."
+      surface_atlas:
+        range: string
+        description: "The atlas to read vertex labels from, where it differs from the one the values are keyed by."
+      mask:
+        range: string
+        description: "A per-vertex 0/1 file. Vertices OUTSIDE it — a medial wall — are drawn grey and kept out of the colour range rather than coloured as zeros."
+      geometry:
+        range: boolean
+        description: "Read the layer as (V, 3) vertex COORDINATES rather than as a field: what the panel then shows is the surface a reconstruction rebuilt, not a quantity living on a fixed one."
+      color:
+        range: string
+        description: "Draw the mesh itself in one flat colour instead of painting a map on it. With no layer, that is the bare geometry."
+      edge_color:
+        range: string
+        description: "Draw the triangulation in this colour, for a panel whose subject is the mesh the model is solved on."
+      edge_width:
+        range: float
+        description: "Line weight of the triangulation."
+
+  Volume:
+    description: "A labelled-volume panel's geometry: the volumetric counterpart of `Surface`, same layer and same colour scale, with the geometry coming from an atlas instead of a mesh. Values are placed BY LABEL through the atlas crosswalk, never by array position."
+    is_a: ColorScale
+    attributes:
+      atlas:
+        range: string
+        description: "The curated atlas whose segmentation the values are painted into."
+      image:
+        range: string
+        description: "A `dseg` segmentation file, for a parcellation nobody has curated."
+      view:
+        range: VolumeView
+        description: "Which plane the volume is projected along."
+      intensity_projection:
+        range: string
+        description: "How voxels collapse along the view axis (`absmax` by default)."
+
+  Graph:
+    description: "A node-link panel's graph and how it is drawn: the connectome the model actually ran on, with a state living on it. The geometry is the network's own — one marker per region at its anatomical centre — and a layer supplies one value per region, placed by label."
+    is_a: ColorScale
+    attributes:
+      connectome:
+        range: string
+        description: "The network whose nodes and edges are drawn, as a curated IRI (`tvbo:DesikanKilliany`) or a path beside the study. Required: the panel draws the network, not the result."
+      projection:
+        range: Projection
+        description: "Which plane the region centres flatten onto."
+      labels:
+        range: boolean
+        description: "Annotate each node with its region name. Off by default — 87 names on one panel is a block of text, not a figure."
+      color:
+        range: string
+        description: "One flat colour for every node, for a panel whose subject is the network rather than a state on it."
+      node_size:
+        range: float
+        description: "Marker size for the regions."
+      node_edge_color:
+        range: string
+        description: "Outline colour of the region markers."
+      node_edge_width:
+        range: float
+        description: "Outline weight of the region markers."
+      edge_color:
+        range: string
+        description: "Colour of the connections that survive `edge_percentile`."
+      edge_alpha:
+        range: float
+        description: "Opacity of those connections."
+      edge_width:
+        range: float
+        description: "Base line weight of the connections; the drawn widths scale with the weight, so a strong connection reads as strong."
+      edge_percentile:
+        range: float
+        description: "Keep only edges above this percentile of the weights. A dense connectome drawn whole is a filled square, not a graph."
+
+  Grid:
+    description: "How a `grid` panel tiles its cells, and what the strips around them are labelled with. Rows and columns are labelled ONCE, at the left and the top — the whole reason a paper's composite panel is one lettered panel rather than n of them.\n\nThe reserved label strips are taken out of the drawable area, so declaring one shrinks the cells to make room instead of being drawn over them. The axis labels the cells SHARE are the panel's own `xlabel`/`ylabel`, one word at two levels, not slots of this object.\n\nA directive that varies down the rows or across the columns is still written as `row.<name>` / `col.<name>` in `opts`: it supplies one value per row or column of ANY directive, so it cannot be a fixed slot of anything."
+    attributes:
+      ncols:
+        range: integer
+        description: "Cells per row. Unset puts every cell in one row."
+      nrows:
+        range: integer
+        description: "Rows to fill. Unset holds every cell, so declaring only `ncols` wraps rather than drops; an explicit value still crops the extras, deliberately."
+      left:
+        range: float
+        description: "Strip reserved at the left for the row labels, as a fraction of the panel."
+      right:
+        range: float
+        description: "Strip reserved at the right — what cells carrying their ticks on that side need, or their labels are drawn over the panel next door."
+      top:
+        range: float
+        description: "Strip reserved at the top for the column labels."
+      bottom:
+        range: float
+        description: "Strip reserved at the bottom for the cells' tick labels or a shared axis label."
+      wspace:
+        range: float
+        description: "Gap between columns, as a fraction of the panel. A value approaching the cell width collapses the cells rather than separating them."
+      hspace:
+        range: float
+        description: "Gap between rows, in the same fraction."
+      col_labels:
+        range: string
+        multivalued: true
+        description: "One heading per column, written just above the cells rather than at the panel's own top, so it keeps reading as belonging to its column."
+      row_labels:
+        range: string
+        multivalued: true
+        description: "One heading per row, in the reserved left strip."
+      col_label_size:
+        range: float
+        description: "Type size of the column headings."
+      col_label_pad:
+        range: float
+        description: "Gap between a column heading and the cells under it."
+      row_label_rotation:
+        range: float
+        description: "Rotation of the row headings, in degrees."
+      between:
+        range: string
+        multivalued: true
+        description: "Text written in the gap BEFORE each cell, which is what turns a row of maps into a paper's decomposition equation."
+      trailing:
+        range: string
+        description: "Text written after the last cell, closing such an equation."
+
+  Rule:
+    description: "A straight reference line drawn across a panel: the zero a signal is measured from, the threshold a value has to clear, the agreement line of a target-versus-simulated plot. One object, so the line and the colour it is drawn in cannot be stated apart — as two loose panel options they could disagree, and a colour could be given to a rule that was never declared."
+    attributes:
+      orientation:
+        range: RuleOrientation
+        required: true
+        description: "`horizontal` and `vertical` take a single `at`; `diagonal` takes `[slope, intercept]`, which is the only way to draw the identity line `[1, 0]` a target-versus-simulated panel is read against."
+      at:
+        range: float
+        multivalued: true
+        required: true
+        description: "Where the rule sits: one value for a horizontal or vertical rule, `[slope, intercept]` for a diagonal one."
+      color:
+        range: string
+        description: "The rule's colour, as a palette role (`muted`), a hue (`palette.2`), or any colour the backend reads. A rule is scaffolding, so `muted` is usually what it wants."
+      width:
+        range: float
+        description: "Line weight in points. Unset takes the theme's `line_width`."
+      dash:
+        range: string
+        description: "Dash pattern (`solid`, `dashed`, `dotted`, `dashdot`). A reference line is conventionally dashed, so it is not read as data."
+      label:
+        range: string
+        description: "Legend entry for the rule. Unset draws it without one."
+
+  Legend:
+    description: "A panel's key: whether it is drawn, where it sits, and the three things a figure actually asks of one beyond that. An object rather than a bare position because `frame` had nowhere to live — the renderer drew every key frameless whatever the theme said, so a theme asking for a boxed legend never got one.\n\nThe shorthands are the same slot: `legend: true` is `{show: true}` and `legend: upper right` is `{loc: upper right}`, expanded on load, so a panel that starts with a corner and later needs two columns keeps the word it had.\n\nDistinct from `kind: legend`, which is a standalone legend PANEL occupying a cell of the mosaic and sharing no axes with anything."
+    attributes:
+      show:
+        range: boolean
+        description: "Whether to draw the key. Unset means yes: declaring the slot at all is the request, and `show: false` is how a shared theme's legend is switched off for one panel without deleting what it says."
+      loc:
+        range: LegendLoc
+        description: "Which corner the key sits in. Unset lets the backend choose."
+      frame:
+        range: boolean
+        description: "Whether the key is boxed. Unset takes the theme's `legend_frame`."
+      columns:
+        range: integer
+        description: "How many columns the entries are laid out in. A wide panel with six short labels reads better as one row than as a six-deep column over the data."
+      title:
+        range: string
+        description: "A heading above the entries, for the case where the labels alone do not say what varies between them."
+      labels:
+        range: string
+        multivalued: true
+        description: "The entries of a STANDALONE `kind: legend` panel, named outright. A panel-attached key takes its entries from the marks it belongs to instead."
+      colors:
+        range: string
+        multivalued: true
+        description: "One colour per entry of a standalone legend, as a palette role, a hue or any colour the backend reads."
+      linestyles:
+        range: string
+        multivalued: true
+        description: "One dash pattern per entry of a standalone legend."
+      markers:
+        range: string
+        multivalued: true
+        description: "One marker per entry of a standalone legend, for a key whose entries are scatter marks."
+      handle_length:
+        range: float
+        description: "Length of each entry's sample line."
+
+  Region:
+    description: "A rectangle drawn over a panel to ring the window a paper calls out — the parameter band a regime lives in, the interval a statistic was taken over. Declared rather than drawn by a custom callable, so the window a figure highlights is part of the spec that can be read back."
+    attributes:
+      bounds:
+        range: float
+        multivalued: true
+        required: true
+        description: "[x0, x1, y0, y1] in data coordinates."
+      color:
+        range: string
+        description: "The outline's colour, as a palette role, a hue, or any colour the backend reads."
+      fill:
+        range: boolean
+        description: "Fill the rectangle rather than outlining it. A filled region sits under the data."
+      opacity:
+        range: float
+        description: "Opacity of the fill, 0-1. Ignored when `fill` is unset."
+
+  Camera:
+    description: "Where a 3-D panel is looked at from. Only a `line3d` panel or a surface reads it; every other kind ignores it. Stated as a class rather than three loose options because a viewpoint is one thing, and a figure that states two of its three numbers is under-specified in a way nothing else would catch."
+    attributes:
+      elevation:
+        range: float
+        description: "Angle above the horizontal plane, in degrees."
+      azimuth:
+        range: float
+        description: "Angle around the vertical axis, in degrees."
+      zoom:
+        range: float
+        description: "Scale factor on the projected view; above 1 moves the camera in."
+
   Colormaps:
-    description: "Continuous colour scales by role: anything ordinal or continuous draws from one of these, anything categorical draws from `Palette.palette`, and an ordinal scale drawn as discrete swatches samples one rather than picking hues that imply no order. A role is either a registered colormap name (`viridis`) or the list of colours to ramp between (`['#000000', '#ffffff']`). The three roles below are the ones TVB-O resolves; a project may name further ones of its own."
+    description: "Continuous colour scales, by key: anything ordinal or continuous draws from one of these, anything categorical draws from `Palette.palette`, and an ordinal scale drawn as discrete swatches samples one rather than picking hues that imply no order. A value is either a registered colormap name (`viridis`) or the list of colours to ramp between (`['#000000', '#ffffff']`). The namespace is open — a project adds its own keys for the scales it distinguishes (`bold: viridis, meg: plasma, eeg: cividis`) and names them anywhere a colormap is named. `sequential` and `diverging` are the two the renderer reaches for on its own, so they are typed here and always present: a project that declares neither still has both. An open namespace cannot catch a misspelt key — `sequentiel` is read as a project key, not as a typo — which is the price of letting a project name its own scales. A key that shadows a registered colormap name is refused, so a name cannot mean two things at once."
     attributes:
       sequential:
         range: string
         any_of:
           - range: string
           - array: {}
-        description: "Ordered magnitudes with no meaningful zero. Also what `image.cmap` is set to, so an unstyled imshow lands here."
-      intensity:
-        range: string
-        any_of:
-          - range: string
-          - array: {}
-        description: "Strength or density read against a dark ground, where the scale should run to black rather than to a hue."
+        description: "Ordered magnitudes with no meaningful zero. The scale an undeclared continuous mark takes, and what `image.cmap` is set to."
       diverging:
         range: string
         any_of:
           - range: string
           - array: {}
-        description: "Signed quantities read against a midpoint, where the two directions must be told apart at a glance."
+        description: "Signed quantities read against a midpoint, where the two directions must be told apart at a glance. The scale a mark whose limits are centred takes, so a map of signed deviations is not drawn on a one-directional ramp."
 
   RenderSpec:
     description: "A headless-browser capture recipe turning an `image` panel's HTML/URL `source` into the static file placed at its `path`. Mirrors one shot of code/capture-screenshots.py so a screenshot of the live platform (or any HTML render) is reproducible from the spec, not hand-captured. Only the `source` needs committing alongside the rendered `path`."

@@ -262,6 +262,29 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
     # ── Code generation ──────────────────────────────────────────────────
 
+    def refuse_unrenderable(self) -> None:
+        """Raise where the emitted Julia would quietly integrate something other than what was declared.
+
+        The edge and experiment templates carry no delay path, so a delayed coupling is not lowered — it is dropped, and the run returns a well-formed trajectory of the undelayed network. They carry no observation path either, so a declared monitor is dropped the same way and the result arrives with an empty ``observations``. Refusing is the same contract the Brian2 adapter states for the forms it cannot lower: a clear error beats a plausible answer to a different question.
+        """
+        delayed = [name for name, coupling in (self.resolve_couplings() or {}).items() if getattr(coupling, "delayed", False)]
+        if delayed:
+            raise NotImplementedError(
+                "the NetworkDynamics.jl templates lower no transmission delay, so "
+                f"{', '.join(delayed)} would be integrated as an undelayed coupling. "
+                "Run the delayed network on a backend that carries a history buffer "
+                "(tvb, tvboptim, jax), or declare the coupling undelayed."
+            )
+        from tvbo.utils import keyed_items
+
+        observations = sorted(name for name, _ in keyed_items(getattr(self.experiment, "observations", None), "observations"))
+        if observations:
+            raise NotImplementedError(
+                "the NetworkDynamics.jl templates emit no observation, so "
+                f"{', '.join(observations)} would be dropped and the run would return the raw trajectory alone. "
+                "Run the monitors on a backend that lowers them (tvb, tvboptim, jax), or drop them from the experiment."
+            )
+
     def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using NetworkDynamics.jl.
 
@@ -272,6 +295,8 @@ class NetworkDynamicsAdapter(BaseAdapter):
             Extra attributes: ``sol``, ``graph``, ``edge_data``, ``vertex_data``.
         """
         import xarray as xr
+
+        self.refuse_unrenderable()
 
         from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (

@@ -55,13 +55,13 @@
 
     <!-- Parameters -->
     <Parameter name="a" dimension="none"/>
-    <Parameter name="b" dimension="per_time"/>
-    <Parameter name="d" dimension="time"/>
+    <Parameter name="b" dimension="none"/>
+    <Parameter name="d" dimension="none"/>
     <Parameter name="gamma" dimension="none"/>
-    <Parameter name="tau_s" dimension="time"/>
+    <Parameter name="tau_s" dimension="none"/>
     <Parameter name="w" dimension="none"/>
-    <Parameter name="J_N" dimension="current"/>
-    <Parameter name="I_o" dimension="current"/>
+    <Parameter name="J_N" dimension="none"/>
+    <Parameter name="I_o" dimension="none"/>
     <!-- Coupling inputs -->
     <Parameter name="instant" dimension="none"/>
     <Parameter name="delayed" dimension="none"/>
@@ -109,7 +109,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="ReducedWongWangTvboptim_inst" type="ReducedWongWangTvboptim" a="0.27" b="0.108 per_ms" d="154.0 ms" gamma="0.641" tau_s="100.0 ms" w="0.5" J_N="0.2609 nA" I_o="0.34 nA" instant="0" delayed="0" S_0="0.1"/>
+  <Component id="ReducedWongWangTvboptim_inst" type="ReducedWongWangTvboptim" a="0.27" b="0.108" d="154.0" gamma="0.641" tau_s="100.0" w="0.5" J_N="0.2609" I_o="0.34" instant="0" delayed="0" S_0="0.1"/>
 
 
 
