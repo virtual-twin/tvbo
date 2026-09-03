@@ -1,0 +1,74 @@
+name: NLDCoupledLogisticMaps4
+parameters:
+  lam:
+    name: lam
+    value: 1.2
+    description: Local quadratic map parameter λ.
+  k:
+    name: k
+    value: 0.08
+    description: All-to-all coupling strength k.
+description: 'Four-dimensional unrolled version of the nonlinear diffusion-like coupled
+  logistic
+
+  maps with all-to-all coupling. General D requires symbolic indexing not supported
+
+  by the current parser, hence D=4 explicit form.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/discrete_famous_systems.jl
+references:
+- Custom
+state_variables:
+  x0:
+    name: x0
+    equation:
+      lhs: x0_next
+      rhs: lam - x0**2 + k*((x1**2 - x0**2) + (x2**2 - x0**2) + (x3**2 - x0**2))
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  x1:
+    name: x1
+    equation:
+      lhs: x1_next
+      rhs: lam - x1**2 + k*((x0**2 - x1**2) + (x2**2 - x1**2) + (x3**2 - x1**2))
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.3333333333333333
+  x2:
+    name: x2
+    equation:
+      lhs: x2_next
+      rhs: lam - x2**2 + k*((x0**2 - x2**2) + (x1**2 - x2**2) + (x3**2 - x2**2))
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.6666666666666666
+  x3:
+    name: x3
+    equation:
+      lhs: x3_next
+      rhs: lam - x3**2 + k*((x0**2 - x3**2) + (x1**2 - x3**2) + (x2**2 - x3**2))
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 1.0
+number_of_modes: 1
+model_type: generic
+system_type: discrete
+autonomous: true
+cse: false
+compile: false

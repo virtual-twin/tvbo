@@ -1,3 +1,6 @@
+<%!
+from tvbo.utils import initial_value as _initial_value
+%>\
 ## -*- coding: utf-8 -*-
 <%doc>
 Standalone ModelingToolkit.jl experiment template.
@@ -16,14 +19,14 @@ Context: Pre-computed dict from BaseAdapter.prepare_context()
 </%doc>
 <%page args="experiment, model, integration, \
 dynamics_dict, sv_names, n_sv, \
-is_stochastic, dt, duration, solver_method, needs_stiff, \
+is_stochastic, dt, duration, solver_method, fixed_step, needs_stiff, \
 tstops, \
 **kwargs"/>
 <%!
 from tvbo.codegen import render_expression
 from sympy.parsing.sympy_parser import parse_expr as _parse_expr
 from tvbo.adapters.julia_model import (
-    julia_ode_package, build_ifelse, needs_special_functions, symbol_names,
+    julia_ode_package, make_renderer, needs_special_functions, symbol_names,
 )
 %>
 <%
@@ -88,7 +91,7 @@ def _expand_func_calls(code):
         code = ''.join(result)
     return code
 
-juliacode_raw = lambda expr: render_expression(expr, format='mtk', parameters=all_symbols, user_functions=func_names)
+juliacode_raw = make_renderer(model, fmt='mtk')
 juliacode = lambda expr: _expand_func_calls(juliacode_raw(expr))
 
 # Output variables: those marked coupling_variable=true
@@ -143,7 +146,7 @@ using SpecialFunctions
     all_fargs = fargs + extras
 %>\
 function ${f.name}(${', '.join(all_fargs)})
-    return ${juliacode_raw(f.equation.rhs)}
+    return ${juliacode_raw(f.equation)}
 end
 @register_symbolic ${f.name}(${', '.join(all_fargs)})
 % endfor
@@ -174,13 +177,13 @@ end
     @variables begin
 % for sv_name, sv in model.state_variables.items():
 <%
-    sv_init = sv.initial_value if sv.initial_value is not None else ''
+    sv_init = _initial_value(sv)
     sv_desc = jl_escape(sv.description or sv.label or '')
     meta = []
     if sv_desc:
         meta.append(f'description="{sv_desc}"')
     meta_str = ', [' + ', '.join(meta) + ']' if meta else ''
-    default_str = f'={sv_init}' if sv_init != '' else ''
+    default_str = f'={sv_init}'
 %>\
         ${sv_name}(t)${default_str}${meta_str}
 % endfor
@@ -188,7 +191,7 @@ end
 % for dp_name in dp_names:
         ${dp_name}(t)
 % endfor
-% for dv_name, dv in (getattr(model, 'derived_variables', None) or {}).items():
+% for dv_name, dv in model.in_dependency_order('derived_variables').items():
 <%
     dv_desc = jl_escape(getattr(dv, 'description', '') or '')
     dv_meta = []
@@ -201,22 +204,12 @@ end
     end
     eqs = [
 ## Derived parameters (algebraic definitions that use parameters only)
-% for dp in (getattr(model, 'derived_parameters', None) or {}).values():
-        ${dp.name} ~ ${juliacode(dp.equation.rhs)},
+% for dp in model.in_dependency_order('derived_parameters').values():
+        ${dp.name} ~ ${juliacode(dp.equation)},
 % endfor
 ## Derived variables (algebraic equations involving t-dependent variables)
-% for dv in (getattr(model, 'derived_variables', None) or {}).values():
-<%
-    is_conditional = getattr(dv, 'conditional', False) and getattr(dv, 'cases', None)
-%>\
-% if is_conditional:
-<%
-    ifelse_expr = build_ifelse(list(dv.cases), juliacode)
-%>\
-        ${dv.name} ~ ${ifelse_expr},
-% else:
-        ${dv.name} ~ ${juliacode(dv.equation.rhs)},
-% endif
+% for dv in model.in_dependency_order('derived_variables').values():
+        ${dv.name} ~ ${juliacode(dv.equation)},
 % endfor
 ## State variable equations
 % for sv_name, sv in model.state_variables.items():
@@ -226,7 +219,7 @@ end
     order = higher_order_svs.get(sv_name, 1)
 %>\
 % if is_algebraic:
-        ${sv_name} ~ ${juliacode(sv.equation.rhs)},
+        ${sv_name} ~ ${juliacode(sv.equation)},
 % elif order > 1:
 <%
     # Build nested Dt: D(D(x)) for order 2, D(D(D(x))) for order 3, etc.
@@ -234,9 +227,9 @@ end
     for _ in range(order):
         dt_chain = f'Dt({dt_chain})'
 %>\
-        ${dt_chain} ~ ${juliacode(sv.equation.rhs)},
+        ${dt_chain} ~ ${juliacode(sv.equation)},
 % else:
-        Dt(${sv_name}) ~ ${juliacode(sv.equation.rhs)},
+        Dt(${sv_name}) ~ ${juliacode(sv.equation)},
 % endif
 % endfor
     ]
@@ -277,7 +270,7 @@ tspan = (0.0, ${duration})
         tstops_str = ", tstops=[" + ", ".join(str(t) for t in tstops) + "]"
 %>\
 prob = ODEProblem(sys, u0, tspan, jac=true)
-sol = solve(prob, ${solver_method}(); saveat=${dt}${tstops_str})
+sol = solve(prob, ${solver_method}(); ${'dt=%s, ' % dt if fixed_step else ''}saveat=${dt}${tstops_str})
 
 ## ── Plot ────────────────────────────────────────────────────────────────────
 using Plots

@@ -71,6 +71,7 @@ execution = getattr(exp, 'execution', None)
 references = getattr(exp, 'references', []) or []
 
 derivative_notation = context.get('derivative_notation', 'dot')
+mul_symbol = context.get('mul_symbol', None)
 
 # ── Auto-numbering ──
 _sec = [0]
@@ -154,7 +155,7 @@ def _callable_text(obj):
 # ── Collect all known symbols for equation parsing ──
 all_param_names = []
 if model:
-    for coll in ('parameters', 'state_variables', 'derived_variables', 'derived_parameters', 'coupling_terms'):
+    for coll in ('parameters', 'state_variables', 'derived_variables', 'derived_parameters', 'coupling_inputs'):
         obj = getattr(model, coll, None)
         if obj:
             if isinstance(obj, dict):
@@ -266,9 +267,12 @@ mfuncs = getattr(model, 'functions', {}) or {}
 params = getattr(model, 'parameters', {}) or {}
 output = getattr(model, 'output', []) or []
 coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
-coupling_terms = getattr(model, 'coupling_terms', {}) or {}
 observed = getattr(model, 'observed', {}) or {}
-events = getattr(model, 'events', []) or []
+# The Dynamics carries only event names, the experiment the full declaration, so the experiment wins where both name one.
+events = dict(report.name_items(getattr(model, 'events', None)))
+events.update(dict(report.name_items(getattr(exp, 'events', None))))
+unit_verdicts = report.unit_verdicts(model) if model else []
+derived_units = report.derived_units(unit_verdicts)
 model_summary = []
 if _p(model, 'model_type', None):
     model_summary.append(f"type: {_p(model, 'model_type')}")
@@ -300,12 +304,8 @@ ${'; '.join(model_summary)}.
 
 **State Equations**
 
-% for name, svar in svars.items():
-<%
-svar_eq = getattr(svar, 'equation', None)
-svar_rhs = getattr(svar_eq, 'rhs', '') if svar_eq else ''
-%>
-$$${deriv_latex(name, svar_rhs)}$$
+% for _eq in report.model_equations_latex(model, 'state', derivative_notation, mul_symbol):
+$$${_eq}$$
 % endfor
 
 % if dvars or mfuncs:
@@ -352,17 +352,23 @@ ${report.state_variable_table(svars)}
 % if params:
 **Parameters**
 
-${report.parameter_table(params)}
+${report.parameter_table(params, derived=derived_units)}
+
+% endif
+% if unit_verdicts:
+**Dimensional Check**
+
+${report.unit_verdict_table(unit_verdicts)}
 
 % endif
 % if dparams:
 **Derived Parameters**
 
-| Parameter | Expression | Description |
-|:----------|:-----------|:------------|
+| Parameter | Expression | Unit | Description |
+|:----------|:-----------|:-----|:------------|
 % for name, dp in dparams.items():
 <% dp_eq = getattr(dp, 'equation', None); dp_rhs = getattr(dp_eq, 'rhs', '') if dp_eq else ''; dp_desc = _p(dp, 'description', '') or 'Derived' %>\
-| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | ${dp_desc} |
+| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | ${_unit_text(_p(dp, 'unit', None)) or report.derived_unit_text(derived_units, name)} | ${dp_desc} |
 % endfor
 % endif
 
@@ -396,18 +402,14 @@ out_names = [n for n in out_names if n not in dvars]
 % endfor
 
 % endif
-% if coupling_terms:
-**Coupling Terms**
-
-${report.param_table(coupling_terms, name_header='Term')}
-
-% endif
 % if observed:
 **Observed Variables:** ${', '.join([str(name) for name, _ in _items(observed)])}
 
 % endif
 % if events:
-**Events:** ${', '.join([_name_text(item) for item in _as_list(events)])}
+**Events**
+
+${report.event_table(events, derivative_notation)}
 
 % endif
 % endif
@@ -453,7 +455,7 @@ def _matrix_summary(matrix):
     dtype = _p(matrix, 'dtype', None)
     if dtype:
         parts.append(f"dtype={dtype}")
-    location = _p(matrix, 'dataLocation', None) or _p(matrix, 'dataset_path', None)
+    location = _p(matrix, 'dataLocation', None)
     if location:
         parts.append(f"data={location}")
     return ', '.join(parts)
@@ -504,7 +506,7 @@ parc_atlas = _p(parcellation, 'atlas', '')
 % endif
 % if transforms:
 % for t in transforms:
-| Transform (${t.name}) | $M_{\text{out}} = ${safe_latex(str(t.equation.rhs), ['W', 'M', 'W_max', 'W_min', 'M_max', 'M_min', 'max', 'min'])}$ |
+| Transform (${t.name}) | $M_{\text{out}} = ${safe_latex(str(t.equation.rhs), ['weight', 'length', 'max', 'min', 'mean', 'sum'])}$ |
 % endfor
 % endif
 % if structural:
@@ -814,12 +816,11 @@ obs_period = _p(obs, 'period', None)
 obs_downsample = _p(obs, 'downsample_period', None)
 obs_agg = _p(obs, 'aggregation', None)
 obs_modality = _p(obs, 'imaging_modality', None)
-obs_time_scale = _p(obs, 'time_scale', None)
+obs_time_scale = _p(obs, 'time_unit', None)
 obs_voi = _p(obs, 'voi', None)
 obs_skip = _p(obs, 'skip_t', None)
 obs_tail = _p(obs, 'tail_samples', None)
 obs_window = _p(obs, 'window_size', None)
-obs_warmup = _p(obs, 'warmup_source', None)
 obs_data = _p(obs, 'data_source', None)
 pipeline = _p(obs, 'pipeline', [])
 sampling_bits = []
@@ -841,8 +842,6 @@ if obs_tail is not None:
     sampling_bits.append(f"tail={obs_tail}")
 if obs_window is not None:
     sampling_bits.append(f"window={obs_window}")
-if obs_warmup:
-    sampling_bits.append(f"warm-up={obs_warmup}")
 if obs_data:
     sampling_bits.append(f"data={_name_text(obs_data)}")
 period_str = ', '.join(sampling_bits) or '—'
@@ -869,7 +868,7 @@ for s in _dobs_sources:
         src_obs.append(n)
 d_pipeline = _p(dobs, 'pipeline', [])
 d_sampling = []
-for attr, label in (('aggregation', 'aggregation'), ('skip_t', 'skip'), ('tail_samples', 'tail'), ('window_size', 'window'), ('time_scale', 'scale')):
+for attr, label in (('aggregation', 'aggregation'), ('skip_t', 'skip'), ('tail_samples', 'tail'), ('window_size', 'window'), ('time_unit', 'scale')):
     value = _p(dobs, attr, None)
     if value is not None:
         d_sampling.append(f"{label}={value}")

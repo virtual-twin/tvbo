@@ -1,6 +1,9 @@
 ---
 title: "NML2: Gap Junctions"
 description: "Electrical synapse definitions and gap junction connections"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## NML2_GapJunctions.nml

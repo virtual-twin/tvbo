@@ -1,0 +1,36 @@
+function Shinriki!(dx, x, p, t = 0)
+
+    (;R1,) = p
+
+    v1, v2, v3 = x
+
+
+    Vnl = 2.295e-5 * exp(3.0038 * v1 .- 3.0038 * v2) .- 2.295e-5 * exp(3.0038 * v2 .- 3.0038 * v1)
+
+    dx[1] = 6.89655172413793 * v2 .- 100.0 * Vnl .- 6.89655172413793 * v1 .+ 100.0 * v1 .* (0.144927536231884 .- 1 ./ R1)
+    dx[2] = 10.0 * Vnl .+ 0.689655172413793 * v1 .- 10.0 * v3 .- 0.689655172413793 * v2
+    dx[3] = 3.125 * v2 .- 0.3125 * v3
+    dx
+end
+
+# Parameter values
+p = (R1 = 22.0,)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -2.0,
+        0.0,
+        0.2,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Shinriki!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

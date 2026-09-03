@@ -1,0 +1,99 @@
+---
+title: "How code generation works"
+description: "Why a TVB-O spec compiles rather than runs interpreted, and the three layers that turn one specification into backend-native code."
+subtitle: "One specification, many concrete implementations"
+aliases:
+  - /ScaleOut/CodegenPhilosophy.html
+---
+
+TVB-O does not simulate anything. It **writes the program that does**, in the idiom of the backend you name, and then gets out of the way. `render_code` returns that program as text you can read, diff, edit and run without TVB-O installed.
+
+That is a deliberate choice, and the alternative is worth naming. A framework that interprets a specification at run time has to carry every feature into every backend at run time, and the user gets a black box whose behaviour is only knowable by reading the framework. A framework that *emits* code produces an artefact: the thing that ran is on disk, in the target language, and a reviewer can check it.
+
+```{python}
+#| label: render
+from tvbo import Dynamics, SimulationExperiment
+from IPython.display import Markdown
+
+exp = SimulationExperiment(dynamics=Dynamics.from_db("Generic2dOscillator"))
+code = exp.render_code("jax")
+Markdown("```python\n" + code[:900] + "\n…\n```")
+```
+
+## Three layers
+
+Generation splits into three jobs, and keeping them apart is what stops a backend from becoming unmaintainable.
+
+```text
+Adapter    tvbo/adapters/<backend>.py   resolve the spec into typed context
+Printer    tvbo/codegen/code.py         render one expression in the target language
+Template   tvbo/templates/<backend>/    lay out the program around it
+```
+
+### The adapter resolves
+
+`BaseAdapter` turns stringly-typed metadata into clean typed context, once: which dynamics sit on which node, how couplings resolve, what the weight matrix is, which distributions the initial state draws from, what the integrator needs. A backend subclasses it and states only what makes it different — its template tree, and a `prepare_context` override where the shared context will not do.
+
+Everything ambiguous is decided here. A template that had to re-derive which state variable a coupling reads would be re-deriving it in every backend, and the three answers would diverge.
+
+### The printer speaks the target language
+
+Equations are sympy expressions, and each target has a printer that renders them: `JaxPrinter`, `JuliaPrinter`, `MTKPrinter`, `Brian2Printer`, `LEMSPrinter`, `CUDACodePrinter`, `FortranPrinter`. One model's `rhs` becomes `jnp.tanh(...)`, `tanh(...)` or `tanhf(...)` depending only on which printer is asked.
+
+This is why a model written once compares across backends at all. The equation is never re-typed per backend, so there is no opportunity for two backends to disagree about what the model *is* — only about how they integrate it, which is a [separate and measurable question](../2-specify/Integrators/CrossBackendParity.qmd).
+
+### The template lays out the program
+
+Templates are Mako trees, one per backend, and they express the *shape* of the emitted code — the module, the imports, the solve loop, the branches a feature needs. Structure lives in Mako `<%def>` partials rather than in Python string-building, because a 60-line function body assembled by `"".join()` is fragile about indentation, unreadable, and impossible to diff.
+
+## The backends
+
+Each backend declares what it can do, and the declaration is what the workflow planner consults when deciding whether a sweep axis vectorizes inside the backend or fans out across jobs.
+
+```{python}
+#| label: backends
+#| echo: false
+from tvbo.cli._backends import BACKENDS
+import pandas as pd
+
+rows = [
+    {
+        "Backend": spec.label,
+        "Tasks": ", ".join(sorted(spec.tasks)),
+        "Vectorizes over": ", ".join(sorted(spec.vectorize_axes)) or "—",
+    }
+    for spec in BACKENDS.values()
+]
+Markdown(pd.DataFrame(rows).to_markdown(index=False))
+```
+
+A backend that cannot render a task says so rather than silently substituting another. That is the contract that makes "run it on Julia" a checkable request instead of a hope.
+
+## Reading the generated code
+
+The emitted program is the artefact, so read it when something surprises you — it is usually faster than reasoning about what the framework might have done.
+
+:::: {.panel-tabset}
+
+### Python
+
+```python
+print(exp.render_code("jax"))
+print(exp.render_code("networkdynamics-julia"))
+```
+
+### CLI
+
+```bash
+tvbo export jax experiment:JR_MEG_FrequencyGradient_Optimization
+tvbo export jax experiment:JR_MEG_FrequencyGradient_Optimization -o solve.py
+```
+
+::::
+
+## Related
+
+- [Code generation & export](CodeGeneration.qmd): every export target, including LEMS, BIDS and openMINDS.
+- [Run on a backend](../4-run/Backends.qmd): the capability matrix and how work is dispatched.
+- [Cross-backend numerical parity](../2-specify/Integrators/CrossBackendParity.qmd): why two backends can still disagree, and by how much.
+- [Distributed workflows](workflows/DistributedWorkflows.qmd): what the planner does with a backend's declared capabilities.

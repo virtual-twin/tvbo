@@ -1,0 +1,26 @@
+import jax.numpy as jnp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    tauT = _p.tauT
+    taux = _p.taux
+    dynamic = _p.dynamic
+
+    # Coupling
+    c_glob0 = cX[0]
+    c_glob1 = cX[1]
+
+    # State variables
+    theta = current_state[0]
+    x = current_state[1]
+
+    # Derivatives
+    dtheta_dt = jnp.where(
+        jnp.greater(dynamic, 0), (c_glob1 - theta) / tauT, (c_glob0 - x) / taux
+    )
+    dx_dt = (c_glob0 - x) / taux
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dtheta_dt, dx_dt))
+
+    return derivatives

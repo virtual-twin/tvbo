@@ -1,0 +1,32 @@
+function StandardMap!(dx, x, p, t = 0)
+
+    (;k,) = p
+
+    theta, p = x
+
+
+    dx[1] = (p .+ theta .+ k .* sin(theta) .- 2 * pi * floor((p .+ theta .+ k .* sin(theta)) / (2 * pi)))
+    dx[2] = (p .+ k .* sin(theta) .- 2 * pi * floor((p .+ k .* sin(theta)) / (2 * pi)))
+    dx
+end
+
+# Parameter values
+p = (k = 0.971635,)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.001245,
+        0.00875,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(StandardMap!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

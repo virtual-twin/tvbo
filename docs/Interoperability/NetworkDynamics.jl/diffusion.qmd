@@ -52,8 +52,11 @@ print(f"(Should converge to ~0 as all nodes reach equilibrium)")
 ## Animate
 
 ```{python}
+from pathlib import Path
+
 ani = ts.animate("v", format="dots")
+Path("_output").mkdir(exist_ok=True)
 ani.save("_output/diffusion.gif", writer="pillow", fps=20)
 ```
 
-![](_output/diffusion.gif)
+![Node values on a random graph relaxing toward a common value as diffusion spreads along the edges.](_output/diffusion.gif)

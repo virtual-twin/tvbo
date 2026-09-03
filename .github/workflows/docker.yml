@@ -23,10 +23,7 @@ env:
   PIP_NO_WARN_SCRIPT_LOCATION: "1"
 
 jobs:
-  # ─── Build & push Docker image (native per-arch, then merge) ────────────
-  # We build amd64 and arm64 on NATIVE runners in parallel instead of
-  # cross-compiling under QEMU. Each arch caches independently. A final
-  # job stitches the two arch-tagged images into the final multi-arch tag.
+  # amd64 and arm64 build on NATIVE runners in parallel, each cached independently; a final job stitches them into the multi-arch tag.
   build:
     name: Build (${{ matrix.platform.tag }})
     runs-on: ${{ matrix.platform.runner }}
@@ -63,8 +60,7 @@ jobs:
           images: |
             leonmartin2/tvbo
             ghcr.io/${{ github.repository }}
-          # Per-arch tag suffix so we can push both arches without colliding,
-          # then merge into the canonical tags in the manifest job.
+          # Per-arch tag suffix, so both arches push without colliding before the manifest job merges them.
           flavor: |
             suffix=-${{ matrix.platform.arch }},onlatest=true
           tags: |
@@ -131,9 +127,7 @@ jobs:
               "${tag}-arm64"
           done <<< "${{ steps.meta.outputs.tags }}"
 
-  # ─── Container tests (after build) ──────────────────────────
-  # Sharded for parallelism + per-test timeout so hangs surface as
-  # tracebacks instead of silent runner kills.
+  # Sharded for parallelism, with a per-test timeout so hangs surface as tracebacks instead of silent runner kills.
   test-container:
     name: Container (${{ matrix.shard }})
     needs: manifest
@@ -159,9 +153,13 @@ jobs:
               tests/functional/test_simulation_experiment_basic.py
               tests/functional/test_timeseries_utils.py
               tests/functional/test_simulation_backends_core.py
+              tests/test_citation_formatting.py
+              tests/test_numerical_golden_corpus.py
+              tests/test_codegen_golden_corpus.py
             needs_julia_refdata: false
           - shard: tvboptim
             paths: >-
+              tests/test_numerical_golden_corpus.py
               tests/test_tvboptim_experiments.py
               tests/functional/test_simulation_backends_tvboptim.py
             needs_julia_refdata: false
@@ -214,8 +212,7 @@ jobs:
             --override-ini="addopts=" \
             ${{ matrix.paths }}
 
-  # ─── Doc tests (after build) ─────────────────────────────────
-  # ─── Doc tests — one shard per backend, all run in parallel ────────────
+  # Doc tests — one shard per backend, all in parallel.
   test-docs:
     name: Docs (${{ matrix.shard }})
     needs: manifest
@@ -236,8 +233,7 @@ jobs:
             extra_args: ""
             xla_device_count: "8"
             test_timeout: "900"
-          # Julia backends: BifurcationKit, ModelingToolkit, NetworkDynamics
-          # test_timeout=1800: Julia cold precompilation can take >15 min in Docker
+          # Julia backends; the long timeout covers cold precompilation, which can exceed 15 min in Docker.
           - shard: julia
             doc_pattern: "BifurcationKit or ModelingToolkit or NetworkDynamics"
             extra_args: ""
@@ -255,36 +251,49 @@ jobs:
             extra_args: ""
             xla_device_count: "8"
             test_timeout: "900"
-          # tvboptim docs in CI: keep only stable RWW path.
-          # EI/JR are too heavy for current CI limits and run in manual workflows.
+          # Stable RWW only (EI/JR too heavy). device_count=1: forced host CPU devices add cores=0, memory=8x → OOM.
           - shard: tvboptim-rww
             doc_pattern: "RWW_tvboptim"
             extra_args: "--run-slow"
-            xla_device_count: "8"
+            xla_device_count: "1"
             test_timeout: "900"
-          # Replication studies
+          # The heaviest renders: nvmap_auto_cap lets the 2GB memory budget rather than a fixed count set the batch size, and one device keeps each grid on a single vmap.
           - shard: replication
             doc_pattern: "Replication"
             extra_args: ""
+            xla_device_count: "1"
+            nvmap_auto_cap: "4096"
+            test_timeout: "3600"
+            # Idle while the replication studies live in tvbo-manuscript: the pages left here carry no executable cells, so the shard stays wired up and revives on its own when one lands.
+            allow_empty: "true"
+          # The remaining tvboptim fitting workflows, which `SLOW_DIRS` marks slow, so they need --run-slow to run at all. Eight devices because the pages ask for that themselves: the Pareto page splits a GA population over `n_pmap` and one device leaves it nothing to split.
+          - shard: fitting
+            doc_pattern: "_tvboptim and not RWW_tvboptim"
+            extra_args: "--run-slow"
             xla_device_count: "8"
-            test_timeout: "900"
-          # Core: Usage, Specification, api, examples (non-NeuroML), OpenMINDS, BIDS, root index
-          # Negative catch-all: everything not covered by the specialised shards above.
-        #   - shard: core
-        #     doc_pattern: "not NeuroML and not BifurcationKit and not ModelingToolkit and not NetworkDynamics and not Pyrates and not TVB and not tvboptim and not Replication"
-        #     extra_args: ""
+            test_timeout: "1800"
+          # Core: everything the specialised shards above do not match. `xla_device_count` does nothing here, because the variable is opt-in: the four tvboptim fitting pages read it and set their own XLA_FLAGS from it before importing jax, and no page this shard collects does. The exclusions name paths rather than backends because `-k` matches case-insensitively, so a bare `TVB` also excludes every id under the `tvbo` checkout -- which is why this shard collected nothing and was commented out instead of fixed.
+          - shard: core
+            doc_pattern: "not NeuroML and not BifurcationKit and not ModelingToolkit and not NetworkDynamics and not Pyrates and not Interoperability/TVB and not _tvboptim and not Replication"
+            extra_args: ""
+            xla_device_count: "1"
+            test_timeout: "1800"
     env:
       JAX_PLATFORMS: cpu
       XLA_PYTHON_CLIENT_ALLOCATOR: platform
       XLA_PYTHON_CLIENT_PREALLOCATE: "false"
       TVBO_XLA_DEVICE_COUNT: ${{ matrix.xla_device_count }}
+      TVBO_NVMAP_AUTO_CAP: ${{ matrix.nvmap_auto_cap }}
+      # The shard's declared ceiling governs the notebook subprocess too, not only pytest; `timeout_for` holds the inner one below it so the inner is the timer that fires and names the doc.
+      TVBO_DOC_EXECUTE_TIMEOUT_S: ${{ matrix.test_timeout }}
     steps:
       - uses: actions/checkout@v6
       - name: Ensure Quarto is available
         run: |
+          # Pinned, not resolved from the releases API: eight shards ask at once, unauthenticated, and a throttled answer leaves the version empty and the download a 404.
           if ! command -v quarto &>/dev/null; then
             apt-get update && apt-get install -y --no-install-recommends curl jq wget sudo
-            QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | grep -oP '"tag_name": "v\K[^"]+')
+            QUARTO_VERSION=1.10.18
             ARCH=$(dpkg --print-architecture)
             wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${ARCH}.deb"
             dpkg -i quarto.deb && rm quarto.deb
@@ -316,11 +325,20 @@ jobs:
           "${UV_BIN}" pip install --system pytest-xdist pytest-timeout
       - name: Run doc tests (${{ matrix.shard }})
         run: |
+          set +e
           pytest tests/test_docs.py -v --tb=long -m docs \
             -k "${{ matrix.doc_pattern }}" \
             ${{ matrix.extra_args }} \
             --timeout=${{ matrix.test_timeout }} --timeout-method=thread \
             --override-ini="addopts="
+          rc=$?
+          set -e
+          # Exit 5 is "nothing collected", which only a shard declaring allow_empty is permitted to report -- anywhere else it means the pattern stopped matching what it was written for.
+          if [ "$rc" -eq 5 ] && [ "${{ matrix.allow_empty }}" = "true" ]; then
+            echo "No docs matched '${{ matrix.doc_pattern }}'; shard idle."
+            exit 0
+          fi
+          exit $rc
 
   # ─── Release-ready check (main only) ────────────────────────
   release-ready:
@@ -352,7 +370,7 @@ jobs:
 
       - name: Verify version consistency
         run: |
-          PKG_VERSION=$(grep -m1 '__version__' tvbo/__init__.py | sed 's/.*"\(.*\)".*/\1/')
+          PKG_VERSION=$(make -s print-version)
           WHL_NAME=$(ls dist/*.whl | head -1)
           echo "Package version: $PKG_VERSION"
           echo "Wheel: $WHL_NAME"
@@ -375,10 +393,7 @@ jobs:
           path: dist/*
           retention-days: 30
 
-  # ─── Publish docs from the freshly-built release image (tags only) ──────
-  # `needs: manifest` guarantees the version image (e.g. 0.5.0) is already
-  # pushed before docs-deploy pulls it — proper ordering, no race, no retry.
-  # docs-deploy renders inside that exact image and publishes to gh-pages.
+  # `needs: manifest` guarantees the version image is pushed before docs-deploy pulls it — ordered, no race, no retry.
   publish-docs:
     name: Publish docs
     needs: manifest

@@ -13,6 +13,7 @@ prefixes:
     tvbo_sw: https://w3id.org/tvbo/software/
     schema: http://schema.org/
     doap: http://usefulinc.com/ns/doap#
+    prov: http://www.w3.org/ns/prov#
     sio: http://semanticscience.org/resource/
     nidm: http://purl.org/nidash/nidm#
     biotools: https://bio.tools/ontology/
@@ -260,6 +261,8 @@ classes:
             Identity and metadata for a software package, aligned with
             schema.org/SoftwareApplication and CodeMeta v3.
         class_uri: schema:SoftwareApplication
+        close_mappings:
+            - prov:SoftwareAgent
         slots:
             - name
         attributes:
@@ -282,6 +285,27 @@ classes:
                 range: string
                 slot_uri: bibo:doi
                 description: "Digital Object Identifier for the software or its reference publication."
+            version:
+                range: string
+                slot_uri: schema:softwareVersion
+                description: >-
+                    Version of the package as it ran. Required by BEP028's software record,
+                    where a provenance claim without a version is unverifiable.
+            alternative_identifier:
+                multivalued: true
+                range: uriorcurie
+                description: >-
+                    Further identifiers for the same package, an RRID among them (BEP028
+                    ``AlternativeIdentifier``).
+            acted_on_behalf_of:
+                multivalued: true
+                range: SoftwarePackage
+                inlined: false
+                exact_mappings:
+                    - prov:actedOnBehalfOf
+                description: >-
+                    Packages whose use triggered this one, so a backend invoked through a
+                    framework records the chain rather than only the innermost caller.
             ecosystem:
                 range: EcosystemEnum
                 multivalued: true
@@ -395,6 +419,45 @@ classes:
                 slot_uri: schema:isAccessibleForFree
                 ifabsent: true
                 description: "Whether the tool is free/open-source."
+            # ── What TVBO can emit for this tool ──
+            codegen_format:
+                range: string
+                description: >-
+                    Export-registry key of the format TVBO emits for this tool
+                    (`tvbo formats`). Present only on tools TVBO generates code for.
+            units:
+                range: ToolUnit
+                multivalued: true
+                inlined: true
+                description: >-
+                    How this tool spells the units TVBO declares. Only units the tool
+                    has its own name for appear; anything absent is emitted unitless.
+
+    ToolUnit:
+        description: >-
+            One TVBO unit as a single tool writes it.
+
+            A tool's unit vocabulary is a fact about that tool, not about the unit —
+            LEMS calls `Hz` a `per_time` quantity and writes it `per_s`, and no other
+            backend need agree. Keyed by the `UnitEnum` value so a record states only
+            the units its tool knows.
+        attributes:
+            unit:
+                range: string
+                key: true
+                annotations:
+                    collection_key: true
+                description: "The `UnitEnum` value this entry translates."
+            dimension:
+                range: string
+                description: >-
+                    The tool's name for the physical dimension of this unit. Absent
+                    where the tool has no dimension for it.
+            symbol:
+                range: string
+                description: >-
+                    The tool's spelling of the unit itself, appended to numeric
+                    values. Absent where the tool writes the value bare.
 
     SoftwareRequirement:
         description: >-

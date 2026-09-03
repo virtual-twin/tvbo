@@ -30,11 +30,8 @@ from tvbo.codegen import render_expression
 # Extract stimulus events from experiment context
 assert 'experiment' in context.keys(), "experiment required for stimulus template"
 
-events_list = list(experiment.events.values()) if experiment.events else []
-def _is_external_input_event(ev):
-    et = str(getattr(ev, 'event_type', 'stimulus'))
-    return ('stimul' in et) or (et in ('continuous', 'discrete'))
-stimulus_events = [ev for ev in events_list if _is_external_input_event(ev)]
+from tvbo.templates.tvboptim.utils import active_stimulus_events
+stimulus_events = active_stimulus_events(experiment)
 
 # State index lookup for continuous-event conditions (map a state name to its
 # row in the [n_states, n_nodes] state array).
@@ -54,11 +51,7 @@ if hasattr(_exp_functions, 'keys'):
 
 n_nodes = getattr(experiment.network, 'number_of_nodes', None) or getattr(experiment.network, 'number_of_regions', 1)
 
-# Integration timing — needed to size pre-generated per-step input arrays and
-# to map an absolute time t to an integer step index (step = round(t / dt)).
-# The native solver runs the main sim from t0=transient .. transient+duration,
-# so absolute t spans the full [0, transient + duration] window; the array is
-# sized to cover it and indexed by absolute t.
+# Integration timing — needed to size pre-generated per-step input arrays and to map a time t to an integer step index. The scan runs from -transient to +duration on the measurement clock, so t spans [-transient, duration] and the step index counts from the scan start, not from t=0.
 _dt = float(experiment.integration.step_size)
 _inv_dt = 1.0 / _dt
 _duration = float(experiment.integration.duration) if experiment.integration.duration else 0.0
@@ -108,6 +101,31 @@ def _time_axis_distribution(event):
     # Build spatial mask: array of shape (n_nodes,) with weights per region
     has_spatial = bool(ev_regions)
 
+    # `subset`: each trial stimulates round(fraction * pool) regions drawn without replacement; prepare() pre-samples every trial's mask and DEFAULT_PARAMS.trial selects the row.
+    _wd = getattr(event, 'weight_distribution', None)
+    is_subset = _wd is not None and str(getattr(_wd, 'name', '') or '').lower() == 'subset'
+    if is_subset:
+        if ev_weighting:
+            raise ValueError(
+                f"event {str(event.name)!r} declares both `weights` and a `subset` "
+                f"weight_distribution; the per-trial mask is uniform over the drawn regions, "
+                f"so the declared weighting would be discarded. Declare one or the other."
+            )
+        _wd_params = dict(getattr(_wd, 'parameters', None) or {})
+        _frac_obj = _wd_params.get('fraction')
+        _frac_val = getattr(_frac_obj, 'value', _frac_obj) if _frac_obj is not None else None
+        subset_fraction = float(_frac_val) if _frac_val is not None else 0.1
+        subset_seed = int(getattr(_wd, 'seed', None) or 0)
+        subset_pool = [int(r) for r in ev_regions]  # empty -> all nodes
+        _pool_n = len(subset_pool) if subset_pool else int(n_nodes)
+        subset_k = max(1, int(round(subset_fraction * _pool_n)))
+        subset_n_trials = 1
+        for _expl in (getattr(experiment, 'explorations', None) or {}).values():
+            _nt = getattr(_expl, 'n_trials', None)
+            if _nt:
+                subset_n_trials = max(subset_n_trials, int(_nt))
+        has_spatial = False
+
     # Closed-loop 'continuous' event: onset is triggered when a state condition
     # crosses zero, then the affect waveform (a function of tau = t - t_trigger)
     # is emitted. A stateful ExternalInput carries armed/t_trigger/cond_prev.
@@ -129,11 +147,33 @@ def _time_axis_distribution(event):
     # instead of evaluating a symbolic equation.
     data_location = None if is_continuous else getattr(event, 'dataLocation', None)
     is_data = bool(data_location)
+    if is_subset and (is_continuous or is_data):
+        raise ValueError(
+            f"event {ev_name!r} declares a `subset` weight_distribution, which is only "
+            f"implemented for open-loop symbolic stimuli (event_type '{_ev_type}', "
+            f"dataLocation={data_location!r})."
+        )
     if is_data:
         sampling_rate = float(getattr(event, 'sampling_rate', None) or 1.0)
         interp_kind = str(getattr(event, 'interpolation', None) or 'linear')
+        if interp_kind not in ('linear', 'cubic'):
+            raise ValueError(
+                f"event {ev_name!r} declares interpolation {interp_kind!r}; the data-driven "
+                f"stimulus is interpolated by tvboptim's DataInput, which implements 'linear' and 'cubic'."
+            )
         # optional onset (ms): shifts when the waveform starts playing
         onset = float(ev_params['onset'].value) if ('onset' in ev_params and ev_params['onset'].value is not None) else 0.0
+        # `onset` positions the waveform on the clock and is consumed here; `amplitude` becomes a live parameter of the emitted input. A data-driven waveform has no equation whose symbols anything else could bind to, so any further parameter would be accepted and never read.
+        unsupported = sorted(k for k in ev_params if k not in ('onset', 'amplitude'))
+        if unsupported:
+            raise ValueError(
+                f"event {ev_name!r} reads its signal from {data_location!r} and declares "
+                f"parameter(s) {', '.join(unsupported)}, which nothing in a data-driven stimulus "
+                f"evaluates. Such a stimulus takes `onset` (where the waveform starts) and "
+                f"`amplitude` (its gain); a parameter the signal depends on belongs in an "
+                f"`equation:` stimulus instead."
+            )
+        amplitude = float(ev_params['amplitude'].value) if ('amplitude' in ev_params and ev_params['amplitude'].value is not None) else 1.0
     else:
         eq_rhs = str(event.equation.rhs) if event.equation else '0.0'
     # Per-step iid driver (symbolic branch only): an event parameter with
@@ -223,21 +263,30 @@ class ${class_name}(AbstractExternalInput):
             step=input_state.step + 1.0,
         )
 % elif is_data:
-class ${class_name}(AbstractExternalInput):
-    """Data-driven external input: ${ev_name}(t) interpolated from a file.
+class ${class_name}(DataInput):
+    """Data-driven external input: ${ev_name}(t), interpolated from a file.
 
     ${event.description or event.label or 'Data-driven stimulus.'}
 
     Source: ${data_location}  (sampling_rate=${sampling_rate}/ms, onset=${onset} ms, ${interp_kind})
+
+    The samples go to tvboptim's DataInput, which builds the diffrax interpolation object once in prepare() and evaluates it inside the scan, so the declared interpolation is the one the solver runs. Outside the sampled span the stimulus is silent. `amplitude` (${amplitude}) scales it as a live config leaf, so a sweep or a gradient fit can write the drive's gain.
     """
 
-    N_OUTPUT_DIMS = 1
-    DEFAULT_PARAMS = Bunch()
+    def __init__(self, **kwargs):
+        import numpy as _np
+        _samples = jnp.asarray(_np.load(r"${data_location}"), dtype=jnp.float32)
+        _samples = _samples.reshape(-1) if _samples.ndim == 1 else _samples.reshape(_samples.shape[0], -1)
+        _times = ${onset} + jnp.arange(_samples.shape[0], dtype=jnp.float32) / ${sampling_rate}
+        super().__init__(times=_times, data=_samples, interpolation="${interp_kind}")
+        # DataInput carries the samples and the interpolation kind; `amplitude` rides beside them as a live config leaf, which is what lets a sweep or a gradient fit write the drive's gain.
+        _gain = Bunch(amplitude=${amplitude})
+        _gain.update(kwargs)
+        self.DEFAULT_PARAMS = Bunch(self.DEFAULT_PARAMS, **_gain)
+        self.params = Bunch(self.params, **_gain)
 
     def prepare(self, network, dt: float):
-        import numpy as _np
-        _samples = jnp.asarray(_np.load(r"${data_location}"), dtype=jnp.float32).reshape(-1)
-        _times = ${onset} + jnp.arange(_samples.shape[0], dtype=jnp.float32) / ${sampling_rate}
+        input_data, input_state = super().prepare(network, dt)
         % if has_spatial:
         _mask = jnp.zeros(network.graph.n_nodes)
         _regions = [${', '.join(str(r) for r in ev_regions)}]
@@ -247,15 +296,16 @@ class ${class_name}(AbstractExternalInput):
         % else:
         _mask = jnp.ones(network.graph.n_nodes)
         % endif
-        return Bunch(times=_times, signal=_samples, mask=_mask), Bunch()
+        input_data.mask = _mask
+        input_data.t_lo = self.params.times[0]
+        input_data.t_hi = self.params.times[-1]
+        return input_data, input_state
 
     def compute(self, t, state, input_data, input_state, params):
-        # interpolate the waveform at time t; zero outside the data window
-        signal = jnp.interp(t, input_data.times, input_data.signal, left=0.0, right=0.0)
-        return (signal * input_data.mask)[None, :]
-
-    def update_state(self, input_data, input_state, new_state):
-        return input_state
+        # An interpolation holds its endpoint value beyond the sampled span; the stimulus is silent there.
+        signal = super().compute(t, state, input_data, input_state, params)
+        _sounding = (t >= input_data.t_lo) & (t <= input_data.t_hi)
+        return jnp.where(_sounding, signal, 0.0) * params.amplitude * input_data.mask
 % else:
 class ${class_name}(AbstractExternalInput):
     """External input: ${ev_name}(t).
@@ -270,7 +320,17 @@ class ${class_name}(AbstractExternalInput):
         % for pname, pobj in det_params.items():
         ${pname}=${float(pobj.value) if pobj.value is not None else 0.0},
         % endfor
+        % if is_subset:
+        trial=0.0,
+        % endif
     )
+    % if is_subset:
+
+    # Keyed by fold_in(key(SUBSET_SEED), trial) so adding trials never perturbs the existing ones.
+    SUBSET_SEED = ${subset_seed}
+    SUBSET_K = ${subset_k}
+    SUBSET_N_TRIALS = ${subset_n_trials}
+    % endif
     % if is_stochastic:
 
     # iid per-step driver: u[t] = ${_stoch_info['dist'].capitalize()}(${_stoch_info['lo']}, ${_stoch_info['hi']}),
@@ -282,17 +342,35 @@ class ${class_name}(AbstractExternalInput):
     STOCH_LO = ${_stoch_info['lo']}
     STOCH_HI = ${_stoch_info['hi']}
     INV_DT = ${_inv_dt}
+    SCAN_T0 = ${-_transient}   # the scan's own start on the measurement clock
     % endif
 
     def prepare(self, network, dt: float):
         % if is_stochastic:
-        # Pre-generate the iid per-step sequence (indexed by step = round(t/dt)).
+        # Pre-generate the iid per-step sequence (indexed by step = round((t - scan_t0)/dt)).
         _u = jax.random.uniform(
             jax.random.key(self.STOCH_SEED), (self.STOCH_N_STEPS,),
             minval=self.STOCH_LO, maxval=self.STOCH_HI,
         )
         % endif
-        % if has_spatial:
+        % if is_subset:
+        # Pre-sample every trial's mask (pure array -> vmap/pmap-safe).
+        % if subset_pool:
+        _pool = jnp.asarray([${', '.join(str(r) for r in subset_pool)}])
+        % else:
+        _pool = jnp.arange(network.graph.n_nodes)
+        % endif
+        def _draw_mask(_k):
+            _idx = jax.random.choice(_k, _pool, shape=(self.SUBSET_K,), replace=False)
+            return jnp.zeros(network.graph.n_nodes).at[_idx].set(1.0)
+        _keys = jax.vmap(lambda i: jax.random.fold_in(jax.random.key(self.SUBSET_SEED), i))(jnp.arange(self.SUBSET_N_TRIALS))
+        _masks = jax.vmap(_draw_mask)(_keys)
+        % if is_stochastic:
+        return Bunch(masks=_masks, u=_u), Bunch()
+        % else:
+        return Bunch(masks=_masks), Bunch()
+        % endif
+        % elif has_spatial:
         # Spatial weighting mask: stimulus applied to specific regions
         _mask = jnp.zeros(network.graph.n_nodes)
         _regions = [${', '.join(str(r) for r in ev_regions)}]
@@ -318,15 +396,19 @@ class ${class_name}(AbstractExternalInput):
         ${pname} = params.${pname}
         % endfor
         % if is_stochastic:
-        # Per-step iid sample: index the pre-generated sequence by step number.
-        _step = jnp.int32(jnp.clip(t * self.INV_DT, 0, input_data.u.shape[0] - 1))
+        # Per-step iid sample: index the pre-generated sequence by step number, counted from the scan start so the settle draws its own samples rather than repeating the first.
+        _step = jnp.int32(jnp.clip((t - self.SCAN_T0) * self.INV_DT, 0, input_data.u.shape[0] - 1))
         ${_stoch_pname} = input_data.u[_step]
         % endif
 
         # Evaluate event equation
         signal = ${stim_jaxcode(eq_rhs, param_names=list(det_params.keys()) + ([_stoch_pname] if is_stochastic else []) + ['t'])}
 
-        % if has_spatial:
+        % if is_subset:
+        # This trial's pre-sampled random-subset mask (params.trial is a state.external leaf).
+        _mask = input_data.masks[jnp.int32(params.trial)]
+        return (signal * _mask)[None, :]
+        % elif has_spatial:
         # Apply spatial mask (broadcast to [1, n_nodes])
         return (signal * input_data.mask)[None, :]
         % else:

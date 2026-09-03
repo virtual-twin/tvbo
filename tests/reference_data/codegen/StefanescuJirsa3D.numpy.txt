@@ -1,0 +1,77 @@
+import numpy as np
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    r = _p.r
+    a = _p.a
+    b = _p.b
+    c = _p.c
+    d = _p.d
+    s = _p.s
+    x_0 = _p.x_0
+    K_11 = _p.K_11
+    K_12 = _p.K_12
+    K_21 = _p.K_21
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    xi = current_state[0]
+    eta = current_state[1]
+    tau = current_state[2]
+    alpha = current_state[3]
+    beta = current_state[4]
+    gamma = current_state[5]
+
+    # Derived variables
+    A_ik = 0.500000000000000
+    B_ik = 0.500000000000000
+    C_ik = 0.500000000000000
+    IE_i = 0.0
+    II_i = 0.0
+    a_i = a
+    b_i = b
+    c_i = c
+    d_i = d
+    e_i = a
+    f_i = b
+    h_i = c
+    m_i = r * s * x_0
+    n_i = r * s * x_0
+    p_i = d
+
+    # Derivatives
+    dxi_dt = (
+        IE_i
+        + c_glob
+        + eta
+        - tau
+        + K_11 * (-xi + A_ik * xi)
+        + b_i * xi**2
+        + local_coupling * xi
+        - K_12 * (-xi + B_ik * alpha)
+        - a_i * xi**3
+    )
+    deta_dt = c_i - eta - d_i * xi**2
+    dtau_dt = -m_i - r * tau + r * s * xi
+    dalpha_dt = (
+        II_i
+        + beta
+        + c_glob
+        - gamma
+        + K_21 * (-alpha + C_ik * xi)
+        + f_i * alpha**2
+        + local_coupling * xi
+        - e_i * alpha**3
+    )
+    dbeta_dt = h_i - beta - p_i * alpha**2
+    dgamma_dt = -n_i - gamma * r + alpha * r * s
+
+    derivatives = np.array(
+        np.broadcast_arrays(dxi_dt, deta_dt, dtau_dt, dalpha_dt, dbeta_dt, dgamma_dt)
+    )
+
+    return derivatives

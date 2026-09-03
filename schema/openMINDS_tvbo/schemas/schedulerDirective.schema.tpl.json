@@ -1,0 +1,15 @@
+{
+  "_type": "tvbo:SchedulerDirective",
+  "required": [
+    "name",
+    "value"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "value": {
+      "type": "string"
+    }
+  }
+}

@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """NetworkDynamics.jl backend adapter for SimulationExperiment.
 
-Uses pyjulia (tvbo.adapters.julia) to execute generated Julia code
-and return full Julia objects alongside a TVBO TimeSeries.
+Uses pyjulia (tvbo.adapters.julia) to execute generated Julia code and return full Julia objects alongside a TVBO TimeSeries.
 """
 
 from __future__ import annotations
@@ -67,8 +65,7 @@ def _extract_edge_observables(
 ) -> dict[str, np.ndarray]:
     """Extract edge observables from Julia solution using outsym metadata.
 
-    For each symbol in outsym_names, extracts the per-edge time series
-    using ``eidxs(sol, :, :sym)``.
+    For each symbol in outsym_names, extracts the per-edge time series using ``eidxs(sol, :, :sym)``.
 
     For coupling-defined observed variables (obssym), extracts those too.
 
@@ -109,8 +106,7 @@ def _extract_vertex_observables(
 ) -> dict[str, np.ndarray]:
     """Extract vertex derived-variable observables from Julia solution.
 
-    For each symbol in vertex_dv_names, extracts per-node time series
-    using ``vidxs(sol, i, :sym)``.
+    For each symbol in vertex_dv_names, extracts per-node time series using ``vidxs(sol, i, :sym)``.
 
     Returns a dict mapping symbol names to arrays of shape ``(n_t, n_nodes)``.
     """
@@ -133,20 +129,18 @@ def _extract_vertex_observables(
 class NetworkDynamicsAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via NetworkDynamics.jl (pyjulia).
 
-    Inherits metadata processing from BaseAdapter. The prepare_context()
-    method pre-computes all template variables so Mako templates stay clean.
+    Inherits metadata processing from BaseAdapter. The prepare_context() method pre-computes all template variables so Mako templates stay clean.
     """
+
+    TEMPLATE = "tvbo-nd-experiment.jl.mako"
 
     # ── Spatial / heterogeneous metadata ─────────────────────────────────
 
     def get_initial_positions(self) -> np.ndarray:
         """Extract initial (x, y, …) positions for ALL nodes from YAML.
 
-        For free (dynamic) nodes: positions come from per-node ``state``
-        overrides (legacy ``initial_state`` arrays are also supported),
-        at the indices marked ``coupling_variable=True``.
-        For static (fixed) nodes: positions come from node parameter
-        values (in parameter-definition order).
+        For free (dynamic) nodes: positions come from per-node ``state`` overrides (legacy ``initial_state`` arrays are also supported), at the indices marked ``coupling_variable=True``.
+        For static (fixed) nodes: positions come from node parameter values (in parameter-definition order).
 
         Returns shape ``(n_nodes, n_coupling_vars)``.
         """
@@ -232,13 +226,12 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
     def build_node_positions(
         self,
-        ts: "SimulationResult",
+        ts: SimulationResult,
         ctx: dict,
     ) -> np.ndarray:
         """Build ``(n_t, n_nodes, n_cv)`` position array from simulation data.
 
-        For free nodes: positions come from the coupling-variable columns
-        of the properly shaped ``(time, variable, node)`` DataArray.
+        For free nodes: positions come from the coupling-variable columns of the properly shaped ``(time, variable, node)`` DataArray.
         For fixed nodes: positions are constant (from YAML parameters).
         """
         dynamics_dict = ctx["dynamics_dict"]
@@ -269,25 +262,42 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
     # ── Code generation ──────────────────────────────────────────────────
 
-    def render_code(self, **kwargs) -> str:
-        """Render Julia code with pre-computed context from BaseAdapter."""
-        from tvbo import templates
+    def refuse_unrenderable(self) -> None:
+        """Raise where the emitted Julia would quietly integrate something other than what was declared.
 
-        ctx = self.prepare_context()
-        ctx.update(kwargs)
-        template = templates.lookup.get_template("tvbo-nd-experiment.jl.mako")
-        return template.render(**ctx)
+        The edge and experiment templates carry no delay path, so a delayed coupling is not lowered — it is dropped, and the run returns a well-formed trajectory of the undelayed network. They carry no observation path either, so a declared monitor is dropped the same way and the result arrives with an empty ``observations``. Refusing is the same contract the Brian2 adapter states for the forms it cannot lower: a clear error beats a plausible answer to a different question.
+        """
+        delayed = self.delayed_couplings()
+        if delayed:
+            raise NotImplementedError(
+                "the NetworkDynamics.jl templates lower no transmission delay, so "
+                f"{', '.join(delayed)} would be integrated as an undelayed coupling. "
+                "Run the delayed network on a backend that carries a history buffer "
+                "(tvb, tvboptim, jax), or declare the coupling undelayed."
+            )
+        from tvbo.utils import keyed_items
 
-    def run(self, **kwargs) -> "ExperimentResult":
+        observations = sorted(name for name, _ in keyed_items(getattr(self.experiment, "observations", None), "observations"))
+        if observations:
+            raise NotImplementedError(
+                "the NetworkDynamics.jl templates emit no observation, so "
+                f"{', '.join(observations)} would be dropped and the run would return the raw trajectory alone. "
+                "Run the monitors on a backend that lowers them (tvb, tvboptim, jax), or drop them from the experiment."
+            )
+        super().refuse_unrenderable()
+
+    def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using NetworkDynamics.jl.
 
-        Returns
+        Returns:
         -------
         ExperimentResult
             Simulation results with named dimensions and coordinates.
             Extra attributes: ``sol``, ``graph``, ``edge_data``, ``vertex_data``.
         """
         import xarray as xr
+
+        self.refuse_unrenderable()
 
         from tvbo.data.types import ExperimentResult, SimulationResult
         from tvbo.run.julia import (
@@ -306,8 +316,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         code = self.render_code(**kwargs)
         code = _strip_plot_lines(code)
 
-        # 3. Change Julia working directory to YAML source dir
-        #    so that readdlm("Norm_G_DTI.txt") etc. resolve correctly.
+        # 3. Change Julia working directory to YAML source dir so that readdlm("Norm_G_DTI.txt") etc. resolve correctly.
         source = getattr(exp, "_source_file", None)
         import os
 
@@ -355,8 +364,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
             n_unique_sv = len(all_sv_names)
             data = np.full((n_t, n_unique_sv, n_nodes), np.nan)
 
-            # Extract per-variable time series via ND.jl vidxs (one Julia
-            # call per unique SV — batches all nodes that share that variable)
+            # Extract per-variable time series via ND.jl vidxs (one Julia call per unique SV — batches all nodes that share that variable)
             for sv_idx, sv_name in enumerate(all_sv_names):
                 node_ids = [
                     n.id

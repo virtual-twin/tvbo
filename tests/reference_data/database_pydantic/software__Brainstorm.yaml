@@ -1,0 +1,42 @@
+name: Brainstorm
+description: A collaborative, open-source application for MEG/EEG/sEEG/ECoG/fNIRS
+  data analysis, visualization, and source localization.
+homepage: https://neuroimage.usc.edu/brainstorm/
+license: GPL-3.0-only
+repository: https://github.com/brainstorm-tools/brainstorm3
+doi: 10.1155/2011/879716
+application_category: analysis
+scale:
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- analysis_tool
+programming_language:
+- MATLAB
+runtime_platform:
+- MATLAB
+interoperates_with:
+- MNE-Python
+- FieldTrip
+- SPM
+date_created: '2000-01-01'
+development_status: active
+author:
+- Francois Tadel
+- Sylvain Baillet
+maintainer:
+- USC Biomedical Imaging Group
+funder:
+- NIH
+- McGill University
+reference_publication: 10.1155/2011/879716
+keywords:
+- MEG
+- EEG
+- source imaging
+- MATLAB
+- GUI
+same_as:
+- https://scicrunch.org/resolver/RRID:SCR_001761
+is_accessible_for_free: true

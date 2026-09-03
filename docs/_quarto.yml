@@ -4,40 +4,51 @@ project:
     - bash scripts/prerender.sh
   render:
     - index.qmd
+    - GettingStarted.qmd
     - installation.md
     - reference.qmd
-    - platform.qmd
+    - 1-explore/**/*.qmd
+    - 2-specify/**/*.qmd
+    - 3-generate/**/*.qmd
+    - 4-run/*.qmd
+    - 5-share/*.qmd
     - api/**/*.qmd
     - datamodel/*.qmd
     - datamodel/**/*.qmd
-    - Usage/*.qmd
     - CLI/*.qmd
     - examples/**/*.qmd
-    - Specification/*.qmd
     - Interoperability/**/*.qmd
+    - Interoperability/**/*.md
     - Interoperability/*.qmd
     - Replication/*.qmd
     - Replication/**/*.qmd
     - Developer/*.md
-    - ontology/*.qmd
+    - Developer/*.qmd
     - agents/*.qmd
-    - "!_archive/*"
-    - "!ontology/spec/**"
+    - "!_archive/**"
+    - "!1-explore/ontology/spec/**"
   resources:
-    - ontology/spec/**
+    - 1-explore/ontology/spec/**
   output-dir: _site
 
 # Sidebar configuration lives in _toc.yml (single unified sidebar).
 metadata-files:
     - _toc.yml
 
+# phase-badge stamps the spine phase; usecase-tags lists the published studies whose recipes exercise the page. Both read generated maps under _static/.
+filters:
+    - filters/phase-badge.lua
+    - filters/cards.lua
+    - filters/running-example.lua
+    - filters/usecase-tags.lua
+
 website:
     title: "TVB-O Documentation"
     favicon: "_static/tvbo_python_square.svg"
     image: "_static/tvbo_python_square.svg"
 
-    repo-url: https://github.com/TVB-Ontology/tvbo-python
-    issue-url: https://github.com/TVB-Ontology/tvbo-python/new/choose
+    repo-url: https://github.com/virtual-twin/tvbo
+    issue-url: https://github.com/virtual-twin/tvbo/issues/new/choose
     repo-actions: [edit, issue]
     page-navigation: true
 
@@ -45,23 +56,22 @@ website:
         logo: _static/tvbo_favicon.png
         logo-alt: "TVB-O logo"
 
+        # Destinations you jump to, not the reading order. The five numbered phases are the sidebar's job and the per-page badge's; repeating them here would say the same thing three times.
         left:
             - href: index.qmd
               text: Home
-            - text: "Usage"
-              href: Usage/index.qmd
-            - text: "CLI"
-              href: CLI/index.qmd
-            - text: "Data Model"
-              href: datamodel/index.qmd
+            - text: "Get Started"
+              href: GettingStarted.qmd
+            - text: "Examples"
+              href: examples/index.qmd
+            - text: "Reference"
+              href: reference.qmd
             - text: "Platform"
-              href: platform.qmd
-            - text: "Agents"
-              href: agents/index.qmd
+              href: 1-explore/platform.qmd
 
         tools:
             - icon: github
-              href: https://github.com/leon-k-martin/tvbo
+              href: https://github.com/virtual-twin/tvbo
               text: tvbo GitHub
 
     sidebar: []  # merged from _toc.yml and api/_sidebar.yml
@@ -80,7 +90,10 @@ website:
 format:
     html:
         theme: cosmo
-        css: styles.css
+        css:
+            - _static/palette.css
+            - _static/phases.css
+            - styles.css
         toc: true
         code-copy: true
         code-overflow: wrap
@@ -102,8 +115,10 @@ csl: https://raw.githubusercontent.com/citation-style-language/styles/master/iee
 
 fig-align: center
 
-# Cache notebook execution results. 'auto' only re-executes when source changes.
-# Cached results stored in _freeze/ — commit this directory to share across machines.
+# Kernel name only; its argv is a bare `python`, so PATH decides which interpreter runs the cells.
+jupyter: python3
+
+# `freeze: auto` re-executes only on source change; commit _freeze/ to share the cache.
 execute:
     enabled: true
     cache: true

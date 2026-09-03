@@ -1,0 +1,64 @@
+name: SprottDissipativeConservative
+parameters:
+  a:
+    name: a
+    value: 2.0
+    description: Nonlinear mixed term coefficient a.
+  b:
+    name: b
+    value: 1.0
+    description: yz coupling coefficient b.
+  c:
+    name: c
+    value: 1.0
+    description: Linear term coefficient c in z equation.
+description: 'Mixed dissipative/conservative three-dimensional system where initial
+  condition
+
+  choice yields either quasi-periodic torus motion or chaotic attractor behavior.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- Sprott2014b
+state_variables:
+  x:
+    name: x
+    equation:
+      lhs: Derivative(x, t)
+      rhs: y + a*x*y + x*z
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 1.0
+  y:
+    name: y
+    equation:
+      lhs: Derivative(y, t)
+      rhs: 1 - 2*x**2 + b*y*z
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  z:
+    name: z
+    equation:
+      lhs: Derivative(z, t)
+      rhs: c*x - x**2 - y**2
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: generic
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

@@ -1,0 +1,1129 @@
+name: DesikanKilliany
+coordinateSpace: MNI152NLin2009c
+terminology:
+  entities:
+    left-cerebellum-cortex:
+      name: left-cerebellum-cortex
+      abbreviation: CER
+      alternateName:
+      - L.CER
+      - CEREBELLUM_LEFT
+      lookupLabel: 1
+      originalLookupLabel: 8
+      hemisphere: left
+      center:
+        x: -24.40642428142428
+        y: -61.91204150579151
+        z: -36.62557646932647
+    left-thalamus:
+      name: left-thalamus
+      abbreviation: TH
+      alternateName:
+      - L.TH
+      - THALAMUS_LEFT
+      lookupLabel: 2
+      originalLookupLabel: 10
+      hemisphere: left
+      center:
+        x: -11.500183217295714
+        y: -18.458226456577506
+        z: 7.141168926346651
+    left-caudate:
+      name: left-caudate
+      abbreviation: CA
+      alternateName:
+      - L.CA
+      - CAUDATE_LEFT
+      lookupLabel: 3
+      originalLookupLabel: 11
+      hemisphere: left
+      center:
+        x: -12.735150095805835
+        y: 10.40195869704067
+        z: 9.836491377474985
+    left-putamen:
+      name: left-putamen
+      abbreviation: PU
+      alternateName:
+      - L.PU
+      - PUTAMEN_LEFT
+      lookupLabel: 4
+      originalLookupLabel: 12
+      hemisphere: left
+      center:
+        x: -25.96036489462095
+        y: 1.3513683548285655
+        z: 0.1748977665932614
+    left-pallidum:
+      name: left-pallidum
+      abbreviation: PA
+      alternateName:
+      - L.PA
+      - PALLIDUM_LEFT
+      lookupLabel: 5
+      originalLookupLabel: 13
+      hemisphere: left
+      center:
+        x: -20.477836213373408
+        y: -4.457926371149512
+        z: -0.817430503380919
+    brain-stem:
+      name: brain-stem
+      alternateName:
+      - BRAIN_STEM
+      lookupLabel: 6
+      originalLookupLabel: 16
+      hemisphere: both
+      center:
+        x: -6.0589560918871825
+        y: -30.443442861296887
+        z: -33.16363768537366
+    left-hippocampus:
+      name: left-hippocampus
+      abbreviation: HI
+      alternateName:
+      - L.HI
+      - HIPPOCAMPUS_LEFT
+      lookupLabel: 7
+      originalLookupLabel: 17
+      hemisphere: left
+      center:
+        x: -25.205718041406513
+        y: -21.822543542556687
+        z: -13.643608281301354
+    left-amygdala:
+      name: left-amygdala
+      abbreviation: AM
+      alternateName:
+      - L.AM
+      - AMYGDALA_LEFT
+      lookupLabel: 8
+      originalLookupLabel: 18
+      hemisphere: left
+      center:
+        x: -22.85378973105135
+        y: -4.4596577017114925
+        z: -19.27041564792176
+    left-accumbens-area:
+      name: left-accumbens-area
+      abbreviation: AC
+      alternateName:
+      - L.AC
+      - ACCUMBENS_LEFT
+      lookupLabel: 9
+      originalLookupLabel: 26
+      hemisphere: left
+      center:
+        x: -8.33931240657698
+        y: 11.461883408071742
+        z: -7.768310911808669
+    left-ventraldc:
+      name: left-ventraldc
+      alternateName:
+      - DIENCEPHALON_VENTRAL_LEFT
+      lookupLabel: 10
+      originalLookupLabel: 28
+      hemisphere: left
+      center:
+        x: -10.237206308336013
+        y: -14.780978435790146
+        z: -10.105889925973614
+    right-cerebellum-cortex:
+      name: right-cerebellum-cortex
+      abbreviation: CER
+      alternateName:
+      - R.CER
+      - CEREBELLUM_RIGHT
+      lookupLabel: 11
+      originalLookupLabel: 47
+      hemisphere: right
+      center:
+        x: 24.792715621526185
+        y: -61.53569607009743
+        z: -36.70357679984306
+    right-thalamus:
+      name: right-thalamus
+      abbreviation: TH
+      alternateName:
+      - R.TH
+      - THALAMUS_RIGHT
+      lookupLabel: 12
+      originalLookupLabel: 49
+      hemisphere: right
+      center:
+        x: 11.61273313153012
+        y: -16.875695732838594
+        z: 7.132701884581579
+    right-caudate:
+      name: right-caudate
+      abbreviation: CA
+      alternateName:
+      - R.CA
+      - CAUDATE_RIGHT
+      lookupLabel: 13
+      originalLookupLabel: 50
+      hemisphere: right
+      center:
+        x: 13.286608260325409
+        y: 11.799958281184814
+        z: 9.694201084689198
+    right-putamen:
+      name: right-putamen
+      abbreviation: PU
+      alternateName:
+      - R.PU
+      - PUTAMEN_RIGHT
+      lookupLabel: 14
+      originalLookupLabel: 51
+      hemisphere: right
+      center:
+        x: 26.567430416730744
+        y: 3.172689527910194
+        z: -0.39351068737505557
+    right-pallidum:
+      name: right-pallidum
+      abbreviation: PA
+      alternateName:
+      - R.PA
+      - PALLIDUM_RIGHT
+      lookupLabel: 15
+      originalLookupLabel: 52
+      hemisphere: right
+      center:
+        x: 21.271406127258444
+        y: -2.800471327572666
+        z: -0.939905734485464
+    right-hippocampus:
+      name: right-hippocampus
+      abbreviation: HI
+      alternateName:
+      - R.HI
+      - HIPPOCAMPUS_RIGHT
+      lookupLabel: 16
+      originalLookupLabel: 53
+      hemisphere: right
+      center:
+        x: 26.533618477331046
+        y: -20.720273738237807
+        z: -13.792130025662956
+    right-amygdala:
+      name: right-amygdala
+      abbreviation: AM
+      alternateName:
+      - R.AM
+      - AMYGDALA_RIGHT
+      lookupLabel: 17
+      originalLookupLabel: 54
+      hemisphere: right
+      center:
+        x: 23.278780068728523
+        y: -3.0472508591065264
+        z: -19.627147766323027
+    right-accumbens-area:
+      name: right-accumbens-area
+      abbreviation: AC
+      alternateName:
+      - R.AC
+      - ACCUMBENS_RIGHT
+      lookupLabel: 18
+      originalLookupLabel: 58
+      hemisphere: right
+      center:
+        x: 8.52184769038702
+        y: 12.62921348314606
+        z: -7.15106117353308
+    right-ventraldc:
+      name: right-ventraldc
+      alternateName:
+      - DIENCEPHALON_VENTRAL_RIGHT
+      lookupLabel: 19
+      originalLookupLabel: 60
+      hemisphere: right
+      center:
+        x: 10.595841864860603
+        y: -14.210899354229014
+        z: -10.174988187116085
+    ctx-lh-bankssts:
+      name: ctx-lh-bankssts
+      abbreviation: BSTS
+      alternateName:
+      - L.BSTS
+      - L_bankssts
+      lookupLabel: 20
+      originalLookupLabel: 1001
+      hemisphere: left
+      center:
+        x: -53.39756532066508
+        y: -45.79423990498812
+        z: 8.515142517814724
+    ctx-lh-caudalanteriorcingulate:
+      name: ctx-lh-caudalanteriorcingulate
+      abbreviation: CACG
+      alternateName:
+      - L.CACG
+      - L_caudalanteriorcingulate
+      lookupLabel: 21
+      originalLookupLabel: 1002
+      hemisphere: left
+      center:
+        x: -4.973120728929388
+        y: 21.2359908883827
+        z: 27.031890660592254
+    ctx-lh-caudalmiddlefrontal:
+      name: ctx-lh-caudalmiddlefrontal
+      abbreviation: CMFG
+      alternateName:
+      - L.CMFG
+      - L_caudalmiddlefrontal
+      lookupLabel: 22
+      originalLookupLabel: 1003
+      hemisphere: left
+      center:
+        x: -36.74404027949034
+        y: 11.222975750102762
+        z: 49.34001233045623
+    ctx-lh-cuneus:
+      name: ctx-lh-cuneus
+      abbreviation: CU
+      alternateName:
+      - L.CU
+      - L_cuneus
+      lookupLabel: 23
+      originalLookupLabel: 1005
+      hemisphere: left
+      center:
+        x: -6.846679081315955
+        y: -78.28739913097455
+        z: 21.713842333954062
+    ctx-lh-entorhinal:
+      name: ctx-lh-entorhinal
+      abbreviation: EC
+      alternateName:
+      - L.EC
+      - L_entorhinal
+      lookupLabel: 24
+      originalLookupLabel: 1006
+      hemisphere: left
+      center:
+        x: -24.201298701298697
+        y: -4.779220779220779
+        z: -32.824675324675326
+    ctx-lh-fusiform:
+      name: ctx-lh-fusiform
+      abbreviation: FG
+      alternateName:
+      - L.FG
+      - L_fusiform
+      lookupLabel: 25
+      originalLookupLabel: 1007
+      hemisphere: left
+      center:
+        x: -34.905548705302095
+        y: -44.133497739416356
+        z: -20.642005754212903
+    ctx-lh-inferiorparietal:
+      name: ctx-lh-inferiorparietal
+      abbreviation: IPG
+      alternateName:
+      - L.IPG
+      - L_inferiorparietal
+      lookupLabel: 26
+      originalLookupLabel: 1008
+      hemisphere: left
+      center:
+        x: -40.60552268244576
+        y: -70.56233421750663
+        z: 33.03631911854724
+    ctx-lh-inferiortemporal:
+      name: ctx-lh-inferiortemporal
+      abbreviation: ITG
+      alternateName:
+      - L.ITG
+      - L_inferiortemporal
+      lookupLabel: 27
+      originalLookupLabel: 1009
+      hemisphere: left
+      center:
+        x: -50.56490037085926
+        y: -31.539128795021682
+        z: -24.869193538248787
+    ctx-lh-isthmuscingulate:
+      name: ctx-lh-isthmuscingulate
+      abbreviation: ICG
+      alternateName:
+      - L.ICG
+      - L_isthmuscingulate
+      lookupLabel: 28
+      originalLookupLabel: 1010
+      hemisphere: left
+      center:
+        x: -6.529188558085224
+        y: -45.38412142440164
+        z: 19.773204903677765
+    ctx-lh-lateraloccipital:
+      name: ctx-lh-lateraloccipital
+      abbreviation: LOG
+      alternateName:
+      - L.LOG
+      - L_lateraloccipital
+      lookupLabel: 29
+      originalLookupLabel: 1011
+      hemisphere: left
+      center:
+        x: -30.96147730557965
+        y: -88.63045677941602
+        z: 1.6724486845909183
+    ctx-lh-lateralorbitofrontal:
+      name: ctx-lh-lateralorbitofrontal
+      abbreviation: LOFG
+      alternateName:
+      - L.LOFG
+      - L_lateralorbitofrontal
+      lookupLabel: 30
+      originalLookupLabel: 1012
+      hemisphere: left
+      center:
+        x: -24.359540971168443
+        y: 31.971452959028824
+        z: -18.02959028831563
+    ctx-lh-lingual:
+      name: ctx-lh-lingual
+      abbreviation: LG
+      alternateName:
+      - L.LG
+      - L_lingual
+      lookupLabel: 31
+      originalLookupLabel: 1013
+      hemisphere: left
+      center:
+        x: -14.154186134612956
+        y: -67.35004419749968
+        z: -4.748453087511052
+    ctx-lh-medialorbitofrontal:
+      name: ctx-lh-medialorbitofrontal
+      abbreviation: MOFG
+      alternateName:
+      - L.MOFG
+      - L_medialorbitofrontal
+      lookupLabel: 32
+      originalLookupLabel: 1014
+      hemisphere: left
+      center:
+        x: -5.935648896068926
+        y: 34.539310716208945
+        z: -17.127355950457726
+    ctx-lh-middletemporal:
+      name: ctx-lh-middletemporal
+      abbreviation: MTG
+      alternateName:
+      - L.MTG
+      - L_middletemporal
+      lookupLabel: 33
+      originalLookupLabel: 1015
+      hemisphere: left
+      center:
+        x: -57.95826158826365
+        y: -21.837385494868798
+        z: -14.932295612645497
+    ctx-lh-parahippocampal:
+      name: ctx-lh-parahippocampal
+      abbreviation: PHIG
+      alternateName:
+      - L.PHIG
+      - L_parahippocampal
+      lookupLabel: 34
+      originalLookupLabel: 1016
+      hemisphere: left
+      center:
+        x: -23.94569839712136
+        y: -30.401701014066077
+        z: -18.63591756624141
+    ctx-lh-paracentral:
+      name: ctx-lh-paracentral
+      abbreviation: PaCG
+      alternateName:
+      - L.PaCG
+      - L_paracentral
+      lookupLabel: 35
+      originalLookupLabel: 1017
+      hemisphere: left
+      center:
+        x: -6.365271728839232
+        y: -28.35845483809885
+        z: 58.75932588524901
+    ctx-lh-parsopercularis:
+      name: ctx-lh-parsopercularis
+      abbreviation: POP
+      alternateName:
+      - L.POP
+      - L_parsopercularis
+      lookupLabel: 36
+      originalLookupLabel: 1018
+      hemisphere: left
+      center:
+        x: -47.72817428060478
+        y: 15.508372622337845
+        z: 14.426597301251832
+    ctx-lh-parsorbitalis:
+      name: ctx-lh-parsorbitalis
+      abbreviation: POR
+      alternateName:
+      - L.POR
+      - L_parsorbitalis
+      lookupLabel: 37
+      originalLookupLabel: 1019
+      hemisphere: left
+      center:
+        x: -43.20521541950114
+        y: 41.39909297052154
+        z: -12.979875283446717
+    ctx-lh-parstriangularis:
+      name: ctx-lh-parstriangularis
+      abbreviation: PTR
+      alternateName:
+      - L.PTR
+      - L_parstriangularis
+      lookupLabel: 38
+      originalLookupLabel: 1020
+      hemisphere: left
+      center:
+        x: -47.245463049579044
+        y: 31.71487371375116
+        z: 3.1206735266604255
+    ctx-lh-pericalcarine:
+      name: ctx-lh-pericalcarine
+      abbreviation: PCAL
+      alternateName:
+      - L.PCAL
+      - L_pericalcarine
+      lookupLabel: 39
+      originalLookupLabel: 1021
+      hemisphere: left
+      center:
+        x: -12.091287878787881
+        y: -80.11666666666667
+        z: 6.467045454545456
+    ctx-lh-postcentral:
+      name: ctx-lh-postcentral
+      abbreviation: PoCG
+      alternateName:
+      - L.PoCG
+      - L_postcentral
+      lookupLabel: 40
+      originalLookupLabel: 1022
+      hemisphere: left
+      center:
+        x: -46.6283493218657
+        y: -22.266953357591802
+        z: 44.24892490903076
+    ctx-lh-posteriorcingulate:
+      name: ctx-lh-posteriorcingulate
+      abbreviation: PCG
+      alternateName:
+      - L.PCG
+      - L_posteriorcingulate
+      lookupLabel: 41
+      originalLookupLabel: 1023
+      hemisphere: left
+      center:
+        x: -5.396387832699617
+        y: -18.092205323193923
+        z: 39.02614068441065
+    ctx-lh-precentral:
+      name: ctx-lh-precentral
+      abbreviation: PrCG
+      alternateName:
+      - L.PrCG
+      - L_precentral
+      lookupLabel: 42
+      originalLookupLabel: 1024
+      hemisphere: left
+      center:
+        x: -43.05403462529204
+        y: -6.9650751812136775
+        z: 42.54927215000299
+    ctx-lh-precuneus:
+      name: ctx-lh-precuneus
+      abbreviation: PCU
+      alternateName:
+      - L.PCU
+      - L_precuneus
+      lookupLabel: 43
+      originalLookupLabel: 1025
+      hemisphere: left
+      center:
+        x: -8.467257583861851
+        y: -59.011920226178646
+        z: 38.991289065484835
+    ctx-lh-rostralanteriorcingulate:
+      name: ctx-lh-rostralanteriorcingulate
+      abbreviation: RACG
+      alternateName:
+      - L.RACG
+      - L_rostralanteriorcingulate
+      lookupLabel: 44
+      originalLookupLabel: 1026
+      hemisphere: left
+      center:
+        x: -4.612650433809122
+        y: 36.28575426812202
+        z: -0.7903722362160579
+    ctx-lh-rostralmiddlefrontal:
+      name: ctx-lh-rostralmiddlefrontal
+      abbreviation: RMFG
+      alternateName:
+      - L.RMFG
+      - L_rostralmiddlefrontal
+      lookupLabel: 45
+      originalLookupLabel: 1027
+      hemisphere: left
+      center:
+        x: -33.5027973031129
+        y: 46.39257877875005
+        z: 17.839477836752266
+    ctx-lh-superiorfrontal:
+      name: ctx-lh-superiorfrontal
+      abbreviation: SFG
+      alternateName:
+      - L.SFG
+      - L_superiorfrontal
+      lookupLabel: 46
+      originalLookupLabel: 1028
+      hemisphere: left
+      center:
+        x: -11.28868552412645
+        y: 30.465201675368633
+        z: 43.95478799701647
+    ctx-lh-superiorparietal:
+      name: ctx-lh-superiorparietal
+      abbreviation: SPG
+      alternateName:
+      - L.SPG
+      - L_superiorparietal
+      lookupLabel: 47
+      originalLookupLabel: 1029
+      hemisphere: left
+      center:
+        x: -23.471579751254637
+        y: -64.13031856862317
+        z: 51.99874536329915
+    ctx-lh-superiortemporal:
+      name: ctx-lh-superiortemporal
+      abbreviation: STG
+      alternateName:
+      - L.STG
+      - L_superiortemporal
+      lookupLabel: 48
+      originalLookupLabel: 1030
+      hemisphere: left
+      center:
+        x: -53.72980147099486
+        y: -11.545484709395566
+        z: -3.700215672178288
+    ctx-lh-supramarginal:
+      name: ctx-lh-supramarginal
+      abbreviation: SMG
+      alternateName:
+      - L.SMG
+      - L_supramarginal
+      lookupLabel: 49
+      originalLookupLabel: 1031
+      hemisphere: left
+      center:
+        x: -55.0221420142986
+        y: -39.35781217463733
+        z: 35.114735892274595
+    ctx-lh-frontalpole:
+      name: ctx-lh-frontalpole
+      abbreviation: FP
+      alternateName:
+      - L.FP
+      - L_frontalpole
+      lookupLabel: 50
+      originalLookupLabel: 1032
+      hemisphere: left
+      center:
+        x: -7.600335852225015
+        y: 67.47607052896726
+        z: -10.203190596137702
+    ctx-lh-temporalpole:
+      name: ctx-lh-temporalpole
+      abbreviation: TP
+      alternateName:
+      - L.TP
+      - L_temporalpole
+      lookupLabel: 51
+      originalLookupLabel: 1033
+      hemisphere: left
+      center:
+        x: -28.46723182262798
+        y: 13.661232474731008
+        z: -37.038800130420604
+    ctx-lh-transversetemporal:
+      name: ctx-lh-transversetemporal
+      abbreviation: TTG
+      alternateName:
+      - L.TTG
+      - L_transversetemporal
+      lookupLabel: 52
+      originalLookupLabel: 1034
+      hemisphere: left
+      center:
+        x: -44.806090739589806
+        y: -21.555003107520193
+        z: 9.389061528899944
+    ctx-lh-insula:
+      name: ctx-lh-insula
+      abbreviation: IN
+      alternateName:
+      - L.IN
+      - L_insula
+      lookupLabel: 53
+      originalLookupLabel: 1035
+      hemisphere: left
+      center:
+        x: -36.0443006470881
+        y: 0.8967645594823352
+        z: -0.4175211548033815
+    ctx-rh-bankssts:
+      name: ctx-rh-bankssts
+      abbreviation: BSTS
+      alternateName:
+      - R.BSTS
+      - R_bankssts
+      lookupLabel: 54
+      originalLookupLabel: 2001
+      hemisphere: right
+      center:
+        x: 54.35591814159292
+        y: -40.31692477876106
+        z: 9.907356194690266
+    ctx-rh-caudalanteriorcingulate:
+      name: ctx-rh-caudalanteriorcingulate
+      abbreviation: CACG
+      alternateName:
+      - R.CACG
+      - R_caudalanteriorcingulate
+      lookupLabel: 55
+      originalLookupLabel: 2002
+      hemisphere: right
+      center:
+        x: 5.119630812921542
+        y: 22.472843450479246
+        z: 27.414625488107916
+    ctx-rh-caudalmiddlefrontal:
+      name: ctx-rh-caudalmiddlefrontal
+      abbreviation: CMFG
+      alternateName:
+      - R.CMFG
+      - R_caudalmiddlefrontal
+      lookupLabel: 56
+      originalLookupLabel: 2003
+      hemisphere: right
+      center:
+        x: 36.84884792626727
+        y: 14.019662058371722
+        z: 49.388940092165896
+    ctx-rh-cuneus:
+      name: ctx-rh-cuneus
+      abbreviation: CU
+      alternateName:
+      - R.CU
+      - R_cuneus
+      lookupLabel: 57
+      originalLookupLabel: 2005
+      hemisphere: right
+      center:
+        x: 8.293982544786402
+        y: -78.26917776757006
+        z: 22.761828203950387
+    ctx-rh-entorhinal:
+      name: ctx-rh-entorhinal
+      abbreviation: EC
+      alternateName:
+      - R.EC
+      - R_entorhinal
+      lookupLabel: 58
+      originalLookupLabel: 2006
+      hemisphere: right
+      center:
+        x: 23.822523881347408
+        y: -4.82352941176471
+        z: -33.72800402212167
+    ctx-rh-fusiform:
+      name: ctx-rh-fusiform
+      abbreviation: FG
+      alternateName:
+      - R.FG
+      - R_fusiform
+      lookupLabel: 59
+      originalLookupLabel: 2007
+      hemisphere: right
+      center:
+        x: 33.99211931192272
+        y: -37.66155410558427
+        z: -22.865604609778835
+    ctx-rh-inferiorparietal:
+      name: ctx-rh-inferiorparietal
+      abbreviation: IPG
+      alternateName:
+      - R.IPG
+      - R_inferiorparietal
+      lookupLabel: 60
+      originalLookupLabel: 2008
+      hemisphere: right
+      center:
+        x: 46.338160087341265
+        y: -63.07378038269263
+        z: 32.69166235706487
+    ctx-rh-inferiortemporal:
+      name: ctx-rh-inferiortemporal
+      abbreviation: ITG
+      alternateName:
+      - R.ITG
+      - R_inferiortemporal
+      lookupLabel: 61
+      originalLookupLabel: 2009
+      hemisphere: right
+      center:
+        x: 50.51963177348489
+        y: -27.11786038077969
+        z: -27.183834298068206
+    ctx-rh-isthmuscingulate:
+      name: ctx-rh-isthmuscingulate
+      abbreviation: ICG
+      alternateName:
+      - R.ICG
+      - R_isthmuscingulate
+      lookupLabel: 62
+      originalLookupLabel: 2010
+      hemisphere: right
+      center:
+        x: 7.688529244747301
+        y: -43.68313458262351
+        z: 20.111300397501424
+    ctx-rh-lateraloccipital:
+      name: ctx-rh-lateraloccipital
+      abbreviation: LOG
+      alternateName:
+      - R.LOG
+      - R_lateraloccipital
+      lookupLabel: 63
+      originalLookupLabel: 2011
+      hemisphere: right
+      center:
+        x: 35.092215077301944
+        y: -83.91161581611712
+        z: 0.8458065398823322
+    ctx-rh-lateralorbitofrontal:
+      name: ctx-rh-lateralorbitofrontal
+      abbreviation: LOFG
+      alternateName:
+      - R.LOFG
+      - R_lateralorbitofrontal
+      lookupLabel: 64
+      originalLookupLabel: 2012
+      hemisphere: right
+      center:
+        x: 23.58775710088149
+        y: 32.155827619980414
+        z: -18.290401567091088
+    ctx-rh-lingual:
+      name: ctx-rh-lingual
+      abbreviation: LG
+      alternateName:
+      - R.LG
+      - R_lingual
+      lookupLabel: 65
+      originalLookupLabel: 2013
+      hemisphere: right
+      center:
+        x: 14.48061104582844
+        y: -65.48108108108109
+        z: -3.4635722679200995
+    ctx-rh-medialorbitofrontal:
+      name: ctx-rh-medialorbitofrontal
+      abbreviation: MOFG
+      alternateName:
+      - R.MOFG
+      - R_medialorbitofrontal
+      lookupLabel: 66
+      originalLookupLabel: 2014
+      hemisphere: right
+      center:
+        x: -1.0
+        y: 27.0
+        z: -17.0
+    ctx-rh-middletemporal:
+      name: ctx-rh-middletemporal
+      abbreviation: MTG
+      alternateName:
+      - R.MTG
+      - R_middletemporal
+      lookupLabel: 67
+      originalLookupLabel: 2015
+      hemisphere: right
+      center:
+        x: 57.996066433566426
+        y: -19.82498751248751
+        z: -15.695179820179817
+    ctx-rh-parahippocampal:
+      name: ctx-rh-parahippocampal
+      abbreviation: PHIG
+      alternateName:
+      - R.PHIG
+      - R_parahippocampal
+      lookupLabel: 68
+      originalLookupLabel: 2016
+      hemisphere: right
+      center:
+        x: 25.07764198418404
+        y: -28.98562185478073
+        z: -18.8842559309849
+    ctx-rh-paracentral:
+      name: ctx-rh-paracentral
+      abbreviation: PaCG
+      alternateName:
+      - R.PaCG
+      - R_paracentral
+      lookupLabel: 69
+      originalLookupLabel: 2017
+      hemisphere: right
+      center:
+        x: 7.240244969378821
+        y: -26.09606299212598
+        z: 58.74033245844271
+    ctx-rh-parsopercularis:
+      name: ctx-rh-parsopercularis
+      abbreviation: POP
+      alternateName:
+      - R.POP
+      - R_parsopercularis
+      lookupLabel: 70
+      originalLookupLabel: 2018
+      hemisphere: right
+      center:
+        x: 48.45660237388725
+        y: 16.0600890207715
+        z: 13.343842729970333
+    ctx-rh-parsorbitalis:
+      name: ctx-rh-parsorbitalis
+      abbreviation: POR
+      alternateName:
+      - R.POR
+      - R_parsorbitalis
+      lookupLabel: 71
+      originalLookupLabel: 2019
+      hemisphere: right
+      center:
+        x: 43.11352447147408
+        y: 42.51752099623516
+        z: -13.376773819866784
+    ctx-rh-parstriangularis:
+      name: ctx-rh-parstriangularis
+      abbreviation: PTR
+      alternateName:
+      - R.PTR
+      - R_parstriangularis
+      lookupLabel: 72
+      originalLookupLabel: 2020
+      hemisphere: right
+      center:
+        x: 49.07252506265664
+        y: 32.37045739348372
+        z: 4.812030075187977
+    ctx-rh-pericalcarine:
+      name: ctx-rh-pericalcarine
+      abbreviation: PCAL
+      alternateName:
+      - R.PCAL
+      - R_pericalcarine
+      lookupLabel: 73
+      originalLookupLabel: 2021
+      hemisphere: right
+      center:
+        x: 13.270567375886529
+        y: -78.05602836879433
+        z: 8.123404255319144
+    ctx-rh-postcentral:
+      name: ctx-rh-postcentral
+      abbreviation: PoCG
+      alternateName:
+      - R.PoCG
+      - R_postcentral
+      lookupLabel: 74
+      originalLookupLabel: 2022
+      hemisphere: right
+      center:
+        x: 47.432493177074974
+        y: -18.782469096163112
+        z: 43.82693851340504
+    ctx-rh-posteriorcingulate:
+      name: ctx-rh-posteriorcingulate
+      abbreviation: PCG
+      alternateName:
+      - R.PCG
+      - R_posteriorcingulate
+      lookupLabel: 75
+      originalLookupLabel: 2023
+      hemisphere: right
+      center:
+        x: 5.84615384615384
+        y: -16.45428156748912
+        z: 39.15135807588638
+    ctx-rh-precentral:
+      name: ctx-rh-precentral
+      abbreviation: PrCG
+      alternateName:
+      - R.PrCG
+      - R_precentral
+      lookupLabel: 76
+      originalLookupLabel: 2024
+      hemisphere: right
+      center:
+        x: 44.28920433776045
+        y: -4.543986840502015
+        z: 42.76501766784452
+    ctx-rh-precuneus:
+      name: ctx-rh-precuneus
+      abbreviation: PCU
+      alternateName:
+      - R.PCU
+      - R_precuneus
+      lookupLabel: 77
+      originalLookupLabel: 2025
+      hemisphere: right
+      center:
+        x: 10.294996842326853
+        y: -57.70963441162024
+        z: 38.6811451827942
+    ctx-rh-rostralanteriorcingulate:
+      name: ctx-rh-rostralanteriorcingulate
+      abbreviation: RACG
+      alternateName:
+      - R.RACG
+      - R_rostralanteriorcingulate
+      lookupLabel: 78
+      originalLookupLabel: 2026
+      hemisphere: right
+      center:
+        x: 4.951359084406292
+        y: 37.200286123032896
+        z: 1.9409871244635184
+    ctx-rh-rostralmiddlefrontal:
+      name: ctx-rh-rostralmiddlefrontal
+      abbreviation: RMFG
+      alternateName:
+      - R.RMFG
+      - R_rostralmiddlefrontal
+      lookupLabel: 79
+      originalLookupLabel: 2027
+      hemisphere: right
+      center:
+        x: 34.467899190581306
+        y: 47.87601177336276
+        z: 16.53233075791023
+    ctx-rh-superiorfrontal:
+      name: ctx-rh-superiorfrontal
+      abbreviation: SFG
+      alternateName:
+      - R.SFG
+      - R_superiorfrontal
+      lookupLabel: 80
+      originalLookupLabel: 2028
+      hemisphere: right
+      center:
+        x: 11.909999999999997
+        y: 31.74030487804879
+        z: 43.47411585365853
+    ctx-rh-superiorparietal:
+      name: ctx-rh-superiorparietal
+      abbreviation: SPG
+      alternateName:
+      - R.SPG
+      - R_superiorparietal
+      lookupLabel: 81
+      originalLookupLabel: 2029
+      hemisphere: right
+      center:
+        x: 25.160497364198946
+        y: -63.0392505157002
+        z: 53.294407517763005
+    ctx-rh-superiortemporal:
+      name: ctx-rh-superiortemporal
+      abbreviation: STG
+      alternateName:
+      - R.STG
+      - R_superiortemporal
+      lookupLabel: 82
+      originalLookupLabel: 2030
+      hemisphere: right
+      center:
+        x: 54.669730604694195
+        y: -6.946583420048555
+        z: -5.236963810845182
+    ctx-rh-supramarginal:
+      name: ctx-rh-supramarginal
+      abbreviation: SMG
+      alternateName:
+      - R.SMG
+      - R_supramarginal
+      lookupLabel: 83
+      originalLookupLabel: 2031
+      hemisphere: right
+      center:
+        x: 55.918280691299174
+        y: -30.966775923718714
+        z: 35.97683253873659
+    ctx-rh-frontalpole:
+      name: ctx-rh-frontalpole
+      abbreviation: FP
+      alternateName:
+      - R.FP
+      - R_frontalpole
+      lookupLabel: 84
+      originalLookupLabel: 2032
+      hemisphere: right
+      center:
+        x: 8.367959034381855
+        y: 67.15727871250914
+        z: -13.155084125822967
+    ctx-rh-temporalpole:
+      name: ctx-rh-temporalpole
+      abbreviation: TP
+      alternateName:
+      - R.TP
+      - R_temporalpole
+      lookupLabel: 85
+      originalLookupLabel: 2033
+      hemisphere: right
+      center:
+        x: 28.28962962962963
+        y: 15.050000000000011
+        z: -35.056666666666665
+    ctx-rh-transversetemporal:
+      name: ctx-rh-transversetemporal
+      abbreviation: TTG
+      alternateName:
+      - R.TTG
+      - R_transversetemporal
+      lookupLabel: 86
+      originalLookupLabel: 2034
+      hemisphere: right
+      center:
+        x: 45.68185516680228
+        y: -17.853539462978034
+        z: 8.748576078112293
+    ctx-rh-insula:
+      name: ctx-rh-insula
+      abbreviation: IN
+      alternateName:
+      - R.IN
+      - R_insula
+      lookupLabel: 87
+      originalLookupLabel: 2035
+      hemisphere: right
+      center:
+        x: 34.85538959185615
+        y: 3.414898677575877
+        z: -2.5362953096755803

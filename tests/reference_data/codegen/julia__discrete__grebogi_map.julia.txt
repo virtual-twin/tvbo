@@ -1,0 +1,32 @@
+function GrebogiMap!(dx, _x, p, t = 0)
+
+    (;a, b, J0) = p
+
+    theta, x = _x
+
+
+    dx[1] = (theta .+ a .* sin(2 * theta) .- b .* sin(4 * theta) .- x .* sin(theta) .- 2 * pi * floor((theta .+ a .* sin(2 * theta) .- b .* sin(4 * theta) .- x .* sin(theta)) / (2 * pi)))
+    dx[2] = -J0 .* cos(theta)
+    dx
+end
+
+# Parameter values
+p = (a = 1.32, b = 0.9, J0 = 0.3)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.2,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(GrebogiMap!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

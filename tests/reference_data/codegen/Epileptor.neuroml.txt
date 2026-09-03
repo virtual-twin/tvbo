@@ -1,0 +1,164 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: Epileptor
+       Generated from TVBO Dynamics: Epileptor
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="Epileptor">
+
+    <!-- Parameters -->
+    <Parameter name="a" dimension="none"/>
+    <Parameter name="b" dimension="none"/>
+    <Parameter name="c" dimension="none"/>
+    <Parameter name="d" dimension="none"/>
+    <Parameter name="r" dimension="none"/>
+    <Parameter name="s" dimension="none"/>
+    <Parameter name="x0" dimension="none"/>
+    <Parameter name="Iext" dimension="none"/>
+    <Parameter name="slope" dimension="none"/>
+    <Parameter name="Iext2" dimension="none"/>
+    <Parameter name="tau" dimension="none"/>
+    <Parameter name="aa" dimension="none"/>
+    <Parameter name="bb" dimension="none"/>
+    <Parameter name="Kvf" dimension="none"/>
+    <Parameter name="Kf" dimension="none"/>
+    <Parameter name="Ks" dimension="none"/>
+    <Parameter name="tt" dimension="none"/>
+    <Parameter name="modification" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob0" dimension="none"/>
+    <Parameter name="c_glob1" dimension="none"/>
+    <Parameter name="local_coupling" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="x1_0" dimension="none"/>
+    <Parameter name="y1_0" dimension="none"/>
+    <Parameter name="z_0" dimension="none"/>
+    <Parameter name="x2_0" dimension="none"/>
+    <Parameter name="y2_0" dimension="none"/>
+    <Parameter name="g_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="x1" dimension="none"/>
+    <Exposure name="y1" dimension="none"/>
+    <Exposure name="z" dimension="none"/>
+    <Exposure name="x2" dimension="none"/>
+    <Exposure name="y2" dimension="none"/>
+    <Exposure name="g" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="x1" dimension="none" exposure="x1"/>
+      <StateVariable name="y1" dimension="none" exposure="y1"/>
+      <StateVariable name="z" dimension="none" exposure="z"/>
+      <StateVariable name="x2" dimension="none" exposure="x2"/>
+      <StateVariable name="y2" dimension="none" exposure="y2"/>
+      <StateVariable name="g" dimension="none" exposure="g"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="Iext_total" dimension="none" value="Iext + local_coupling*x1"/>
+      <ConditionalDerivedVariable name="f1" dimension="none">
+        <Case condition="x1 .lt. 0" value="b*x1 - a*x1^2"/>
+        <Case value="slope - x2 + 0.6*(-4.0 + z)^2"/>
+      </ConditionalDerivedVariable>
+      <ConditionalDerivedVariable name="f2" dimension="none">
+        <Case condition="x2 .lt. -0.25" value="0"/>
+        <Case value="aa*(0.25 + x2)"/>
+      </ConditionalDerivedVariable>
+      <ConditionalDerivedVariable name="h" dimension="none">
+        <Case condition="modification .gt. 0" value="x0 + 3/(1 + 0.00673794699908547*exp(-10.0*x1))"/>
+        <Case value="-4*x0 + 4*x1 + H(z .lt. 0) * (-0.1*z^7)"/>
+      </ConditionalDerivedVariable>
+      <DerivedVariable name="lfp" dimension="none" value="x2 - x1"/>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="x1" value="(tt*(Iext_total + y1 - z + Kvf*c_glob0 + f1*x1)) / SEC"/>
+      <TimeDerivative variable="y1" value="(tt*(c - y1 - d*x1^2)) / SEC"/>
+      <TimeDerivative variable="z" value="(r*tt*(h - z + Ks*c_glob0)) / SEC"/>
+      <TimeDerivative variable="x2" value="(tt*(1.05 + Iext2 + x2 - y2 - x2^3 - 0.3*z + Kf*c_glob1 + bb*g)) / SEC"/>
+      <TimeDerivative variable="y2" value="(tt*(f2 - y2)/tau) / SEC"/>
+      <TimeDerivative variable="g" value="(tt*(0.001*x1 - 0.01*g)) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="x1" value="x1_0"/>
+        <StateAssignment variable="y1" value="y1_0"/>
+        <StateAssignment variable="z" value="z_0"/>
+        <StateAssignment variable="x2" value="x2_0"/>
+        <StateAssignment variable="y2" value="y2_0"/>
+        <StateAssignment variable="g" value="g_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="Epileptor_inst" type="Epileptor" a="1.0" b="3.0" c="1.0" d="5.0" r="0.00035" s="4.0" x0="-1.6" Iext="3.1" slope="0.0" Iext2="0.45" tau="10.0" aa="6.0" bb="2.0" Kvf="0.0" Kf="0.0" Ks="0.0" tt="1.0" modification="0.0" c_glob0="0" c_glob1="0" local_coupling="0" x1_0="0.1" y1_0="0.1" z_0="3.0" x2_0="-1.0" y2_0="0.1" g_0="0.0"/>
+
+
+
+</Lems>

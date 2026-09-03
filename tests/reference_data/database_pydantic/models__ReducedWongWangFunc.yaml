@@ -1,0 +1,154 @@
+name: ReducedWongWangFunc
+parameters:
+  I_o:
+    name: I_o
+    definition: External input current to the neurons population
+    value: 0.33
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    description: External input current to the neurons population
+    unit: nA
+  J_N:
+    name: J_N
+    definition: Excitatory recurrence
+    value: 0.2609
+    domain:
+      enforce: none
+      lo: 0.2609
+      hi: 0.5
+      step: 0.001
+      log_scale: false
+    description: Excitatory recurrence
+    unit: nA
+  a:
+    name: a
+    definition: Slope (or gain) parameter of the sigmoid input-output function H_RWW
+    value: 0.27
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.27
+      step: 0.01
+      log_scale: false
+    description: Slope (or gain) parameter of the sigmoid input-output function H_RWW
+      (Deco et al
+    unit: per_pC
+  b:
+    name: b
+    value: 0.108
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    description: Shift parameter of the sigmoid input-output function H_RWW (Deco
+      et al
+    unit: kHz
+  d:
+    name: d
+    value: 154.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 200.0
+      step: 0.01
+      log_scale: false
+    description: Scaling parameter of the sigmoid input-output function H_RWW (Deco
+      et al
+    unit: ms
+  gamma:
+    name: gamma
+    definition: Kinetic parameter
+    value: 0.641
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    description: Kinetic parameter
+  tau_s:
+    name: tau_s
+    value: 100.0
+    domain:
+      enforce: none
+      lo: 50.0
+      hi: 150.0
+      step: 1.0
+      log_scale: false
+    description: Kinetic parameter
+    unit: ms
+  w:
+    name: w
+    definition: Excitatory recurrence
+    value: 0.6
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    description: Excitatory recurrence
+    unit: dimensionless
+derived_variables:
+  x:
+    name: x
+    description: (NMDAR)-mediated synaptic input current to the neurons population
+      (Deco et al., 2013).
+    equation:
+      lhs: x
+      rhs: I_o + J_N*S*local_coupling + J_N*S*w + J_N*c_glob
+      latex: false
+    record: false
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    dimension: 1
+    local: false
+  local_coupling:
+    name: local_coupling
+    dimension: 1
+    local: false
+state_variables:
+  S:
+    name: S
+    domain:
+      enforce: clamp
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+    description: State-variable of the Reduced WongWang model, denoting the average,
+      (NMDAR)-mediated synaptic gating, i
+    equation:
+      lhs: Derivative(S, t)
+      rhs: H(x)*gamma*(1 - S) - S/tau_s
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+derived_from_model: ReducedWongWang
+number_of_modes: 1
+functions:
+  H:
+    name: H
+    equation:
+      rhs: (a*x - b)/(1 - exp(-d*(a*x - b)))
+      latex: false
+    definition: Sigmoid input-output function of the synaptic input current that computes
+      the averaged firing rate of the neurons population (Deco et al., 2013).
+    arguments:
+      x:
+        name: x
+model_type: mean_field
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

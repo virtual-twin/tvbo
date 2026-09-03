@@ -213,7 +213,7 @@ network:
   transforms:
     - name: weight
       equation:
-        rhs: "W / max(W)"
+        rhs: "weight / max(weight)"
 
     # Coupling functions: key == class name == coupling_input key
   coupling:
@@ -302,19 +302,6 @@ functions:
         value: 1
         description: "Samples per window = round(downsample_period / dt)"
 
-  prepend_history:
-    description: >
-      Fit the (downsampled) transient history to one kernel length and prepend it,
-      zero-padding at the front when shorter — matches HRFBold._process_history.
-    source_code: "jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],) + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples else history[-kernel_samples:]), data], axis=0)"
-    arguments:
-      data:
-        description: "Downsampled input time series"
-      history:
-        description: "Downsampled transient history data"
-      kernel_samples:
-        value: 5000
-        description: "Kernel support = ceil(kernel_duration / downsample_period)"
 
   volterra_transform:
     description: |
@@ -524,6 +511,7 @@ observations:
     label: "Simulated BOLD Signal"
     description: "BOLD signal from hemodynamic response function"
     source: [S_e]
+    dims: [time, variable, node]
     period: 720.0
     pipeline:
             # HRF kernel (precomputed once)
@@ -537,26 +525,6 @@ observations:
             value: integration.result
           period_samples:
             value: 1
-      - output: downsampled_history
-        function: temporal_average
-        arguments:
-          data:
-            value: integration.transient
-          period_samples:
-            value: 1
-
-            # Prepend transient history (zero-padded to one kernel length)
-      - function: prepend_history
-        arguments:
-          data:
-            value: downsampled_data
-          history:
-            value: downsampled_history
-          kernel_samples:
-            value: 5000
-
-            # Convolve with HRF kernel
-            # Original: jax.vmap(jax.vmap(fftconvolve))(ys_with_history)
       - output: bold_convolve
         callable:
           module: jax.scipy.signal
@@ -564,7 +532,7 @@ observations:
         apply_on_dimension: node
         arguments:
           in1:
-            value: prepend_history
+            value: downsampled_data
           in2:
             value: hrf_kernel
           mode:
@@ -586,12 +554,14 @@ observations:
     label: "Mean Excitatory Activity"
     description: "Mean S_e over simulation window (for FIC algorithms)"
     source: [S_e]
+    dims: [variable, node]
     aggregation: mean
 
   mean_S_e_final:
     label: "Mean Excitatory Activity (Final 500 Timesteps)"
     description: "Mean S_e over final 500 timesteps (for gradient optimization loss)"
     source: [S_e]
+    dims: [variable, node]
     aggregation: mean
     tail_samples: 500
 
@@ -599,18 +569,21 @@ observations:
     label: "Mean Inhibitory Activity"
     description: "Mean S_i over simulation window (for FIC)"
     source: [S_i]
+    dims: [variable, node]
     aggregation: mean
 
   fc_target:
     label: "Empirical Functional Connectivity"
     description: "Target FC matrix from network observations (loaded from BIDS)"
     source: [network.observations.BoldCorrelation]
+    dims: [node_i, node_j]
   # === Derived observations (computed from other observations) ===
   fc:
     label: "Simulated Functional Connectivity (Post-Tuning)"
     description: "Pearson correlation matrix from BOLD time series (skip_t=20 for post-tuning evaluation)"
     source:
       - bold
+    dims: [node_i, node_j]
     pipeline:
       - callable:
           name: compute_fc
@@ -620,13 +593,14 @@ observations:
             value: bold
           skip_t:
             value: 20
-            description: "Skip first 20 TRs for transient removal in post-tuning"
+            description: "Skip 20 TRs beyond the settle, which is already cut, for the post-tuning evaluation"
 
   fc_inloop:
     label: "Simulated Functional Connectivity (In-Loop)"
-    description: "FC computed on sliding window without transient skip (for algorithm in-loop)"
+    description: "FC over the sliding window, with no skip beyond the settle (algorithm in-loop)"
     source:
       - bold
+    dims: [node_i, node_j]
     pipeline:
       - callable:
           name: compute_fc
@@ -636,13 +610,14 @@ observations:
             value: bold
           skip_t:
             value: 0
-            description: "No skip for in-loop FC (sliding window already handles transient)"
+            description: "No extra skip in-loop: the settle is cut and the sliding window carries its own warm-up"
 
   fc_gradient:
     label: "Simulated FC for Gradient Optimization"
     description: "FC computation for gradient optimization (skip_t=30 as in original)"
     source:
       - bold
+    dims: [node_i, node_j]
     pipeline:
       - callable:
           name: compute_fc
@@ -661,9 +636,7 @@ observations:
       - fc
       - fc_target
     pipeline:
-      - callable:
-          name: fc_corr
-          module: tvboptim.observations.observation
+      - function: fc_corr
         arguments:
           A:
             value: fc
@@ -677,9 +650,7 @@ observations:
       - fc
       - fc_target
     pipeline:
-      - callable:
-          name: rmse
-          module: tvboptim.observations.observation
+      - function: fc_rmse
         arguments:
           A:
             value: fc

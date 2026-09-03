@@ -25,9 +25,9 @@ RUN git clone --depth 1 https://github.com/auto-07p/auto-07p /auto-07p \
     && cd /auto-07p && ./configure && make && uv pip install --system . \
     && rm -rf /auto-07p/.git /auto-07p/doc /auto-07p/demos
 
-# Install Quarto (multi-arch: detect amd64 vs arm64)
-RUN QUARTO_VERSION=$(curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | grep -oP '"tag_name": "v\K[^"]+') \
-    && ARCH=$(dpkg --print-architecture) \
+# Install Quarto (multi-arch: detect amd64 vs arm64). Pinned rather than resolved from the releases API, which is unauthenticated and rate-limited: when it answers with nothing the version is empty, the URL it builds is a 404, and the failure reads as a broken download rather than a throttled lookup.
+ARG QUARTO_VERSION=1.10.18
+RUN ARCH=$(dpkg --print-architecture) \
     && wget -qO quarto.deb "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${ARCH}.deb" \
     && dpkg -i quarto.deb && rm quarto.deb
 
@@ -48,8 +48,9 @@ ENV UV_SYSTEM_PYTHON=1 \
 #    SimpleDict-shorthand fixes; remove once 1.11.0 is on PyPI.
 COPY pyproject.toml /app/pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra neuron --extra tvb \
-        jupyterlab uvicorn fastapi tvboptim
+    uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra neuron --extra tvb --extra docs --extra tvboptim \
+        jupyterlab uvicorn fastapi \
+        "tvboptim @ git+https://github.com/virtual-twin/tvboptim.git@main"
 
 # 2. Pre-warm Julia. juliacall just needs juliapkg.json on sys.path.
 ENV JULIA_DEPOT_PATH="/opt/julia-depot" \
@@ -61,7 +62,12 @@ RUN echo "" > /tmp/jl-stub/tvbo/__init__.py \
     && chmod -R a+rw /opt/julia-depot
 ENV PYTHONPATH=""
 
-# 3. Copy real source and install tvbo only (deps already satisfied → fast).
+# 3. Pre-warm the surface templates a `template:` figure panel draws, which bsplot fetches from templateflow as it renders — a docs run has no network to fetch them over, and a render failure does not fail the run, so the page fails later reading back a figure that was never drawn.
+ENV TEMPLATEFLOW_HOME="/opt/templateflow"
+RUN python3 -c "import bsplot; from bsplot.data.surface import get_surface_geometry; [(get_surface_geometry(template='fsaverage', hemi=h, density='164k'), bsplot.load_atlas_labels(atlas='Desikan2006', hemi=h, template='fsaverage', density='164k')) for h in ('lh', 'rh')]" \
+    && chmod -R a+rw /opt/templateflow
+
+# 4. Copy real source and install tvbo only (deps already satisfied → fast).
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --no-deps .

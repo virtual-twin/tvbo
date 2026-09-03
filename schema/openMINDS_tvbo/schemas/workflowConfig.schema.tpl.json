@@ -1,0 +1,62 @@
+{
+  "_type": "tvbo:WorkflowConfig",
+  "properties": {
+    "out_dir": {
+      "type": "string"
+    },
+    "container": {
+      "type": "string"
+    },
+    "container_binds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "container_args": {
+      "type": "string"
+    },
+    "retries": {
+      "type": "integer"
+    },
+    "rng": {
+      "type": "string"
+    },
+    "emit_provenance": {
+      "type": "boolean"
+    },
+    "chunk": {
+      "type": "integer"
+    },
+    "distribute": {
+      "_embeddedTypes": [
+        "tvbo:DistributionConfig"
+      ]
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "slurm": {
+      "_embeddedTypes": [
+        "tvbo:WorkflowEngineConfig"
+      ]
+    },
+    "snakemake": {
+      "_embeddedTypes": [
+        "tvbo:WorkflowEngineConfig"
+      ]
+    },
+    "nextflow": {
+      "_embeddedTypes": [
+        "tvbo:WorkflowEngineConfig"
+      ]
+    }
+  }
+}

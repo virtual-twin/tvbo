@@ -1,0 +1,190 @@
+# The study's entry recipe: `tvbo run JR_tvboptim.yaml`. Its directory is the study root.
+tvbo_class: tvbo:SimulationStudy
+
+citekey: JR_tvboptim
+title: "Reproducing MEG resting-state frequency gradients with network dynamics"
+label: "Jansen-Rit MEG frequency gradient: fitting region-specific time constants to a spatial frequency gradient"
+description: >-
+  Fits the region-specific Jansen-Rit time constants a and b so that each region's simulated peak frequency matches a target gradient running from visual cortex (11 Hz) to the most distant association areas (7 Hz). The target is not supplied to the fit: it is derived from the connectome's own tract lengths to bilateral lateral occipital cortex, so the whole experiment is reproducible from this recipe and the curated database alone.
+
+experiments:
+    - tvbo:experiment/JR_MEG_FrequencyGradient_Optimization
+
+      # The same curated experiment without its settle: the approach from the initial state is what the fitted run deliberately discards.
+    - iri: tvbo:experiment/JR_MEG_FrequencyGradient_Optimization
+      id: 2
+      label: "Startup transient"
+      description: "The network's approach to its limit cycle, before the settle is cut away."
+      integration:
+          transient_time: 0.0
+          duration: 1000.0
+      optimizations: null
+      explorations: null
+
+figures:
+    - name: jr_frequency_gradient
+      label: "Jansen-Rit MEG frequency gradient optimization"
+      description: >-
+        Region-specific time constants fitted so the network reproduces a posterior-to-anterior
+        peak-frequency gradient, with the target derived from the connectome's own tract lengths.
+      layout: |
+          aabbccdd
+          aabbccdd
+          eeeeffgg
+          eeeeffgg
+      width: 260.0
+      height: 130.0
+      font_size: 7.0
+      panel_numbers: true
+      panels:
+          a:
+              kind: grid
+              label: "Network dynamics"
+              description: >-
+                The y0 trajectory of every region, shaded by node: the approach from the initial
+                state, and the settled activity the spectra are computed from.
+              grid:
+                  ncols: 1
+              cell:
+                  kind: cartesian
+                  ylabel: "y0 [a.u.]"
+              cells:
+                  - kind: cartesian
+                    layers:
+                        - used: {experiment: 2, output: integration__y0_trace}
+                          mark: line
+                          encoding: {color: integration__y0_mean}
+                          style: {colormap: cividis, opts: {linewidth: 0.4}}
+                    annotations:
+                        - text: Transient
+                          loc: "upper right"
+                    ylabel: "y0 [a.u.]"
+                    hide_xticklabels: true
+                  - kind: cartesian
+                    layers:
+                        - used: {experiment: 1, output: integration__y0_trace}
+                          mark: line
+                          encoding: {color: integration__y0_mean}
+                          style: {colormap: cividis, opts: {linewidth: 0.4}}
+                    annotations:
+                        - text: Stabilized
+                          loc: "upper right"
+                    xlabel: "Sample"
+                    ylabel: "y0 [a.u.]"
+
+          b:
+              kind: cartesian
+              label: "Power spectral density"
+              description: "Mean spectrum across regions; the alpha peak the fit moves region by region."
+              layers:
+                  - used: {experiment: 1, output: integration__simulated_psd}
+                    mark: line
+                    encoding: {x: integration__psd_frequencies, color: node}
+                    style: {colormap: cividis, opacity: 0.18, opts: {linewidth: 0.4}}
+                  - used: {experiment: 1, output: integration__avg_spectrum}
+                    mark: line
+                    encoding: {x: integration__psd_frequencies}
+                    style: {color: "#000000", opts: {linewidth: 1.4}}
+              annotations:
+                  - text: "Peak @ {:.1f} Hz"
+                    used: {experiment: 1, output: integration__peak_frequency}
+                    loc: "upper right"
+              xlabel: "Frequency [Hz]"
+              ylabel: "Power"
+              yscale: log
+              xlim: [0, 20]
+
+          c:
+              kind: heatmap
+              label: "Parameter landscape and fitted values"
+              description: "Peak frequency over the (a, b) plane, with each region's fitted pair marked."
+              layers:
+                  - used: {experiment: 1, output: results}
+                    encoding: {x: JansenRit.a, y: JansenRit.b}
+                    style: {colormap: cividis}
+                  - used: {experiment: 1, output: optimization__spectral_gradient_fit__fitted__dynamics__b}
+                    mark: scatter
+                    encoding: {x: optimization__spectral_gradient_fit__fitted__dynamics__a}
+                    style: {color: white, opts: {s: 14, edgecolors: black, linewidths: 0.4, zorder: 5}}
+              xlabel: "a [ms^-1]"
+              ylabel: "b [ms^-1]"
+              colorbar:
+                  show: true
+                  label: "Peak frequency [Hz]"
+
+          d:
+              kind: cartesian
+              label: "Target versus simulated"
+              description: >-
+                Every region before and after the fit; the dashed line is agreement, and fitting
+                collapses the cloud onto it.
+              layers:
+                  - used: {experiment: 1, output: integration__peak_frequencies}
+                    mark: scatter
+                    label: Before
+                    encoding: {x: integration__target_peak_frequencies}
+                    style: {color: "#b0b0b0", opts: {s: 12, alpha: 0.7, edgecolors: k, linewidths: 0.3}}
+                  - used: {experiment: 1, output: optimization__spectral_gradient_fit__observation__peak_frequencies}
+                    mark: scatter
+                    label: After
+                    encoding: {x: optimization__spectral_gradient_fit__observation__target_peak_frequencies}
+                    style: {color: royalblue, opts: {s: 12, alpha: 0.7, edgecolors: k, linewidths: 0.3}}
+              xlabel: "Target [Hz]"
+              ylabel: "Simulated [Hz]"
+              xlim: [6, 12]
+              ylim: [6, 12]
+              aspect: equal
+              legend: "upper left"
+              rules:
+                  - {orientation: diagonal, at: [1.0, 0.0]}
+
+          e:
+              kind: grid
+              label: "Brain frequency maps"
+              description: "Initial, target and fitted peak frequency painted into the Desikan-Killiany volume."
+              grid:
+                  col_labels: [Initial, Target, Fitted]
+              cell:
+                  kind: volume
+                  volume:
+                      atlas: tvbo:atlas/DesikanKilliany
+                      view: sagittal
+                      colormap: cividis_r
+                      vmin: 6.5
+                      vmax: 11.5
+              layers:
+                  - used: {experiment: 1, output: integration__peak_frequencies}
+                  - used: {experiment: 1, output: integration__target_peak_frequencies}
+                  - used: {experiment: 1, output: optimization__spectral_gradient_fit__observation__peak_frequencies}
+
+          f:
+              kind: surface
+              label: "Target gradient"
+              description: "The target gradient on the fsaverage cortical surface."
+              layers:
+                  - used: {experiment: 1, output: integration__target_peak_frequencies}
+              surface:
+                  atlas: tvbo:atlas/DesikanKilliany
+                  template: fsaverage
+                  hemi: both
+                  view: dorsal
+                  colormap: cividis_r
+                  symmetric: false
+                  vmin: 6.5
+                  vmax: 11.5
+
+          g:
+              kind: surface
+              label: "Fitted gradient"
+              description: "The fitted gradient on the same surface and colour scale."
+              layers:
+                  - used: {experiment: 1, output: optimization__spectral_gradient_fit__observation__peak_frequencies}
+              surface:
+                  atlas: tvbo:atlas/DesikanKilliany
+                  template: fsaverage
+                  hemi: both
+                  view: dorsal
+                  colormap: cividis_r
+                  symmetric: false
+                  vmin: 6.5
+                  vmax: 11.5

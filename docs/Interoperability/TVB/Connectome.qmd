@@ -4,10 +4,7 @@ description: Lossless import/export between TVB and tvbo — connectivity, surfa
 jupyter: python3
 ---
 
-TVB (The Virtual Brain) stores brain connectivity as `Connectivity`
-objects with weights, tract lengths, centres, region labels, and
-conduction speed. TVBO can import these losslessly, persist them as
-YAML + HDF5, and export back to TVB with identical arrays.
+TVB (The Virtual Brain) stores brain connectivity as `Connectivity` objects with weights, tract lengths, centres, region labels, and conduction speed. TVBO can import these losslessly, persist them as YAML + HDF5, and export back to TVB with identical arrays.
 
 ```{python}
 import numpy as np
@@ -20,8 +17,7 @@ from bsplot.graph import create_network
 
 ## 1. Import TVB Connectivity
 
-Load the default TVB connectivity (76-region Hagmann parcellation)
-and convert it to a tvbo `Network`:
+Load the default TVB connectivity (76-region Hagmann parcellation) and convert it to a tvbo `Network`:
 
 ```{python}
 from tvb.datatypes.connectivity import Connectivity
@@ -43,8 +39,7 @@ print(f"Weights range: [{net.weights_matrix.min():.4f}, {net.weights_matrix.max(
 print(f"Lengths range: [{net.lengths_matrix.min():.1f}, {net.lengths_matrix.max():.1f}] mm")
 ```
 
-All TVB per-node metadata is preserved — cortical flags, areas,
-hemispheres, and orientations:
+All TVB per-node metadata is preserved — cortical flags, areas, hemispheres, and orientations:
 
 ```{python}
 node0 = net.nodes[0]
@@ -74,9 +69,7 @@ net.plot_overview(plot_brain=False)
 
 ## 3. Save as YAML + HDF5
 
-TVBO stores networks as a human-readable YAML sidecar (metadata and
-schema) plus an HDF5 companion file (dense matrix data with gzip
-compression).
+TVBO stores networks as a human-readable YAML sidecar (metadata and schema) plus an HDF5 companion file (dense matrix data with gzip compression).
 
 ```{python}
 outdir = Path(tempfile.mkdtemp())
@@ -131,8 +124,7 @@ print(f"✓ First {min(5, net.number_of_nodes)} node labels and positions match"
 
 ## 5. Export Back to TVB
 
-Convert the reloaded network back to a TVB `Connectivity` and compare
-with the original:
+Convert the reloaded network back to a TVB `Connectivity` and compare with the original:
 
 ```{python}
 conn2 = reloaded.execute(format="tvb")
@@ -273,10 +265,8 @@ print("✓ Mesh data survives HDF5 round-trip")
 
 ### Optional: MNE Projection Layer in the Network Section
 
-The MNE exporter creates a sensor-to-region projection network in tvbo
-format (`sensors_eeg_standard1005_fsaverage_aparc_projection.yaml`).
-This can be handled in the same multi-layer network workflow as other
-network resources.
+The MNE exporter creates a sensor-to-region projection network in tvbo format (`sensors_eeg_standard1005_fsaverage_aparc_projection.yaml`).
+This can be handled in the same multi-layer network workflow as other network resources.
 
 ```{python}
 from tvbo import database_path
@@ -348,6 +338,4 @@ else:
 | Export | `net.execute(format="tvb")` | tvbo Network → TVB Connectivity |
 | Surface | `Network.from_tvb_surface(conn, surf, rmap)` | Multi-level: regions + mesh |
 
-The full pipeline is **lossless** — all matrices, node metadata,
-mesh geometry, and region mappings survive the round-trip with
-zero numerical error.
+The full pipeline is **lossless** — all matrices, node metadata, mesh geometry, and region mappings survive the round-trip with zero numerical error.

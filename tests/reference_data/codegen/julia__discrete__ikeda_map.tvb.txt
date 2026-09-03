@@ -1,0 +1,88 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class IkedaMap(Model):
+
+    a = NArray(label=r":math:`a`", default=np.array([1.0]), doc="""Constant bias a.""")
+    b = NArray(label=r":math:`b`", default=np.array([1.0]), doc="""Linear scaling b.""")
+    c = NArray(label=r":math:`c`", default=np.array([0.4]), doc="""Phase offset c.""")
+    d = NArray(
+        label=r":math:`d`",
+        default=np.array([6.0]),
+        doc="""Phase nonlinearity scale d.""",
+    )
+
+    _nvar = 2
+    state_variables = ["x", "y"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "x": np.array([-1000000000.0, 1000000000.0]),
+            "y": np.array([-1000000000.0, 1000000000.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("x", "y"),
+        default=("x", "y"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=["a", "b", "c", "d"],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "x": "a + b*(x*np.cos(theta) - y*np.sin(theta))",
+            "y": "b*(x*np.sin(theta) + y*np.cos(theta))",
+        },
+    )
+
+    cvar = np.array([], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=[])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        x = state_variables[0, :]
+        y = state_variables[1, :]
+
+        a = self.a
+        b = self.b
+        c = self.c
+        d = self.d
+
+        # Coupling Terms (from coupling array)
+
+        # Derived Variables
+        self.theta = theta = c - d / (1 + x**2 + y**2)
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(a + b * (x * np.cos(theta) - y * np.sin(theta))),  # x
+            np.asarray(b * (x * np.sin(theta) + y * np.cos(theta))),  # y
+        )
+        return np.array(_derivs)

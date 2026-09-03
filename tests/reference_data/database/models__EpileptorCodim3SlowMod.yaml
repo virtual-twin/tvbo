@@ -1,0 +1,608 @@
+name: EpileptorCodim3SlowMod
+iri: tvbo:EpileptorCodim3SlowMod
+parameters:
+  mu1_Ain:
+    name: mu1_Ain
+    value: 0.05494
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter mu1 at the initial point at bursting offset.
+  mu2_Ain:
+    name: mu2_Ain
+    value: 0.2731
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter mu2 at the initial point at bursting offset.
+  nu_Ain:
+    name: nu_Ain
+    value: 0.287
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter nu at the initial point at bursting offset.
+  mu1_Bin:
+    name: mu1_Bin
+    value: -0.0461
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter mu1 at the initial point at bursting onset.
+  mu2_Bin:
+    name: mu2_Bin
+    value: 0.243
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter mu2 at the initial point at bursting onset.
+  nu_Bin:
+    name: nu_Bin
+    value: 0.3144
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter nu at the initial point at bursting onset.
+  mu1_Aend:
+    name: mu1_Aend
+    value: 0.06485
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter mu1 at the final point at bursting offset.
+  mu2_Aend:
+    name: mu2_Aend
+    value: 0.07337
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter mu2 at the final point at bursting offset.
+  nu_Aend:
+    name: nu_Aend
+    value: -0.3878
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter nu at the final point at bursting offset.
+  mu1_Bend:
+    name: mu1_Bend
+    value: 0.03676
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter mu1 at the final point at bursting onset.
+  mu2_Bend:
+    name: mu2_Bend
+    value: -0.02792
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter mu2 at the final point at bursting onset.
+  nu_Bend:
+    name: nu_Bend
+    value: -0.3973
+    domain:
+      enforce: none
+      lo: -1.0
+      hi: 1.0
+      log_scale: false
+    description: The bifurcation parameter nu at the final point at bursting onset.
+  b:
+    name: b
+    value: 1.0
+    description: Unfolding type of the degenerate Takens-Bogdanov bifurcation, default
+      is a focus type.
+  R:
+    name: R
+    value: 0.4
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 2.5
+      log_scale: false
+    description: Radius in unfolding.
+  c:
+    name: c
+    value: 0.002
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.01
+      log_scale: false
+    description: Speed of the slow variable.
+  cA:
+    name: cA
+    value: 0.0001
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.001
+      log_scale: false
+    description: Speed of the ultra-slow transition of the initial point.
+  cB:
+    name: cB
+    value: 0.00012
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.001
+      log_scale: false
+    description: Speed of the ultra-slow transition of the final point.
+  dstar:
+    name: dstar
+    value: 0.3
+    domain:
+      enforce: none
+      lo: -0.1
+      hi: 0.5
+      log_scale: false
+    description: Threshold for the inversion of the slow variable.
+  Ks:
+    name: Ks
+    value: 0.0
+    description: Slow permittivity coupling strength, the default is no coupling.
+  modification:
+    name: modification
+    value: 1.0
+    description: 'Toggle the +0.1*(z-0.5)^7 stabilising term in z_dot: >0 (True, default)
+      includes it, 0 (False) omits it.'
+description: The Epileptor Codim 3 model with ultra-slow modulation of bursting classes
+  (Saggio et al., 2017). It is a neural mass model containing a fast subsystem (x,
+  y) built from the unfolding of a degenerate Takens-Bogdanov bifurcation of codimension
+  3 and a slow subsystem (z) that steers the fast one back and forth along a path
+  in parameter space, producing bursting. Two additional ultra-slow state variables
+  (uA, uB) modulate the offset (A) and onset (B) points of the burster along great
+  arcs on a sphere of radius R, allowing the model to switch between different classes
+  of bursters (Hysteresis-Loop bursters c0, c0', c2s, c3s, c4s, c10s, c11s, c2b, c4b,
+  c8b, c14b, c16b as classified in Saggio et al. 2017 Table 2). The bifurcation parameters
+  (mu1, mu2, nu) at the offset (A) and onset (B) points are obtained by parametrising
+  great arcs between the points Ain/Aend and Bin/Bend on the sphere. This capture
+  uses the default branch of the resting state (N = 1) and the default stabilising
+  modification (modification = True).
+references:
+- Saggio2017
+derived_parameters:
+  G0:
+    name: G0
+    description: First component of the unit vector G = Ain/||Ain|| (offset great-arc
+      base point).
+    equation:
+      lhs: G0
+      rhs: mu2_Ain/sqrt(mu2_Ain**2 + mu1_Ain**2 + nu_Ain**2)
+      latex: false
+  G1:
+    name: G1
+    description: Second component of the unit vector G = Ain/||Ain||.
+    equation:
+      lhs: G1
+      rhs: -mu1_Ain/sqrt(mu2_Ain**2 + mu1_Ain**2 + nu_Ain**2)
+      latex: false
+  G2:
+    name: G2
+    description: Third component of the unit vector G = Ain/||Ain||.
+    equation:
+      lhs: G2
+      rhs: nu_Ain/sqrt(mu2_Ain**2 + mu1_Ain**2 + nu_Ain**2)
+      latex: false
+  H0:
+    name: H0
+    description: First component of the unit vector H = ((Ain x Aend) x Ain)/||...||
+      along the offset great arc.
+    equation:
+      lhs: H0
+      rhs: (mu1_Ain*(-mu1_Aend*mu2_Ain + mu1_Ain*mu2_Aend) + nu_Ain*(mu2_Aend*nu_Ain
+        - mu2_Ain*nu_Aend))/sqrt((mu1_Ain*(-mu1_Aend*mu2_Ain + mu1_Ain*mu2_Aend) +
+        nu_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))**2 + (-mu1_Ain*(mu1_Aend*nu_Ain
+        - mu1_Ain*nu_Aend) - mu2_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))**2 + (mu2_Ain*(-mu1_Aend*mu2_Ain
+        + mu1_Ain*mu2_Aend) - nu_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend))**2)
+      latex: false
+  H1:
+    name: H1
+    description: Second component of the unit vector H along the offset great arc.
+    equation:
+      lhs: H1
+      rhs: (mu2_Ain*(-mu1_Aend*mu2_Ain + mu1_Ain*mu2_Aend) - nu_Ain*(mu1_Aend*nu_Ain
+        - mu1_Ain*nu_Aend))/sqrt((mu1_Ain*(-mu1_Aend*mu2_Ain + mu1_Ain*mu2_Aend) +
+        nu_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))**2 + (-mu1_Ain*(mu1_Aend*nu_Ain
+        - mu1_Ain*nu_Aend) - mu2_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))**2 + (mu2_Ain*(-mu1_Aend*mu2_Ain
+        + mu1_Ain*mu2_Aend) - nu_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend))**2)
+      latex: false
+  H2:
+    name: H2
+    description: Third component of the unit vector H along the offset great arc.
+    equation:
+      lhs: H2
+      rhs: (-mu1_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend) - mu2_Ain*(mu2_Aend*nu_Ain
+        - mu2_Ain*nu_Aend))/sqrt((mu1_Ain*(-mu1_Aend*mu2_Ain + mu1_Ain*mu2_Aend) +
+        nu_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))**2 + (-mu1_Ain*(mu1_Aend*nu_Ain
+        - mu1_Ain*nu_Aend) - mu2_Ain*(mu2_Aend*nu_Ain - mu2_Ain*nu_Aend))**2 + (mu2_Ain*(-mu1_Aend*mu2_Ain
+        + mu1_Ain*mu2_Aend) - nu_Ain*(mu1_Aend*nu_Ain - mu1_Ain*nu_Aend))**2)
+      latex: false
+  L0:
+    name: L0
+    description: First component of the unit vector L = Bin/||Bin|| (onset great-arc
+      base point).
+    equation:
+      lhs: L0
+      rhs: mu2_Bin/sqrt(mu2_Bin**2 + mu1_Bin**2 + nu_Bin**2)
+      latex: false
+  L1:
+    name: L1
+    description: Second component of the unit vector L = Bin/||Bin||.
+    equation:
+      lhs: L1
+      rhs: -mu1_Bin/sqrt(mu2_Bin**2 + mu1_Bin**2 + nu_Bin**2)
+      latex: false
+  L2:
+    name: L2
+    description: Third component of the unit vector L = Bin/||Bin||.
+    equation:
+      lhs: L2
+      rhs: nu_Bin/sqrt(mu2_Bin**2 + mu1_Bin**2 + nu_Bin**2)
+      latex: false
+  M0:
+    name: M0
+    description: First component of the unit vector M = ((Bin x Bend) x Bin)/||...||
+      along the onset great arc.
+    equation:
+      lhs: M0
+      rhs: (mu1_Bin*(-mu1_Bend*mu2_Bin + mu1_Bin*mu2_Bend) + nu_Bin*(mu2_Bend*nu_Bin
+        - mu2_Bin*nu_Bend))/sqrt((mu1_Bin*(-mu1_Bend*mu2_Bin + mu1_Bin*mu2_Bend) +
+        nu_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))**2 + (-mu1_Bin*(mu1_Bend*nu_Bin
+        - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))**2 + (mu2_Bin*(-mu1_Bend*mu2_Bin
+        + mu1_Bin*mu2_Bend) - nu_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend))**2)
+      latex: false
+  M1:
+    name: M1
+    description: Second component of the unit vector M along the onset great arc.
+    equation:
+      lhs: M1
+      rhs: (mu2_Bin*(-mu1_Bend*mu2_Bin + mu1_Bin*mu2_Bend) - nu_Bin*(mu1_Bend*nu_Bin
+        - mu1_Bin*nu_Bend))/sqrt((mu1_Bin*(-mu1_Bend*mu2_Bin + mu1_Bin*mu2_Bend) +
+        nu_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))**2 + (-mu1_Bin*(mu1_Bend*nu_Bin
+        - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))**2 + (mu2_Bin*(-mu1_Bend*mu2_Bin
+        + mu1_Bin*mu2_Bend) - nu_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend))**2)
+      latex: false
+  M2:
+    name: M2
+    description: Third component of the unit vector M along the onset great arc.
+    equation:
+      lhs: M2
+      rhs: (-mu1_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin
+        - mu2_Bin*nu_Bend))/sqrt((mu1_Bin*(-mu1_Bend*mu2_Bin + mu1_Bin*mu2_Bend) +
+        nu_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))**2 + (-mu1_Bin*(mu1_Bend*nu_Bin
+        - mu1_Bin*nu_Bend) - mu2_Bin*(mu2_Bend*nu_Bin - mu2_Bin*nu_Bend))**2 + (mu2_Bin*(-mu1_Bend*mu2_Bin
+        + mu1_Bin*mu2_Bend) - nu_Bin*(mu1_Bend*nu_Bin - mu1_Bin*nu_Bend))**2)
+      latex: false
+derived_variables:
+  A0:
+    name: A0
+    equation:
+      lhs: A0
+      rhs: R*(G0*cos(uA) + H0*sin(uA))
+      latex: false
+    record: false
+  A1:
+    name: A1
+    equation:
+      lhs: A1
+      rhs: R*(G1*cos(uA) + H1*sin(uA))
+      latex: false
+    record: false
+  A2:
+    name: A2
+    equation:
+      lhs: A2
+      rhs: R*(G2*cos(uA) + H2*sin(uA))
+      latex: false
+    record: false
+  B0:
+    name: B0
+    equation:
+      lhs: B0
+      rhs: R*(L0*cos(uB) + M0*sin(uB))
+      latex: false
+    record: false
+  B1:
+    name: B1
+    equation:
+      lhs: B1
+      rhs: R*(L1*cos(uB) + M1*sin(uB))
+      latex: false
+    record: false
+  B2:
+    name: B2
+    equation:
+      lhs: B2
+      rhs: R*(L2*cos(uB) + M2*sin(uB))
+      latex: false
+    record: false
+  normA:
+    name: normA
+    equation:
+      lhs: normA
+      rhs: sqrt(A0**2 + A1**2 + A2**2)
+      latex: false
+    record: false
+  E0:
+    name: E0
+    equation:
+      lhs: E0
+      rhs: A0/normA
+      latex: false
+    record: false
+  E1:
+    name: E1
+    equation:
+      lhs: E1
+      rhs: A1/normA
+      latex: false
+    record: false
+  E2:
+    name: E2
+    equation:
+      lhs: E2
+      rhs: A2/normA
+      latex: false
+    record: false
+  C0:
+    name: C0
+    equation:
+      lhs: C0
+      rhs: A1*B2 - A2*B1
+      latex: false
+    record: false
+  C1:
+    name: C1
+    equation:
+      lhs: C1
+      rhs: A2*B0 - A0*B2
+      latex: false
+    record: false
+  C2:
+    name: C2
+    equation:
+      lhs: C2
+      rhs: A0*B1 - A1*B0
+      latex: false
+    record: false
+  Fx0:
+    name: Fx0
+    equation:
+      lhs: Fx0
+      rhs: C1*A2 - C2*A1
+      latex: false
+    record: false
+  Fx1:
+    name: Fx1
+    equation:
+      lhs: Fx1
+      rhs: C2*A0 - C0*A2
+      latex: false
+    record: false
+  Fx2:
+    name: Fx2
+    equation:
+      lhs: Fx2
+      rhs: C0*A1 - C1*A0
+      latex: false
+    record: false
+  normF:
+    name: normF
+    equation:
+      lhs: normF
+      rhs: sqrt(Fx0**2 + Fx1**2 + Fx2**2)
+      latex: false
+    record: false
+  F0:
+    name: F0
+    equation:
+      lhs: F0
+      rhs: Fx0/normF
+      latex: false
+    record: false
+  F1:
+    name: F1
+    equation:
+      lhs: F1
+      rhs: Fx1/normF
+      latex: false
+    record: false
+  F2:
+    name: F2
+    equation:
+      lhs: F2
+      rhs: Fx2/normF
+      latex: false
+    record: false
+  mu2:
+    name: mu2
+    description: Bifurcation parameter mu2 along the great arc (E, F, R) at slow variable
+      z.
+    equation:
+      lhs: mu2
+      rhs: R*(E0*cos(z) + F0*sin(z))
+      latex: false
+    record: false
+  mu1:
+    name: mu1
+    description: Bifurcation parameter mu1 along the great arc (E, F, R) at slow variable
+      z.
+    equation:
+      lhs: mu1
+      rhs: -R*(E1*cos(z) + F1*sin(z))
+      latex: false
+    record: false
+  nu:
+    name: nu
+    description: Bifurcation parameter nu along the great arc (E, F, R) at slow variable
+      z.
+    equation:
+      lhs: nu
+      rhs: R*(E2*cos(z) + F2*sin(z))
+      latex: false
+    record: false
+  disc:
+    name: disc
+    description: Discriminant mu1^2/4 - mu2^3/27 of the depressed cubic for the resting-state
+      x-coordinate.
+    equation:
+      lhs: disc
+      rhs: mu1**2/4 - mu2**3/27
+      latex: false
+    record: false
+  sqdisc:
+    name: sqdisc
+    description: Square root of the absolute discriminant.
+    equation:
+      lhs: sqdisc
+      rhs: sqrt(Abs(disc))
+      latex: false
+    record: false
+  xs:
+    name: xs
+    description: Real x-coordinate of the resting state, the branch (N = 1) real solution
+      of x_s^3 - mu2 x_s - mu1 = 0 via Cardano's formula, taking the real part of
+      the principal complex cube roots in both the one-real-root (disc >= 0) and three-real-roots
+      (disc < 0) regimes.
+    equation:
+      lhs: xs
+      rhs: Piecewise((Abs(mu1/2 + sqdisc)**(1/3)*cos(atan2(0, mu1/2 + sqdisc)/3) +
+        Abs(mu1/2 - sqdisc)**(1/3)*cos(atan2(0, mu1/2 - sqdisc)/3), disc >= 0), (sqrt((mu1/2)**2
+        + sqdisc**2)**(1/3)*cos(atan2(sqdisc, mu1/2)/3) + sqrt((mu1/2)**2 + sqdisc**2)**(1/3)*cos(atan2(-sqdisc,
+        mu1/2)/3), True))
+      conditionals:
+      - condition: disc >= 0
+        expression: Abs(mu1/2 + sqdisc)**(1/3)*cos(atan2(0, mu1/2 + sqdisc)/3) + Abs(mu1/2
+          - sqdisc)**(1/3)*cos(atan2(0, mu1/2 - sqdisc)/3)
+      - condition: 'True'
+        expression: sqrt((mu1/2)**2 + sqdisc**2)**(1/3)*cos(atan2(sqdisc, mu1/2)/3)
+          + sqrt((mu1/2)**2 + sqdisc**2)**(1/3)*cos(atan2(-sqdisc, mu1/2)/3)
+      latex: false
+    record: false
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    dimension: 1
+    local: false
+state_variables:
+  x:
+    name: x
+    domain:
+      enforce: none
+      lo: 0.4
+      hi: 0.6
+      log_scale: false
+    description: Fast-subsystem state variable x (membrane-potential-like).
+    equation:
+      lhs: Derivative(x, t)
+      rhs: -y
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.5
+  y:
+    name: y
+    domain:
+      enforce: none
+      lo: -0.1
+      hi: 0.1
+      log_scale: false
+    description: Fast-subsystem state variable y.
+    equation:
+      lhs: Derivative(y, t)
+      rhs: x**3 - mu2*x - mu1 - y*(nu + b*x + x**2)
+      latex: false
+    record: false
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  z:
+    name: z
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.1
+      log_scale: false
+    description: Slow-subsystem permittivity variable z.
+    equation:
+      lhs: Derivative(z, t)
+      rhs: -c*(sqrt((x - xs)**2 + y**2) - dstar + Piecewise(((z - 1/2)**7/10, modification
+        > 0), (0, True)) + Ks*c_glob)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.05
+  uA:
+    name: uA
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.0
+      log_scale: false
+    description: Ultra-slow modulation of the offset point A along the offset great
+      arc.
+    equation:
+      lhs: Derivative(uA, t)
+      rhs: cA + 0*uA
+      latex: false
+    record: false
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  uB:
+    name: uB
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.0
+      log_scale: false
+    description: Ultra-slow modulation of the onset point B along the onset great
+      arc.
+    equation:
+      lhs: Derivative(uB, t)
+      rhs: cB + 0*uB
+      latex: false
+    record: false
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: neural_mass
+autonomous: true
+cse: false
+compile: false

@@ -39,7 +39,7 @@ dynamics:
             value: 0.0
             unit: "rad/s"
             description: "Intrinsic angular frequency of the oscillator"
-    coupling_terms:
+    coupling_inputs:
         c_coupling:
             description: "Aggregated sinusoidal coupling from incident edges"
     state_variables:
@@ -86,7 +86,7 @@ network:
                     value: -0.4375
                     unit: "rad"
                     description: "Constant phase output of this vertex"
-            coupling_terms: {}
+            coupling_inputs: {}
             state_variables: {}
 
         KuramotoInertia:
@@ -105,7 +105,7 @@ network:
                     value: 0.0
                     unit: "rad/s"
                     description: "Intrinsic angular frequency"
-            coupling_terms:
+            coupling_inputs:
                 c_coupling:
                     description: "Aggregated sinusoidal coupling from incident edges"
             state_variables:

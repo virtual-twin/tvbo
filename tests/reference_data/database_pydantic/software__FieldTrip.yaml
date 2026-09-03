@@ -1,0 +1,43 @@
+name: FieldTrip
+description: A MATLAB toolbox for MEG, EEG, iEEG and NIRS analysis, including preprocessing,
+  source reconstruction, statistical testing, and connectivity analysis.
+homepage: https://www.fieldtriptoolbox.org
+license: GPL-3.0-only
+repository: https://github.com/fieldtrip/fieldtrip
+doi: 10.1155/2011/156869
+application_category: analysis
+scale:
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- analysis_tool
+programming_language:
+- MATLAB
+runtime_platform:
+- MATLAB
+interoperates_with:
+- MNE-Python
+- SPM
+- EEGLAB
+date_created: '2003-01-01'
+development_status: active
+author:
+- Robert Oostenveld
+- Jan-Mathijs Schoffelen
+maintainer:
+- Donders Institute
+funder:
+- Radboud University
+- NWO
+reference_publication: 10.1155/2011/156869
+keywords:
+- MEG
+- EEG
+- LFP
+- MATLAB
+- source reconstruction
+same_as:
+- https://www.wikidata.org/entity/Q5448078
+- https://scicrunch.org/resolver/RRID:SCR_004849
+is_accessible_for_free: true

@@ -1,0 +1,396 @@
+name: ReducedSetHindmarshRose
+iri: tvbo:ReducedSetHindmarshRose
+parameters:
+  a:
+    name: a
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  b:
+    name: b
+    value: 3.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 3.0
+      log_scale: false
+  c:
+    name: c
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  d:
+    name: d
+    value: 5.0
+    domain:
+      enforce: none
+      lo: 2.5
+      hi: 7.5
+      log_scale: false
+  r:
+    name: r
+    value: 0.006
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.1
+      log_scale: false
+  s:
+    name: s
+    value: 4.0
+    domain:
+      enforce: none
+      lo: 2.0
+      hi: 6.0
+      log_scale: false
+  xo:
+    name: xo
+    value: -1.6
+    domain:
+      enforce: none
+      lo: -2.4
+      hi: -0.8
+      log_scale: false
+  K11:
+    name: K11
+    value: 0.5
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  K12:
+    name: K12
+    value: 0.1
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  K21:
+    name: K21
+    value: 0.15
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  mu:
+    name: mu
+    value: 3.3
+    domain:
+      enforce: none
+      lo: 1.1
+      hi: 3.3
+      log_scale: false
+  sigma:
+    name: sigma
+    value: 0.3
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  A_ik:
+    name: A_ik
+    value:
+    - - 0.3328165811190223
+      - 0.18525241779532714
+      - 0.3328165811190241
+    - - 0.5984537933538554
+      - 0.3331114447027479
+      - 0.5984537933538587
+    - - 0.33281658111902046
+      - 0.18525241779532614
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (A_ik).
+  B_ik:
+    name: B_ik
+    value:
+    - - 0.3328165811190223
+      - 0.5984537933538554
+      - 0.33281658111902046
+    - - 0.18525241779532714
+      - 0.3331114447027479
+      - 0.18525241779532614
+    - - 0.3328165811190241
+      - 0.5984537933538587
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (B_ik).
+  C_ik:
+    name: C_ik
+    value:
+    - - 0.3328165811190223
+      - 0.18525241779532714
+      - 0.3328165811190241
+    - - 0.5984537933538554
+      - 0.3331114447027479
+      - 0.5984537933538587
+    - - 0.33281658111902046
+      - 0.18525241779532614
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (C_ik).
+  iV0:
+    name: iV0
+    value:
+    - 1.6668762461300366
+    - 0.9278169186250886
+    - 1.666876246130046
+    description: Fixed SJ_2008 quadrature constant (iV0).
+  iU0:
+    name: iU0
+    value:
+    - 1.6668762461300366
+    - 0.9278169186250886
+    - 1.666876246130046
+    description: Fixed SJ_2008 quadrature constant (iU0).
+  iV3:
+    name: iV3
+    value:
+    - 0.5999245608794813
+    - 1.0777988414803623
+    - 0.5999245608794778
+    description: Fixed SJ_2008 quadrature constant (iV3).
+  iU3:
+    name: iU3
+    value:
+    - 0.5999245608794813
+    - 1.0777988414803623
+    - 0.5999245608794778
+    description: Fixed SJ_2008 quadrature constant (iU3).
+  iV4:
+    name: iV4
+    value:
+    - 0.35990947874643836
+    - 1.1616503426964113
+    - 0.3599094787464342
+    description: Fixed SJ_2008 quadrature constant (iV4).
+  iU4:
+    name: iU4
+    value:
+    - 0.35990947874643836
+    - 1.1616503426964113
+    - 0.3599094787464342
+    description: Fixed SJ_2008 quadrature constant (iU4).
+  iZV:
+    name: iZV
+    value:
+    - -3.033148827134955
+    - 1.3877787807814457e-17
+    - 3.033148827134998
+    description: Fixed SJ_2008 quadrature constant (iZV).
+  iZU:
+    name: iZU
+    value:
+    - -3.033148827134955
+    - 1.3877787807814457e-17
+    - 3.033148827134998
+    description: Fixed SJ_2008 quadrature constant (iZU).
+description: Reduced set of Hindmarsh-Rose oscillators (Stefanescu & Jirsa 2008);
+  3 modes coupled via mode-mixing matrices with Gaussian-quadrature coefficients recomputed
+  from mu/sigma.
+references:
+- StefanescuJirsa2008
+derived_parameters:
+  a_i:
+    name: a_i
+    equation:
+      lhs: a_i
+      rhs: a*iV4/sigma
+      latex: false
+  e_i:
+    name: e_i
+    equation:
+      lhs: e_i
+      rhs: a*iU4/sigma
+      latex: false
+  b_i:
+    name: b_i
+    equation:
+      lhs: b_i
+      rhs: b*iV3/sqrt(sigma)
+      latex: false
+  f_i:
+    name: f_i
+    equation:
+      lhs: f_i
+      rhs: b*iU3/sqrt(sigma)
+      latex: false
+  c_i:
+    name: c_i
+    equation:
+      lhs: c_i
+      rhs: c*sqrt(sigma)*iV0
+      latex: false
+  h_i:
+    name: h_i
+    equation:
+      lhs: h_i
+      rhs: c*sqrt(sigma)*iU0
+      latex: false
+  IE_i:
+    name: IE_i
+    equation:
+      lhs: IE_i
+      rhs: sqrt(sigma)*(mu*iV0 + sigma*iZV)
+      latex: false
+  II_i:
+    name: II_i
+    equation:
+      lhs: II_i
+      rhs: sqrt(sigma)*(mu*iU0 + sigma*iZU)
+      latex: false
+  d_i:
+    name: d_i
+    equation:
+      lhs: d_i
+      rhs: d*iV3/sqrt(sigma)
+      latex: false
+  p_i:
+    name: p_i
+    equation:
+      lhs: p_i
+      rhs: d*iU3/sqrt(sigma)
+      latex: false
+  m_i:
+    name: m_i
+    equation:
+      lhs: m_i
+      rhs: r*s*xo*sqrt(sigma)*iV0
+      latex: false
+  n_i:
+    name: n_i
+    equation:
+      lhs: n_i
+      rhs: r*s*xo*sqrt(sigma)*iU0
+      latex: false
+coupling_inputs:
+  c_glob0:
+    name: c_glob0
+    dimension: 1
+    local: false
+  c_glob1:
+    name: c_glob1
+    dimension: 1
+    local: false
+  local_coupling:
+    name: local_coupling
+    dimension: 1
+    local: true
+state_variables:
+  xi:
+    name: xi
+    domain:
+      enforce: none
+      lo: -4.0
+      hi: 4.0
+      log_scale: false
+    equation:
+      lhs: Derivative(xi, t)
+      rhs: eta - a_i*xi**3 + b_i*xi**2 - tau + K11*(mode_dot(xi, A_ik) - xi) - K12*(mode_dot(alpha,
+        B_ik) - xi) + IE_i + mode_sum(c_glob0) + local_coupling*xi
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  eta:
+    name: eta
+    domain:
+      enforce: none
+      lo: -25.0
+      hi: 20.0
+      log_scale: false
+    equation:
+      lhs: Derivative(eta, t)
+      rhs: c_i - d_i*xi**2 - eta
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  tau:
+    name: tau
+    domain:
+      enforce: none
+      lo: 2.0
+      hi: 10.0
+      log_scale: false
+    equation:
+      lhs: Derivative(tau, t)
+      rhs: r*s*xi - r*tau - m_i
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 3.0
+  alpha:
+    name: alpha
+    domain:
+      enforce: none
+      lo: -4.0
+      hi: 4.0
+      log_scale: false
+    equation:
+      lhs: Derivative(alpha, t)
+      rhs: beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K21*(mode_dot(xi, C_ik) -
+        alpha) + II_i + mode_sum(c_glob0) + local_coupling*xi
+      latex: false
+    record: false
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  beta:
+    name: beta
+    domain:
+      enforce: none
+      lo: -20.0
+      hi: 20.0
+      log_scale: false
+    equation:
+      lhs: Derivative(beta, t)
+      rhs: h_i - p_i*alpha**2 - beta
+      latex: false
+    record: false
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  gamma:
+    name: gamma
+    domain:
+      enforce: none
+      lo: 2.0
+      hi: 10.0
+      log_scale: false
+    equation:
+      lhs: Derivative(gamma, t)
+      rhs: r*s*alpha - r*gamma - n_i
+      latex: false
+    record: false
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 3.0
+number_of_modes: 3
+model_type: neural_mass
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """PyRates backend adapter for SimulationExperiment.
 
-This module handles all PyRates-specific logic for running simulations,
-converting between TVBO and PyRates data formats, and computing outputs.
+This module handles all PyRates-specific logic for running simulations, converting between TVBO and PyRates data formats, and computing outputs.
 """
 
 from __future__ import annotations
@@ -17,18 +15,19 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from tvbo.adapters.base import BaseAdapter
-from tvbo.utils import is_array_valued, as_list
+from tvbo.adapters.base import BaseAdapter, dense_matrix
+from tvbo.codegen.code import inline_functions
 
-# Single source of truth (forward map + derived reverse) lives in
-# tvbo/codegen/pyrates.py; re-imported here and used by the model template so
-# the rename mapping is defined exactly once. See PYRATES_REPL there.
+# Single source of truth (forward map + derived reverse) lives in tvbo/codegen/pyrates.py; re-imported here and used by the model template so the rename mapping is defined exactly once. See PYRATES_REPL there.
 from tvbo.codegen.pyrates import PYRATES_REPL  # noqa: F401
+from tvbo.parse.expression import function_bodies, parse_eq, states_an_expression
+from tvbo.utils import as_list, is_array_valued
 
 if TYPE_CHECKING:
     import pandas as pd
-    from tvbo.data.types import ExperimentResult, SimulationResult
+
     from tvbo.classes.experiment import SimulationExperiment
+    from tvbo.data.types import ExperimentResult, SimulationResult
 
 
 # PyRates supported solvers and TVBO-to-PyRates mapping
@@ -44,21 +43,13 @@ TVBO_TO_PYRATES_SOLVER = {
 }
 
 
-
 def _patch_pyrates_networkx_backend():
     """Fix networkx 3.4+ backend dispatch conflict with PyRates.
 
-    PyRates' ``ComputeGraph`` extends ``networkx.MultiDiGraph``.  In
-    networkx ≥ 3.4 the ``MultiDiGraph.__new__`` is decorated with
-    ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument
-    and tries to dispatch to a networkx graph backend.  PyRates passes
-    ``backend='default'`` (meaning *PyRates* compute backend, not a
-    networkx backend) through ``**kwargs`` to ``ComputeGraph(**kwargs)``.
-    The decorator sees it and raises ``ImportError: 'default' backend is
-    not installed``.
+    PyRates' ``ComputeGraph`` extends ``networkx.MultiDiGraph``.  In networkx ≥ 3.4 the ``MultiDiGraph.__new__`` is decorated with ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument and tries to dispatch to a networkx graph backend.  PyRates passes ``backend='default'`` (meaning *PyRates* compute backend, not a networkx backend) through ``**kwargs`` to ``ComputeGraph(**kwargs)``.
+    The decorator sees it and raises ``ImportError: 'default' backend is not installed``.
 
-    Fix: replace ``ComputeGraph.__new__`` (and ``ComputeGraphBackProp``)
-    with plain ``object.__new__`` so the decorator is removed.
+    Fix: replace ``ComputeGraph.__new__`` (and ``ComputeGraphBackProp``) with plain ``object.__new__`` so the decorator is removed.
     """
     try:
         from pyrates.backend.computegraph import ComputeGraph, ComputeGraphBackProp
@@ -85,12 +76,7 @@ def _patch_pyrates_networkx_backend():
 def _patch_pyrates_replace_in_expr():
     """Monkey-patch PyRates' replace_in_expr to use xreplace.
 
-    PyRates uses ``expr.subs(replacements, simultaneous=True)`` which
-    corrupts compound sub-expressions: when a ``Mul`` has two or more
-    ``Add`` children sharing a symbol (e.g. ``a*v*(1-v)*(v-b)``), ``subs``
-    replaces the symbol *inside* the ``Add`` first, breaking the match for
-    the ``Add`` replacement key. ``xreplace`` matches top-down and avoids
-    this bug.
+    PyRates uses ``expr.subs(replacements, simultaneous=True)`` which corrupts compound sub-expressions: when a ``Mul`` has two or more ``Add`` children sharing a symbol (e.g. ``a*v*(1-v)*(v-b)``), ``subs`` replaces the symbol *inside* the ``Add`` first, breaking the match for the ``Add`` replacement key. ``xreplace`` matches top-down and avoids this bug.
     """
     import pyrates.backend.parser as _pr_parser
 
@@ -103,22 +89,9 @@ def _patch_pyrates_replace_in_expr():
 def _patch_pyrates_reserved_names():
     """Relax PyRates' variable-name reservation for SymPy collisions.
 
-    PyRates >=1.2 rejects parameter / state-variable names that collide with
-    a SymPy constant or function — ``Gamma``, ``gamma``, ``beta``, ``exp``,
-    ``pi`` … — because an *undeclared* name of that form would sympify to the
-    function/constant rather than a free symbol (e.g. ``sympify('Gamma*x')``
-    yields the gamma function). See ``check_vname`` in
-    ``pyrates.frontend.template.operator``.
+    PyRates >=1.2 rejects parameter / state-variable names that collide with a SymPy constant or function — ``Gamma``, ``gamma``, ``beta``, ``exp``, ``pi`` … — because an *undeclared* name of that form would sympify to the function/constant rather than a free symbol (e.g. ``sympify('Gamma*x')`` yields the gamma function). See ``check_vname`` in ``pyrates.frontend.template.operator``.
 
-    tvbo declares *every* model parameter and state variable as an explicit
-    PyRates operator variable, so PyRates' own parser resolves the name to a
-    symbol and the collision never occurs — exactly how tvbo's parser lets a
-    declared parameter override the SymPy built-in (see
-    ``tvbo.parse.expression.parse_eq``). We therefore keep only the genuinely
-    PyRates-internal slot names reserved (the state vector ``y``/``dy``, the
-    index slots, and the buffer/history name parts) and allow the rest. This
-    is maximally flexible: a model may use ``Gamma`` as a parameter, or use
-    the SymPy ``Gamma`` function in an equation where it is *not* declared.
+    tvbo declares *every* model parameter and state variable as an explicit PyRates operator variable, so PyRates' own parser resolves the name to a symbol and the collision never occurs — exactly how tvbo's parser lets a declared parameter override the SymPy built-in (see ``tvbo.parse.expression.parse_eq``). We therefore keep only the genuinely PyRates-internal slot names reserved (the state vector ``y``/``dy``, the index slots, and the buffer/history name parts) and allow the rest. This is maximally flexible: a model may use ``Gamma`` as a parameter, or use the SymPy ``Gamma`` function in an equation where it is *not* declared.
     """
     import pyrates.frontend.template.operator as _pr_op
     from pyrates.ir.circuit import PyRatesException
@@ -152,12 +125,9 @@ def _patch_pyrates_missing_funcs():
     """Register additional math functions in PyRates' base backend.
 
     PyRates' compute graph only supports functions listed in ``base_funcs``.
-    Functions like ``erfc``, ``erf``, and ``fmod`` are valid in SymPy/numpy
-    but missing from PyRates' registry.  We inject them into the shared
-    ``base_funcs`` dict which is copied by every new backend instance.
+    Functions like ``erfc``, ``erf``, and ``fmod`` are valid in SymPy/numpy but missing from PyRates' registry.  We inject them into the shared ``base_funcs`` dict which is copied by every new backend instance.
 
-    Also patches the ExpressionParser to inject functions into already-
-    instantiated backends via their compute graph.
+    Also patches the ExpressionParser to inject functions into already- instantiated backends via their compute graph.
     """
     from pyrates.backend.base.base_funcs import base_funcs
 
@@ -183,8 +153,7 @@ def _patch_pyrates_missing_funcs():
     if _extra_funcs:
         base_funcs.update(_extra_funcs)
 
-        # Also monkey-patch ExpressionParser.parse_expr to inject funcs
-        # into compute graph backends that were already instantiated.
+        # Also monkey-patch ExpressionParser.parse_expr to inject funcs into compute graph backends that were already instantiated.
         import pyrates.backend.parser as _pr_parser
 
         _orig_parse_expr = _pr_parser.ExpressionParser.parse_expr
@@ -198,40 +167,26 @@ def _patch_pyrates_missing_funcs():
         _pr_parser.ExpressionParser.parse_expr = _patched_parse_expr
 
 
-def _inline_model_functions(expr, dyn):
-    """Inline model-defined functions (e.g. H(x)) into a SymPy expression.
+def _legacy_input_variable(dynamics):
+    """``I_ext`` where *dynamics* actually declares it, else nothing.
 
-    Replaces function calls like H(x) with the function body from
-    dyn.functions, substituting formal arguments with actual arguments.
+    The historic default for a stimulus with no event to name its target. Checked against the model rather than assumed, so a model that calls its drive anything else fails loudly instead of being handed an input key for a variable it does not have.
     """
-    import sympy as sp
-
-    functions = getattr(dyn, "functions", None)
-    if not functions:
-        return expr
-
-    for func_name, func_def in functions.items():
-        func_eq = getattr(func_def, "equation", None)
-        if not func_eq or not func_eq.rhs:
-            continue
-        args = getattr(func_def, "arguments", None) or {}
-        # Function arguments are keyed by name (dict); tolerate a legacy list too.
-        arg_iter = args.values() if hasattr(args, "values") else args
-        arg_names = [str(getattr(a, "name", a)) for a in arg_iter]
-        sym_func = sp.Function(func_name)
-        for match in expr.atoms(sp.Function(func_name)):
-            if match.func == sym_func:
-                body = sp.sympify(func_eq.rhs)
-                for formal, actual in zip(arg_names, match.args):
-                    body = body.subs(sp.Symbol(formal), actual)
-                expr = expr.subs(match, body)
-    return expr
+    if dynamics is None:
+        return None
+    declared = set()
+    for collection in ("state_variables", "parameters", "coupling_inputs", "derived_variables"):
+        declared |= set(getattr(dynamics, collection, None) or {})
+    return "I_ext" if "I_ext" in declared else None
 
 
 class PyRatesAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via PyRates backend."""
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    DELAY_CARRIERS = ("delay", "length")
+    """Explicit per-edge delays are used as they are; tract lengths are converted through `Network.calculate_delays`."""
+
+    def __init__(self, experiment: SimulationExperiment):
         """Initialize adapter with experiment reference.
 
         Parameters
@@ -248,11 +203,10 @@ class PyRatesAdapter(BaseAdapter):
         outputs: list[str] | None = None,
         matrix_edge_threshold: int = 100,
         **kwargs,
-    ) -> "ExperimentResult":
+    ) -> ExperimentResult:
         """Run simulation and explorations using PyRates backend.
 
-        Handles both integration and grid-search explorations in a single
-        call, sharing YAML export / circuit load across both.
+        Handles both integration and grid-search explorations in a single call, sharing YAML export / circuit load across both.
 
         Parameters
         ----------
@@ -268,7 +222,7 @@ class PyRatesAdapter(BaseAdapter):
         **kwargs
             Additional kwargs passed to circuit.run() / grid_search().
 
-        Returns
+        Returns:
         -------
         ExperimentResult
         """
@@ -297,7 +251,7 @@ class PyRatesAdapter(BaseAdapter):
         # Check network size for matrix-based edges
         network = getattr(exp, "network", None)
         n_nodes = self._get_node_count(network)
-        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(network, "weights_matrix")
+        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(network, "matrix")
 
         # ── Shared setup: single YAML export + circuit load ──────────
         circuit, tmpdir, pkg_name = self._load_circuit_from_yaml(include_edges=not use_matrix_edges)
@@ -368,8 +322,7 @@ class PyRatesAdapter(BaseAdapter):
     ) -> dict:
         """Run all explorations using PyRates native ``grid_search``.
 
-        Called internally by ``run()`` with an already-loaded circuit,
-        avoiding duplicate YAML export / circuit load.
+        Called internally by ``run()`` with an already-loaded circuit, avoiding duplicate YAML export / circuit load.
 
         Parameters
         ----------
@@ -384,7 +337,7 @@ class PyRatesAdapter(BaseAdapter):
         **kwargs
             Additional keyword arguments forwarded to ``grid_search``.
 
-        Returns
+        Returns:
         -------
         dict
             ``{exploration_name: ExplorationResult}``
@@ -429,10 +382,9 @@ class PyRatesAdapter(BaseAdapter):
     def _build_param_grid_and_axes(self, expl) -> tuple:
         """Translate a TVBO ``Exploration`` into PyRates ``param_grid``, ``param_map``, and axes.
 
-        Uses ``_pyrates_node_map()`` to resolve operator/node naming, so the
-        generated paths match the YAML template exactly.
+        Uses ``_pyrates_node_map()`` to resolve operator/node naming, so the generated paths match the YAML template exactly.
 
-        Returns
+        Returns:
         -------
         tuple
             ``(param_grid, param_map, axes)``
@@ -448,9 +400,7 @@ class PyRatesAdapter(BaseAdapter):
 
         for axis in as_list(expl.space):
             ref = str(axis.parameter)
-            # Dotted ref "Dynamics.param": the prefix names the dynamics class and the
-            # suffix the parameter. Keep them separate — the parameter name drives
-            # variable resolution while the full ref stays the unique grid key.
+            # Dotted ref "Dynamics.param": the prefix names the dynamics class and the suffix the parameter. Keep them separate — the parameter name drives variable resolution while the full ref stays the unique grid key.
             if "." in ref:
                 dyn_class, param_name = ref.split(".", 1)
             else:
@@ -471,10 +421,7 @@ class PyRatesAdapter(BaseAdapter):
             else:
                 continue
 
-            # Grid key = the full dotted ref. PyRates treats it as an opaque label
-            # (grid_search only ever looks up param_map[key]), so it stays unique even
-            # when two axes sweep the same parameter name on different dynamics. A
-            # repeated key means the same axis was listed twice.
+            # Grid key = the full dotted ref. PyRates treats it as an opaque label (grid_search only ever looks up param_map[key]), so it stays unique even when two axes sweep the same parameter name on different dynamics. A repeated key means the same axis was listed twice.
             grid_key = ref
             if grid_key in param_grid:
                 raise ValueError(
@@ -483,19 +430,14 @@ class PyRatesAdapter(BaseAdapter):
                 )
             param_grid[grid_key] = list(values)
 
-            # Harmonized axis name = the dotted reference (== Exploration.space key,
-            # matching every other backend); `key` carries the PyRates grid key
-            # (== results_map column) so consumers never re-derive it from the name.
+            # Harmonized axis name = the dotted reference (== Exploration.space key, matching every other backend); `key` carries the PyRates grid key (== results_map column) so consumers never re-derive it from the name.
             ax = Bunch(name=ref, n=len(values), explored_values=values, key=grid_key)
             axes.append(ax)
 
-            # Resolve the target dynamics: prefer the class named by the prefix (so
-            # `A.w` and `B.w` reach their own nodes), else the first dynamics that
-            # declares the parameter, else the first dynamics.
+            # Prefer the class the prefix names, so `A.w` and `B.w` reach their own nodes.
             py_name = PYRATES_REPL.get(param_name, param_name)
             resolved = None
-            if dyn_class and dyn_class in dynamics_dict \
-                    and param_name in (dynamics_dict[dyn_class].parameters or {}):
+            if dyn_class and dyn_class in dynamics_dict and param_name in (dynamics_dict[dyn_class].parameters or {}):
                 resolved = dyn_class
             else:
                 for dyn_name, dyn in dynamics_dict.items():
@@ -512,8 +454,8 @@ class PyRatesAdapter(BaseAdapter):
 
     def _df_to_exploration_result(
         self,
-        results_df: "pd.DataFrame",
-        results_map: "pd.DataFrame",
+        results_df: pd.DataFrame,
+        results_map: pd.DataFrame,
         axes: list,
         expl,
         expl_name: str,
@@ -525,8 +467,7 @@ class PyRatesAdapter(BaseAdapter):
           rows = time points.
         * ``results_map``: rows indexed by condition_name, columns = param names.
 
-        The resulting ``ExplorationResult`` stores a ``(n_conditions, n_time, n_vars)``
-        time-series array together with axes metadata.
+        The resulting ``ExplorationResult`` stores a ``(n_conditions, n_time, n_vars)`` time-series array together with axes metadata.
         """
         import pandas as pd
 
@@ -557,34 +498,23 @@ class PyRatesAdapter(BaseAdapter):
             else:
                 results_arr[c_idx, :, 0] = results_df[cond_name].values.squeeze()
 
-        # PyRates enumerates grid conditions in its own order (first axis fastest),
-        # but every other backend — and ExplorationResult.as_grid() — assumes the
-        # canonical C-order (axes[0] slowest … axes[-1] fastest). Reorder here by
-        # matching each condition's parameter values back to the axis coordinate
-        # indices, so `as_grid()` labels the grid correctly across all backends.
+        # PyRates enumerates grid conditions in its own order (first axis fastest), but every other backend — and ExplorationResult.as_grid() — assumes the canonical C-order (axes[0] slowest … axes[-1] fastest). Reorder here by matching each condition's parameter values back to the axis coordinate indices, so `as_grid()` labels the grid correctly across all backends.
         _axis_vals = [getattr(ax, "explored_values", None) for ax in axes]
         grid_shape = tuple(0 if v is None else len(v) for v in _axis_vals)
         if len(grid_shape) > 1 and 0 not in grid_shape and int(np.prod(grid_shape)) == n_conditions:
-            # Use the grid key carried on the axis (== results_map column); fall back
-            # to the trailing name segment only for axes built elsewhere.
-            bare = [
-                getattr(ax, "key", None) or str(getattr(ax, "name", "")).rsplit(".", 1)[-1]
-                for ax in axes
-            ]
+            # Use the grid key carried on the axis (== results_map column); fall back to the trailing name segment only for axes built elsewhere.
+            bare = [getattr(ax, "key", None) or str(getattr(ax, "name", "")).rsplit(".", 1)[-1] for ax in axes]
             vals = [np.asarray(v, dtype=float) for v in _axis_vals]
             ordered = np.empty_like(results_arr)
             filled = np.zeros(n_conditions, dtype=bool)
             for c_idx, cond_name in enumerate(results_map.index):
                 midx = tuple(
-                    int(np.argmin(np.abs(vals[k] - float(results_map.loc[cond_name, bare[k]]))))
-                    for k in range(len(axes))
+                    int(np.argmin(np.abs(vals[k] - float(results_map.loc[cond_name, bare[k]])))) for k in range(len(axes))
                 )
                 pos = int(np.ravel_multi_index(midx, grid_shape))
                 ordered[pos] = results_arr[c_idx]
                 filled[pos] = True
-            # Only adopt the reorder when it is a clean permutation (every cell filled
-            # exactly once). Degenerate axes with duplicate swept values collide, which
-            # would leave uninitialised cells — keep the original order in that case.
+            # Only adopt the reorder when it is a clean permutation (every cell filled exactly once). Degenerate axes with duplicate swept values collide, which would leave uninitialised cells — keep the original order in that case.
             if filled.all():
                 results_arr = ordered
 
@@ -631,8 +561,7 @@ class PyRatesAdapter(BaseAdapter):
     def _is_heterogeneous(self) -> bool:
         """Check if the experiment has heterogeneous dynamics (multiple models).
 
-        PyRates vectorize=True cannot handle circuits where different nodes
-        have different operators (different parameter counts / state variables).
+        PyRates vectorize=True cannot handle circuits where different nodes have different operators (different parameter counts / state variables).
         """
         dynamics_dict = self.build_dynamics_dict()
         return len(dynamics_dict) > 1
@@ -640,10 +569,9 @@ class PyRatesAdapter(BaseAdapter):
     def _pyrates_node_map(self) -> dict:
         """Map each dynamics model to its PyRates operator name and node labels.
 
-        Mirrors the naming conventions of the PyRates YAML template exactly,
-        so output paths and param_map entries resolve correctly.
+        Mirrors the naming conventions of the PyRates YAML template exactly, so output paths and param_map entries resolve correctly.
 
-        Returns
+        Returns:
         -------
         dict
             ``{dyn_name: {'op': str, 'nodes': list[str]}}``
@@ -668,7 +596,7 @@ class PyRatesAdapter(BaseAdapter):
         elif network is not None:
             # Base Network/Connectome: all nodes share the default dynamics
             n_nodes = getattr(network, "number_of_nodes", 0)
-            weights = getattr(network, "weights_matrix", None)
+            weights = dense_matrix(network, "weight")
             if weights is not None:
                 n_nodes = weights.shape[0]
             if hasattr(network, "node_labels") and network.node_labels:
@@ -689,7 +617,7 @@ class PyRatesAdapter(BaseAdapter):
     def _load_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
         """Load PyRates circuit from YAML template.
 
-        Returns
+        Returns:
         -------
         tuple
             (circuit, tmpdir, pkg_name) for cleanup
@@ -763,7 +691,7 @@ class PyRatesAdapter(BaseAdapter):
                 label = getattr(node, "label", None) or f"node_{node.id}"
                 node_labels.append(str(label).replace(" ", "_").replace("-", "_"))
         else:
-            n_nodes = network.weights_matrix.shape[0]
+            n_nodes = network.matrix("weight").shape[0]
             node_labels = [f"node_{i}" for i in range(n_nodes)]
 
         # Get source/target variables from dynamics
@@ -779,14 +707,14 @@ class PyRatesAdapter(BaseAdapter):
             src_var = f"{dyn_name}_op/x"
 
         # Target: coupling input
-        ci = getattr(first_dyn, "coupling_inputs", None) or getattr(first_dyn, "coupling_terms", None)
+        ci = getattr(first_dyn, "coupling_inputs", None)
         if ci:
             tgt_var = f"{dyn_name}_op/{list(ci.keys())[0]}"
         else:
             tgt_var = src_var
 
         # Add edges using matrix
-        weights = network.weights_matrix
+        weights = dense_matrix(network, "weight")
         if weights is not None and weights.size > 0:
             delays = self._get_delays(network)
             edge_attr = {"delay": delays} if delays is not None else None
@@ -841,13 +769,11 @@ class PyRatesAdapter(BaseAdapter):
 
         return outputs
 
-    def _compute_outputs(self, result: "pd.DataFrame") -> "pd.DataFrame":
+    def _compute_outputs(self, result: pd.DataFrame) -> pd.DataFrame:
         """Compute algebraic output variables from PyRates simulation results.
 
-        PyRates only records state variables. This method evaluates output
-        equations (like 'r_eff = r_in*x') using recorded state values and parameters.
+        PyRates only records state variables. This method evaluates output equations (like 'r_eff = r_in*x') using recorded state values and parameters.
         """
-
         exp = self.experiment
         dynamics = self.build_dynamics_dict()
 
@@ -921,7 +847,7 @@ class PyRatesAdapter(BaseAdapter):
 
     def _compute_node_outputs(
         self,
-        result: "pd.DataFrame",
+        result: pd.DataFrame,
         dyn,
         prefix: str,
         safe_label: str,
@@ -931,15 +857,17 @@ class PyRatesAdapter(BaseAdapter):
         """Compute algebraic outputs for a single node."""
         import sympy as sp
 
+        scope = dyn.get_symbolic_elements()
+        bodies = function_bodies(dyn)
         for out_name in dyn.output:
             out_var = dyn.derived_variables.get(out_name)
             if out_var is None:
                 continue
             eq = out_var.equation
-            if not (eq and eq.rhs):
+            if not states_an_expression(eq):
                 continue
 
-            expr = _inline_model_functions(sp.sympify(eq.rhs), dyn)
+            expr = inline_functions(parse_eq(eq, local_dict=scope), bodies)
             subs = {}
 
             for sym in expr.free_symbols:
@@ -966,19 +894,21 @@ class PyRatesAdapter(BaseAdapter):
                 func = sp.lambdify(list(subs.keys()), expr, "numpy")
                 result[out_col] = func(*subs.values())
 
-    def _compute_single_outputs(self, result: "pd.DataFrame", dyn) -> None:
+    def _compute_single_outputs(self, result: pd.DataFrame, dyn) -> None:
         """Compute algebraic outputs for single dynamics case."""
         import sympy as sp
 
+        scope = dyn.get_symbolic_elements()
+        bodies = function_bodies(dyn)
         for out_name in dyn.output:
             out_var = dyn.derived_variables.get(out_name)
             if out_var is None:
                 continue
             eq = out_var.equation
-            if not (eq and eq.rhs):
+            if not states_an_expression(eq):
                 continue
 
-            expr = _inline_model_functions(sp.sympify(eq.rhs), dyn)
+            expr = inline_functions(parse_eq(eq, local_dict=scope), bodies)
             subs = {}
 
             for sym in expr.free_symbols:
@@ -1015,14 +945,16 @@ class PyRatesAdapter(BaseAdapter):
             return inputs
 
         stim_values = stim_func(time)
-        target_var = getattr(stimulation, "target_variable", None) or "I_ext"
+        target_var = self._stimulus_target_variable()
         regions = getattr(stimulation, "regions", None) or []
         weighting = getattr(stimulation, "weighting", None) or []
 
         network = getattr(exp, "network", None)
-        dynamics = exp.dynamics
-        if not isinstance(dynamics, dict):
-            dynamics = {d.name: d for d in (dynamics or [])}
+        # `node.dynamics` keys the network's library; a single-model experiment holds it itself.
+        dynamics = dict(getattr(network, "dynamics", None) or {})
+        single = getattr(exp, "dynamics", None)
+        if getattr(single, "name", None):
+            dynamics.setdefault(single.name, single)
 
         if network is not None and hasattr(network, "nodes") and network.nodes:
             nodes = list(network.nodes)
@@ -1037,17 +969,38 @@ class PyRatesAdapter(BaseAdapter):
                 node_label = getattr(node, "label", None) or f"node_{node.id}"
                 safe_label = str(node_label).replace(" ", "_").replace("-", "_")
 
-                dyn_name = node.dynamics if isinstance(node.dynamics, str) else getattr(node.dynamics, "name", None)
+                inline = None if isinstance(node.dynamics, str) else node.dynamics
+                dyn_name = node.dynamics if inline is None else getattr(inline, "name", None)
 
                 if dyn_name:
+                    var = target_var or _legacy_input_variable(inline or dynamics.get(dyn_name))
+                    if var is None:
+                        raise ValueError(
+                            f"No stimulus event names the variable to drive, and {dyn_name!r} "
+                            "declares no 'I_ext' to fall back on. Name the target by giving the "
+                            "stimulus an event whose name is the driven variable."
+                        )
                     op_name = f"{dyn_name}_op"
-                    key = f"{safe_label}/{op_name}/{target_var}"
+                    key = f"{safe_label}/{op_name}/{var}"
                     weight = weighting[i] if i < len(weighting) else 1.0
                     inputs[key] = stim_values * weight
 
         return inputs
 
-    def _df_to_simulation_result(self, result: "pd.DataFrame") -> "SimulationResult":
+    def _stimulus_target_variable(self):
+        """The dfun variable a stimulus drives, named by its event.
+
+        TVBO expresses the target as the stimulus event's own *name*: `SimulationExperiment._resolve_events` lowers a declarative `target_variable` onto it, and that is where every other backend reads it. A `Stimulus` carries no target of its own, so asking one for `target_variable` yielded the `I_ext` default for every experiment ever run — addressing a variable the model need not have.
+        """
+        events = getattr(self.experiment, "events", None) or {}
+        for key, event in events.items() if hasattr(events, "items") else []:
+            if "stimul" in str(getattr(event, "event_type", "") or "").lower():
+                name = getattr(event, "name", None) or key
+                if name:
+                    return str(name)
+        return None
+
+    def _df_to_simulation_result(self, result: pd.DataFrame) -> SimulationResult:
         """Convert PyRates pandas DataFrame result to SimulationResult."""
         import xarray as xr
 

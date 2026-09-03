@@ -1,0 +1,108 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class JansenRit1995(AbstractDynamics):
+    """JansenRit1995 neural mass model."""
+
+    STATE_NAMES = ("y0", "y3", "y1", "y4", "y2", "y5")
+    INITIAL_STATE = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
+    AUXILIARY_NAMES = ("v_pyr",)
+    VARIABLES_OF_INTEREST = ("y0", "y3", "y1", "y4", "y2", "y5", "v_pyr")
+
+    DEFAULT_PARAMS = Bunch(
+        A=3.25,
+        B=22.0,
+        C=135.0,
+        a=100.0,
+        b=50.0,
+        e0=2.5,
+        p=220.0,
+        r=0.56,
+        v0=6.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_intercolumn": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        A = params.A
+        B = params.B
+        C = params.C
+        a = params.a
+        b = params.b
+        e0 = params.e0
+        p = params.p
+        r = params.r
+        v0 = params.v0
+
+        C1 = C
+        C2 = 0.8 * C
+        C3 = 0.25 * C
+        C4 = 0.25 * C
+
+        y0 = state[0]
+        y3 = state[1]
+        y1 = state[2]
+        y4 = state[3]
+        y2 = state[4]
+        y5 = state[5]
+
+        c_intercolumn = (
+            jnp.atleast_1d(coupling.c_intercolumn)[0]
+            if hasattr(coupling, "c_intercolumn")
+            else 0.0
+        )
+
+        def Sigm(v):
+            return 2 * e0 / (1 + jnp.exp(r * (v0 - v)))
+
+        v_pyr = y1 - y2
+
+        dy0_dt = y3
+        dy3_dt = A * a * Sigm(y1 - y2) - 2 * a * y3 - a**2 * y0
+        dy1_dt = y4
+        dy4_dt = (
+            A * a * (p + C2 * Sigm(C1 * y0) + c_intercolumn) - 2 * a * y4 - a**2 * y1
+        )
+        dy2_dt = y5
+        dy5_dt = B * b * C4 * Sigm(C3 * y0) - 2 * b * y5 - b**2 * y2
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dy0_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dy0_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy3_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy4_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy2_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy5_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(v_pyr), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

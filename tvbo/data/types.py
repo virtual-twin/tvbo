@@ -1,29 +1,28 @@
 """Runtime data types for TVBO simulations.
 
-Provides `TimeSeries`, a JAX-pytree-aware, xarray-backed time-series container
-with domain-specific analysis and visualization helpers, and `SimulationState`,
-the bundled simulation state (initial conditions, network, noise, parameters,
-stimulus, and monitor settings) handed to the integration backends.
+Provides `TimeSeries`, a JAX-pytree-aware, xarray-backed time-series container with domain-specific analysis and visualization helpers, and `SimulationState`, the bundled simulation state (initial conditions, network, noise, parameters, stimulus, and monitor settings) handed to the integration backends.
 """
 
+import copy
+import dataclasses
+import logging
+import re
 from copy import deepcopy
 
+import jax
+import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
+import xarray as xr
 from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 
-import xarray as xr
 import tvbo.jax.xarray_pytrees  # noqa: F401 – registers xr types as JAX pytrees
-
-from tvbo.classes import equation as equations
-from tvbo.utils import Bunch
 from tvbo.classes.network import Network
-from tvbo.utils import format_pytree_as_string
+from tvbo.utils import Bunch, format_pytree_as_string
+from tvbo.utils.pytree import Pytree
 
-import jax
-from jax.tree_util import register_pytree_node_class
-import jax.numpy as jnp
+logger = logging.getLogger(__name__)
 
 
 def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
@@ -38,7 +37,7 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
     state_names : list[str] or None
         State variable names for the 'variable' coordinate.
 
-    Returns
+    Returns:
     -------
     xr.DataArray or None
     """
@@ -49,9 +48,7 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
     data_np = np.asarray(raw_data)
     all_dims = ["time", "variable", "node", "mode"]
     dims = all_dims[: data_np.ndim]
-    # node and mode dims only exist when they actually carry information (size > 1).
-    # Trailing singleton dims are meaningless — drop them so selection always
-    # yields a predictable shape without any downstream squeeze() calls.
+    # node and mode dims only exist when they actually carry information (size > 1). Trailing singleton dims are meaningless — drop them so selection always yields a predictable shape without any downstream squeeze() calls.
     while len(dims) > 2 and dims[-1] in ("node", "mode") and data_np.shape[len(dims) - 1] == 1:
         data_np = data_np[..., 0]
         dims = dims[:-1]
@@ -73,22 +70,259 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
     return xr.DataArray(data=data_np, dims=dims, coords=coords)
 
 
-def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None):
+def _unwrap_observation(obs):
+    """An observation's array, whatever wrapper it arrived in.
+
+    ``.data`` unwraps an ``ObservationResult``, but xarray spells its raw buffer the same way, so the same expression would strip the dims a labelled observation carries. Every site that reaches for an observation's array goes through here.
+    """
+    return obs if isinstance(obs, xr.DataArray) else getattr(obs, "data", obs)
+
+
+def _observation_dataarray(raw_data, dims=None, nodes=None, times=None, name=None):
+    """*raw_data* with its observation's DECLARED axes bound to its array, in whatever wrapper it arrived in.
+
+    The axes are never inferred. An observation's output shape is fixed by the reduction that produced it or stated outright by the recipe's ``dims:``, so codegen emits the names (``_OBSERVATION_DIMS``, from ``utils.observation_dims``) and this only binds them, together with the network's node labels the caller already holds. Inferring from shape instead cannot tell an ``(n_freq, n_node)`` spectrum from an ``(n_node, n_node)`` matrix.
+
+    An observation arrives wrapped — in an :class:`ObservationResult` carrying several named outputs, or in the solver's own solution object. Either way its ``.ys`` buffer is labelled in place, so binding the axes never costs the rest of what the wrapper carries, and the wrapper's own ``.ts`` is what stamps the time axis: a pipeline that subsampled reports the grid it actually sampled, which the integration's step grid no longer describes. A wrapper that refuses the assignment — a frozen solution object — keeps its unlabelled buffer rather than failing the run that produced it.
+
+    Raises when a declaration contradicts the array it describes. Applying it would reshape the data and dropping it would leave the author's ``dims:`` silently ignored, which is the failure this declaration exists to end. A value with no axes at all is not a contradiction — the reduction that produced it collapsed them, so there is nothing to name. An observation that declares nothing is passed through unlabelled, and the container falls back to positional names.
+    """
+    if raw_data is None or not dims:
+        return raw_data
+    if not isinstance(raw_data, xr.DataArray) and hasattr(raw_data, "ys"):
+        own_ts = getattr(raw_data, "ts", None)
+        labelled = _observation_dataarray(raw_data.ys, dims, nodes, times if own_ts is None else own_ts, name=name)
+        if isinstance(labelled, xr.DataArray):
+            try:
+                raw_data.ys = labelled
+            except (AttributeError, TypeError, dataclasses.FrozenInstanceError):
+                pass
+        return raw_data
+    if isinstance(raw_data, xr.DataArray):
+        return raw_data
+    try:
+        a = np.asarray(raw_data)
+    except (ValueError, TypeError):
+        return raw_data
+    if a.dtype == object or a.ndim == 0 or a.size == 0:
+        return raw_data
+    if a.ndim != len(dims):
+        raise ValueError(
+            f"observation {name or '<unnamed>'!r} declares {len(dims)} axis/axes {tuple(dims)} but its "
+            f"value has {a.ndim} with shape {a.shape}. Correct the observation's `dims:` to the shape its "
+            f"pipeline actually returns, or remove it and let the container fall back to positional names."
+        )
+
+    dims = [str(d) for d in dims]
+    coords = _node_coords(dims, a.shape, nodes)
+    if times is not None and "time" in dims and len(times) == a.shape[dims.index("time")]:
+        coords["time"] = np.asarray(times)
+    return xr.DataArray(a, dims=dims, coords=coords)
+
+
+def _jax_array(value):
+    """*value* unwrapped to its array when it implements the JAX array protocol, else *value* itself.
+
+    tvboptim's ``Parameter``/``BoundedParameter`` expose their value only through ``__jax_array__``: their ``__array__`` takes no ``dtype``, so ``np.asarray(p, dtype=float)`` raises and a fitted parameter would be dropped as non-numeric rather than saved.
+    """
+    unwrap = getattr(value, "__jax_array__", None)
+    return unwrap() if unwrap is not None else value
+
+
+def _loss_series(saved):
+    """*saved* as the flat float array :attr:`OptimizationResult.loss_trajectory` promises.
+
+    tvboptim records the loss into a pandas DataFrame, so the column arrives as an object Series of 0-d device scalars. That indexes by LABEL, which makes ``[-1]`` a ``KeyError`` rather than the last step, and reaches the container as nothing numeric. Anything that cannot be read as numbers yields None, so an optimization with no usable record reports none rather than a broken one.
+    """
+    try:
+        a = np.asarray(getattr(saved, "values", saved), dtype=float)
+    except (ValueError, TypeError):
+        return None
+    return a if a.ndim else a.reshape(1)
+
+
+def _declared_observation_dims(source) -> dict:
+    """Axis names each of *source*'s observations declares, keyed by observation name.
+
+    The reduction an observation declares fixes its axes, so the container can name them instead of writing an unnamed placeholder dim that no reader can select on.
+
+    Labelling is a convenience over an already-finished compute, so it never costs a run:
+    any failure to resolve the declared reductions — the helper unavailable, an observation whose reduction the resolver rejects — yields no names and the caller falls back to its positional template, rather than throwing out of ``save()`` and discarding the result.
+    Logged rather than swallowed, so a spec that cannot be resolved is still visible.
+    """
+    try:
+        from tvbo.templates.tvboptim.utils import observation_dims
+
+        return observation_dims(source)
+    except Exception as exc:
+        logger.warning("could not resolve declared observation axes (%s); saving them unlabelled", exc)
+        return {}
+
+
+_NODE_AXES = ("node", "node_i", "node_j")
+"""Dim names that denote a spatial (per-node) axis, so node labels belong on them.
+
+Covers both edge-matrix spellings the container writes — the ``(node, node_j)`` a co-moment
+reduction declares and the ``(node_i, node_j)`` a per-edge estimate uses.
+"""
+
+
+def _node_coords(dims, shape, nodes) -> dict:
+    """Node labels as coordinates on whichever of *dims* are node axes.
+
+    A node axis is only selectable by label if it carries one, and a spatial axis is the one a reader always wants to select on by name (``sel: {node: PFC}``). Size-matched so a label list can never be hung on an axis that is not the node axis, and a no-op without labels — every caller holding both a declared ``node`` dim and the network's labels binds them here rather than reimplementing the pairing. Emptiness is tested by length, because labels arrive as a numpy array as often as a list and an array has no truth value.
+    """
+    if nodes is None or len(nodes) == 0:
+        return {}
+    labels = [str(n) for n in nodes]
+    return {d: labels for i, d in enumerate(dims) if d in _NODE_AXES and shape[i] == len(labels)}
+
+
+def _inner_dims(post_trial_shape, ts_arr, declared=None):
+    """Axis names for one exploration cell's payload, and the coords they carry.
+
+    A DECLARED shape wins outright. An observation's axes come from the reduction it declares — a stride keeps ``(time, node)``, a co-moment gives ``(node, node_j)``, a recurrence gives ``(node,)`` — and are known at codegen. Falling back to matching lengths against a positional ``(time, variable, node, mode)`` template is how a 1,338-frame time axis ends up named ``node``: silently, with every downstream selection then keyed on the wrong axis.
+
+    The template remains the fallback for payloads that declare nothing (a raw swept trajectory, an observable a backend returns unlabelled).
+    """
+    n = len(post_trial_shape)
+    coords = {}
+    if declared is not None and len(declared) == n:
+        dims = [str(d) for d in declared]
+        if ts_arr is not None and "time" in dims and ts_arr.size == post_trial_shape[dims.index("time")]:
+            coords["time"] = ts_arr
+        return dims, coords
+
+    template = ["variable", "node", "mode"]
+    if ts_arr is not None and ts_arr.size > 1 and n > 0 and ts_arr.size == post_trial_shape[0]:
+        dims = ["time"] + [template[i] if i < len(template) else f"dim_{i}" for i in range(n - 1)]
+        coords["time"] = ts_arr
+    else:
+        # Time-aggregated (or no time) — assume spatial layout, right-aligned.
+        dims = template[-n:] if n else []
+    return dims, coords
+
+
+def _axis_size(ax) -> int | None:
+    """An axis's declared cell count, however the producer shaped it.
+
+    Handles both axis shapes the module accepts (dict or attribute) and falls back to ``len(explored_values)`` for an axis carrying values but no ``n``. Returns ``None`` when neither is available, which callers must distinguish from a real size: an unknown size makes grid completeness undecidable rather than zero.
+    """
+    n = ax.get("n") if isinstance(ax, dict) else getattr(ax, "n", None)
+    if n is not None:
+        return int(n)
+    vals = ax.get("explored_values") if isinstance(ax, dict) else getattr(ax, "explored_values", None)
+    return None if vals is None else int(np.asarray(vals).size)
+
+
+def _is_partial_shard(expl) -> bool:
+    """Whether *expl* holds one HPC array task's slice rather than a whole sweep.
+
+    Prefers the producer's own answer: the generated script has ``kwargs['shard']`` in hand and records it as ``is_shard``. Nothing downstream can re-derive that as reliably, so a declared value always wins.
+
+    The count-based fallback exists for results built before that slot, and asks whether the cells present are fewer than the Cartesian product of the axes. It is genuinely partial — it cannot see a *branch* shard, whose axis ``n`` is taken from the already-sliced index so the slice looks complete — which is exactly why the declared value is preferred rather than merely consulted.
+
+    What it must never do is read ``cell_coords`` as the marker: that field is present on EVERY keyed sweep, sharded or not (see :func:`_stacked_to_dataarray`), and reading it that way silently cost every local sweep its provenance sidecar.
+
+    Undecidable cases count as *not* a shard. One redundant sidecar beside a shard is recoverable; dropping the sidecar of a full run breaks the self-describing contract ``save`` advertises, and does so without a word.
+    """
+    declared = getattr(expl, "is_shard", None)
+    if declared is not None:
+        return bool(declared)
+    cell_coords = getattr(expl, "cell_coords", None)
+    if not cell_coords:
+        return False
+    sizes = [_axis_size(ax) for ax in (getattr(expl, "axes", None) or [])]
+    if not sizes or any(s is None or s <= 0 for s in sizes):
+        return False
+    counts = [int(np.asarray(v).shape[0]) for v in cell_coords.values() if np.asarray(v).ndim]
+    return bool(counts) and max(counts) < int(np.prod(sizes))
+
+
+def _axis_points_are_arrays(a) -> bool:
+    """Whether an axis's POINTS are arrays rather than scalars.
+
+    Keyed on an element, not on the container's dtype: a string axis is object-dtype too, and treating its points as arrays would try to read floats out of "heun". Asks about the point's EXTENT rather than its type, which is why :func:`tvbo.utils.is_array_valued` does not answer this one: a 0-d array is a container but not an axis of matrices.
+    """
+    if a.ndim > 1:
+        return True
+    return a.dtype == object and a.size > 0 and np.asarray(a.flat[0]).ndim > 0
+
+
+def _axis_positions(cell_vals, grid_vals, axis, name):
+    """Index of each cell along one grid axis, matched by value.
+
+    A numeric axis matches by nearest value, because a swept float that has round-tripped through a file need not compare equal to the one the grid declares — but only within a round-trip-sized tolerance (relative ``1e-6``, an order above float32 precision). A value farther from every declared point than storage error can explain means the column is paired with the wrong axis or the grid changed under the cells, and snapping it silently would relabel the surface, so it raises instead. Anything else matches exactly: a string axis (``integration.method`` over "heun"/"euler") cannot be subtracted at all, and placing it by position would be the scrambling this whole path exists to prevent.
+
+    ARRAY-VALUED points are REFUSED rather than matched. An axis whose points are whole matrices declares one point INDEX per point as its coordinate, because an xarray coordinate is an index of scalars, so cells carrying the matrices themselves are in a different currency. Only the generated code holds the materialised points, which is where the conversion belongs (:func:`tvbo.templates.tvboptim.callbacks.point_indices`); matching them here would key the surface on a coordinate the cells do not share.
+    """
+    cell = np.asarray(cell_vals)
+    grid = np.asarray(grid_vals)
+    if _axis_points_are_arrays(cell) or _axis_points_are_arrays(grid):
+        raise ValueError(
+            f"cell_coords for observation {name!r} carry ARRAY-valued points on axis {axis!r}, "
+            f"but a grid coordinate holds scalars, so these are in different currencies. The "
+            f"producer converts each cell to its point index (callbacks.point_indices) while the "
+            f"materialised points are still in scope; they never reach the container."
+        )
+    if np.issubdtype(cell.dtype, np.number) and np.issubdtype(grid.dtype, np.number):
+        pos = np.abs(cell[:, None] - grid[None, :]).argmin(axis=1)
+        snapped = grid[pos]
+        err = np.abs(np.asarray(cell, dtype=float) - np.asarray(snapped, dtype=float))
+        tol = 1e-6 * np.maximum(np.abs(cell), np.abs(snapped))
+        if np.any(err > tol):
+            i = int(np.argmax(err - tol))
+            raise ValueError(
+                f"cell_coords for observation {name!r} carry value {cell[i]!r} on axis {axis!r}, "
+                f"too far from every declared grid point (nearest: {snapped[i]!r}) to be a storage "
+                f"round-trip. The column is paired with the wrong axis, or the grid changed under "
+                f"the cells; snapping it silently would relabel the surface."
+            )
+        return pos
+    index = {v: i for i, v in enumerate(grid.tolist())}
+    absent = sorted({v for v in cell.tolist() if v not in index}, key=repr)
+    if absent:
+        raise ValueError(
+            f"cell_coords for observation {name!r} put value(s) {absent} on axis {axis!r}, "
+            f"which the grid does not declare (it has {grid.tolist()})."
+        )
+    return np.asarray([index[v] for v in cell.tolist()])
+
+
+def _axis_points_dataarray(name, points):
+    """The materialised points of an ARRAY-valued axis, keyed by its point index.
+
+    An axis of whole arrays coordinates its grid dimension on the point INDEX (an xarray coordinate is a 1-D index of scalars), and that index is meaningless once the run ends unless the points ride along — recovering WHICH matrix a cell used otherwise needs the builder that produced them. The leading dim takes the axis's own name with ``arange(n)`` coords, so it aligns with the grid dimension when merged into a result Dataset and a cell's coordinate value selects its point directly. Inner dims follow the node-array convention (``node`` for per-node vectors, ``node_i``/``node_j`` for per-edge matrices).
+    """
+    a = np.asarray(points)
+    inner = {1: ["node"], 2: ["node_i", "node_j"]}.get(a.ndim - 1, [f"{name}_d{i}" for i in range(a.ndim - 1)])
+    return xr.DataArray(a, dims=[name, *inner], coords={name: np.arange(a.shape[0])}, name=name)
+
+
+def _host_reduced_to_observations(name, out):
+    """Wrap a cross-trial (``reduce: trials``) pipeline result as named ``xr.DataArray``s.
+
+    ``out`` is what the host-side stage returned: an array-like, or a flat dict of array-likes. A single-entry dict stores under the observation's own ``name``; a multi-entry dict stores each entry under ``<name>_<key>``. Nested dicts are refused — the stage contract is arrays.
+    """
+    if isinstance(out, dict):
+        if any(isinstance(v, dict) for v in out.values()):
+            raise TypeError(f"reduce: trials stage {name!r} returned a nested dict; return array-likes")
+        if len(out) == 1:
+            return {name: xr.DataArray(np.asarray(next(iter(out.values()))), name=name)}
+        return {f"{name}_{k}": xr.DataArray(np.asarray(v), name=f"{name}_{k}") for k, v in out.items()}
+    return {name: xr.DataArray(np.asarray(out), name=name)}
+
+
+def _stacked_to_dataarray(
+    stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None, nodes=None
+):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
 
-    Outer dims correspond to exploration axes (parameter names with their
-    explored values as coords). When ``n_trials > 1`` and the leading inner
-    axis matches, a ``trial`` dim is inserted after the grid dims. Remaining
-    inner dims follow the simulation convention ``(time, variable, node,
-    mode)``; the leading ``time`` dim is included only when ``intrinsic_ts``
-    carries a multi-step time vector matching the leading remaining shape,
-    so time-aggregated observations don't get a spurious ``time`` axis.
+    Outer dims correspond to exploration axes (parameter names with their explored values as coords). When ``n_trials > 1`` and the leading inner axis matches, a ``trial`` dim is inserted after the grid dims. Remaining inner dims follow the simulation convention ``(time, variable, node, mode)``; the leading ``time`` dim is included only when ``intrinsic_ts`` carries a multi-step time vector matching the leading remaining shape, so time-aggregated observations don't get a spurious ``time`` axis.
 
-    ``cell_coords`` (``{axis_name: per_cell_values}``) marks a sharded run: the
-    leading axis is a flat subset of grid points (one HPC array task's slice),
-    not the full Cartesian product. The result then gets a single ``point`` dim
-    with each axis's value hung on it as a coordinate, so the shard is
-    self-describing and reassembles by parameter value across tasks.
+    ``cell_coords`` (``{axis_name: per_cell_values}``) is each cell's actual parameter values read back from the grid, in the grid's OWN emission order. It keys results by value rather than by position, because a ``Space`` emits cells in pytree-leaf order, which is NOT the ``axes_info`` order whenever the swept axes live on different state sub-objects (dynamics/coupling/graph) — a plain positional reshape would then scramble the surface. Every keyed payload is first built flat, one ``point`` per cell with each axis's value hung on it as a coordinate. A flat subset (one HPC array task's shard) is returned in that form, self-describing, so it reassembles by parameter value across tasks. A full Cartesian product is additionally pivoted into the rectangular grid by ``set_index`` + ``unstack`` — the same idiom shard reassembly uses — after each cell coordinate is snapped onto the declared grid value it names (:func:`_axis_positions`), because a float that round-tripped through a file need not compare equal to the declared one and unstack places by coordinate identity. Cells whose snapped values collide cannot be a grid and raise.
+
+    ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`). ``nodes`` are the network's node labels, hung on whichever declared dim is the node axis — a swept observation is selected by label the same way an unswept one is, and without them a sweep's node axis is addressable only by index.
     """
     if stacked_arr is None:
         return None
@@ -100,28 +334,28 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
         ax_name = ax.get("name") if isinstance(ax, dict) else getattr(ax, "name", None)
         if not ax_name:
             continue
-        ax_vals = (
-            ax.get("explored_values")
-            if isinstance(ax, dict)
-            else getattr(ax, "explored_values", None)
-        )
-        ax_n = ax.get("n") if isinstance(ax, dict) else getattr(ax, "n", None)
-        if ax_n is None and ax_vals is not None:
-            ax_n = len(np.asarray(ax_vals))
+        ax_vals = ax.get("explored_values") if isinstance(ax, dict) else getattr(ax, "explored_values", None)
+        ax_n = _axis_size(ax)
         grid_dims.append(ax_name)
         grid_sizes.append(int(ax_n) if ax_n is not None else None)
         if ax_vals is not None:
             grid_coords[ax_name] = np.asarray(ax_vals)
 
-    # Sharded / non-rectangular subset: the leading axis is a flat list of grid
-    # points, not the full Cartesian product, so it cannot be reshaped into one
-    # dim per parameter. Emit a single ``point`` dim and hang each axis's
-    # per-cell value on it as a (non-dimension) coordinate.
-    _full_grid = (
-        bool(grid_sizes)
-        and all(s is not None for s in grid_sizes)
-        and arr.shape[0] == int(np.prod(grid_sizes))
-    )
+    # Keyed payloads are built flat first — one ``point`` per cell, axis values as coordinates. A full Cartesian product is then pivoted into the rectangular grid below; a subset keeps the flat, self-describing form.
+    _full_grid = bool(grid_sizes) and all(s is not None for s in grid_sizes) and arr.shape[0] == int(np.prod(grid_sizes))
+    _to_grid = cell_coords is not None and _full_grid and bool(grid_dims)
+    if _to_grid:
+        _missing = [n for n in grid_dims if n not in cell_coords or n not in grid_coords]
+        if _missing:
+            raise ValueError(
+                f"cell_coords cannot place observation {name!r} into its grid: no per-cell "
+                f"values for axis(es) {_missing} (have {sorted(cell_coords)}). A positional "
+                f"reshape would scramble the surface whenever the Space emission order "
+                f"differs from the declared axis order, so this is an error, not a fallback."
+            )
+        cell_coords = {
+            _n: np.asarray(grid_coords[_n])[_axis_positions(cell_coords[_n], grid_coords[_n], _n, name)] for _n in grid_dims
+        }
     if cell_coords is not None or (grid_dims and not _full_grid):
         n_points = arr.shape[0]
         inner_shape = arr.shape[1:]
@@ -143,31 +377,30 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
             ts_arr = np.asarray(intrinsic_ts)
             while ts_arr.ndim > 1:
                 ts_arr = ts_arr[0]
-        has_time = (
-            ts_arr is not None
-            and ts_arr.size > 1
-            and len(post_trial_shape) > 0
-            and ts_arr.size == post_trial_shape[0]
-        )
-        if has_time:
-            post_time_template = ["variable", "node", "mode"]
-            inner_dims = ["time"] + [
-                post_time_template[i] if i < len(post_time_template) else f"dim_{i}"
-                for i in range(len(post_trial_shape) - 1)
-            ]
-            coords["time"] = ts_arr
-        else:
-            spatial_template = ["variable", "node", "mode"]
-            inner_dims = spatial_template[-len(post_trial_shape):] if post_trial_shape else []
-        while inner_dims and arr.shape[-1] == 1:
+        inner_dims, inner_coords = _inner_dims(post_trial_shape, ts_arr, dims)
+        coords.update(inner_coords)
+        while inner_dims and arr.shape[-1] == 1 and inner_dims != list(dims or []):
             arr = arr[..., 0]
             inner_dims = inner_dims[:-1]
         all_dims = ["point"] + trial_dims + inner_dims
-        return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+        coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
+        da = xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
+        if not _to_grid:
+            return da
+        try:
+            if len(grid_dims) > 1:
+                da = da.set_index(point=grid_dims).unstack("point")
+            else:
+                da = da.swap_dims({"point": grid_dims[0]})
+            da = da.reindex({_n: grid_coords[_n] for _n in grid_dims})
+        except ValueError as e:
+            raise ValueError(
+                f"cell_coords for observation {name!r} map {n_points} cells onto fewer "
+                f"distinct grid cells — the per-cell values do not identify every cell uniquely."
+            ) from e
+        return da.transpose(*grid_dims, ...)
 
-    # Multi-axis 'product'-mode explorations come back with a flat leading
-    # dim of size prod(grid_sizes). Reshape into per-axis dims so the
-    # DataArray gets one named axis per parameter.
+    # Multi-axis 'product'-mode explorations come back with a flat leading dim of size prod(grid_sizes). Reshape into per-axis dims so the DataArray gets one named axis per parameter.
     if (
         len(grid_dims) > 1
         and arr.ndim >= 1
@@ -179,24 +412,14 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
     n_grid = len(grid_dims)
     inner_shape = arr.shape[n_grid:]
 
-    # Trials-only explorations have no grid axes but still get a synthetic
-    # leading axis from stacking a single observable_fn call. Collapse it so
-    # the trial dim sits where downstream selection expects it.
-    if (
-        n_grid == 0
-        and n_trials > 1
-        and len(inner_shape) >= 2
-        and inner_shape[0] == 1
-        and inner_shape[1] == n_trials
-    ):
+    # Trials-only explorations have no grid axes but still get a synthetic leading axis from stacking a single observable_fn call. Collapse it so the trial dim sits where downstream selection expects it.
+    if n_grid == 0 and n_trials > 1 and len(inner_shape) >= 2 and inner_shape[0] == 1 and inner_shape[1] == n_trials:
         arr = arr[0]
         inner_shape = inner_shape[1:]
 
     coords = dict(grid_coords)
 
-    has_trial = (
-        n_trials > 1 and len(inner_shape) > 0 and inner_shape[0] == n_trials
-    )
+    has_trial = n_trials > 1 and len(inner_shape) > 0 and inner_shape[0] == n_trials
     if has_trial:
         trial_dims = ["trial"]
         coords["trial"] = np.arange(n_trials)
@@ -211,48 +434,23 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
         while ts_arr.ndim > 1:
             ts_arr = ts_arr[0]
 
-    has_time = (
-        ts_arr is not None
-        and ts_arr.size > 1
-        and len(post_trial_shape) > 0
-        and ts_arr.size == post_trial_shape[0]
-    )
+    inner_dims, inner_coords = _inner_dims(post_trial_shape, ts_arr, dims)
+    coords.update(inner_coords)
 
-    if has_time:
-        post_time_template = ["variable", "node", "mode"]
-        inner_dims = ["time"] + [
-            post_time_template[i] if i < len(post_time_template) else f"dim_{i}"
-            for i in range(len(post_trial_shape) - 1)
-        ]
-        coords["time"] = ts_arr
-    else:
-        # Time-aggregated (or no time) — assume spatial layout
-        # (variable, node, mode), aligned to the right of the convention.
-        spatial_template = ["variable", "node", "mode"]
-        inner_dims = (
-            spatial_template[-len(post_trial_shape):] if post_trial_shape else []
-        )
-
-    # Drop trailing singleton inner dims so we don't fabricate axes that don't
-    # actually carry information (e.g. mode/node when size 1).
-    while inner_dims and arr.shape[-1] == 1:
+    # Drop trailing singleton inner dims so we don't fabricate axes that don't actually carry information (e.g. mode/node when size 1) — but never a DECLARED axis: a single-node observation still has a node axis, because it said so.
+    while inner_dims and arr.shape[-1] == 1 and inner_dims != list(dims or []):
         arr = arr[..., 0]
         inner_dims = inner_dims[:-1]
 
     all_dims = grid_dims + trial_dims + inner_dims
+    coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
     return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
 
 
 def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim="point"):
     """Concatenate sharded exploration outputs into the full sweep result.
 
-    Each HPC array task writes its slice of the sweep as a flat ``point``-dim
-    ``DataArray`` whose per-cell parameter values are coordinates (see
-    :meth:`ExperimentResult.save`). This is the analysis-pass side of the
-    two-stage HPC pattern: it reads every shard file, concatenates them along
-    ``point``, and — with ``to_grid=True`` — pivots ``point`` into one dimension
-    per swept parameter, giving the full rectangular grid addressed by value
-    (order-independent, so it is robust to how tasks were sharded).
+    Each HPC array task writes its slice of the sweep as a flat ``point``-dim ``DataArray`` whose per-cell parameter values are coordinates (see :meth:`ExperimentResult.save`). This is the analysis-pass side of the two-stage HPC pattern: it reads every shard file, concatenates them along ``point``, and — with ``to_grid=True`` — pivots ``point`` into one dimension per swept parameter, giving the full rectangular grid addressed by value (order-independent, so it is robust to how tasks were sharded).
 
     Args:
         source: a directory to scan with *pattern*, or an explicit list of paths.
@@ -269,11 +467,7 @@ def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim=
 
     if isinstance(source, (str, os.PathLike)):
         src = os.fspath(source)
-        paths = (
-            sorted(glob.glob(os.path.join(src, pattern)))
-            if os.path.isdir(src)
-            else sorted(glob.glob(src))
-        )
+        paths = sorted(glob.glob(os.path.join(src, pattern))) if os.path.isdir(src) else sorted(glob.glob(src))
     else:
         paths = list(source)
     if not paths:
@@ -282,42 +476,126 @@ def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim=
     combined = xr.concat([xr.open_dataarray(p) for p in paths], dim=point_dim)
     if not to_grid:
         return combined
-    coord_names = [
-        c for c in combined.coords
-        if point_dim in combined[c].dims and c != point_dim
-    ]
+    coord_names = [c for c in combined.coords if point_dim in combined[c].dims and c != point_dim]
     if not coord_names:
         return combined
     return combined.set_index({point_dim: coord_names}).unstack(point_dim)
 
 
-# =============================================================================
+def reassemble_experiment_results(
+    shards_root, out_dir, pattern="**/*_result.h5", point_dim="point", stem="result", sidecar=None, compress: bool = True
+):
+    """Gather an HPC run's shard outputs into one keyed ``ExperimentResult`` artifact.
+
+    Follows the same on-disk shape as a :class:`~tvbo.classes.network.Network`:
+    one HDF5 file (``<stem>.h5``) holding the data, plus a YAML sidecar (``<stem>.yaml``) carrying the frozen, fully-overridden experiment spec — so the result is self-describing, provenance-complete and reproducible without any extra flags, and identical to what a local run writes.
+
+    Each array task wrote a shard as the same ``<prefix>_result.h5`` Dataset with a flat, self-describing ``point`` dimension (see :meth:`ExperimentResult.save`).
+    This concatenates them along ``point`` and pivots by parameter value into the full rectangular grid, giving one standard xarray ``Dataset`` that opens with a plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader. ``axis_points__*`` variables — one sweep-wide axis table, required identical in every shard — are carried past the concat and re-attached to the grid, so the gathered artifact stays as self-describing as a local run's.
+
+    Args:
+        shards_root: directory holding the shard ``.h5`` files (scanned recursively).
+        out_dir: where the ``<stem>.h5`` (+ ``<stem>.yaml``) is written.
+        pattern: glob for shard files.
+        point_dim: the flat cell dimension the shards wrote.
+        stem: basename of the result artifact (default ``result``).
+        sidecar: path to the frozen spec YAML to copy as ``<stem>.yaml``
+            (typically the kit's ``spec/<name>.yaml``). Omit to skip the sidecar.
+        compress: whether the reassembled artifact is written compressed. A gathered
+            sweep is the archival copy of a run that will not be repeated, so it is
+            worth the write time by default.
+
+    Returns:
+        List of written paths (``<stem>.h5`` first, then ``<stem>.yaml``).
+    """
+    import glob
+    import os
+    import shutil
+
+    src = os.fspath(shards_root)
+    paths = sorted(glob.glob(os.path.join(src, pattern), recursive=True))
+    if not paths:
+        raise FileNotFoundError(f"no shard files matched {pattern!r} under {src!r}")
+
+    datasets = [xr.open_dataset(p, engine="h5netcdf") for p in paths]
+    # ``axis_points__*`` vars are one sweep-wide axis table, not per-cell data: concatenating them along ``point`` would tile the sidecar once per shard. Lift them out, require every shard to carry the same table, and re-attach after the pivot.
+    sidecar_names = sorted({str(k) for ds in datasets for k in ds.data_vars if "axis_points__" in str(k)})
+    sidecars = {k: datasets[0][k] for k in sidecar_names if k in datasets[0]}
+    for p, ds in zip(paths, datasets, strict=True):
+        for k in sidecar_names:
+            if k not in ds.data_vars or (k in sidecars and not ds[k].equals(sidecars[k])):
+                raise ValueError(
+                    f"shard {p!r} disagrees with its siblings on {k!r} — the shards were not "
+                    f"produced by one sweep's axis table, so their point indices do not name "
+                    f"the same points and cannot be reassembled."
+                )
+    if sidecar_names:
+        datasets = [ds.drop_vars(sidecar_names) for ds in datasets]
+    combined = xr.concat(datasets, dim=point_dim)
+    coord_names = [c for c in combined.coords if point_dim in combined[c].dims and c != point_dim]
+    if len(coord_names) >= 2:
+        # Multi-parameter sweep: pivot the flat point dim into one dim per parameter, addressing the full rectangular grid by value (order-independent).
+        grid = combined.set_index({point_dim: coord_names}).unstack(point_dim)
+    elif len(coord_names) == 1:
+        # A single ordering coordinate (a one-parameter sweep, or a branch-restart's ``branch_point`` index) is a flat, ordered sequence — not a grid to pivot. Sort by it so shard order is irrelevant, then make it the dimension. (unstack needs a multi-index, so it cannot handle the single-coordinate case at all.)
+        grid = combined.sortby(coord_names[0]).swap_dims({point_dim: coord_names[0]})
+    else:
+        grid = combined
+    for k, da in sidecars.items():
+        # Shards suffix the sidecar's dim (`<axis>__point`) to keep it clear of the flat per-point coordinate; on the pivoted grid the axis IS a dimension, so the name goes back and the sidecar aligns with it.
+        grid[k] = da.rename({d: str(d)[: -len("__point")] for d in da.dims if str(d).endswith("__point")})
+    grid.attrs["tvbo_class"] = "tvbo:ExperimentResult"
+    if sidecar is not None:
+        grid.attrs["sidecar_file"] = f"{stem}.yaml"
+
+    os.makedirs(out_dir, exist_ok=True)
+    h5_path = os.path.join(out_dir, f"{stem}.h5")
+    encoding = {name: {"zlib": True, "complevel": 4} for name in grid.data_vars} if compress else None
+    grid.to_netcdf(h5_path, engine="h5netcdf", encoding=encoding)
+    written = [h5_path]
+
+    if sidecar is not None and os.path.exists(os.fspath(sidecar)):
+        yaml_path = os.path.join(out_dir, f"{stem}.yaml")
+        shutil.copyfile(os.fspath(sidecar), yaml_path)
+        written.append(yaml_path)
+    return written
+
+
 # Result Classes for Simulation Experiments
-# =============================================================================
 
 
 class SimulationResult:
     """Output from a single simulation run with its computed observations.
 
-    Stores simulation data as an ``xr.DataArray`` with named dimensions
-    (time, variable, node[, mode][, trial]). Observations are bound to the
-    simulation that produced them.
+    Stores simulation data as an ``xr.DataArray`` with named dimensions (time, variable, node[, mode][, trial]). Observations are bound to the simulation that produced them.
 
-    Accepts both new-style (``data=xr.DataArray``) and legacy
-    (``result=NativeSolution, state_names=[...]``) constructor signatures
-    for backward compatibility with generated template code.
+    Accepts both new-style (``data=xr.DataArray``) and legacy (``result=NativeSolution, state_names=[...]``) constructor signatures for backward compatibility with generated template code.
 
-    Attributes
+    Attributes:
     ----------
     data : xr.DataArray or None
         Simulation data with named dims and coords.
     observations : dict
         Computed observations from this simulation (BOLD, FC, etc.).
     transient : SimulationResult or None
-        Warm-up simulation result that preceded this one.
+        The run's own settling window, as a view on the same buffer — never a second run.
     """
 
-    def __init__(self, data=None, observations=None, transient=None, *, result=None, state_names=None, nodes=None, units=None, **kwargs):
+    def __init__(
+        self,
+        data=None,
+        observations=None,
+        transient=None,
+        *,
+        result=None,
+        state_names=None,
+        nodes=None,
+        observation_dims=None,
+        observation_times=None,
+        units=None,
+        n_transient=0,
+        **kwargs,
+    ):
         self._extras = {}
         self._timeseries = None
         self._units = units or {}  # {variable_name: unit_string}
@@ -331,16 +609,22 @@ class SimulationResult:
         elif data is not None and not isinstance(data, xr.DataArray):
             data = _to_dataarray(data, None, state_names, nodes)
 
-        self.data = data
-        # Normalize observations to Bunch so both JAX and tvboptim results have
-        # dot-access: result.observations.BOLD_TVB  (not just dict indexing).
-        if isinstance(observations, Bunch):
-            self.observations = observations
-        elif observations:
-            self.observations = Bunch(observations)
+        # One buffer, cut by the marker: `.data` is the measured window, `.transient` its settling head, `.full` both. The slices are taken on access, so nothing is duplicated to hold them.
+        self._n_transient = int(n_transient or 0)
+        self._full = data
+        self.data = data if self._n_transient <= 0 or data is None else data.isel(time=slice(self._n_transient, None))
+        # Normalize observations to Bunch so both JAX and tvboptim results have dot-access: result.observations.BOLD_TVB  (not just dict indexing). Observations carry the axis names their reduction declared at codegen, bound to the SAME node labels the trajectory just got — the one place holding both.
+        _odims = observation_dims or {}
+        _otimes = observation_times or {}
+
+        if observations:
+            self.observations = Bunch(
+                {k: _observation_dataarray(v, _odims.get(k), nodes, _otimes.get(k), name=k) for k, v in observations.items()}
+            )
         else:
             self.observations = Bunch()
-        self.transient = transient
+        # A backend that settles separately still hands its window over; it is reported as-is.
+        self._explicit_transient = transient
         self._extras.update(kwargs)
         # Store state_names separately for cases with no data yet
         if state_names and not (data is not None and "variable" in getattr(data, "coords", {})):
@@ -350,6 +634,25 @@ class SimulationResult:
     def units(self):
         """Unit mapping {variable_name: unit_string} for state/derived variables."""
         return self._units
+
+    @property
+    def full(self):
+        """The whole integrated window, settle included, on the measurement clock (t <= 0 is the settle)."""
+        return self._full
+
+    @property
+    def transient(self):
+        """This run's settling window, or None when none was declared.
+
+        A view on the same buffer `.data` reads, not a second simulation: `transient_time` marks part of ONE integration, and the marked head is cut here rather than integrated separately.
+        """
+        if self._explicit_transient is not None:
+            return self._explicit_transient
+        if self._n_transient <= 0 or self._full is None:
+            return None
+        out = SimulationResult(data=self._full.isel(time=slice(None, self._n_transient)), units=self._units)
+        out._source = self._source
+        return out
 
     # ── xarray delegation ─────────────────────────
 
@@ -399,7 +702,7 @@ class SimulationResult:
     def to_timeseries(self):
         """Convert to a full TimeSeries object for plotting and analysis.
 
-        Returns
+        Returns:
         -------
         TimeSeries
             4D time series (Time, State Variable, Space, Mode)
@@ -493,7 +796,7 @@ class SimulationResult:
         **kwargs
             Forwarded to the animation function.
 
-        Returns
+        Returns:
         -------
         matplotlib.animation.FuncAnimation
         """
@@ -554,7 +857,7 @@ class SimulationResult:
         try:
             ts = self.to_timeseries()
         except (ValueError, AttributeError, RecursionError):
-            raise AttributeError(name)
+            raise AttributeError(name) from None
         if hasattr(ts, name):
             return getattr(ts, name)
         raise AttributeError(f"SimulationResult has no attribute '{name}'")
@@ -570,10 +873,9 @@ class SimulationResult:
 class AlgorithmResult:
     """Result of an iterative algorithm (FIC, EIB, etc.).
 
-    Provides structured access to algorithm outputs with consistent naming
-    regardless of which algorithm was run.
+    Provides structured access to algorithm outputs with consistent naming regardless of which algorithm was run.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Algorithm name
@@ -622,6 +924,9 @@ class AlgorithmResult:
                 observations=post_tuning_observations or Bunch(),
                 state_names=state_names,
             )
+        elif post_tuning is None and post_tuning_observations:
+            # Streaming post-eval yields observations without a trajectory; expose them.
+            self.post_tuning = SimulationResult(data=None, observations=post_tuning_observations)
         else:
             self.post_tuning = post_tuning
 
@@ -649,7 +954,7 @@ class AlgorithmResult:
         try:
             return self._extras[name]
         except KeyError:
-            raise AttributeError(f"AlgorithmResult has no attribute '{name}'")
+            raise AttributeError(f"AlgorithmResult has no attribute '{name}'") from None
 
     def get(self, key, default=None):
         """Dict-like get for backward compat with Bunch-based code."""
@@ -666,10 +971,9 @@ class AlgorithmResult:
 class OptimizationResult:
     """Result of gradient-based optimization.
 
-    Provides structured access to optimization outputs including loss trajectory,
-    parameter evolution, and final simulation.
+    Provides structured access to optimization outputs including loss trajectory, parameter evolution, and final simulation.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Optimization/loss function name
@@ -719,23 +1023,23 @@ class OptimizationResult:
         self._extract_metrics()
 
     def _extract_metrics(self):
-        """Extract convenience metrics from history."""
-        if self.history and hasattr(self.history, "loss"):
-            loss_data = self.history.loss
-            if hasattr(loss_data, "save"):
-                self.loss_trajectory = loss_data.save
-            elif hasattr(loss_data, "array"):
-                self.loss_trajectory = loss_data.array
-            else:
-                self.loss_trajectory = loss_data
+        """Extract convenience metrics from history.
+
+        The history is keyed, not attributed: tvboptim's callbacks write into a plain ``dict``, so ``"loss" in history`` is what finds the loss and ``history.loss`` finds nothing. Reading it by attribute left ``loss_trajectory`` and ``final_loss`` None for every gradient fit, which is why neither reached the container — the sibling ``parameters`` branch below was already keyed and did work.
+
+        Every metric is assigned on every path, including the one where a recorded loss cannot be read as numbers: an attribute left unset is not None here but an ``AttributeError`` from ``__getattr__``, which ``__repr__`` then raises on.
+        """
+        self.loss_trajectory = None
+        self.final_loss = self.initial_loss = self.loss_improvement = None
+        if self.history and "loss" in self.history:
+            loss_data = self.history["loss"]
+            saved = next((v for v in (getattr(loss_data, a, None) for a in ("save", "array")) if v is not None), loss_data)
+            self.loss_trajectory = _loss_series(saved)
 
             if self.loss_trajectory is not None and len(self.loss_trajectory) > 0:
                 self.final_loss = float(self.loss_trajectory[-1])
                 self.initial_loss = float(self.loss_trajectory[0])
                 self.loss_improvement = self.initial_loss - self.final_loss
-        else:
-            self.loss_trajectory = None
-            self.final_loss = None
 
         # State trajectory (from SavingParametersCallback)
         if self.history and "parameters" in self.history:
@@ -757,15 +1061,13 @@ class OptimizationResult:
         try:
             return self._extras[name]
         except KeyError:
-            raise AttributeError(f"OptimizationResult has no attribute '{name}'")
+            raise AttributeError(f"OptimizationResult has no attribute '{name}'") from None
 
     def __repr__(self):
         loss_str = f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
         return f"OptimizationResult(name='{self.name}', n_steps={self.n_steps}{loss_str})"
 
-    # ------------------------------------------------------------------
     # Plotting
-    # ------------------------------------------------------------------
 
     def plot(self, type="summary", ax=None, figsize=None, **kwargs):
         """Plot optimization results.
@@ -830,16 +1132,17 @@ class OptimizationResult:
 
     @staticmethod
     def _flatten_params(state, prefix=""):
-        """Flatten a (possibly nested) state dict to ``{name: ndarray}``."""
+        """Flatten a (possibly nested) state to ``{dotted_name: ndarray}``.
+
+        Recurses into containers (dicts, objects) and returns array-like values as leaves. A leaf is anything exposing ``ndim`` — numpy and jax alike; a jax array carries an empty ``__dict__``, so it is detected as a leaf here rather than recursed into as an empty container.
+        """
         flat = {}
         if state is None:
             return flat
-        # Treat JAX-array-protocol objects (e.g. tvboptim Parameter,
-        # BoundedParameter) as leaf nodes — don't recurse into their
-        # internal attrs like .low / .high.
+        # Treat JAX-array-protocol objects (e.g. tvboptim Parameter, BoundedParameter) as leaf nodes — don't recurse into their internal attrs like .low / .high.
         if hasattr(state, "__jax_array__"):
             try:
-                arr = np.asarray(state.__jax_array__())
+                arr = np.asarray(_jax_array(state))
                 if arr.dtype.kind in ("f", "i", "u"):
                     flat[prefix] = arr
             except (TypeError, ValueError):
@@ -848,7 +1151,7 @@ class OptimizationResult:
         items = None
         if isinstance(state, dict):
             items = state.items()
-        elif hasattr(state, "__dict__") and not isinstance(state, np.ndarray):
+        elif hasattr(state, "__dict__") and not hasattr(state, "ndim"):
             items = ((k, v) for k, v in vars(state).items() if not k.startswith("_"))
         if items is not None:
             for k, v in items:
@@ -859,8 +1162,7 @@ class OptimizationResult:
         else:
             # Leaf node
             try:
-                val = state.__jax_array__() if hasattr(state, "__jax_array__") else state
-                arr = np.asarray(val)
+                arr = np.asarray(_jax_array(state))
                 if arr.dtype.kind in ("f", "i", "u"):
                     flat[prefix] = arr
             except (TypeError, ValueError):
@@ -899,7 +1201,7 @@ class OptimizationResult:
             squeeze=False,
         )
         axes = axes[:, 0]
-        for ax, (name, values) in zip(axes, trajectories.items()):
+        for ax, (name, values) in zip(axes, trajectories.items(), strict=True):
             steps = np.arange(values.shape[0])
             if values.ndim == 1 or (values.ndim == 2 and values.shape[1] == 1):
                 ax.plot(steps, values.ravel(), **kwargs)
@@ -1005,7 +1307,7 @@ class OptimizationResult:
 class InferenceResult:
     """Result of Bayesian inference (MCMC posterior over parameters).
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Inference name (the ``inferences:`` key).
@@ -1043,13 +1345,12 @@ class ExplorationResult(Bunch):
     """Result of parameter exploration (grid search).
 
     A thin wrapper around tvboptim exploration outputs that provides:
-    - Access to raw results (flat or grid-shaped)
+    - Access to labelled results (flat or grid-shaped)
     - Axis information for parameter values
     - Utility methods for finding optimal points and slicing
     - Time series plotting for parameter sweeps (when observable returns time series)
 
-    Designed to work with tvboptim's Space and ParallelResult directly,
-    while also supporting other exploration backends.
+    Designed to work with tvboptim's Space and ParallelResult directly, while also supporting other exploration backends.
 
     Supports two result types:
     - **Scalar results**: Each grid point produces a scalar (e.g., loss function).
@@ -1057,14 +1358,20 @@ class ExplorationResult(Bunch):
     - **Time series results**: Each grid point produces a time series (e.g., model
       output). Stored as ``(n_grid, n_time, ...)``, with ``plot()`` support.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Exploration name
     grid : Space
         Parameter grid specification (tvboptim Space object)
-    results : jnp.ndarray
-        Observable values at each grid point (flat for scalars, multi-dim for time series)
+    results : xr.DataArray
+        Observable values at each grid point (flat for scalars, multi-dim for time
+        series), carrying named dims: the leading run axis (the swept parameter,
+        ``trial``, or ``point``) followed by the intrinsic dims (time, variable,
+        node, mode). The payload stays JAX-native — only the labels are
+        materialised — and the shape is unchanged from what the backend emitted, so
+        it is addressed by key rather than by position. ``as_grid()`` reshapes the
+        flat run axis into one dim per exploration axis.
     axes : list
         List of axis info (Bunch with name, lo, hi, n, values)
     observable : str
@@ -1077,6 +1384,8 @@ class ExplorationResult(Bunch):
         True if results contain time series per grid point
     dt : float
         Time step for time series results (optional)
+    transient_time : float
+        Length of the settle at the head of each cell's recorded trajectory. A sweep records the window it integrated, so ``results`` spans the settle too — the analogue of ``SimulationResult.full`` — and this puts its time axis on the measurement clock, where the settle carries non-positive timestamps. ``results.sel(time=slice(dt, None))`` is the measured window that ``SimulationResult.data`` reports.
     output_names : list[str]
         Names of output variables (e.g., ['v_pyr']) for time series results
     """
@@ -1089,25 +1398,49 @@ class ExplorationResult(Bunch):
         axes=None,
         observable: str = None,
         dt: float = None,
+        transient_time: float = 0.0,
         output_names: list = None,
         observations=None,
         cell_coords=None,
+        is_shard=None,
+        axis_points=None,
         **kwargs,
     ):
+        """A sweep's results, labelled against the axes that produced them.
+
+        ``cell_coords`` (``{axis: (n_cell,) array}``) is each cell's actual parameter values, set for EVERY keyed sweep — a whole grid as much as one array task's slice. It drives placement by value in ``as_grid``: into the rectangular grid for a full product, onto a flat ``point`` dim for a subset. It is NOT a shard marker, and reading it as one cost every local sweep its provenance sidecar.
+
+        ``is_shard`` is that marker, declared by the producer — the generated script holds ``kwargs['shard']``. ``None`` means undeclared, and ``_is_partial_shard`` falls back to counting cells. Nothing downstream can re-derive it reliably: a branch shard's axis ``n`` is taken from the already-sliced index, so the slice looks complete.
+
+        ``axis_points`` (``{axis: (n_point, ...) array}``) is the materialised points of each ARRAY-valued axis — only the producer holds them, and the point-index coordinate such an axis sweeps on is meaningless without them. Kept as keyed ``DataArray`` sidecars (see :func:`_axis_points_dataarray`); scalar axes carry nothing extra and are dropped here, so the producer may hand over its whole axis table.
+        """
         super().__init__(**kwargs)
         self.name = name
         self.grid = grid
         self.axes = axes or []
         self.observable = observable
         self.dt = dt
+        self.transient_time = float(transient_time or 0.0)
         self.output_names = output_names or []
-        # Per-cell parameter values for a sharded run ({axis: (n_point,) array}).
-        # Present only when this result is one HPC array task's slice; drives the
-        # flat 'point'-dim labelling in ``as_grid`` and reassembly by value.
+        self.is_shard = is_shard
         self.cell_coords = cell_coords
-        # Per-grid-point observations as {name: xr.DataArray} with grid axes
-        # prepended to each observation's intrinsic dims (time/variable/node/mode).
-        self.observations = observations or {}
+        self.axis_points = {
+            str(k): _axis_points_dataarray(str(k), v)
+            for k, v in (axis_points or {}).items()
+            if v is not None and np.asarray(v).ndim > 1
+        }
+        # Per-grid-point observations as {name: xr.DataArray} with grid axes prepended to each observation's intrinsic dims (time/variable/node/mode). Grid codegen already hands over labelled DataArrays; the warm-start / adiabatic path hands over plain arrays, so label those here (against the swept axes) — the class honours its own contract regardless of producer, and every consumer (plotting, save, reassembly) sees DataArrays.
+        self.observations = {
+            k: (
+                _stacked_to_dataarray(v, self.axes, name=k, cell_coords=self.cell_coords)
+                if v is not None and not hasattr(v, "dims")
+                else v
+            )
+            for k, v in (observations or {}).items()
+        }
+
+        # Collapse any axis marked ``ExplorationAxis.reduce`` by its statistic. An ensemble axis (e.g. an ``execution.random_seed`` trial ensemble) is reduced in place across every observation carrying its named grid dim, so the reduced observation (mean/sem/…) becomes first-class and the collapsed dim — and its axis metadata — drop out. Keyed by dim name (never positional); observations without the dim are untouched. No reduce axes ⇒ a no-op (behaviour unchanged).
+        self._apply_axis_reductions()
 
         # Compute expected grid shape from axes
         self._grid_shape = tuple(
@@ -1116,20 +1449,26 @@ class ExplorationResult(Bunch):
 
         # Detect whether results are time series or scalar per grid point
         if results is not None:
-            results_arr = jnp.asarray(results)
-            n_grid_dims = len(self._grid_shape) if self._grid_shape else 1
+            # A producer may hand over an already-labelled payload; take the raw array so the shape detection below sees the same thing either way.
+            results_arr = jnp.asarray(self._payload(results))
+            # Grid occupies the leading dim(s); anything after is intrinsic (time/node), so an extra dim ⇒ time series. Grid layout is either a flat cell dim (prod of axes, the runner's) or one dim per axis — resolve from the shape (comparing ndim to len(grid_shape) unconditionally mis-flattened >2-axis timeseries sweeps).
+            n_grid = int(np.prod(self._grid_shape)) if self._grid_shape else None
+            n_axes = len(self._grid_shape) if self._grid_shape else 0
+            shp = tuple(results_arr.shape)
+            if n_grid is not None and shp and shp[0] == n_grid:
+                n_grid_dims = 1  # flat cell product (runner layout)
+            elif n_axes and shp[:n_axes] == tuple(self._grid_shape):
+                n_grid_dims = n_axes  # one dim per axis
+            else:
+                n_grid_dims = n_axes or 1  # fallback (prior behaviour)
             if results_arr.ndim > n_grid_dims:
-                # Time series: shape (n_grid, n_time, ...) — preserve structure
-                self.results = results_arr
+                self.results = results_arr  # time series: preserve structure
                 self.is_timeseries = True
             else:
-                # Scalar: flatten for backward compatibility
-                self.results = results_arr.flatten()
+                self.results = results_arr.flatten()  # scalar per grid point
                 self.is_timeseries = False
 
-            # Trials-only explorations (no sweep axes) can be emitted as
-            # (1, n_trials, n_time, ...). Collapse the synthetic grid axis so
-            # plotting interprets axis 1 as time instead of trials.
+            # Trials-only explorations (no sweep axes) can be emitted as (1, n_trials, n_time, ...). Collapse the synthetic grid axis so plotting interprets axis 1 as time instead of trials.
             n_trials = int(getattr(self, "n_trials", 1) or 1)
             if (
                 self.is_timeseries
@@ -1144,9 +1483,99 @@ class ExplorationResult(Bunch):
             self.results = None
             self.is_timeseries = False
 
+        # Label the payload so every result carries named dims, whatever the producer handed over. Consumers then select by key instead of by position, which is what keeps a layout change from silently reading the wrong channel.
+        self.results = self._label_payload(self.results)
+
         # Shape is the expected grid shape from axes
         self.shape = self._grid_shape
         self._find_optimal()
+
+    @staticmethod
+    def _payload(data):
+        """The raw array behind a labelled payload (JAX-native, no copy)."""
+        return data.data if hasattr(data, "dims") else data
+
+    def _has_trial_axis(self, tail_first) -> bool:
+        """Whether the dim after the run axis is a per-point ``trial`` ensemble.
+
+        True only for a swept exploration carried *with* trials, where the payload keeps a trial axis between the grid axis and time. A trials-only ensemble already spends its leading axis on ``trial`` and is excluded by the caller.
+        """
+        n_trials = int(getattr(self, "n_trials", 0) or 0)
+        return n_trials > 1 and tail_first == n_trials
+
+    def _intrinsic_dims(self, tail_shape, *, trial_first: bool = False):
+        """Names + coords for the intrinsic dims that follow the leading run axis.
+
+        ``tail_shape`` is the payload shape after the run axis (the swept parameter, ``point``, or ``trial``). Returns ``(dims, coords)`` following the TVB convention ``time[, variable][, node][, mode]``, optionally prefixed with a per-point ``trial`` axis. Single home for the labelling rule so :meth:`_label_payload` and :meth:`as_grid` never disagree.
+        """
+        dims: list = []
+        coords: dict = {}
+        tail = list(tail_shape)
+        if trial_first and tail:
+            dims.append("trial")
+            coords["trial"] = np.arange(tail[0])
+            tail = tail[1:]
+        if not tail:
+            return dims, coords
+        dims.append("time")
+        if self.dt:
+            # The measurement clock, the one every other result reports on: samples are post-step, so the first sits one dt in, and a declared settle puts the origin at its end.
+            coords["time"] = (np.arange(tail[0]) + 1) * self.dt - float(getattr(self, "transient_time", 0.0) or 0.0)
+        # tvboptim drops the `variable` dim for a single model output, so only label the leading spatial dim `variable` when it matches the output count; the rest map to (node, mode). Unknown output count → assume `variable` is present.
+        spatial = tail[1:]
+        n_out = len(self.output_names) if self.output_names else None
+        if spatial and (n_out is None or spatial[0] == n_out):
+            dims.append("variable")
+            if self.output_names and len(self.output_names) == spatial[0]:
+                coords["variable"] = list(self.output_names)
+            spatial = spatial[1:]
+        dims += ["node", "mode"][: len(spatial)]
+        return dims, coords
+
+    def _label_payload(self, data):
+        """Name the dims of the results payload **without reshaping it**.
+
+        The leading dim is the flat run axis: the swept parameter when exactly one axis is explored, ``trial`` for a trials-only ensemble, otherwise ``point`` (the flattened grid product, which :meth:`as_grid` reshapes into one dim per axis). Intrinsic dims follow the TVB convention (time, variable, node, mode) and pick up coordinates from ``dt`` and ``output_names``.
+
+        Shapes are left untouched, so positional consumers keep working while keyed access becomes possible.
+        """
+        if data is None or hasattr(data, "dims"):
+            return data
+        ndim = getattr(data, "ndim", 0)
+        if ndim == 0:
+            return xr.DataArray(data, name=self.observable or None)
+
+        names = [self._axis_name(ax) for ax in self.axes]
+        n_trials = int(getattr(self, "n_trials", 0) or 0)
+        coords = {}
+
+        if len(names) == 1 and names[0] and data.shape[0] == (int(self._grid_shape[0]) if self._grid_shape else -1):
+            lead = names[0]
+            vals = self._axis_values(self.axes[0])
+            if vals is not None and len(vals) == data.shape[0]:
+                coords[lead] = np.asarray(vals)
+        elif not self.axes and n_trials and data.shape[0] == n_trials:
+            lead = "trial"
+            coords[lead] = np.arange(data.shape[0])
+        else:
+            lead = "point"
+        dims = [lead]
+
+        if self.is_timeseries and ndim > 1:
+            tail = data.shape[1:]
+            # A trials-only ensemble already spent its leading axis on `trial`; only a swept run carries a separate trial axis in the tail.
+            trial_first = lead != "trial" and self._has_trial_axis(tail[0])
+            intrinsic, intrinsic_coords = self._intrinsic_dims(tail, trial_first=trial_first)
+            dims += intrinsic
+            coords.update(intrinsic_coords)
+
+        # Any dim the layout does not account for still gets a name, so the result is labelled even when the producer emits an unexpected rank.
+        while len(dims) < ndim:
+            dims.append(f"dim_{len(dims)}")
+        try:
+            return xr.DataArray(data, dims=dims[:ndim], coords=coords, name=self.observable or None)
+        except Exception:
+            return xr.DataArray(data, name=self.observable or None)
 
     @staticmethod
     def _axis_name(ax):
@@ -1157,20 +1586,59 @@ class ExplorationResult(Bunch):
         """Swept coordinate values for one axis (``Bunch`` or plain dict)."""
         return ax.get("explored_values") if isinstance(ax, dict) else getattr(ax, "explored_values", None)
 
+    @staticmethod
+    def _axis_reduce(ax):
+        """Reduction statistic for one axis (``ExplorationAxis.reduce.statistic``), or ``None``."""
+        return ax.get("reduce") if isinstance(ax, dict) else getattr(ax, "reduce", None)
+
+    @staticmethod
+    def _reduce_dataarray(da, dim, stat):
+        """Collapse ``da`` along the named ``dim`` by ``stat`` (keyed by dim name).
+
+        Supports ``mean``, ``sum``, ``std``, ``median`` and ``sem`` (the standard error of the mean, ``std`` along the dim divided by ``sqrt(n)``).
+        """
+        stat = str(stat).lower()
+        if stat == "mean":
+            return da.mean(dim=dim)
+        if stat == "sum":
+            return da.sum(dim=dim)
+        if stat == "std":
+            return da.std(dim=dim)
+        if stat == "median":
+            return da.median(dim=dim)
+        if stat == "sem":
+            return da.std(dim=dim) / np.sqrt(da.sizes[dim])
+        raise ValueError(f"unknown ExplorationAxis.reduce statistic {stat!r}; expected one of: mean, sum, std, sem, median")
+
+    def _apply_axis_reductions(self):
+        """Collapse every axis marked ``reduce`` across the observations it labels.
+
+        For each axis whose ``reduce`` statistic is set, the matching named grid dimension is reduced across every observation ``DataArray`` that carries it (keyed by dim name), the reduced observations keep their names, and the axis is dropped from ``self.axes`` so the shape metadata stays consistent.
+        Observations without the dim are left untouched. A no-op when no axis sets ``reduce`` (result is byte-identical to a run without the feature).
+        """
+        if not any(self._axis_reduce(ax) for ax in self.axes):
+            return
+        for ax in self.axes:
+            stat = self._axis_reduce(ax)
+            if not stat:
+                continue
+            dim = self._axis_name(ax)
+            if not dim:
+                continue
+            for k, da in list(self.observations.items()):
+                if da is None or not hasattr(da, "dims") or dim not in da.dims:
+                    continue  # skip observations that don't carry this dim
+                self.observations[k] = self._reduce_dataarray(da, dim, stat)
+        # Drop the collapsed axes from the axis metadata so downstream shape computation (``_grid_shape``) and labelling exclude them.
+        self.axes = [ax for ax in self.axes if not self._axis_reduce(ax)]
+
     def as_grid(self):
         """Reshape the flat results into a grid **labeled by parameter name**.
 
-        Returns an ``xr.DataArray`` with one dimension per exploration axis — named
-        by the swept parameter, coordinates set to the swept values — so grid
-        results are addressed by name (``g.sel(**{"ReducedWongWang.w": 0.5})``) and
-        are **independent of axis order**. The data stays a JAX array (the DataArray
-        is a registered JAX pytree); only the coordinate labels are materialised. A
-        time-series observable keeps its intrinsic dims (time, variable, node, mode)
-        after the grid dims. Falls back to the positional array if it cannot be
-        labelled; ``None`` when empty. A sharded result (``cell_coords`` set) is
-        a subset of grid points, not a full product, so it is labelled with a
-        single ``point`` dim carrying each axis's value — reassemble across
-        shards by parameter value.
+        Returns an ``xr.DataArray`` with one dimension per exploration axis — named by the swept parameter, coordinates set to the swept values — so grid results are addressed by name (``g.sel(**{"ReducedWongWang.w": 0.5})``) and are **independent of axis order**. The data stays a JAX array (the DataArray is a registered JAX pytree); only the coordinate labels are materialised. A time-series observable keeps its intrinsic dims (time, variable, node, mode) after the grid dims. ``None`` when empty; otherwise always labelled — a payload that cannot be reshaped into the grid is returned with the dim names it already carries (see :meth:`_label_payload`) rather than as a bare array, so no consumer is handed positional data. A set ``cell_coords`` selects the keyed path below, which every sweep takes because every sweep sets it;
+        :func:`_stacked_to_dataarray` then decides the shape from whether the cells fill the Cartesian product. A full product is placed into the rectangular grid BY VALUE, so ``sel`` by parameter works as usual. A subset — an HPC array task's slice, or a branch restart — gets a single ``point`` dim carrying each axis's value, so it reassembles across shards by parameter value.
+
+        Do not read a set ``cell_coords`` as "this is a shard". ``_is_partial_shard`` answers that separate question, for provenance rather than labelling, and prefers the producer's declared ``is_shard``.
         """
         if self.results is None:
             return None
@@ -1183,55 +1651,50 @@ class ExplorationResult(Bunch):
                 if r.ndim > t_dim:
                     intrinsic_ts = np.arange(r.shape[t_dim]) * self.dt
             return _stacked_to_dataarray(
-                self.results, self.axes, intrinsic_ts=intrinsic_ts,
-                n_trials=n_trials, name=self.observable or None,
+                self._payload(self.results),
+                self.axes,
+                intrinsic_ts=intrinsic_ts,
+                n_trials=n_trials,
+                name=self.observable or None,
                 cell_coords=self.cell_coords,
             )
-        data = self.results  # keep JAX-native; never np.asarray the payload
+        labelled = self.results  # already carries named dims
+        data = self._payload(labelled)  # keep JAX-native; never np.asarray the payload
         names = [self._axis_name(ax) for ax in self.axes]
         grid_shape = tuple(self._grid_shape or ())
         n_grid = 1
         for _s in grid_shape:
             n_grid *= int(_s)
+        if not all(names) or not grid_shape:
+            # No named grid to lay out (trials-only, or a nameless axis): the payload is already labelled with its own dims, so hand that back.
+            return labelled
         try:
+            intrinsic_coords = {}
             if self.is_timeseries:
-                if not (grid_shape and data.shape[0] == n_grid):
-                    return data  # trials-only / unshaped: leave positional
+                if data.shape[0] != n_grid:
+                    return labelled
                 data = data.reshape(grid_shape + tuple(data.shape[1:]))
-                # Intrinsic (post-grid) layout is (time, *spatial) following the TVB
-                # convention (variable, node, mode). tvboptim drops the `variable` dim
-                # for a single model output, so only label it `variable` when the
-                # leading spatial dim actually matches the output count; the rest map
-                # to (node, mode). Unknown output count → assume `variable` is present.
-                spatial = list(data.shape[len(names) + 1:])
-                n_out = len(self.output_names) if self.output_names else None
-                intrinsic = ["time"]
-                if spatial and (n_out is None or spatial[0] == n_out):
-                    intrinsic.append("variable")
-                    spatial = spatial[1:]
-                intrinsic += ["node", "mode"][: len(spatial)]
+                # Intrinsic (post-grid) dims follow the same rule as the flat payload — resolved once in `_intrinsic_dims` so the two agree.
+                tail = data.shape[len(names) :]
+                trial_first = bool(tail) and self._has_trial_axis(tail[0])
+                intrinsic, intrinsic_coords = self._intrinsic_dims(tail, trial_first=trial_first)
                 dims = names + intrinsic
             else:
-                if not grid_shape or data.size != n_grid:
-                    return data  # nothing to lay out
+                if data.size != n_grid:
+                    return labelled
                 data = data.reshape(grid_shape)
                 dims = list(names)
-            if not all(dims):
-                return data  # a nameless axis — positional fallback
-            sizes = dict(zip(dims, data.shape))
+            sizes = dict(zip(dims, data.shape, strict=True))
             coords = {}
-            for ax, nm in zip(self.axes, names):
+            for ax, nm in zip(self.axes, names, strict=True):
                 vals = self._axis_values(ax)
                 if vals is not None and len(vals) == sizes.get(nm):
                     coords[nm] = np.asarray(vals)  # coordinate labels, like TimeSeries' time
-            if self.is_timeseries and "time" in dims and self.dt:
-                coords["time"] = np.arange(data.shape[dims.index("time")]) * self.dt
-            if self.is_timeseries and "variable" in dims and self.output_names \
-                    and len(self.output_names) == data.shape[dims.index("variable")]:
-                coords["variable"] = list(self.output_names)
+            coords.update(intrinsic_coords)
             return xr.DataArray(data, dims=dims, coords=coords, name=self.observable or None)
         except Exception:
-            return data
+            # Never degrade to a bare array — the labelled payload is still correct, just not reshaped into the grid.
+            return labelled
 
     def _find_optimal(self):
         """Find optimal point in the grid (scalar results only)."""
@@ -1239,7 +1702,7 @@ class ExplorationResult(Bunch):
         if self.is_timeseries or self.results is None or self.results.size == 0:
             return
         # Find argmin in flat results (assumes lower is better for loss functions)
-        flat = self.results.flatten()
+        flat = self._payload(self.results).flatten()
         flat_idx = int(jnp.argmin(flat))
         self.optimal.flat_index = flat_idx
         self.optimal.value = float(flat[flat_idx])
@@ -1276,8 +1739,7 @@ class ExplorationResult(Bunch):
     def plot(self, figsize=None, sharex=True, ax=None, overlay=False, **kwargs):
         """Plot exploration results.
 
-        For time series results: subplots for each parameter value by default,
-        or a single overlaid axis when ``overlay=True``.
+        For time series results: subplots for each parameter value by default, or a single overlaid axis when ``overlay=True``.
         For scalar results: line plot (1D) or filled-contour heatmap (2D), drawn into ``ax`` if given.
         """
         if not self.is_timeseries:
@@ -1449,8 +1911,7 @@ class ExplorationResult(Bunch):
 class ObservationResult(Bunch):
     """Result from an observation pipeline with named outputs.
 
-    Exposes pipeline outputs as attributes (e.g., result.psd, result.frequencies)
-    while maintaining NativeSolution-like interface (.data, .time, .dt).
+    Exposes pipeline outputs as attributes (e.g., result.psd, result.frequencies) while maintaining NativeSolution-like interface (.data, .time, .dt).
     """
 
     @property
@@ -1464,14 +1925,94 @@ class ObservationResult(Bunch):
         return getattr(self, "ts", None)
 
 
+def _free_param_names(source) -> set:
+    """Names of the model's free (tunable) parameters — dynamics + coupling.
+
+    These are the parameters an algorithm tunes (e.g. wLRE / wFFI / J_i for EIB); their fitted values are the operating point a ``from_experiment`` warm-start reloads as a prior location (persisted as ``estimate__<param>`` in :meth:`ExperimentResult.save`).
+    State variables are never parameters, so filtering to these can never collide with the settled ``<sv>_final`` state observations. Empty set when *source* is absent.
+    """
+    names: set = set()
+    if source is None:
+        return names
+
+    def _vals(coll):
+        if coll is None:
+            return []
+        return list(coll.values()) if hasattr(coll, "values") else list(coll)
+
+    def _add_free(params):
+        for p in _vals(params):
+            if getattr(p, "free", False) and getattr(p, "name", None):
+                names.add(p.name)
+
+    def _couplings(obj):
+        # network.coupling is a name->Coupling dict; experiment.coupling is a single Coupling. Accept dict / list / single object so either shape resolves.
+        if obj is None:
+            return []
+        if hasattr(obj, "values"):
+            return list(obj.values())
+        if isinstance(obj, (list, tuple)):
+            return list(obj)
+        return [obj]
+
+    _add_free(getattr(getattr(source, "dynamics", None), "parameters", None))
+    net = getattr(source, "network", None)
+    for c in _couplings(getattr(net, "coupling", None)) + _couplings(getattr(source, "coupling", None)):
+        _add_free(getattr(c, "parameters", None))
+    return names
+
+
+def _algo_tuned_params(source) -> dict:
+    """Map each algorithm name to the set of free parameters it FITS.
+
+    A parameter counts as fit by an algorithm when an ``update_rule`` targets it — the algorithm's own rules or, recursively, those of an algorithm it ``includes``. Lets ``estimate__<param>`` be sourced from the algorithm that actually tunes a parameter rather than one that merely carries it at its initial value (e.g. a FIC pre-pass that holds ``wLRE``/``wFFI`` fixed must not shadow the EIB pass that fits them). Empty dict when *source* exposes no introspectable algorithms; each present algorithm maps to a (possibly empty) set.
+    """
+
+    def _as_list(coll):
+        if coll is None:
+            return []
+        if hasattr(coll, "values"):
+            return list(coll.values())
+        if isinstance(coll, (list, tuple)):
+            return list(coll)
+        return [coll]
+
+    algos = getattr(source, "algorithms", None)
+    if not algos:
+        return {}
+    by_name = algos if hasattr(algos, "get") else {str(getattr(a, "name", i)): a for i, a in enumerate(_as_list(algos))}
+
+    def _targets(algo):
+        out = set()
+        for rule in _as_list(getattr(algo, "update_rules", None)):
+            tp = getattr(rule, "target_parameter", None)
+            nm = getattr(tp, "name", None) or (str(tp) if tp is not None else None)
+            if nm:
+                out.add(str(nm))
+        return out
+
+    def _tuned(name, seen):
+        algo = by_name.get(name)
+        if algo is None or name in seen:
+            return set()
+        seen.add(name)
+        out = _targets(algo)
+        for inc in _as_list(getattr(algo, "includes", None)):
+            inc_name = getattr(inc, "algorithm", None)
+            inc_name = getattr(inc_name, "name", None) or inc_name
+            if inc_name:
+                out |= _tuned(str(inc_name), seen)
+        return out
+
+    return {name: _tuned(name, set()) for name in by_name}
+
+
 class ExperimentResult:
     """Result from a complete experiment run.
 
-    Mirrors the SimulationExperiment schema structure: integration, algorithms,
-    optimizations, explorations, continuations. Accepts both new-style explicit
-    fields and old-style ``results=Bunch`` constructor for backward compatibility.
+    Mirrors the SimulationExperiment schema structure: integration, algorithms, optimizations, explorations, continuations. Accepts both new-style explicit fields and old-style ``results=Bunch`` constructor for backward compatibility.
 
-    Attributes
+    Attributes:
     ----------
     integration : SimulationResult or None
         Primary simulation output with its observations and transient.
@@ -1491,7 +2032,7 @@ class ExperimentResult:
         Back-reference to input specification.
     """
 
-    _output_sections = {"integration", "algorithms", "optimizations", "explorations", "continuations"}
+    _output_sections = {"integration", "algorithms", "optimizations", "explorations", "continuations", "inferences"}
 
     def __init__(
         self,
@@ -1500,6 +2041,7 @@ class ExperimentResult:
         algorithms=None,
         optimizations=None,
         continuations=None,
+        inferences=None,
         data_sources=None,
         name=None,
         source=None,
@@ -1516,9 +2058,18 @@ class ExperimentResult:
             optimizations = results.get("optimizations", optimizations)
             explorations = results.get("explorations", explorations)
             continuations = results.get("continuations", continuations)
+            inferences = results.get("inferences", inferences)
             # Preserve extra keys (state, model_fn, timings, etc.)
             for k, v in results.items():
-                if k not in ("integration", "algorithms", "optimizations", "explorations", "continuations", "data_sources"):
+                if k not in (
+                    "integration",
+                    "algorithms",
+                    "optimizations",
+                    "explorations",
+                    "continuations",
+                    "inferences",
+                    "data_sources",
+                ):
                     self._extras[k] = v
 
         # Also handle keyword: ExperimentResult(results=bunch, ...)
@@ -1530,6 +2081,7 @@ class ExperimentResult:
                 optimizations = optimizations or results_kw.get("optimizations")
                 explorations = explorations or results_kw.get("explorations")
                 continuations = continuations or results_kw.get("continuations")
+                inferences = inferences or results_kw.get("inferences")
                 for k, v in results_kw.items():
                     if k not in (
                         "integration",
@@ -1537,6 +2089,7 @@ class ExperimentResult:
                         "optimizations",
                         "explorations",
                         "continuations",
+                        "inferences",
                         "data_sources",
                     ):
                         self._extras[k] = v
@@ -1546,6 +2099,7 @@ class ExperimentResult:
         self.optimizations = optimizations or {}
         self.explorations = explorations or {}
         self.continuations = continuations or {}
+        self.inferences = inferences or {}
         self.data_sources = data_sources or {}
         self.name = name or experiment_name
         self.source = source
@@ -1570,13 +2124,13 @@ class ExperimentResult:
                         units[str(n)] = str(u)
                 integration._units = units
 
-    # Singular-to-plural aliases for back-compat with docs/notebooks that
-    # access result.exploration.X / result.optimization.X / etc.
+    # Singular-to-plural aliases for back-compat with docs/notebooks that access result.exploration.X / result.optimization.X / etc.
     _singular_aliases = {
         "exploration": "explorations",
         "optimization": "optimizations",
         "algorithm": "algorithms",
         "continuation": "continuations",
+        "inference": "inferences",
     }
 
     def __getattr__(self, name):
@@ -1609,66 +2163,586 @@ class ExperimentResult:
             return val is not None and val != {}
         return key in self._extras
 
-    def save(self, out_dir):
-        """Persist the run's observation arrays to *out_dir* as netCDF.
+    def _recorded_observation_names(self) -> set:
+        """Observation names to persist: leaves plus anything flagged ``record``.
 
-        Writes one file per observation ``DataArray`` on the explorations (the
-        two-stage HPC simulation output) and on the primary integration result.
-        A sharded run writes only its own slice; each file carries the swept
-        parameter value per cell as a coordinate, so shard files concatenate by
-        value into the full grid in the analysis pass. Returns written paths.
-        Falls back to ``.npz`` when a DataArray cannot be encoded as netCDF.
+        An observation is recorded when it is either explicitly ``record: true`` or *terminal* — not consumed as a ``source`` by another observation or by an optimization loss. ``record: false`` always drops it. This keeps final results (a fitted FC, an effective-frequency map) while omitting intermediates (a raw BOLD feeding an FC, an FC feeding a loss), which are recomputable from the recipe in the sidecar. Falls back to keeping every observation when the experiment carries no observation definitions.
+        """
+        exp = self.source
+        obs_defs = getattr(exp, "observations", None) or {}
+        present = set(getattr(self, "observations", None) or {})
+        if not obs_defs:
+            return present
+        consumed: set = set()
+
+        def _mark(ref):
+            s = str(getattr(ref, "name", ref))
+            if s in obs_defs:  # bare observation name
+                consumed.add(s)
+            elif s.startswith("observations."):  # observations.<name>[.data]
+                base = s.split(".")[1]
+                if base in obs_defs:
+                    consumed.add(base)
+
+        for o in obs_defs.values():
+            for src in getattr(o, "source", None) or []:
+                _mark(src)
+        for opt in (getattr(exp, "optimizations", None) or {}).values():
+            loss = getattr(opt, "loss", None)
+            for arg in (getattr(loss, "arguments", None) or {}).values():
+                if getattr(arg, "value", None) is not None:
+                    _mark(arg.value)
+
+        keep = set()
+        for name, o in obs_defs.items():
+            rec = getattr(o, "record", None)
+            if rec is True:
+                keep.add(name)
+            elif rec is False:
+                continue
+            elif name not in consumed:
+                keep.add(name)
+        return keep & present if present else keep
+
+    def _cohort_subject_states(self):
+        """Unstack an on-device cohort into per-subject tuned states, or None.
+
+        The on-device cohort driver (``dataset.batch_mode == on_device``) returns ONE batched tuned state per algorithm — a leading subject axis over the whole cohort — instead of a per-subject :class:`AlgorithmResult`, plus the cohort's ``subject_ids``. Every array leaf carries the subject axis at position 0, so slicing it apart yields one per-subject state, saved exactly like the per-subject fan-out (one result per subject). Returns ``(subject_ids, [{algo_name: per_subject_AlgorithmResult}, ...])``, or ``None`` for an ordinary run so the normal single-result save path runs.
+        """
+        algos = self.algorithms or {}
+        batched = [(n, a) for n, a in algos.items() if getattr(a, "cohort_state", None) is not None]
+        if not batched:
+            return None
+        subject_ids = list(getattr(batched[0][1], "subject_ids", None) or [])
+        if not subject_ids:
+            raise ValueError(
+                "On-device cohort result carries a batched cohort_state but no subject_ids "
+                "to split it by. Every leaf is a (n_subjects, ...) batch, so without the "
+                "cohort's subject ids it cannot be written as per-subject results."
+            )
+        per_subject = []
+        for i in range(len(subject_ids)):
+            algos_i = {}
+            for name, algo in batched:
+                state_i = jax.tree_util.tree_map(
+                    lambda x, _i=i: x[_i] if hasattr(x, "ndim") else x,
+                    algo.cohort_state,
+                )
+                algos_i[name] = AlgorithmResult(name=name, state=state_i)
+            per_subject.append(algos_i)
+        return subject_ids, per_subject
+
+    def _save_per_subject(self, out_dir, cohort, compress, record_only):
+        """Persist an on-device cohort as one ``sub-<id>_..._result`` per subject.
+
+        Mirrors the per-subject fan-out: each subject file carries only that subject's tuned parameters (``estimate__<param>``) — on-device tuning produces per-subject parameters, not a per-subject trajectory, so the shared base run's observations/integration are not duplicated per subject.
+        """
+        subject_ids, per_subject = cohort
+        src = self.source
+        if src is None:
+            raise ValueError(
+                "Cannot save an on-device cohort without a source experiment: the "
+                "per-subject result stem (sub-<id>_...) comes from the source's "
+                "_active_subject, so every subject would overwrite the same file."
+            )
+        _saved_active = getattr(src, "_active_subject", None)
+        written = []
+        try:
+            for sid, algos_i in zip(subject_ids, per_subject, strict=True):
+                src._active_subject = str(sid)  # drives the sub-<id>_ result stem
+                view = copy.copy(self)
+                view.algorithms = algos_i
+                view.integration = None
+                view.observations = Bunch()
+                view.explorations = {}
+                view.optimizations = {}
+                view.continuations = {}
+                written += ExperimentResult.save(view, out_dir, compress=compress, record_only=record_only)
+        finally:
+            src._active_subject = _saved_active
+        return written
+
+    def save(self, out_dir, compress: bool = True, record_only: bool = True):
+        """Persist the run as one keyed HDF5 result plus a YAML provenance sidecar.
+
+        Writes ``<prefix>_result.h5`` — a single xarray ``Dataset`` where every output is a data-variable and the sweep parameters are shared coordinates (a full run is gridded; a sharded run keeps the flat, self-describing ``point`` dim that reassembles by value) — and ``<prefix>_result.yaml``, the frozen experiment spec. ``<prefix>`` is the experiment's BIDS-style key-value name (``ses-<id>_desc-<label>``). The **same** artifact is produced by a local run and by the HPC gather pass, so they are interchangeable. Returns the written paths.
+
+        The sidecar carries the frozen spec plus a connectome companion (``<stem>_network.h5``), so the result reloads without its original data sources. Writing it is not guarded: it is half of what this method promises, and a swallowed failure returned an ``.h5`` with no ``.yaml``, which the caller met much later as an unrelated error.
+
+        An on-device cohort run fans here into one per-subject result (see :meth:`_save_per_subject`), mirroring the per-subject workflow fan-out.
         """
         import os
 
+        _cohort = self._cohort_subject_states()
+        if _cohort is not None:
+            return self._save_per_subject(out_dir, _cohort, compress, record_only)
+
         os.makedirs(out_dir, exist_ok=True)
-        written = []
 
         def _san(s):
-            return "".join(c if (c.isalnum() or c in "._-") else "_" for c in str(s))
+            """*s* as a container-safe name, with runs of ``_`` collapsed so it cannot contain the path separator.
 
-        def _dump(da, stem):
-            named = da if getattr(da, "name", None) is not None else da.rename(stem)
-            path = os.path.join(out_dir, stem + ".nc")
-            try:
-                named.to_netcdf(path)
-                return path
-            except Exception:
-                npz = os.path.join(out_dir, stem + ".npz")
-                np.savez(
-                    npz,
-                    data=np.asarray(da.values),
-                    **{f"coord__{_san(k)}": np.asarray(v) for k, v in da.coords.items()},
-                )
-                return npz
+            An output's place in the hierarchy is encoded in its name with ``__`` between the segments, so a name that sanitises into one — ``peak freq (Hz)`` becomes ``peak_freq__Hz_`` — would be read back as a group nothing declared. Collapsing the run keeps the separator meaning only what the writer put there.
+            """
+            return re.sub(r"_+", "_", "".join(c if (c.isalnum() or c in "._-") else "_" for c in str(s)))
 
+        _labels_cache: list = []
+
+        def _node_labels():
+            """RESOLVED node labels, shared by every per-node array this method writes.
+
+            Hydrates ``bids:`` placeholders (``region_<i>``) so a consumer reconciles them all the same way. Resolved on FIRST USE and memoized: hydration can hit the filesystem, and a container holding no per-node array must not pay for a lookup it never reads. Emptiness is tested by length, since a label array has no truth value.
+            """
+            if not _labels_cache:
+                _get = getattr(self.source, "_resolve_model_node_labels", None)
+                raw = _get() if callable(_get) else None
+                if raw is None or len(raw) == 0:
+                    raw = getattr(getattr(self.source, "network", None), "node_labels", None)
+                _labels_cache.append([str(lbl) for lbl in raw] if raw is not None and len(raw) else None)
+            return _labels_cache[0]
+
+        # ── collect every output as a data-variable ──────────────────────────
+        by_output: dict[tuple, xr.DataArray] = {}
         for expl_name, expl in (self.explorations or {}).items():
+            # ExplorationResult labels every observation as a DataArray at construction (grid and warm-start alike), so this stays uniform.
             for obs_name, da in (getattr(expl, "observations", None) or {}).items():
-                if da is not None:
-                    written.append(_dump(da, f"exploration__{_san(expl_name)}__{_san(obs_name)}"))
-            # Raw sweep results (the no-observations two-stage sim output): dump the
-            # labelled array (grid for a full run, flat 'point' for a shard).
+                if da is not None and hasattr(da, "dims"):
+                    by_output[(_san(expl_name), _san(obs_name))] = da
+            # An array-valued axis's materialised points ride along as ``axis_points__<axis>``, aligned with the grid dim of the same name and labelled on their node axes. Written for every run, shards included — the gather pass recognises the reserved prefix and carries the sidecar past its point-concat — so the reassembled artifact is as self-describing as a local one.
+            _shard = _is_partial_shard(expl)
+            for ax_label, da in (getattr(expl, "axis_points", None) or {}).items():
+                if da is not None and hasattr(da, "dims"):
+                    da = da.assign_coords(_node_coords([str(d) for d in da.dims], da.shape, _node_labels()))
+                    if _shard:
+                        # On the flat shard form the axis name is a per-point COORDINATE, and a same-named sidecar dim would silently displace it — the very coordinate reassembly pivots on. The reserved suffix keeps them apart; the gather pass renames it back once the axis is a real dimension.
+                        da = da.rename({da.dims[0]: f"{da.dims[0]}__point"})
+                    by_output[(_san(expl_name), f"axis_points__{_san(ax_label)}")] = da
             if getattr(expl, "results", None) is not None:
                 try:
                     g = expl.as_grid()
                 except Exception:
                     g = None
-                if g is not None and hasattr(g, "to_netcdf"):
-                    written.append(_dump(g, f"exploration__{_san(expl_name)}__results"))
-                elif g is not None:
-                    npz = os.path.join(out_dir, f"exploration__{_san(expl_name)}__results.npz")
-                    np.savez(npz, results=np.asarray(g))
-                    written.append(npz)
+                if g is not None and hasattr(g, "dims"):
+                    by_output[(_san(expl_name), "results")] = g
+        outputs = [o for _, o in by_output]
+        data_vars = {(o if outputs.count(o) == 1 else f"{e}__{o}"): da for (e, o), da in by_output.items()}
 
-        integ = self.integration
-        integ_obs = getattr(integ, "observations", None) if integ is not None else None
+        # Experiments that produce observations/optimizations without an exploration sweep (e.g. a per-subject FC fit) still carry data to persist: the derived observations (simulated + reconciled empirical FC) and the fit outcome (fitted parameters, final loss, loss trajectory). Coerce to float and skip anything non-numeric so the HDF5 write never trips on Python objects.
+        def _numeric_da(name, arr, dims=None):
+            """*arr* as a float ``DataArray``, or None when it holds nothing numeric.
+
+            ``dims`` are the caller's DECLARED axis names, used when the value carries none of its own: an unnamed axis is only selectable positionally, so a per-node fit result would otherwise arrive keyed on nothing.
+            """
+            if arr is None:
+                return None
+            try:
+                arr = _jax_array(arr)
+                a = np.asarray(getattr(arr, "values", arr), dtype=float)
+            except (ValueError, TypeError):
+                try:  # jax/0-d scalar wrapped as object
+                    a = np.asarray(float(arr), dtype=float)
+                except (ValueError, TypeError):
+                    return None
+            if a.dtype == object or a.size == 0:
+                return None
+            if a.ndim == 0:
+                return xr.DataArray(a)
+            # An already-labelled value keeps its own dims and coords: observations are named at construction (`_observation_dataarray`), and re-deriving names here, from shape alone, could only contradict them.
+            if getattr(arr, "dims", None) and len(arr.dims) == a.ndim:
+                return xr.DataArray(a, dims=[str(d) for d in arr.dims], coords=getattr(arr, "coords", None))
+            if dims and len(dims) == a.ndim:
+                dims = [str(d) for d in dims]
+                # Labels are asked for only when one of the declared axes is a node axis, so an array with none never pays for resolving them.
+                nodes = _node_labels() if any(d in _NODE_AXES for d in dims) else None
+                return xr.DataArray(a, dims=dims, coords=_node_coords(dims, a.shape, nodes))
+            # No declared axes: an honest placeholder. A length matching the node count is not evidence of a node axis — a four-sample trace in a four-node network has the same shape — and a guess that lands wrong paints a brain map with the wrong region's value while looking labelled.
+            return xr.DataArray(a, dims=[f"{name}_d{i}" for i in range(a.ndim)])
+
+        # An analysis observation (a Fisher curve, a gradient) is a bare array with no dims, so it goes through _numeric_da rather than being dropped by the labelled-only guard.
+        integ_obs = getattr(self.integration, "observations", None) if self.integration is not None else None
         if integ_obs and hasattr(integ_obs, "items"):
             for obs_name, obs in integ_obs.items():
-                da = getattr(obs, "data", obs)
-                if hasattr(da, "to_netcdf"):
-                    written.append(_dump(da, f"integration__{_san(obs_name)}"))
+                da = _unwrap_observation(obs)
+                if da is not None and not hasattr(da, "dims"):
+                    da = _numeric_da(f"integration__{_san(obs_name)}", da)
+                if da is not None and hasattr(da, "dims"):
+                    data_vars[f"integration__{_san(obs_name)}"] = da
 
+        def _numeric_leaves(prefix, obj, dims=None):
+            """Yield (var_name, DataArray) for the numeric leaves of a nested pytree.
+
+            An underscore-prefixed key is the backend's own scaffolding rather than a result: a solver's parameter pytree carries its step size, its history indices and its stage bookkeeping beside the values it fitted, and writing those into the container states them as outcomes of the run. One of them is a subtree named ``time``, which no group in the result tree can be called, because the container's ``time`` coordinate is inherited by every group.
+            """
+            leaf = _numeric_da(prefix.rsplit("__", 1)[-1], obj, dims=dims)
+            if leaf is not None:
+                yield prefix, leaf
+                return
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    if str(k).startswith("_"):
+                        continue
+                    yield from _numeric_leaves(f"{prefix}__{_san(k)}", v)
+            elif isinstance(obj, (list, tuple)):
+                for i, v in enumerate(obj):
+                    yield from _numeric_leaves(f"{prefix}__{i}", v)
+
+        keep_obs = self._recorded_observation_names() if record_only else set(getattr(self, "observations", None) or {})
+        for obs_name, obs in (getattr(self, "observations", None) or {}).items():
+            if obs_name not in keep_obs:
+                continue
+            key = f"observation__{_san(obs_name)}"
+            # Flatten via _numeric_leaves, not _numeric_da: an observation may return a nested pytree (e.g. a per-hemisphere wave metric {lh:{...}, rh:{...}}), which _numeric_da drops whole (np.asarray(dict) raises → None → silently unsaved). For an array value _numeric_leaves yields the single leaf unchanged, so this is a superset — the same flattening already used for optimization fitted params.
+            for var, da in _numeric_leaves(key, _unwrap_observation(obs)):
+                if var not in data_vars:
+                    data_vars[var] = da
+        _dims_cache: list = []
+
+        def _declared_dims():
+            """Declared axis names per observation, resolved once and shared by both fit-outcome writers below."""
+            if not _dims_cache:
+                _dims_cache.append(_declared_observation_dims(self.source))
+            return _dims_cache[0]
+
+        def _write_fit_observations(observations, prefix_for):
+            """Persist a fit's achieved observations (simulated FC + reconciled empirical target) under ``prefix_for(name)``.
+
+            Saving these makes the fit OUTCOME legible from the artifact, not only the tuned parameters. Each keeps the axes its declared reduction implies, so a per-node result lands on a labelled `node` axis like the `estimate__` params beside it rather than an unnamed one.
+            """
+            for obs_name, obs in (observations or {}).items():
+                for var, da in _numeric_leaves(
+                    prefix_for(obs_name), _unwrap_observation(obs), dims=_declared_dims().get(str(obs_name))
+                ):
+                    if var not in data_vars:
+                        data_vars[var] = da
+
+        for opt_name, opt in (self.optimizations or {}).items():
+            # The loss trajectory is one value per optimization step, named so a convergence panel selects on the step rather than on a positional axis — the same naming the algorithms' `iteration` history uses beside it.
+            for field, field_dims in (("final_loss", None), ("loss_trajectory", ("step",))):
+                da = _numeric_da(field, getattr(opt, field, None), dims=field_dims)
+                if da is not None:
+                    data_vars[f"optimization__{_san(opt_name)}__{field}"] = da
+            fitted = getattr(opt, "fitted_params", None)
+            if fitted is not None:
+                for name, da in _numeric_leaves(f"optimization__{_san(opt_name)}__fitted", fitted):
+                    data_vars[name] = da
+            # The path the fit walked, stacked per parameter so the artifact carries the trajectory and not only its endpoint, on the same `step` axis the loss trajectory uses so a panel can draw loss and parameters against each other. It shares `_get_param_trajectories` with the parameter plot — a second walk would name different parameters for one fit, since the state a fit hands back is an object pytree that only that walk descends — and skips the solver's `_`-prefixed bookkeeping, which is scaffolding rather than a fitted result.
+            _trajectories = getattr(opt, "_get_param_trajectories", None)
+            for traj_name, traj_arr in (_trajectories() if callable(_trajectories) else {}).items():
+                if any(seg.startswith("_") for seg in str(traj_name).split(".")):
+                    continue
+                traj_dims = ("step",) + tuple(f"{_san(traj_name)}_d{i}" for i in range(np.ndim(traj_arr) - 1))
+                traj_da = _numeric_da(_san(traj_name), traj_arr, dims=traj_dims)
+                if traj_da is not None:
+                    data_vars[f"optimization__{_san(opt_name)}__history__{_san(traj_name)}"] = traj_da
+            # The `__observation__` infix keeps these clear of the sibling `optimization__<name>__final_loss` / `__fitted__*` keys, which share the prefix.
+            _sim = getattr(opt, "simulation", None)
+            _write_fit_observations(
+                getattr(_sim, "observations", None),
+                lambda n, _o=opt_name: f"optimization__{_san(_o)}__observation__{_san(n)}",
+            )
+
+        # A posterior joins the container like every other kind, bound as `inference__<name>__posterior__<param>` with its diagnostics per parameter; its parameters share ONE chain of draws, so those axes are bound by name rather than positionally, without which a joint plot of two marginals is an outer product rather than a scatter.
+        _draw_dims = {1: ("draw",), 2: ("chain", "draw")}
+        for inf_name, inf in (self.inferences or {}).items():
+            for param, samples in (getattr(inf, "posterior", None) or {}).items():
+                da = _numeric_da(_san(param), samples, dims=_draw_dims.get(np.ndim(samples)))
+                if da is not None:
+                    data_vars[f"inference__{_san(inf_name)}__posterior__{_san(param)}"] = da
+            for param, stats in (getattr(inf, "diagnostics", None) or {}).items():
+                if not hasattr(stats, "items"):
+                    continue
+                for stat, value in stats.items():
+                    da = _numeric_da(_san(stat), value)
+                    if da is not None:
+                        data_vars[f"inference__{_san(inf_name)}__diagnostics__{_san(param)}__{_san(stat)}"] = da
+
+        def _tracked_dims(shape, declared):
+            """Axis names for one per-iteration record: the iteration it was taken at, then the axes of the value itself.
+
+            The value's own axes come from the observation's declaration where it has one, and otherwise from the node axes a per-node vector or per-edge matrix implies — the same convention the ``estimate__`` parameters beside them use. None where neither answers, so the container falls back to positional names rather than naming an axis it cannot know.
+            """
+            rest = list(declared or ())
+            if len(rest) == len(shape) - 1:
+                return ("iteration", *rest)
+            if len(shape) == 1:
+                return ("iteration",)
+            trailing = {2: ["node"], 3: ["node_i", "node_j"]}.get(len(shape))
+            n_nodes = len(_node_labels() or ()) if trailing else 0
+            if trailing and n_nodes and all(s == n_nodes for s in shape[1:]):
+                return ("iteration", *trailing)
+            return None
+
+        for algo_name, algo in (self.algorithms or {}).items():
+            post = getattr(algo, "post_tuning", None)
+            _write_fit_observations(
+                getattr(post, "observations", None) if post is not None else None,
+                lambda n, _a=algo_name: f"algorithm__{_san(_a)}__{_san(n)}",
+            )
+            # An algorithm's `observations:` are what the recipe asks it to TRACK, so the container holds them per iteration and not only at the end: the tuned parameters its update rules write are recorded the same way and land beside them, which is what makes a fit's trajectory legible from the artifact rather than just its endpoint. The `history` segment is what puts them at `/algorithms/<name>/history/<track>` in the tree, one level below the post-tuning outputs they converge to.
+            history = getattr(algo, "history", None)
+            for track, value in history.items() if hasattr(history, "items") else ():
+                key = f"algorithm__{_san(algo_name)}__history__{_san(track)}"
+                shape = getattr(value, "shape", None)
+                if not shape:
+                    continue
+                da = _numeric_da(key, value, dims=_tracked_dims(shape, _declared_dims().get(str(track))))
+                if da is not None:
+                    data_vars[key] = da
+
+        # Persist each tuned FREE parameter's fitted value as ``estimate__<param>`` so a from_experiment warm-start can reload it as a prior location (point prior). Kept on LABELLED node axes (``node`` for vectors, ``node_i``+``node_j`` for per-edge matrices) — the same convention FC matrices use — so the consumer reconciles by label with the existing `.sel` path, no bespoke reindex. Container-layer only (values already live in AlgorithmResult.state) → no codegen change; free params only, so it can't shadow a ``<sv>_final`` key; sourced from the algorithm that FITS each param (last-writer among fitting passes, see _algo_tuned_params).
+        free_names = _free_param_names(self.source) if self.algorithms else set()
+        if free_names:  # nothing tunable → skip the flatten entirely
+            # Source each estimate from the algorithm that FITS the param (last/most-converged wins), not one that merely carries its init value.
+            tuned_by = _algo_tuned_params(self.source)
+            for algo_name, algo in self.algorithms.items():
+                fits = tuned_by.get(algo_name, free_names)
+                for dotted, arr in OptimizationResult._flatten_params(getattr(algo, "state", None)).items():
+                    param = dotted.rsplit(".", 1)[-1]
+                    key = f"estimate__{_san(param)}"
+                    if param not in free_names or param not in fits:
+                        continue
+                    a = np.asarray(getattr(arr, "values", arr))
+                    if a.dtype == object or a.size == 0:
+                        continue
+                    # Label per-node vectors / per-edge matrices so the consumer reconciles by label with `.sel`; anything else (scalar) stays unlabelled.
+                    label_dims = {1: ["node"], 2: ["node_i", "node_j"]}.get(a.ndim)
+                    nn = len(_node_labels() or ()) if label_dims else 0
+                    da = _numeric_da(key, a, dims=label_dims if (nn and all(s == nn for s in a.shape)) else None)
+                    if da is not None:
+                        data_vars[key] = da
+
+        def _storable(da):
+            """*da* in a dtype HDF5 accepts: an object column of labels becomes fixed-width text, so fold and Hopf markers survive the round trip.
+
+            A missing entry becomes the empty string rather than the text ``"None"``, which would read back as a special point on every step of the branch, and text rather than bytes, so a consumer's ``== "hopf"`` still matches after the round trip.
+            """
+            if da.dtype != object:
+                return da
+            try:
+                text = np.array(["" if v is None else str(v) for v in np.ravel(da.values)], dtype=str)
+            except (TypeError, ValueError):
+                return None
+            return da.copy(data=text.reshape(da.shape))
+
+        # Continuation branches (bifurcation results) persist through the SAME native Dataset — no per-figure array dump. Each branch keeps its own ``step`` dimension (renamed unique) so multiple branches and the sweep grid coexist; the continuation parameter and observables become data variables.
+        for cont_name, bifres in (self.continuations or {}).items():
+            to_ds = getattr(bifres, "to_dataset", None)
+            if not callable(to_ds):
+                continue
+            cds = to_ds()
+            if "step" not in getattr(cds, "sizes", {}):
+                continue
+            dim = f"continuation__{_san(cont_name)}__step"
+            cds = cds.rename({"step": dim}).reset_coords()  # ICS coord (e.g. G) → data var
+            for vname, da in cds.data_vars.items():
+                stored = _storable(da)
+                if stored is not None:
+                    data_vars[f"continuation__{_san(cont_name)}__{_san(vname)}"] = stored
+
+            # Child periodic-orbit branches (from a Hopf point) hang off the equilibrium branch in ``periodic_orbits`` and were previously dropped by the save, so a PO branch's amplitude envelope (max/min per state var) and period never reached the ``.h5``. Serialize each under a nested ``__<po>__`` name so the full bifurcation diagram (Fig-2 periodic branch, Fig-3A period divergence) is reproducible from ``tvbo run`` alone.
+            for i, po in enumerate(getattr(bifres, "periodic_orbits", None) or []):
+                po_to_ds = getattr(po, "to_dataset", None)
+                if not callable(po_to_ds):
+                    continue
+                po_ds = po_to_ds()
+                if "step" not in getattr(po_ds, "sizes", {}):
+                    continue
+                po_name = _san(getattr(po, "name", None) or f"po{i}")
+                pdim = f"continuation__{_san(cont_name)}__{po_name}__step"
+                po_ds = po_ds.rename({"step": pdim}).reset_coords()
+                for vname, da in po_ds.data_vars.items():
+                    stored = _storable(da)
+                    if stored is not None:
+                        data_vars[f"continuation__{_san(cont_name)}__{po_name}__{_san(vname)}"] = stored
+
+                # Orbit waveforms: the adapter attaches ``orbit_profiles`` ([n_steps, n_phase, n_vars], phase-resampled over one period) when the engine reconstructs them. Serialize as one 3-D var so every orbit's actual E(t)/x(t)/u(t) profile (Fig-3B morphologies, Fig-3C orbit) is reproducible.
+                prof = getattr(po, "orbit_profiles", None)
+                if prof is not None:
+                    prof = np.asarray(prof, dtype=float)
+                    n_po = po_ds.sizes.get(pdim)
+                    if prof.ndim == 3 and (n_po is None or prof.shape[0] == n_po):
+                        _mdl = getattr(po, "model", None)
+                        _svs = getattr(_mdl, "state_variables", None)
+                        if hasattr(_svs, "keys"):
+                            _vn = list(_svs.keys())
+                        elif _svs is not None:
+                            _vn = [getattr(s, "name", f"v{j}") for j, s in enumerate(_svs)]
+                        else:
+                            _vn = []
+                        _vn = (_vn + [f"v{j}" for j in range(len(_vn), prof.shape[2])])[: prof.shape[2]]
+                        _pdim = f"continuation__{_san(cont_name)}__{po_name}__phase"
+                        _vdim = f"continuation__{_san(cont_name)}__{po_name}__var"
+                        data_vars[f"continuation__{_san(cont_name)}__{po_name}__profile"] = xr.DataArray(
+                            prof, dims=[pdim, _pdim, _vdim], coords={_pdim: np.linspace(0.0, 1.0, prof.shape[1]), _vdim: _vn}
+                        )
+
+        # Spiking backends (Brian2) carry a raster in ``_extras["spikes"]`` — persist it so a spiking run reproduces from the container: per-population spike times + neuron indices as flat 1D variables (each population its own length), plus the population firing rates and sizes on a shared ``population`` axis, and the run window in the Dataset attrs. General to any spiking run; guarded on the presence of spikes.
+        _spk = self._extras.get("spikes")
+        if _spk:
+            _rates = self._extras.get("rates") or {}
+            _sizes = self._extras.get("sizes") or {}
+            _pops = list(_spk)
+            # Key the population axis by the same filename-safe token the per-population raster variables use (``spikes__<key>__t/i``), so a consumer can select a rate by name and map it straight to that population's raster — never a positional zip against attrs.
+            _pops_key = [_san(p) for p in _pops]
+            for pop, key in zip(_pops, _pops_key, strict=True):
+                t = np.asarray(_spk[pop].get("t_ms"), dtype=float)
+                idx = np.asarray(_spk[pop].get("i"), dtype=float)
+                dim = f"spike__{key}"
+                data_vars[f"spikes__{key}__t"] = xr.DataArray(t, dims=[dim])
+                data_vars[f"spikes__{key}__i"] = xr.DataArray(idx, dims=[dim])
+            if _rates:
+                data_vars["firing_rate"] = xr.DataArray(
+                    np.asarray([_rates.get(p, np.nan) for p in _pops], dtype=float),
+                    dims=["population"],
+                    coords={"population": _pops_key},
+                )
+            if _sizes:
+                data_vars["population_size"] = xr.DataArray(
+                    np.asarray([_sizes.get(p, 0) for p in _pops], dtype=float),
+                    dims=["population"],
+                    coords={"population": _pops_key},
+                )
+            self._extras.setdefault("_spike_pops", _pops)
+
+        # Recorded synapse-internal state (u, x): the continuous population-mean trace measured by the backend's observation probe, one time series per recorded variable, on its own (coarser) time axis. Keyed by the filename-safe source-population name.
+        _syn = self._extras.get("synapse_state")
+        if _syn:
+            for key, d in _syn.items():
+                sk = _san(key)
+                dim = f"syntime__{sk}"
+                tvals = np.asarray(d["t_ms"], dtype=float)
+                for var, arr in d["vars"].items():
+                    data_vars[f"synapse__{sk}__{var}"] = xr.DataArray(
+                        np.asarray(arr, dtype=float), dims=[dim], coords={dim: tvals}
+                    )
+
+        # Fallback: a pure forward simulation (no sweep, no declared observations, no continuation, no optimization) still carries its recorded trajectory in integration.data. Persist it so `tvbo run` reproduces a raw forward run — e.g. a NeuroML EPSP-train experiment — as a native container instead of writing nothing. Guarded on an otherwise-empty data_vars, so exploration/observation runs are untouched.
+        if not data_vars and self.integration is not None:
+            _idata = getattr(self.integration, "data", None)
+            if _idata is not None and hasattr(_idata, "dims"):
+                data_vars["integration"] = _idata
+
+        stem = "result"
+        if self.source is not None and hasattr(self.source, "get_result_stem"):
+            try:
+                stem = self.source.get_result_stem()  # BIDS pybids-generated, filename-safe
+            except Exception:
+                stem = "result"
+
+        # A shard's provenance sidecar is written once by the gather pass, not per task.
+        is_shard = any(_is_partial_shard(e) for e in (self.explorations or {}).values())
+
+        # Several explorations in one experiment each write a `<expl>__results` variable; their sweep dims can share a name (`point`, `K[0]`, …) at different sizes, which `xr.Dataset` rejects. Rename the colliding dim per-variable so they coexist. Fires only on a real conflict, so single-exploration/single-sweep experiments are untouched.
+        if len(data_vars) > 1:
+            from collections import defaultdict
+
+            _dim_sizes: dict = defaultdict(set)
+            for _da in data_vars.values():
+                for _d, _s in zip(_da.dims, _da.shape, strict=True):
+                    _dim_sizes[_d].add(int(_s))
+            _conflicting = {_d for _d, _sizes in _dim_sizes.items() if len(_sizes) > 1}
+            if _conflicting:
+                data_vars = {
+                    _vn: (
+                        _da.rename({_d: f"{_vn}__{_d}" for _d in _da.dims if _d in _conflicting})
+                        if any(_d in _conflicting for _d in _da.dims)
+                        else _da
+                    )
+                    for _vn, _da in data_vars.items()
+                }
+
+        written = []
+        if data_vars:
+            _attrs = {"tvbo_class": "tvbo:ExperimentResult", "sidecar_file": f"{stem}.yaml"}
+            if self._extras.get("spikes"):
+                # The same filename-safe token used for the raster variables and the population coord, so attrs, coord and variable names all agree (no raw-vs-sanitised drift).
+                _attrs["populations"] = [_san(p) for p in self._extras["spikes"]]
+                for _k in ("duration_ms", "dt_ms", "transient_ms"):
+                    if self._extras.get(_k) is not None:
+                        _attrs[_k] = float(self._extras[_k])
+                # Stated rather than inferred: a raster is on the measurement clock, so its settle carries negative timestamps and t = 0 opens the measured window. A file written before this attribute existed counts from the start of integration instead, and the absence of the attribute is what says so.
+                _attrs["spike_time_origin"] = "measurement"
+            if self._extras.get("synapse_state"):
+                _attrs["synapse_recorded"] = [_san(k) for k in self._extras["synapse_state"]]
+            ds = xr.Dataset(data_vars, attrs=_attrs)
+            # A counting axis with no coordinate is written by h5netcdf as a zero-filled placeholder scale, so a reader that opens the file finds the axis named and its index gone. Numbering it here makes an optimizer's step and an algorithm's iteration selectable by name, as the continuation branch's own `step` already is.
+            ds = ds.assign_coords(
+                {
+                    dim: np.arange(size)
+                    for dim, size in ds.sizes.items()
+                    if dim not in ds.coords and dim.rsplit("__", 1)[-1] in ("step", "iteration")
+                }
+            )
+            h5 = os.path.join(out_dir, f"{stem}.h5")
+            # Grids of trajectories/observations compress well (repeated structure, smooth fields), so gzip-deflate by default; `compress=False` opts out for max write speed. complevel 4 is the deflate speed/size sweet spot.
+            encoding = {name: {"zlib": True, "complevel": 4} for name in ds.data_vars} if compress else None
+            # Single self-describing format; a write failure raises, no lossy fallback.
+            ds.to_netcdf(h5, engine="h5netcdf", encoding=encoding)
+            written.append(h5)
+
+        if not is_shard and written and self.source is not None and hasattr(self.source, "freeze_yaml"):
+            written += self._write_provenance(out_dir, stem, results=written)
         return written
+
+    def _write_provenance(self, out_dir, stem, results) -> list:
+        """Write the re-run recipe and the BIDS sidecars, reporting whatever failed.
+
+        The results are on disk by the time this runs, so one metadata step failing must not skip the others — and must not pass unremarked either, which is how a result set that lost its recipe came to look like a complete one. Every step is attempted and the failures are raised together, naming the results that were written.
+        """
+        import os
+
+        def _recipe():
+            """The spec plus its frozen connectome companion, reproducible on reload with no data sources present."""
+            network_stem = (
+                self.source.get_network_stem()
+                if hasattr(self.source, "get_network_stem")
+                else f"{stem.rsplit('_', 1)[0]}_network"
+            )
+            yaml_text = self.source.freeze_yaml(out_dir, network_stem=network_stem)
+            yaml_path = os.path.join(out_dir, f"{stem}.yaml")
+            with open(yaml_path, "w", encoding="utf-8") as fh:
+                fh.write(yaml_text)
+            return [yaml_path]
+
+        written, failures = [], []
+        for label, write in (
+            ("re-run recipe", _recipe),
+            ("BIDS dataset_description", lambda: self._write_dataset_description(out_dir)),
+        ):
+            try:
+                written += write()
+            except Exception as exc:
+                failures.append(f"  {label}: {type(exc).__name__}: {exc}")
+        if failures:
+            raise RuntimeError(
+                "the results were written but their provenance was not:\n"
+                + "\n".join(failures)
+                + "\nresults on disk:\n"
+                + "\n".join(f"  {path}" for path in results + written)
+            )
+        return written
+
+    def _write_dataset_description(self, out_dir) -> list:
+        """Mark ``out_dir`` as a BIDS derivative dataset, if nothing has already.
+
+        ``tvbo study init`` writes this for a scaffolded study; a run given ``-o`` somewhere else still needs its results directory to declare what it is, so a reader of the bare directory knows what they have.
+        """
+        import os
+
+        from tvbo.adapters.bids import DatasetDescription
+
+        dd = os.path.join(out_dir, "dataset_description.json")
+        if os.path.exists(dd):
+            return []
+        exp = self.source
+        desc = DatasetDescription(
+            Name=str(getattr(exp, "label", None) or getattr(exp, "id", None) or "tvbo results"),
+            DatasetType="derivative",
+            GeneratedBy=[{"Name": "tvbo", "Description": "TVB-Ontology simulation result"}],
+        )
+        with open(dd, "w", encoding="utf-8") as fh:
+            fh.write(desc.to_json())
+        return [dd]
 
     def plot(self, **kwargs):
         """Dispatch plot to the most relevant sub-result."""
@@ -1772,8 +2846,7 @@ class ExperimentResult:
     def export(self, output_dir, subject="01", session=None, description="tvbsim"):
         """Export results and metadata to a BIDS-compatible directory.
 
-        Writes experiment specification as YAML and simulation data as
-        netCDF/HDF5, following BEP034 directory conventions::
+        Writes experiment specification as YAML and simulation data as netCDF/HDF5, following BEP034 directory conventions::
 
             output_dir/
             ├── dataset_description.json
@@ -1795,13 +2868,13 @@ class ExperimentResult:
         description : str
             BIDS ``desc-`` entity (default ``"tvbsim"``).
 
-        Returns
+        Returns:
         -------
         pathlib.Path
             Path to the output directory.
         """
-        from pathlib import Path
         import json
+        from pathlib import Path
 
         output_dir = Path(output_dir)
         sub = f"sub-{subject}"
@@ -1935,8 +3008,7 @@ class ExperimentResult:
     def from_timeseries(cls, ts, source=None, name=None, **extras):
         """Create an ExperimentResult from a TVBO TimeSeries.
 
-        Converts a raw TimeSeries (as returned by JAX, PyRates,
-        NetworkDynamics, etc.) into the standard ExperimentResult wrapper.
+        Converts a raw TimeSeries (as returned by JAX, PyRates, NetworkDynamics, etc.) into the standard ExperimentResult wrapper.
 
         Parameters
         ----------
@@ -1949,7 +3021,7 @@ class ExperimentResult:
         **extras
             Additional attributes to store (e.g. ``sol``, ``graph``).
 
-        Returns
+        Returns:
         -------
         ExperimentResult
         """
@@ -2002,7 +3074,7 @@ class ExperimentResult:
         )
 
     @classmethod
-    def from_tvb(cls, simulator, result=None):
+    def from_tvb(cls, simulator, result=None, transient_time=0.0):
         """Create an ExperimentResult from a TVB simulator and its run output.
 
         Wraps TVB simulation output into the standard TVBO result structure:
@@ -2018,8 +3090,12 @@ class ExperimentResult:
         result : list of (time_array, data_array) tuples, optional
             Output of ``simulator.run()``. If *None*, the simulator is
             run using its ``simulation_length``.
+        transient_time : float
+            Length of the leading settle inside the run, in the simulator's time unit. TVB
+            integrates it as part of one simulation; it is marked here so the result cuts it at
+            t=0 exactly as every other backend does.
 
-        Returns
+        Returns:
         -------
         ExperimentResult
         """
@@ -2035,7 +3111,7 @@ class ExperimentResult:
         primary_xv = None
         observations = {}
 
-        for monitor, (tv, xv) in zip(simulator.monitors, result):
+        for monitor, (tv, xv) in zip(simulator.monitors, result, strict=True):
             mon_labels = deepcopy(base_labels)
             if hasattr(monitor, "sensors") and monitor.sensors is not None:
                 mon_labels["Region"] = list(monitor.sensors.labels)
@@ -2057,8 +3133,7 @@ class ExperimentResult:
             else:
                 observations[mon_name] = ts
 
-        # Build xr.DataArray from primary monitor
-        # TVB shape: (time, state_variables, nodes, modes) — keep mode dim
+        # Build xr.DataArray from primary monitor TVB shape: (time, state_variables, nodes, modes) — keep mode dim
         data_np = np.asarray(primary_xv)
         dims = ["time", "variable", "node", "mode"][: data_np.ndim]
         coords = {
@@ -2068,60 +3143,35 @@ class ExperimentResult:
         }
         if "mode" in dims:
             coords["mode"] = list(range(data_np.shape[3]))
+        # The settle ends AT t=0 and carries non-positive timestamps, so a TVB run and a tvboptim run of the same recipe report the same window on the same clock. The slack is half a sample, read off the axis rather than from `sample_period` so it survives a series that does not declare one, and it absorbs the float drift between TVB's `step * dt` and a declared settle.
+        _tv = np.asarray(primary_tv)
+        _half_sample = 0.5 * (float(_tv[1] - _tv[0]) if _tv.size > 1 else 0.0)
+        _n_transient = int(np.count_nonzero(_tv <= float(transient_time) + _half_sample)) if transient_time else 0
+        if transient_time:
+            coords["time"] = _tv - float(transient_time)
         da = xr.DataArray(data=data_np, dims=dims, coords=coords)
 
         sim_result = SimulationResult(
             data=da,
             observations=observations,
+            n_transient=_n_transient,
         )
         sim_result._timeseries = primary_ts
 
         return cls(integration=sim_result)
 
 
-# =============================================================================
 # Time Series Classes
-# =============================================================================
 
 
-@register_pytree_node_class
-class TimeSeries:
-    """
-    Time-series dataType with JAX pytree support, domain-specific analysis,
-    and visualization methods.
+class TimeSeries(Pytree):
+    """Time-series dataType with JAX pytree support, domain-specific analysis, and visualization methods.
+
+    `sample_period` is a leaf, not metadata, because it may hold a tracer such as ``state.dt`` inside `jit`; so is the network, a pytree of its own.
     """
 
-    def tree_flatten(self):
-        """Flatten into JAX pytree (children, aux_data).
-
-        `sample_period` is a child (not aux) because it may hold a JAX tracer such as `state.dt` inside `jit`.
-        """
-        # Keep network as a child (not metadata) to avoid non-hashable/array metadata.
-        # sample_period must also be a child because it can be a JAX-traced value
-        # (e.g. state.dt inside jit); putting tracers in aux_data causes
-        # UnexpectedTracerError on repeated JIT calls.
-        children = (self.time, self.data, self.network, self.sample_period)
-        aux_data = (
-            self.title,
-            self.labels_dimensions,
-            self.units,
-        )
-        return children, aux_data
-
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        """Reconstruct a `TimeSeries` from JAX pytree children and aux_data."""
-        time, data, network, sample_period = children
-        title, labels_dimensions, units = aux_data
-        return cls(
-            time,
-            data,
-            network=network,
-            title=title,
-            sample_period=sample_period,
-            labels_dimensions=labels_dimensions,
-            units=units,
-        )
+    LEAVES = ("time", "data", "network", "sample_period")
+    STATIC = ("title", "labels_dimensions", "units")
 
     def __init__(
         self,
@@ -2130,17 +3180,14 @@ class TimeSeries:
         network=None,
         title="TimeSeries",
         sample_period=None,
-        labels_dimensions={},
+        labels_dimensions=None,
         units=None,
     ):
-        """
-        labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] }
-        units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}
-        """
+        """labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] } units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}."""
         # 1. Essential Data
         self.time = time
         self.data = data
-        self.labels_dimensions = labels_dimensions
+        self.labels_dimensions = {} if labels_dimensions is None else labels_dimensions
 
         # 2. Metadata
         self.title = title
@@ -2183,9 +3230,7 @@ class TimeSeries:
     def space_labels(self):
         """Labels for the spatial (region) axis as a NumPy array.
 
-        Reads the canonical `"Space"` entry of `labels_dimensions`, falling back
-        to a legacy `"Region"` key, and returns an empty array when neither is
-        present. Scalar or string values are coerced to a one-element array.
+        Reads the canonical `"Space"` entry of `labels_dimensions`, falling back to a legacy `"Region"` key, and returns an empty array when neither is present. Scalar or string values are coerced to a one-element array.
         """
         # Robustly handle legacy keys and bad types
         ld = self.labels_dimensions if isinstance(self.labels_dimensions, dict) else {}
@@ -2204,8 +3249,7 @@ class TimeSeries:
     def variables_labels(self):
         """Labels for the state-variable axis as a NumPy array.
 
-        Returns an empty array when no state-variable labels are stored; scalar
-        or string values are coerced to a one-element array.
+        Returns an empty array when no state-variable labels are stored; scalar or string values are coerced to a one-element array.
         """
         ld = self.labels_dimensions if isinstance(self.labels_dimensions, dict) else {}
         vals = ld.get(self.labels_ordering[1], [])
@@ -2249,9 +3293,7 @@ class TimeSeries:
         return np.mean(np.diff(self.time)) if self.dt is None else self.dt
 
     def summary_info(self):
-        """
-        Gather scientifically interesting summary information from an instance of this datatype.
-        """
+        """Gather scientifically interesting summary information from an instance of this datatype."""
         summary = {
             "Time-series type": self.__class__.__name__,
             "Time-series name": self.title,
@@ -2343,19 +3385,12 @@ class TimeSeries:
         list_of_indices_for_labels = self._get_indices_for_labels(list_of_labels)
         return self.get_subspace_by_index(list_of_indices_for_labels)
 
-    # def _get_index_for_slice_label(self, slice_label, slice_idx):
-    #     if slice_idx == 1:
-    #         return self._get_indices_for_labels([slice_label])[0]
-    #     if slice_idx == 2:
-    #         return self._get_index_of_state_variable(slice_label)
-
     def copy(self):
         """Return a deep copy of the current instance."""
         return deepcopy(self)
 
     def convert_units(self, dimension, target_unit):
-        """
-        Convert units for a specific dimension and return a new TimeSeries.
+        """Convert units for a specific dimension and return a new TimeSeries.
 
         Parameters:
         -----------
@@ -2412,19 +3447,8 @@ class TimeSeries:
         elif dimension == "state":
             return self.duplicate(data=self.data * scale_factor, units=new_units)
 
-    # def duplicate(self, **kwargs):
-    #     """Return a copy of the current instance with optional attribute updates."""
-    #     duplicate = self.copy()  # Use self.copy() instead of super()
-    #     for attr, value in kwargs.items():
-    #         setattr(duplicate, attr, value)
-    #     if hasattr(duplicate, "configure"):
-    #         duplicate.configure()  # Call configure only if it exists
-    #     return duplicate
-
     def duplicate(self, **kwargs):
-        """
-        Fast shallow-copy-based duplication with attribute update.
-        """
+        """Fast shallow-copy-based duplication with attribute update."""
         new_time = kwargs.get("time", self.time)
         # Recalculate sample_period if time changed and not explicitly provided
         if "sample_period" in kwargs:
@@ -2451,10 +3475,7 @@ class TimeSeries:
     def get_state_variable(self, sv_label):
         """Evaluate a state variable or a symbolic expression of state variables.
 
-        When `sv_label` is a list/tuple/array it behaves like `get_state`. When
-        it is a string it is parsed as a symbolic expression whose free symbols
-        are matched against existing state variables, allowing derived
-        quantities such as `"E - I"` to be computed.
+        When `sv_label` is a list/tuple/array it behaves like `get_state`. When it is a string it is parsed as a symbolic expression whose free symbols are matched against existing state variables, allowing derived quantities such as `"E - I"` to be computed.
 
         Args:
             sv_label: A state-variable label, a collection of labels, or a
@@ -2470,7 +3491,9 @@ class TimeSeries:
 
         import sympy as sp
 
-        exp = sp.parse_expr(sv_label, equations._clash1, evaluate=False)
+        from tvbo.parse.symbols import BUILTIN_SHADOW
+
+        exp = BUILTIN_SHADOW.parse(sv_label, evaluate=False)
         data = {}
         for s in exp.free_symbols:
             data[str(s)] = self.data[:, self._get_index_of_state_variable(str(s)), :, :]
@@ -2485,10 +3508,7 @@ class TimeSeries:
     def plot(self, ax=None, axis_labels=False, legend=True, title=None, **kwargs):
         """Plot the time series, or a state-space trajectory of its variables.
 
-        By default each state variable is drawn against time. Passing
-        `type="statespace"` (or an equivalent alias such as `"phase"` or
-        `"trajectory"`) instead plots one state variable against another for a
-        chosen region and mode.
+        By default each state variable is drawn against time. Passing `type="statespace"` (or an equivalent alias such as `"phase"` or `"trajectory"`) instead plots one state variable against another for a chosen region and mode.
 
         Args:
             ax: Existing Matplotlib axes to draw on. When omitted, a new figure
@@ -2574,9 +3594,8 @@ class TimeSeries:
         n_svar = self.data.shape[1] if len(self.data.shape) > 1 else 1
         uses_modes = len(self.data.shape) > 3 and self.data.shape[3] > 1
         if uses_modes:
-            print("Plotting only first mode by default")
+            logger.info("Plotting only first mode by default")
 
-        # n_regions = self.data.shape[2]
         if "labels" in kwargs.keys():
             labels = kwargs.pop("labels")
         else:
@@ -2609,7 +3628,7 @@ class TimeSeries:
         if legend and any(labels):
             ax.legend(loc="upper right", fontsize="smaller")
             handles, labels = ax.get_legend_handles_labels()
-            unique = list(dict(zip(labels, handles)).items())  # Keep only the last occurrence of each label
+            unique = list(dict(zip(labels, handles, strict=True)).items())  # Keep only the last occurrence of each label
             ax.legend(
                 [handle for _, handle in unique],
                 [label for label, _ in unique],
@@ -2630,9 +3649,7 @@ class TimeSeries:
     ):
         """Animate timeseries on a graph layout.
 
-        Each node is a dot positioned by the graph layout; its color
-        reflects the timeseries value of the selected state variable
-        over time.
+        Each node is a dot positioned by the graph layout; its color reflects the timeseries value of the selected state variable over time.
 
         Parameters
         ----------
@@ -2649,13 +3666,12 @@ class TimeSeries:
         figsize : tuple
             Figure size ``(width, height)``.
 
-        Returns
+        Returns:
         -------
         matplotlib.animation.FuncAnimation
             The animation object (render with ``HTML(ani.to_jshtml())``
             in Jupyter, or ``ani.save(...)``).
         """
-
         graph = getattr(self, "graph", None)
         if graph is None:
             raise ValueError("No graph data attached.  Run with format='networkdynamics' to get graph positions.")
@@ -2769,9 +3785,7 @@ class TimeSeries:
         linewidth: float = 0.5,
         **kwargs,
     ):
-        """
-        Plot each region as a separate channel stacked vertically on a single axes
-        (EEG-like representation).
+        """Plot each region as a separate channel stacked vertically on a single axes (EEG-like representation).
 
         Parameters
         ----------
@@ -2795,7 +3809,7 @@ class TimeSeries:
         **kwargs : dict
             Additional kwargs forwarded to matplotlib plot.
 
-        Returns
+        Returns:
         -------
         matplotlib.figure.Figure | None
             Returns a figure if it creates one; otherwise None.
@@ -2947,8 +3961,7 @@ class TimeSeries:
         return self.duplicate(data=data, labels_dimensions=labels_dimensions)
 
     def calculate_frequency(self, state_variable=None, region=0, mode=0) -> float:
-        """
-        Calculate the dominant frequency of the time series data using FFT.
+        """Calculate the dominant frequency of the time series data using FFT.
 
         Returns:
             float: Dominant frequency in Hz.
@@ -2977,15 +3990,14 @@ class TimeSeries:
         return dominant_frequency
 
     def compute_normalised_average_power(self, VOI=None):
-        """
-        Compute normalized average power spectrum using FFT.
+        """Compute normalized average power spectrum using FFT.
 
         Parameters
         ----------
         VOI : str, optional
             Variable of interest to analyze. Required if multiple state variables exist.
 
-        Returns
+        Returns:
         -------
         frequency : ndarray
             Frequency values in Hz
@@ -3026,13 +4038,12 @@ class TimeSeries:
     def compute_dt(self):
         """Recompute `sample_period` from the mean spacing of the time axis.
 
-        Prints a warning and updates `sample_period` in place when it disagrees
-        with the mean of `diff(time)`.
+        Prints a warning and updates `sample_period` in place when it disagrees with the mean of `diff(time)`.
         """
         dt = np.diff(self.time)
         mean_dt = np.mean(dt)
         if self.sample_period != mean_dt:
-            print("Warning: Sample period does not match mean dt. Setting sample period to mean dt.")
+            logger.warning("Sample period does not match mean dt; setting sample period to mean dt.")
             self.sample_period = mean_dt
 
     def plot_power_spectrum(
@@ -3046,8 +4057,7 @@ class TimeSeries:
         label="simulation",
         **kwargs,
     ):
-        """
-        Plot the power spectrum with normalized average power computed via FFT.
+        """Plot the power spectrum with normalized average power computed via FFT.
 
         Parameters:
         - VOI: Variable of Interest, typically selecting subsets of data.
@@ -3185,636 +4195,12 @@ class TimeSeries:
 
         return self.duplicate(data=roi_data, labels_dimensions=subspace_labels_dimensions)
 
-    def to_bids(
-        self,
-        output_dir: str,
-        subject: str = "01",
-        session: str | None = None,
-        description: str | None = None,
-        run: int | None = None,
-        suffix: str = "State",
-        experiment=None,
-        include_model: bool = True,
-        include_connectivity: bool = True,
-        timeseries_format: str = "cifti",
-    ) -> str:
-        """
-        Export TimeSeries data to BIDS-compliant format (BEP034).
 
-        Creates a BIDS dataset structure following the Computational Model
-        Specification (BEP034 v1.0.0) with:
-        - net/: Network connectivity files (weights, distances)
-        - ts/: Time series data files (CIFTI-2 ptseries or TSV)
-        - eq/: Model equations (tvbo format)
-        - coord/: Region coordinates (if available)
-        - JSON sidecar files with metadata
-
-        Uses pydantic models for metadata serialization and pybids patterns
-        for BIDS-compliant filename generation.
-
-        Parameters
-        ----------
-        output_dir : str
-            Root directory for the BIDS dataset.
-        subject : str
-            Subject identifier (without 'sub-' prefix). Default: '01'.
-        session : str, optional
-            Session identifier (without 'ses-' prefix).
-        description : str, optional
-            Description label for the output files. If not provided, uses
-            the model name from experiment (e.g., 'wilsoncowan').
-        run : int, optional
-            Run number.
-        suffix : str
-            BIDS suffix indicating the observation/output type:
-            - 'State' (default): Raw neural output (no observation model)
-            - 'BOLD': fMRI BOLD signal (output convolved with HRF)
-            - 'EEG': EEG signal (output with EEG forward model)
-            - 'MEG': MEG signal (output with MEG forward model)
-            The ts entity (ts-V, ts-W, ts-Diff) identifies which output variable,
-            which can be a state variable or derived output (e.g., Diff: V-W).
-            The suffix indicates the observation transformation applied.
-        experiment : SimulationExperiment, optional
-            The source simulation experiment for full provenance tracking.
-            If not provided, uses self.source_experiment if available.
-        include_model : bool
-            Whether to export model equations. Default: True.
-        include_connectivity : bool
-            Whether to export connectivity data. Default: True.
-        timeseries_format : str
-            Format for time series output. Options:
-            - 'cifti' (default): CIFTI-2 ptseries.nii files with named parcels.
-              Splits data by state variable into separate files.
-            - 'tsv': Tab-separated values files. Splits by state variable.
-            - 'h5' or 'hdf5': HDF5 files preserving full dimensionality.
-              Does NOT split by state variable - keeps all dimensions intact.
-              Ideal for parameter sweeps (e.g., sweep, time, state, region, mode).
-
-        Returns
-        -------
-        str
-            Path to the created BIDS dataset root directory.
-
-        Examples
-        --------
-        >>> ts = experiment.run()
-        >>> ts.to_bids("./derivatives/tvbo", subject="01")
-        './derivatives/tvbo'
-
-        >>> # Export BOLD observation model output
-        >>> bold_ts.to_bids("./derivatives/tvbo", suffix="BOLD")
-
-        >>> # Export as TSV instead of CIFTI
-        >>> ts.to_bids("./derivatives/tvbo", timeseries_format="tsv")
-
-        >>> # Export as HDF5 preserving all dimensions (no state variable split)
-        >>> ts.to_bids("./derivatives/tvbo", timeseries_format="h5")
-
-        Notes
-        -----
-        Follows BIDS BEP034 Computational Modeling extension v1.0.0.
-        Uses pydantic for metadata serialization and pybids for filenames.
-        """
-        import os
-        from datetime import datetime
-
-        import pandas as pd
-
-        # Import BEP034 module
-        from tvbo.adapters.bids import (
-            H5PY_AVAILABLE,
-            BEP034PathBuilder,
-            CoordinateSidecar,
-            DatasetDescription,
-            EquationSidecar,
-            NetworkSidecar,
-            SimulationProvenance,
-            TimeSeriesHDF5Sidecar,
-            TimeSeriesSidecar,
-            compute_id,
-            to_float,
-            write_cifti_ptseries,
-            write_hdf5_timeseries,
-            write_sidecar,
-            write_tsv,
-        )
-
-        # Use source_experiment if not explicitly provided
-        if experiment is None:
-            experiment = getattr(self, "source_experiment", None)
-
-        # Auto-detect description from model name if not provided
-        if description is None and experiment is not None:
-            if hasattr(experiment, "dynamics"):
-                description = type(experiment.dynamics).__name__.lower()
-            else:
-                description = "simulation"
-        elif description is None:
-            description = "simulation"
-
-        # Initialize path builder
-        path_builder = BEP034PathBuilder()
-
-        # Create base directory structure
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Track all created files for summary
-        created_files = {"net": [], "ts": [], "eq": [], "coord": []}
-
-        region_labels = list(self.space_labels) if len(self.space_labels) else None
-
-        # =====================================================================
-        # 1. Export connectivity to net/ directory
-        # =====================================================================
-        # Use experiment's network if TimeSeries doesn't have one attached
-        network = self.network
-        if network is None and experiment is not None:
-            network = getattr(experiment, "network", None)
-        if include_connectivity and network is not None:
-            # --- Weights matrix ---
-            weights_sidecar = NetworkSidecar(
-                Description="Structural connectivity weights matrix",
-                NumberOfNodes=int(network.weights.shape[0]),
-                Units="a.u.",
-                Source="tvbo simulation",
-                GeneratedAt=datetime.now().isoformat(),
-                NodeLabels=region_labels,
-            )
-            weights_id = compute_id(weights_sidecar.to_dict())
-
-            # Build path using pybids patterns
-            weights_rel_path = path_builder.build_net_path(
-                subject=subject,
-                net_type="weights",
-                id_hash=weights_id,
-                desc=description,
-                session=session,
-                run=run,
-                extension=".tsv",
-            )
-            weights_tsv_path = os.path.join(output_dir, weights_rel_path)
-            weights_json_path = weights_tsv_path.replace(".tsv", ".json")
-
-            weights_df = pd.DataFrame(
-                np.asarray(network.weights),
-                index=region_labels,
-                columns=region_labels,
-            )
-            write_tsv(weights_df, weights_tsv_path)
-            write_sidecar(weights_sidecar, weights_json_path)
-            created_files["net"].append(weights_rel_path)
-
-            # --- Distances (tract lengths) matrix ---
-            lengths = network.lengths if hasattr(network, "lengths") else getattr(network, "tract_lengths", None)
-            if lengths is None:
-                lengths = np.zeros_like(network.weights)
-            distances_sidecar = NetworkSidecar(
-                Description="Tract lengths (distances) between regions",
-                NumberOfNodes=int(lengths.shape[0]),
-                Units="mm",
-                Source="tvbo simulation",
-                GeneratedAt=datetime.now().isoformat(),
-                NodeLabels=region_labels,
-            )
-            distances_id = compute_id(distances_sidecar.to_dict())
-
-            distances_rel_path = path_builder.build_net_path(
-                subject=subject,
-                net_type="distances",
-                id_hash=distances_id,
-                desc=description,
-                session=session,
-                run=run,
-                extension=".tsv",
-            )
-            distances_tsv_path = os.path.join(output_dir, distances_rel_path)
-            distances_json_path = distances_tsv_path.replace(".tsv", ".json")
-
-            distances_df = pd.DataFrame(
-                np.asarray(lengths),
-                index=region_labels,
-                columns=region_labels,
-            )
-            write_tsv(distances_df, distances_tsv_path)
-            write_sidecar(distances_sidecar, distances_json_path)
-            created_files["net"].append(distances_rel_path)
-
-            # --- Coordinates if available ---
-            if hasattr(network, "centres") and network.centres is not None:
-                coord_sidecar = CoordinateSidecar(
-                    Description="Region center coordinates",
-                    NumberOfNodes=int(network.centres.shape[0]),
-                    CoordinateSystem="MNI152NLin6Asym",
-                    Units="mm",
-                    Columns=["x", "y", "z"],
-                    NodeLabels=region_labels,
-                )
-                coord_id = compute_id(coord_sidecar.to_dict())
-
-                coord_rel_path = path_builder.build_coord_path(
-                    subject=subject,
-                    coord_type="centres",
-                    id_hash=coord_id,
-                    desc=description,
-                    session=session,
-                    extension=".tsv",
-                )
-                coord_tsv_path = os.path.join(output_dir, coord_rel_path)
-                coord_json_path = coord_tsv_path.replace(".tsv", ".json")
-
-                coord_df = pd.DataFrame(
-                    np.asarray(network.centres),
-                    columns=["x", "y", "z"],
-                    index=region_labels,
-                )
-                write_tsv(coord_df, coord_tsv_path)
-                write_sidecar(coord_sidecar, coord_json_path)
-                created_files["coord"].append(coord_rel_path)
-
-        # =====================================================================
-        # 2. Export time series to ts/ directory as CIFTI-2 ptseries
-        # =====================================================================
-        sample_period_val = to_float(self.sample_period)
-        if sample_period_val is not None and sample_period_val > 0:
-            if self.sample_period_unit in ("ms", "msec"):
-                sampling_freq = 1000.0 / sample_period_val
-            else:
-                sampling_freq = 1.0 / sample_period_val
-        else:
-            sampling_freq = None
-
-        # Build provenance if experiment available
-        provenance = None
-        if experiment is not None:
-            provenance = SimulationProvenance(
-                Model=(str(experiment.dynamics) if hasattr(experiment, "dynamics") else None),
-                Integrator=(str(experiment.integration) if hasattr(experiment, "integration") else None),
-                Duration=(to_float(experiment.duration) if hasattr(experiment, "duration") else None),
-                StepSize=(
-                    to_float(experiment.integration.step_size)
-                    if hasattr(experiment, "integration") and hasattr(experiment.integration, "step_size")
-                    else None
-                ),
-                GeneratedAt=datetime.now().isoformat(),
-            )
-
-        # Determine output format
-        use_cifti = timeseries_format.lower() == "cifti" and region_labels is not None
-        use_h5 = timeseries_format.lower() in ("h5", "hdf5")
-
-        if use_h5:
-            # =====================================================================
-            # HDF5 format: Preserve full dimensionality, don't split by state
-            # =====================================================================
-            if not H5PY_AVAILABLE:
-                raise ImportError("h5py is required for HDF5 export. Install with: pip install h5py")
-
-            # Create HDF5 sidecar with full dimension info
-            # Filter out None values from labels_dimensions (e.g., Time may be None)
-            dim_labels = {k: v for k, v in self.labels_dimensions.items() if v is not None} if self.labels_dimensions else None
-            h5_sidecar = TimeSeriesHDF5Sidecar(
-                Description="Simulated time series - all state variables",
-                Format="HDF5",
-                Shape=list(self.data.shape),
-                Dimensions=list(self.labels_ordering),
-                DimensionLabels=dim_labels if dim_labels else None,
-                SamplingFrequency=sampling_freq,
-                SamplingPeriod=sample_period_val,
-                SamplingPeriodUnits=self.sample_period_unit,
-                StartTime=to_float(self.time[0]) if len(self.time) > 0 else 0.0,
-                Units="a.u.",
-                GeneratedAt=datetime.now().isoformat(),
-                Provenance=provenance,
-                StateVariables=(list(self.variables_labels) if len(self.variables_labels) > 0 else None),
-                Datasets={
-                    "/data": f"Time series data with shape {self.data.shape}",
-                    "/time": "Time array",
-                    "/labels/*": "Labels for each dimension",
-                },
-            )
-
-            # Build path - use first state variable for ts entity, or 'all' for multi-state
-            ts_entity = self.variables_labels[0] if len(self.variables_labels) == 1 else "all"
-            ts_rel_path = path_builder.build_ts_path(
-                subject=subject,
-                ts_label=ts_entity,
-                suffix=suffix,
-                desc=description,
-                session=session,
-                run=run,
-                extension=".h5",
-            )
-            ts_h5_path = os.path.join(output_dir, ts_rel_path)
-            ts_json_path = ts_h5_path.replace(".h5", ".json")
-
-            # Additional metadata for HDF5
-            metadata = {
-                "source": "tvbo simulation",
-                "model": (str(experiment.dynamics) if experiment and hasattr(experiment, "dynamics") else None),
-            }
-
-            write_hdf5_timeseries(
-                data=np.asarray(self.data),
-                time=np.asarray(self.time),
-                path=ts_h5_path,
-                labels_dimensions=(dict(self.labels_dimensions) if self.labels_dimensions else None),
-                labels_ordering=self.labels_ordering,
-                sample_period=sample_period_val,
-                sample_period_unit=self.sample_period_unit,
-                metadata=metadata,
-            )
-
-            write_sidecar(h5_sidecar, ts_json_path)
-            created_files["ts"].append(ts_rel_path)
-
-        else:
-            # =====================================================================
-            # CIFTI/TSV format: Export each state variable as separate file
-            # =====================================================================
-            for sv_idx, sv_label in enumerate(self.variables_labels):
-                # Create sidecar metadata
-                ts_sidecar = TimeSeriesSidecar(
-                    Description=f"Simulated parcellated time series - state variable {sv_label}",
-                    StateVariable=sv_label,
-                    SamplingFrequency=sampling_freq,
-                    SamplingPeriod=sample_period_val,
-                    SamplingPeriodUnits=self.sample_period_unit,
-                    StartTime=to_float(self.time[0]) if len(self.time) > 0 else 0.0,
-                    NumberOfTimepoints=int(self.data.shape[0]),
-                    NumberOfNodes=int(self.data.shape[2]) if self.data.ndim > 2 else 1,
-                    Columns=(region_labels if not use_cifti else None),  # Columns for TSV only
-                    Units="a.u.",
-                    GeneratedAt=datetime.now().isoformat(),
-                    Provenance=provenance,
-                )
-
-                # Extract data for this state variable (time x regions)
-                sv_data = self.data[:, sv_idx, :, 0]  # Take first mode
-
-                if use_cifti:
-                    # Write CIFTI-2 ptseries file with nibabel
-                    # ts entity = state variable label (V, W, etc.)
-                    # suffix = State (raw neural) or BOLD/EEG/etc. (observation)
-                    ts_rel_path = path_builder.build_ts_path(
-                        subject=subject,
-                        ts_label=sv_label,
-                        suffix=suffix,
-                        desc=description,
-                        session=session,
-                        run=run,
-                        extension=".ptseries.nii",
-                    )
-                    ts_cifti_path = os.path.join(output_dir, ts_rel_path)
-                    ts_json_path = ts_cifti_path.replace(".ptseries.nii", ".json")
-
-                    write_cifti_ptseries(
-                        data=np.asarray(sv_data),
-                        region_labels=region_labels,
-                        path=ts_cifti_path,
-                        sample_period=sample_period_val or 1.0,
-                        sample_period_unit=self.sample_period_unit,
-                    )
-                else:
-                    # Write TSV file
-                    ts_rel_path = path_builder.build_ts_path(
-                        subject=subject,
-                        ts_label=sv_label,
-                        suffix=suffix,
-                        desc=description,
-                        session=session,
-                        run=run,
-                        extension=".tsv",
-                    )
-                    ts_tsv_path = os.path.join(output_dir, ts_rel_path)
-                    ts_json_path = ts_tsv_path.replace(".tsv", ".json")
-
-                    ts_df = pd.DataFrame(np.asarray(sv_data), columns=region_labels)
-                    ts_df.insert(0, "time", np.asarray(self.time))
-                    write_tsv(ts_df, ts_tsv_path, include_index=False)
-
-                write_sidecar(ts_sidecar, ts_json_path)
-                created_files["ts"].append(ts_rel_path)
-
-        # =====================================================================
-        # 3. Export model equations to eq/ directory
-        # =====================================================================
-        if include_model and experiment is not None:
-            model_name = "unknown"
-            if hasattr(experiment, "dynamics"):
-                model_name = type(experiment.dynamics).__name__
-
-            # Extract model parameters
-            params = None
-            if hasattr(experiment, "dynamics"):
-                model = experiment.dynamics
-                params = {}
-                for attr in dir(model):
-                    if not attr.startswith("_"):
-                        val = getattr(model, attr, None)
-                        if isinstance(val, (int, float)):
-                            params[attr] = val
-                        elif hasattr(val, "tolist"):
-                            try:
-                                params[attr] = float(np.asarray(val).flat[0])
-                            except Exception:
-                                pass
-                if not params:
-                    params = None
-
-            eq_sidecar = EquationSidecar(
-                Description=f"Neural mass model equations - {model_name}",
-                ModelType=model_name,
-                Format="tvbo",
-                GeneratedAt=datetime.now().isoformat(),
-                Parameters=params,
-            )
-            eq_id = compute_id(eq_sidecar.to_dict())
-
-            eq_rel_path = path_builder.build_eq_path(
-                eq_label=model_name.lower(),
-                id_hash=eq_id,
-                desc=description,
-                subject=subject,
-                session=session,
-                extension=".json",
-            )
-            eq_json_path = os.path.join(output_dir, eq_rel_path)
-
-            write_sidecar(eq_sidecar, eq_json_path)
-            created_files["eq"].append(eq_rel_path)
-
-        # =====================================================================
-        # 4. Create dataset_description.json at root
-        # =====================================================================
-        desc_path = os.path.join(output_dir, "dataset_description.json")
-        if not os.path.exists(desc_path):
-            dataset_desc = DatasetDescription(
-                Name="TVB Simulation Output",
-                BIDSVersion="1.9.0",
-                DatasetType="derivative",
-                GeneratedBy=[
-                    {
-                        "Name": "tvbo",
-                        "Version": "0.1.0",
-                        "Description": "The Virtual Brain Ontology and Simulation Framework",
-                        "CodeURL": "https://github.com/the-virtual-brain/tvb-ontology",
-                    }
-                ],
-                BEP034Version="1.0.0",
-            )
-            write_sidecar(dataset_desc, desc_path)
-
-        # =====================================================================
-        # 5. Create participants.tsv
-        # =====================================================================
-        sub_label = f"sub-{subject}"
-        participants_path = os.path.join(output_dir, "participants.tsv")
-        if not os.path.exists(participants_path):
-            participants_df = pd.DataFrame({"participant_id": [sub_label]})
-            participants_df.to_csv(participants_path, sep="\t", index=False)
-        else:
-            existing = pd.read_csv(participants_path, sep="\t")
-            if sub_label not in existing["participant_id"].values:
-                new_row = pd.DataFrame({"participant_id": [sub_label]})
-                existing = pd.concat([existing, new_row], ignore_index=True)
-                existing.to_csv(participants_path, sep="\t", index=False)
-
-        return output_dir
-
-
-# class TimeSeriesRegion(TimeSeries):
-#     """A time-series associated with the regions of a network."""
-
-#     # network = Attr(field_type=network.Connectivity)
-#     # region_mapping_volume = Attr(
-#     #     field_type=region_mapping.RegionVolumeMapping, required=False
-#     # )
-#     # region_mapping = Attr(field_type=region_mapping.RegionMapping, required=False)
-#     # labels_ordering = List(of=str, default=("Time", "State Variable", "Region", "Mode"))
-
-#     def summary_info(self):
-#         """
-#         Gather scientifically interesting summary information from an instance of this datatype.
-#         """
-#         summary = super(TimeSeriesRegion, self).summary_info()
-#         summary.update(
-#             {
-#                 "Source Connectivity": self.network.title,
-#                 "Region Mapping": (
-#                     self.region_mapping.title if self.region_mapping else "None"
-#                 ),
-#                 "Region Mapping Volume": (
-#                     self.region_mapping_volume.title
-#                     if self.region_mapping_volume
-#                     else "None"
-#                 ),
-#             }
-#         )
-#         return summary
-
-#     def animate_time_series(
-#         ts,
-#         plane="sagittal",
-#         state=0,
-#         mode=0,
-#         interval=100,
-#         window_dt=1000,
-#         cmap="viridis",
-#         node_size=100,
-#         line_kwargs={},
-#     ):
-#         """
-#         Creates an animated 2D scatter plot from a 4D time-series object,
-#         with a second axis for the time-series progression showing all regions.
-
-#         Parameters:
-#         - ts: Time series object with `ts.time`, `ts.data`, and `ts.network.centres`.
-#             `ts.data` has shape (time, state, region, mode).
-#         - plane: Projection plane ('sagittal', 'horizontal', 'axial').
-#         - state: Index of the state to select or None to aggregate across states.
-#         - mode: Index of the mode to select or None to aggregate across modes.
-#         - interval: Time interval between frames in milliseconds.
-#         - aggregation: Aggregation method ('mean', 'sum') if state or mode is None.
-#         """
-#         # Map plane to coordinates
-#         if plane == "sagittal":
-#             x, y = ts.network.centres[:, 1], ts.network.centres[:, 2]
-#         elif plane == "horizontal":
-#             x, y = ts.network.centres[:, 0], ts.network.centres[:, 1]
-#         elif plane == "axial":
-#             x, y = ts.network.centres[:, 0], ts.network.centres[:, 2]
-#         else:
-#             raise ValueError(
-#                 "Invalid plane. Choose from 'sagittal', 'horizontal', 'axial'."
-#             )
-
-#         # Prepare data based on state and mode selection or aggregation
-#         data = ts.data
-#         data = data[:, state, :, mode][::window_dt]  # Fix state
-#         data = (data - np.min(data)) / (
-#             np.max(data) - np.min(data)
-#         )  # Normalize to [0, 1]
-
-#         time = ts.time[::window_dt]
-#         n_regions = data.shape[1]
-
-#         # Initialize figure and axes
-#         fig, (ax, ax_ts) = plt.subplots(1, 2, layout="compressed", figsize=(8, 4))
-#         sc = ax.scatter(x, y, c=data[0], cmap="viridis", s=node_size, vmin=0, vmax=1)
-
-#         ax.set_title(f"Time: {time[0]:.2f}")
-#         ax.set_aspect("equal")
-#         fig.colorbar(sc, ax=ax, label="Data Intensity", shrink=0.5)
-
-#         # Create evenly spaced colors from the viridis colormap
-#         colors = colormaps[cmap](np.linspace(0, 1, n_regions))
-
-#         # Initialize the time series plot for all regions
-#         lines = []
-#         for i, color in enumerate(colors):
-#             (line,) = ax_ts.plot(
-#                 [], [], color=color, label=f"Region {i+1}", **line_kwargs
-#             )
-#             lines.append(line)
-#         (avg_line,) = ax_ts.plot([], [], color="red", linewidth=2, label="Average")
-
-#         ax_ts.set_xlim(time[0], time[-1])
-#         ax_ts.set_ylim(0, 1.1)
-#         ax_ts.set_title("Time-Series Progression")
-#         ax_ts.set_xlabel("Time")
-#         ax_ts.set_ylabel("Intensity")
-
-#         # Update function for animation
-#         def update(frame):
-#             sc.set_array(data[frame])
-#             ax.set_title(f"Time: {time[frame]:.2f}")
-#             for i, line in enumerate(lines):
-#                 line.set_xdata(time[: frame + 1])  # Update X data for each region
-#                 line.set_ydata(data[: frame + 1, i])  # Update Y data for each region
-#             avg_line.set_xdata(time[: frame + 1])  # Update X data for average
-#             avg_line.set_ydata(
-#                 data[: frame + 1].mean(axis=1)
-#             )  # Update Y data for average
-#             return [sc] + lines + [avg_line]
-
-#         # Create animation
-#         ani = FuncAnimation(
-#             fig, update, frames=len(time), interval=interval, blit=False
-#         )
-
-#         plt.close()
-#         return ani
-
-
-@register_pytree_node_class
-class SimulationState:
+class SimulationState(Pytree):
     """Bundled state passed to the integration backends for one simulation.
 
-    Groups everything a backend needs to advance a run: the initial conditions,
-    the `Network`, the integration step, the noise configuration, model
-    parameters, stimulus, monitor settings, and the number of time steps.
-    Registered as a JAX pytree so it can flow through `jit`/`vmap`; `nt` is kept
-    static while the remaining fields are dynamic children.
+    Groups everything a backend needs to advance a run: the initial conditions, the `Network`, the integration step, the noise configuration, model parameters, stimulus, monitor settings, and the number of time steps.
+    Registered as a JAX pytree so it can flow through `jit`/`vmap`; `nt` is kept static while the remaining fields are dynamic children.
 
     Args:
         initial_conditions: Initial state as a `TimeSeries` (history buffer).
@@ -3847,54 +4233,13 @@ class SimulationState:
         self.monitor_parameters = monitor_parameters
         self.nt = nt
 
-    def tree_flatten(self):
-        """Flatten into JAX pytree (children, aux_data).
-
-        `nt` is kept as static aux_data so it stays concrete in shape/length contexts under jit/vmap.
-        """
-        # Make `noise` a child so fields like sigma_vec can participate in vmap batching.
-        # Keep `nt` static (aux) to ensure it remains a concrete value under jit/vmap
-        # because we use it in shape/length contexts like jnp.arange(0, nt).
-        children = (
-            self.initial_conditions,
-            self.network,
-            self.dt,
-            self.noise,
-            self.parameters,
-            self.stimulus,
-            self.monitor_parameters,
-        )
-        aux = (self.nt,)
-        return children, aux
-
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        """Reconstruct a `SimulationState` from JAX pytree children and aux_data."""
-        # Reconstruct in the original __init__ order
-        (
-            initial_conditions,
-            network,
-            dt,
-            noise,
-            parameters,
-            stimulus,
-            monitor_parameters,
-        ) = children
-        (nt,) = aux_data if isinstance(aux_data, tuple) else (aux_data,)
-        return cls(
-            initial_conditions,
-            network,
-            dt,
-            noise,
-            parameters,
-            stimulus,
-            monitor_parameters,
-            nt,
-        )
+    LEAVES = ("initial_conditions", "network", "dt", "noise", "parameters", "stimulus", "monitor_parameters")
+    STATIC = ("nt",)
+    """``nt`` stays static so it is concrete where it sizes a scan or an ``arange`` under `jit`/`vmap`; everything else, the noise included, may be traced or batched."""
 
     def __repr__(self):
-        """
-        Returns a string representation of the SimulationState object.
+        """Return a string representation of the SimulationState object.
+
         Shows all fields in the pytree structure.
         """
         return format_pytree_as_string(self, "SimulationState", "", False, False)
@@ -3913,11 +4258,8 @@ class SimulationState:
     def state_variable_names(self):
         """State-variable names, falling back to positional indices as strings.
 
-        Returns the `"State Variable"` labels from the initial conditions when
-        they are present and match the number of state variables, otherwise a
-        list of stringified indices.
+        Returns the `"State Variable"` labels from the initial conditions when they are present and match the number of state variables, otherwise a list of stringified indices.
         """
-
         ld = getattr(self.initial_conditions, "labels_dimensions", {}) or {}
         names = ld.get("State Variable", None)
         if names is not None and len(names) == self.n_state_variables:
@@ -3960,8 +4302,7 @@ class SimulationState:
     def set_sigma_for(self, name_or_index, value):
         """Set the noise sigma for one state variable (or all at once).
 
-        Rebuilds `noise.sigma_vec` rather than mutating it in place, so it is
-        safe to call before `jit`/`vmap`.
+        Rebuilds `noise.sigma_vec` rather than mutating it in place, so it is safe to call before `jit`/`vmap`.
 
         Args:
             name_or_index: The state variable to target, by name or index.
@@ -3993,7 +4334,7 @@ class SimulationState:
         return self
 
     def set_sigma_many(self, mapping: dict):
-        """Set multiple sigma values using a dict: { 'V': 0.02, 'W': 0.0 }"""
+        """Set multiple sigma values using a dict: { 'V': 0.02, 'W': 0.0 }."""
         import jax.numpy as jnp
 
         noise = self._ensure_noise_holder()
@@ -4044,15 +4385,14 @@ class SimulationState:
 
     @property
     def state_variables(self):
-        """Ergonomic proxy: state.state_variables.V.noise.sigma = 0.02
+        """Ergonomic proxy: state.state_variables.V.noise.sigma = 0.02.
 
         This updates state.noise.sigma_vec appropriately. Safe to use before jit/vmap.
         """
         return SimulationState._StateVariablesProxy(self)
 
     def convert_dtype(self, target_dtype=jnp.float32):
-        """
-        Convert the dtype of the parameter pytree.
+        """Convert the dtype of the parameter pytree.
 
         Useful for converting between 32 and 64 bit types.
 
@@ -4063,12 +4403,12 @@ class SimulationState:
         target_dtype : jnp.dtype, optional
             The target dtype to convert to. Defaults to jnp.float32.
 
-        Returns
+        Returns:
         -------
         converted_pytree : pytree
             The parameter tree with converted dtype.
 
-        Notes
+        Notes:
         -----
         This method recursively traverses the pytree structure and converts all leaf nodes to the specified target dtype.
         It preserves the overall structure of the pytree while changing the dtype of its elements.

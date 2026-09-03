@@ -1,3 +1,6 @@
+<%!
+from tvbo.utils import initial_value as _initial_value
+%>\
 ## -*- coding: utf-8 -*-
 <%doc>
 TVBO → LEMS XML Template  (monolithic / include-based)
@@ -92,7 +95,8 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for pname, p in ct_params.items():
     <Parameter name="${pname}" dimension="${ct_lems_dim(getattr(p, 'unit', None))}"/>
 % endfor
-% if ct_regime_data:
+## Default `refract` in for the refractory regime, unless the model declares its own and it would be emitted twice.
+% if ct_regime_data and 'refract' not in ct_params:
     <Parameter name="refract" dimension="time"/>
 % endif
 % for sv_name in ct_svs:
@@ -134,7 +138,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for dv_name, dv in ct_dvs.items():
 <%
   eq = getattr(dv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
   dv_dim = ct_lems_dim(getattr(dv, 'unit', None))
   pw_cases = ct_parse_piecewise(rhs) if rhs else None
 %>\
@@ -170,7 +174,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
@@ -190,7 +194,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs and sv_name not in ct_regime_data['reset_vars']:
 % if ct_needs_sec:
@@ -239,7 +243,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
@@ -267,7 +271,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
@@ -294,7 +298,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
@@ -339,13 +343,16 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <Component id="${ct_dyn_id}_inst" type="${ct_dyn_id}"\
 % for pname, p in ct_params.items():
 <% p_unit = ct_lems_sym(getattr(p, 'unit', None)) %>\
- ${pname}="${getattr(p, 'value', 0)}${(' ' + p_unit) if p_unit else ''}"\
+## Omit an unset parameter so LEMS names it, rather than writing "None" and failing on the quantity.
+% if getattr(p, 'value', None) is not None:
+ ${pname}="${p.value}${(' ' + p_unit) if p_unit else ''}"\
+% endif
 % endfor
-% if ct_regime_data:
+% if ct_regime_data and 'refract' not in ct_params:
  refract="0 ${time_scale}"\
 % endif
 % for sv_name, sv in ct_svs.items():
-<% iv = getattr(sv, 'initial_value', None) %>\
+<% iv = _initial_value(sv) %>\
 <% sv_unit = ct_lems_sym(getattr(sv, 'unit', None)) %>\
  ${sv_name}_0="${iv if iv is not None else 0.0}${(' ' + sv_unit) if sv_unit else ''}"\
 % endfor
@@ -370,15 +377,28 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   ct_parse_piecewise = ct['_parse_piecewise']
   ct_lems_dim = ct.get('lems_dim', lems_dim)
   ct_lems_sym = ct.get('lems_sym', lems_sym)
-  ct_has_i = ct.get('has_i_exposure', False)
   ct_has_v = ct.get('has_v_req', False)
   ct_ext_evs = set(ct.get('external_event_names', []))
+  ct_synapse_extends = ct.get('synapse_extends', 'baseSynapse')
+  ct_syn_inherited = set(ct.get('synapse_inherited_params', ()))
+  ct_exposure_names = set(ct.get('synapse_exposure_names', ('i',)))
+  # The per-connection weight scales the current the postsynaptic cell sums.
+  ct_weighted = ct.get('weighted_exposure')
+  ct_weigh = lambda n, v: 'weight * (%s)' % v if n == ct_weighted else v
+  # A variable named for one of the base type's exposures fulfils it, which LEMS requires the subtype to do.
+  ct_expose = lambda n: ' exposure="%s"' % n if n in ct_exposure_names else ''
 %>\
 
-  <!-- ── Synapse ComponentType: ${ct_dyn_id} (extends baseSynapse) ── -->
-  <ComponentType name="${ct_dyn_id}" extends="baseSynapse">
+  <!-- ── Synapse ComponentType: ${ct_dyn_id} (extends ${ct_synapse_extends}) ── -->
+  <ComponentType name="${ct_dyn_id}" extends="${ct_synapse_extends}">
+% if ct_weighted:
+## jLEMS hides baseSynapse's inherited `weight` from the DerivedVariable checker, so re-declare it as gradedSynapse does.
+    <Property name="weight" dimension="none" defaultValue="1"/>
+% endif
 % for pname, p in ct_params.items():
+% if pname not in ct_syn_inherited:
     <Parameter name="${pname}" dimension="${ct_lems_dim(getattr(p, 'unit', None))}"/>
+% endif
 % endfor
 % for sv_name in ct_svs:
     <Parameter name="${sv_name}_0" dimension="${ct_lems_dim(getattr(ct_svs[sv_name], 'unit', None))}"/>
@@ -392,22 +412,21 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 
     <Dynamics>
 % for sv_name, sv in ct_svs.items():
-      <StateVariable name="${sv_name}" dimension="${ct_lems_dim(getattr(sv, 'unit', None))}"/>
+      <StateVariable name="${sv_name}" dimension="${ct_lems_dim(getattr(sv, 'unit', None))}"${ct_expose(sv_name)}/>
 % endfor
 % for dv_name, dv in ct_dvs.items():
 <%
   eq = getattr(dv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
   dv_dim = ct_lems_dim(getattr(dv, 'unit', None))
   pw_cases = ct_parse_piecewise(rhs) if rhs else None
-  is_i = (dv_name == 'i')
 %>\
 % if rhs:
 % if pw_cases:
 % if len(pw_cases) == 1 and pw_cases[0][0] is None:
-      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ ' exposure="i"' if is_i else ''} value="${pw_cases[0][1]}"/>
+      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)} value="${ct_weigh(dv_name, pw_cases[0][1])}"/>
 % else:
-      <ConditionalDerivedVariable name="${dv_name}" dimension="${dv_dim}"${ ' exposure="i"' if is_i else ''}>
+      <ConditionalDerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)}>
 % for (cond_str, val_str) in pw_cases:
 % if cond_str is not None:
         <Case condition="${cond_str}" value="${val_str}"/>
@@ -418,14 +437,14 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
       </ConditionalDerivedVariable>
 % endif
 % else:
-      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ ' exposure="i"' if is_i else ''} value="${ct_lems_expr(rhs)}"/>
+      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)} value="${ct_weigh(dv_name, ct_lems_expr(rhs))}"/>
 % endif
 % endif
 % endfor
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
@@ -474,6 +493,21 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % endfor
     </Dynamics>
   </ComponentType>
+
+  <Component id="${ct_dyn_id}_inst" type="${ct_dyn_id}"\
+% for pname, p in ct_params.items():
+<% p_unit = ct_lems_sym(getattr(p, 'unit', None)) %>\
+## Omit an unset parameter so LEMS names it, rather than writing "None" and failing on the quantity.
+% if getattr(p, 'value', None) is not None:
+ ${pname}="${p.value}${(' ' + p_unit) if p_unit else ''}"\
+% endif
+% endfor
+% for sv_name, sv in ct_svs.items():
+<% iv = _initial_value(sv) %>\
+<% sv_unit = ct_lems_sym(getattr(sv, 'unit', None)) %>\
+ ${sv_name}_0="${iv if iv is not None else 0.0}${(' ' + sv_unit) if sv_unit else ''}"\
+% endfor
+/>
 % endif
 % endfor
 
@@ -501,8 +535,8 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <!-- ════════════════════════════════════════════════════════════════
        Input Sources (pulseGenerator, spikeGenerator, spikeArray, etc.)
        ════════════════════════════════════════════════════════════════ -->
-## ── Current-injection sources (standalone components) ──
-% for inp in net_ctx.get('inputs', []):
+## ── Current-injection sources (standalone components, one per input) ──
+% for inp in net_ctx.get('input_components', []):
   <${inp['type']} id="${inp['id']}"\
 % for pk, pv in inp.get('params', {}).items():
  ${pk}="${pv}"\
@@ -550,14 +584,8 @@ ${spike_children_xml}
   conn_delay_unit = conn.get('delay_unit') or time_scale
 %>\
 % if has_wd:
-    <synapticConnectionWD from="${conn['from_pop']}[${conn['from_idx']}]" to="${conn['to_pop']}[${conn['to_idx']}]" synapse="${conn['synapse']}" destination="synapses"\
-% if conn.get('weight') is not None:
- weight="${conn['weight']}"\
-% endif
-% if conn.get('delay') is not None:
- delay="${conn['delay']}${conn_delay_unit}"\
-% endif
-/>
+## synapticConnectionWD requires both weight and delay, so supply the neutral default for whichever the edge left unset.
+    <synapticConnectionWD from="${conn['from_pop']}[${conn['from_idx']}]" to="${conn['to_pop']}[${conn['to_idx']}]" synapse="${conn['synapse']}" destination="synapses" weight="${1.0 if conn.get('weight') is None else conn['weight']}" delay="${0 if conn.get('delay') is None else conn['delay']}${conn_delay_unit}"/>
 % else:
     <synapticConnection from="${conn['from_pop']}[${conn['from_idx']}]" to="${conn['to_pop']}[${conn['to_idx']}]" synapse="${conn['synapse']}" destination="synapses"/>
 % endif

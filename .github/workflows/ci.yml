@@ -2,9 +2,9 @@ name: Lint & Test
 
 on:
     push:
-        branches: ["main"]
-    pull_request:
         branches: ["main", "dev"]
+    # No branch filter: a PR stacked on another PR's branch must be tested too.
+    pull_request:
     workflow_dispatch:
 
 # Cancel redundant runs: same branch/PR triggers supersede previous runs
@@ -20,8 +20,7 @@ permissions:
 # Shared environment variables for all jobs
 env:
     JAX_PLATFORMS: cpu
-    # Headless matplotlib backend so plotting tests (test_plot_layouts) render
-    # to an in-memory canvas instead of trying to open an interactive window.
+    # Headless backend, so plotting tests render to an in-memory canvas rather than an interactive window.
     MPLBACKEND: Agg
     # uv: bytecode-compile installed wheels for faster cold starts
     UV_COMPILE_BYTECODE: "1"
@@ -34,28 +33,41 @@ jobs:
         name: Lint
         runs-on: ubuntu-latest
         steps:
+            # Full history: the diff-mode prose check needs a merge-base with the target branch.
             - uses: actions/checkout@v6
-
-            # ruff: blocking syntax-error subset (same gate as before).
-            - name: Ruff — syntax errors (blocking)
-              uses: astral-sh/ruff-action@v4.0.0
               with:
-                  args: "check --select=E9,F63,F7,F82 --output-format=github ."
+                  fetch-depth: 0
 
-            # ruff: full lint summary, non-blocking until codebase is clean.
-            - name: Ruff — full lint (non-blocking)
-              uses: astral-sh/ruff-action@v4.0.0
+            # `version` tracks the `lint` extra in pyproject.toml.
+            - name: Ruff — lint
+              uses: astral-sh/ruff-action@v4.1.0
               with:
-                  args: "check --exit-zero ."
+                  version: "0.16.1"
+                  args: "check --output-format=github ."
 
-            # ruff format: report files needing reformatting, non-blocking.
-            - name: Ruff format — check (non-blocking)
-              uses: astral-sh/ruff-action@v4.0.0
+            - name: Ruff — format
+              uses: astral-sh/ruff-action@v4.1.0
               with:
+                  version: "0.16.1"
                   args: "format --check --diff ."
-              continue-on-error: true
 
-            # mypy: type-check the source tree, non-blocking.
+            - name: Setup Python for the prose check
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+
+            - name: Prose — comments and docstrings
+              run: python scripts/check_prose.py
+
+            # `HEAD^1` is the base side of the merge ref CI checks out — the base as it is NOW, so the diff stays this PR's own work however far the base has moved. A branch ref would blame the PR for whatever the base gained meanwhile.
+            - name: Prose — no stacked '#' blocks added
+              run: python scripts/check_prose.py --diff "$(git rev-parse HEAD^1 2>/dev/null || echo origin/${{ github.base_ref || 'dev' }})"
+
+            # Every hand-authored page is clean, so both checks run whole-file; the generated api/ and datamodel/ trees are excluded because their prose comes from docstrings and the schema.
+            - name: Docs — page style
+              run: python docs/scripts/check_pages.py --quiet $(find docs -name '*.qmd' -o -name '*.md' | grep -vE '/(_site|_freeze|_build|[.]quarto|_archive|[.]jupyter_cache|_output|api|datamodel)/')
+
+            # The steps below all need the package importable: the CLI check resolves real commands, render coverage reads YAML, and mypy needs the datamodel that `-e .` regenerates through the hatch build hook.
             - uses: astral-sh/setup-uv@v8.1.0
               with:
                   python-version: "3.12"
@@ -64,19 +76,27 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
-            - name: Install (editable, no-deps → generates datamodel) + mypy
-              # `-e .` fires the hatch build hook, which regenerates the untracked
-              # tvbo/datamodel/{schema,pydantic}.py that mypy needs to see.
-              run: uv pip install -e . --no-deps && uv pip install mypy
+            - name: Install (editable → generates datamodel)
+              run: uv pip install -e . && uv pip install mypy
+
+            - name: Docs — documented CLI commands resolve
+              run: python docs/scripts/check_cli_examples.py --quiet $(find docs -name '*.qmd' -o -name '*.md' | grep -vE '/(_site|_freeze|_build|[.]quarto|_archive|[.]jupyter_cache|_output)/')
+
+            # A sidebar entry and a `project.render` glob live in different files with nothing tying them together, so a page can be linked, exist, and still be built by nothing — which only shows as a 404 on the deployed site.
+            - name: Docs — every sidebar link is in the render set
+              run: cd docs && python scripts/check_render_coverage.py
+
+            # Citeproc renders an unresolved key as literal **[@Key]** and exits 0, so a broken reference reaches the published site unannounced.
+            - name: Docs — every citation resolves
+              run: cd docs && python scripts/check_citations.py
+
+            - name: "Docs — pages declaring `native: true` draw nothing by hand"
+              run: cd docs && python scripts/check_native_pages.py
+
             - name: Mypy — type check (non-blocking)
               run: mypy tvbo || true
 
-    # ─── Always: skills sync guard ────────────────────────────
-    # Canonical skills live in skills/ and tvbo/skills/canonical/. The
-    # rendered copies (.claude/skills/, .github/instructions/, AGENTS.md)
-    # are GENERATED by `tvbo skills sync`. This guard fails if those copies
-    # drift from the canonical sources — run `tvbo skills sync` and commit
-    # the result to fix.
+    # Fails on drift, orphans, leaks and bad extras — see "CI notes" in CONTRIBUTING.md.
     skills-sync:
         name: Skills sync guard
         needs: lint
@@ -97,10 +117,42 @@ jobs:
             - name: Check rendered skills match canonical sources
               run: tvbo skills sync --check
 
-    # ─── Always: schema validation gate ───────────────────────
-    # Validates every YAML in tvbo/database/ against the LinkML schema.
-    # Fast (~20s) and depends only on linkml + pyyaml, so runs on every PR
-    # without the full install matrix. Catches schema/database drift early.
+    # A scaffolded study must validate against the layout record, and every generated block must match what it renders now.
+    study-layout:
+        name: Study layout guard
+        needs: lint
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  enable-cache: true
+                  activate-environment: true
+                  cache-dependency-glob: |
+                      pyproject.toml
+                      .github/workflows/ci.yml
+            - name: Install (core, editable)
+              run: uv pip install -e .
+            - name: Scaffolded studies validate against the record
+              run: |
+                  tvbo study init CiGeneral --in /tmp/layout-check
+                  tvbo validate study /tmp/layout-check/CiGeneral
+                  tvbo study init CiReplication --in /tmp/layout-check -t replication
+                  tvbo validate study /tmp/layout-check/CiReplication
+            - name: Generated layout blocks are current
+              # --sync rewrites in place, so a dirty tree afterwards means a document restates a layout the record no longer has.
+              run: |
+                  tvbo study layout --sync docs/Interoperability/BIDS/index.qmd
+                  tvbo study layout --sync tvbo/skills/canonical/replicating-studies/SKILL.md -t replication
+                  git diff --exit-code -- docs tvbo/skills
+            - name: Layout record tests
+              run: |
+                  uv pip install pytest pytest-xdist
+                  pytest -v --tb=short tests/test_study_layout.py tests/test_workflow_kit_paths.py
+
+    # Every tvbo/database/ YAML against the LinkML schema — see "CI notes" in CONTRIBUTING.md.
     schema-validate:
         name: Schema validation
         needs: lint
@@ -124,11 +176,7 @@ jobs:
             - name: Validate every database YAML against the LinkML schema
               run: pytest -v --tb=short tests/test_database_validation.py
 
-    # ─── Always: schema artifact build (OWL + SHACL) ───────────
-    # Builds tvb-o-struct.owl and tvb-o.shacl.ttl from the LinkML schema on
-    # every PR. Gated/non-blocking initially: surfaces gen-owl / gen-shacl
-    # failures early without breaking the merge. Artifacts uploaded for
-    # downstream reasoner CI (PR-I) and external consumers.
+    # Builds tvb-o-struct.owl + tvb-o.shacl.ttl and uploads them for the reasoner job and external consumers.
     schema-artifacts:
         name: Schema artifacts (OWL + SHACL)
         needs: lint
@@ -154,6 +202,13 @@ jobs:
               run: make gen-owl
             - name: Generate SHACL
               run: make gen-shacl
+            - name: Regeneration is reproducible
+              run: |
+                  cp ontology/tvb-o-struct.owl "${RUNNER_TEMP}/struct.first"
+                  cp ontology/tvb-o.shacl.ttl "${RUNNER_TEMP}/shacl.first"
+                  make gen-owl gen-shacl
+                  diff -u "${RUNNER_TEMP}/struct.first" ontology/tvb-o-struct.owl
+                  diff -u "${RUNNER_TEMP}/shacl.first" ontology/tvb-o.shacl.ttl
             - name: Upload schema artifacts
               uses: actions/upload-artifact@v4
               with:
@@ -163,14 +218,7 @@ jobs:
                       ontology/tvb-o.shacl.ttl
                   retention-days: 30
 
-    # ─── Always: ontology reasoner (ELK + HermiT via ROBOT) ────
-    # Runs OWL reasoning on the generated tvb-o-struct.owl to detect
-    # unsatisfiable classes, inconsistent ontologies, and inverse /
-    # functional / cardinality regressions. Uses ROBOT (the OBO standard
-    # CLI) with ELK (fast OWL-EL profile) by default and HermiT for full
-    # OWL-DL coverage. Non-blocking initially (continue-on-error) because
-    # the freshly-generated ontology has known cleanup pending in §2.4.
-    # Closes §2.6 first checkbox once flipped to required.
+    # ELK + HermiT over the generated ontology; non-blocking while cleanup is pending — see "CI notes" in CONTRIBUTING.md.
     reasoner:
         name: Ontology reasoner (ELK + HermiT)
         needs: schema-artifacts
@@ -280,18 +328,16 @@ jobs:
                       tests/test_model_loading.py tests/test_graph.py \
                       tests/functional/test_dynamics_basic.py
 
-    # ─── All PRs + push to main: native tests (no container) ──
-    # Sharded into parallel jobs so one slow/heavy backend doesn't OOM or
-    # exceed the runner watchdog. Each shard has its own timeout, and
-    # pytest-timeout surfaces hangs as tracebacks instead of silent kills.
+    # Sharded so one heavy backend cannot OOM or outlive the runner watchdog; pytest-timeout turns hangs into tracebacks.
     test-native:
         name: Native (${{ matrix.shard }})
         needs: lint
         if: >-
             github.event_name == 'pull_request'
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+            || github.event_name == 'workflow_dispatch'
         runs-on: ubuntu-latest
-        timeout-minutes: 45
+        timeout-minutes: ${{ matrix.timeout || 45 }}
         strategy:
             fail-fast: false
             matrix:
@@ -307,16 +353,25 @@ jobs:
                           tests/functional/test_simulation_experiment_basic.py
                           tests/functional/test_timeseries_utils.py
                           tests/functional/test_simulation_backends_core.py
+                          tests/test_citation_formatting.py
+                          tests/test_numerical_golden_corpus.py
+                          tests/test_codegen_golden_corpus.py
+                          tests/test_symbol_context.py
+                          tests/test_symbolic_layer.py
+                          tests/test_piecewise_lowering.py
+                          tests/test_branches_only_equations.py
                     - shard: tvboptim
                       paths: >-
                           tests/test_tvboptim_experiments.py
                           tests/functional/test_simulation_backends_tvboptim.py
                           tests/test_full_workflow_comparison.py
                           tests/test_tvboptim_byte_identity.py
+                          tests/functional/test_observation_backend_consistency.py
                     - shard: tvb
                       paths: >-
                           tests/test_tvb_comparison.py
                           tests/test_tvb_interop.py
+                          tests/test_stimulus_rendering.py
                           tests/functional/test_simulation_backends_tvb.py
                     - shard: pyrates
                       paths: >-
@@ -325,9 +380,11 @@ jobs:
                     - shard: neuroml
                       paths: >-
                           tests/functional/test_simulation_backends_neuroml.py
+                          tests/functional/test_brian2_backend.py
                     - shard: extras
                       paths: >-
                           tests/test_units.py
+                          tests/test_database_golden_dump.py
                           tests/test_yaml_loader.py
                           tests/test_pydantic_loader.py
                           tests/test_linkml_compatibility.py
@@ -336,7 +393,62 @@ jobs:
                           tests/test_cli_workflow.py
                           tests/test_run_models.py
                           tests/test_tvboptim_observation_codegen.py
+                          tests/test_weight_transform_codegen.py
+                          tests/test_exploration_result_labelling.py
                           tests/functional/test_plot_layouts.py
+                          tests/test_panel_group_axis.py
+                          tests/test_exploration_result_labelling.py
+                    # The complement of the shards above: a file they name is ignored here, so it runs once, under its own shard's concurrency.
+                    - shard: rest
+                      paths: >-
+                          tests/
+                          --ignore=tests/test_docs.py
+                          --ignore=tests/test_database_validation.py
+                          --ignore=tests/test_model_loading.py
+                          --ignore=tests/test_graph.py
+                          --ignore=tests/test_package_structure.py
+                          --ignore=tests/test_network_io.py
+                          --ignore=tests/functional/test_dynamics_basic.py
+                          --ignore=tests/functional/test_metadata_import.py
+                          --ignore=tests/functional/test_simulation_experiment_basic.py
+                          --ignore=tests/functional/test_timeseries_utils.py
+                          --ignore=tests/functional/test_simulation_backends_core.py
+                          --ignore=tests/test_citation_formatting.py
+                          --ignore=tests/test_numerical_golden_corpus.py
+                          --ignore=tests/test_codegen_golden_corpus.py
+                          --ignore=tests/test_symbol_context.py
+                          --ignore=tests/test_symbolic_layer.py
+                          --ignore=tests/test_piecewise_lowering.py
+                          --ignore=tests/test_branches_only_equations.py
+                          --ignore=tests/test_tvboptim_experiments.py
+                          --ignore=tests/functional/test_simulation_backends_tvboptim.py
+                          --ignore=tests/test_full_workflow_comparison.py
+                          --ignore=tests/test_tvboptim_byte_identity.py
+                          --ignore=tests/functional/test_observation_backend_consistency.py
+                          --ignore=tests/test_tvb_comparison.py
+                          --ignore=tests/test_tvb_interop.py
+                          --ignore=tests/test_stimulus_rendering.py
+                          --ignore=tests/functional/test_simulation_backends_tvb.py
+                          --ignore=tests/functional/test_pyrates_integration.py
+                          --ignore=tests/functional/test_simulation_backends_pyrates.py
+                          --ignore=tests/functional/test_simulation_backends_neuroml.py
+                          --ignore=tests/functional/test_brian2_backend.py
+                          --ignore=tests/test_units.py
+                          --ignore=tests/test_database_golden_dump.py
+                          --ignore=tests/test_yaml_loader.py
+                          --ignore=tests/test_pydantic_loader.py
+                          --ignore=tests/test_linkml_compatibility.py
+                          --ignore=tests/test_experiment_api.py
+                          --ignore=tests/test_cli.py
+                          --ignore=tests/test_cli_workflow.py
+                          --ignore=tests/test_run_models.py
+                          --ignore=tests/test_tvboptim_observation_codegen.py
+                          --ignore=tests/test_weight_transform_codegen.py
+                          --ignore=tests/test_exploration_result_labelling.py
+                          --ignore=tests/functional/test_plot_layouts.py
+                          --ignore=tests/test_panel_group_axis.py
+                      pytest_args: -n auto -m "not julia"
+                      timeout: 60
         steps:
             - uses: actions/checkout@v6
             - uses: astral-sh/setup-uv@v8.1.0
@@ -348,7 +460,9 @@ jobs:
                       pyproject.toml
                       .github/workflows/ci.yml
             - name: Configure git for private repos
-              run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
+              env:
+                  PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+              run: git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$PRIVATE_REPO_TOKEN"; }; f'
             - name: Cache .venv
               id: venv-cache
               uses: actions/cache@v5
@@ -368,22 +482,16 @@ jobs:
                   pytest -x -v --tb=short \
                       --timeout=600 --timeout-method=thread \
                       --override-ini="addopts=" \
-                      ${{ matrix.paths }}
+                      ${{ matrix.pytest_args }} ${{ matrix.paths }}
 
-    # ─── Julia backends: cached depot keeps precompilation off the hot path ──
-    # juliacall/juliapkg install Julia 1.10 + the DifferentialEquations /
-    # ModelingToolkit / NetworkDynamics / BifurcationKit stack declared in
-    # tvbo/juliapkg.json. A cold precompile of that stack is ~10-15 min, which
-    # is why Julia was excluded before. We cache the Julia depot keyed on
-    # juliapkg.json: the first run pays the cost once, every later run restores
-    # the precompiled depot and finishes in a few minutes. Kept as its own job
-    # (not a test-native shard) because it needs the depot cache + pre-warm.
+    # Own job, not a shard, because it needs the depot cache and pre-warm — see "CI notes" in CONTRIBUTING.md.
     test-julia:
         name: Native (julia)
         needs: lint
         if: >-
             github.event_name == 'pull_request'
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+            || github.event_name == 'workflow_dispatch'
         runs-on: ubuntu-latest
         timeout-minutes: 60
         env:
@@ -400,7 +508,9 @@ jobs:
                       pyproject.toml
                       .github/workflows/ci.yml
             - name: Configure git for private repos
-              run: git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
+              env:
+                  PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+              run: git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$PRIVATE_REPO_TOKEN"; }; f'
             - name: Cache .venv
               id: venv-cache
               uses: actions/cache@v5
@@ -414,34 +524,33 @@ jobs:
             - name: Refresh editable link (cache hit)
               if: steps.venv-cache.outputs.cache-hit == 'true'
               run: uv pip install -e . --no-deps
-            - name: Cache Julia depot (Julia + precompiled packages)
+            - name: Restore Julia depot (Julia + precompiled packages)
               id: cache-julia-depot
-              uses: actions/cache@v5
+              uses: actions/cache/restore@v5
               with:
                   path: ${{ env.JULIA_DEPOT_PATH }}
-                  key: julia-depot-1.10-${{ hashFiles('tvbo/juliapkg.json') }}
+                  # -v2 escapes the poisoned depots saved under the pre-rule key, which were immutable and served forever.
+                  key: julia-depot-v2-1.10-${{ hashFiles('tvbo/juliapkg.json') }}
                   restore-keys: |
-                      julia-depot-1.10-
+                      julia-depot-v2-1.10-
             - name: Pre-warm Julia (resolve + precompile declared packages)
-              # Importing juliacall makes juliapkg resolve tvbo/juliapkg.json and
-              # install/precompile the stack into JULIA_DEPOT_PATH. On a cache hit
-              # this is a fast no-op; on a miss it populates the depot we cache.
               run: |
-                  # When juliapkg.json changes, the exact depot key misses and the
-                  # restore-keys fallback restores a depot resolved for the *previous*
-                  # juliapkg.json. juliacall's implicit resolve can't reconcile that
-                  # partial restore (PythonCall.jl ends up "not installed"), so on any
-                  # non-exact-hit force a clean re-resolve first — this instantiates
-                  # every declared package (incl. PythonCall) via a Julia subprocess,
-                  # independent of loading PythonCall.jl.
-                  if [ "${{ steps.cache-julia-depot.outputs.cache-hit }}" != "true" ]; then
-                      python -c "import juliapkg; juliapkg.resolve(force=True)"
-                  fi
+                  # Reconciles a Manifest restored against an older depot — see "CI notes" in CONTRIBUTING.md.
+                  python -c "import juliapkg; juliapkg.resolve(force=True)"
                   python -c "import tvbo, juliacall; juliacall.Main.seval('using NetworkDynamics, OrdinaryDiffEq'); print('Julia depot ready')"
+            # Selects by the same marker the `rest` shard deselects, so neither list drifts.
             - name: Run Julia backend tests
               run: |
                   pytest -x -v --tb=short \
                       --timeout=1200 --timeout-method=thread \
                       --override-ini="addopts=" \
-                      tests/functional/test_simulation_backends_julia.py \
-                      tests/test_networkdynamics_comparison.py
+                      -m julia tests/ \
+                      --ignore=tests/test_docs.py \
+                      --ignore=tests/test_database_validation.py
+            - name: Save Julia depot (Julia + precompiled packages)
+              # Only on success and only on an exact-key miss, so a half-built depot can never be written back.
+              if: success() && steps.cache-julia-depot.outputs.cache-hit != 'true'
+              uses: actions/cache/save@v5
+              with:
+                  path: ${{ env.JULIA_DEPOT_PATH }}
+                  key: julia-depot-v2-1.10-${{ hashFiles('tvbo/juliapkg.json') }}

@@ -9,6 +9,7 @@ prefixes:
     linkml: https://w3id.org/linkml/
     tvbo: https://w3id.org/tvbo/
     schema: http://schema.org/
+    prov: http://www.w3.org/ns/prov#
 
 default_prefix: tvbo
 
@@ -21,3 +22,129 @@ slots:
         range: string
         identifier: true
         description: "Globally unique identifier for the entity."
+
+    part:
+        range: ReportPart
+        ifabsent: "ReportPart(main)"
+        description: >-
+            Which part of a generated report this belongs in — the main Methods or
+            the supplementary material. Placement only: every experiment runs and
+            every figure renders regardless, so demoting one never changes what is
+            computed. It answers a different question from a replication's target
+            tier (how central a claim is) and from the source paper's own Fig/EDF
+            numbering (where *they* printed it), because our document may carry a
+            headline result's parameter dump in the SI, or relegate a figure the
+            paper printed up front. Defaults to ``main``, so a recipe that says
+            nothing keeps everything in the Methods.
+
+enums:
+    ReportPart:
+        description: >-
+            Where a declared item appears in a generated report. A study with many
+            near-identical experiments marks the routine ones ``supplementary``, so
+            the Methods carries the experiments that make the argument and the rest
+            stay a table row plus a paragraph in the SI.
+        permissible_values:
+            main:
+                description: "The main Methods, in full."
+            supplementary:
+                description: >-
+                    Supplementary material. The item still appears as a row in the
+                    Methods' experiment table, so the reader sees that it exists.
+
+    NodeReconciliation:
+        description: >-
+            Strategy for aligning a sourced array's nodes to the consuming model
+            network before use. Keyed alignment guards against a differing node
+            count or ordering (e.g. a 998-parcel empirical FC against a 1000-parcel
+            model, or a hemisphere-swapped connectome) silently misaligning the data.
+        permissible_values:
+            by_label:
+                description: >-
+                    Restrict to the shared node labels by name (keyed ``.sel``),
+                    preserving the consuming network's order, on every node axis (a
+                    vector on its node axis, a matrix on both). Never positional.
+            none:
+                description: "No reconciliation; the node sets are assumed identical."
+
+classes:
+    DataRef:
+        class_uri: prov:Entity
+        description: >-
+            A pointer to one labelled array in a result container, dataset, or
+            curated entity — the single cross-container reference primitive (a PROV
+            entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study
+            experiment id, resolved like ``initial_state.source_experiment``),
+            ``analysis`` (an in-study analysis name), or the full ``iri`` (a curated /
+            result / external pointer); at most one.
+            WHICH is ``output`` (a recorded variable, ``observation__<name>``,
+            ``estimate__<param>``, or external variable). SLICE is ``sel`` (label-keyed
+            ``.sel``, never positional). ``reconcile`` optionally aligns the sourced
+            array to the consuming network's node order by label. One model reused by
+            figure layers (``Layer.used``), sourced arguments (``Argument.used``) and
+            sourced parameters (``Parameter.used``), so data binding, cross-experiment
+            sourcing and PROV provenance are the same edge. A sourced array is resolved
+            lazily and never inlined into generated code.
+        slots:
+            - iri
+        attributes:
+            experiment:
+                any_of:
+                    - range: integer
+                    - range: string
+                description: >-
+                    WHERE (short form): an in-study experiment id whose saved result
+                    holds the array, resolved within the enclosing study like
+                    ``initial_state.source_experiment``. Written as the bare integer id
+                    (``34``), or as one of the string spellings the workflow planner also
+                    accepts (``exp-34``, ``"34"``) — ``tvbo.data.dataref`` normalises all
+                    three to the integer it globs the container by. Mutually exclusive with
+                    ``iri`` (the full cross-study / curated / external form). When
+                    both are absent the reference is local — ``output`` names this
+                    experiment's own output — otherwise falling back to
+                    ``initial_state.source_experiment`` when present.
+            analysis:
+                range: string
+                description: >-
+                    WHERE (short form): an in-study analysis name whose saved result
+                    holds the array (``derivatives/tvbo/ana-<name>_result.h5``). Mutually
+                    exclusive with ``experiment`` and ``iri``, and — like
+                    ``experiment`` — it registers the run-order dependency, so the
+                    analysis runs before whatever consumes it.
+            output:
+                range: string
+                description: >-
+                    WHICH array to take from the container at ``experiment`` / ``iri``:
+                    a recorded state variable, an ``observation__<name>``, an
+                    ``estimate__<param>`` (a tuned free parameter a fit persisted), or
+                    an external variable. Matched exactly or by the ``<producer>__<name>``
+                    suffix.
+            sel:
+                range: Argument
+                multivalued: true
+                inlined: true
+                description: >-
+                    SLICE: label-based selector (xarray ``.sel``), keyed by dimension
+                    (reuses ``Argument``; name = dim, value = coordinate label), taking
+                    the nearest coordinate for a numeric selection. Never positional —
+                    picks e.g. one operating point out of a swept branch by its
+                    parameter value.
+            transform:
+                range: string
+                description: >-
+                    Optional named reduction applied to the sourced array after ``sel``,
+                    before ``reconcile`` — a registered ``fn(da) -> da`` (the same
+                    ``bsplot.register_transform`` registry a figure ``Layer.transform``
+                    uses). Handles a selection a label ``sel`` cannot express on its own,
+                    e.g. picking the operating point (endpoint) out of a branch-restart
+                    container keyed by ordinal. Presentation/selection only — prefer a
+                    ``sel`` or an upstream observation when one suffices.
+            reconcile:
+                range: NodeReconciliation
+                ifabsent: "none"
+                description: >-
+                    Align the sourced array's nodes to the consuming network by label
+                    (``by_label``) or take it as-is (``none``, the default — a sibling
+                    experiment usually already shares the node order). A property of the
+                    reference, so figure layers, dataset targets and warm-starts share
+                    one flag.

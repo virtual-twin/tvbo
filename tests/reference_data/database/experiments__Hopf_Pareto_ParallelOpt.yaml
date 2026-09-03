@@ -1,0 +1,740 @@
+id: 9
+part: main
+description: 'Fit a delay-coupled SupHopf network to two competing targets — empirical
+  FC and a spatial peak-frequency gradient — replicating tvboptim Hopf_Pareto_ParallelOpt.
+  Stage 0: NSGA-II genetic pre-search over (G, a, log10 sigma). Stage 1: parallel
+  gradient refinement from every Pareto seed. Byte-identical to the reference workflow.
+
+  '
+label: 'Hopf Pareto: FC vs Frequency-Gradient (NSGA-II + parallel refinement)'
+dynamics:
+  name: SupHopf
+  parameters:
+    a:
+      name: a
+      value: 0.01
+    omega:
+      name: omega
+      value:
+      - 0.05609293700519776
+      - 0.047879134381531636
+      - 0.05004033811792825
+      - 0.06716935496052817
+      - 0.05561410304271409
+      - 0.0645235132305075
+      - 0.06600996677229319
+      - 0.06134772634822532
+      - 0.06706219803420597
+      - 0.06911503837897544
+      - 0.04636519264862753
+      - 0.0668790615502894
+      - 0.05251317062754093
+      - 0.057769904159922954
+      - 0.0605099683444255
+      - 0.049725795457336144
+      - 0.04584321776979323
+      - 0.05129902264785612
+      - 0.04733802638757775
+      - 0.06804822853944927
+      - 0.05291411439625482
+      - 0.05353265777676754
+      - 0.0513080898092627
+      - 0.06401435488576125
+      - 0.05054639697382636
+      - 0.04489305973742436
+      - 0.04669621426755177
+      - 0.06541303698975744
+      - 0.0536522832204835
+      - 0.05324842110549934
+      - 0.053156026128815564
+      - 0.04954655125366097
+      - 0.055947269389760544
+      - 0.05535575582603992
+      - 0.050401964472089465
+      - 0.058292252471148616
+      - 0.05378573569519129
+      - 0.05623994451834959
+      - 0.05599572753747452
+      - 0.06191265330923985
+      - 0.05454129643634467
+      - 0.05775206033406855
+      - 0.0582284385605578
+      - 0.05423539288331354
+      - 0.05681832329440687
+      - 0.0554924621788084
+      - 0.06122737109499706
+      - 0.05493256774876094
+      - 0.05561366161218581
+      - 0.055165015478329076
+      - 0.04766568934442699
+      - 0.04943009162484475
+      - 0.0668019396239946
+      - 0.05578228250036987
+      - 0.06405888675416536
+      - 0.0661752482831198
+      - 0.06130510645366488
+      - 0.06703006701947575
+      - 0.06911503837897544
+      - 0.04624295540761925
+      - 0.06694243447624137
+      - 0.046439626084649376
+      - 0.0574230655055143
+      - 0.060509700253410216
+      - 0.05119140277684101
+      - 0.04581582455312182
+      - 0.046266007890762614
+      - 0.04540861826746886
+      - 0.06781284351331039
+      - 0.05267963229619653
+      - 0.05411568272060728
+      - 0.051286927897270754
+      - 0.06457129875402763
+      - 0.04910074320597845
+      - 0.0439822971502571
+      - 0.046940454657621526
+      - 0.06549979982567324
+      - 0.05420362772085449
+      - 0.05259331033344723
+      - 0.04839476536860731
+      - 0.049339209328026816
+      - 0.05609134295051231
+      - 0.05586910385927237
+      - 0.050131531422618385
+  derived_variables:
+    r_squared:
+      name: r_squared
+      equation:
+        rhs: x**2 + y**2
+        latex: false
+      record: false
+    amplitude_term:
+      name: amplitude_term
+      equation:
+        rhs: a - r_squared
+        latex: false
+      record: false
+  coupling_inputs:
+    LinCoupling:
+      name: LinCoupling
+      dimension: 1
+      local: false
+  state_variables:
+    x:
+      name: x
+      equation:
+        rhs: amplitude_term*x - omega*y + LinCoupling
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: true
+      equation_type: differential
+      equation_order: 1
+      noise:
+        parameters:
+          sigma:
+            name: sigma
+            value: 0.01
+        noise_type: gaussian
+        gaussian: false
+        additive: true
+        seed: 42
+      initial_value: 0.1
+    y:
+      name: y
+      equation:
+        rhs: amplitude_term*y + omega*x
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      noise:
+        parameters:
+          sigma:
+            name: sigma
+            value: 0.01
+        noise_type: gaussian
+        gaussian: false
+        additive: true
+        seed: 42
+      initial_value: 0.0
+  number_of_modes: 1
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: Heun
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 1.0
+  duration: 60000.0
+  transient_time: 60000.0
+  block_size: 1000
+  noise_draw: fused
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  label: Desikan-Killiany (dk_average)
+  coupling:
+    LinCoupling:
+      name: LinCoupling
+      parameters:
+        G:
+          name: G
+          value: 0.025
+      sparse: false
+      pre_expression:
+        rhs: local_states
+        latex: false
+      post_expression:
+        rhs: G * gx
+        latex: false
+      local_states:
+      - x
+      delayed: false
+      interpolate_delays: false
+      vectorized: false
+      symmetry: directed
+  graph_representation: auto
+  transforms:
+  - name: weight
+    callable:
+      name: normalized_graph_laplacian
+      module: tvbo.classes.network
+  bids_dir: ../networks/bids/dk_average
+  structural_measures:
+  - streamlineCount
+  - tractLength
+  observational_measures:
+  - BoldCorrelation
+  distance_unit: mm
+observations:
+  psd:
+    name: psd
+    label: Welch PSD (per node)
+    source:
+    - x
+    reconcile: by_label
+    pipeline:
+    - function: welch_psd
+      output: psd
+      arguments:
+        data:
+          name: data
+          value: integration.result
+  fitted_peaks:
+    name: fitted_peaks
+    label: Soft-argmax peak frequency (per node)
+    source:
+    - x
+    reconcile: by_label
+    pipeline:
+    - function: welch_psd
+      output: psd_step
+      arguments:
+        data:
+          name: data
+          value: integration.result
+    - function: soft_peak_freqs
+      output: fitted_peaks
+      arguments:
+        data:
+          name: data
+          value: psd_step
+  empirical_fc:
+    name: empirical_fc
+    label: Empirical FC (dk_average BOLD correlation)
+    source:
+    - network.observations.BoldCorrelation
+    reconcile: by_label
+  bold:
+    name: bold
+    label: Simulated BOLD (x, First-Order Volterra HRF)
+    source:
+    - x
+    period: 1000.0
+    reconcile: by_label
+    pipeline:
+    - function: hrf_kernel
+    - function: select_voi
+      output: _voi_data
+      arguments:
+        data:
+          name: data
+          value: integration.result
+        voi:
+          name: voi
+          value: 0
+    - function: temporal_average
+      output: downsampled_data
+      arguments:
+        data:
+          name: data
+          value: _voi_data
+        period_samples:
+          name: period_samples
+          value: 1
+    - callable:
+        name: fftconvolve
+        module: jax.scipy.signal
+      output: bold_convolve
+      apply_on_dimension: node
+      arguments:
+        in1:
+          name: in1
+          value: downsampled_data
+        in2:
+          name: in2
+          value: hrf_kernel
+        mode:
+          name: mode
+          value: valid
+    - function: volterra_transform
+      arguments:
+        data:
+          name: data
+          value: bold_convolve
+    - function: subsample_bold
+      arguments:
+        data:
+          name: data
+          value: volterra_transform
+        step:
+          name: step
+          value: 1000
+  fc:
+    name: fc
+    label: Simulated FC
+    source:
+    - bold
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: compute_fc
+        module: tvboptim.observations.observation
+      arguments:
+        timeseries:
+          name: timeseries
+          value: bold
+        skip_t:
+          name: skip_t
+          value: 20
+  fc_corr_val:
+    name: fc_corr_val
+    label: FC correlation (simulated vs empirical)
+    source:
+    - fc
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: fc_corr
+        module: tvboptim.observations.observation
+      output: fc_corr_val
+      arguments:
+        fc1:
+          name: fc1
+          value: fc
+        fc2:
+          name: fc2
+          value: empirical_fc
+  one_minus_fc:
+    name: one_minus_fc
+    label: 1 - FC correlation (GA objective, lower is better)
+    source:
+    - fc
+    reconcile: by_label
+    pipeline:
+    - function: one_minus_fc_fn
+      output: one_minus_fc
+      arguments:
+        fc:
+          name: fc
+          value: fc
+        empirical_fc:
+          name: empirical_fc
+          value: empirical_fc
+  psd_mae:
+    name: psd_mae
+    label: PSD MAE to uniform 9 Hz
+    source:
+    - x
+    reconcile: by_label
+    pipeline:
+    - function: welch_psd
+      output: _psd
+      arguments:
+        data:
+          name: data
+          value: integration.result
+    - function: soft_peak_freqs
+      output: _peaks
+      arguments:
+        data:
+          name: data
+          value: _psd
+    - function: psd_mae_fn
+      output: psd_mae
+      arguments:
+        data:
+          name: data
+          value: _peaks
+  freq_grad_corr:
+    name: freq_grad_corr
+    label: Correlation of fitted peaks to target frequency gradient
+    source:
+    - x
+    reconcile: by_label
+    pipeline:
+    - function: welch_psd
+      output: _psd
+      arguments:
+        data:
+          name: data
+          value: integration.result
+    - function: soft_peak_freqs
+      output: _peaks
+      arguments:
+        data:
+          name: data
+          value: _psd
+    - function: freq_grad_corr_fn
+      output: freq_grad_corr
+      arguments:
+        data:
+          name: data
+          value: _peaks
+functions:
+  welch_psd:
+    name: welch_psd
+    description: Per-node Welch PSD of the subsampled x trajectory (returns Pxx only).
+    arguments:
+      data:
+        name: data
+        description: Raw trajectory (time, states, nodes).
+      subsample:
+        name: subsample
+        value: 10
+      fs_obs:
+        name: fs_obs
+        value: 100.0
+    source_code: jax.scipy.signal.welch(data[::subsample, 0, :].T, fs=fs_obs, nperseg=512,
+      nfft=2048)[1]
+  soft_peak_freqs:
+    name: soft_peak_freqs
+    description: Soft-argmax peak frequency per node over the Welch PSD (transient=3,
+      beta=150).
+    arguments:
+      data:
+        name: data
+        description: Per-node Welch PSD (nodes, freqs).
+      transient:
+        name: transient
+        value: 3
+      beta:
+        name: beta
+        value: 150.0
+      fs_obs:
+        name: fs_obs
+        value: 100.0
+    source_code: jnp.sum(jax.nn.softmax(beta * (data[:, transient:] / (jnp.max(data[:,
+      transient:], axis=1, keepdims=True) + 1e-12)), axis=1) * jnp.linspace(0.0, fs_obs
+      / 2.0, data.shape[1])[transient:][None, :], axis=1)
+  psd_mae_fn:
+    name: psd_mae_fn
+    description: Mean absolute error of per-node peak frequencies to a uniform 9 Hz
+      target.
+    arguments:
+      data:
+        name: data
+      target:
+        name: target
+        value: 9.0
+    source_code: jnp.mean(jnp.abs(data - target))
+  freq_grad_corr_fn:
+    name: freq_grad_corr_fn
+    description: Pearson correlation of fitted peak frequencies to the spatial target
+      gradient.
+    arguments:
+      data:
+        name: data
+      target:
+        name: target
+        value:
+        - 8.92746819691952
+        - 7.620200907781877
+        - 7.964167165458072
+        - 10.690334866262178
+        - 8.851259404869964
+        - 10.269236076290579
+        - 10.505812505142227
+        - 9.76379389576897
+        - 10.673280311751467
+        - 11.0
+        - 7.37924959743708
+        - 10.644133235075676
+        - 8.357730682801266
+        - 9.194365808996785
+        - 9.630460568349429
+        - 7.914106146211562
+        - 7.296174715300806
+        - 8.16449303018939
+        - 7.534080895797578
+        - 10.830211940700337
+        - 8.421542865493976
+        - 8.519987102019346
+        - 8.16593611374706
+        - 10.188201008907724
+        - 8.044708933869686
+        - 7.144952367730832
+        - 7.431933324359154
+        - 10.41080817957289
+        - 8.539026082706304
+        - 8.474749430779026
+        - 8.460044313522943
+        - 7.885578545176086
+        - 8.904284475874277
+        - 8.810142168302237
+        - 8.02172178727513
+        - 9.277500124744053
+        - 8.560265703723893
+        - 8.950865169309282
+        - 8.911996829616033
+        - 9.853704814100315
+        - 8.68051693048463
+        - 9.191525875908386
+        - 9.267343825435502
+        - 8.631830867910352
+        - 9.042917010498238
+        - 8.831899660097404
+        - 9.744638762290615
+        - 8.742789693945733
+        - 8.851189149019357
+        - 8.77978489911699
+        - 7.58623007504824
+        - 7.867043419579339
+        - 10.631858899285088
+        - 8.878025996882396
+        - 10.195288475889358
+        - 10.532117874591977
+        - 9.75701072887562
+        - 10.668166501930594
+        - 11.0
+        - 7.3597949363006965
+        - 10.654219349499128
+        - 7.39109604671127
+        - 9.139164722692307
+        - 9.630417900339149
+        - 8.147364795742424
+        - 7.291814949460363
+        - 7.363463852943505
+        - 7.227006056240606
+        - 10.79274925026052
+        - 8.38422388020313
+        - 8.612778403777316
+        - 8.162568090848266
+        - 10.276841378567042
+        - 7.814625990717268
+        - 7.0
+        - 7.470805389741448
+        - 10.42461691378556
+        - 8.626775285286877
+        - 8.370485313134186
+        - 7.702266128186324
+        - 7.85257905280122
+        - 8.927214495236772
+        - 8.891844045317685
+        - 7.978681030676393
+    source_code: jnp.corrcoef(data, jnp.asarray(target))[0, 1]
+  select_voi:
+    name: select_voi
+    description: Select the variable-of-interest slice (keepdim) from (time, vars,
+      nodes).
+    arguments:
+      data:
+        name: data
+      voi:
+        name: voi
+        value: 0
+    source_code: data[:, voi:voi + 1, :]
+  temporal_average:
+    name: temporal_average
+    description: Downsample by mean over non-overlapping windows (tvboptim TemporalAverage).
+    arguments:
+      data:
+        name: data
+      period_samples:
+        name: period_samples
+        value: 1
+    source_code: 'jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) +
+      (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0])
+      + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0],
+      period_samples).shape[0]]'
+  hrf_kernel:
+    name: hrf_kernel
+    equation:
+      parameters:
+        tau_s:
+          name: tau_s
+          value: 0.8
+        tau_f:
+          name: tau_f
+          value: 0.4
+      rhs: (1/3)*exp(-0.5*(t/1000)/tau_s)*sin(sqrt(1/tau_f - 1/(4*tau_s**2))*(t/1000))/sqrt(1/tau_f
+        - 1/(4*tau_s**2))
+      latex: false
+    description: Hemodynamic response kernel (First-Order Volterra), 1 ms resolution.
+    arguments:
+      duration:
+        name: duration
+        value: 20000.0
+    time_range:
+      enforce: none
+      lo: 0
+      hi: duration
+      n: 20000
+      log_scale: false
+  volterra_transform:
+    name: volterra_transform
+    equation:
+      parameters:
+        k_1:
+          name: k_1
+          value: 5.6
+        V_0:
+          name: V_0
+          value: 0.02
+      rhs: k_1 * V_0 * (data - 1.0)
+      latex: false
+    description: Volterra nonlinear BOLD transformation.
+    arguments:
+      data:
+        name: data
+  subsample_bold:
+    name: subsample_bold
+    description: Sample convolved signal at each BOLD TR (step = round(TR/downsample_period)).
+    arguments:
+      data:
+        name: data
+      step:
+        name: step
+        value: 1000
+    source_code: data[step::step]
+  fc_corr_fn:
+    name: fc_corr_fn
+    description: Upper-triangle Pearson correlation between two FC matrices.
+    callable:
+      name: fc_corr
+      module: tvboptim.observations.observation
+  one_minus_fc_fn:
+    name: one_minus_fc_fn
+    description: 1 - FC correlation (lower-is-better FC objective; fc_corr = upper-tri
+      corrcoef).
+    arguments:
+      fc:
+        name: fc
+      empirical_fc:
+        name: empirical_fc
+    source_code: 1.0 - jnp.corrcoef(fc.flatten(), empirical_fc.flatten())[0, 1]
+  combined_loss_fn:
+    name: combined_loss_fn
+    description: 'Competing-objective loss: -rho_FC - rho_freq-grad (lower is better).'
+    arguments:
+      fc_corr_val:
+        name: fc_corr_val
+      freq_grad_corr:
+        name: freq_grad_corr
+    source_code: -fc_corr_val - freq_grad_corr
+optimizations:
+  refine:
+    name: refine
+    label: Parallel gradient refinement from every Pareto seed
+    free_parameters:
+    - parameter: LinCoupling.G
+      heterogeneous: false
+    - parameter: SupHopf.a
+      heterogeneous: true
+      shape: (n_nodes,)
+    - parameter: SupHopf.omega
+      heterogeneous: true
+      shape: (n_nodes,)
+      domain:
+        enforce: none
+        lo: 0.0
+        hi: .inf
+        log_scale: false
+    algorithm: adam
+    learning_rate: 0.001
+    max_iterations: 200
+    loss:
+      function: combined_loss_fn
+      arguments:
+        fc_corr_val:
+          name: fc_corr_val
+          value: observations.fc_corr_val.data
+        freq_grad_corr:
+          name: freq_grad_corr
+          value: observations.freq_grad_corr.data
+    depends_on: ga_presearch
+explorations:
+  ga_presearch:
+    name: ga_presearch
+    label: NSGA-II pre-search over (G, a, log10 sigma)
+    space:
+      LinCoupling.G:
+        parameter: LinCoupling.G
+        domain:
+          enforce: none
+          lo: 0.001
+          hi: 0.15
+          log_scale: false
+        transform: none
+      SupHopf.a:
+        parameter: SupHopf.a
+        domain:
+          enforce: none
+          lo: -0.1
+          hi: 0.01
+          log_scale: false
+        transform: none
+      noise.sigma:
+        parameter: noise.sigma
+        domain:
+          enforce: none
+          lo: -2.0
+          hi: -0.5
+          log_scale: false
+        transform: log10
+    parameters:
+      population_size:
+        name: population_size
+        value: 8
+      num_generations:
+        name: num_generations
+        value: 40
+      seed:
+        name: seed
+        value: 42
+      reference_point:
+        name: reference_point
+        value:
+        - 13.5
+        - 1.5
+    mode: product
+    strategy: nsga2
+    objectives:
+    - psd_mae
+    - one_minus_fc
+    n_parallel: '8'
+    n_trials: 1
+    sweep_seeding: independent
+    sweep_direction: up
+execution:
+  n_workers: 2
+  n_threads: -1
+  precision: float64
+  accelerator: auto
+  random_seed: 0
+  find_fixpoint: false

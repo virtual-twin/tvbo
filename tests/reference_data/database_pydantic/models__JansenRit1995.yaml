@@ -1,0 +1,186 @@
+name: JansenRit1995
+has_reference: Jansen1995
+label: Jansen-Rit Neural Mass Model (1995)
+iri: tvbo:JansenRit1995
+parameters:
+  A:
+    name: A
+    value: 3.25
+    description: Maximum amplitude of excitatory PSP (EPSP)
+    unit: mV
+  B:
+    name: B
+    value: 22
+    description: Maximum amplitude of inhibitory PSP (IPSP)
+    unit: mV
+  C:
+    name: C
+    value: 135
+    description: Lumped connectivity constant (C = C1)
+  a:
+    name: a
+    value: 100
+    description: Reciprocal of EPSP time constant
+    unit: per_s
+  b:
+    name: b
+    value: 50
+    description: Reciprocal of IPSP time constant
+    unit: per_s
+  v0:
+    name: v0
+    value: 6
+    description: PSP for 50% firing rate (sigmoid midpoint)
+    unit: mV
+  e0:
+    name: e0
+    value: 2.5
+    description: Half of maximum firing rate (2*e0 = max rate)
+    unit: per_s
+  r:
+    name: r
+    value: 0.56
+    description: Steepness of sigmoid transformation
+    unit: per_mV
+  p:
+    name: p
+    value: 220
+    description: Mean external input (afferent pulse density)
+    unit: per_s
+description: 'Lumped-parameter cortical column model with three neural populations:
+  pyramidal cells, excitatory interneurons, and inhibitory interneurons. Each population
+  is modeled by a PSP block (2nd-order linear filter) and a sigmoidal potential-to-firing-rate
+  transformation. The model produces EEG-like output as the pyramidal PSP difference
+  v_pyr = y1 - y2. Based on Lopes da Silva et al. (1974, 1976) and Jansen et al. (1993).'
+derived_parameters:
+  C1:
+    name: C1
+    description: Pyramidal → excitatory interneuron connectivity
+    equation:
+      rhs: C
+      latex: false
+  C2:
+    name: C2
+    description: Excitatory interneuron → pyramidal connectivity (Eq. 14)
+    equation:
+      rhs: 0.8*C
+      latex: false
+  C3:
+    name: C3
+    description: Pyramidal → inhibitory interneuron connectivity (Eq. 16)
+    equation:
+      rhs: 0.25*C
+      latex: false
+  C4:
+    name: C4
+    description: Inhibitory interneuron → pyramidal connectivity (Eq. 15)
+    equation:
+      rhs: 0.25*C
+      latex: false
+derived_variables:
+  v_pyr:
+    name: v_pyr
+    description: Aggregate pyramidal PSP (EEG-like output)
+    equation:
+      rhs: y1 - y2
+      latex: false
+    unit: mV
+    record: true
+coupling_inputs:
+  c_intercolumn:
+    name: c_intercolumn
+    description: 'Inter-column coupling input to the excitatory (pyramidal) population.
+      Evaluates to zero for single-column experiments (no network active). For non-delayed
+      coupling: receives linear v_pyr signal. For delayed coupling: receives z0 (delayed
+      EPSP filter output).'
+    dimension: 1
+    local: false
+state_variables:
+  y0:
+    name: y0
+    label: Pyramidal membrane potential (position)
+    equation:
+      rhs: y3
+      latex: false
+    unit: mV
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+  y3:
+    name: y3
+    label: Pyramidal EPSP drive (velocity)
+    equation:
+      rhs: A*a*Sigm(y1 - y2) - 2*a*y3 - a**2*y0
+      latex: false
+    unit: mV_per_s
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+  y1:
+    name: y1
+    label: Excitatory interneuron membrane potential (position)
+    equation:
+      rhs: y4
+      latex: false
+    unit: mV
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+  y4:
+    name: y4
+    label: Excitatory EPSP drive (velocity) with coupling input
+    equation:
+      rhs: A*a*(p + C2*Sigm(C1*y0) + c_intercolumn) - 2*a*y4 - a**2*y1
+      latex: false
+    unit: mV_per_s
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+  y2:
+    name: y2
+    label: Inhibitory interneuron membrane potential (position)
+    equation:
+      rhs: y5
+      latex: false
+    unit: mV
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+  y5:
+    name: y5
+    label: Inhibitory IPSP drive (velocity)
+    equation:
+      rhs: B*b*(C4*Sigm(C3*y0)) - 2*b*y5 - b**2*y2
+      latex: false
+    unit: mV_per_s
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+number_of_modes: 1
+functions:
+  Sigm:
+    name: Sigm
+    equation:
+      rhs: 2*e0 / (1 + exp(r*(v0 - v)))
+      latex: false
+    definition: Sigmoid potential-to-firing-rate transformation (Eq. 3)
+    arguments:
+      v:
+        name: v
+model_type: neural_mass
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

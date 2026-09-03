@@ -1,9 +1,7 @@
 """Canonical database registry — resolves short names to YAML file paths.
 
 Works both from pip-installed packages and editable/dev installs.
-Searches recursively within each category directory so that models in
-subfolders (e.g. database/models/julia/) are automatically discovered.
-See TVBO-Database-Access-Proposal.md §5 for design rationale.
+Searches recursively within each category directory so that models in subfolders (e.g. database/models/julia/) are automatically discovered.
 """
 
 import re
@@ -27,8 +25,7 @@ _CATEGORIES = {
     "Integrator": "integrators",
     "Network": "networks",
     "SimulationExperiment": "experiments",
-    # The studies/ directory holds bibliographic source records (Study); a
-    # SimulationStudy is_a Study, so both class names resolve to the same dir.
+    # A SimulationStudy is_a Study, so both resolve to the bibliographic studies/ directory.
     "Study": "studies",
     "SimulationStudy": "studies",
     "Observation": "observation_models",
@@ -37,24 +34,72 @@ _CATEGORIES = {
     "Continuation": "continuations",
     "GraphGenerator": "graph_generators",
     "SimulationTool": "software",
+    # A Theme is_a Palette, so a document declaring either resolves to the same directory.
+    "Theme": "themes",
+    "Palette": "themes",
 }
 
 
 def local_name(iri: str) -> str:
     """Strip an optional ``prefix:`` from a CURIE / IRI, returning the local name.
 
-    ``tvbo:KuramotoCoupling`` -> ``KuramotoCoupling``; a bare name is returned
-    unchanged. Single source of truth for CURIE-prefix stripping, so the
-    class-layer ``_iri_local`` helpers don't each re-implement it.
+    ``tvbo:KuramotoCoupling`` -> ``KuramotoCoupling``; a bare name is returned unchanged. Single source of truth for CURIE-prefix stripping, so the class-layer ``_iri_local`` helpers don't each re-implement it.
     """
     return iri.split(":", 1)[-1] if ":" in iri else iri
+
+
+# The IRI scope each curated entity is addressed under: `tvbo:<scope>/<name>` identifies a SPEC in the database, mirroring _CATEGORIES one level up. A container a run produced is addressed under `result/` and resolves against a study's results directory instead — a recipe and its output must never share a scope.
+_IRI_SCOPES = {
+    "experiment": "SimulationExperiment",
+    "study": "SimulationStudy",
+    "dynamics": "Dynamics",
+    "network": "Network",
+    "atlas": "BrainAtlas",
+    "coupling": "Coupling",
+    "integrator": "Integrator",
+    "observation": "Observation",
+    "function": "Function",
+    "continuation": "Continuation",
+    "graph_generator": "GraphGenerator",
+    "software": "SimulationTool",
+    "theme": "Theme",
+}
+
+_IRI_RE = re.compile(r"^(?P<prefix>[A-Za-z][\w.-]*):(?P<scope>[a-z_]+)/(?P<name>[^/].*)$")
+
+
+def iri_target(iri: str) -> tuple[str, str] | None:
+    """``(class_name, local_name)`` for a curated-entity IRI, or ``None`` when it is not one.
+
+    ``tvbo:experiment/JR_MEG_FrequencyGradient_Optimization`` -> ``("SimulationExperiment", "JR_MEG_FrequencyGradient_Optimization")``. Returns ``None`` for a bare name (no scope), for a ``result/`` reference (a produced container, which :mod:`tvbo.data.dataref` resolves against a study's results directory), and for any unknown scope — so a caller falls back rather than being handed the wrong entity.
+
+    The ``prefix:`` is required, and that is what separates an IRI from a relative path: without it ``network/Glasser.yaml`` reads as scope ``network``, and a path the caller meant to open would be resolved against the database instead.
+    """
+    m = _IRI_RE.match(str(iri).strip())
+    if not m:
+        return None
+    cls_name = _IRI_SCOPES.get(m.group("scope"))
+    return (cls_name, m.group("name")) if cls_name else None
+
+
+def resolve_iri(iri: str) -> Path:
+    """Resolve a curated-entity IRI to its database YAML path.
+
+    New specs reference curated entities this way because a relative path is not portable: ``!include`` splices a document without rebasing the paths inside it, so an experiment included out of the database resolves its own ``network.bids_dir`` against the including file and loads the wrong root. An IRI carries no path, so the database resolves it against the database.
+    """
+    target = iri_target(iri)
+    if target is None:
+        raise ValueError(
+            f"{iri!r} is not a curated-entity IRI. Expected `tvbo:<scope>/<name>` with scope one of: "
+            f"{', '.join(sorted(_IRI_SCOPES))}."
+        )
+    return resolve(*target)
 
 
 def resolve(cls_name: str, name: str) -> Path:
     """Resolve a short name to a database YAML file path.
 
-    Tries exact top-level stem match first (fast path), then searches
-    recursively by canonical `name:` field and file stem (case-insensitive).
+    Tries exact top-level stem match first (fast path), then searches recursively by canonical `name:` field and file stem (case-insensitive).
     For Network, also matches BIDS filenames containing the atlas name.
     """
     if DATABASE_ROOT is None:
@@ -134,9 +179,9 @@ def list_entries(cls_name: str) -> list[str]:
 
 
 def list_entries_with_metadata(cls_name: str) -> list[dict]:
-    """Return a list of dicts with `name`, `model_type`, `description`, `path`
-    for every entry in the given class category.  Fast — reads only the first
-    ~30 lines of each YAML file.
+    """Every entry in the given class category, as dicts with `name`, `model_type`, `description`, `path`.
+
+    Fast — reads only the first ~30 lines of each YAML file.
     """
     if DATABASE_ROOT is None:
         return []

@@ -1,0 +1,32 @@
+# Seeded as docs/_quarto.yml for a collection: it renders the document rather than one study's report, and reads the emitted results manifest so a quoted number is never typed into the prose.
+project:
+  type: default
+  render:
+    - manuscript.qmd
+title: "{study}"
+format:
+  pdf:
+    output-file: manuscript.pdf
+    pdf-engine: xelatex
+    documentclass: scrartcl
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    colorlinks: true
+    fig-width: 7
+    fig-pos: "H"
+    geometry:
+      - margin=2cm
+    include-in-header:
+      text: |
+        \usepackage{etoolbox}
+        \usepackage{ragged2e}
+        \AtBeginEnvironment{longtable}{\small\RaggedRight}
+callout-icon: false
+bibliography: references.bib
+metadata-files:
+    - ../manuscript_results.yml
+jupyter: python3
+execute:
+  echo: false
+  warning: false

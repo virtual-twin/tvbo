@@ -1,0 +1,284 @@
+"""Figure -> distributed-workflow emitter.
+
+Wires TVBO's declarative :class:`~tvbo.datamodel.pydantic.Figure` codegen into the HPC/workflow emission so that figures render as their own scheduler jobs, siblings of the experiment rules ``tvbo workflow snakemake`` already emits.
+
+The idea in one line: *a figure's PROV ``used`` edges are its workflow dependency edges.* Every layer of a figure binds to an experiment result container (via ``bsplot._container_path``); those containers are exactly the render rule's ``input:``, so the rule schedules after the experiments that produce them. The per-figure resource request comes from ``Figure.workflow_overrides`` (a ``WorkflowConfig``) merged over the study-level ``workflow`` — the same override pattern experiments use.
+
+Resolution (used->inputs, workflow_overrides->resources, unit conversion) lives here in Python; the rule *structure* lives in ``tvbo/templates/workflow/snakemake/tvbo-figure-rule.smk.mako`` (the house codegen rule). ``emit_figure_rules`` returns the Snakemake rule text; ``write_figure_kit`` also freezes each figure's self-contained ``plot.py`` and the ``.smk`` snippet to disk.
+"""
+
+from __future__ import annotations
+
+import datetime as _dt
+import re
+import shlex
+from pathlib import Path
+
+from tvbo.adapters import bsplot
+from tvbo.cli import _workflow as _wf
+from tvbo.data.dataref import experiment_id as _experiment_id
+from tvbo.templates import lookup
+from tvbo.utils import as_list, deep_merge, sanitize_name
+
+_RULE_TEMPLATE = "tvbo-figure-rule.smk.mako"
+
+
+# --------------------------------------------------------------------------- helpers
+
+
+def _figure_block(workflow, overrides, engine: str = "snakemake"):
+    """Merge ``figure.workflow_overrides`` over the study ``workflow`` -> (spec, block).
+
+    Reuses the ``_workflow`` merge machinery so the semantics match the experiment emitter exactly: name-keyed engine slots (env/options) merge by name, and the engine block inherits the engine-agnostic resource keys (and, for Snakemake, the SLURM scheduler identity) from the ``slurm`` block when it does not set them — unset falls back, an override wins only where it names a key.
+
+    ``gres`` is NOT among the inherited keys: it is accelerator-scoped and a figure render is CPU, so an inherited GPU ``gres`` would land on a ``medium``-partition rule the executor plugin then rejects. A figure that wants one declares it itself.
+    """
+    base = _wf._canonicalize_engine_maps(_wf._as_plain_dict(workflow))
+    over = _wf._canonicalize_engine_maps(_wf._as_plain_dict(overrides))
+    spec = deep_merge(base, over)
+
+    block = dict(spec.get(engine) or {})
+    shared = ["cpus_per_task", "mem", "time", "modules", "venv", "env", "setup"]
+    if engine == "snakemake":
+        shared += ["partition", "account"]  # not gres — see docstring
+    slurm = spec.get("slurm") or {}
+    for k in shared:
+        if k not in block and k in slurm:
+            block[k] = slurm[k]
+    if "env" in block:
+        block["env"] = _wf._normalize_env(block["env"])
+    if "options" in block:
+        block["options"] = _wf._normalize_directives(block["options"])
+    if "setup" in block:
+        block["setup"] = _wf._as_lines(block["setup"])
+    return spec, block
+
+
+def _rule_resources(block: dict) -> dict:
+    """Lower a merged engine block into a Snakemake ``resources:`` map.
+
+    Returns ``{key: python-literal-string}`` (already repr'd so the template emits ``key=<literal>`` verbatim). ``cpus_per_task``/``mem_mb``/``runtime`` map across engines; the SLURM scheduler identity (partition/account) is surfaced as the executor's ``slurm_partition``/``slurm_account`` resources, and a per-figure ``gres`` as the executor's NATIVE ``gres`` resource (never ``slurm_extra='--gres='``, which the modern slurm executor plugin rejects — it manages GRES itself). ``options`` pass through verbatim.
+    """
+    r: dict = {}
+    if block.get("cpus_per_task"):
+        r["cpus_per_task"] = str(int(block["cpus_per_task"]))
+    # `is not None`, not truthiness: a declared 0 is a value the figure chose, and dropping it silently hands the job the partition default instead.
+    mb = _wf.mem_mb(block.get("mem"))
+    if mb is not None:
+        r["mem_mb"] = str(mb)
+    rt = _wf.runtime_minutes(block.get("time"))
+    if rt is not None:
+        r["runtime"] = str(rt)
+    if block.get("partition"):
+        r["slurm_partition"] = repr(str(block["partition"]))
+    if block.get("account"):
+        r["slurm_account"] = repr(str(block["account"]))
+    if block.get("gres"):
+        r["gres"] = repr(str(block["gres"]))
+    for opt in block.get("options") or []:
+        v = str(opt["value"])
+        # numeric -> bare int literal; else a repr'd (safely escaped) string literal
+        r[opt["name"]] = v if v.lstrip("-").isdigit() else repr(v)
+    return r
+
+
+def _exp_key_of(iri, keys) -> str | None:
+    """The kit experiment key a figure ``used.iri`` points at, or ``None`` for an external reference.
+
+    Uses the same STRICT matcher as ``bsplot._container_path`` (``dataref.experiment_id``, which requires the last segment to BE an experiment token): a name that merely contains a digit — an analysis called ``fig2_spectrum``, a curated ``rec-avgMatrix_atlas-HCPMMP1`` — must not be read as experiment 2 and bound to that rule's outputs. A loose digit strip made the workflow disagree with the ``plot.py`` about which container a layer meant.
+    """
+    if not iri:
+        return None
+    last = re.split(r"[:/#]", str(iri))[-1]
+    if last in keys:
+        return last
+    eid = _experiment_id(iri)
+    return next((c for c in (f"exp{eid}", f"exp-{eid}", eid) if c in keys), None) if eid else None
+
+
+def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]:
+    """This figure's ``used`` result dependencies, deduped, as ``{value, raw}`` items.
+
+    A ``used`` edge to a KIT experiment resolves to that experiment's own output files — the ``expand()`` over its fanned grid (so the figure waits for EVERY cell) or its single group-run path — emitted RAW so Snakemake evaluates the ``expand``. A ``used`` edge to something the kit does not produce (an external/author-time container, or an analysis's own container) falls back to the single resolved container path via the same ``bsplot._container_path`` the ``plot.py`` reads, emitted as a quoted string. Unresolved edges are dropped — a rule cannot depend on a file that does not exist.
+
+    The reference is read through ``bsplot._used_ref``, so the short ``experiment:`` and ``analysis:`` forms register their dependency exactly as a full ``iri`` does. Both a layer's ``used`` (a plotted result) and an annotation's ``used`` (a printed statistic read from a run) carry the same PROV edge, so both are walked — a figure whose only binding to an experiment is a computed annotation still waits for that run.
+    """
+    inputs, seen = [], set()
+    for panel in as_list(getattr(figure, "panels", None)):
+        layers = getattr(panel, "layers", None) or []
+        annotations = getattr(panel, "annotations", None) or []
+        for holder in (*layers, *annotations):
+            iri = bsplot._used_ref(getattr(holder, "used", None))
+            key = _exp_key_of(iri, exp_plans_by_key)
+            if key is not None:
+                item = {"value": _wf.fan_input_expr(exp_plans_by_key[key]), "raw": True}
+            else:
+                container = bsplot._container_path(iri, Path(base_dir))
+                if not container:
+                    continue
+                item = {"value": container, "raw": False}
+            dedup = (item["raw"], item["value"])
+            if dedup not in seen:
+                seen.add(dedup)
+                inputs.append(item)
+    return inputs
+
+
+def _has_unresolved_used(figure, base_dir: Path, exp_plans_by_key: dict) -> bool:
+    """True when a ``used`` edge names data neither the kit nor the author's tree resolves.
+
+    ``_figure_inputs`` drops such an edge — a rule cannot depend on a file that does not exist — which leaves the figure looking self-contained while its render still opens that container.
+    Reported separately so the figure is kept out of the default target rather than added to it with a dependency silently missing.
+    """
+    for panel in as_list(getattr(figure, "panels", None)):
+        layers = getattr(panel, "layers", None) or []
+        annotations = getattr(panel, "annotations", None) or []
+        for holder in (*layers, *annotations):
+            iri = bsplot._used_ref(getattr(holder, "used", None))
+            if not iri or _exp_key_of(iri, exp_plans_by_key) is not None:
+                continue
+            if not bsplot._container_path(iri, Path(base_dir)):
+                return True
+    return False
+
+
+def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) -> dict:
+    """Resolve one ``Figure`` into the template context for its render rule.
+
+    ``kit_satisfiable`` decides whether the figure joins the kit's default target. A ``raw`` input is an ``expand()`` over a kit experiment's own outputs; anything else is a container resolved against the AUTHOR's tree, which the kit neither produces nor ships — as is a ``used`` edge that resolved to nothing and was dropped from ``input:``. Either way the figure keeps its rule but leaves every default target, because a target that cannot be satisfied on the target host reads as a broken kit.
+
+    ``pythonpath_code`` puts the kit's bundled ``code/`` on ``PYTHONPATH`` for the figure's custom-panel ``code_modules``, exactly as the experiment rules do.
+    """
+    base_dir = Path(base_dir)
+    name = figure.name or "figure"
+    fmt = (figure.format or "png").lstrip(".")
+    _spec, block = _figure_block(workflow, getattr(figure, "workflow_overrides", None))
+    inputs = _figure_inputs(figure, base_dir, exp_plans_by_key)
+    return {
+        "name": name,
+        "rule_name": "fig_" + sanitize_name(name),
+        "inputs": inputs,
+        "kit_satisfiable": all(i["raw"] for i in inputs) and not _has_unresolved_used(figure, base_dir, exp_plans_by_key),
+        "output": f"figures/{name}.{fmt}",
+        "figures_dir": "figures",
+        "script": f"figures/scripts/plot_{sanitize_name(name)}.py",
+        "pythonpath_code": bool(bundled_code),
+        "threads": int(block.get("cpus_per_task") or block.get("cores") or 1),
+        "resources": _rule_resources(block),
+        "container": _spec.get("container"),
+        # Activation runs in the rule shell before plot.py, exactly as the experiment rules do: a fresh compute-node shell inherits nothing, so `modules`/`venv` must be put in place or `python`/`bsplot` is the wrong (system) interpreter and the render fails.
+        "activation": _activation_lines(block),
+        "env": block.get("env") or [],
+    }
+
+
+def _activation_lines(block: dict) -> list[str]:
+    """Shell lines that put the declared environment in place (modules, then venv, then the verbatim ``setup`` lines) — mirrors the experiment rules' ``_activation`` so a figure renders in the same interpreter its data was produced with."""
+    lines = [f"module load {m}" for m in (block.get("modules") or [])]
+    if block.get("venv"):
+        lines.append("source {}/bin/activate".format(shlex.quote(str(block["venv"]))))
+    return lines + list(block.get("setup") or [])
+
+
+def figure_contexts(figures, base_dir=".", workflow=None, exp_plans=None, bundled_code=False) -> list[dict]:
+    """Per-figure template contexts (fan-aware inputs). ``exp_plans`` are the emitter's per-experiment dicts; without them (author-time render) inputs fall back to the author's own result containers. Public so the study emitter can read the figure outputs it must add to the default target before it renders the Snakefile."""
+    keys = {ep["key"]: ep for ep in (exp_plans or [])}
+    return [_figure_context(f, base_dir, workflow, keys, bundled_code) for f in figures]
+
+
+# --------------------------------------------------------------------------- emit
+
+
+def emit_figure_rules(
+    figures, base_dir=".", workflow=None, kit_dir="kit", include_all: bool = False, exp_plans=None, bundled_code: bool = False
+) -> str:
+    """Render Snakemake render rules for *figures* — one rule per figure.
+
+    Args:
+        figures: An iterable of ``Figure`` objects (e.g. ``study.figures``).
+        base_dir: Root the experiment result containers live under; each figure's
+            ``used`` IRIs resolve against the ``results`` role under ``base_dir``.
+        workflow: The study-level ``WorkflowConfig`` (or ``None``); each figure's
+            ``workflow_overrides`` merges over it for that figure's resources.
+        kit_dir: Directory the companion :func:`write_figure_kit` writes to (kept for
+            API symmetry; rule paths are kit-relative and independent of it).
+        include_all: When True, prepend an aggregate ``all_figures`` target rule so
+            the snippet is runnable standalone (``snakemake -s figures.smk``).
+        exp_plans: The emitter's per-experiment dicts; a figure ``used`` edge to one of
+            them becomes an ``expand()`` over that experiment's fanned cells (the whole
+            grid), so the render waits for the sweep. Without them, inputs fall back to
+            the author's own result containers.
+        bundled_code: Whether the kit carries a ``code/`` dir the figure's custom-panel
+            modules were bundled into (put on the rule's ``PYTHONPATH``).
+
+    Returns:
+        The Snakemake rule text. Each rule's ``input:`` is the figure's ``used``
+        dependencies and its ``resources:`` reflect ``workflow_overrides`` over
+        *workflow*; the rule runs the figure's frozen ``plot.py``.
+    """
+    fig_ctxs = figure_contexts(figures, base_dir, workflow, exp_plans, bundled_code)
+    now = _dt.datetime.now().isoformat(timespec="seconds")
+    return lookup.get_template(_RULE_TEMPLATE).render(figures=fig_ctxs, now=now, include_all=include_all)
+
+
+def _rebase_containers_to_kit(code: str, figure, base_dir, exp_plans_by_key: dict, out_dir: str) -> str:
+    """Rewrite each layer's author-time container path to the KIT path the render rule uses.
+
+    ``bsplot.render_code`` bakes each ``used`` edge as its author-time resolved container (``<base_dir>/derivatives/tvbo/<file>``), but the kit stores that experiment's result at ``<out_dir>/<key>/<stem>`` — the SAME path ``_figure_inputs`` puts in the rule's ``input:``.
+    Left unrewritten, the frozen ``plot.py`` reads an absolute laptop path that does not exist on the compute node. Only a single-file (group / on-device-vectorized grid) experiment is rebased; a workflow-FANNED experiment and an on-device COHORT both resolve to several cell files with no single container a plot could point at, so they are left alone, as is an edge whose author-time container does not resolve (an empty path would splice the kit path between every character of the script).
+    """
+    for panel in as_list(getattr(figure, "panels", None)):
+        layers = getattr(panel, "layers", None) or []
+        annotations = getattr(panel, "annotations", None) or []
+        for holder in (*layers, *annotations):
+            iri = bsplot._used_ref(getattr(holder, "used", None))
+            key = _exp_key_of(iri, exp_plans_by_key)
+            if key is None:
+                continue
+            plan = exp_plans_by_key[key]
+            if plan.get("axes") or _wf.cohort_out_relpaths(plan):
+                continue
+            author = bsplot._container_path(iri, Path(base_dir))
+            if not author:
+                continue
+            kit = f"{out_dir}/{key}/{_wf.cell_out_relpath(plan)}"
+            code = code.replace(str(author), kit)
+    return code
+
+
+def write_figure_kit(
+    figures, base_dir=".", out_dir="kit", workflow=None, include_all: bool = True, exp_plans=None, bundled_code: bool = False
+) -> Path:
+    """Freeze a figure workflow kit to disk: per-figure ``plot.py`` + the ``.smk`` snippet.
+
+    Layout::
+
+        out_dir/
+          figures.smk                # the render rules (from emit_figure_rules)
+          figures/<name>.<fmt>          # the rendered image (what the rule declares)
+          figures/scripts/plot_<name>.py  # self-contained bsplot script per figure
+
+    Each ``plot_<name>.py`` is ``bsplot.render_code(figure, base_dir, outfile=…)`` with ``outfile`` set to the rule's declared ``output`` (``figures/<name>.<fmt>``), so running ``python figures/scripts/plot_<name>.py`` from the kit root produces exactly what the rule promises. The kit mirrors the local render layout — image in ``figures/``, script in ``figures/scripts/`` — so a cluster run and a laptop run put the same artefact in the same place. Returns the kit directory.
+    """
+    out_dir = Path(out_dir)
+    (out_dir / "figures" / "scripts").mkdir(parents=True, exist_ok=True)
+    keys = {ep["key"]: ep for ep in (exp_plans or [])}
+    kit_out = (exp_plans[0].get("out_dir") if exp_plans else None) or "results"
+    for figure in figures:
+        name = figure.name or "figure"
+        fmt = (figure.format or "png").lstrip(".")
+        script = out_dir / "figures" / "scripts" / f"plot_{sanitize_name(name)}.py"
+        code = bsplot.render_code(figure, base_dir=base_dir, outfile=f"figures/{name}.{fmt}")
+        code = _rebase_containers_to_kit(code, figure, base_dir, keys, kit_out)
+        script.write_text(code, encoding="utf-8")
+    rules = emit_figure_rules(
+        figures,
+        base_dir,
+        workflow=workflow,
+        kit_dir=str(out_dir),
+        include_all=include_all,
+        exp_plans=exp_plans,
+        bundled_code=bundled_code,
+    )
+    (out_dir / "figures.smk").write_text(rules, encoding="utf-8")
+    return out_dir

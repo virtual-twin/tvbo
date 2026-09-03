@@ -1,0 +1,627 @@
+id: 7
+references:
+- tvboptim TBPTT.qmd - truncated backprop-through-time
+part: main
+description: 'Truncated backprop-through-time for a chaotic Jansen-Rit network. Fits
+  global coupling G to empirical FC; contrasts full-BPTT vs windowed (grad_horizon)
+  gradients. Based on tvboptim TBPTT.qmd.
+
+  '
+label: TBPTT Jansen-Rit FC Fitting
+dynamics:
+  name: JansenRit
+  label: Jansen-Rit Neural Mass Model
+  parameters:
+    A:
+      name: A
+      value: 3.25
+      unit: mV
+    B:
+      name: B
+      value: 22.0
+      unit: mV
+    a:
+      name: a
+      value: 0.1
+      unit: per_ms
+    b:
+      name: b
+      value: 0.05
+      unit: per_ms
+    v0:
+      name: v0
+      value: 5.52
+      unit: mV
+    nu_max:
+      name: nu_max
+      value: 0.0025
+      unit: per_ms
+    r:
+      name: r
+      value: 0.56
+      unit: per_mV
+    J:
+      name: J
+      value: 135.0
+    a_1:
+      name: a_1
+      value: 1.0
+    a_2:
+      name: a_2
+      value: 0.8
+    a_3:
+      name: a_3
+      value: 0.25
+    a_4:
+      name: a_4
+      value: 0.25
+    mu:
+      name: mu
+      value: 0.08
+  description: 'Three-population neural mass model; chaotic-regime parameters (a=0.1,
+    mu=0.08).
+
+    '
+  derived_variables:
+    sigm_y1_y2:
+      name: sigm_y1_y2
+      equation:
+        rhs: 2.0 * nu_max / (1.0 + exp(r * (v0 - (y1 - y2))))
+        latex: false
+      record: false
+    sigm_y0_1:
+      name: sigm_y0_1
+      equation:
+        rhs: 2.0 * nu_max / (1.0 + exp(r * (v0 - (a_1 * J * y0))))
+        latex: false
+      record: false
+    sigm_y0_3:
+      name: sigm_y0_3
+      equation:
+        rhs: 2.0 * nu_max / (1.0 + exp(r * (v0 - (a_3 * J * y0))))
+        latex: false
+      record: false
+  coupling_inputs:
+    c_sigmJR:
+      name: c_sigmJR
+      dimension: 1
+      local: false
+  state_variables:
+    y0:
+      name: y0
+      equation:
+        rhs: y3
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+    y1:
+      name: y1
+      equation:
+        rhs: y4
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 5.0
+    y2:
+      name: y2
+      equation:
+        rhs: y5
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 5.0
+    y3:
+      name: y3
+      equation:
+        rhs: A * a * sigm_y1_y2 - 2.0 * a * y3 - a**2 * y0
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+    y4:
+      name: y4
+      equation:
+        rhs: A * a * (mu + a_2 * J * sigm_y0_1 + c_sigmJR) - 2.0 * a * y4 - a**2 *
+          y1
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: true
+      equation_type: differential
+      equation_order: 1
+      noise:
+        parameters:
+          sigma:
+            name: sigma
+            value: 0.0316
+            description: Noise intensity on y4 (chaos-regime drive)
+        noise_type: gaussian
+        gaussian: false
+        additive: true
+        seed: 42
+      initial_value: 0.0
+    y5:
+      name: y5
+      equation:
+        rhs: B * b * (a_4 * J * sigm_y0_3) - 2.0 * b * y5 - b**2 * y2
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+  number_of_modes: 1
+  system_type: continuous
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: Heun
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 1.0
+  duration: 60000.0
+  transient_time: 20000.0
+  block_size: 1000
+  noise_draw: fused
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  differentiation:
+    truncation_window: 100.0
+    mode: reverse
+  coupling_evaluation: per_step
+network:
+  label: Desikan-Killiany
+  description: Structural connectivity from dk_average dataset
+  coupling:
+    c_sigmJR:
+      name: c_sigmJR
+      label: Sigmoidal Jansen-Rit Coupling (instantaneous)
+      parameters:
+        G:
+          name: G
+          value: 8.0
+          description: Global coupling strength
+          free: true
+        cmin:
+          name: cmin
+          value: 0.0
+        cmax:
+          name: cmax
+          value: 0.005
+        midpoint:
+          name: midpoint
+          value: 6.0
+        r:
+          name: r
+          value: 0.56
+      description: Instantaneous sigmoidal Jansen-Rit coupling
+      sparse: false
+      pre_expression:
+        rhs: cmin + (cmax - cmin) / (1.0 + exp(r * (midpoint - (y1 - y2))))
+        latex: false
+      post_expression:
+        rhs: G * gx
+        latex: false
+      incoming_states:
+      - y1
+      - y2
+      delayed: false
+      interpolate_delays: false
+      vectorized: false
+      symmetry: directed
+  graph_representation: auto
+  transforms:
+  - name: weight
+    equation:
+      rhs: weight / max(weight)
+      latex: false
+  bids_dir: ../networks/bids/dk_average
+  structural_measures:
+  - streamlineCount
+  - tractLength
+  observational_measures:
+  - BoldCorrelation
+  distance_unit: mm
+observations:
+  empirical_fc:
+    name: empirical_fc
+    label: Empirical Functional Connectivity
+    source:
+    - network.observations.BoldCorrelation
+    reconcile: by_label
+  bold:
+    name: bold
+    label: Simulated BOLD Signal
+    source:
+    - y0
+    period: 720.0
+    reconcile: by_label
+    pipeline:
+    - function: hrf_kernel
+    - function: temporal_average
+      output: downsampled_data
+      arguments:
+        data:
+          name: data
+          value: integration.result
+        period_samples:
+          name: period_samples
+          value: 4
+    - callable:
+        name: fftconvolve
+        module: jax.scipy.signal
+      output: bold_convolve
+      apply_on_dimension: node
+      arguments:
+        in1:
+          name: in1
+          value: downsampled_data
+        in2:
+          name: in2
+          value: hrf_kernel
+        mode:
+          name: mode
+          value: valid
+    - function: volterra_transform
+      arguments:
+        data:
+          name: data
+          value: bold_convolve
+    - function: subsample_bold
+      arguments:
+        data:
+          name: data
+          value: volterra_transform
+  fc:
+    name: fc
+    label: Simulated Functional Connectivity
+    source:
+    - bold
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: compute_fc
+        module: tvboptim.observations.observation
+      arguments:
+        timeseries:
+          name: timeseries
+          value: bold
+        skip_t:
+          name: skip_t
+          value: 25
+  loss:
+    name: loss
+    label: FC-RMSE loss
+    description: RMSE between simulated and empirical FC (the optimization/diagnostic
+      objective)
+    source:
+    - fc
+    - empirical_fc
+    reconcile: by_label
+    pipeline:
+    - function: rmse
+      arguments:
+        x:
+          name: x
+          value: fc
+        y:
+          name: y
+          value: empirical_fc
+  lyapunov:
+    name: lyapunov
+    label: Top Lyapunov exponent
+    description: Largest Lyapunov exponent on a short segment (marks the chaos onset)
+    reconcile: by_label
+    analysis:
+      parameters:
+        segment_time:
+          name: segment_time
+          value: 1000.0
+        n:
+          name: n
+          value: 5
+        k:
+          name: k
+          value: 1
+      type: lyapunov
+      wrt:
+      - c_sigmJR.G
+  ad_gradient:
+    name: ad_gradient
+    label: AD gradient of loss w.r.t. G
+    description: Reverse-mode autodiff gradient of the FC-RMSE loss w.r.t. global
+      coupling G
+    reconcile: by_label
+    analysis:
+      parameters:
+        mode:
+          name: mode
+          value: reverse
+      type: gradient
+      target: loss
+      wrt:
+      - c_sigmJR.G
+  fd_gradient:
+    name: fd_gradient
+    label: Finite-difference gradient of loss w.r.t. G
+    description: 'Seed-averaged central finite-difference gradient of the FC-RMSE
+      loss w.r.t. G. Common random numbers per seed (shared noise key at +/-delta);
+      the tape-free ground-truth reference for the AD gradient in the chaotic band.
+
+      '
+    reconcile: by_label
+    analysis:
+      parameters:
+        delta:
+          name: delta
+          value: 0.3
+        seeds:
+          name: seeds
+          value: 8
+        seed_base:
+          name: seed_base
+          value: 0
+        stat:
+          name: stat
+          value: mean
+      type: finite_difference
+      target: loss
+      wrt:
+      - c_sigmJR.G
+  fd_sem:
+    name: fd_sem
+    label: Finite-difference gradient standard error
+    description: 'Standard error (std / sqrt(seeds)) of the seed-averaged finite-difference
+      gradient above — the uncertainty band on the ground-truth gradient. Identical
+      computation and seeds as fd_gradient, reduced with stat: sem instead of the
+      mean.
+
+      '
+    reconcile: by_label
+    analysis:
+      parameters:
+        delta:
+          name: delta
+          value: 0.3
+        seeds:
+          name: seeds
+          value: 8
+        seed_base:
+          name: seed_base
+          value: 0
+        stat:
+          name: stat
+          value: sem
+      type: finite_difference
+      target: loss
+      wrt:
+      - c_sigmJR.G
+functions:
+  hrf_kernel:
+    name: hrf_kernel
+    equation:
+      parameters:
+        tau_s:
+          name: tau_s
+          value: 0.8
+        tau_f:
+          name: tau_f
+          value: 0.4
+      rhs: (1/3)*exp(-0.5*(t/1000)/tau_s)*sin(sqrt(1/tau_f - 1/(4*tau_s**2))*(t/1000))/sqrt(1/tau_f
+        - 1/(4*tau_s**2))
+      latex: false
+    description: First-order Volterra HRF kernel
+    arguments:
+      duration:
+        name: duration
+        value: 20000.0
+    time_range:
+      enforce: none
+      lo: 0
+      hi: duration
+      n: 5000
+      log_scale: false
+  temporal_average:
+    name: temporal_average
+    description: Centered window-average downsample (reproduces HRFBold TemporalAverage)
+    arguments:
+      data:
+        name: data
+      period_samples:
+        name: period_samples
+        value: 4
+    source_code: 'jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) +
+      (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0])
+      + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0],
+      period_samples).shape[0]]'
+  volterra_transform:
+    name: volterra_transform
+    equation:
+      parameters:
+        k_1:
+          name: k_1
+          value: 5.6
+        V_0:
+          name: V_0
+          value: 0.02
+      rhs: k_1 * V_0 * (data - 1.0)
+      latex: false
+    description: Volterra BOLD nonlinearity
+    arguments:
+      data:
+        name: data
+  subsample_bold:
+    name: subsample_bold
+    description: Sample at end of each BOLD TR (anchored, uncapped)
+    arguments:
+      data:
+        name: data
+      step:
+        name: step
+        value: 180
+    source_code: data[step::step]
+  rmse:
+    name: rmse
+    equation:
+      rhs: sqrt(mean((x - y)**2))
+      latex: false
+    description: Root mean squared error
+    arguments:
+      x:
+        name: x
+      y:
+        name: y
+optimizations:
+  fit_G:
+    name: fit_G
+    label: Fit global coupling G to empirical FC
+    description: 'Minimize FC-RMSE w.r.t. global coupling G with Adam. The differentiation
+      mode (reverse=TBPTT / forward=full AD) is taken from integration.differentiation.
+
+      '
+    algorithm: adam
+    learning_rate: 0.001
+    max_iterations: 100
+    loss:
+      function: rmse
+      arguments:
+        x:
+          name: x
+          value: observations.fc.data
+        y:
+          name: y
+          value: observations.empirical_fc.data
+    stages:
+    - name: fit
+      label: Fit G
+      description: Descend FC-RMSE on the single global-coupling scalar G
+      free_parameters:
+      - parameter: c_sigmJR.G
+        heterogeneous: false
+        initial_value: 5.0
+      algorithm: adam
+      learning_rate: 1.0
+      max_iterations: 100
+explorations:
+  G_sweep:
+    name: G_sweep
+    label: G sweep of the FC-RMSE landscape
+    description: 'Sweep global coupling G from quiescence through synchronized oscillation
+      into chaos, tracing the FC-RMSE landscape the optimizer must descend.
+
+      '
+    space:
+      c_sigmJR.G:
+        parameter: c_sigmJR.G
+        domain:
+          enforce: none
+          lo: 0.0
+          hi: 40.0
+          n: 80
+          log_scale: false
+        transform: none
+    mode: product
+    strategy: grid
+    observable:
+      function: rmse
+      arguments:
+        x:
+          name: x
+          value: fc.data
+        y:
+          name: y
+          value: empirical_fc.data
+    n_parallel: auto
+    n_trials: 1
+    sweep_seeding: independent
+    sweep_direction: up
+  psp_bifurcation:
+    name: psp_bifurcation
+    label: PSP bifurcation envelope (adiabatic G-scan)
+    description: 'Adiabatic scan of the pyramidal PSP (y1 - y2) oscillation envelope:
+      ramp G up then back down, carrying the settled state between values, and record
+      the per-node temporal min / max (averaged across the network) plus the mean
+      at each G. The amplitude stays bounded on the fixed-point / limit-cycle side
+      and blows open at the same G where the top Lyapunov exponent crosses zero —
+      the same bifurcation the gradient breaks at. The up- and down-sweeps expose
+      any hysteresis. Delegates to tvboptim''s adiabatic_scan; no Python driver.
+
+      '
+    space:
+      c_sigmJR.G:
+        parameter: c_sigmJR.G
+        domain:
+          enforce: none
+          lo: 0.0
+          hi: 40.0
+          n: 60
+          log_scale: false
+        transform: none
+    parameters:
+      signal:
+        name: signal
+        value: y1 - y2
+      segment_time:
+        name: segment_time
+        value: 4000.0
+      transient_time:
+        name: transient_time
+        value: 2000.0
+      bothways:
+        name: bothways
+        value: 1
+    mode: product
+    strategy: adiabatic_scan
+    n_parallel: auto
+    n_trials: 1
+    sweep_seeding: independent
+    sweep_direction: up
+  motivation_sweep:
+    name: motivation_sweep
+    label: Diagnostics vs G (the motivation sweep)
+    description: 'Sweep global coupling G and record the FC-RMSE loss together with
+      the three diagnostics — the AD gradient, the seed-averaged finite-difference
+      gradient, and the top Lyapunov exponent — at each G. This is the declarative
+      form of the original run_motivation probe: the exact reverse-mode gradient tracks
+      the FD ground truth until the Lyapunov exponent crosses zero (chaos onset),
+      where it breaks. Recorded per grid point; no Python driver.
+
+      '
+    space:
+      c_sigmJR.G:
+        parameter: c_sigmJR.G
+        domain:
+          enforce: none
+          lo: 0.0
+          hi: 40.0
+          n: 80
+          log_scale: false
+        transform: none
+    mode: product
+    strategy: grid
+    record:
+    - loss
+    - ad_gradient
+    - fd_gradient
+    - fd_sem
+    - lyapunov
+    n_parallel: auto
+    n_trials: 1
+    sweep_seeding: independent
+    sweep_direction: up

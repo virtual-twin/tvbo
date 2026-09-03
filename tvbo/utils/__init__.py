@@ -1,27 +1,21 @@
-#  utils.py
-#
-# Created on Mon Aug 07 2023
-# Author: Leon K. Martin
-#
-# Copyright (c) 2023 Charité Universitätsmedizin Berlin
-#
-"""
-Utilities Module for TVB-O
-==========================
+# Copyright © 2023 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
 
-Core utilities: ``Bunch`` container, PyTree formatting, YAML I/O,
-and metadata traversal helpers.
+"""Utilities Module for TVB-O.
 
-Plotting utilities (colors, colormaps, ``multiview``) have moved to
-``tvbo.plot.utils`` and are re-exported here for backward compatibility.
+Core utilities: ``Bunch`` container, PyTree formatting, YAML I/O, and metadata traversal helpers.
 
-Analysis functions (``per_window_fc``, ``ttest_correlation_strength``) have
-moved to ``tvbo.analysis``.
+Plotting utilities (colors, colormaps, ``multiview``) have moved to ``tvbo.plot.utils`` and are re-exported here for backward compatibility.
+
+Analysis functions (``per_window_fc``, ``ttest_correlation_strength``) have moved to ``tvbo.analysis``.
 """
 
+import warnings
 from os.path import abspath, dirname, join
 
 import numpy as np
+
+from tvbo.utils.pytree import Pytree
 
 cm = 1 / 2.54
 ROOT_DIR = abspath(dirname(__file__))
@@ -30,13 +24,7 @@ ROOT_DIR = abspath(dirname(__file__))
 def domain_enforcement(domain) -> str:
     """Normalise a state-variable domain's enforcement mode to a plain string.
 
-    Returns one of ``'none'`` (default — descriptive metadata only), ``'clamp'``
-    (hard-clip to [lo, hi]) or ``'wrap'`` (periodic). Accepts a Range/domain
-    object (reads its ``enforce`` slot), a bare ``DomainEnforcement`` value, or
-    ``None``. Normalises across both generated representations of the enum — the
-    pydantic ``(str, Enum)`` (compare via ``.value``) and the gen-python
-    permissible value (compare via ``str()``) — so callers can simply test
-    ``domain_enforcement(sv.domain) == 'clamp'``.
+    Returns one of ``'none'`` (default — descriptive metadata only), ``'clamp'`` (hard-clip to [lo, hi]) or ``'wrap'`` (periodic). Accepts a Range/domain object (reads its ``enforce`` slot), a bare ``DomainEnforcement`` value, or ``None``. Normalises across both generated representations of the enum — the pydantic ``(str, Enum)`` (compare via ``.value``) and the gen-python permissible value (compare via ``str()``) — so callers can simply test ``domain_enforcement(sv.domain) == 'clamp'``.
     """
     enf = getattr(domain, "enforce", domain)
     if enf is None:
@@ -47,28 +35,354 @@ def domain_enforcement(domain) -> str:
     return str(enf).rsplit(".", 1)[-1]
 
 
+def initial_value(sv, default=0.1) -> float:
+    """The initial value a state variable declares, else *default*.
+
+    ``StateVariable.initial_value`` has no schema default: undeclared is ``None`` and means "the spec did not say", which is what makes the fallback the caller's to name.
+    A model state starts at the generic 0.1; an observation reduction's accumulator starts at its reduction identity ``0.0``, which is a different question and so is passed explicitly.
+
+    The slot used to carry ``ifabsent: float(0.1)``, which materialised 0.1 for every state variable. That made "undeclared" unrepresentable — every consumer's own ``is None`` fallback was unreachable, and a reduction observer could not distinguish a declared 0.1 from a spec that said nothing.
+    """
+    v = getattr(sv, "initial_value", None)
+    return float(v) if v is not None else float(default)
+
+
+def parameter_number(value):
+    """A parameter's declared value as plain numbers, uniform sequences collapsed.
+
+    ``Parameter.value`` is scalar for most models, one entry per mode for a multi-mode one, and a matrix for a mode-coupled one (``ReducedSetHindmarshRose``'s ``A_ik``), so it nests to arbitrary depth. A sequence whose entries are all equal collapses to the scalar it means; anything else keeps its shape, because reducing a genuinely heterogeneous value to its first entry would silently change the model.
+
+    Backends that can only emit scalars use this to decide, rather than each deciding differently — or, as the PyRates emitter did, calling ``float()`` and raising.
+    """
+    if isinstance(value, (list, tuple)):
+        items = [parameter_number(v) for v in value]
+        return items[0] if items and all(i == items[0] for i in items) else items
+    return float(value)
+
+
+def register_recipe_code_paths(source_file, code_source=None) -> list:
+    """Make a recipe's callable code importable — the ``code/`` convention, or a declared :class:`CodeSource` (a local directory or a git repository).
+
+    A recipe references custom builders and analysis callables by bare module name (e.g. ``module: taher2019_analysis``); their directory must be on ``sys.path`` for ``import`` to resolve them. Resolution:
+
+    1. **Explicit ``code_source``** (a ``CodeSource`` or dict on the study) — decouples the specification from where its code lives:
+         * ``path`` — a directory (relative to the recipe YAML, or absolute); or
+         * ``git`` — a repository shallow-cloned and cached under
+           ``~/.cache/tvbo/code_sources/<url+ref hash>``, checked out at ``ref``.
+       An optional ``subdir`` narrows which directory of the source is used.
+    2. **Convention** (no ``code_source``) — the ``code/`` subdir beside the recipe YAML.
+
+    Registering at load time, once and left in place (callables resolve lazily during a run), lets ``tvbo run`` / ``tvbo workflow`` and notebooks load a recipe without a ``PYTHONPATH`` prefix. The dir goes to the front of ``sys.path`` (matching ``PYTHONPATH``) and is skipped when already present.
+    Returns the paths newly inserted.
+    """
+    import sys
+    from pathlib import Path
+
+    entries = []
+    if code_source is not None:
+        resolved = _resolve_code_source(code_source, source_file)
+        if resolved:
+            entries = [str(resolved)]
+    if not entries and source_file:  # no (or empty) code_source -> code/ convention
+        code_dir = Path(source_file).resolve().parent / "code"
+        if code_dir.is_dir():
+            entries = [str(code_dir)]
+
+    inserted = []
+    for entry in entries:
+        if entry not in sys.path:
+            sys.path.insert(0, entry)
+            inserted.append(entry)
+    return inserted
+
+
+def _resolve_code_source(code_source, source_file):
+    """Resolve a ``CodeSource`` (local ``path`` or ``git`` repo) to a directory on disk, applying an optional ``subdir``. ``path``/``git`` are mutually exclusive."""
+    from pathlib import Path
+
+    get = code_source.get if isinstance(code_source, dict) else (lambda k: getattr(code_source, k, None))
+    path, git, ref, subdir = get("path"), get("git"), get("ref"), get("subdir")
+    if path and git:
+        raise ValueError("CodeSource: 'path' and 'git' are mutually exclusive")
+    if git:
+        base = _fetch_git_code_source(git, ref)
+    elif path:
+        base = Path(path)
+        if not base.is_absolute():
+            if not source_file:
+                raise ValueError(f"CodeSource: relative path {path!r} needs a recipe file to anchor to")
+            base = Path(source_file).resolve().parent / base
+    else:
+        return None
+    resolved = (Path(base) / subdir if subdir else Path(base)).resolve()
+    if not resolved.is_dir():
+        raise FileNotFoundError(f"CodeSource resolved to a non-directory: {resolved}")
+    return resolved
+
+
+def _fetch_git_code_source(url, ref=None):
+    """Shallow-clone (and cache) a git code source; return the local clone dir.
+
+    Cached by ``sha1(url@ref)`` under ``$TVBO_CACHE`` (default ``~/.cache/tvbo``) so a re-run reuses the clone. A branch/tag uses ``--branch``; a bare commit (which ``--branch`` rejects) falls back to a full clone + ``checkout``. The cache is never refreshed, so a **mutable ref (branch) is pinned to its first-clone state** — pin a tag or commit for reproducibility, or delete the cache dir to re-fetch.
+    """
+    import hashlib
+    import os
+    import shutil
+    import subprocess
+    from pathlib import Path
+
+    key = hashlib.sha1(f"{url}@{ref or 'HEAD'}".encode(), usedforsecurity=False).hexdigest()[:16]
+    cache = Path(os.environ.get("TVBO_CACHE", Path.home() / ".cache" / "tvbo")) / "code_sources" / key
+    if (cache / ".git").is_dir():
+        return cache
+    shutil.rmtree(cache, ignore_errors=True)  # clear any partial/corrupt leftover
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cmd = ["git", "clone", "--depth", "1"] + (["--branch", ref] if ref else []) + [url, str(cache)]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        return cache
+    except FileNotFoundError as e:
+        raise RuntimeError(f"CodeSource git fetch needs `git` on PATH ({url})") from e
+    except subprocess.CalledProcessError as e:
+        shutil.rmtree(cache, ignore_errors=True)
+        if not ref:
+            raise RuntimeError(f"CodeSource git fetch failed ({url}): {e.stderr}") from e
+        try:  # ref may be a bare commit — clone then checkout
+            subprocess.run(["git", "clone", url, str(cache)], check=True, capture_output=True, text=True)
+            subprocess.run(["git", "-C", str(cache), "checkout", ref], check=True, capture_output=True, text=True)
+            return cache
+        except subprocess.CalledProcessError as e2:
+            shutil.rmtree(cache, ignore_errors=True)
+            raise RuntimeError(f"CodeSource git fetch failed ({url}@{ref}): {e2.stderr}") from e2
+
+
+def bind_function_arguments(func_name, formal, actual) -> dict:
+    """Pair a model function's declared arguments with one call site's actual arguments.
+
+    A mismatch names the function and both arities. `arguments:` is an optional slot, so a schema-legal recipe can declare a function whose declaration and calls disagree; the two failure modes either side of this are both unhelpful. Silently truncating (a bare `zip`) inlines a body with a formal symbol left unbound, which surfaces much later as a wrong equation. Raising `zip()`'s own message names neither the function nor the recipe, and in the NeuroML path it fires inside a sympy replace callback, so the traceback is all sympy internals.
+
+    Returns `{formal: actual}`, keyed by whatever the caller passed as *formal* — names or `Symbol`s alike.
+    """
+    formal, actual = list(formal), list(actual)
+    if len(formal) != len(actual):
+        declared = ", ".join(str(f) for f in formal) or "none"
+        raise ValueError(
+            f"model function {func_name!r} declares {len(formal)} argument(s) ({declared}) "
+            f"but is called with {len(actual)}. The `arguments:` list and the call in the "
+            "equation have to agree."
+        )
+    return dict(zip(formal, actual, strict=True))
+
+
 def as_list(obj) -> list:
     """Normalize a keyed-dict-or-list collection to a list of its members.
 
-    TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by
-    each member's identifier, but may also appear as plain lists. Returns the
-    member values in either case (``None`` -> ``[]``).
+    TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by each member's identifier, but may also appear as plain lists. Returns the member values in either case (``None`` -> ``[]``).
+
+    A scalar becomes a one-element list. Strings especially: they are iterable, so ``list("/data")`` would silently yield one entry *per character* — which is how a single ``--set container_binds=/data/cephfs-1`` turned into a bind of ``/,d,a,t,a,…``. No caller ever wants a string split into characters. A bare ``JsonObj`` — the shape an assigned collection slot takes — is iterable over its *keys* for the same reason, and is read through :mod:`jsonasobj2` instead; the test is on the exact type, since every LinkML entity subclasses ``JsonObj`` and a lone one is a scalar here.
     """
+    from jsonasobj2 import JsonObj
+    from jsonasobj2 import values as _json_values
+
     if obj is None:
         return []
+    if isinstance(obj, (str, bytes)):
+        return [obj]
+    if type(obj) is JsonObj:
+        return list(_json_values(obj))
     if hasattr(obj, "values"):
         return list(obj.values())
-    return list(obj)
+    if isinstance(obj, JsonObj):  # a LinkML entity: one member, not its field list
+        return [obj]
+    try:
+        return list(obj)
+    except TypeError:  # a genuine scalar (int, float, …)
+        return [obj]
+
+
+def keyed_items(collection, kind: str = "collection") -> list:
+    """A keyed collection's ``(key, member)`` pairs, whichever shape holds it.
+
+    The generated dataclasses wrap a keyed collection in a ``JsonObj`` when it is assigned, and a ``JsonObj`` has no ``.items``; the Pydantic models keep a plain dict. The schema also allows the list spelling, whose members carry their own ``name``. Anything else raises: a reader that answers "nothing here" for a shape it did not recognise reports an empty collection as an empty *result*, which is how an unchecked ``from_datamodel`` load went unchecked.
+
+    The ``JsonObj`` test is on the exact type, because every LinkML entity subclasses it: a lone ``Coupling`` read as a collection would answer with its own 22 field names, which is a shape mismatch reported as data rather than as an error.
+    """
+    from jsonasobj2 import JsonObj
+    from jsonasobj2 import items as _json_items
+
+    if collection is None:
+        return []
+    if type(collection) is JsonObj:
+        return list(_json_items(collection))
+    if hasattr(collection, "items"):
+        return list(collection.items())
+    if isinstance(collection, (list, tuple)):
+        return [(getattr(member, "name", None), member) for member in collection]
+    raise TypeError(f"cannot read {kind} names from {type(collection).__name__}")
+
+
+def normalize_params(params) -> dict:
+    """Normalize a ``parameters`` collection to a flat ``{name: param}`` dict.
+
+    Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node and dynamics parameter collections alike.
+
+    A bare ``JsonObj`` — what an assigned collection slot holds — has no ``.items``, and iterating it yields its *keys*; it is read through :mod:`jsonasobj2` instead. The test is on the exact type, because every LinkML entity subclasses ``JsonObj`` and a single ``Parameter`` read that way would answer with its own field names.
+    """
+    from jsonasobj2 import JsonObj
+    from jsonasobj2 import items as _json_items
+
+    if not params:
+        return {}
+    if isinstance(params, (list, tuple)):
+        out = {}
+        for item in params:
+            if isinstance(item, dict):
+                out.update({str(k): v for k, v in item.items()})
+            elif getattr(item, "name", None) is not None:
+                out[str(item.name)] = item
+        return out
+    if type(params) is JsonObj:
+        return {str(k): v for k, v in _json_items(params)}
+    try:
+        return {str(k): v for k, v in params.items()}
+    except AttributeError:
+        return {}
+
+
+def network_couplings(network) -> dict:
+    """*network*'s couplings, keyed by the role each fills.
+
+    A coupling acts over a connectivity, so this slot is the only place one is declared and every backend reads it through here. Assigning a mapping to a keyed multivalued slot leaves a ``JsonObj`` on the generated dataclass — no ``.values()``, no ``.items()`` — so a reader that reaches for either sees a coupling on one form of the record and an ``AttributeError`` on the other.
+    """
+    return {str(key): coupling for key, coupling in keyed_items(getattr(network, "coupling", None), "coupling")}
+
+
+def edge_param(edge, name: str, default=None):
+    """A named quantity off an ``Edge``: its ``parameters`` entry, else its own slot.
+
+    ``weight``/``delay``/``distance`` are both first-class ``Edge`` slots and valid entries in the generic ``parameters`` collection, so a recipe may spell either. ``parameters`` wins when both are set. This is the single reader every backend goes through, so one recipe cannot mean different connectomes on different backends. Returns the value verbatim (no coercion), or *default*.
+    """
+    p = normalize_params(getattr(edge, "parameters", None)).get(name)
+    if p is not None:
+        val = getattr(p, "value", p)
+        if val is not None:
+            return val
+    scalar = getattr(edge, name, None)
+    if isinstance(scalar, bool) or scalar is None:
+        return default
+    return scalar if isinstance(scalar, (int, float)) else default
+
+
+_NETWORK_EDGE_ALIASES = {
+    "weight": "weight",
+    "weights": "weight",
+    "length": "length",
+    "lengths": "length",
+}
+"""Ergonomic shortcuts for the canonical ``network.edges.<label>``.
+
+Both spellings resolve to a connectome matrix through ``Network.matrix()``.
+"""
+
+
+def edge_label(ref):
+    """Canonical ``Network.matrix()`` label for a network reference, else ``None``.
+
+    The one resolver for every way a recipe can point at a connectome matrix, so a transform equation, an observation source and an exploration axis cannot mean different matrices by the same name. Accepts the fully-qualified form (``network.weight``, ``network.edges.length``), the explicit ``edges.<label>`` form (any label), and the bare ``weight(s)``/``length(s)`` shortcut. Returns ``None`` for anything that is not a connectome-matrix reference (state variables, ``network.observations.*``, ...), which callers route through their normal path.
+    """
+    if not isinstance(ref, str):
+        return None
+    r = ref[len("network.") :] if ref.startswith("network.") else ref
+    if r.startswith("edges."):
+        return r.split("edges.", 1)[1] or None
+    return _NETWORK_EDGE_ALIASES.get(r)
+
+
+def transform_target(func):
+    """The edge attribute a ``transforms:`` entry rewrites, or ``None``.
+
+    A transform's identifier *is* its target, so a recipe spells it ``target:`` — the schema declares that an alias of ``name``, which LinkML requires to stay the identifier. Reading it through here says which of the two meanings a call site wants, since ``name: weight`` beside ``rhs: weight / max(weight)`` otherwise reads as if the two were different things.
+    """
+    return getattr(func, "name", None)
+
+
+def noise_sigma(noise):
+    """The noise standard deviation σ off a declared ``Noise``, or ``None``.
+
+    The one reader for every spelling the schema allows, so a recipe cannot mean a different amplitude on different backends. Each spelling has exactly one meaning:
+
+    * ``parameters: {sigma: {value: s}}`` → ``s``. Wins whenever present.
+    * ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. The dispersion spelling
+      (``D = σ²/2``) — what a TVB import writes.
+
+    Returns ``None`` when the noise declares no amplitude at all (and for a missing ``Noise``), leaving "absent" distinguishable from an explicit zero.
+    """
+    import math
+
+    if not noise:
+        return None
+    params = normalize_params(getattr(noise, "parameters", None))
+    candidates = (
+        (params.get("sigma"), lambda v: v),
+        (params.get("nsig"), lambda v: math.sqrt(2.0 * v)),
+    )
+    for source, to_sigma in candidates:
+        val = getattr(source, "value", source)
+        if val is None:
+            continue
+        val = float(val)
+        return to_sigma(val) if val > 0 else 0.0
+    return None
+
+
+INTEGRATION_METHODS = {
+    "Euler": ("eulerdeterministic", "eulerstochastic"),
+    "Heun": ("heundeterministic", "heunstochastic"),
+    "RungeKutta4thOrder": ("rk4", "runge_kutta", "rungekutta", "rungekutta4", "rungekutta4thorderdeterministic"),
+    "Dopri5": (),
+    "Dopri853": (),
+    "VODE": (),
+    "Identity": (),
+    "Tsit5": (),
+}
+"""Every integration method tvbo accepts, and the extra spellings that name it.
+
+The canonical key is the entry in ``tvbo/database/integrators/`` and the label of the ontology class carrying the method's symbolic form; the tuple holds the spellings a recipe may write instead. The key itself and its lowercase form are always accepted, so only genuinely different spellings are listed — ``rk4`` for ``RungeKutta4thOrder``, the ``Deterministic``/``Stochastic`` suffixes a TVB import writes (in tvbo a method is stochastic because noise is declared, not because it is spelled so).
+
+``Tsit5`` has no entry in the database and no ontology class: it is an adaptive solver a backend supplies, with no closed-form update expression to render.
+"""
+
+_INTEGRATION_ALIASES = {
+    spelling: canonical for canonical, spellings in INTEGRATION_METHODS.items() for spelling in (canonical.lower(), *spellings)
+}
+
+
+def integration_method(method, *, strict: bool = True) -> str | None:
+    """The canonical name of a declared integration method. Raises on a spelling tvbo does not know.
+
+    A recipe writes ``rk4``, ``RungeKutta4thOrder`` or ``runge_kutta`` and means one method; the ontology that holds its update expression and the adapter that picks a backend solver each need the one name. Reading the spelling through here is what stops the two from answering differently — the failure this replaces was a recipe that ran correctly on tvboptim, which knew ``rk4``, and died in the tvb template on ``'NoneType' object has no attribute 'equation'``, because the ontology did not and left the update expression unfilled.
+
+    An unrecognised spelling raises rather than resolving to a default: silently integrating by a scheme the recipe did not ask for changes the numbers it reports. ``strict=False`` answers ``None`` for it instead, which is what a caller that only wants to look the method up needs: ``Integrator.method`` is an open vocabulary for a backend that supplies its own solver — a NetworkDynamics.jl recipe naming ``AutoTsit5`` hands that string to Julia's ``solve`` and is not a mistake — so failing to recognise a spelling may not be an error at the point of the lookup.
+    """
+    key = str(method or "").strip().lower()
+    if key in _INTEGRATION_ALIASES:
+        return _INTEGRATION_ALIASES[key]
+    if not strict:
+        return None
+    raise ValueError(f"unknown integration method {method!r}; tvbo integrates by one of {sorted(INTEGRATION_METHODS)}")
+
+
+def sanitize_name(name) -> str:
+    """Sanitise a name into a filesystem- and rule-safe token (keep alnum, ``_``, ``-``)."""
+    import re
+
+    return re.sub(r"[^0-9A-Za-z_-]+", "_", str(name))
 
 
 def is_array_valued(value) -> bool:
     """Return True if a parameter value is an array constant rather than a scalar.
 
-    Array-valued parameters (e.g. mode-coupling matrices, Gaussian-quadrature
-    vectors) are stored as nested lists/tuples in YAML or as ``np.ndarray`` when
-    set programmatically. Scalar-only call sites (``float(p.value)`` substitution,
-    sympy ``subs``) must skip them. Single source of truth so list/tuple *and*
-    ndarray are treated consistently everywhere.
+    Array-valued parameters (e.g. mode-coupling matrices, Gaussian-quadrature vectors) are stored as nested lists/tuples in YAML or as ``np.ndarray`` when set programmatically. Scalar-only call sites (``float(p.value)`` substitution, sympy ``subs``) must skip them. Single source of truth so list/tuple *and* ndarray are treated consistently everywhere.
     """
     return isinstance(value, (list, tuple, np.ndarray))
 
@@ -76,15 +390,10 @@ def is_array_valued(value) -> bool:
 def deep_merge(base: dict, override: dict) -> dict:
     """Recursively merge ``override`` onto ``base``, returning a new dict.
 
-    Nested dicts are merged key-by-key, so an override can replace a single leaf
-    while inheriting its siblings from ``base`` — e.g. ``{parameters: {a: {value:
-    1}}}`` overrides only ``a.value`` and keeps every other parameter from
-    ``base``. Any key whose two sides are not both dicts is taken from
-    ``override``. Neither input is mutated.
+    Nested dicts are merged key-by-key, so an override can replace a single leaf while inheriting its siblings from ``base`` — e.g. ``{parameters: {a: {value:
+    1}}}`` overrides only ``a.value`` and keeps every other parameter from ``base``. Any key whose two sides are not both dicts is taken from ``override``. Neither input is mutated.
 
-    This is the field-level precedence used when a spec sourced by ``iri`` is
-    refined by inline metadata: the inline value supervenes and the source
-    (registry entry / ontology default) fills the gaps.
+    This is the field-level precedence used when a spec sourced by ``iri`` is refined by inline metadata: the inline value supervenes and the source (registry entry / ontology default) fills the gaps.
     """
     out = dict(base)
     if not override:
@@ -116,12 +425,11 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-class Bunch(dict):
+class Bunch(Pytree, dict):
     """Dictionary with attribute access and optional JAX PyTree support.
 
     Extends dict to allow both ``bunch["key"]`` and ``bunch.key`` access.
-    If JAX is installed, registered as a PyTree via ``register_pytree_node_class``
-    with deterministic (sorted-key) traversal order.
+    Registered as a JAX pytree whose children are its values, keyed by name, so traversal order is the sorted keys.
 
     Based on scikit-learn's ``sklearn.utils.Bunch``.
 
@@ -133,7 +441,7 @@ class Bunch(dict):
         try:
             return self[key]
         except KeyError:
-            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
+            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'") from None
 
     def __setattr__(self, key, value):
         self[key] = value
@@ -142,7 +450,7 @@ class Bunch(dict):
         try:
             del self[key]
         except KeyError:
-            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
+            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'") from None
 
     def __dir__(self):
         return list(super().__dir__()) + list(self.keys())
@@ -159,34 +467,21 @@ class Bunch(dict):
         """
         return Bunch(self)
 
-    def tree_flatten(self):
-        """Flatten the `Bunch` into JAX pytree (children, aux_data).
+    def _pytree_leaves(self) -> dict:
+        return dict(self)
 
-        Keys are sorted so traversal order is deterministic across calls.
-        """
-        keys = tuple(sorted(self.keys()))
-        values = tuple(self[k] for k in keys)
-        return values, keys
+    def _pytree_static(self) -> str:
+        return ""
 
     @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        """Reconstruct a `Bunch` from JAX pytree aux_data and children."""
-        return cls(zip(aux_data, children))
-
-
-try:
-    from jax.tree_util import register_pytree_node_class
-
-    register_pytree_node_class(Bunch)
-except ImportError:
-    pass
+    def _pytree_build(cls, static, leaves):
+        return cls(leaves)
 
 
 def numbered_print(text):
     """Print `text` with each line prefixed by a zero-padded line number.
 
-    Line numbers start at 1 and are padded to the width of the largest number
-    so the printed numbers stay aligned.
+    Line numbers start at 1 and are padded to the width of the largest number so the printed numbers stay aligned.
 
     Args:
         text: The multi-line string to print.
@@ -207,8 +502,7 @@ def format_pytree_as_string(
     hide_none: bool = False,
     show_array_values: bool = False,
 ) -> str:
-    """
-    Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters.
+    """Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters.
 
     Args:
         pytree (Any): The pytree to format.
@@ -223,9 +517,9 @@ def format_pytree_as_string(
     Returns:
         str: The formatted string representation of the pytree.
     """
+    import equinox as eqx
     import jax
     import jax.numpy as jnp
-    import equinox as eqx
 
     # Unicode box-drawing characters for the tree structure
     space = "    "
@@ -260,10 +554,7 @@ def format_pytree_as_string(
 
     # Check if the object is a JAX array
     if isinstance(pytree, (jnp.ndarray, np.ndarray)):
-        # result.append(f"{current_prefix}{name}: Array({shape_str}, {dtype_str})")
         if show_array_values:
-            # result.append(f"{current_prefix}{name}: Array({shape_str}, {dtype_str})")
-            # result.append(f"{current_prefix}{name}: No({shape_str}, {dtype_str})")
             result.append(f"{current_prefix}{name}: {pytree}")
         else:
             result.append(f"{current_prefix}{name}: {eqx.tree_pformat(pytree)}")
@@ -340,8 +631,7 @@ def format_pytree_as_string(
             result.append(f"{current_prefix}{name}: {type(pytree).__name__} (unknown structure)")
 
     except Exception:
-        # If we can't flatten it as a pytree, treat it as a leaf
-        # For strings, display the string value if not filtering
+        # Not flattenable as a pytree, so it is a leaf.
         if isinstance(pytree, str):
             if not show_numerical_only:
                 result.append(f'{current_prefix}{name}: "{pytree}"')
@@ -362,8 +652,7 @@ def pretty_print_pytree(
     show_numerical_only: bool = False,
     hide_none: bool = False,
 ) -> None:
-    """
-    Prints a pretty formatted representation of a JAX pytree structure.
+    """Prints a pretty formatted representation of a JAX pytree structure.
 
     Args:
         pytree (Any): The pytree to print.
@@ -380,11 +669,56 @@ def pretty_print_pytree(
 
 
 # ---- YAML utilities ----
-def to_yaml(obj, filepath: str | None = None) -> str:
-    """Dump a LinkML datamodel object to YAML.
+def record_dict(model) -> dict:
+    """A generated Pydantic model as the mapping a record states it by.
 
-    - If filepath is provided, write YAML to that file and return the path.
-    - If filepath is None, return the YAML string.
+    The identifier first, then the schema's own slot order, which is the order the generated
+    class declares its fields in. A slot holding ``None`` or an empty collection is omitted:
+    a record states what it says, and a slot nobody wrote is not part of it. Nested models
+    recurse, a date becomes its ISO form, and every other value is passed through — an
+    ``inf`` bound stays ``inf`` rather than becoming the ``null`` a JSON round-trip makes of it.
+
+    The one place the Pydantic form of a record is turned into data, so `to_yaml` and any
+    other consumer cannot disagree about what the record says.
+    """
+    import datetime
+    from enum import Enum
+
+    from pydantic import BaseModel
+
+    from tvbo.datamodel.dialect import identifier_field
+
+    def value_of(value):
+        if isinstance(value, BaseModel):
+            return record_dict(value)
+        if isinstance(value, dict):
+            return {k: value_of(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [value_of(v) for v in value]
+        if isinstance(value, (datetime.date, datetime.datetime)):
+            return value.isoformat()
+        if isinstance(value, Enum):
+            return value.value
+        return value
+
+    fields = type(model).model_fields
+    identifier = identifier_field(type(model))
+    names = ([identifier] if identifier in fields else []) + [n for n in fields if n != identifier]
+    record = {}
+    for name in names:
+        stated = value_of(getattr(model, name, None))
+        if stated is None or stated == [] or stated == {}:
+            continue
+        record[fields[name].alias or name] = stated
+    return record
+
+
+def to_yaml(obj, filepath: str | None = None) -> str:
+    """Dump a datamodel object to canonical TVBO YAML, in either generated form.
+
+    A dataclass goes through LinkML's dumper; a Pydantic model goes through `record_dict`.
+    One entry point for both, so the published record has one definition however the object
+    in hand was built, and a caller never has to know which generator produced it.
 
     Args:
         obj (object): Datamodel object to serialize.
@@ -393,6 +727,19 @@ def to_yaml(obj, filepath: str | None = None) -> str:
     Returns:
         str: File path when written to disk, otherwise the YAML string.
     """
+    from pydantic import BaseModel
+
+    if isinstance(obj, BaseModel):
+        import pathlib
+
+        import yaml as _yaml
+
+        produced = _yaml.safe_dump(record_dict(obj), sort_keys=False, allow_unicode=True)
+        if filepath:
+            pathlib.Path(filepath).write_text(produced, encoding="utf-8")
+            return filepath
+        return produced
+
     try:
         from linkml_runtime.dumpers import yaml_dumper
     except Exception as e:
@@ -423,18 +770,31 @@ def from_yaml(filepath: str, cls) -> object:
 
 
 def add_to_parameters_collection(key, value, path, parameters):
-    """Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level."""
+    """Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level.
+
+    A Parameter may carry both a scalar ``value`` AND a nested ``distribution`` (e.g.
+    ``omega_mean_hz = 10 Hz + Normal(mean, std)``): its scalar and the distribution's sub-parameters navigate through the same name. The two must coexist rather than overwrite — a scalar already stored at a name is preserved under a reserved ``value`` key when that name has to become a sub-Bunch, and a scalar written onto a name that is already a sub-Bunch is stored under ``value`` instead of clobbering the sub-tree.
+    """
     current_level = parameters
     for part in path:
         if part == "parameters":
             continue
+        if part == key:
+            continue  # the final leaf is written after the loop; never turn it into a Bunch
         part_key = str(part) if isinstance(part, int) else part
-        if part_key not in current_level:
-            current_level[part_key] = Bunch()
-        if part != key:
-            current_level = current_level[part_key]
+        existing = current_level.get(part_key)
+        if not isinstance(existing, Bunch):
+            nested = Bunch()
+            if existing is not None:
+                nested["value"] = existing  # keep a scalar leaf already stored at this name
+            current_level[part_key] = nested
+        current_level = current_level[part_key]
     final_key = str(key) if isinstance(key, int) else key
-    current_level[final_key] = value.value
+    existing = current_level.get(final_key)
+    if isinstance(existing, Bunch):
+        existing["value"] = value.value  # a nested sub-tree already occupies this slot
+    else:
+        current_level[final_key] = value.value
 
 
 def traverse_metadata(

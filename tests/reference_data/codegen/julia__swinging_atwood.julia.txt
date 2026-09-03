@@ -1,0 +1,38 @@
+function SwingingAtwood!(dx, x, p, t = 0)
+
+    (;g, l, m1, m2) = p
+
+    theta, omega, y, v = x
+
+
+    energy = 0.5 * m1 .* (v .^ 2 .+ l .^ 2 .* omega .^ 2 .+ 2 * l .* omega .* v .* sin(theta)) .+ 0.5 * m2 .* v .^ 2 .+ g .* y .* (m1 .+ m2) .+ g .* l .* m1 .* (1 .- cos(theta))
+
+    dx[1] = omega
+    dx[2] = (-g .* (m1 .+ m2) .* sin(theta) .- m1 .* omega .^ 2 .* cos(theta) .* sin(theta)) ./ (l .* (m1 .+ m2) .- l .* m1 .* cos(theta) .^ 2)
+    dx[3] = v
+    dx[4] = g .* (m2 .- m1 .* sin(theta) .^ 2) ./ (m1 .+ m2 .- m1 .* cos(theta) .^ 2) .- l .* m1 .* omega .^ 2 .* cos(theta) ./ (m1 .+ m2 .- m1 .* cos(theta) .^ 2)
+    dx
+end
+
+# Parameter values
+p = (g = 9.81, l = 1.0, m1 = 1.0, m2 = 3.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.3,
+        0.0,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(SwingingAtwood!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

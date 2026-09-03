@@ -7,7 +7,12 @@ from tvbo.adapters.julia_model import build_model_context
 ## All variables are pre-computed by BifurcationKitAdapter._prepare_context()
 ## Template only places values — no processing.
 svs = list(model.state_variables.values())
-mc = build_model_context(model)
+mc = build_model_context(model, network, constraints=constraints)
+n_nodes = mc.get("n_nodes", 1)
+# A single node records each state variable directly; a network reduces derived observables across nodes below.
+_rec = ", ".join(f"{sv.name} = x[{i+1}]" for i, sv in enumerate(svs))
+# The record argument supplies the continuation parameter, so exclude it from the closure's destructure.
+_destr_no_ics = ", ".join(n for n in (nm.strip() for nm in mc["destructure"].split(",")) if n and n != ICS)
 %>
 ##
 <%include file="/tvbo-julia-model.jl.mako" args="mc=mc" />
@@ -15,10 +20,10 @@ mc = build_model_context(model)
 # Override continuation parameter to start within [p_min, p_max]
 p = merge(p, (${ICS} = ${float(p_start)},))
 
-# Initial conditions from model defaults
+# Initial conditions from model defaults (network: n_nodes blocks per state var)
 x0 = [
-        % for sv in svs:
-        ${sv.initial_value if sv.initial_value is not None else 0.1}, # Initial value for ${sv.name}
+        % for v in mc['u0']:
+        ${v if v is not None else 0.1},
         % endfor
     ]
 
@@ -54,8 +59,43 @@ x0_eq = _find_steady_state(${model.name}!, x0, p)
 
 ################################################################################
 
-# Record named state variables for each continuation step
-record_from_sol = (x, p; k...) -> (${', '.join(f'{sv.name} = x[{i+1}]' for i, sv in enumerate(svs))},)
+# Record observables for each continuation step
+% if network:
+## Recompute derived observables per node, reusing the model's equation emission, and reduce to max and mean.
+record_from_sol = (${mc['arg_x']}, ${ICS}; k...) -> begin
+    (; ${_destr_no_ics}) = p
+    N = ${n_nodes}
+% for name, rhs in mc['derived_params']:
+    ${name} = ${rhs}
+% endfor
+% for line in mc['coupling_pre']:
+    ${line}
+% endfor
+% for name in mc['record_obs']:
+    _${name}_max = -Inf; _${name}_sum = 0.0
+% endfor
+    @inbounds for i in 1:N
+% for line in mc['unpack']:
+        ${line}
+% endfor
+% for line in mc.get('pernode_gather', []):
+        ${line}
+% endfor
+% for line in mc['coupling_body']:
+        ${line}
+% endfor
+% for name, rhs in mc['derived_vars']:
+        ${name} = ${rhs}
+% endfor
+% for name in mc['record_obs']:
+        _${name}_max = max(_${name}_max, ${name}); _${name}_sum += ${name}
+% endfor
+    end
+    (${', '.join(f'{name}_max = _{name}_max, {name}_mean = _{name}_sum / N' for name in mc['record_obs'])},)
+end
+% else:
+record_from_sol = (x, p; k...) -> (${_rec},)
+% endif
 
 # Bifurcation Problem
 prob = BifurcationProblem(${model.name}_vf!, x0_eq, p, (@optic _.${ICS});
@@ -201,7 +241,51 @@ for hopf_idx in hopf_indices
     end
 end
 
-po_results = (hopf_indices = hopf_indices, branches = po_branches)
+# BifurcationKit records only amplitude and period, so phase-resample each orbit to NPROF points to keep the waveform recoverable.
+NPROF = 400
+NVARS = ${len(svs)}
+_PHASE_GRID = LinRange(0.0, 1.0, NPROF)
+
+# Depends only on the orbit's time axis, so it is computed once per orbit and reused for every state variable.
+function _phase_brackets(tn)
+    map(_PHASE_GRID) do g
+        k = searchsortedfirst(tn, g)
+        k <= 1        ? (1, 1, 0.0) :
+        k > length(tn) ? (length(tn), length(tn), 0.0) :
+        (k - 1, k, (g - tn[k-1]) / max(tn[k] - tn[k-1], eps()))
+    end
+end
+
+po_profiles = Any[]
+for (bi, br_po) in enumerate(po_branches)
+    try
+        # Rows are the branch steps that `po_results.branches` serialises, not the saved solutions, which can be a coarser stride.
+        nrows = length(br_po.branch)
+        profs = fill(NaN, nrows, NPROF, NVARS)
+        for (si, _s) in enumerate(br_po.sol)
+            _row = hasproperty(_s, :step) ? Int(_s.step) + 1 : si
+            (1 <= _row <= nrows) || continue
+            xtt = get_periodic_orbit(br_po.prob, _s.x, _s.p)
+            _t = xtt.t
+            _tn = (_t .- _t[1]) ./ max(_t[end] - _t[1], eps())
+            _ord = sortperm(_tn); _tn = _tn[_ord]           # ensure ascending for interpolation
+            _br = _phase_brackets(_tn)
+            for vi in 1:NVARS
+                _yv = xtt[vi, _ord]
+                for (pj, (lo, hi, w)) in enumerate(_br)
+                    profs[_row, pj, vi] = (1 - w) * _yv[lo] + w * _yv[hi]
+                end
+            end
+        end
+        push!(po_profiles, profs)
+    catch e
+        @warn "PO branch $bi: orbit-profile extraction failed; this branch's waveforms \
+               (E(t), x(t), … over one period) will be MISSING from the result" exception=(e, catch_backtrace())
+        push!(po_profiles, nothing)
+    end
+end
+
+po_results = (hopf_indices = hopf_indices, branches = po_branches, profiles = po_profiles)
 
 % endif
 

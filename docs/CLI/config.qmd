@@ -39,12 +39,12 @@ Print the file contents. Prints `# (no config at <path>)` to `stderr` and exits 
 
 The C2 milestone will add:
 
-- `tvbo config set KEY=VALUE` — write into the user file
-- `tvbo config get KEY` — read a single value
+- `tvbo config set KEY=VALUE`: write into the user file
+- `tvbo config get KEY`: read a single value
 - Profile support for multiple HPC clusters and multiple credential sets
 
 Until then, edit the TOML file by hand.
 
 ## See also
 
-- [HPC patterns](hpc.qmd) — values planned to live under `slurm.*`, `container.*`
+- [HPC patterns](../3-generate/workflows/hpc.qmd): values planned to live under `slurm.*`, `container.*`

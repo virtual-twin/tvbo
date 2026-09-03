@@ -1,33 +1,16 @@
 ---
-title: "NeuroML/LEMS Examples"
-subtitle: "All 28 canonical NeuroML2 examples — represented, rendered, and validated in TVBO"
+title: "NeuroML/LEMS conformance gallery"
+subtitle: "Every canonical NeuroML2 example, expressed as one TVB-O specification and checked against jNeuroML"
+description: "The full NeuroML2 example suite in TVB-O: what a LEMS experiment costs in XML, what it costs in YAML, and how closely the two traces agree."
 bibliography: ../../../references.bib
-listing:
-  - id: lems-examples
-    contents: "Ex*.qmd"
-    sort: "title asc"
-    type: table
-    fields: [title, description]
-    field-display-names:
-      title: "Example"
-      description: "Description"
+jupyter: python3
 ---
 
-## Origin
+The [NeuroML2 repository](https://github.com/NeuroML/NeuroML2) ships a canonical example suite: the tests the NeuroML community uses to decide whether a simulator implements the standard. TVB-O expresses every one of them as a single specification and checks the result against jNeuroML. This page is the scoreboard; each row links to the worked example behind it.
 
-The examples on this page are retrieved from the **official [NeuroML2 repository](https://github.com/NeuroML/NeuroML2)** (`LEMSexamples/` and `examples/` directories). They constitute the canonical test suite that the NeuroML community uses to validate simulator implementations. Each example here has a 1-to-1 correspondence with an original `LEMS_NML2_Ex*.xml` file and its associated `.nml` component files.
+## What a LEMS experiment costs in XML
 
-TVBO can represent **every one of these experiments** in a single, unified YAML specification — no XML, no file scattering, no separate simulation harness.
-
----
-
-## What are `.nml` and LEMS `.xml` files?
-
-NeuroML splits model descriptions across two complementary XML formats:
-
-### `.nml` files — Model Components
-
-**NeuroML files** (`.nml`) define reusable biological components: ion channels, cells, synapses, morphologies, and networks. They use a domain-specific XML schema with elements like `<ionChannelHH>`, `<cell>`, `<expOneSynapse>`, and `<network>`. Each `.nml` file is a self-contained building block — for example, `NML2_SingleCompHHCell.nml` defines a Hodgkin-Huxley cell with Na, K, and leak channels, its morphology, and biophysical properties.
+NeuroML splits a model across two file kinds. A `.nml` file defines reusable biological components (ion channels, cells, synapses, morphologies, networks) in a domain-specific schema:
 
 ```xml
 <!-- NML2_SingleCompHHCell.nml (excerpt) -->
@@ -36,20 +19,17 @@ NeuroML splits model descriptions across two complementary XML formats:
     <forwardRate type="HHExpLinearRate" rate="1per_ms" midpoint="-40mV" scale="10mV"/>
     <reverseRate type="HHExpRate" rate="4per_ms" midpoint="-65mV" scale="-18mV"/>
   </gateHHrates>
-  ...
 </ionChannelHH>
 ```
 
-### LEMS `.xml` files — Simulation Experiments
-
-**LEMS files** (Low Entropy Model Specification) are the simulation harness. They `<Include>` the `.nml` component files, wire them into a network, define simulation parameters (duration, time step), and specify what to record. A single LEMS file stitches together all the pieces needed to run an experiment:
+A LEMS `.xml` file is the simulation harness: it includes the component files, wires them into a network, sets duration and step, and names what to record.
 
 ```xml
 <!-- LEMS_NML2_Ex5_DetCell.xml (excerpt) -->
-<Include file="Cells.xml"/>           <!-- core type definitions -->
-<Include file="Networks.xml"/>        <!-- core type definitions -->
-<Include file="Simulation.xml"/>      <!-- core type definitions -->
-<Include file="../examples/NML2_SingleCompHHCell.nml"/>  <!-- the actual model -->
+<Include file="Cells.xml"/>
+<Include file="Networks.xml"/>
+<Include file="Simulation.xml"/>
+<Include file="../examples/NML2_SingleCompHHCell.nml"/>
 
 <network id="net1">
   <population id="hhpop" component="hhcell" size="1"/>
@@ -62,73 +42,97 @@ NeuroML splits model descriptions across two complementary XML formats:
 </Simulation>
 ```
 
-### The fragmentation problem
+A typical experiment therefore needs at least four files: three core includes that themselves import dozens more, the LEMS file, and one or more `.nml` models. The equations are nowhere in them; they live in `type` attributes pointing into the LEMS component-type hierarchy.
 
-A typical NeuroML experiment requires **4+ XML files**: 3 core LEMS includes (`Cells.xml`, `Networks.xml`, `Simulation.xml` — which themselves include dozens more), the LEMS simulation file, and one or more `.nml` model files. More complex examples reference additional channel, synapse, or morphology files. The actual model equations are implicit — encoded in `type` attributes that reference component types buried deep in the LEMS type hierarchy.
+## What it costs in TVB-O
 
----
-
-## One TVBO YAML instead
-
-TVBO collapses this entire multi-file XML structure into a **single YAML document** that is simultaneously:
-
-- **Human-readable** — equations, parameters, units, network, integrator, and outputs are all visible in one place
-- **Machine-actionable** — the same YAML can render to LEMS XML, JAX, NumPy, Julia, or any supported backend
-- **Self-contained** — no external includes, no implicit type hierarchies, no file path dependencies
-- **Schema-validated** — every field is checked against the LinkML data model; typos and missing fields are caught before simulation
-
-For example, the FitzHugh-Nagumo oscillator (Ex9) requires a LEMS XML file that references `Cells.xml`, `Networks.xml`, and `Simulation.xml` — themselves importing hundreds of component type definitions. In TVBO, the same experiment is:
+One document, with the equations in it. The FitzHugh-Nagumo oscillator of [Ex9](Ex9_FN.qmd):
 
 ```yaml
 name: FitzHughNagumo
 state_variables:
-  V: { equation: { rhs: "V - V**3/3 - W + I" } }
-  W: { equation: { rhs: "0.08 * (V + 0.7 - 0.8 * W)" } }
+  V: {equation: {rhs: "V - V**3/3 - W + I"}}
+  W: {equation: {rhs: "0.08 * (V + 0.7 - 0.8 * W)"}}
 parameters:
-  I: { value: 0.8 }
-integrator: { scheme: euler, dt: 0.01, duration: 200 }
+  I: {value: 0.8}
+integrator: {scheme: euler, dt: 0.01, duration: 200}
 ```
 
-From this single spec, TVBO can:
+From that one spec, `exp.render("lems")` emits LEMS XML that jNeuroML runs, `exp.run()` simulates directly, and `exp.render("julia")` or `exp.render("pyrates")` targets another ecosystem entirely. See [LEMS export](../LEMS_Export.qmd) for the emitter and [IRI versus YAML](../IRI_vs_YAML.qmd) for how a component is referenced rather than copied.
 
-1. **`exp.render("lems")`** → produce the exact LEMS XML that jNeuroML runs
-2. **`exp.run()`** → simulate directly via JAX/NumPy
-3. **`exp.render("julia")`** → generate Julia code for NetworkDynamics.jl
-4. **`exp.render("pyrates")`** → export to PyRates
+## The conformance table
 
----
+Each example is defined as a TVB-O `SimulationExperiment`, rendered to LEMS, run through jNeuroML as the reference, run again through `NeuroMLAdapter`, and compared trace by trace. The table below is read from the run record, so it reports what the last suite execution actually measured.
 
-## Validation approach
+```{python}
+#| label: conformance
+#| echo: false
+import json
+from pathlib import Path
 
-Each example notebook below:
+from IPython.display import Markdown
 
-1. **Defines** the model as a TVBO `SimulationExperiment`
-2. **Renders** to LEMS XML via `exp.render("lems")`
-3. **Runs the original** NeuroML2 LEMS file via jNeuroML as reference
-4. **Runs the TVBO version** via `NeuroMLAdapter.run()`
-5. **Compares** time-series numerically (RMSE, correlation, max error)
-6. **Plots** overlaid reference vs. TVBO traces
+records = json.loads(Path("_run_all_examples_results.json").read_text())
 
-### Example categories
+# The suite's own grouping of the NeuroML2 examples by what each one exercises.
+FAMILY = {
+    "Ex0": "Single-cell ODE", "Ex2": "Single-cell ODE", "Ex8": "Single-cell ODE", "Ex9": "Single-cell ODE",
+    "Ex1": "Conductance-based", "Ex5": "Conductance-based", "Ex22": "Conductance-based",
+    "Ex4": "Channels & kinetics", "Ex10": "Channels & kinetics", "Ex15": "Channels & kinetics",
+    "Ex18": "Channels & kinetics", "Ex24": "Channels & kinetics",
+    "Ex3": "Synapses", "Ex6": "Synapses", "Ex7": "Synapses", "Ex20": "Synapses", "Ex21": "Synapses", "Ex27": "Synapses",
+    "Ex12": "Networks", "Ex13": "Networks", "Ex19": "Networks", "Ex25": "Networks", "Ex26": "Networks",
+    "Ex14": "Interchange", "Ex16": "Interchange", "Ex17": "Interchange", "Ex23": "Interchange",
+}
+ORDER = ["Single-cell ODE", "Conductance-based", "Channels & kinetics", "Synapses", "Networks", "Interchange"]
+if any(r["name"] not in FAMILY for r in records):
+    ORDER.append("Unclassified")
 
-| Category | Examples | Description |
-|---|---|---|
-| **Single-cell ODE** | Ex0 (IaF), Ex2 (Izh), Ex8 (AdEx), Ex9 (FN) | Simple 1–2 variable models with event-driven spikes |
-| **Conductance-based** | Ex1 (HH), Ex5 (DetCell) | Hodgkin-Huxley-style cells with gating variables |
-| **Channels & Kinetics** | Ex4 (KS), Ex10 (Q10), Ex15 (Ca), Ex18 (GHK), Ex24 (Frac) | Ion channel biophysics |
-| **Synapses** | Ex3 (Net), Ex6 (NMDA), Ex7 (STP), Ex20/21 (Analog/Current), Ex27 (Multi) | Synaptic dynamics and plasticity |
-| **Networks** | Ex12 (Net2), Ex13 (Instances), Ex19 (GapJ), Ex25 (MultiComp), Ex26 (Weights) | Multi-cell networks and connectivity |
-| **Other** | Ex14 (PyNN), Ex16 (Inputs), Ex17 (Tissue), Ex22 (PinskyRinzel), Ex23 (Spiketimes) | Specialized examples |
+rows = ["| Family | Example | Traces | Worst $r$ | Worst NRMSE | Verdict |", "|---|---|---:|---:|---:|---|"]
+for family in ORDER:
+    members = [r for r in records if FAMILY.get(r["name"], "Unclassified") == family]
+    for i, r in enumerate(sorted(members, key=lambda r: int(r["name"][2:]))):
+        title = r["qmd"].removesuffix(".qmd").split("_", 1)[1].replace("_", " ")
+        rows.append(
+            f"| {family if i == 0 else ''} | [{r['name']} — {title}]({r['qmd']}) | {len(r['mappings'])} "
+            f"| {r['worst_corr']:.6f} | {r['worst_nrmse']:.3g} | {r['status']} |"
+        )
 
-### Prerequisites
+n = len(records)
+passing = sum(r["status"] == "PASS" for r in records)
+exact = sum(r["xml_exact_match"] for r in records)
+Markdown(
+    f"{passing} of {n} examples reproduce the jNeuroML reference; "
+    f"{exact} of {n} render XML that is byte-identical to the canonical file.\n\n" + "\n".join(rows)
+)
+```
+
+::: {.callout-important}
+## Read the two columns together
+
+The verdict is correlation-based: an example passes when its trace tracks the reference in shape. Two consequences are visible in the table above and neither is hidden.
+
+**A scale error still passes.** [Ex22 (Pinsky-Rinzel)](Ex22_PinskyRinzel.qmd) reaches $r \approx 1$ with a worst NRMSE near 787. The waveform is right and the amplitude is not. Where the NRMSE column is not small, the example demonstrates structural agreement only.
+
+**The XML is equivalent, not identical.** No example renders a byte-for-byte copy of the canonical file. TVB-O emits standard NeuroML2 component types that jNeuroML runs to the same result, which is the property that matters for interchange and the one the numerical columns measure.
+:::
+
+## Component examples
+
+Alongside the LEMS simulation suite, the NeuroML2 repository ships component files that define models without running them. Each is expressed as a TVB-O object and re-emitted:
+
+| | |
+|---|---|
+| Cells | [Abstract cells](NML2_AbstractCells.qmd) · [Single-compartment HH](NML2_SingleCompHHCell.qmd) · [Full cell](NML2_FullCell.qmd) · [Morphology](NML2_SimpleMorphology.qmd) |
+| Channels | [Simple ion channel](NML2_SimpleIonChannel.qmd) |
+| Synapses | [Synapse types](NML2_SynapseTypes.qmd) · [Analog synapses](NML2_AnalogSynapses.qmd) · [Gap junctions](NML2_GapJunctions.qmd) |
+| Networks | [Inputs](NML2_Inputs.qmd) · [Instance-based network](NML2_InstanceBasedNetwork.qmd) · [Full NeuroML](NML2_FullNeuroML.qmd) |
+
+## Running the suite yourself
 
 ```bash
 pip install pyneuroml matplotlib scipy
+python Interoperability/NeuroML/examples/_run_all_examples.py
 ```
 
-jNeuroML (Java-based) is required for running the reference examples. It is bundled with pyNeuroML.
-
----
-
-::: {#lems-examples}
-:::
+jNeuroML runs the reference side and ships with pyNeuroML, so a working Java is the only extra requirement. The script rewrites `_run_all_examples_results.json`, and the table above follows.

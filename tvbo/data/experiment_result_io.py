@@ -1,9 +1,6 @@
 """Sidecar I/O + cross-experiment cache for :class:`ExperimentResult`.
 
-Lets downstream experiments depend on an upstream experiment's fitted
-parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``,
-``J_i`` via an ``aux_data: Reference``) without recomputing on every
-notebook re-execution.
+Lets downstream experiments depend on an upstream experiment's fitted parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``, ``J_i`` via an ``aux_data: Reference``) without recomputing on every notebook re-execution.
 
 Layout
 ------
@@ -13,13 +10,15 @@ Layout
     reference/exp_<id>_seed<seed>.yaml          (descriptor + provenance)
     reference/exp_<id>_seed<seed>.h5
     └── parameters/
-        ├── w_LRE     (n_nodes, n_nodes) float32
-        ├── w_FFI     (n_nodes, n_nodes) float32
-        ├── J_i       (n_nodes,)         float32
+        ├── w_LRE     (n_nodes, n_nodes)
+        ├── w_FFI     (n_nodes, n_nodes)
+        ├── J_i       (n_nodes,)
         └── ...
 
-Cache invalidation (per /grill-me Q8 = C.3)
--------------------------------------------
+Each array is stored at the precision it was computed at, which is the precision the descriptor's ``parameters[].dtype`` reports.
+
+Cache invalidation
+------------------
 
 - ``provenance.experiment_yaml_hash`` — SHA-256 of the normalised YAML
   that produced this sidecar.
@@ -29,35 +28,31 @@ Cache invalidation (per /grill-me Q8 = C.3)
 A cache hit requires both:
 
 1. Current experiment YAML hash matches ``provenance.experiment_yaml_hash``.
-2. For each input fingerprint, the underlying file's ``(mtime, size)``
-   matches (fast path). On mismatch, recompute the sha256; if THAT
-   matches, still a hit (handles ``touch`` and rename-in-place).
+2. For each input fingerprint, the underlying file's ``(mtime, size)`` matches (fast path). On mismatch, recompute the sha256; if THAT matches, still a hit (handles ``touch`` and rename-in-place).
 """
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import os
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import h5py
 import numpy as np
 import yaml
 
-
-# ----------------------------------------------------------------------------
 # YAML hashing
-# ----------------------------------------------------------------------------
+
 
 def hash_yaml(normalized_dict: Mapping[str, Any]) -> str:
     """Stable SHA-256 hex digest of a Python-side YAML representation.
 
-    Uses ``yaml.safe_dump(sort_keys=True)`` so the digest only depends on
-    semantic content, not key ordering.
+    Uses ``yaml.safe_dump(sort_keys=True)`` so the digest only depends on semantic content, not key ordering.
     """
-    blob = yaml.safe_dump(dict(normalized_dict), sort_keys=True,
-                          default_flow_style=False).encode("utf-8")
+    blob = yaml.safe_dump(dict(normalized_dict), sort_keys=True, default_flow_style=False).encode("utf-8")
     return hashlib.sha256(blob).hexdigest()
 
 
@@ -72,20 +67,21 @@ def file_fingerprint(path: str | os.PathLike) -> dict:
     with open(p, "rb") as f:
         for chunk in iter(lambda: f.read(65536), b""):
             h.update(chunk)
-    return {"mtime": float(st.st_mtime), "size": int(st.st_size),
-            "hash": h.hexdigest()}
+    return {"mtime": float(st.st_mtime), "size": int(st.st_size), "hash": h.hexdigest()}
 
 
-# ----------------------------------------------------------------------------
 # Sidecar I/O
-# ----------------------------------------------------------------------------
 
-def save_sidecar(*, parameters: Mapping[str, np.ndarray],
-                 yaml_path: str | os.PathLike,
-                 experiment_yaml_hash: str,
-                 inputs: list[dict] | None = None,
-                 extra_metadata: Mapping[str, Any] | None = None,
-                 provenance_comment: str | None = None) -> tuple[Path, Path]:
+
+def save_sidecar(
+    *,
+    parameters: Mapping[str, np.ndarray],
+    yaml_path: str | os.PathLike,
+    experiment_yaml_hash: str,
+    inputs: list[dict] | None = None,
+    extra_metadata: Mapping[str, Any] | None = None,
+    provenance_comment: str | None = None,
+) -> tuple[Path, Path]:
     """Write an ExperimentResult sidecar (yaml descriptor + h5 companion).
 
     Parameters
@@ -114,15 +110,14 @@ def save_sidecar(*, parameters: Mapping[str, np.ndarray],
     with h5py.File(h5_path, "w") as f:
         pg = f.create_group("parameters")
         for name, arr in parameters.items():
-            pg.create_dataset(name, data=np.asarray(arr, dtype=np.float32))
+            pg.create_dataset(name, data=np.asarray(arr))
 
     # yaml descriptor
     descriptor = {
         "tvbo_class": "tvbo:ExperimentResultSidecar",
         "data_file": h5_path.name,
         "parameters": [
-            {"name": name, "shape": list(np.shape(arr)),
-             "dtype": str(np.asarray(arr).dtype)}
+            {"name": name, "shape": list(np.shape(arr)), "dtype": str(np.asarray(arr).dtype)}
             for name, arr in parameters.items()
         ],
         "provenance": {
@@ -144,7 +139,7 @@ def save_sidecar(*, parameters: Mapping[str, np.ndarray],
 def load_sidecar(yaml_path: str | os.PathLike) -> tuple[dict, dict]:
     """Load an ExperimentResult sidecar.
 
-    Returns
+    Returns:
     -------
     parameters
         ``{name: ndarray}`` — eagerly loaded numeric arrays.
@@ -162,12 +157,12 @@ def load_sidecar(yaml_path: str | os.PathLike) -> tuple[dict, dict]:
     return parameters, descriptor
 
 
-# ----------------------------------------------------------------------------
 # Cache hit/miss check
-# ----------------------------------------------------------------------------
+
 
 class CacheStatus:
     """Reason a cache entry was accepted or rejected."""
+
     HIT = "hit"
     MISS_NO_SIDECAR = "miss_no_sidecar"
     MISS_YAML_HASH = "miss_yaml_hash"
@@ -176,10 +171,12 @@ class CacheStatus:
     MISS_INPUT_MISSING = "miss_input_missing"
 
 
-def check_cache(*, sidecar_yaml: str | os.PathLike,
-                expected_yaml_hash: str,
-                input_paths: Mapping[str, str | os.PathLike] | None = None,
-                ) -> tuple[str, str | None]:
+def check_cache(
+    *,
+    sidecar_yaml: str | os.PathLike,
+    expected_yaml_hash: str,
+    input_paths: Mapping[str, str | os.PathLike] | None = None,
+) -> tuple[str, str | None]:
     """Decide whether a cached ExperimentResult sidecar is still valid.
 
     Parameters
@@ -194,7 +191,7 @@ def check_cache(*, sidecar_yaml: str | os.PathLike,
         identifier to its current on-disk path. For each fingerprint in
         the sidecar, the matching ``path`` is fingerprinted and compared.
 
-    Returns
+    Returns:
     -------
     status
         One of :class:`CacheStatus` constants.
@@ -210,16 +207,16 @@ def check_cache(*, sidecar_yaml: str | os.PathLike,
     prov = descriptor.get("provenance", {}) or {}
     recorded_hash = prov.get("experiment_yaml_hash")
     if recorded_hash != expected_yaml_hash:
-        return (CacheStatus.MISS_YAML_HASH,
-                f"yaml hash differs: cached={recorded_hash[:8]!r}, "
-                f"current={expected_yaml_hash[:8]!r}")
+        return (
+            CacheStatus.MISS_YAML_HASH,
+            f"yaml hash differs: cached={recorded_hash[:8]!r}, current={expected_yaml_hash[:8]!r}",
+        )
 
     inputs = prov.get("inputs", []) or []
     input_paths = dict(input_paths or {})
     for fp in inputs:
         key = fp.get("iri") or fp.get("field") or "?"
-        path = input_paths.get(key) or input_paths.get(fp.get("iri")) \
-               or input_paths.get(fp.get("field"))
+        path = input_paths.get(key) or input_paths.get(fp.get("iri")) or input_paths.get(fp.get("field"))
         if path is None:
             # No mapping provided — skip (assume caller doesn't track this input)
             continue
@@ -227,12 +224,65 @@ def check_cache(*, sidecar_yaml: str | os.PathLike,
         if not path.exists():
             return CacheStatus.MISS_INPUT_MISSING, f"input {key!r}: {path} missing"
         st = path.stat()
-        if (float(st.st_mtime) == float(fp.get("mtime", 0)) and
-                int(st.st_size) == int(fp.get("size", -1))):
+        if float(st.st_mtime) == float(fp.get("mtime", 0)) and int(st.st_size) == int(fp.get("size", -1)):
             continue  # fast-path hit
         # mtime/size differ — recompute hash
         cur_hash = file_fingerprint(path)["hash"]
         if cur_hash != fp.get("hash"):
-            return (CacheStatus.MISS_INPUT_HASH,
-                    f"input {key!r} hash mismatch (file modified)")
+            return (CacheStatus.MISS_INPUT_HASH, f"input {key!r} hash mismatch (file modified)")
     return CacheStatus.HIT, None
+
+
+SEPARATOR = "__"
+"""What :meth:`ExperimentResult.save` puts between the segments of an output's path."""
+
+STRUCTURAL_PREFIXES = frozenset({"integration", "optimization", "algorithm", "continuation", "observation", "inference"})
+"""The path segments the writer emits as structure that a recipe also declares, and which therefore take the recipe's spelling.
+
+Re-spelled only where they carry children, so an observation a study happens to call ``observation`` stays what its author named it. ``estimate`` is deliberately absent: ``estimate__<param>`` is a fitted parameter the writer emits and no recipe section declares, so it has no spelling to be restored to and keeps the writer's own.
+"""
+
+
+@functools.cache
+def _spec_slot(segment: str) -> str:
+    """*segment* under the name :class:`SimulationExperiment` gives that slot.
+
+    The writer flattens in the singular (``optimization__…``) while a recipe declares in the plural (``optimizations:``). The plural is read off the datamodel rather than typed here, so the two spellings cannot drift from the schema. Cached, because the answer is a property of the schema and the alternative is re-reading every field of the class once per segment of every variable in the container.
+    """
+    import dataclasses
+
+    from tvbo.datamodel import schema as dm
+
+    slots = {f.name for f in dataclasses.fields(dm.SimulationExperiment)}
+    return segment if segment in slots else (f"{segment}s" if f"{segment}s" in slots else segment)
+
+
+def result_tree(dataset):
+    """A container's flat data-variables as the nested shape the recipe declares them in.
+
+    :meth:`ExperimentResult.save` writes every output as one data-variable named by its path with :data:`SEPARATOR` between the segments, so ``optimizations.spectral_gradient_fit.observations.peak_frequencies`` arrives as ``optimization__spectral_gradient_fit__observation__peak_frequencies``. This inverts that, restoring each structural segment (:data:`STRUCTURAL_PREFIXES`) to the recipe's own spelling.
+
+    The result is an :class:`xarray.DataTree` — a group per path, a variable per output — so the container stays an xarray object all the way down: ``tree.optimizations.spectral_gradient_fit.observations.peak_frequencies`` and ``tree["optimizations/spectral_gradient_fit"]`` both reach it, ``.sel`` applies across the whole tree, and it writes back out with ``to_netcdf``. The container's coordinates are hoisted to the root, where every group inherits them, so node labels are declared once for the run rather than repeated on each output.
+
+    A tree is what the container should have been written as in the first place: netCDF has groups, and encoding the hierarchy into the variable name is what makes this function necessary. An output that is both a value and a group is refused rather than resolved — the two cannot share a name, and inventing a place for one of them hides the collision instead of reporting it.
+    """
+    import xarray as xr
+
+    shared = list(dataset.coords)
+    groups: dict[str, dict] = {}
+    for name in dataset.data_vars:
+        segments = str(name).split(SEPARATOR)
+        path = "/" + "/".join(_spec_slot(s) if s in STRUCTURAL_PREFIXES else s for s in segments[:-1])
+        da = dataset[name]
+        groups.setdefault(path, {})[segments[-1]] = da.drop_vars([c for c in shared if c in da.coords])
+
+    nodes = {"/": xr.Dataset(groups.pop("/", {}), coords=dataset.coords)}
+    nodes.update({path: xr.Dataset(variables) for path, variables in groups.items()})
+    try:
+        return xr.DataTree.from_dict(nodes)
+    except KeyError as e:
+        raise ValueError(
+            f"this container holds an output that is both a value and a group ({e}); one of the two has to "
+            f"be renamed, because a group and a variable cannot share a name and choosing for you would hide "
+            f"the collision rather than report it."
+        ) from None

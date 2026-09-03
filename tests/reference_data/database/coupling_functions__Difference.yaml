@@ -1,0 +1,16 @@
+name: Difference
+parameters:
+  a:
+    name: a
+    value: 0.1
+sparse: false
+pre_expression:
+  rhs: -x_i + x_j
+  latex: false
+post_expression:
+  rhs: a*gx
+  latex: false
+delayed: true
+interpolate_delays: false
+vectorized: false
+symmetry: directed

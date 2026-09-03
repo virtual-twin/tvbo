@@ -1,0 +1,78 @@
+name: iEEG
+label: Intracranial EEG (SEEG)
+description: Forward solution for intracranial/stereoelectroencephalography (SEEG).
+  Projects source activity through a lead field matrix to implanted depth electrode
+  contacts. Uses the same single-sphere analytic formula as scalp EEG (Sarvas 1987,
+  Eq. 12), but with electrode positions inside the brain volume.
+parameters:
+  conductivity:
+    name: conductivity
+    value: 1.0
+    description: Tissue conductivity for the analytic point-dipole approximation.
+      Only used when no precomputed gain is available.
+    unit: S_per_m
+period: 0.9765625
+imaging_modality: SEEG
+data_source:
+  name: sensor_network
+  description: SEEG depth electrode network. Each node is an electrode contact with
+    spatial coordinates inside the brain.
+  path: acq-SEEG588_sensors.yaml
+reconcile: by_label
+pipeline:
+- equation:
+    parameters:
+      sigma:
+        name: sigma
+        value: 1.0
+        unit: S_per_m
+    rhs: sum(Q * (a / norm(a)**3), axis=1) / (4 * pi * sigma)
+    latex: false
+  description: Construct the SEEG lead field using Sarvas 1987 Eq. 12.
+  name: compute_gain
+  output: gain
+  arguments:
+    Q:
+      name: Q
+      description: Source dipole orientations (n_sources, 3)
+    a:
+      name: a
+      description: Source-to-electrode vectors (n_sources, 3)
+- equation:
+    parameters:
+      period_steps:
+        name: period_steps
+        description: Integration steps per sampling period. TVB's Projection monitors
+          TRUNCATE this ratio (`int(period / dt)`) where the averaging monitors round
+          it, so at the default period the two differ by a sample.
+        equation:
+          rhs: floor(period / dt)
+          latex: false
+    rhs: gain @ sum(X, axis=-1) / period_steps
+    latex: false
+  name: lead_field_projection
+  output: projected
+  apply_on_dimension: node
+  arguments:
+    gain:
+      name: gain
+      description: Lead field matrix (n_sensors, n_sources)
+    period_steps:
+      name: period_steps
+      description: Number of integration steps per sampling period
+- equation:
+    rhs: X + noise
+    latex: false
+  name: add_noise
+  input: lead_field_projection
+  output: iEEG
+  arguments:
+    noise:
+      name: noise
+      description: Observation noise (n_sensors, 1)
+class_reference:
+  name: iEEG
+  module: tvb.simulator.monitors
+  constructor_args:
+  - name: sigma
+    value: 1.0

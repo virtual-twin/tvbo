@@ -1,13 +1,14 @@
 ---
 title: "Ex6: NMDA Synapse"
 description: "Cell with morphology receiving NMDA synapse input and DC current"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: NMDA Synapse
 
-A passive cell (with morphology and biophysics) receives NMDA synapse input from
-a spike generator, plus a DC current injection. Demonstrates the `cell` type with
-`channelDensity` and `blockingPlasticSynapse` with Mg²⁺ block.
+A passive cell (with morphology and biophysics) receives NMDA synapse input from a spike generator, plus a DC current injection. Demonstrates the `cell` type with `channelDensity` and `blockingPlasticSynapse` with Mg²⁺ block.
 
 Reference: NeuroML2 LEMS_NML2_Ex6_NMDA.xml
 
@@ -59,8 +60,8 @@ network:
           iri: neuroml:voltageConcDepBlockMechanism
           parameters:
             species: {description: mg}
-            blockConcentration: {value: 1.2, unit: mmol_per_m3}
-            scalingConc: {value: 1.920544, unit: mmol_per_m3}
+            blockConcentration: {value: 1.2, unit: mM}
+            scalingConc: {value: 1.920544, unit: mM}
             scalingVolt: {value: 16.129, unit: mV}
     pulseGen2:
       name: pulseGen2

@@ -1,0 +1,107 @@
+name: eq_in_a_full
+label: Equilibrium branch in a (full settings)
+description: Comprehensive bifurcation analysis of the Generic2dOscillator. Continues
+  the equilibrium branch as parameter a is varied, detects fold and Hopf bifurcations,
+  then branches to periodic orbits from both Hopf points with fine-tuned solver settings.
+dynamics: Generic2dOscillator
+free_parameters:
+- name: a
+  domain:
+    enforce: none
+    lo: -20
+    hi: 20
+    log_scale: false
+ds: 0.01
+ds_min: 0.0001
+ds_max: 0.1
+max_steps: 400
+newton_tol: 1.0e-12
+newton_max_iterations: 25
+nev: 3
+tol_stability: 1.0e-10
+detect_bifurcation: 3
+detect_fold: true
+n_inversion: 2
+max_bisection_steps: 25
+algorithm: PALC
+initial_state:
+  method: time_integration
+  duration: 2000.0
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  solver:
+    method: Tsit5
+    abs_tol: 1.0e-10
+    rel_tol: 1.0e-10
+branches:
+  po_from_hopf:
+    name: po_from_hopf
+    description: 'Continue periodic orbits emanating from all detected Hopf bifurcation
+      points. Uses orthogonal collocation on a mesh of 20 intervals with degree-4
+      polynomials.
+
+      # Which special point(s) to branch from: #   "hopf:-1"   → last Hopf only (default)
+      #   "hopf:all"  → every detected Hopf #   "hopf:1"    → first Hopf'
+    parameters:
+      max_norm_bound:
+        name: max_norm_bound
+        value: 10000.0
+    source_point: hopf:all
+    delta_p: 0.01
+    continuation:
+      name: po_continuation
+      ds: 0.0001
+      ds_min: 1.0e-06
+      ds_max: 0.02
+      max_steps: 400
+      newton_tol: 1.0e-10
+      newton_max_iterations: 20
+      nev: 3
+      tol_stability: 1.0e-06
+      detect_bifurcation: 3
+      n_inversion: 8
+      algorithm: PALC
+      options:
+      - name: tangent
+        value: Bordered
+    discretization:
+      parameters:
+        mesh_intervals:
+          name: mesh_intervals
+          value: 20
+        degree:
+          name: degree
+          value: 4
+        mesh_adaptation:
+          name: mesh_adaptation
+          value: false
+      method: collocation
+      mesh_intervals: 50
+      degree: 4
+      n_sections: 3
+      options:
+      - name: jacobian
+        value: DenseAnalyticalInplace
+    bothside: true
+    options:
+      linear_solver:
+        name: linear_solver
+        value: COPBLS
+bothside: true
+execution:
+  n_workers: 1
+  n_threads: -1
+  precision: float64
+  accelerator: auto
+  random_seed: 42
+  find_fixpoint: false
+software:
+  name: BifurcationKit
+  version_spec: '>=0.4'
+  role: runtime
+  optional: false
+  url: https://github.com/bifurcationkit/BifurcationKit.jl
+  license: MIT
+options:
+- name: tangent
+  value: Secant

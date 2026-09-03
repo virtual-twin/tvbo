@@ -1,0 +1,129 @@
+# tvbo-native port of tvboptim's docs/workflows/Delay_Speed_Synchronization.qmd.
+# The connectome carries tract lengths, so delays are derived (DenseLengthGraph)
+# and the swept conduction speed is a live graph leaf.
+id: 20
+label: "Delays Shape Synchronization"
+description: >
+  Coupled Kuramoto phase oscillators on the Desikan-Killiany connectome. A sweep
+  over the conduction speed varies the transmission delays (delays = tract length
+  / speed) and measures the Kuramoto order parameter, reproducing the
+  non-monotonic delay-organised synchronization of Petkoski & Jirsa (2019).
+
+# Local dynamics: Kuramoto phase oscillator.
+dynamics:
+  name: Kuramoto
+  label: "Kuramoto phase oscillator"
+  description: "Single phase variable theta with intrinsic frequency omega."
+  parameters:
+    omega:
+      value: 0.06283185307179587   # 2*pi*0.01 rad/ms  (~10 Hz alpha rhythm)
+      unit: rad_per_ms
+      description: "Intrinsic angular frequency."
+  coupling_inputs:
+    c:
+      description: "Delayed network coupling input."
+  state_variables:
+    theta:
+      unit: rad
+      equation:
+        rhs: "omega + c"
+      initial_value: 0.1
+      variable_of_interest: true
+      coupling_variable: true
+  output: [theta]
+  number_of_modes: 1
+
+# Desikan-Killiany connectome, carrying weights and tract lengths.
+network:
+  label: "Desikan-Killiany"
+  description: "Structural connectivity from the dk_average dataset."
+  bids_dir: "../networks/bids/dk_average"
+  structural_measures: [streamlineCount, tractLength]
+  parameters:
+    conduction_speed:
+      name: conduction_speed
+      value: 3.0
+      unit: mm_per_ms
+      description: "Conduction speed; delays = tract length / conduction_speed."
+  transforms:
+    - name: weight
+      equation:
+        rhs: "weight / mean(weight[weight > 0])"   # mean over existing edges, not over the zeros too, so G stays O(1)
+
+  # Delayed Kuramoto coupling: c_i(t) = G * sum_j w_ij sin(theta_j(t - tau_ij) - theta_i(t))
+  coupling:
+    DelayedKuramotoCoupling:
+      label: "Delayed Kuramoto coupling"
+      description: "Phase-difference coupling with transmission delays."
+      delayed: true
+      parameters:
+        G:
+          value: 0.0011904761904761906   # 0.1 / 84 nodes
+          description: "Global coupling strength (scaled by network size)."
+      incoming_states: [theta]
+      local_states: [theta]
+      pre_expression:
+        rhs: "sin(theta_j - theta_i)"
+      post_expression:
+        rhs: "G * gx"
+
+# Heun at dt = 0.5 ms over 800 ms with no separate transient, since the order parameter averages only the last 20% of the run.
+integration:
+  method: Heun
+  step_size: 0.5
+  duration: 800.0
+  transient_time: 0.0
+
+functions:
+  kuramoto_order:
+    name: kuramoto_order
+    description: >
+      Kuramoto order parameter R = <| <exp(i*theta)>_nodes |>_time, averaged over
+      the last `tail` fraction of the run (the settled window).
+    source_code: "jnp.mean(jnp.abs(jnp.mean(jnp.exp(1j * data[-int(tail * data.shape[0]):, 0, :]), axis=1)))"
+    arguments:
+      data:
+        description: "Trajectory (time, states, nodes)."
+      tail:
+        value: 0.2
+        description: "Fraction of the run averaged (settled window)."
+
+observations:
+  order_parameter:
+    label: "Kuramoto order parameter"
+    description: "Global phase coherence R in [0, 1]."
+    source: [theta]
+    pipeline:
+      - function: kuramoto_order
+        arguments:
+          data:
+            value: integration.result
+            description: "Simulated phase trajectory."
+
+# Sweeps the conduction speed, a live DenseLengthGraph leaf.
+explorations:
+  speed_sweep:
+    label: "Conduction-speed sweep"
+    description: >
+      Sweep the conduction speed from 0.5 to 6.0 mm/ms. Each speed rebuilds the
+      transmission delays (delays = lengths / speed) and the order parameter
+      traces out a non-monotonic synchronization resonance.
+    space:
+      network.conduction_speed:
+        domain:
+          lo: 0.5
+          hi: 6.0
+          n: 50
+    mode: product
+    n_parallel: 1
+    observable:
+      function: order_parameter
+
+execution:
+  n_workers: 8
+  precision: float64
+
+references:
+  - "Petkoski & Jirsa (2019) Phil Trans R Soc A 377:20180132 - delays organize brain network synchronization"
+  - "Yeung & Strogatz (1999) Phys Rev Lett 82:648 - time delay in the Kuramoto model"
+  - "Kuramoto (1975) - coupled phase oscillators"

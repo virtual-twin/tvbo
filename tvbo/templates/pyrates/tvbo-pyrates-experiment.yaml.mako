@@ -82,16 +82,11 @@ if is_network:
                 nodes[safe_label] = "node"
                 node_dynamics_map[node_id] = None
 
-        # Helper to get parameter value from edge.parameters
         def get_edge_param(edge, name, default=0.0):
-            params = getattr(edge, 'parameters', None)
-            if params:
-                for p in params:
-                    p_name = getattr(p, 'name', None)
-                    if p_name == name:
-                        val = getattr(p, 'value', None)
-                        return float(val) if val is not None else default
-            return default
+            """Edge weight/delay/distance as a float, via the shared reader."""
+            from tvbo.utils import edge_param
+            val = edge_param(edge, name)
+            return float(val) if val is not None else default
 
         # Collect edges from network.edges
         if hasattr(network, 'edges') and network.edges:
@@ -133,7 +128,7 @@ if is_network:
                     src_var = list(src_dyn.state_variables.keys())[0]
                 else:
                     src_var = "x"
-                _tgt_ci = getattr(tgt_dyn, 'coupling_inputs', None) or getattr(tgt_dyn, 'coupling_terms', None) or {}
+                _tgt_ci = getattr(tgt_dyn, 'coupling_inputs', None) or {}
                 tgt_var = list(_tgt_ci.keys())[0] if tgt_dyn and _tgt_ci else src_var
 
                 edges.append({
@@ -183,7 +178,7 @@ if is_network:
                 src_var = list(src_m.state_variables.keys())[0]
             else:
                 src_var = "x"
-            _tgt_ci2 = getattr(tgt_m, 'coupling_inputs', None) or getattr(tgt_m, 'coupling_terms', None) or {}
+            _tgt_ci2 = getattr(tgt_m, 'coupling_inputs', None) or {}
             tgt_var = list(_tgt_ci2.keys())[0] if tgt_m and _tgt_ci2 else src_var
 
             edges.append({
@@ -200,7 +195,7 @@ if is_network:
         # Base Network/Connectome class (datamodel-based)
         # Get model from context or use a default operator name
         base_model = context.get('model')
-        weights = network.weights_matrix if hasattr(network, 'weights_matrix') else None
+        weights = network.matrix("weight", format="dense") if hasattr(network, 'matrix') else None
         n_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)
         if weights is not None:
             n_nodes = weights.shape[0]
@@ -226,7 +221,7 @@ if is_network:
             if base_model:
                 if base_model.state_variables:
                     src_var = list(base_model.state_variables.keys())[0]
-                _base_ci = getattr(base_model, 'coupling_inputs', None) or getattr(base_model, 'coupling_terms', None) or {}
+                _base_ci = getattr(base_model, 'coupling_inputs', None) or {}
                 if _base_ci:
                     tgt_var = list(_base_ci.keys())[0]
 

@@ -1,0 +1,294 @@
+---
+title: "Writing TVB-O YAML"
+description: "From the basics to anchors, includes and shortcuts, and which of them are plain YAML, which are LinkML, and which TVB-O adds."
+subtitle: "One page for the idioms every recipe uses"
+aliases:
+  - /Specification/YAML.html
+---
+
+## Overview
+
+Every TVB-O specification — a `Dynamics`, a `Network`, a `SimulationExperiment`, a `SimulationStudy` — is one YAML document read by one loader, so the idioms below work the same everywhere. For *what* fields each component has, see the [specification reference](SpecificationReference.qmd).
+
+The page runs from the basics to the parts you only need on larger recipes. If you are writing your first experiment, the first three sections are enough.
+
+### Where each idiom comes from
+
+TVB-O is a [LinkML](https://linkml.io) schema loaded with `linkml-runtime`, plus a
+few conveniences of its own. Knowing which is which tells you what survives if you consume the datamodel with plain LinkML tooling:
+
+| Idiom | Origin | Plain LinkML? |
+|---|---|---|
+| Mappings, lists, scalars | YAML | yes |
+| `&anchor` / `*reference` | YAML | yes |
+| `<<:` merge keys | YAML | **no**. LinkML's loader rejects the tag; TVB-O restores it |
+| Keyed collections `{name: {...}}` | LinkML (`inlined_as_dict`) | yes |
+| Duplicate key is an error | LinkML (`DupCheckYamlLoader`) | yes |
+| Scalar for a keyed member (`omega: 0.0628`) | LinkML *specifies* it (`inlined_as_simple_dict`) | **no**. Unimplemented in `linkml-runtime`; TVB-O implements it |
+| Scalar for a single object (`equation: "x+2"`) | TVB-O | no |
+| Slot aliases (`dt`, `number_of_regions`) | LinkML *declares* `aliases:`, but treats them as documentation | **no**. TVB-O resolves them |
+| `!include` | TVB-O | no |
+| `iri:` sourcing | TVB-O | no |
+| `distribution: {lo, hi}`, `boundaries:` | TVB-O | no |
+
+Two of these are resolved in the **generated classes** rather than in the loader, namely slot aliases and the scalar shortcuts, so they keep working even if you load the datamodel with `linkml_runtime` directly, or construct objects in Python.
+
+## The basics {#basics}
+
+A specification is a **mapping**: `key: value`, one per line, nesting by indentation (spaces, never tabs).
+
+```yaml
+id: 1                        # a number
+label: "My Experiment"       # a string — quote it if it contains : or #
+integration:                 # a nested mapping
+  method: heun
+  step_size: 0.1
+```
+
+A **list** uses `-`, or `[]` inline:
+
+```yaml
+coupling_inputs: [c_in, c_ex]     # inline
+edges:                            # block form
+  - {source: 0, target: 1}
+  - {source: 1, target: 0}
+```
+
+Mappings have an inline form too, so small objects fit on one line. These mean the same thing:
+
+```yaml
+integration: {method: heun, step_size: 0.1}
+```
+
+That is all the YAML most recipes need.
+
+## Keyed collections
+
+*LinkML.* Collections of *named* things, such as parameters, state variables and dynamics libraries, are mappings whose **key is the name**. You do not repeat it inside:
+
+```yaml
+parameters:
+  omega: {value: 0.0628}     # the parameter is called `omega`
+  k:     {value: 2.0}
+```
+
+`omega: {name: omega, value: 0.0628}` is redundant, and a key that disagrees with an inner `name:` is an error rather than a silent winner.
+
+## Shortcuts
+
+Where an object has one obvious field, write the value bare:
+
+```yaml
+parameters:
+  omega: 0.0628              # same as {value: 0.0628}
+state_variables:
+  x:
+    equation: "x + 2"        # same as {rhs: "x + 2"}
+    initial_value: 0.1
+```
+
+| You write | It means |
+|---|---|
+| a `Parameter` as a scalar | `{value: …}` |
+| an `Equation` as a string | `{rhs: …}` |
+
+The long form is always available. Reach for it as soon as you need a sibling field, e.g. `{value: 0.0628, unit: Hz}`.
+
+::: {.callout-note collapse="true"}
+## How this relates to LinkML
+
+The schema marks the stand-in slot with LinkML's own `simple_dict_value` annotation, so `Parameter.value` and `Equation.rhs` carry it and every slot ranged on those classes picks it up, including `Event.condition`, `Event.affect` and `Stimulus.equation`.
+
+LinkML specifies this for *keyed collections* (`inlined_as_simple_dict`) but `linkml-runtime`'s dataclass loader does not implement it, so TVB-O does. TVB-O also extends it to **single-valued** slots (`equation: "x+2"`), which the LinkML spec does not cover.
+:::
+
+Two more in the same spirit, both TVB-O:
+
+```yaml
+# a terse distribution completes to a Uniform over that support
+parameters:
+  g: {value: 1.0, distribution: {lo: 0.0, hi: 2.0}}
+
+# `boundaries` is the legacy hard-clamp spelling; it implies enforce: clamp
+state_variables:
+  x: {equation: "-x", initial_value: 0.1, boundaries: {lo: 0.0, hi: 1.0}}
+```
+
+A plain `domain: {lo, hi}` is descriptive only: it records the meaningful range without constraining the trajectory. Clamping is never a default; see [Defining a dynamical system](Models/DefineDynamicalSystem.qmd).
+
+### Alternative spellings
+
+Some slots accept a second name:
+
+| Alias | Canonical slot |
+|---|---|
+| `dt` | `step_size` (on any solver) |
+| `number_of_regions` | `number_of_nodes` |
+| `righthandside` / `lefthandside` | `rhs` / `lhs` |
+| `components` | `modes` (on a `Dynamics`) |
+| `optimization` / `inference` | `optimizations` / `inferences` |
+
+```yaml
+integration: {method: heun, dt: 0.05}   # dt == step_size
+```
+
+These are declared with LinkML's `aliases:`, which LinkML itself treats as documentation. Nothing resolves it, so a declared alias would otherwise be rejected.
+TVB-O resolves them **per class**, which is what makes a colliding name safe: a model parameter called `dt` stays a parameter, and a `components:` list under an unrelated block is left alone. Writing both spellings in one mapping warns and keeps the canonical one.
+
+## Reusing values: `&`, `*` and `<<`
+
+Standard YAML gives you three handles for saying a thing once. Worth knowing when a recipe starts repeating itself.
+
+### `&name`: anchor
+
+Label a value so you can point at it later. An anchor changes nothing on its own:
+
+```yaml
+dynamics: &base
+  name: Kuramoto
+  parameters: {omega: 0.0628}
+```
+
+### `*name`: reference
+
+Use the anchored value again, verbatim:
+
+```yaml
+network:
+  number_of_nodes: 2
+  dynamics:
+    Kuramoto: *base          # exactly the block anchored above
+```
+
+### `<<: *name`: merge key
+
+Pull the anchored mapping's entries in, then override what differs. This is the one you want when two blocks are *almost* the same:
+
+```yaml
+dynamics: &base
+  name: Kuramoto
+  parameters: {omega: 0.0628}     # 10 Hz
+network:
+  number_of_nodes: 2
+  dynamics:
+    Kuramoto:
+      <<: *base                   # name comes from the anchor
+      parameters: {omega: 0.1257} # 20 Hz
+```
+
+It works on list entries too. Here one edge is reused with its endpoints reversed:
+
+```yaml
+edges:
+  - &link {source: 0, target: 1, parameters: {weight: 0.3}, directed: true}
+  - {<<: *link, source: 1, target: 0}
+```
+
+Two things to know:
+
+* The anchor must sit on a value the schema accepts: a slot, or a list entry. An invented top-level key (`base: &base {…}` beside `dynamics:`) is read as a slot of the document and rejected.
+* The merge is **shallow**. An explicit `parameters:` replaces the anchor's whole block rather than merging into it key by key.
+
+Merge keys are ordinary YAML, but LinkML's loader rejects the `<<` tag; TVB-O's loader restores the standard behaviour, keeping LinkML's duplicate-key check for keys you wrote twice yourself.
+
+Several anchors can be merged at once with `<<: [*a, *b]`, earlier ones winning.
+
+## More YAML worth knowing
+
+Two further plain-YAML idioms earn their keep in recipes.
+
+**Block scalars** keep a long equation or description readable. `>` folds newlines into spaces; `-` strips the trailing newline:
+
+```yaml
+description: >
+  A folded block: newlines become spaces, so a long prose description
+  stays readable in the file without adding line breaks to the value.
+state_variables:
+  x:
+    equation: >-
+      -x + 0.5 * (y - x)
+      + 0.1
+```
+
+Use `|` instead of `>` when the newlines matter, as with embedded source code.
+
+**Anchors work on plain scalars**, which is the tidiest way to state a constant once and use it in several places:
+
+```yaml
+parameters:
+  a: &shared 0.42
+  b: *shared          # same number, stated once
+```
+
+::: {.callout-caution}
+## Two YAML traps worth knowing
+
+**`1e-3` is a string, not a number.** YAML's float rule needs a decimal point, so `1e-3` parses as the text `"1e-3"` and silently reaches the model as a string. Write `1.0e-3` (or `0.001`):
+
+```yaml
+parameters:
+  a: 1e-3      # ✗ the string "1e-3"
+  b: 1.0e-3    # ✓ the number 0.001
+```
+
+**`on`, `off`, `yes`, `no` are booleans.** In YAML 1.1 these are not strings, so a parameter *named* `on` becomes the key `True`. Quote it as `"on"` when you mean the word.
+:::
+
+::: {.callout-warning}
+## Duplicate keys are an error
+
+A key written twice in the same mapping is rejected, not silently resolved to the last one, because a duplicate is nearly always a hand-merge accident. Merge keys are unaffected: an explicit entry still overrides what `<<:` pulled in.
+:::
+
+## Splitting a recipe: `!include`
+
+*TVB-O.* Substitute another YAML file at that position. Paths resolve relative to the file containing the directive, so a large recipe splits into readable pieces:
+
+```yaml
+id: 1
+label: My Experiment
+dynamics: !include _models/jansen_rit.yaml
+network:  !include _networks/dk68.yaml
+```
+
+Anchors are file-local: a fragment is readable on its own and cannot capture names from its parent, or leak them into it.
+
+## Sourcing by `iri`
+
+*TVB-O.* Rather than writing a component out, point at a curated entry:
+
+```yaml
+dynamics: {iri: "tvbo:JansenRit"}
+```
+
+Fields alongside `iri` override the sourced ones, which is the usual way to take a curated model and change one parameter. See [Specs and resolution](../CLI/specs.qmd) for the accepted forms.
+
+## Quick reference
+
+| Write | Means | Origin |
+|---|---|---|
+| `parameters: {omega: {value: 0.0628}}` | a named `Parameter` | LinkML |
+| `parameters: {omega: 0.0628}` | `{value: 0.0628}` | LinkML spec, TVB-O implements |
+| `equation: "x + 2"` | `{rhs: "x + 2"}` | TVB-O |
+| `integration: {dt: 0.05}` | `step_size: 0.05` | TVB-O resolves LinkML's `aliases:` |
+| `number_of_regions: 68` | `number_of_nodes: 68` | ″ |
+| `distribution: {lo: 0, hi: 2}` | a `Uniform` over that support | TVB-O |
+| `boundaries: {lo: 0, hi: 1}` | `domain` **with** `enforce: clamp` | TVB-O |
+| `domain: {lo: 0, hi: 1}` | descriptive range, no clamping | LinkML |
+| `x: &base {...}` … `y: *base` | reuse the value verbatim | YAML |
+| `y: {<<: *base, k: v}` | reuse, overriding `k` | YAML (TVB-O restores it on LinkML's loader) |
+| `dynamics: !include m.yaml` | splice another file in | TVB-O |
+| `dynamics: {iri: "tvbo:JansenRit"}` | source from the curated database | TVB-O |
+| the same key twice | an error | LinkML |
+| `a: &v 0.42` … `b: *v` | a constant stated once | YAML |
+| `equation: >-` | a folded multi-line scalar | YAML |
+| `1e-3` | the **string** `"1e-3"`; write `1.0e-3` | YAML |
+| a key `on` / `yes` | the **boolean** `True`; quote it | YAML |
+
+Anything marked TVB-O is resolved before or during construction, so it never reaches a downstream LinkML consumer as a non-standard document. Slot aliases and scalar shortcuts resolve in the generated classes, so they also work when you build objects in Python or load with `linkml-runtime` directly.
+
+## See also
+
+- [Specification reference](SpecificationReference.qmd): what each component contains
+- [Simulation experiments](SimulationExperiments.qmd): loading and running
+- [Specs and resolution](../CLI/specs.qmd): how an `iri` is resolved

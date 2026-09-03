@@ -1,13 +1,14 @@
 ---
 title: "Ex12: Network 2"
 description: "Multiple spike sources and synapse types including NMDA with Mg²⁺ block"
+# Off the sidebar since the conformance gallery indexes them; the badge still needs its chapter.
+phase: interop
+phase-section: "NeuroML / LEMS"
 ---
 
 ## Model: Network 2
 
-Nine iafCells receiving input from three spike sources (periodic generator, spike arrays)
-via three synapse types: `expOneSynapse`, `expTwoSynapse`, and NMDA `blockingPlasticSynapse`
-with Mg²⁺ voltage-dependent block. Demonstrates weight and delay modulation.
+Nine iafCells receiving input from three spike sources (periodic generator, spike arrays) via three synapse types: `expOneSynapse`, `expTwoSynapse`, and NMDA `blockingPlasticSynapse` with Mg²⁺ voltage-dependent block. Demonstrates weight and delay modulation.
 
 Reference: NeuroML2 LEMS_NML2_Ex12_Net2.xml
 
@@ -69,8 +70,8 @@ network:
           iri: neuroml:voltageConcDepBlockMechanism
           parameters:
             species: {description: mg}
-            blockConcentration: {value: 1.2, unit: mmol_per_m3}
-            scalingConc: {value: 1.9205441817997078, unit: mmol_per_m3}
+            blockConcentration: {value: 1.2, unit: mM}
+            scalingConc: {value: 1.9205441817997078, unit: mM}
             scalingVolt: {value: 16.129032258064516, unit: mV}
   nodes:
     # 9 post-synaptic cells

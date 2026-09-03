@@ -30,9 +30,10 @@ dynamics:
     system_type: continuous
     autonomous: true
     parameters: {}
-    coupling_terms:
+    coupling_inputs:
         c_flow:
             description: "Aggregated edge flow into this vertex (2D vector: flow_x, flow_phi)"
+            dimension: 2
     state_variables:
         x:
             label: "Diffusion state x"

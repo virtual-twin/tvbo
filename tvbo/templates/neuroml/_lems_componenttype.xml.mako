@@ -1,3 +1,6 @@
+<%!
+from tvbo.utils import initial_value as _initial_value
+%>\
 ## -*- coding: utf-8 -*-
 <%doc>
 Shared fragment: LEMS ComponentType + Coupling + Component instances
@@ -77,7 +80,7 @@ All template variables are injected by the calling template's render context
 % for dv_name, dv in dvs.items():
 <%
   eq = getattr(dv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
   dv_dim = _dim(getattr(dv, 'unit', None))
   pw_cases = _parse_piecewise(rhs) if rhs else None
 %>\
@@ -117,7 +120,7 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if all_dimensioned:
@@ -138,7 +141,7 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs and sv_name not in regime_data['reset_vars']:
 % if all_dimensioned:
@@ -166,7 +169,7 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if all_dimensioned:
@@ -253,7 +256,7 @@ All template variables are injected by the calling template's render context
 % endif
 % endfor
 % for sv_name, sv in svs.items():
-<% iv = getattr(sv, 'initial_value', None) %>\
+<% iv = _initial_value(sv) %>\
 <% sv_unit = lems_sym(getattr(sv, 'unit', None)) %>\
  ${sv_name}_0="${iv if iv is not None else 0.0}${(' ' + sv_unit) if sv_unit else ''}"\
 % endfor

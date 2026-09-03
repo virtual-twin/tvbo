@@ -1,0 +1,29 @@
+name: SpatialAverage
+label: Spatial Region Average
+description: Computes spatially averaged signals within regions defined by a spatial
+  mask (node-to-region assignment). The mask assigns each node to a region index,
+  and the output is the mean signal per region.
+parameters:
+  spatial_mask:
+    name: spatial_mask
+    description: Vector of length N_nodes mapping each node to a region index (0-indexed).
+      Inferred from network topology if not provided.
+period: 0.9765625
+reconcile: by_label
+pipeline:
+- name: spatial_average
+  equation:
+    rhs: spatial_mean @ X
+    latex: false
+  description: Weighted spatial average per region via a binary assignment matrix
+    M[n_regions, n_nodes] derived from the spatial mask.
+  output: region_averaged
+  apply_on_dimension: node
+  arguments:
+    spatial_mean:
+      name: spatial_mean
+      description: Region averaging matrix (n_regions, n_nodes). M[r, j] = 1/n_r if
+        node j belongs to region r, else 0.
+class_reference:
+  name: SpatialAverage
+  module: tvb.simulator.monitors

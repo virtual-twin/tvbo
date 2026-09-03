@@ -64,6 +64,7 @@ classes:
       - name
       - abbreviation
       - alternateName
+      - description
       - unit
       - license
     class_uri: atom:atlas/Transformation
@@ -71,8 +72,8 @@ classes:
   ParcellationEntity:
     description: A schema for representing a parcellation entity, which is an anatomical location or study target.
     categories:
-      - anatomicalLocation
-      - studyTarget
+      - atom:anatomicalLocation
+      - atom:studyTarget
     attributes:
       - relatedUBERONTerm:
           range: string

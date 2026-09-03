@@ -1,0 +1,301 @@
+tvbo_class: tvbo:StudyLayout
+name: study
+description: >-
+  Directory layout of a TVBO simulation study, as a BIDS study dataset. This record is the
+  single ground truth: `tvbo study init` builds the tree from it, the path resolvers ask it
+  where results and figures go, the `.gitignore` and `.bidsignore` writers derive their
+  contents from it, `tvbo validate study` checks a study against it, and the documentation
+  renders its tree from it. Nothing restates the layout.
+
+  One record covers every kind of study. The unmarked entries are that study; an entry marked
+  `in_templates` belongs only to the named `tvbo study init --template` kinds, which `templates`
+  declares.
+dataset_type: study
+bids_version: 1.11.1
+
+templates:
+  replication:
+    description: >-
+      Reproduces published work. Adds the material it is checked against (`sourcedata/original_study/`),
+      the internal report that places the paper's figures beside ours, and the claims the reproduction
+      commits to, so the verdict is read from written criteria rather than asserted.
+  collection:
+    description: >-
+      A study of studies: it nests the studies a document reports and owns the document itself. Adds
+      the document in place of one study's report, and the results manifest carrying the numbers the
+      prose quotes, so the build never transcribes a value by hand.
+
+files:
+  - name: dataset_description.json
+    role: dataset_description
+    level: required
+    generated: true
+    description: "Declares the dataset type, its name, and the BIDS version it was written against."
+  - name: README.md
+    role: readme
+    level: required
+    template: README.md.tmpl
+    template_variants: {replication: README.replication.md.tmpl, collection: README.collection.md.tmpl}
+    description: What the study does, and how to run it.
+  - name: CITATION.cff
+    role: citation
+    level: recommended
+    template: CITATION.cff.tmpl
+  - name: "{study}.yaml"
+    role: recipe
+    level: required
+    template: recipe.yaml.tmpl
+    template_variants: {collection: recipe.collection.yaml.tmpl}
+    bids: unsanctioned
+    expires_with: >-
+      BEP034+, which would sanction a recipe at the study root. A named entry rather than a
+      `*.yaml` glob, so a root YAML that later ought to be validated is not silently exempt.
+    description: >-
+      The entry recipe: the one specification a run is given. Includes the fragments under
+      `spec/`, so the output root resolves to this file's own directory.
+  - name: manuscript_results.yml
+    role: results_manifest
+    in_templates: [collection]
+    generated: true
+    bids: unsanctioned
+    expires_with: >-
+      A BEP sanctioning derived values at a dataset root. None is under review: BIDS carries
+      data, and this file carries the numbers a document quotes.
+    description: >-
+      The study's `results:` bindings, resolved to values. Committed, because the document
+      reads it through Quarto `metadata-files` and a build checkout has no run containers to
+      resolve against. Emitted by a run that nests studies; a study reporting nothing has none.
+  - name: .gitignore
+    role: gitignore
+    generated: true
+  - name: .bidsignore
+    role: bidsignore
+    generated: true
+
+subdirs:
+  - name: spec
+    role: spec
+    level: recommended
+    bids: unsanctioned
+    expires_with: >-
+      BEP034+, which proposes `spec/` as a study-root directory for the model and experiment
+      definitions a run reads.
+    description: >-
+      Recipe fragments the entry recipe includes, each named for what it specifies:
+      `model-<name>_dynamics.yaml`, `atlas-<name>_network.yaml`, `exp-<id>_experiment.yaml`,
+      `ana-<name>_analysis.yaml`, `fig-<id>_figure.yaml`. Every fragment carries its
+      entities from the start, so adding a second instance renames nothing.
+
+  - name: code
+    role: code
+    opaque: true
+    description: >-
+      Callables the recipe references by bare `module:` name: builders, transforms,
+      observation and analysis functions. Opaque to BIDS, which specifies nothing here.
+
+  - name: sourcedata
+    role: sourcedata
+    opaque: true
+    tracked: declared_files
+    description: >-
+      Inputs the study did not compute. Only the README is tracked, so third-party and
+      copyrighted material is documented without being redistributed.
+    files:
+      - name: README.md
+        role: readme
+        level: required
+        template: sourcedata-README.md.tmpl
+        template_variants: {replication: sourcedata-README.replication.md.tmpl}
+        description: Where each input comes from and how to obtain it.
+    subdirs:
+      - name: original_study
+        role: original_study
+        tracked: none
+        in_templates: [replication]
+        description: >-
+          Material published by the work being reproduced: its PDF, figures, released data
+          and code. Kept apart from the study's own inputs so it is never mistaken for an
+          output, and never tracked.
+        subdirs:
+          - name: fig_comparisons
+            role: figures_restricted
+            tracked: none
+            in_templates: [replication]
+            description: >-
+              A/B composites placing one of the paper's figures beside ours. They live under
+              the original-study directory they embed rather than beside our own figures: one
+              directory then holds everything the publisher owns, so the rule that keeps the
+              original out of the repository covers every composite made from it too.
+
+  - name: docs
+    role: docs
+    opaque: true
+    description: >-
+      The report and everything it reads. Human-readable names here; BIDS names live in
+      `spec/` and `derivatives/`.
+    files:
+      - name: report.qmd
+        level: recommended
+        not_in_templates: [collection]
+        template: report.qmd.tmpl
+        template_variants: {replication: report.replication.qmd.tmpl}
+        description: The report, every number computed from the run.
+      - name: _quarto.yml
+        template: _quarto.yml.tmpl
+        template_variants: {replication: _quarto.replication.yml.tmpl, collection: _quarto.collection.yml.tmpl}
+      - name: references.bib
+        level: recommended
+      - name: manuscript.qmd
+        level: required
+        template: manuscript.qmd.tmpl
+        in_templates: [collection]
+        description: >-
+          The document, in place of one study's report: a spine of `{{< include >}}` lines over
+          `sections/`, quoting every number from the results manifest rather than from the prose.
+      - name: manuscript.pdf
+        tracked: none
+        in_templates: [collection]
+        description: Rendered from `manuscript.qmd`, so it is a product like any other.
+      - name: report_internal.qmd
+        template: report_internal.qmd.tmpl
+        in_templates: [replication]
+        description: >-
+          The A/B wrapper that places our figure beside the original. Renders locally only,
+          since the composite embeds copyrighted material.
+      - name: report.pdf
+        tracked: none
+        not_in_templates: [collection]
+        description: >-
+          Rendered from `report.qmd`, so it is a product like any other. Shareable as a file
+          without being carried in the history.
+      - name: report_internal.pdf
+        tracked: none
+        in_templates: [replication]
+        description: >-
+          Rendered from `report_internal.qmd`, which draws the paper's own figures beside ours.
+          Never tracked: `sourcedata/original_study/` being untracked does not protect a
+          rendering that embeds it.
+    subdirs:
+      - name: .quarto
+        tracked: none
+        bids: hidden
+        description: Quarto's own cache for this project, rewritten on every render.
+      - name: figures
+        role: figures
+        tracked: none
+        description: >-
+          Render target for the declarative figures, each named `fig-<id>_desc-<descriptor>` --
+          the identifier the document prints and a camelCase descriptor -- so a figure's record,
+          the script that draws it, its image and its caption all carry one name. Untracked,
+          because a run reproduces them. Inside the report's own project directory, so a report
+          embeds a figure where it was rendered rather than staging a second copy of it.
+        subdirs:
+          - name: scripts
+            role: figure_scripts
+            tracked: none
+            description: The plotting script each figure generates, kept beside what it renders.
+      - name: analysis
+        role: analysis
+        description: >-
+          What the study commits to and how it is checked, written down before the run rather than
+          read off it: a preregistration for a study proposing something of its own, and for a
+          reproduction the target values, the figure inventory and the backend comparison whose
+          three files below carry it.
+        files:
+          - name: targets.md
+            level: required
+            template: analysis/targets.md.tmpl
+            in_templates: [replication]
+            description: >-
+              Every quantity the reproduction commits to, with the published value beside it and
+              a fidelity tier. The scorecard is read from this file, so the criteria are written
+              once and the verdicts cannot disagree with them.
+          - name: figures.md
+            level: required
+            template: analysis/figures.md.tmpl
+            in_templates: [replication]
+            description: The paper's figure inventory, and which of them this study reproduces.
+          - name: backend-fit.md
+            template: analysis/backend-fit.md.tmpl
+            in_templates: [replication]
+            description: >-
+              Why this backend was chosen, from the targets' feature needs rather than by default,
+              and what the alternatives could not do.
+      - name: sections
+        role: manuscript_sections
+        in_templates: [collection]
+        description: >-
+          One file per section of the document, included by `manuscript.qmd` in the order it names
+          them. Split so a section can be rewritten without touching the rest, and so the order
+          lives in one place rather than being implied by the prose.
+        files:
+          - name: _introduction.qmd
+            template: sections/_introduction.qmd.tmpl
+            description: What the collection asks, and what is at stake in the answer.
+          - name: _methods.qmd
+            template: sections/_methods.qmd.tmpl
+            description: >-
+              Only what holds across the members: each nested study states its own model, network
+              and protocol in its own report.
+          - name: _results.qmd
+            template: sections/_results.qmd.tmpl
+            description: One subsection per claim, every number quoted from the results manifest.
+          - name: _discussion.qmd
+            template: sections/_discussion.qmd.tmpl
+            description: What the collection establishes, and what it does not.
+      - name: notes
+        role: notes
+        tracked: none
+        description: The gap register and open threads, kept local so a note can be blunt.
+
+  - name: derivatives
+    role: derivatives
+    opaque: true
+    tracked: declared_files
+    description: >-
+      Nested derivative datasets. A run reproduces everything in them except the
+      description that declares each one, which is tracked so a fresh checkout validates.
+    subdirs:
+      - name: tvbo
+        role: results
+        bids: nested_dataset
+        description: >-
+          One flat derivative dataset holding every container this study computes:
+          `exp-<id>_model-<name>_result.h5` for a run, `ana-<name>_result.h5` for an
+          analysis, each beside one `.yaml` sidecar: the frozen, re-runnable spec that
+          produced it. That YAML is the only metadata file per container — a second JSON
+          copy of a few of its fields would be one more thing to keep in agreement with it.
+          Flat and single, so a cross-reference from an analysis to an experiment resolves
+          against one base directory. The directory is named for the tool, never for the
+          backend, which the sidecar records instead.
+        files:
+          - name: dataset_description.json
+            role: dataset_description
+            level: required
+            generated: true
+            description: >-
+              Declares the derivative type, the generating tool, and the source dataset,
+              which is the study root two levels up.
+
+  - name: logs
+    role: logs
+    opaque: true
+    tracked: none
+    description: Run logs.
+
+  - name: .tvbo
+    role: build
+    bids: hidden
+    tracked: none
+    description: >-
+      Build root. Everything here is a pure product of the spec and reproduces from it, so
+      it is hidden rather than published: dot-prefixed, which validators skip by convention.
+    subdirs:
+      - name: kits
+        role: kits
+        description: >-
+          Self-contained runnable kits packaged from the spec, each with its own shards
+          under `<kit>/shards/`, named `split-<index>`.
+      - name: cache
+        role: cache
+        description: Cached intermediate results, keyed on their inputs.

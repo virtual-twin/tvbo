@@ -1,0 +1,234 @@
+@prefix tvbo:    <https://w3id.org/tvbo/> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+#
+# ═════════════════════════════════════════════════════════════════
+# TVB-O bifurcation / special-point taxonomy (axiomatised module).
+# ═════════════════════════════════════════════════════════════════
+#
+# A dedicated, mergeable module for the dynamical-systems bifurcation
+# (a.k.a. continuation "special point") taxonomy. It is merged into the
+# compound `tvbo.owl` by `make gen-merged` alongside `tvb-o-struct.owl`
+# and `tvb-o-axioms.ttl` — never edit the merged artefact directly.
+#
+# WHY a defined (axiomatised) taxonomy and not bare labels:
+#   Continuation backends disagree on special-point *labels* — e.g.
+#   BifurcationKit.jl emits ``:bp`` for BOTH a genuine branch point and a
+#   saddle-node fold; AUTO-07p emits ``LP``/``HB``/``BP``; PyRates its own.
+#   A label map alone cannot disambiguate them. Here each bifurcation type
+#   is *defined* by codimension + eigenvalue signature + branch geometry,
+#   so a Fold (limit/turning point) is distinguishable from a BranchPoint
+#   (branch crossing) even when a backend gives both the same label. The
+#   discriminator — a real eigenvalue crossing zero AT a parameter turning
+#   point ⟹ Fold — is exactly what the tvbo adapter applies operationally,
+#   and what these axioms state declaratively. Backend labels are attached
+#   as ``skos:altLabel`` and the canonical short code as ``tvbo:canonicalCode``,
+#   so the Python label map derives from this module (single source of truth).
+#
+# ELK-safety: definitions use ``owl:hasValue`` on object properties with
+# named individuals (EL profile), so the merge's ELK reasoning step is
+# unaffected by datatype restrictions.
+#
+
+<https://w3id.org/tvbo/bifurcation> a owl:Ontology ;
+    dcterms:title       "TVB-O bifurcation / special-point taxonomy"@en ;
+    dcterms:description  "Axiomatised taxonomy of bifurcation (continuation special-point) types, defined by codimension, eigenvalue signature and branch geometry, with backend label anchoring (BifurcationKit / AUTO-07p / PyRates)."@en ;
+    dcterms:license      <https://creativecommons.org/licenses/by/4.0/> ;
+    rdfs:seeAlso         <https://w3id.org/tvbo/axioms> .
+
+# Annotation property declarations (OWL-DL cleanliness).
+dcterms:title        a owl:AnnotationProperty .
+dcterms:description  a owl:AnnotationProperty .
+dcterms:license      a owl:AnnotationProperty .
+tvbo:canonicalCode   a owl:AnnotationProperty ;
+    rdfs:label   "canonical code"@en ;
+    rdfs:comment "Backend-independent short code for a special-point type (e.g. \"LP\", \"HB\", \"BP\"). The Python special-point label map derives (altLabel → canonicalCode) from these annotations."@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Discriminating vocabulary (codimension, eigenvalue signature,
+# branch geometry) as named individuals so definitions stay in EL.
+# ─────────────────────────────────────────────────────────────────
+#
+
+tvbo:Codimension a owl:Class ; rdfs:label "Codimension"@en ;
+    rdfs:comment "Number of parameters that must be tuned for the bifurcation to occur generically."@en .
+tvbo:Codimension1 a owl:NamedIndividual, tvbo:Codimension ; rdfs:label "codimension 1"@en .
+tvbo:Codimension2 a owl:NamedIndividual, tvbo:Codimension ; rdfs:label "codimension 2"@en .
+
+tvbo:EigenvalueSignature a owl:Class ; rdfs:label "Eigenvalue signature"@en ;
+    rdfs:comment "Qualitative crossing of the Jacobian spectrum through the stability boundary at the bifurcation."@en .
+tvbo:RealEigenvalueZero a owl:NamedIndividual, tvbo:EigenvalueSignature ;
+    rdfs:label "one real eigenvalue crosses zero"@en .
+tvbo:ConjugatePairImaginary a owl:NamedIndividual, tvbo:EigenvalueSignature ;
+    rdfs:label "a complex-conjugate pair crosses the imaginary axis"@en .
+tvbo:DoubleZeroEigenvalue a owl:NamedIndividual, tvbo:EigenvalueSignature ;
+    rdfs:label "a double-zero (nilpotent) eigenvalue"@en .
+tvbo:RealZeroAndImaginaryPair a owl:NamedIndividual, tvbo:EigenvalueSignature ;
+    rdfs:label "a real zero eigenvalue together with an imaginary pair"@en .
+tvbo:TwoImaginaryPairs a owl:NamedIndividual, tvbo:EigenvalueSignature ;
+    rdfs:label "two distinct imaginary pairs"@en .
+
+tvbo:BranchGeometry a owl:Class ; rdfs:label "Branch geometry"@en ;
+    rdfs:comment "Local geometry of the solution branch at the special point in the (state, parameter) space."@en .
+tvbo:LimitPointGeometry a owl:NamedIndividual, tvbo:BranchGeometry ;
+    rdfs:label "limit point (turning point; branch tangent to the parameter axis)"@en .
+tvbo:BranchCrossingGeometry a owl:NamedIndividual, tvbo:BranchGeometry ;
+    rdfs:label "branch crossing (transversal intersection of solution branches)"@en .
+
+tvbo:hasCodimension a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:range tvbo:Codimension ; rdfs:label "has codimension"@en .
+tvbo:hasEigenvalueSignature a owl:ObjectProperty ;
+    rdfs:range tvbo:EigenvalueSignature ; rdfs:label "has eigenvalue signature"@en .
+tvbo:hasBranchGeometry a owl:ObjectProperty ;
+    rdfs:range tvbo:BranchGeometry ; rdfs:label "has branch geometry"@en .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Codimension-1 equilibrium bifurcations.
+# ─────────────────────────────────────────────────────────────────
+#
+
+# Fold / saddle-node / limit point — one real eigenvalue crosses zero
+# AT a turning point. This is the discriminator vs BranchPoint below.
+tvbo:Fold a owl:Class ;
+    rdfs:label "Fold"@en ;
+    rdfs:comment "Saddle-node (limit / turning point): a pair of equilibria collide and annihilate as one real eigenvalue crosses zero and the branch folds back on the parameter."@en ;
+    tvbo:canonicalCode "LP" ;
+    skos:prefLabel "Fold"@en ;
+    skos:altLabel "LP", "lp", "fold", "saddle-node", "saddlenode", "sn", "limit point", "limitpoint" ;
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            tvbo:Bifurcation
+            [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ;         owl:hasValue tvbo:Codimension1 ]
+            [ a owl:Restriction ; owl:onProperty tvbo:hasEigenvalueSignature ; owl:hasValue tvbo:RealEigenvalueZero ]
+            [ a owl:Restriction ; owl:onProperty tvbo:hasBranchGeometry ;      owl:hasValue tvbo:LimitPointGeometry ]
+        )
+    ] .
+
+# Saddle-node is the classical name for the same phenomenon.
+tvbo:SaddleNode owl:equivalentClass tvbo:Fold ;
+    skos:altLabel "saddle-node", "sn" .
+
+# Branch point (transcritical / pitchfork): a real eigenvalue crosses zero
+# but two branches cross transversally rather than folding back.
+tvbo:BranchPoint a owl:Class ;
+    rdfs:label "Branch point"@en ;
+    rdfs:comment "Branch point: two solution branches intersect transversally as a real eigenvalue crosses zero (e.g. transcritical, pitchfork). Distinct from a Fold, which turns back on the parameter."@en ;
+    tvbo:canonicalCode "BP" ;
+    skos:prefLabel "Branch point"@en ;
+    skos:altLabel "BP", "bp", "branch point", "branchpoint", "branch-point" ;
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            tvbo:Bifurcation
+            [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ;         owl:hasValue tvbo:Codimension1 ]
+            [ a owl:Restriction ; owl:onProperty tvbo:hasEigenvalueSignature ; owl:hasValue tvbo:RealEigenvalueZero ]
+            [ a owl:Restriction ; owl:onProperty tvbo:hasBranchGeometry ;      owl:hasValue tvbo:BranchCrossingGeometry ]
+        )
+    ] .
+
+tvbo:Pitchfork a owl:Class ; rdfs:subClassOf tvbo:BranchPoint ;
+    rdfs:label "Pitchfork"@en ; skos:altLabel "pitchfork" .
+tvbo:Transcritical a owl:Class ; rdfs:subClassOf tvbo:BranchPoint ;
+    rdfs:label "Transcritical"@en ; skos:altLabel "transcritical" .
+
+# Hopf / Andronov-Hopf — a complex-conjugate pair crosses the imaginary axis.
+tvbo:Hopf a owl:Class ;
+    rdfs:label "Hopf"@en ;
+    rdfs:comment "Andronov-Hopf: an equilibrium loses stability as a complex-conjugate eigenvalue pair crosses the imaginary axis, giving birth to a limit cycle."@en ;
+    tvbo:canonicalCode "HB" ;
+    skos:prefLabel "Hopf"@en ;
+    skos:altLabel "HB", "hb", "hopf", "andronov-hopf", "andronov hopf" ;
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            tvbo:Bifurcation
+            [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ;         owl:hasValue tvbo:Codimension1 ]
+            [ a owl:Restriction ; owl:onProperty tvbo:hasEigenvalueSignature ; owl:hasValue tvbo:ConjugatePairImaginary ]
+        )
+    ] .
+
+tvbo:SubcriticalHopf   a owl:Class ; rdfs:subClassOf tvbo:Hopf ; rdfs:label "Subcritical Hopf"@en ; skos:altLabel "subcritical hopf" .
+tvbo:SupercriticalHopf a owl:Class ; rdfs:subClassOf tvbo:Hopf ; rdfs:label "Supercritical Hopf"@en ; skos:altLabel "supercritical hopf" .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Codimension-1 limit-cycle bifurcations.
+# ─────────────────────────────────────────────────────────────────
+#
+
+tvbo:PeriodDoubling a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ;
+    rdfs:label "Period doubling"@en ;
+    rdfs:comment "Flip bifurcation of a limit cycle: a Floquet multiplier crosses -1 and a period-doubled cycle branches off."@en ;
+    tvbo:canonicalCode "PD" ;
+    skos:altLabel "PD", "pd", "flip", "period doubling", "period-doubling" ;
+    rdfs:subClassOf [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ; owl:hasValue tvbo:Codimension1 ] .
+
+tvbo:NeimarkSacker a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ;
+    rdfs:label "Neimark-Sacker"@en ;
+    rdfs:comment "Torus (Neimark-Sacker) bifurcation of a limit cycle: a complex pair of Floquet multipliers crosses the unit circle, birthing an invariant torus."@en ;
+    tvbo:canonicalCode "TR" ;
+    skos:altLabel "TR", "tr", "ns", "torus", "neimark-sacker", "neimark sacker" ;
+    rdfs:subClassOf [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ; owl:hasValue tvbo:Codimension1 ] .
+
+tvbo:FoldOfLimitCycles a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ;
+    rdfs:label "Fold of limit cycles"@en ;
+    rdfs:comment "Saddle-node of periodic orbits: two limit cycles collide and annihilate as a Floquet multiplier crosses +1."@en ;
+    tvbo:canonicalCode "LPC" ;
+    skos:altLabel "LPC", "lpc", "cpc", "snpo", "fold of limit cycles", "fold-of-limit-cycles" ;
+    rdfs:subClassOf [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ; owl:hasValue tvbo:Codimension1 ] .
+
+tvbo:HomoclinicBifurcation a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ;
+    rdfs:label "Homoclinic"@en ;
+    rdfs:comment "Global bifurcation where a limit cycle collides with a saddle equilibrium, forming a homoclinic orbit of infinite period."@en ;
+    skos:altLabel "homoclinic", "hom" .
+
+#
+# ─────────────────────────────────────────────────────────────────
+# Codimension-2 bifurcations (organising centres).
+# ─────────────────────────────────────────────────────────────────
+#
+
+tvbo:Cusp a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ;
+    rdfs:label "Cusp"@en ;
+    rdfs:comment "Codim-2 organising centre where two fold curves meet tangentially."@en ;
+    tvbo:canonicalCode "CP" ;
+    skos:altLabel "CP", "cp", "cusp" ;
+    rdfs:subClassOf [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ; owl:hasValue tvbo:Codimension2 ] .
+
+tvbo:BogdanovTakens a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ;
+    rdfs:label "Bogdanov-Takens"@en ;
+    rdfs:comment "Codim-2 point with a double-zero (nilpotent) eigenvalue, where fold, Hopf and homoclinic curves meet."@en ;
+    tvbo:canonicalCode "BT" ;
+    skos:altLabel "BT", "bt", "bogdanov-takens", "bogdanov takens" ;
+    rdfs:subClassOf [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ;         owl:hasValue tvbo:Codimension2 ] ,
+                    [ a owl:Restriction ; owl:onProperty tvbo:hasEigenvalueSignature ; owl:hasValue tvbo:DoubleZeroEigenvalue ] .
+
+tvbo:GeneralizedHopf a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ;
+    rdfs:label "Generalized Hopf (Bautin)"@en ;
+    rdfs:comment "Codim-2 point where a Hopf bifurcation switches between sub- and supercritical (first Lyapunov coefficient vanishes); a fold-of-limit-cycles curve emanates."@en ;
+    tvbo:canonicalCode "GH" ;
+    skos:altLabel "GH", "gh", "bautin", "generalized hopf", "generalised hopf" ;
+    rdfs:subClassOf [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ; owl:hasValue tvbo:Codimension2 ] .
+
+tvbo:ZeroHopf a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ;
+    rdfs:label "Zero-Hopf (fold-Hopf)"@en ;
+    rdfs:comment "Codim-2 point with a real zero eigenvalue and an imaginary pair simultaneously; a fold curve meets a Hopf curve."@en ;
+    tvbo:canonicalCode "ZH" ;
+    skos:altLabel "ZH", "zh", "zero-hopf", "fold-hopf", "gavrilov-guckenheimer" ;
+    rdfs:subClassOf [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ;         owl:hasValue tvbo:Codimension2 ] ,
+                    [ a owl:Restriction ; owl:onProperty tvbo:hasEigenvalueSignature ; owl:hasValue tvbo:RealZeroAndImaginaryPair ] .
+
+tvbo:HopfHopf a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ;
+    rdfs:label "Hopf-Hopf (double Hopf)"@en ;
+    rdfs:comment "Codim-2 point where two Hopf curves cross (two imaginary pairs simultaneously)."@en ;
+    tvbo:canonicalCode "HH" ;
+    skos:altLabel "HH", "hh", "double hopf", "hopf-hopf" ;
+    rdfs:subClassOf [ a owl:Restriction ; owl:onProperty tvbo:hasCodimension ;         owl:hasValue tvbo:Codimension2 ] ,
+                    [ a owl:Restriction ; owl:onProperty tvbo:hasEigenvalueSignature ; owl:hasValue tvbo:TwoImaginaryPairs ] .

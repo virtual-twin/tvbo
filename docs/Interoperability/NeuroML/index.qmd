@@ -1,6 +1,6 @@
 ---
 title: "NeuroML / LEMS Integration"
-subtitle: "Export TVBO models to LEMS XML for simulation with jNeuroML, NEURON, Brian2, and NEST"
+subtitle: "Export TVBO models to LEMS XML for simulation with jNeuroML, NEURON, Brian2, NetPyNE, and EDEN"
 bibliography: ../../references.bib
 ---
 
@@ -102,8 +102,7 @@ paths = adapter.export("./output", split=True, validate=False)
 # }
 ```
 
-Each file uses `<Include file="..."/>` to chain the others, so you can run the
-simulation file with `jnml ses-..._simulation.xml` and it pulls in the rest automatically.
+Each file uses `<Include file="..."/>` to chain the others, so you can run the simulation file with `jnml ses-..._simulation.xml` and it pulls in the rest automatically.
 
 For a single self-contained file (default):
 
@@ -176,11 +175,7 @@ NeuroMLAdapter
 
 ### Template Context
 
-All templates share a pre-computed context dictionary returned by
-`build_lems_context(experiment)`.  Templates contain no Python setup logic — all
-variables arrive ready-to-use via `template.render(**ctx)`.  This means the same
-model object is computed once and shared across all templates during a `split=True`
-export.
+All templates share a pre-computed context dictionary returned by `build_lems_context(experiment)`.  Templates contain no Python setup logic — all variables arrive ready-to-use via `template.render(**ctx)`.  This means the same model object is computed once and shared across all templates during a `split=True` export.
 
 ---
 
@@ -194,7 +189,7 @@ export.
 
 ## Roadmap
 
-The current adapter covers **Goal 2** from the [full interoperability plan](../../../dev/Interoperability/Small-Scale-Simulators/NeuroML-Interoperability-Plan.md): whole-brain network models exported as LEMS.
+The current adapter covers **Goal 2** from the full interoperability plan: whole-brain network models exported as LEMS.
 
 **Goal 1** (reproduce all 27 NeuroML canonical examples in TVBO YAML) is being tracked in `database/dynamics/spiking/`, `database/dynamics/ion_channels/`, and `database/edges/synapses/`.
 

@@ -1,0 +1,32 @@
+function Epileptor3DStefanescuMcDonald!(dx, x, p, t = 0)
+
+    (;N, x_0, tau_z, c_glob) = p
+
+    x1, z = x
+
+
+    dx[1] = N .* (c_glob .+ x1 .- z .- x1 .^ 3 / 3)
+    dx[2] = (-z .- 4 * x_0 .+ 4 * x1) ./ tau_z
+    dx
+end
+
+# Parameter values
+p = (N = 1.0, x_0 = -1.6, tau_z = 2857.0, c_glob = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -1.5,
+        3.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Epileptor3DStefanescuMcDonald!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

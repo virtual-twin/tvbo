@@ -1,0 +1,34 @@
+function Gissinger!(dx, x, p, t = 0)
+
+    (;mu, nu, Gamma) = p
+
+    Q, D, V = x
+
+
+    dx[1] = Q .* mu .- D .* V
+    dx[2] = Q .* V .- D .* nu
+    dx[3] = Gamma .- V .+ D .* Q
+    dx
+end
+
+# Parameter values
+p = (mu = 0.119, nu = 0.1, Gamma = 0.9)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        3.0,
+        0.5,
+        1.5,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Gissinger!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

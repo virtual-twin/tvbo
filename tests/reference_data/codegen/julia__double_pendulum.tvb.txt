@@ -1,0 +1,128 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class DoublePendulum(Model):
+
+    G = NArray(
+        label=r":math:`G`",
+        default=np.array([10.0]),
+        doc="""Gravitational acceleration.""",
+    )
+    L1 = NArray(
+        label=r":math:`L1`", default=np.array([1.0]), doc="""Length of first rod."""
+    )
+    L2 = NArray(
+        label=r":math:`L2`", default=np.array([1.0]), doc="""Length of second rod."""
+    )
+    M1 = NArray(
+        label=r":math:`M1`", default=np.array([1.0]), doc="""Mass of first bob."""
+    )
+    M2 = NArray(
+        label=r":math:`M2`", default=np.array([1.0]), doc="""Mass of second bob."""
+    )
+
+    _nvar = 4
+    state_variables = ["theta1", "omega1", "theta2", "omega2"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "theta1": np.array([-1000000000.0, 1000000000.0]),
+            "omega1": np.array([-1000000000.0, 1000000000.0]),
+            "theta2": np.array([-1000000000.0, 1000000000.0]),
+            "omega2": np.array([-1000000000.0, 1000000000.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("theta1", "omega1", "theta2", "omega2"),
+        default=("theta1", "omega1", "theta2", "omega2"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=["G", "L1", "L2", "M1", "M2"],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "theta1": "omega1",
+            "omega1": "(M2*((G*np.sin(theta2) + L1*omega1**2*np.sin(phi))*np.cos(phi) + L2*omega2**2*np.sin(phi)) - G*(M1 + M2)*np.sin(theta1))/(Delta*L1)",
+            "theta2": "omega2",
+            "omega2": "((M1 + M2)*(G*(-np.sin(theta2) + np.cos(phi)*np.sin(theta1)) - L1*omega1**2*np.sin(phi)) - L2*M2*omega2**2*np.cos(phi)*np.sin(phi))/(Delta*L2)",
+        },
+    )
+
+    cvar = np.array([], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=[])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        theta1 = state_variables[0, :]
+        omega1 = state_variables[1, :]
+        theta2 = state_variables[2, :]
+        omega2 = state_variables[3, :]
+
+        G = self.G
+        L1 = self.L1
+        L2 = self.L2
+        M1 = self.M1
+        M2 = self.M2
+
+        # Coupling Terms (from coupling array)
+
+        # Derived Variables
+        self.phi = phi = theta2 - theta1
+        self.Delta = Delta = M1 + M2 - M2 * np.cos(phi) ** 2
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(omega1),  # theta1
+            np.asarray(
+                (
+                    M2
+                    * (
+                        (G * np.sin(theta2) + L1 * omega1**2 * np.sin(phi))
+                        * np.cos(phi)
+                        + L2 * omega2**2 * np.sin(phi)
+                    )
+                    - G * (M1 + M2) * np.sin(theta1)
+                )
+                / (Delta * L1)
+            ),  # omega1
+            np.asarray(omega2),  # theta2
+            np.asarray(
+                (
+                    (M1 + M2)
+                    * (
+                        G * (-np.sin(theta2) + np.cos(phi) * np.sin(theta1))
+                        - L1 * omega1**2 * np.sin(phi)
+                    )
+                    - L2 * M2 * omega2**2 * np.cos(phi) * np.sin(phi)
+                )
+                / (Delta * L2)
+            ),  # omega2
+        )
+        return np.array(_derivs)

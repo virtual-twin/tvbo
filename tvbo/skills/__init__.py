@@ -7,12 +7,16 @@ Canonical sources live in:
 
 Both are rendered to per-tool adapter formats by :mod:`tvbo.skills._render`.
 """
+
 from __future__ import annotations
 
 from ._render import (
     CANONICAL_PACKAGE_DIR,
     CANONICAL_REPO_DIR,
     Skill,
+    asset_refs,
+    flat_body,
+    is_asset_noise,
     is_managed_file,
     load_canonical,
     render_agents_md,
@@ -26,6 +30,9 @@ __all__ = [
     "CANONICAL_PACKAGE_DIR",
     "CANONICAL_REPO_DIR",
     "Skill",
+    "asset_refs",
+    "flat_body",
+    "is_asset_noise",
     "is_managed_file",
     "load_canonical",
     "render_agents_md",

@@ -18,17 +18,21 @@ Order (mirrors a typical "Model" methods sub-section):
   8. References
 </%doc>
 <%
-from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
+from sympy import latex, Eq, sympify, Symbol, Derivative
 from tvbo.utils import report
 
 derivative_notation = context.get('derivative_notation', 'd')
+mul_symbol = context.get('mul_symbol', None)
+
+# Display overrides passed to every sympy.latex call, so equations use the source's own notation (``w_plus`` as ``w_+``).
+symbol_names = {}
 
 def _dot_lhs(deriv, mul_symbol='*'):
     try:
         t = Symbol("t")
         order = sum(1 for v in deriv.variables if v == t)
         base = deriv.expr
-        base_latex = latex(base, mul_symbol=mul_symbol)
+        base_latex = latex(base, mul_symbol=mul_symbol, symbol_names=symbol_names)
         if order == 1:
             return f"\\dot{{{base_latex}}}"
         if order == 2:
@@ -37,14 +41,14 @@ def _dot_lhs(deriv, mul_symbol='*'):
             return f"\\dddot{{{base_latex}}}"
         return f"\\frac{{d^{order}}}{{d t^{order}}} {base_latex}"
     except Exception:
-        return latex(deriv, mul_symbol=mul_symbol)
+        return latex(deriv, mul_symbol=mul_symbol, symbol_names=symbol_names)
 
-def latex_equation(eq, mul_symbol='*'):
+def latex_equation(eq, mul_symbol=mul_symbol):
     if derivative_notation == 'dot' and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
         lhs = _dot_lhs(eq.lhs, mul_symbol=mul_symbol)
-        rhs = latex(eq.rhs, mul_symbol=mul_symbol)
+        rhs = latex(eq.rhs, mul_symbol=mul_symbol, symbol_names=symbol_names)
         return f"{lhs} = {rhs}"
-    return latex(eq, mul_symbol=mul_symbol)
+    return latex(eq, mul_symbol=mul_symbol, symbol_names=symbol_names)
 
 def _slot(obj, name, default=None):
     return getattr(obj, name, default) if obj is not None else default
@@ -65,29 +69,53 @@ if 'experiment' in context.keys():
 else:
     model = context.get('dynamics', context.get('model'))
 
-state_equations = [eq for k, eq in model.get_equations().items() if k in model.state_variables]
+# Resolution lives on the model in Dynamics.symbol_map; the template only consumes it.
+symbol_names.update(model.symbol_map())
 
-derived_variables = [eq for k, eq in model.get_equations().items() if k in model.derived_variables]
+# A passed `baseline` renders only what this model adds or changes, report.model_delta doing the comparison.
+_baseline = context.get('baseline', None)
+_delta = report.model_delta(model, _baseline) if _baseline is not None else None
 
-derived_parameters = [
-    Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.derived_parameters.values()
-]
-
-functions = [
-    Eq(
-        Function(f.name)(*[
-            Symbol(arg.name if hasattr(arg, 'name') else str(arg))
-            for arg in (f.arguments.values() if hasattr(f.arguments, 'values') else f.arguments)
-        ]),
-        sympify(f.equation.rhs, strict=False),
-    )
-    for f in model.functions.values()
-]
+_equations = report.model_equation_groups(model, delta=_delta)
+state_equations = _equations['state']
+derived_variables = _equations['derived']
+derived_parameters = _equations['derived_parameters']
+functions = _equations['functions']
 
 outputs = list(model.output or [])
+
+# Rendered from the model's own event declarations, so the report is complete for a spiking model too.
+events_lines = []
+for _en, _ev in (getattr(model, 'events', None) or {}).items():
+    _cond = _slot(_slot(_ev, 'condition', None), 'rhs', None)
+    _aff = _slot(_slot(_ev, 'affect', None), 'rhs', None)
+    _parts = []
+    if _present(_cond):
+        try:
+            _c = latex(sympify(str(_cond), strict=False), symbol_names=symbol_names)
+        except Exception:
+            _c = str(_cond)
+        _parts.append(f"when ${_c}$")
+    # An affect may hold several ';'-separated assignments, so render each with sympy rather than the joined string.
+    _updates = []
+    for _stmt in str(_aff or '').split(';'):
+        _stmt = _stmt.strip()
+        if not _stmt or '=' not in _stmt:
+            continue
+        _l, _r = _stmt.split('=', 1)
+        try:
+            _updates.append(f"{latex(Symbol(_l.strip()), symbol_names=symbol_names)} \\leftarrow "
+                            f"{latex(sympify(_r, strict=False), symbol_names=symbol_names)}")
+        except Exception:
+            _updates.append(_stmt)
+    if _updates:
+        _parts.append("$" + ",\\; ".join(_updates) + "$")
+    events_lines.append(f"- *{_en}*: " + ", ".join(_parts))
+
+# coupling_inputs is the rendered surface, each input being its own term.
 coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
-coupling_terms = getattr(model, 'coupling_terms', {}) or {}
+if _delta is not None:
+    coupling_inputs = {n: o for n, o in report.name_items(coupling_inputs) if n in _delta.coupling_inputs}
 model_summary = []
 if getattr(model, 'model_type', None):
     model_summary.append(f"type: {model.model_type}")
@@ -105,6 +133,8 @@ if model.derived_parameters:
     model_summary.append(f"derived parameters: {len(model.derived_parameters)}")
 if model.functions:
     model_summary.append(f"functions: {len(model.functions)}")
+if events_lines:
+    model_summary.append(f"events: {len(events_lines)}")
 if outputs:
     model_summary.append("outputs: " + ", ".join(outputs))
 
@@ -127,8 +157,11 @@ if not ref_names:
     if isinstance(raw_refs, str):
         raw_refs = [raw_refs]
     ref_names = list(raw_refs)
+# 'quarto' emits inline @key citations and no References list, the host document's bibliography resolving them.
+citeformat = context.get('citeformat', None)
+_quarto_cites = ("[" + "; ".join("@" + n for n in ref_names) + "]") if (citeformat == 'quarto' and ref_names) else ""
 %>\
-**${model.name}**
+**${model.name}**${' ' + _quarto_cites if _quarto_cites else ''}
 
 % if model.description:
 ${model.description}
@@ -136,59 +169,72 @@ ${model.description}
 % endif
 ${'; '.join(model_summary)}.
 
+% if _delta is not None:
+Shown **relative to the base model** (${_delta.base_label}) — only new or changed state variables, parameters, derived variables and couplings are listed; everything else is inherited unchanged.
+
+% endif
 % if state_equations:
 **State Equations**
 
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in state_equations])}
+${'\n'.join([f"$$\n{latex_equation(eq)}\n$$" for eq in state_equations])}
 
 % endif
 % if derived_variables:
 where
 
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_variables])}
+${'\n'.join([f"$$\n{latex_equation(eq)}\n$$" for eq in derived_variables])}
 
 % endif
 % if functions:
 with
 
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in functions])}
+${'\n'.join([f"$$\n{latex_equation(eq)}\n$$" for eq in functions])}
 
 % endif
-% if model.state_variables:
+<%
+_svars_show = model.state_variables if _delta is None else {n: s for n, s in report.name_items(model.state_variables) if n in _delta.new_svars}
+%>\
+% if _svars_show:
 **State Variables**
 
-${report.state_variable_table(model.state_variables)}
+${report.state_variable_table(_svars_show)}
 
 % endif
-% if model.parameters:
+<%
+_params_show = model.parameters if _delta is None else {n: p for n, p in report.name_items(model.parameters) if n in _delta.params}
+%>\
+% if _params_show:
 **Parameters**
 
-${report.parameter_table(model.parameters)}
+${report.parameter_table(_params_show)}
 
 % endif
 % if coupling_inputs:
+<%
+# One md_table rather than a hand-rolled one, so empty columns drop and a scalar-only list collapses to text.
+ci_rows = [[nm, report.slot(o, "source", ""),
+            ("" if report.slot(o, "dimension", "") in (1, "1", None, "") else report.slot(o, "dimension", "")),
+            ", ".join(report.slot(o, "keys", []) or []), report.slot(o, "description", "") or ""]
+           for nm, o in coupling_inputs.items()]
+%>\
 **Coupling Inputs**
 
-| Input | Source | Dimension | Keys | Description |
-|:------|:-------|----------:|:-----|:------------|
-% for input_name, input_obj in coupling_inputs.items():
-| ${input_name} | ${_slot(input_obj, 'source', '—') or '—'} | ${_slot(input_obj, 'dimension', 1)} | ${', '.join(_slot(input_obj, 'keys', []) or []) or '—'} | ${_slot(input_obj, 'description', '') or ''} |
-% endfor
+${report.md_table(["Input", "Source", "Dimension", "Keys", "Description"], ci_rows, aligns=["l", "l", "r", "l", "l"])}
 
 % endif
-% if coupling_terms:
-**Coupling Terms**
+% if events_lines:
+**Events**
 
-${report.param_table(coupling_terms, name_header='Term')}
+${'\n'.join(events_lines)}
 
 % endif
 % if derived_parameters:
 **Derived Parameters**
 
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_parameters])}
+${'\n'.join([f"$$\n{latex_equation(eq)}\n$$" for eq in derived_parameters])}
 
 % endif
-% if ref_names:
+% if ref_names and citeformat != 'quarto':
 **References**
 
 ${"\n\n".join([report.get_citation(n) for n in ref_names])}

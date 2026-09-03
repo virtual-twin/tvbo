@@ -52,7 +52,7 @@ dynamics:
             value: 9.81
             unit: "m/s²"
             description: "Gravitational acceleration"
-    coupling_terms:
+    coupling_inputs:
         c_Fx:
             description: "Sum of horizontal beam forces"
         c_Fy:
@@ -116,7 +116,7 @@ network:
                     symbol: "yfix"
                     value: 0.0
                     unit: "m"
-            coupling_terms: {}
+            coupling_inputs: {}
             state_variables: {}
 
     label: "11-node truss structure"

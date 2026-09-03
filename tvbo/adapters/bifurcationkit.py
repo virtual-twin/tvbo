@@ -1,17 +1,16 @@
-# -*- coding: utf-8 -*-
 """BifurcationKit.jl backend adapter for SimulationExperiment.
 
-Uses juliacall to execute generated BifurcationKit Julia code
-and return BifurcationResult objects.
+Uses juliacall to execute generated BifurcationKit Julia code and return BifurcationResult objects.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from tvbo.adapters.base import ContinuationAdapter
+
 if TYPE_CHECKING:
     from tvbo.analysis.bifurcation import BifurcationResult
-    from tvbo.classes.experiment import SimulationExperiment
 
 # Schema attr → Julia kwarg name mapping for ContinuationPar
 _CONT_FIELDS = [
@@ -35,7 +34,7 @@ def _str(val):
 
 
 def _get(obj, path, default=None):
-    """Nested attribute access: _get(cont, 'initial_state.duration')."""
+    """Read a dotted attribute path, e.g. ``'initial_state.duration'``, returning *default* at the first missing link."""
     cur = obj
     for p in path.split("."):
         if cur is None:
@@ -102,16 +101,11 @@ def _newton_kwargs(c):
     return args
 
 
-class BifurcationKitAdapter:
+class BifurcationKitAdapter(ContinuationAdapter):
     """Adapter for running bifurcation analysis via BifurcationKit.jl.
 
-    Unlike NetworkDynamics/MTK adapters, this does not inherit from
-    BaseAdapter — bifurcation analysis operates on individual
-    (Dynamics, Continuation) pairs rather than a full network context.
+    A continuation backend: it renders one ``(Dynamics, Continuation)`` pair at a time rather than a whole network context, so it takes its pair resolution from [`ContinuationAdapter`](#tvbo.adapters.base.ContinuationAdapter).
     """
-
-    def __init__(self, experiment: "SimulationExperiment"):
-        self.experiment = experiment
 
     # ── Context preparation ──────────────────────────────────────────────
 
@@ -119,10 +113,18 @@ class BifurcationKitAdapter:
     def _prepare_context(model, cont, **kwargs):
         """Pre-compute every value the template needs.
 
-        Returns a flat dict of simple strings/numbers/booleans
-        so the template does zero processing.
+        Returns a flat dict of simple strings/numbers/booleans so the template does zero processing.
         """
         ctx = dict(model=model, continuation=cont)
+
+        # Network context (None or 1-node ⇒ single-node RHS; >1 node ⇒ coupled).
+        network = kwargs.get("network")
+        n_nodes = int(getattr(network, "number_of_nodes", 0) or 0) if network is not None else 0
+        ctx["network"] = network if n_nodes > 1 else None
+        ctx["n_nodes"] = n_nodes if n_nodes > 1 else 1
+
+        # Constraint-defined free parameters (FIC J_i): promoted to unknown state blocks whose defining equation is the TuningObjective residual (D2).
+        ctx["constraints"] = kwargs.get("constraints") or []
 
         # -- Free parameter --
         fp_dict = cont.free_parameters if cont else None
@@ -211,10 +213,20 @@ class BifurcationKitAdapter:
         po_n = _newton_kwargs(bc)
         if po_n:
             po_cp.append(f"newton_options = NewtonPar({', '.join(po_n)})")
-        po_cp_str = ", ".join(po_cp) if po_cp else ""
+        # Defaults to 0, which leaves `br.sol` empty and every orbit profile `nothing`.
+        po_cp.append("save_sol_every_step = 1")
+        po_cp_str = ", ".join(po_cp)
 
-        # Source point
+        # Source point. This path emits a periodic-orbit continuation, which BifurcationKit starts from a Hopf point; a branch naming any other kind is refused here rather than being emitted as a Hopf switch that finds nothing and reports nothing.
         source = br.source_point
+        kind = str(source).split(":")[0] if source else "hopf"
+        if kind != "hopf":
+            raise ValueError(
+                f"periodic-orbit branch {getattr(br, 'name', '?')!r} declares source_point {source!r}, and a "
+                "periodic orbit is continued from a Hopf point. Equilibrium branch switching at a branch point "
+                "or a fold is not emitted by this backend; declare `hopf:<n>` or `hopf:all`, or continue the "
+                "other equilibrium directly by seeding it (`initial_state: {method: given}`)."
+            )
         all_hopf = source == "hopf:all" if source else False
         if source and ":" in source:
             hopf_idx_str = source.split(":")[1]
@@ -300,15 +312,61 @@ class BifurcationKitAdapter:
         from tvbo import templates
 
         model = model or self.experiment.dynamics
-        if continuation is None:
-            conts = getattr(self.experiment, "continuations", None) or {}
-            if conts:
-                continuation = next(iter(conts.values()))
+        continuation = self.resolve_continuation(continuation)
 
-        ctx = self._prepare_context(model, continuation, **kwargs)
+        # A multi-node network on the experiment ⇒ continue the coupled system.
+        network = getattr(self.experiment, "network", None)
+        constraints = self._derive_constraints(model)
+        ctx = self._prepare_context(model, continuation, network=network, constraints=constraints, **kwargs)
 
         template = templates.lookup.get_template("tvbo-julia-BifurcationKit.jl.mako")
         return template.render(**ctx)
+
+    def _derive_constraints(self, model):
+        """Derive constraint-defined free parameters for the continuation.
+
+        Reuses the *existing* declarations (no new schema): a parameter marked ``free: true`` on the model, together with an activity-target ``TuningObjective`` on one of the experiment's algorithms, defines a constraint ``target_variable = target_value``. Each such free parameter (e.g. the FIC ``J_i``) is promoted by the emitter to an unknown state block whose defining equation is that residual (see ``_build_network_context``).
+
+        Returns a list of ``{"parameter", "target_variable", "target_value"}``;
+        empty when no parameter is free (E-E / FFI variants ⇒ plain continuation).
+        """
+        from tvbo.utils import as_list
+
+        free = [p.name for p in model.parameters.values() if getattr(p, "free", False)]
+        if not free:
+            return []
+        algos = as_list(getattr(self.experiment, "algorithms", None))
+
+        def _activity_objective(a):
+            """The algorithm's objective iff it is an activity target (has a target_variable + target_value); else None."""
+            o = getattr(a, "objective", None)
+            tv = getattr(o, "target_variable", None) if o is not None else None
+            return o if (tv is not None and getattr(o, "target_value", None) is not None) else None
+
+        def _tuned_params(a):
+            """Parameter names this algorithm's update rules tune (target_parameter)."""
+            names = set()
+            for r in as_list(getattr(a, "update_rules", None)):
+                tp = getattr(r, "target_parameter", None)
+                n = getattr(tp, "name", None) or (str(tp) if tp is not None else None)
+                if n:
+                    names.add(n)
+            return names
+
+        constraints = []
+        for fp in free:
+            # Prefer the algorithm that explicitly tunes THIS parameter (so multiple free params each get their own target); fall back to a lone activity objective only when this is the sole free param.
+            obj = next(
+                (_activity_objective(a) for a in algos if fp in _tuned_params(a) and _activity_objective(a)),
+                None,
+            )
+            if obj is None and len(free) == 1:
+                obj = next((_activity_objective(a) for a in algos if _activity_objective(a)), None)
+            if obj is None:
+                continue
+            tv = getattr(obj.target_variable, "name", None) or str(obj.target_variable)
+            constraints.append({"parameter": str(fp), "target_variable": str(tv), "target_value": float(obj.target_value)})
+        return constraints
 
     @staticmethod
     def _get_ics(cont):
@@ -322,14 +380,12 @@ class BifurcationKitAdapter:
             return str(fp[0].name)
         return None
 
-    def run(self, **kwargs) -> "BifurcationResult | dict[str, BifurcationResult]":
+    def run(self, **kwargs) -> BifurcationResult | dict[str, BifurcationResult]:
         """Run bifurcation analysis for each continuation in the experiment.
 
-        Iterates over ``experiment.continuations``, resolves the dynamics
-        model for each, renders BifurcationKit Julia code, executes it,
-        and wraps the result in ``BifurcationResult`` objects.
+        Iterates over ``experiment.continuations``, resolves the dynamics model for each, renders BifurcationKit Julia code, executes it, and wraps the result in ``BifurcationResult`` objects.
 
-        Returns
+        Returns:
         -------
         BifurcationResult or dict[str, BifurcationResult]
             Single result if one continuation, dict if multiple.
@@ -337,8 +393,7 @@ class BifurcationKitAdapter:
         from tvbo.analysis import BifurcationResult
         from tvbo.run.julia import extract_bifurcation_result, run_julia_code
 
-        exp = self.experiment
-        conts = getattr(exp, "continuations", None) or {}
+        conts = self.continuations()
         if not conts:
             raise ValueError(
                 "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
@@ -346,7 +401,7 @@ class BifurcationKitAdapter:
 
         results = {}
         for name, cont in conts.items():
-            model = self._resolve_dynamics(cont)
+            model = self.resolve_dynamics(cont)
             code = self.render_code(model=model, continuation=cont, **kwargs)
 
             run_julia_code(code)
@@ -367,31 +422,32 @@ class BifurcationKitAdapter:
 
     # ── Private helpers ──────────────────────────────────────────────────
 
-    def _resolve_dynamics(self, cont):
-        """Resolve the Dynamics model for a continuation spec."""
-        exp = self.experiment
-        dyn_ref = getattr(cont, "dynamics", None)
-        if dyn_ref:
-            dyn_name = str(dyn_ref)
-            # Check primary dynamics
-            if exp.dynamics and getattr(exp.dynamics, "name", None) == dyn_name:
-                return exp.dynamics
-            # Check network dynamics dict
-            net_dyn = getattr(exp.network, "dynamics", None) if exp.network else None
-            if isinstance(net_dyn, dict) and dyn_name in net_dyn:
-                return net_dyn[dyn_name]
-        if exp.dynamics is not None:
-            return exp.dynamics
-        raise ValueError(f"Cannot resolve dynamics for continuation. dynamics='{dyn_ref}' not found.")
-
     def _extract_periodic_orbits(self, model, **kwargs) -> list:
-        """Extract periodic orbit branches from Julia Main after execution."""
+        """Extract periodic orbit branches from Julia Main after execution.
+
+        Also attaches each branch's orbit waveforms (``orbit_profiles``, a ``[n_steps, NPROF, n_vars]`` array phase-resampled over one period) when the Julia run produced them (``po_results.profiles``); the actual periodic-orbit profile is otherwise not recorded by BifurcationKit.
+        """
+        import numpy as np
+
         from tvbo.adapters.julia import eval_with_auto_install
         from tvbo.analysis import BifurcationResult
 
         try:
             po = eval_with_auto_install("po_results")
-            return [BifurcationResult(br=p, model=model, **kwargs) for p in po.branches]
+            try:
+                prof_list = list(getattr(po, "profiles", None) or [])
+            except Exception:
+                prof_list = []
+            out = []
+            for i, p in enumerate(po.branches):
+                res = BifurcationResult(br=p, model=model, **kwargs)
+                if i < len(prof_list) and prof_list[i] is not None:
+                    try:
+                        res.orbit_profiles = np.asarray(prof_list[i], dtype=float)
+                    except Exception:
+                        pass
+                out.append(res)
+            return out
         except Exception:
             return []
 
@@ -419,17 +475,13 @@ class BifurcationKitAdapter:
                 else:
                     res._source_type = "fold"
 
-                # BifurcationKit codim-2 branches store both parameters
-                # as named columns plus the 'param' column (= continuation
-                # parameter). Identify both by matching model parameters.
+                # BifurcationKit codim-2 branches store both parameters as named columns plus the 'param' column (= continuation parameter). Identify both by matching model parameters.
                 if not res.df.empty and model:
                     import numpy as np
 
                     model_params = set(model.parameters.keys()) if hasattr(model, "parameters") else set()
                     param_cols = [c for c in res.df.columns if c in model_params]
-                    # The column whose values match 'param' is the
-                    # codim-2 continuation parameter; the other is the
-                    # co-parameter (param2).
+                    # The column whose values match 'param' is the codim-2 continuation parameter; the other is the co-parameter (param2).
                     res._ics_name = None
                     res._fp2_name = None
                     for col in param_cols:

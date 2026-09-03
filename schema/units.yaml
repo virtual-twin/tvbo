@@ -1,11 +1,12 @@
 ---
 id: https://w3id.org/tvbo/units
 name: tvbo_units
-title: TVB-O Units and Physical Dimensions
+title: TVB-O Units
 description: >-
-  Controlled vocabulary of physical units (UnitEnum) and dimension categories
-  (PhysicalDimension) used across the TVB-O schema. Units are mapped to QUDT
-  with UO cross-references where available.
+  Controlled vocabulary of physical units (UnitEnum) used across the TVB-O
+  schema. Each is mapped to QUDT, from which its dimension vector and SI
+  multiplier are vendored; a tool's own name for a dimension belongs to that
+  tool, and is recorded on its SimulationTool entry.
 
 prefixes:
   linkml: https://w3id.org/linkml/
@@ -42,6 +43,21 @@ enums:
                 exact_mappings:
                     - UO:0000029
                 description: "Microsecond"
+            ns:
+                meaning: qudt:NanoSEC
+                description: "Nanosecond"
+            min:
+                meaning: qudt:MIN
+                description: "Minute (60 s)"
+            h:
+                meaning: qudt:HR
+                description: "Hour (3600 s)"
+            day:
+                meaning: qudt:DAY
+                description: "Day (86400 s)"
+            year:
+                meaning: qudt:YR
+                description: "Julian year (365.25 d)"
             # ── Rates / inverse time ──
             per_s:
                 meaning: qudt:PER-SEC
@@ -69,13 +85,10 @@ enums:
                     - UO:0000247
                 description: "Millivolt"
             per_mV:
-                meaning: qudt:PER-MilliV
                 description: "Reciprocal millivolt (mV⁻¹)"
             mV_per_ms:
-                meaning: qudt:MilliV-PER-MilliSEC
                 description: "Millivolt per millisecond"
             mV_per_s:
-                meaning: qudt:MilliV-PER-SEC
                 description: "Millivolt per second"
             # ── Current ──
             A:
@@ -122,22 +135,22 @@ enums:
                 description: "Nanosiemens per millivolt"
             # ── Charge (inverse) ──
             per_nC:
-                meaning: qudt:PER-NanoC
                 description: "Reciprocal nanocoulomb (nC⁻¹)"
             per_pC:
-                meaning: qudt:PER-PicoC
                 description: "Reciprocal picocoulomb (pC⁻¹)"
             # ── Concentration ──
             mol_per_m3:
                 meaning: qudt:MOL-PER-M3
-                description: "Mole per cubic metre (mol/m³)"
+                description: >-
+                    Mole per cubic metre (mol/m³), which is millimolar exactly: one mM
+                    is one mmol per litre and a litre is 10⁻³ m³.
+                aliases:
+                    - mM
             mol_per_cm3:
                 description: "Mole per cubic centimetre (mol/cm³)"
             mmol_per_m3:
                 meaning: qudt:MilliMOL-PER-M3
-                description: "Millimole per cubic metre (mmol/m³ ≈ mM)"
-                aliases:
-                    - mM
+                description: "Millimole per cubic metre (mmol/m³), a thousandth of mM"
             mol_per_m_per_A_per_s:
                 description: "Mole per metre per ampere per second (concentration-current coupling)"
             # ── Volume ──
@@ -160,12 +173,22 @@ enums:
                 exact_mappings:
                     - UO:0000015
                 description: "Centimetre"
+            km:
+                meaning: qudt:KiloM
+                description: "Kilometre"
+            # ── Reciprocal area (spatial eigenvalues, curvature) ──
+            per_mm2:
+                description: >-
+                    Per square millimetre (mm⁻²). The unit of a Laplace-Beltrami
+                    eigenvalue and of Gaussian curvature.
+            per_m2:
+                meaning: qudt:PER-M2
+                description: "Per square metre (m⁻²)"
             # ── Velocity ──
             m_per_s:
                 meaning: qudt:M-PER-SEC
                 description: "Metre per second"
             mm_per_ms:
-                meaning: qudt:MilliM-PER-MilliSEC
                 description: "Millimetre per millisecond (= m/s)"
             # ── Gain / compound ──
             Hz_per_nA:
@@ -212,6 +235,9 @@ enums:
                 description: "Kilogram"
             kg_per_s:
                 description: "Kilogram per second"
+            kg_m2:
+                meaning: qudt:KiloGM-M2
+                description: "Kilogram metre squared (moment of inertia)"
             # ── Acceleration ──
             m_per_s2:
                 meaning: qudt:M-PER-SEC2
@@ -233,40 +259,13 @@ enums:
             s2:
                 meaning: qudt:SEC2
                 description: "Second squared (inertia constant)"
+            # ── Power ──
+            W:
+                meaning: qudt:W
+                description: "Watt (power)"
+            MW:
+                meaning: qudt:MegaW
+                description: "Megawatt (10⁶ W); grid real/net power"
             # ── Per-unit (power systems) ──
             per_unit:
                 description: "Per-unit (dimensionless power-systems convention)"
-
-    PhysicalDimension:
-        description: >-
-            Physical dimension categories for LEMS and dimensional analysis.
-            Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).
-        permissible_values:
-            none:
-                description: "Dimensionless"
-            time:
-                description: "Time [T]"
-            per_time:
-                description: "Inverse time [T⁻¹]"
-            voltage:
-                description: "Voltage [M L² T⁻³ I⁻¹]"
-            current:
-                description: "Electric current [I]"
-            capacitance:
-                description: "Capacitance [M⁻¹ L⁻² T⁴ I²]"
-            conductance:
-                description: "Conductance [M⁻¹ L⁻² T³ I²]"
-            resistance:
-                description: "Resistance [M L² T⁻³ I⁻²]"
-            charge:
-                description: "Electric charge [T I]"
-            concentration:
-                description: "Concentration [L⁻³ N]"
-            substance:
-                description: "Amount of substance [N]"
-            length:
-                description: "Length [L]"
-            volume:
-                description: "Volume [L³]"
-            temperature:
-                description: "Temperature [K]"

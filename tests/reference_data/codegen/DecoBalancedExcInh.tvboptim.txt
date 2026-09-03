@@ -1,0 +1,125 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class DecoBalancedExcInh(AbstractDynamics):
+    """DecoBalancedExcInh neural mass model."""
+
+    STATE_NAMES = ("S_e", "S_i")
+    INITIAL_STATE = (0.1, 0.1)
+    AUXILIARY_NAMES = ("J_N_S_e", "coupling", "I_e", "I_i", "x_e", "x_i", "H_e", "H_i")
+
+    DEFAULT_PARAMS = Bunch(
+        G=2.0,
+        I_ext=0.0,
+        I_o=0.382,
+        J_N=0.15,
+        J_i=1.0,
+        M_i=1.0,
+        W_e=1.0,
+        W_i=0.7,
+        a_e=310.0,
+        a_i=615.0,
+        b_e=125.0,
+        b_i=177.0,
+        d_e=0.16,
+        d_i=0.087,
+        gamma_e=0.000641,
+        gamma_i=0.001,
+        lamda=0.0,
+        tau_e=100.0,
+        tau_i=10.0,
+        w_p=1.4,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+        "local_coupling": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        G = params.G
+        I_ext = params.I_ext
+        I_o = params.I_o
+        J_N = params.J_N
+        J_i = params.J_i
+        M_i = params.M_i
+        W_e = params.W_e
+        W_i = params.W_i
+        a_e = params.a_e
+        a_i = params.a_i
+        b_e = params.b_e
+        b_i = params.b_i
+        d_e = params.d_e
+        d_i = params.d_i
+        gamma_e = params.gamma_e
+        gamma_i = params.gamma_i
+        lamda = params.lamda
+        tau_e = params.tau_e
+        tau_i = params.tau_i
+        w_p = params.w_p
+
+        S_e = state[0]
+        S_i = state[1]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+        local_coupling = (
+            jnp.atleast_1d(coupling.local_coupling)[0]
+            if hasattr(coupling, "local_coupling")
+            else 0.0
+        )
+
+        J_N_S_e = J_N * S_e
+        coupling = G * J_N * (S_e * local_coupling + c_glob)
+        I_e = I_ext + I_o * W_e + J_N_S_e * w_p - J_i * S_i + coupling
+        I_i = I_o * W_i + J_N_S_e - S_i + coupling * lamda
+        x_e = M_i * (a_e * I_e - b_e)
+        x_i = M_i * (a_i * I_i - b_i)
+        H_e = x_e / (1 - jnp.exp((-d_e) * x_e))
+        H_i = x_i / (1 - jnp.exp((-d_i) * x_i))
+
+        dS_e_dt = H_e * gamma_e * (1 - S_e) - S_e / tau_e
+        dS_i_dt = H_i * gamma_i - S_i / tau_i
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dS_e_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dS_e_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dS_i_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(J_N_S_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(coupling), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(I_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(I_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(x_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(x_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(H_e), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(H_i), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

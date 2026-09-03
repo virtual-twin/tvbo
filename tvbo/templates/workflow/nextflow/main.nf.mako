@@ -16,6 +16,14 @@ nextflow.enable.dsl = 2
 
 % if plan.container:
 process.container = '${plan.container}'
+## process.container takes effect only while a container runtime is enabled.
+singularity.enabled = true
+## Binds the work directories Nextflow stages each task through.
+singularity.autoMounts = true
+% if plan.container_exec_flags:
+## Host paths the task must see beyond the runtime's defaults (container_binds/args).
+singularity.runOptions = '${plan.container_exec_flags}'
+% endif
 % endif
 % if block.get("executor"):
 process.executor  = '${block["executor"]}'
@@ -23,6 +31,10 @@ process.executor  = '${block["executor"]}'
 % if block.get("queue"):
 process.queue     = '${block["queue"]}'
 % endif
+## Passthrough: each option is a Nextflow process directive (e.g. clusterOptions).
+% for _opt in (block.get("options") or []):
+process.${_opt["name"]} = '${_opt["value"]}'
+% endfor
 
 process tvbo_run {
     tag "${plan.experiment_key}"
@@ -38,6 +50,10 @@ process tvbo_run {
 
     script:
     """
+## env is exported ahead of the task command (values shell-quoted in the plan).
+% for _e in (block.get("env") or []):
+    export ${_e['name']}=${_e['value']}
+% endfor
 % if script_relpath:
     python ${'${baseDir}/'}${script_relpath} \\
 % for ax in axes:

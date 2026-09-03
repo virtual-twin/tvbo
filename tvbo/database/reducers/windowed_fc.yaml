@@ -1,0 +1,45 @@
+# Declarative streaming-reducer recipe (metadata). The math is authored as symbolic
+# assignment recurrences over the state vars, the arriving/leaving sample `v`, and the
+# window `x`; tvbo lowers them per backend via the sympy printers and emits the reducer
+# into the generated experiment (no backend ships a reducer). Sequential reassignment
+# encodes the data flow — a later RHS sees the value assigned to a state var above it —
+# so no `new_*` temporaries are needed. See tvbo/codegen/reducers.py (general resolver).
+name: windowed_fc
+description: >-
+  Windowed Pearson-correlation functional connectivity as a mean-centred streaming
+  co-moment: Welford `add` update, exact reverse-Welford `evict` downdate, two-pass
+  `resync`, and a zero-diagonal Pearson `emit`. Byte-identical to compute_fc, including
+  on a large DC baseline where a naive one-pass co-moment loses precision.
+
+# Which post-scan pipeline reducer this streams, and for which codegen backends.
+replaces: [tvboptim.observations.observation.compute_fc]
+backends: [tvboptim]
+emit_kind: window   # emit the reduced value every step (vs `stride` for dFC/FCD)
+
+state: [count, mean, comoment]
+
+add:                                        # fold in one arriving sample `v`
+  - {target: delta,    expression: "v - mean"}
+  - {target: count,    expression: "count + 1"}
+  - {target: mean,     expression: "mean + delta / count"}
+  - {target: comoment, expression: "comoment + outer(delta, v - mean)"}
+
+evict:                                      # drop one leaving sample `v` (sliding window)
+  - {target: delta,    expression: "v - mean"}
+  - {target: count,    expression: "count - 1"}
+  - {target: mean,     expression: "mean - delta / count"}
+  - {target: comoment, expression: "comoment - outer(v - mean, delta)"}
+
+resync:                                     # rebuild the state exactly from the window `x`
+  - {target: mean,     expression: "global_mean(x)"}
+  - {target: xc,       expression: "x - mean"}
+  - {target: comoment, expression: "matmul(transpose(xc), xc)"}
+  - {target: count,    expression: "shape(x, 0)"}
+
+resync_masked:                              # rebuild from a max-sized ring: window = the `L` rows selected by mask `m`
+  - {target: count,    expression: "L"}
+  - {target: mean,     expression: "sum_axis(x * m, 0) / L"}
+  - {target: xc,       expression: "(x - mean) * m"}
+  - {target: comoment, expression: "matmul(transpose(xc), xc)"}
+
+emit: "zero_diagonal(comoment / outer(sqrt(diag(comoment)), sqrt(diag(comoment))))"

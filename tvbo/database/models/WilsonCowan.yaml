@@ -232,20 +232,17 @@ derived_variables:
       lhs: lc_0
       rhs: local_coupling*E
       latex: false
-    conditional: false
   lc_1:
     equation:
       lhs: lc_1
       rhs: I*local_coupling
       latex: false
-    conditional: false
   x_e:
     description: Average level of excitation in excitatory neuron at time t. Can be interpreted as membrane potential (Sanz-Leon et al., 2015).
     equation:
       lhs: x_e
       rhs: alpha_e*(-I*c_ei + P + c_ee*E + c_glob + lc_0 + lc_1 - theta_e)
       latex: false
-    conditional: false
     grounding:
     - GO:0042391
   x_i:
@@ -254,7 +251,6 @@ derived_variables:
       lhs: x_i
       rhs: alpha_i*(-I*c_ii + Q + c_ie*E + lc_0 + lc_1 - theta_i)
       latex: false
-    conditional: false
     grounding:
     - GO:0042391
   s_e:
@@ -262,13 +258,11 @@ derived_variables:
       lhs: s_e
       rhs: c_e/(1.0 + exp(-a_e*(-b_e + x_e))) - 1.0*shift_sigmoid/(exp(a_e*b_e) + 1.0)
       latex: false
-    conditional: false
   s_i:
     equation:
       lhs: s_i
       rhs: c_i/(1.0 + exp(-a_i*(-b_i + x_i))) - 1.0*shift_sigmoid/(exp(a_i*b_i) + 1.0)
       latex: false
-    conditional: false
 coupling_inputs:
   c_glob: {}
   local_coupling: {local: true}

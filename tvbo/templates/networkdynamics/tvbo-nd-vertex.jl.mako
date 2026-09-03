@@ -15,13 +15,14 @@ Context: model (Dynamics instance)
 <%page args="model, all_couplings=None, outdim=None"/>
 <%!
 from tvbo.codegen import render_expression
+from tvbo.templates.base.utils import get_coupling_terms
 %>
 <%
 sv_names = list(model.state_variables.keys())
 param_names = list(model.parameters.keys())
-ct_names = list(model.coupling_terms.keys()) if model.coupling_terms else []
-dv_names = list(model.derived_variables.keys()) if model.derived_variables else []
-dp_names = list(model.derived_parameters.keys()) if model.derived_parameters else []
+ct_names = list(model.coupling_inputs.keys()) if model.coupling_inputs else []
+dv_names = list(model.in_dependency_order('derived_variables').keys()) if model.derived_variables else []
+dp_names = list(model.in_dependency_order('derived_parameters').keys()) if model.derived_parameters else []
 n_sv = len(sv_names)
 
 # Determine output dimension: coupling variables → vertex output
@@ -32,20 +33,14 @@ n_out = len(coupling_vars) if coupling_vars else n_sv
 
 # Edge output dimension: how many values esum actually contains.
 # This must match the edge model's outsym length.
-# Global coupling terms (excluding 'local_coupling') map to esum.
+# Global coupling terms map to esum; a local input is not driven by the connectome.
 # If outdim not provided, compute from n_out.
-global_ct_names = [ct for ct in ct_names if ct != 'local_coupling']
+global_ct_names = get_coupling_terms(model)[1]
 if outdim is None:
     outdim = n_out
 # Only the first `outdim` global coupling terms read from esum;
 # the rest (and local_coupling) are zero.
 esum_ct_names = global_ct_names[:outdim]
-
-# Determine output dimension: coupling variables → vertex output
-# If coupling_variable is marked, only those are output; otherwise all state vars
-coupling_vars = [name for name, sv in model.state_variables.items()
-                 if getattr(sv, 'coupling_variable', False)]
-n_out = len(coupling_vars) if coupling_vars else n_sv
 
 # Compute StateMask range: indices (1-based) of coupling variables in state vector
 if coupling_vars:
@@ -122,17 +117,16 @@ function ${model.name}_f!(dx, ${arg_x}, esum, p, t)
 %>
     ${fname}(${", ".join(fargs)}) = ${fbody}
     % endfor
-    % for dp in (model.derived_parameters or {}).values():
+    % for dp in model.in_dependency_order('derived_parameters').values():
     ${dp.name} = ${juliacode(dp.equation.rhs)}
     % endfor
-    % for dv in (model.derived_variables or {}).values():
-    % if getattr(dv, 'conditional', False) and getattr(dv, 'cases', None):
+    % for dv in model.in_dependency_order('derived_variables').values():
+    % if getattr(dv.equation, 'conditionals', None):
 <%
-    cases = list(dv.cases)
     parts = []
-    for case in cases:
+    for case in dv.equation.conditionals:
         cond_str = str(case.condition).strip()
-        eq_rhs = juliacode(case.equation.rhs)
+        eq_rhs = juliacode(case.expression)
         if cond_str.lower() == 'true':
             parts.append(eq_rhs)
         else:
