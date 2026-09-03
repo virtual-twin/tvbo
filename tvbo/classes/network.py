@@ -17,13 +17,14 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from jax import Array as JaxArray
-from jax.tree_util import register_pytree_node_class
 from jsonasobj2 import as_dict
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 # Apply the JAX Metal-fallback guard before any Network-level JAX compute. Idempotent and cheap (jax already imported); kept out of ``import tvbo``. See tvbo.__init__._configure_jax_backend.
 from tvbo import _configure_jax_backend as _cfg_jax
+from tvbo.utils.pytree import register as register_pytree
+from tvbo.utils.pytree import static_spec
 
 _cfg_jax()
 
@@ -65,6 +66,26 @@ def _is_weight_name(name) -> bool:
     """Whether *name* spells the connection-weight property."""
     low = str(name).lower()
     return low in _WEIGHT_TARGETS or low in _WEIGHT_MEASURES
+
+
+class LazyMaterializationWarning(UserWarning):
+    """A `Network` entered a JAX transformation with arrays its companion offers still unread.
+
+    The solver then traces nothing and reads the connectome as a constant inside the trace. Set ``TVBO_JAX_STRICT`` to make it an error.
+    """
+
+
+def _array_key(name: str) -> str:
+    """The companion dataset path an array is kept under: ``weight`` is ``edges/weight``, a path is itself."""
+    return name if "/" in name else f"edges/{name}"
+
+
+def _edge_name(key: str) -> str | None:
+    """The edge a companion path names, or ``None`` where it names something else — the inverse of :func:`_array_key`.
+
+    ``edges/weight`` is the ``weight`` edge; ``mesh/vertices`` and ``edges/weight/edge_parameters/length`` are not edge matrices, and a caller that reads the resident keys as edge names offers them as matrices nothing can serve.
+    """
+    return key[len("edges/") :] if key.startswith("edges/") and key.count("/") == 1 else None
 
 
 def _is_length_name(name) -> bool:
@@ -386,7 +407,7 @@ def _backfill_name_from_iri(obj: Any, nested_key: str | None = None) -> None:
     target["name"] = _iri_local(iri)
 
 
-@register_pytree_node_class
+@register_pytree
 class Network(tvbo_datamodel.Network):
     """A brain network: parcellation, connectome, per-node dynamics, and coupling.
 
@@ -578,7 +599,7 @@ class Network(tvbo_datamodel.Network):
 
         A Network is "materialized" if it has cached weight matrices, a lazy array store (h5 companion), or an explicit edges list. Used by ``_resolve`` to short-circuit when no further loading is required.
         """
-        if getattr(self, "_cached_weights", None) is not None:
+        if any(k.startswith("edges/") for k in self._resident()):
             return True
         if getattr(self, "_store", None) is not None:
             return True
@@ -641,8 +662,7 @@ class Network(tvbo_datamodel.Network):
         """
         for attr in ("_resolved", "_producers_resolved"):
             object.__setattr__(self, attr, False)
-        for attr in ("_cached_weights", "_store", "_pytree_data"):
-            object.__setattr__(self, attr, None)
+        object.__setattr__(self, "_store", None)
         object.__setattr__(self, "_arrays", {})
 
     def _has_graph_generator(self) -> bool:
@@ -863,14 +883,10 @@ class Network(tvbo_datamodel.Network):
                 val = getattr(result, attr, None)
                 if val is not None:
                     setattr(self, attr, val)
-            for cache in ("_cached_weights", "_cached_lengths", "_store", "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
-                v = getattr(result, cache, None)
-                if v is not None:
-                    setattr(self, cache, v)
-            # Named edge matrices live in `_arrays`, not in the caches above, so a builder that returns a non-square projection (a gain matrix set with `set_matrix`) would hand back a network whose edge is declared and whose data is gone.
-            produced = result._get_arrays()
-            if produced:
-                self._get_arrays().update(produced)
+            store = getattr(result, "_store", None)
+            if store is not None:
+                self._store = store
+            self._get_arrays().update(result._get_arrays())
         else:
             # Two shapes accepted: dict with `weights` (and optional `lengths`, `node_parameters`, `node_labels`), or tuple `(weights, lengths[, node_params])`.
             node_labels = None
@@ -905,9 +921,9 @@ class Network(tvbo_datamodel.Network):
             # The generator supplies the internal weight matrix only. Preserve any declared edges (e.g. cross-layer routing edges on a subnetwork); only default to empty when none were authored.
             if not getattr(self, "edges", None):
                 self.edges = []
-            self._cached_weights = weights
+            self.set_array("edges/weight", weights)
             if lengths is not None:
-                self._cached_lengths = lengths
+                self.set_array("edges/length", lengths)
             if node_params:
                 # Builder may attach per-node parameters as a dict of {param_name: array of len n_nodes}. Materialise these onto each Node so downstream codegen can consume them.
                 for pname, arr in node_params.items():
@@ -942,14 +958,10 @@ class Network(tvbo_datamodel.Network):
         store = getattr(loaded, "_store", None)
         if store is not None:
             self._store = store
-        # The Mesh schema slot transfers along with the other LinkML fields below; only the array caches are copied here.
         loaded_mesh = getattr(loaded, "mesh", None)
         if loaded_mesh is not None and getattr(self, "mesh", None) is None:
             self.mesh = loaded_mesh
-        for cache in ("_cached_weights", "_cached_lengths", "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
-            v = getattr(loaded, cache, None)
-            if v is not None:
-                setattr(self, cache, v)
+        self._resident().update(loaded._resident())
 
     def _resolve_from_bids_dir(self, source_dir: str | Path | None) -> None:
         """Populate self from a BEP017 BIDS directory at ``self.bids_dir``."""
@@ -973,11 +985,11 @@ class Network(tvbo_datamodel.Network):
             val = getattr(loaded, attr, None)
             if val is not None:
                 setattr(self, attr, val)
-        # NB: from_bids stores observational matrices under ``_bids_observations`` (consumed by the ``observations`` property), not ``_observations``.
-        for cache in ("_cached_weights", "_cached_lengths", "_bids_observations", "_bids_dir", "_store"):
+        for cache in ("_bids_dir", "_store"):
             v = getattr(loaded, cache, None)
             if v is not None:
                 object.__setattr__(self, cache, v)
+        self._resident().update(loaded._resident())
         # Carry over the parcellation that from_bids inferred from the BIDS filenames, so the atlas resolves (and centres can be looked up by label) even when the source YAML named no parcellation.
         if getattr(self, "parcellation", None) is None:
             loaded_parc = getattr(loaded, "parcellation", None)
@@ -1080,9 +1092,9 @@ class Network(tvbo_datamodel.Network):
         if not self.edges:
             self.edges = []
         self.number_of_nodes = n_nodes
-        self._cached_weights = np.asarray(w_arr)
+        self.set_array("edges/weight", np.asarray(w_arr))
         if l_arr is not None:
-            self._cached_lengths = np.asarray(l_arr)
+            self.set_array("edges/length", np.asarray(l_arr))
 
     # Multi-scale resolution                                               #
     def _expand_node_template(self) -> None:
@@ -1208,30 +1220,19 @@ class Network(tvbo_datamodel.Network):
         """Store `val` as the `global_coupling_strength` entry in the parameters dict."""
         self.parameters["global_coupling_strength"] = val
 
-    # -- Serialization: hide internal cached arrays from LinkML dumpers -- JsonObj._items() controls what yaml_dumper / json_dumper / as_dict see. Without this, _cached_weights (numpy arrays) leak into yaml.SafeDumper.
     _INTERNAL_ATTRS = frozenset(
         {
-            "_cached_weights",
-            "_cached_lengths",
             "_store",
             "_arrays",
-            "_edge_params",
-            "_pytree_data",
-            "_node_mapping_data",
             "_parent_network_obj",
             "_node_template_spec",
             "_edge_template_spec",
             "_save_path",
             "_orientations",
             "_resolved",
-            # _mesh is no longer a private cache — it's the LinkML Network.mesh slot. Keep the array caches that adapters set.
-            "_mesh_vertices",
-            "_mesh_elements",
-            "_mesh_normals",
         }
     )
-
-    # Network.mesh is now a first-class LinkML slot (range Mesh, inlined) — no read-only property wrapper needed. Runtime caches of the underlying arrays (``_mesh_vertices``, ``_mesh_elements``, ``_mesh_normals``) remain in ``_INTERNAL_ATTRS`` and are populated by adapters such as ``from_tvb_surface``.
+    """Runtime attributes the LinkML dumpers never see; ``_items`` hides every leading-underscore key regardless, so this names them rather than gates them."""
 
     @property
     def parent_network_obj(self) -> Optional["Network"]:
@@ -1245,7 +1246,7 @@ class Network(tvbo_datamodel.Network):
             return None
 
     def _items(self):
-        # What the LinkML yaml_dumper / json_dumper / as_dict see. Internal caches and lazy-store handles (``_cached_weights``, ``_store``, ``_bids_observations`` …) are runtime bookkeeping, never schema slots — and LinkML slot names are never underscore-prefixed — so any private attribute must be hidden from serialization. Excluding *all* leading- underscore keys (not just a hand-maintained denylist) keeps this robust as new caches are added: a stray ndarray cache like ``_bids_observations`` would otherwise reach yaml.SafeDumper and raise RepresenterError ("cannot represent an object", <ndarray>). Bulk arrays belong in the binary companion (HDF5/zarr) via ``save_network``, referenced from the spec by ``data_file`` — not inlined here.
+        # What the LinkML yaml_dumper / json_dumper / as_dict see. The resident arrays and the lazy store (``_arrays``, ``_store``) are runtime bookkeeping, never schema slots — and LinkML slot names are never underscore-prefixed — so every leading-underscore key is hidden by rule rather than by a denylist, and a new runtime attribute cannot reach yaml.SafeDumper as an ndarray it cannot represent. Bulk arrays belong in the binary companion via ``save_network``, referenced from the spec by ``data_file``.
         for k, v in super()._items():
             if k.startswith("_") or k in self._INTERNAL_ATTRS:
                 continue
@@ -1537,11 +1538,12 @@ class Network(tvbo_datamodel.Network):
             **kwargs,
         )
 
-        # Store matrices using object.__setattr__ to bypass LinkML
-        object.__setattr__(instance, "_cached_weights", weights)
-        object.__setattr__(instance, "_cached_lengths", lengths)
+        instance.set_array("edges/weight", weights)
+        if lengths is not None:
+            instance.set_array("edges/length", lengths)
+        for measure, data in observations.items():
+            instance.set_array(f"edges/{measure}", data)
         object.__setattr__(instance, "_bids_dir", str(bids_dir))
-        object.__setattr__(instance, "_bids_observations", observations)
         object.__setattr__(instance, "_bids_measure_units", measure_units)
 
         # Record the parcellation atlas so get_atlas()/get_centers() can resolve region centres from the named atlas's entities by label.
@@ -1640,8 +1642,9 @@ class Network(tvbo_datamodel.Network):
 
             if weights is not None:
                 n_nodes = weights.shape[0]
-                self._cached_weights = weights
-                self._cached_lengths = lengths
+                self.set_array("edges/weight", weights)
+                if lengths is not None:
+                    self.set_array("edges/length", lengths)
                 self.number_of_nodes = n_nodes
                 self.number_of_regions = n_nodes
 
@@ -1666,16 +1669,15 @@ class Network(tvbo_datamodel.Network):
 
         # Load observational measures if requested
         if observational_measures:
-            # Use object.__setattr__ to store as plain Python dict, bypassing LinkML
-            obs = object.__getattribute__(self, "__dict__").get("_bids_observations", {})
+            loaded = []
             for measure in observational_measures:
                 data = load_measure(measure)
                 if data is not None:
-                    obs[measure] = data
-            object.__setattr__(self, "_bids_observations", obs)
+                    self.set_array(f"edges/{measure}", data)
+                    loaded.append(measure)
             # Declare loaded measures so the `observations` property (which gates on ``observational_measures``) can resolve them.
             existing = list(self.observational_measures or [])
-            self.observational_measures = existing + [m for m in obs if m not in existing]
+            self.observational_measures = existing + [m for m in loaded if m not in existing]
 
         object.__setattr__(self, "_bids_dir", str(bids_dir))
         return self
@@ -1707,9 +1709,9 @@ class Network(tvbo_datamodel.Network):
         weights = np.asarray(weights)
         n_nodes = weights.shape[0]
 
-        # Update cached matrices
-        self._cached_weights = weights
-        self._cached_lengths = lengths if lengths is not None else None
+        self.set_array("edges/weight", weights)
+        if lengths is not None:
+            self.set_array("edges/length", lengths)
 
         # Update node count
         self.number_of_nodes = n_nodes
@@ -2255,132 +2257,45 @@ class Network(tvbo_datamodel.Network):
             return _to_yaml(clean, filepath)
 
     # ---- JAX pytree: flatten/unflatten ----
-    def tree_flatten(self) -> tuple[tuple[JaxArray, JaxArray], tuple[str]]:
-        """Flatten into JAX pytree children `(weights, lengths)` plus metadata aux data.
+    _STATIC_SPEC_HELD_OUT = ("weight", "length", "parcellation", "edges", "data_file", "bids_dir")
+    """Slots the static spec omits: the matrices travel as leaves, the edge declarations hold non-deterministic `Parameter` strings, and the loading slots would make `_pytree_build` re-resolve from disk."""
 
-        Metadata is stored without the array data to avoid duplicating the leaves.
+    def _pytree_leaves(self) -> dict:
+        """The resident arrays, keyed by companion path: this network's JAX children.
 
-        Four groups of slots are held out of that metadata, by the same private-attr rule ``Network._items()`` applies, so there is one source of truth for what is internal and never serialised:
+        JAX flattens a dict by sorted key, so the order arrays were materialised in never retraces and the key set is the treedef: `materialize("weight", "gain")` and `materialize("gain", "weight")` compile once, `materialize("weight")` compiles again. Every resident array is a leaf whatever its shape or dtype — a `(276, 16384)` leadfield and a `(327684, 3)` vertex array as much as the connectome — so `jax.grad` returns a cotangent for each float one and, with ``allow_int=True``, a `float0` for integer topology.
 
-        - ``weight`` / ``length`` — the matrices themselves, already carried in `children`.
-        - ``edges`` — hold ``Parameter`` objects whose string form is not deterministic,
-          and whose weight/length content is likewise already in `children`.
-        - ``parcellation`` / ``data_file`` / ``bids_dir`` — loading specs; keeping them
-          would make ``tree_unflatten`` re-resolve from disk, and fail.
-        - the cache attributes, which are derived state.
+        Nothing is read here. A network whose companion offers arrays it has not materialised flattens to an empty set and warns, because the solver would then trace nothing and read the connectome as a constant inside the trace; under ``TVBO_JAX_STRICT`` that is an error. A scipy sparse matrix is refused by name: it is not a JAX type, and converting it here would decide a treedef the caller never asked for.
         """
-        # Convert metadata to a JSON string for stable equality in JAX
-        import json as _json
+        from scipy import sparse
 
-        import numpy as _np
-        from linkml_runtime.utils.yamlutils import YAMLRoot
+        arrays = self.arrays
+        for key, value in arrays.items():
+            if sparse.issparse(value):
+                raise TypeError(
+                    f"{self}: arrays[{key!r}] is a scipy sparse matrix, which is not a JAX type. Materialise it as a BCOO or a dense array before entering a JAX transformation."
+                )
+        if not arrays and self._lazy_paths():
+            message = f"{self} flattens with nothing materialised; its companion offers {', '.join(self._lazy_paths())}. Call materialize() before entering a JAX transformation, or the connectome is read as a constant inside the trace."
+            if os.environ.get("TVBO_JAX_STRICT"):
+                raise RuntimeError(message)
+            warnings.warn(message, LazyMaterializationWarning, stacklevel=3)
+        return arrays
 
-        def _jsonable(o):
-            try:
-                import jax
-
-                if isinstance(o, jax.Array):
-                    o = _np.array(o)
-            except Exception:
-                pass
-            # numpy scalars -> python scalars
-            if isinstance(o, _np.generic):
-                return o.item()
-            # numpy arrays -> lists
-            if isinstance(o, _np.ndarray):
-                return o.tolist()
-            # tuples -> lists for JSON
-            if isinstance(o, tuple):
-                return list(o)
-            # LinkML enums -> plain text string (NOT as_dict which creates a {'_code': {...}} dict that becomes an unparseable JsonObj on round-trip through json.loads → cls(**meta_dict))
-            from linkml_runtime.utils.enumerations import EnumDefinitionImpl
-
-            if isinstance(o, EnumDefinitionImpl):
-                return str(o)
-            # LinkML dataclasses -> dict via as_dict
-            if isinstance(o, YAMLRoot):
-                return as_dict(o)
-            # dataclasses with __dict__
-            if hasattr(o, "__dict__"):
-                return {k: v for k, v in o.__dict__.items() if not k.startswith("_")}
-            # last resort: stringify
-            return str(o)
-
-        # children are the heavy numeric arrays; keep arrays out of aux Always return arrays to maintain consistent tree structure If weights/lengths are None, use empty arrays with proper shape based on number_of_regions
-
-        # Check if we have cached PyTree data (from a previous unflatten)
-        if hasattr(self, "_pytree_data") and self._pytree_data is not None:
-            weights_arr, lengths_arr = self._pytree_data
-        else:
-            # Use weights_matrix/lengths_matrix properties which handle edges, Matrix, or defaults
-            weights_arr = self._weights_matrix()
-            lengths_arr = self.lengths_matrix
-
-            # Fallback to zeros if properties return None
-            n = self.number_of_nodes or 1
-            if weights_arr is None:
-                weights_arr = np.zeros((n, n))
-            else:
-                weights_arr = np.asarray(weights_arr)
-
-            if lengths_arr is None:
-                lengths_arr = np.zeros((n, n))
-            else:
-                lengths_arr = np.asarray(lengths_arr)
-
-        children = (weights_arr, lengths_arr)
-
-        # Get full metadata but exclude weights/lengths to avoid embedding arrays
-        meta_dict = as_dict(self)
-        # as_dict can return various dict-like structures
-        if not isinstance(meta_dict, dict):
-            meta_dict = dict(meta_dict) if hasattr(meta_dict, "__iter__") else {}
-        _ARRAY_OR_LOADING_SLOTS = (
-            "weight",
-            "length",
-            "parcellation",
-            "edges",
-            "data_file",
-            "bids_dir",
-        )
-        meta_dict_without_arrays = {
-            k: v for k, v in meta_dict.items() if not str(k).startswith("_") and k not in _ARRAY_OR_LOADING_SLOTS
-        }
-
-        def _strip_none(obj):
-            if isinstance(obj, dict):
-                # as_dict() serializes LinkML enums as {'_code': {'text': 'mm', ...}} Flatten back to the plain text key for clean round-trips
-                if "_code" in obj and isinstance(obj["_code"], dict) and "text" in obj["_code"]:
-                    return obj["_code"]["text"]
-                return {k: _strip_none(v) for k, v in obj.items() if v is not None}
-            if isinstance(obj, list):
-                return [_strip_none(x) for x in obj]
-            return obj
-
-        meta_json = _json.dumps(_strip_none(meta_dict_without_arrays), sort_keys=True, default=_jsonable)
-        aux = (meta_json,)
-        return children, aux  # type: ignore[return-value]
+    def _pytree_static(self) -> str:
+        """The spec as canonical JSON, without the slots `_STATIC_SPEC_HELD_OUT` names — compared as a string, which is what keeps treedef equality cheap."""
+        return static_spec(self, self._STATIC_SPEC_HELD_OUT)
 
     @classmethod
-    def tree_unflatten(cls, aux_data: tuple[str], children: tuple[JaxArray, JaxArray]) -> "Network":
-        """Rebuild a `Network` from JAX pytree children and metadata (inverse of `tree_flatten`).
+    def _pytree_build(cls, static: str, leaves: dict) -> "Network":
+        """The spec rebuilt from its JSON, the children installed as the resident arrays.
 
-        Arrays are re-attached as `_pytree_data` rather than `Matrix` objects, so it stays valid under JAX tracing.
+        The arrays are installed as they arrive — tracers under a transformation — and `matrix` hands a JAX array back untouched, so what a traced computation reads is the leaf JAX gave it and never a pre-trace attribute.
         """
         import json as _json
 
-        (meta_json,) = aux_data
-        (weights, lengths) = children
-        # Reconstruct from metadata dict (which doesn't include weights/lengths/parcellation)
-        meta_dict = _json.loads(meta_json)
-
-        # Don't try to reconstruct Matrix objects from the arrays here because during JAX tracing, we can't convert tracers to Python lists. Instead, we'll create a minimal object and rely on _pytree_data for array access. The weights_matrix and lengths_matrix properties will use _pytree_data if available.
-
-        obj = cls(**meta_dict)
-
-        # Store the array children as a tuple using object.__setattr__ This is what weights_matrix and lengths_matrix will use
-        object.__setattr__(obj, "_pytree_data", (weights, lengths))
-
+        obj = cls(**_json.loads(static))
+        object.__setattr__(obj, "_arrays", dict(leaves))
         return obj
 
     # Back-compat pointer
@@ -2404,6 +2319,10 @@ class Network(tvbo_datamodel.Network):
         """
         return {(i if getattr(nd, "id", None) is None else int(nd.id)): i for i, nd in enumerate(self.nodes or [])}
 
+    def _placed_edges(self) -> list:
+        """The edges that connect two nodes. An edge with no endpoints is a template edge naming a companion matrix, not a connection."""
+        return [e for e in (self.edges or []) if e.source is not None and e.target is not None]
+
     def _edge_matrix(self, value_of, fill: float = 0.0) -> np.ndarray | None:
         """Build one connectome matrix from the explicit edges.
 
@@ -2411,7 +2330,7 @@ class Network(tvbo_datamodel.Network):
         ``value_of(edge, i, j)`` supplies the entry (``None`` skips the edge) and receives the resolved indices; the raw ids stay on ``edge`` for callers that need them. Matrices are target-by-source — an edge source -> target is stored at ``[target, source]``, the coupling convention backends expect — and undirected edges are mirrored. ``None`` when the network declares no edge that actually connects two nodes.
         """
         # Endpointless entries are TEMPLATE edges: they name a matrix carried in the companion file, they are not connections. Select before allocating, or a template-only network (any connectome loaded from `data_file:`) builds a dense N x N of `fill` and then scans it — 8.4 GB and a 1e9-element pass for a 32k-vertex mesh, to return a matrix with nothing in it.
-        placed = [e for e in (self.edges or []) if e.source is not None and e.target is not None]
+        placed = self._placed_edges()
         if not placed:
             return None
         n = self.number_of_nodes or self.number_of_regions or 1
@@ -2705,7 +2624,7 @@ class Network(tvbo_datamodel.Network):
     def observations(self) -> dict[str, np.ndarray]:
         """Observational-measure matrices carried by the network.
 
-        Returns a ``{measure_name: matrix}`` dict for every entry in ``self.observational_measures`` (e.g. ``BoldCorrelation`` — the empirical FC target). Source-agnostic: resolves data loaded via ``from_bids`` (``_bids_observations``) or from an inline companion file (``_store``), so experiments can consume network observations the same way they consume ``weights``/``distances``.
+        Returns a ``{measure_name: matrix}`` dict for every entry in ``self.observational_measures`` (e.g. ``BoldCorrelation`` — the empirical FC target). Each is one more edge matrix, read through :meth:`array` — resident if `from_bids` or `set_array` put it there, read from the companion otherwise — so experiments consume network observations the same way they consume ``weights``/``distances``.
 
         Returns:
         -------
@@ -2725,27 +2644,10 @@ class Network(tvbo_datamodel.Network):
             return arr
 
         out: dict[str, np.ndarray] = {}
-
-        # 1) BIDS-loaded observations (from_bids path)
-        bids_obs = object.__getattribute__(self, "__dict__").get("_bids_observations", {}) or {}
         for name in measures:
-            if name in bids_obs:
-                m = _dense(bids_obs[name])
-                if m is not None:
-                    out[name] = m
-
-        # 2) Companion-file store (inline data_file path)
-        if hasattr(self, "_store") and self._store is not None:
-            try:
-                arrays = self._store.arrays
-            except Exception:
-                arrays = {}
-            for name in measures:
-                if name not in out and name in arrays:
-                    m = _dense(arrays[name])
-                    if m is not None:
-                        out[name] = m
-
+            m = _dense(self.array(f"edges/{name}"))
+            if m is not None:
+                out[name] = m
         return out
 
     @property
@@ -2846,10 +2748,8 @@ class Network(tvbo_datamodel.Network):
             # No explicit edges - generate from stored matrices. Build edges from the union of all stored matrices, attaching each matrix's values as named edge attributes.
             from scipy import sparse as _sp
 
-            arrays = self._get_arrays()
-
             # Collect matrix names from in-memory arrays, template-edge metadata, and common aliases accessible via the generic matrix(...) accessor.
-            matrix_names = set(arrays.keys())
+            matrix_names = set(self.edge_arrays())
             for e in self.edges or []:
                 lbl = getattr(e, "label", None) or getattr(e, "name", None)
                 if lbl:
@@ -2902,7 +2802,18 @@ class Network(tvbo_datamodel.Network):
         return f"Network(N={self.number_of_regions})"
 
     def __repr__(self) -> str:
-        return self.__str__()
+        """The network, and which of its arrays are resident and which are still on disk.
+
+        The difference between the two lists is the answer to "why did this script use 40 GB" — or why it did not.
+        """
+        resident = sorted(self._resident())
+        lazy = sorted(set(self._lazy_paths()) - set(resident))
+        parts = [self.__str__()]
+        if resident:
+            parts.append("resident: " + ", ".join(resident))
+        if lazy:
+            parts.append("lazy: " + ", ".join(lazy))
+        return " | ".join(parts)
 
     @property
     def atlas(self) -> Any:
@@ -3905,7 +3816,7 @@ class Network(tvbo_datamodel.Network):
                     for pname in params.keys() if hasattr(params, "keys") else []:
                         seen[pname] = True
             # Also include stored matrices
-            for pname in self._get_arrays().keys():
+            for pname in self.edge_arrays():
                 seen[pname] = True
             edge_properties = list(seen.keys())
 
@@ -3943,7 +3854,7 @@ class Network(tvbo_datamodel.Network):
                 edge_meta[lbl] = e
 
         for row, prop in enumerate(edge_properties):
-            mat = self.matrix(prop)
+            mat = self.matrix(prop, format="dense")
             if mat is None:
                 mat = self._matrix_from_explicit_edges(prop)
             if mat is None:
@@ -4111,8 +4022,7 @@ class Network(tvbo_datamodel.Network):
         ...                             parent_network=sc)
         >>> surface_net.save(tmpdir / "surface_rh.yaml")
         """
-        data = np.asarray(mapping, dtype=np.int32)
-        object.__setattr__(self, "_node_mapping_data", data)
+        self.set_array(dataset_path.lstrip("/"), np.asarray(mapping, dtype=np.int32))
         self.node_mapping = dataset_path
         if parent_network is not None:
             self.parent_network = parent_network  # __setattr__ handles Network→str
@@ -4121,30 +4031,10 @@ class Network(tvbo_datamodel.Network):
     def node_mapping_data(self):
         """The node-to-parent mapping array, or ``None``.
 
-        Resolution order: in-memory (set via :meth:`set_node_mapping`) → lazy load from HDF5 companion (if ``node_mapping`` is set).
+        The dataset ``node_mapping`` names, resident if :meth:`set_node_mapping` put it there and read from the companion otherwise.
         """
-        # 1. In-memory (set by user or by load_network)
-        try:
-            data = object.__getattribute__(self, "_node_mapping_data")
-            if data is not None:
-                return data
-        except AttributeError:
-            pass
-
-        # 2. Lazy load from companion file via _store
-        store = getattr(self, "_store", None)
-        nm_path = getattr(self, "node_mapping", None)
-        if store is not None and nm_path:
-            # Convert "/nodes/parent_index" → "nodes/parent_index"
-            key = nm_path.lstrip("/")
-            try:
-                data = store.read_dataset(key)
-                object.__setattr__(self, "_node_mapping_data", data)
-                return data
-            except (KeyError, AttributeError):
-                pass
-
-        return None
+        path = getattr(self, "node_mapping", None) or "/nodes/parent_index"
+        return self.array(path.lstrip("/"))
 
     # ── Generalized edge / matrix API ─────────────────────────────
 
@@ -4161,7 +4051,7 @@ class Network(tvbo_datamodel.Network):
 
         for edge in self.edges or []:
             label = str(getattr(edge, "label", "") or "")
-            if not label or label in arrays or getattr(edge, "producer", None) is None:
+            if not label or _array_key(label) in arrays or getattr(edge, "producer", None) is None:
                 continue
             source_dir = getattr(self, "_source_dir", None)
             produced = param_io.resolve(edge, source_dir=Path(source_dir) if source_dir else None, context=self)
@@ -4171,17 +4061,124 @@ class Network(tvbo_datamodel.Network):
                     "producer must return the (n, n) array or sparse matrix itself, or a "
                     "dict from which `output:` names one."
                 )
-            arrays[label] = produced
+            arrays[_array_key(label)] = produced
 
-    def _get_arrays(self) -> dict:
-        """Access the internal ``_arrays`` dict, bypassing JsonObj."""
+    def _resident(self) -> dict:
+        """The arrays held in memory, keyed by companion dataset path. Consulting it resolves nothing."""
         try:
             d = object.__getattribute__(self, "_arrays")
-            if not isinstance(d, dict):
-                raise AttributeError
+            if isinstance(d, dict):
+                return d
         except AttributeError:
-            d = {}
-            object.__setattr__(self, "_arrays", d)
+            pass
+        d = {}
+        object.__setattr__(self, "_arrays", d)
+        return d
+
+    def _lazy_paths(self) -> list[str]:
+        """Every dataset path the companion offers, without reading one."""
+        store = getattr(self, "_store", None)
+        if store is None:
+            return []
+        # A companion that has moved or gone is a thing `repr` reports, not a thing it raises over.
+        try:
+            paths = [f"edges/{n}" for n in (getattr(store, "names", None) or [])]
+        except (AttributeError, OSError, KeyError):
+            paths = []
+        for group in ("nodes", "mesh"):
+            try:
+                paths.extend(store.dataset_keys(group))
+            except (AttributeError, OSError, KeyError):
+                pass
+        return paths
+
+    @property
+    def arrays(self) -> dict:
+        """The materialised arrays, keyed by companion dataset path — ``edges/weight``, ``mesh/vertices``.
+
+        This and only this is what a JAX transformation traces. What the companion offers but has not been read is listed by `repr` and reached through :meth:`materialize`.
+        """
+        return self._get_arrays()
+
+    def edge_arrays(self) -> dict:
+        """The resident edge matrices alone, keyed by edge name rather than companion path.
+
+        `arrays` is keyed by path and carries meshes and edge parameters besides, so every caller that means "the matrices this network holds" reads this instead of filtering the paths itself.
+        """
+        return {name: value for key, value in self._get_arrays().items() if (name := _edge_name(key)) is not None}
+
+    def set_array(self, path: str, data) -> None:
+        """Hold ``data`` as the array at ``path`` (a bare name means an edge matrix).
+
+        The one write into the resident set. A scipy sparse matrix is kept sparse; anything else becomes an ndarray. Declares no template edge — :meth:`set_matrix` does, for an edge matrix that should reach the sidecar.
+        """
+        from scipy import sparse
+
+        self._resident()[_array_key(path)] = data if sparse.issparse(data) else np.asarray(data)
+
+    def array(self, path: str):
+        """The array at ``path``, resident or read from the companion on first use; ``None`` when there is neither.
+
+        A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format.
+        """
+        key = _array_key(path)
+        resident = self._get_arrays()
+        if key in resident:
+            return resident[key]
+        store = getattr(self, "_store", None)
+        if store is None:
+            return None
+        try:
+            if key.startswith("edges/") and key.count("/") == 1:
+                value = store[key[len("edges/") :]]
+            else:
+                value = store.read_dataset(key)
+        except (KeyError, OSError, AttributeError):
+            return None
+        resident[key] = value
+        return value
+
+    def materialize(self, *paths: str) -> "Network":
+        """A copy of this network with ``paths`` resident, and nothing else newly read.
+
+        The explicit point at which arrays are read: ``net.materialize("weight", "length")`` reads two datasets of however many the companion holds, and the copy's `arrays` then holds exactly what a solver or a gradient will see. A bare name is an edge matrix; ``mesh/vertices`` names any dataset. The copy shares the arrays already resident here (references, not copies) and the lazy store; its residency is its own.
+
+        Raises ``KeyError`` for a path neither resident nor in the companion, so a typo is a typo and not an absent leaf.
+        """
+        import copy as _copy
+
+        out = _copy.copy(self)
+        object.__setattr__(out, "_arrays", dict(self._resident()))
+        for path in paths:
+            if out.array(path) is None:
+                raise KeyError(f"{path!r} is neither resident nor in the companion of {self}")
+        return out
+
+    def edge_parameter_arrays(self) -> dict[str, dict]:
+        """``{edge: {parameter: matrix}}`` for every edge-parameter matrix, resident or in the companion.
+
+        These are kept under ``edges/<edge>/edge_parameters/<parameter>``, the path the companion writes them at.
+        """
+        out: dict[str, dict] = {}
+        for key, value in self._resident().items():
+            parts = key.split("/")
+            if len(parts) == 4 and parts[0] == "edges" and parts[2] == "edge_parameters":
+                out.setdefault(parts[1], {})[parts[3]] = value
+        store = getattr(self, "_store", None)
+        for name in getattr(store, "names", None) or []:
+            if name in out:
+                continue
+            try:
+                params = store.edge_params_of(name)
+            except (KeyError, OSError, AttributeError):
+                continue
+            if params:
+                out[name] = dict(params)
+        return out
+
+    def _get_arrays(self) -> dict:
+        """The resident arrays, with every ``producer:`` edge resolved into them once."""
+        d = self._resident()
         try:
             resolved = object.__getattribute__(self, "_producers_resolved")
         except AttributeError:
@@ -4218,22 +4215,81 @@ class Network(tvbo_datamodel.Network):
         >>> net.set_matrix("weight", W_dense)
         >>> net.set_matrix("local_connectivity", LC_sparse_csr)
         """
-        from scipy import sparse
-
-        arrays = self._get_arrays()
-
-        if sparse.issparse(data):
-            arrays[name] = data
-        else:
-            arrays[name] = np.asarray(data)
-
-        # Backward compat: sync legacy caches
-        if name in ("weight", "weights"):
-            self._cached_weights = arrays[name]
-        elif name in ("length", "lengths"):
-            self._cached_lengths = arrays[name]
-
+        self._get_arrays()
+        self.set_array(name, data)
         self._ensure_template_edge(name)
+
+    @property
+    def matrix_names(self) -> list[str]:
+        """Every edge matrix this network can serve, without reading one.
+
+        User-set arrays first, then what the companion file declares. A name here answers ``matrix(name)``; the residency of each is a separate question, which is the point.
+        """
+        names = list(self.edge_arrays())
+        store = getattr(self, "_store", None)
+        for n in getattr(store, "names", None) or []:
+            if n not in names:
+                names.append(n)
+        return names
+
+    def carries(self, name: str) -> bool:
+        """Whether ``matrix(name)`` would answer, decided from the header and the declaration without reading a value.
+
+        A resident array or a companion dataset under any spelling of *name* answers. So do the explicit edges, from which ``weight`` (an edge with none counts as 1), ``length`` (declared as ``length`` or ``distance``, or the Euclidean distance between two positioned nodes) and a positive ``delay`` are built; any other name is a per-edge parameter the edges declare. ``weight`` also answers on a bare node set, where `matrix` returns zeros, because an unconnected network is a legitimate one — `has_connectome` is the question of whether anything is connected. What a backend asks before it lowers, so a missing attribute is named at the declaration rather than met as a ``None`` in the middle of a build.
+        """
+        spellings = set(self._matrix_names(name))
+        if spellings & {str(n).lower() for n in self.matrix_names}:
+            return True
+        placed = self._placed_edges()
+        if _is_weight_name(name):
+            return bool(placed) or bool(self.nodes) or (self.number_of_nodes or 0) >= 1
+        if not placed:
+            return False
+        if _is_length_name(name):
+            if any(edge_param(e, "length") or edge_param(e, "distance") for e in placed):
+                return True
+            return any(self._compute_euclidean_distance(e.source, e.target) is not None for e in placed)
+        if str(name).lower() == "delay":
+            return any((edge_param(e, "delay") or 0) > 0 for e in placed)
+        return any(edge_param(e, name) is not None for e in placed)
+
+    def stored_format(self, name: str) -> str | None:
+        """The storage format of the matrix ``matrix(name)`` would serve — ``dense``, ``csr``, ``coo`` — from the header alone, or ``None`` when the network carries none by any spelling."""
+        spellings = set(self._matrix_names(name))
+        for candidate in self.matrix_names:
+            if str(candidate).lower() in spellings:
+                return str(self.matrix_info(candidate).format)
+        return None
+
+    @property
+    def has_connectome(self) -> bool:
+        """Whether anything is connected: a weight matrix in hand or on file, or explicit edges between nodes. A node set `matrix("weight")` answers with zeros is not."""
+        spellings = set(self._matrix_names("weight"))
+        return bool(spellings & {str(n).lower() for n in self.matrix_names}) or bool(self._placed_edges())
+
+    def matrix_info(self, name: str):
+        """Shape, dtype and storage format of one array, from the companion's header alone.
+
+        ``name`` is an edge matrix (``"weight"``) or any dataset path the companion carries (``"mesh/vertices"``). A user-set array answers from the object in hand. Raises ``KeyError`` when nothing by that name exists.
+        """
+        from tvbo.data.matrix_io import ArrayInfo
+
+        key = _array_key(name)
+        arrays = self._get_arrays()
+        if key in arrays:
+            a = arrays[key]
+            data = getattr(a, "data", a)
+            return ArrayInfo(
+                key,
+                tuple(a.shape),
+                np.dtype(getattr(a, "dtype", float)),
+                str(getattr(a, "format", "dense")),
+                int(getattr(data, "nbytes", 0)),
+            )
+        store = getattr(self, "_store", None)
+        if store is None or not hasattr(store, "info"):
+            raise KeyError(name)
+        return store.info(name)
 
     def _matrix_names(self, name: str) -> tuple:
         """Spellings to try for a named edge matrix, most specific first.
@@ -4252,7 +4308,7 @@ class Network(tvbo_datamodel.Network):
     ):
         """Get a named edge matrix, optionally in a specific format.
 
-        The single canonical connectivity accessor. Resolution order: the ``_pytree_data`` payload (the live matrices under a JAX transformation) → ``_arrays`` (user-set) → ``_store`` (the lazy companion file) → ``_cached_*`` (legacy) → edges → ``None``, so a stale legacy cache can never shadow the companion file the spec points at. Each SOURCE is exhausted across every alias spelling before the next is consulted — precedence is between sources, and a spelling is not a precedence, so a companion file holding ``weight`` cannot shadow a user-set ``weights``.
+        The single canonical connectivity accessor. Resolution order: the resident `arrays`, a JAX array among them returned untouched (the live leaf under a transformation) → the companion file, whose matrix is then kept resident → the explicit edges → ``None``. Each SOURCE is exhausted across every alias spelling before the next is consulted — precedence is between sources, and a spelling is not a precedence, so a companion file holding ``weight`` cannot shadow a user-set ``weights``.
 
         Being canonical means subsuming what the deprecated properties returned, so a WEIGHT target on a node set with no edges yields zeros rather than ``None``: an unconnected network is a legitimate one, and every consumer of this builds an ``(n, n)`` array from the result.
 
@@ -4278,50 +4334,45 @@ class Network(tvbo_datamodel.Network):
         from scipy import sparse
         from scipy.sparse import coo_matrix, csr_matrix, lil_matrix
 
-        # Under a JAX transformation the live matrices are the pytree payload, not the pre-trace attributes, so it wins outright — reading around it returns stale weights silently.
-        _pytree = getattr(self, "_pytree_data", None)
-        if _pytree is not None:
-            if _is_weight_name(name):
-                return _pytree[0]
-            if _is_length_name(name):
-                return _pytree[1]
-
         arrays = self._get_arrays()
         store = getattr(self, "_store", None)
         candidates = self._matrix_names(name)
 
-        def _pick(source):
-            """First candidate spelling held by one source, exact match before case-folded.
+        def _spelled(names):
+            """The first candidate among ``names``, exact match before case-folded.
 
-            The exact pass keeps a lazy store lazy; only a miss enumerates its keys, which is what makes a sidecar spelling lengths ``tractLength`` resolvable at all.
+            The case-folded pass is what makes a sidecar spelling lengths ``tractLength`` resolvable at all.
             """
-            if source is None:
-                return None
+            names = list(names)
             for cand in candidates:
-                if cand in source:
-                    return source[cand]
-            keys = getattr(source, "arrays", None)
-            keys = keys if keys is not None else (source if hasattr(source, "keys") else None)
-            if not keys:
-                return None
+                if cand in names:
+                    return cand
             folded = {}
-            for k in keys.keys():
+            for k in names:
                 folded.setdefault(str(k).lower(), k)
             for cand in candidates:
-                k = folded.get(cand)
-                if k is not None:
-                    return source[k]
+                if cand in folded:
+                    return folded[cand]
             return None
 
-        mat = _pick(arrays)
+        mat = None
+        found = _spelled(self.edge_arrays())
+        if found is not None:
+            mat = arrays[_array_key(found)]
+            if isinstance(mat, JaxArray):
+                return mat
+        elif store is not None:
+            found = _spelled(getattr(store, "names", None) or getattr(store, "arrays", {}).keys())
+            if found is not None:
+                # A sidecar may declare a template edge the companion does not carry, and a name the store lists is not a promise it can serve one.
+                try:
+                    mat = store[found]
+                except (KeyError, OSError):
+                    mat = None
+                else:
+                    arrays[_array_key(found)] = mat
         if mat is None:
-            mat = _pick(store)
-        if mat is None:
-            if _is_weight_name(name) and getattr(self, "_cached_weights", None) is not None:
-                mat = self._cached_weights
-            elif _is_length_name(name) and getattr(self, "_cached_lengths", None) is not None:
-                mat = self._cached_lengths
-            elif _is_weight_name(name):
+            if _is_weight_name(name):
                 mat = self._weights_from_edges()
             elif _is_length_name(name):
                 mat = self._lengths_from_edges()
@@ -4447,7 +4498,7 @@ class Network(tvbo_datamodel.Network):
             else:
                 new_rows, new_cols, new_data = sources, targets, values
 
-            existing = arrays.get(name)
+            existing = arrays.get(_array_key(name))
 
             if existing is None:
                 mat = coo_matrix((new_data, (new_rows, new_cols)), shape=(n, n))
@@ -4462,13 +4513,7 @@ class Network(tvbo_datamodel.Network):
                 data = np.concatenate([existing.data, new_data])
                 mat = coo_matrix((data, (rows, cols)), shape=existing.shape)
 
-            arrays[name] = mat
-
-            # Backward compat
-            if name in ("weight", "weights"):
-                self._cached_weights = mat
-            elif name in ("length", "lengths"):
-                self._cached_lengths = mat
+            arrays[_array_key(name)] = mat
 
             self._ensure_template_edge(name)
 
@@ -4545,7 +4590,7 @@ class Network(tvbo_datamodel.Network):
             label = edge_label(name) or name
             if label == target:
                 return M
-            stored = self.matrix(label)
+            stored = self.matrix(label, format="dense")
             if stored is not None:
                 return stored
             vec = self.node_parameter_vectors.get(name)
@@ -4641,8 +4686,7 @@ class Network(tvbo_datamodel.Network):
         """
         from scipy import sparse
 
-        arrays = self._get_arrays()
-        mat = arrays.get(name)
+        mat = self._get_arrays().get(_array_key(name))
 
         for e in self.edges or []:
             lbl = getattr(e, "label", None) or getattr(e, "name", None)
@@ -4672,7 +4716,7 @@ class Network(tvbo_datamodel.Network):
         self.edges.append(edge)
 
 
-@register_pytree_node_class
+@register_pytree
 class Connectome(Network):
     """Deprecated alias for Network. Use Network instead."""
 

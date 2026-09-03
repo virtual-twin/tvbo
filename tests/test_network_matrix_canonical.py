@@ -1,8 +1,9 @@
 """`Network.matrix` is the one connectivity lookup, and every other accessor defers to it.
 
-The regression these freeze: `_weights_matrix` used to consult the legacy `_cached_weights` BEFORE the lazy companion store, while `matrix` consulted the store first. A resolution step that populates the cache from somewhere other than the companion — declaring `parcellation:` alongside `data_file` caches a normative atlas connectome — then made the two accessors return different matrices for the same network. `matrix("weight")` reported the companion's SC while the codegen path silently integrated the atlas's raw streamline counts, so every consistency check passed and the simulation was still wrong.
+The regression these freeze: `_weights_matrix` used to consult a legacy cache BEFORE the lazy companion store, while `matrix` consulted the store first. A resolution step that populated the cache from somewhere other than the companion — declaring `parcellation:` alongside `data_file` cached a normative atlas connectome — then made the two accessors return different matrices for the same network. `matrix("weight")` reported the companion's SC while the codegen path silently integrated the atlas's raw streamline counts, so every consistency check passed and the simulation was still wrong. There is no such cache any more: what is resident is `arrays`, keyed by companion path, and it is the one place every accessor reads.
 """
 
+import jax.numpy as jnp
 import numpy as np
 import pytest
 
@@ -17,6 +18,7 @@ class _Store:
 
     def __init__(self, arrays):
         self.arrays = dict(arrays)
+        self.names = list(arrays)
 
     def __contains__(self, name):
         return name in self.arrays
@@ -26,31 +28,30 @@ class _Store:
 
 
 @pytest.fixture
-def net_with_stale_cache():
-    net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION))
-    object.__setattr__(net, "_arrays", {})
+def net_over_a_companion():
+    """A network with a stale matrix resident under its own name and the real one in the companion, which is what the resident-wins precedence has to be read against."""
+    net = Network.from_matrix(STALE, np.zeros_like(STALE))
     object.__setattr__(net, "_store", _Store({"weight": COMPANION}))
-    net._cached_weights = STALE
     return net
 
 
-def test_companion_store_wins_over_a_stale_legacy_cache(net_with_stale_cache):
-    assert np.array_equal(np.asarray(net_with_stale_cache.matrix("weight", format="dense")), COMPANION)
+def test_a_resident_matrix_wins_over_the_companion(net_over_a_companion):
+    assert np.array_equal(np.asarray(net_over_a_companion.matrix("weight", format="dense")), STALE)
 
 
-def test_codegen_path_agrees_with_matrix(net_with_stale_cache):
+def test_codegen_path_agrees_with_matrix(net_over_a_companion):
     """The accessor the tvboptim codegen path uses must not diverge from `matrix`."""
-    canonical = np.asarray(net_with_stale_cache.matrix("weight", format="dense", apply_transforms=False))
-    codegen = np.asarray(net_with_stale_cache._weights_matrix(apply_transforms=False))
+    canonical = np.asarray(net_over_a_companion.matrix("weight", format="dense", apply_transforms=False))
+    codegen = np.asarray(net_over_a_companion._weights_matrix(apply_transforms=False))
     assert np.array_equal(codegen, canonical)
-    assert np.array_equal(codegen, COMPANION)
+    assert np.array_equal(codegen, STALE)
 
 
-def test_deprecated_accessors_warn_and_agree(net_with_stale_cache):
+def test_deprecated_accessors_warn_and_agree(net_over_a_companion):
     for name in ("weights_matrix", "raw_weights_matrix", "weights"):
         with pytest.deprecated_call():
-            value = getattr(net_with_stale_cache, name)
-        assert np.array_equal(np.asarray(value), COMPANION), name
+            value = getattr(net_over_a_companion, name)
+        assert np.array_equal(np.asarray(value), STALE), name
 
 
 def test_alias_spellings_resolve_to_the_same_matrix():
@@ -67,7 +68,7 @@ def test_a_user_set_matrix_wins_over_the_companion_under_any_spelling():
     """
     user = COMPANION * 7.0
     net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION))
-    object.__setattr__(net, "_arrays", {"weights": user})
+    object.__setattr__(net, "_arrays", {"edges/weights": user})
     object.__setattr__(net, "_store", _Store({"weight": COMPANION}))
     assert np.array_equal(np.asarray(net.matrix("weight", format="dense")), user)
 
@@ -117,15 +118,14 @@ def test_absent_tract_lengths_stay_absent():
 
 
 def test_the_pytree_payload_wins_under_a_jax_transformation():
-    """The live matrices under a JAX transform are the payload, not the pre-trace attributes.
+    """The live matrices under a JAX transform are the leaves `tree_unflatten` installed, not pre-trace attributes.
 
-    `_weights_matrix` and `lengths_matrix` both read `_pytree_data` first. An accessor that reads around it returns the pre-trace weights and the run completes on stale connectivity.
+    A resident JAX array is what `matrix` hands back, untouched. An accessor that reads around it returns the pre-trace weights and the run completes on stale connectivity.
     """
     traced_w = COMPANION * 5.0
     traced_l = np.full_like(COMPANION, 42.0)
     net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION))
-    object.__setattr__(net, "_arrays", {"weight": COMPANION})
-    object.__setattr__(net, "_pytree_data", (traced_w, traced_l))
+    object.__setattr__(net, "_arrays", {"edges/weight": jnp.asarray(traced_w), "edges/length": jnp.asarray(traced_l)})
     assert np.array_equal(np.asarray(net.matrix("weight")), traced_w)
     assert np.array_equal(np.asarray(net.matrix("length")), traced_l)
     assert np.array_equal(np.asarray(net.matrix("weight")), np.asarray(net._weights_matrix()))
@@ -134,12 +134,11 @@ def test_the_pytree_payload_wins_under_a_jax_transformation():
 LENGTHS = np.array([[0.0, 30.0], [30.0, 0.0]])
 
 
-def test_lengths_also_prefer_the_companion_over_a_stale_cache():
+def test_lengths_resolve_from_the_companion():
     """Lengths carried the same shadowing as weights — a wrong delay matrix, silently."""
     net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION))
     object.__setattr__(net, "_arrays", {})
     object.__setattr__(net, "_store", _Store({"weight": COMPANION, "length": LENGTHS}))
-    net._cached_lengths = np.full((2, 2), 999.0)
     assert np.array_equal(np.asarray(net.matrix("length", format="dense")), LENGTHS)
 
 
@@ -169,9 +168,9 @@ def test_a_single_node_network_is_unconnected_not_absent():
 
 
 def test_the_pytree_payload_is_the_connectivity_under_a_trace():
-    """Reading around the payload returns pre-trace weights — silently stale, never an error."""
+    """Reading around the installed leaves returns pre-trace weights — silently stale, never an error."""
     net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION))
     traced = np.full((2, 2), 5.0)
-    object.__setattr__(net, "_pytree_data", (traced, LENGTHS))
+    object.__setattr__(net, "_arrays", {"edges/weight": jnp.asarray(traced), "edges/length": jnp.asarray(LENGTHS)})
     assert np.array_equal(np.asarray(net.matrix("weight")), traced)
     assert np.array_equal(np.asarray(net.matrix("length")), LENGTHS)

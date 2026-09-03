@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from tvbo.adapters.base import BaseAdapter
+from tvbo.adapters.base import BaseAdapter, dense_matrix
 from tvbo.codegen.code import inline_functions
 
 # Single source of truth (forward map + derived reverse) lives in tvbo/codegen/pyrates.py; re-imported here and used by the model template so the rename mapping is defined exactly once. See PYRATES_REPL there.
@@ -182,6 +182,9 @@ def _legacy_input_variable(dynamics):
 
 class PyRatesAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via PyRates backend."""
+
+    DELAY_CARRIERS = ("delay", "length")
+    """Explicit per-edge delays are used as they are; tract lengths are converted through `Network.calculate_delays`."""
 
     def __init__(self, experiment: SimulationExperiment):
         """Initialize adapter with experiment reference.
@@ -593,7 +596,7 @@ class PyRatesAdapter(BaseAdapter):
         elif network is not None:
             # Base Network/Connectome: all nodes share the default dynamics
             n_nodes = getattr(network, "number_of_nodes", 0)
-            weights = network.matrix("weight") if hasattr(network, "matrix") else None
+            weights = dense_matrix(network, "weight")
             if weights is not None:
                 n_nodes = weights.shape[0]
             if hasattr(network, "node_labels") and network.node_labels:
@@ -711,7 +714,7 @@ class PyRatesAdapter(BaseAdapter):
             tgt_var = src_var
 
         # Add edges using matrix
-        weights = network.matrix("weight")
+        weights = dense_matrix(network, "weight")
         if weights is not None and weights.size > 0:
             delays = self._get_delays(network)
             edge_attr = {"delay": delays} if delays is not None else None

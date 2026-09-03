@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 
+from tvbo.adapters.base import dense_matrix
 from tvbo.codegen import render_expression
 from tvbo.parse.expression import parse_eq, states_an_expression
 from tvbo.utils import initial_value
@@ -130,8 +131,6 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     ``constraints`` promotes constraint-defined free parameters (e.g. the FIC ``J_i``) from parameters to extra unknown STATE blocks, appended after the real state. Each block's defining equation is the ``TuningObjective`` residual (``target_variable − target_value``), not an ODE: at equilibrium the residual is zero so the constraint holds, and during the initial-state warm-up the same residual is stabilising negative feedback (``target_variable`` ↑ ⇒ free param ↑ ⇒ inhibition ↑ ⇒ ``target_variable`` ↓), so no separate solver is needed. This is the FIC branch of Deco 2014 Fig 2c. See ``DEV_PLAN_recipe_native.md`` (D2).
     Each constraint is ``{"parameter", "target_variable", "target_value"}``.
     """
-    import numpy as np
-
     sv, params, coupling, _dvars, _dparams = symbol_names(model)
     jl = make_renderer(model, "julia")
     arg_x = "_x" if "x" in sv else "x"
@@ -140,9 +139,9 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     free_names = {c["parameter"] for c in constraints}
 
     # Connectivity matrix as a Julia literal (rows ';'-separated).
-    W = np.asarray(network.matrix("weight"), dtype=float)
-    if W.shape != (n_nodes, n_nodes):
-        raise ValueError(f"weight matrix shape {W.shape} != ({n_nodes}, {n_nodes})")
+    W = dense_matrix(network, "weight")
+    if W is None or W.shape != (n_nodes, n_nodes):
+        raise ValueError(f"weight matrix shape {None if W is None else W.shape} != ({n_nodes}, {n_nodes})")
     w_const = "[" + ";\n ".join(" ".join(repr(float(v)) for v in row) for row in W) + "]"
 
     # Coupling source = the state variable flagged coupling_variable (fallback: sv[0]).

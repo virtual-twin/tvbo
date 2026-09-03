@@ -801,10 +801,10 @@ def build_surface_network(
         number_of_vertices=n_vertices,
         number_of_elements=n_elements,
     )
-    object.__setattr__(surface_net, "_mesh", mesh)
-    object.__setattr__(surface_net, "_mesh_vertices", vertices)
-    object.__setattr__(surface_net, "_mesh_elements", triangles)
-    object.__setattr__(surface_net, "_mesh_normals", normals)
+    surface_net.mesh = mesh
+    surface_net.set_array("mesh/vertices", vertices)
+    surface_net.set_array("mesh/elements", triangles)
+    surface_net.set_array("mesh/normals", normals)
 
     # Link vertices → lobes via parent network
     surface_net.set_node_mapping(

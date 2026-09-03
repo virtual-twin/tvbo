@@ -13,7 +13,7 @@ from tvbo.classes.network import Network
 def _network_with_node_arrays(tmp_path, arrays):
     """A two-node network whose companion carries extra ``nodes/<name>`` datasets."""
     net = Network(number_of_nodes=2)
-    net._cached_weights = np.array([[0.0, 1.0], [1.0, 0.0]])
+    net.set_array("edges/weight", np.array([[0.0, 1.0], [1.0, 0.0]]))
     src = tmp_path / "src" / "network.yaml"
     src.parent.mkdir(parents=True, exist_ok=True)
     net.save(str(src))

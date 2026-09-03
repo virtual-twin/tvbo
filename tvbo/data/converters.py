@@ -104,7 +104,9 @@ def to_bep017(network, output_dir):
         Output directory for BEP017 files.
     """
     store = getattr(network, "_store", None)
-    arrays = store.arrays if store else getattr(network, "_arrays", {})
+    # `Network.arrays` is keyed by companion path; `edge_arrays` is the same set keyed by the edge name a BEP017 filename is built from.
+    arrays = dict(store.arrays) if store else {}
+    arrays.update(network.edge_arrays() if hasattr(network, "edge_arrays") else {})
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 

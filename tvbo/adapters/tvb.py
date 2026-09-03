@@ -22,6 +22,7 @@ from typing import Any
 
 import numpy as np
 
+from tvbo.adapters.base import dense_matrix, edge_needs, require_edge_attributes
 from tvbo.datamodel import schema as tvbo_datamodel
 
 
@@ -867,11 +868,10 @@ def from_tvb_surface(connectivity, surface, region_mapping):
         number_of_vertices=n_vertices,
         number_of_elements=n_elements,
     )
-    # ``mesh`` is now a first-class schema slot on Network. Set it directly; runtime array caches stay as private attributes.
     surface_net.mesh = mesh
-    object.__setattr__(surface_net, "_mesh_vertices", vertices)
-    object.__setattr__(surface_net, "_mesh_elements", triangles)
-    object.__setattr__(surface_net, "_mesh_normals", normals)
+    surface_net.set_array("mesh/vertices", vertices)
+    surface_net.set_array("mesh/elements", triangles)
+    surface_net.set_array("mesh/normals", normals)
 
     surface_net.set_node_mapping(
         mapping,
@@ -897,8 +897,13 @@ def to_tvb(network):
     """
     from tvb.datatypes.connectivity import Connectivity
 
-    _weights = np.asarray(network.matrix("weight"), dtype=float)
-    _lengths = np.asarray(network.lengths_matrix, dtype=float)
+    require_edge_attributes(network, "tvb", edge_needs(network))
+    _weights = dense_matrix(network, "weight")
+    if _weights is None:
+        raise ValueError(f"{network} carries no weight matrix, so there is no connectome to build a TVB Connectivity from.")
+    _lengths = dense_matrix(network, "length")
+    if _lengths is None:
+        _lengths = np.zeros_like(_weights)
     _centres = np.asarray(list(network.get_centers().values()), dtype=float)
     cs_param = getattr(network, "conduction_speed", None)
     cs_value = cs_param.value if cs_param and hasattr(cs_param, "value") else 3.0

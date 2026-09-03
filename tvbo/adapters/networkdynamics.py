@@ -267,7 +267,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         The edge and experiment templates carry no delay path, so a delayed coupling is not lowered — it is dropped, and the run returns a well-formed trajectory of the undelayed network. They carry no observation path either, so a declared monitor is dropped the same way and the result arrives with an empty ``observations``. Refusing is the same contract the Brian2 adapter states for the forms it cannot lower: a clear error beats a plausible answer to a different question.
         """
-        delayed = [name for name, coupling in (self.resolve_couplings() or {}).items() if getattr(coupling, "delayed", False)]
+        delayed = self.delayed_couplings()
         if delayed:
             raise NotImplementedError(
                 "the NetworkDynamics.jl templates lower no transmission delay, so "
@@ -284,6 +284,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
                 f"{', '.join(observations)} would be dropped and the run would return the raw trajectory alone. "
                 "Run the monitors on a backend that lowers them (tvb, tvboptim, jax), or drop them from the experiment."
             )
+        super().refuse_unrenderable()
 
     def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using NetworkDynamics.jl.

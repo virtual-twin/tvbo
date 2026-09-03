@@ -34,6 +34,7 @@ from pydantic import BaseModel
 
 from tvbo.datamodel import dialect
 from tvbo.datamodel import pydantic as _dm
+from tvbo.datamodel.dialect import identifier_field
 from tvbo.utils import yaml_loader
 
 __all__ = ["load", "loads", "validate", "normalize", "dump", "DEFAULT_TARGET"]
@@ -84,23 +85,6 @@ def _first_model(annotation: Any) -> type[BaseModel] | None:
 
 
 @cache
-def _identifier_field(model_cls: type[BaseModel]) -> str | None:
-    """Name of the slot the inlined-dict key maps onto.
-
-    A non-``name``/``id`` key slot marks itself with a ``collection_key`` annotation, because LinkML consumes ``identifier``/``key`` into the field's required-ness and drops them from the emitted metadata (so they can't be read back here). Otherwise falls back to the universal TVBO conventions ``name`` then ``id``. Returns ``None`` when no identifier slot can be determined (the member is then left untouched).
-    """
-    fields = model_cls.model_fields
-    for fname, info in fields.items():
-        extra = info.json_schema_extra
-        meta = extra.get("linkml_meta") if isinstance(extra, dict) else None
-        if isinstance(meta, dict) and "collection_key" in (meta.get("annotations") or {}):
-            return fname
-    for candidate in ("name", "id"):
-        if candidate in fields:
-            return candidate
-    return None
-
-
 # Key -> identifier injection
 def _inject(model_cls: type[BaseModel], data: Any) -> Any:
     """Recursively inject keyed-dict keys into each member's identifier slot.
@@ -130,7 +114,7 @@ def _inject(model_cls: type[BaseModel], data: Any) -> Any:
                 args = get_args(cand)
                 member_cls = _first_model(args[1]) if len(args) == 2 else None
                 if member_cls is not None:
-                    id_slot = _identifier_field(member_cls)
+                    id_slot = identifier_field(member_cls)
                     if isinstance(value, dict):
                         for member_key, member in value.items():
                             if isinstance(member, dict):

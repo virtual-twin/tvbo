@@ -12,6 +12,7 @@ import itertools
 import re
 from pathlib import Path
 
+from tvbo.adapters.base import dense_matrix
 from tvbo.templates import lookup
 from tvbo.utils import as_list
 
@@ -184,17 +185,15 @@ def _read_mesh_cached(path: str, kind: str, mesh_format):
         from tvbo.classes.network import Network
 
         net = Network.from_file(path)
-        try:
-            return (
-                _np.asarray(object.__getattribute__(net, "_mesh_vertices")),
-                _np.asarray(object.__getattribute__(net, "_mesh_elements")),
-            )
-        except AttributeError:
-            raise ValueError(
-                f"surface panel: network {path!r} carries no mesh. Its companion needs a "
-                "`mesh` group (vertices + elements); a network built from edges alone has "
-                "no geometry to paint on."
-            ) from None
+        read = getattr(net, "array", None)
+        vertices, elements = (read("mesh/vertices"), read("mesh/elements")) if callable(read) else (None, None)
+        if vertices is not None and elements is not None:
+            return _np.asarray(vertices), _np.asarray(elements)
+        raise ValueError(
+            f"surface panel: network {path!r} carries no mesh. Its companion needs a "
+            "`mesh` group (vertices + elements); a network built from edges alone has "
+            "no geometry to paint on."
+        )
     if path.endswith(".npz"):
         with _np.load(path) as data:
             missing = {"vertices", "faces"} - set(data)
@@ -210,7 +209,7 @@ def _read_mesh_cached(path: str, kind: str, mesh_format):
 
 
 def _read_mesh(path: str, kind: str, mesh_format):
-    """Per-caller mesh: the parse is cached (once per file), but each caller gets its OWN arrays. The cached tuple must never be handed out directly — a grid of surfaces would then share one geometry, and any in-place consumer (recenter/normalize) would corrupt it for every later cell. Copying outside the cache (not freezing) also avoids aliasing a network's own live ``_mesh_vertices`` array."""
+    """Per-caller mesh: the parse is cached (once per file), but each caller gets its OWN arrays. The cached tuple must never be handed out directly — a grid of surfaces would then share one geometry, and any in-place consumer (recenter/normalize) would corrupt it for every later cell. Copying outside the cache (not freezing) also avoids aliasing a network's own resident ``mesh/vertices`` array."""
     vertices, faces = _read_mesh_cached(path, kind, mesh_format)
     return vertices.copy(), faces.copy()
 
@@ -643,7 +642,7 @@ def _network_geometry(ref: str, base_dir: Path):
     labels = [str(nm) for nm in network.node_labels]
     centres = network.get_centers()
     coords = _np.asarray([centres[i] for i in range(len(labels))], dtype=float)
-    weights = _np.asarray(network.matrix("weight"), dtype=float)
+    weights = dense_matrix(network, "weight")
     return coords, weights, labels
 
 

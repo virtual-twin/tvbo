@@ -51,7 +51,7 @@ class _Net:
     def node_positions(self):
         return np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]], float)
 
-    def matrix(self, lab):
+    def matrix(self, lab, format=None):
         return np.array([[0, 1, 2, 0], [1, 0, 0, 3], [0, 0, 0, 1], [2, 0, 1, 0]], float) if lab == "weight" else None
 
 
@@ -75,7 +75,7 @@ def test_collect_raises_when_vector_unbuildable():
     """A referenced node vector that cannot be built from the network is a hard error, not a silent empty constant."""
 
     class _NoWeight(_Net):
-        def matrix(self, lab):
+        def matrix(self, lab, format=None):
             return None
 
     exp = NS(network=_NoWeight(), observations={"a": NS(source=["network.instrength"], pipeline=[], dynamics=None)})

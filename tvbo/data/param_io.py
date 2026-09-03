@@ -106,22 +106,14 @@ _REF_PREFIX = "network."
 
 
 def _mesh_array(net: Any, field: str) -> np.ndarray:
-    """A mesh array off the Network's lazy runtime caches (set by the h5 load path)."""
-    attr = {
-        "vertices": "_mesh_vertices",
-        "elements": "_mesh_elements",
-        "faces": "_mesh_elements",
-        "normals": "_mesh_normals",
-    }.get(field)
-    if attr is None:
+    """A mesh array off the network, resident or read from its companion's ``mesh/`` group."""
+    name = {"vertices": "vertices", "elements": "elements", "faces": "elements", "normals": "normals"}.get(field)
+    if name is None:
         raise ValueError(f"network.mesh.{field}: unknown mesh array; expected one of vertices, elements/faces, normals.")
-    try:
-        return np.asarray(object.__getattribute__(net, attr))
-    except AttributeError:
-        raise ValueError(
-            f"network.mesh.{field}: the network carries no mesh (nothing loaded into "
-            f"{attr}); does its companion have a mesh/ group?"
-        ) from None
+    arr = net.array(f"mesh/{name}") if hasattr(net, "array") else None
+    if arr is None:
+        raise ValueError(f"network.mesh.{field}: the network carries no mesh/{name}; does its companion have a mesh/ group?")
+    return np.asarray(arr)
 
 
 _NODE_MEASURES = ("positions", "instrength", "labels")
@@ -137,7 +129,7 @@ def resolve_network_node(net: Any, measure: str) -> np.ndarray | None:
     if measure == "positions" and hasattr(net, "node_positions"):
         return np.asarray(net.node_positions(), dtype=float)
     if measure == "instrength" and hasattr(net, "matrix"):
-        w = net.matrix("weight")
+        w = net.matrix("weight", format="dense")
         return np.asarray(w, dtype=float).sum(axis=1) if w is not None else None
     if measure == "labels" and hasattr(net, "node_labels"):
         labels = net.node_labels
@@ -211,7 +203,7 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
         return _mesh_array(net, rest.split(".", 1)[1])
     if rest.startswith("edges."):
         label = rest.split(".", 1)[1]
-        mat = net.matrix(label) if hasattr(net, "matrix") else None
+        mat = net.matrix(label, format="dense") if hasattr(net, "matrix") else None
         if mat is None:
             raise ValueError(f"{where}: the network has no {label!r} matrix.")
         return np.asarray(mat, dtype=float)

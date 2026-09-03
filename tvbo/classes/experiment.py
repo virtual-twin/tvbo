@@ -1401,7 +1401,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     da = ds[_final_key(ds, sv)]
                     for d in [d for d in da.dims if d != _node_dim(da)]:
                         da = da.isel({d: sel})
-                    seed[sv] = jnp.asarray(np.asarray(da.values).ravel())
+                    seed[sv] = jnp.asarray(da.values).ravel()
                 return seed
 
             seeds, axis_values, axis_name, n_cells = {}, None, None, None
@@ -1417,7 +1417,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     )
                 sd = sweep[0]
                 da = da.transpose(sd, nd)  # (n_cells, n_nodes), by name
-                seeds[sv] = jnp.asarray(np.asarray(da.values))
+                seeds[sv] = jnp.asarray(da.values)
                 if axis_values is None:
                     axis_name = str(sd)
                     if sd not in da.coords:
@@ -1438,7 +1438,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ds.close()
         return {
             "axis_name": axis_name,
-            "axis_values": jnp.asarray(np.asarray(axis_values, dtype=float)),
+            "axis_values": jnp.asarray(axis_values, dtype=float),
             "seeds": seeds,
             "n_cells": n_cells,
         }
@@ -1579,7 +1579,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     if any(d in da.coords for d in node_dims):
                         amap, labels = _recon_ctx()
                         da = _dref.reconcile_by_label(da, amap, labels, node_dims=node_dims)
-                    out[pname] = jnp.asarray(np.asarray(da.values))
+                    out[pname] = jnp.asarray(da.values)
             finally:
                 ds.close()
         return out
@@ -1713,6 +1713,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             from tvbo.adapters.tvboptim import (
                 is_heterogeneous,
                 run_heterogeneous_tvboptim,
+                solver_weights,
             )
 
             if is_heterogeneous(self):
@@ -1797,7 +1798,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Run with detailed timing
                 t0 = time.perf_counter()
                 results = ns.run_experiment(
-                    weights=self.network.matrix("weight", apply_transforms=False),
+                    weights=solver_weights(self.network),
                     distances=self.network.distances,
                     delays=delay_matrix,
                     region_labels=node_labels,
@@ -1813,7 +1814,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 return ExperimentResult(results, experiment_name=self.label, source=self)
             else:
                 raw_results = ns.run_experiment(
-                    weights=self.network.matrix("weight", apply_transforms=False),
+                    weights=solver_weights(self.network),
                     distances=self.network.distances,
                     delays=delay_matrix,
                     region_labels=node_labels,
@@ -2246,10 +2247,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.classes.network import Network as _Network
 
         net = getattr(self, "network", None)
-        has_matrices = net is not None and (
-            (getattr(net, "number_of_nodes", None) or 0) > 1
-            or (net.matrix("weight") is not None and _np.asarray(net.matrix("weight")).size > 1)
-        )
+
+        def _wider_than_one_node() -> bool:
+            """Whether the weight matrix spans more than one node — read only when the declared node count has not already answered, so a lazy companion stays unread."""
+            weight = net.matrix("weight")
+            return weight is not None and int(_np.prod(weight.shape)) > 1
+
+        has_matrices = net is not None and ((getattr(net, "number_of_nodes", None) or 0) > 1 or _wider_than_one_node())
         if not has_matrices:
             return self.to_yaml()
 
@@ -2538,7 +2542,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             obs = self.observations[name]
             path = self._find_subject_file(root, active_subject, getattr(obs, "query", None))
             target_net = Network.load(str(path))
-            mat = np.asarray(target_net.matrix(measure))
+            mat = np.asarray(target_net.matrix(measure, format="dense"))
             if mat.ndim != 2:
                 raise ValueError(f"Observation '{name}': measure '{measure}' is not a 2-D matrix in {path.name}.")
             tlabels = list(target_net.node_labels)

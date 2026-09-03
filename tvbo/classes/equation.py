@@ -14,7 +14,6 @@ import sympy as sp
 from sympy import (
     IndexedBase,
     Symbol,
-    parse_expr,
     sympify,
 )
 from sympy.core.basic import Basic
@@ -22,7 +21,7 @@ from sympy.core.symbol import symbols
 from sympy.printing.printer import Printer
 
 from tvbo.ontology import owl as ontology
-from tvbo.parse.symbols import BUILTIN_SHADOW
+from tvbo.parse.symbols import BUILTIN_SHADOW, SymbolContext
 
 # Term order only — NOT `init_printing`, which also installs global IPython display formatters. Under a Jupyter kernel sympy resolves those to `use_latex='png'` and claims builtin `int`, so a report's inline `{python} n_modes` renders as a base64 PNG instead of a number. This is the setting `init_printing` itself applies, without that side effect.
 Printer.set_global_settings(order="none")
@@ -208,31 +207,24 @@ def rename_uppercase_variables(input_equation):
 
 
 def set_specific_symbols_to_zero(
-    equation_str,
+    equation,
     symbols_to_zero=coupling_variables,
 ):
-    """Substitute the given symbols with zero in an equation string.
+    """Substitute the given symbols with zero in an equation.
 
-    Parses `equation_str` and replaces every symbol named in `symbols_to_zero` with `0`, for example to drop coupling contributions for isolated-node dynamics.
+    Replaces every symbol named in `symbols_to_zero` with `0`, for example to drop coupling contributions for isolated-node dynamics. A SymPy expression is substituted as it is; a string is parsed in a scope of exactly the names it mentions, so `e`, `I` and `beta` stay the model's symbols rather than sympy's constants.
 
     Args:
-        equation_str: The equation to parse and modify.
-        symbols_to_zero: Names of the symbols to set to zero; defaults to the
-            module-level coupling variable names.
+        equation: The SymPy expression, or the equation string, to modify.
+        symbols_to_zero: Names of the symbols to set to zero; defaults to the module-level coupling variable names.
 
     Returns:
         The SymPy expression with the listed symbols replaced by zero.
     """
-    # Convert the equation string to a SymPy expression
-    equation = parse_expr(equation_str, evaluate=False)
-
-    # Create a dictionary for substitutions with each target symbol set to 0
-    substitutions = {symbols(symbol): 0 for symbol in symbols_to_zero}
-
-    # Perform the substitution
-    modified_equation = equation.subs(substitutions)
-
-    return modified_equation
+    if not isinstance(equation, Basic):
+        names = set(re.findall(r"[A-Za-z_][A-Za-z_0-9]*", str(equation)))
+        equation = SymbolContext.auto(names).parse(str(equation), evaluate=False)
+    return equation.subs({symbols(name): 0 for name in symbols_to_zero})
 
 
 # ----
@@ -437,49 +429,6 @@ def symbolic_conditions(NMM, zero_coupling=False, **kwargs):
         cond_dict[k.replace(suffix, "")] = symeq
 
     return cond_dict
-
-
-def symbolic_topological_sort(equations):
-    """Order equation names so dependencies precede the equations that use them.
-
-    Builds a dependency graph from each expression's free symbols that also appear as equation keys, then performs a Kahn topological sort.
-
-    Args:
-        equations: Mapping of variable names to SymPy expressions.
-
-    Returns:
-        A list of equation names in dependency-respecting order.
-
-    Raises:
-        ValueError: If the equations contain a circular dependency.
-    """
-    graph = {k: set() for k in equations}
-    for eq, expr in equations.items():
-        for symbol in expr.free_symbols:
-            symbol_str = str(symbol)
-            if symbol_str in equations and symbol_str != eq:
-                graph[symbol_str].add(eq)
-    # TODO: why not use here the topological_sort method defined above
-    in_degree = {node: 0 for node in graph}
-    for node in graph:
-        for dependent in graph[node]:
-            in_degree[dependent] += 1
-
-    queue = deque([node for node in graph if in_degree[node] == 0])
-    sorted_order = []
-
-    while queue:
-        node = queue.popleft()
-        sorted_order.append(node)
-        for dependent in graph[node]:
-            in_degree[dependent] -= 1
-            if in_degree[dependent] == 0:
-                queue.append(dependent)
-
-    if len(sorted_order) != len(graph):
-        raise ValueError("A circular dependency exists in the equations")
-
-    return sorted_order
 
 
 def symbolic_model_equations(NMM, zero_coupling=False, **kwargs):

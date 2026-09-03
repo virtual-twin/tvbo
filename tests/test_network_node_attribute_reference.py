@@ -32,7 +32,7 @@ class _FakeNet:
         self._store = _FakeStore(datasets) if datasets is not None else None
         self._weight = weight
 
-    def matrix(self, label):
+    def matrix(self, label, format=None):
         return self._weight if label == "weight" else None
 
 

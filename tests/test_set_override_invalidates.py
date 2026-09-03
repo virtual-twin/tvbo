@@ -28,9 +28,9 @@ def _network(**kw):
 def test_a_resolved_network_is_invalidated_by_an_override_beneath_it():
     net = _network()
     net._resolved = True
-    net._cached_weights = np.ones((3, 3))
+    net.set_array("edges/weight", np.ones((3, 3)))
     _apply_metadata_overrides(_Experiment(net), ["network.number_of_nodes=4"])
-    assert net._resolved is False and net._cached_weights is None
+    assert net._resolved is False and "edges/weight" not in net.arrays
 
 
 def test_the_override_value_itself_still_lands():

@@ -176,9 +176,9 @@ class TestSurfaceRoundTrip:
         conn, surf, rmap = tvb_data
 
         _, surface_net = Network.from_tvb_surface(conn, surf, rmap)
-        vertices = object.__getattribute__(surface_net, "_mesh_vertices")
-        elements = object.__getattribute__(surface_net, "_mesh_elements")
-        normals = object.__getattribute__(surface_net, "_mesh_normals")
+        vertices = surface_net.array("mesh/vertices")
+        elements = surface_net.array("mesh/elements")
+        normals = surface_net.array("mesh/normals")
 
         np.testing.assert_allclose(vertices, surf.vertices, atol=1e-5)
         np.testing.assert_allclose(elements, surf.triangles)

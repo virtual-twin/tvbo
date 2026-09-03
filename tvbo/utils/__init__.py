@@ -15,6 +15,8 @@ from os.path import abspath, dirname, join
 
 import numpy as np
 
+from tvbo.utils.pytree import Pytree
+
 cm = 1 / 2.54
 ROOT_DIR = abspath(dirname(__file__))
 
@@ -423,11 +425,11 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-class Bunch(dict):
+class Bunch(Pytree, dict):
     """Dictionary with attribute access and optional JAX PyTree support.
 
     Extends dict to allow both ``bunch["key"]`` and ``bunch.key`` access.
-    If JAX is installed, registered as a PyTree via ``register_pytree_node_class`` with deterministic (sorted-key) traversal order.
+    Registered as a JAX pytree whose children are its values, keyed by name, so traversal order is the sorted keys.
 
     Based on scikit-learn's ``sklearn.utils.Bunch``.
 
@@ -465,27 +467,15 @@ class Bunch(dict):
         """
         return Bunch(self)
 
-    def tree_flatten(self):
-        """Flatten the `Bunch` into JAX pytree (children, aux_data).
+    def _pytree_leaves(self) -> dict:
+        return dict(self)
 
-        Keys are sorted so traversal order is deterministic across calls.
-        """
-        keys = tuple(sorted(self.keys()))
-        values = tuple(self[k] for k in keys)
-        return values, keys
+    def _pytree_static(self) -> str:
+        return ""
 
     @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        """Reconstruct a `Bunch` from JAX pytree aux_data and children."""
-        return cls(zip(aux_data, children, strict=True))
-
-
-try:
-    from jax.tree_util import register_pytree_node_class
-
-    register_pytree_node_class(Bunch)
-except ImportError:
-    pass
+    def _pytree_build(cls, static, leaves):
+        return cls(leaves)
 
 
 def numbered_print(text):
@@ -679,11 +669,56 @@ def pretty_print_pytree(
 
 
 # ---- YAML utilities ----
-def to_yaml(obj, filepath: str | None = None) -> str:
-    """Dump a LinkML datamodel object to YAML.
+def record_dict(model) -> dict:
+    """A generated Pydantic model as the mapping a record states it by.
 
-    - If filepath is provided, write YAML to that file and return the path.
-    - If filepath is None, return the YAML string.
+    The identifier first, then the schema's own slot order, which is the order the generated
+    class declares its fields in. A slot holding ``None`` or an empty collection is omitted:
+    a record states what it says, and a slot nobody wrote is not part of it. Nested models
+    recurse, a date becomes its ISO form, and every other value is passed through — an
+    ``inf`` bound stays ``inf`` rather than becoming the ``null`` a JSON round-trip makes of it.
+
+    The one place the Pydantic form of a record is turned into data, so `to_yaml` and any
+    other consumer cannot disagree about what the record says.
+    """
+    import datetime
+    from enum import Enum
+
+    from pydantic import BaseModel
+
+    from tvbo.datamodel.dialect import identifier_field
+
+    def value_of(value):
+        if isinstance(value, BaseModel):
+            return record_dict(value)
+        if isinstance(value, dict):
+            return {k: value_of(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [value_of(v) for v in value]
+        if isinstance(value, (datetime.date, datetime.datetime)):
+            return value.isoformat()
+        if isinstance(value, Enum):
+            return value.value
+        return value
+
+    fields = type(model).model_fields
+    identifier = identifier_field(type(model))
+    names = ([identifier] if identifier in fields else []) + [n for n in fields if n != identifier]
+    record = {}
+    for name in names:
+        stated = value_of(getattr(model, name, None))
+        if stated is None or stated == [] or stated == {}:
+            continue
+        record[fields[name].alias or name] = stated
+    return record
+
+
+def to_yaml(obj, filepath: str | None = None) -> str:
+    """Dump a datamodel object to canonical TVBO YAML, in either generated form.
+
+    A dataclass goes through LinkML's dumper; a Pydantic model goes through `record_dict`.
+    One entry point for both, so the published record has one definition however the object
+    in hand was built, and a caller never has to know which generator produced it.
 
     Args:
         obj (object): Datamodel object to serialize.
@@ -692,6 +727,19 @@ def to_yaml(obj, filepath: str | None = None) -> str:
     Returns:
         str: File path when written to disk, otherwise the YAML string.
     """
+    from pydantic import BaseModel
+
+    if isinstance(obj, BaseModel):
+        import pathlib
+
+        import yaml as _yaml
+
+        produced = _yaml.safe_dump(record_dict(obj), sort_keys=False, allow_unicode=True)
+        if filepath:
+            pathlib.Path(filepath).write_text(produced, encoding="utf-8")
+            return filepath
+        return produced
+
     try:
         from linkml_runtime.dumpers import yaml_dumper
     except Exception as e:

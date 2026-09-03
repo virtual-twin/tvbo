@@ -22,7 +22,19 @@ from tvbo.templates.base.utils import (
     graph_generator_call,
     has_distributions,
 )
-from tvbo.utils import noise_sigma
+from tvbo.utils import network_couplings, noise_sigma
+
+
+def dense_matrix(network, name: str, dtype=float) -> np.ndarray | None:
+    """*network*'s edge matrix ``name`` as a dense array of ``dtype``, or ``None`` when it carries none.
+
+    `Network.matrix` returns a matrix in its stored format, which may be sparse. A backend that integrates a dense connectome — TVB, CUDA, a Julia literal, a plot — says so through this one call rather than converting on its own, so "dense, this dtype, or None" is spelled once. A backend that can take the stored form reads `matrix` directly.
+    """
+    matrix = getattr(network, "matrix", None)
+    if not callable(matrix):
+        return None
+    m = matrix(name, format="dense")
+    return None if m is None else np.asarray(m, dtype=dtype)
 
 
 def declared_node_count(network) -> int:
@@ -40,10 +52,9 @@ def declared_node_count(network) -> int:
         return len(nodes)
     if getattr(network, "edges", None) or getattr(network, "data_file", None) or getattr(network, "parcellation", None):
         return max(count, 2)
-    matrix = getattr(network, "matrix", None)
-    weights = matrix("weight") if callable(matrix) else None
-    if weights is not None and np.asarray(weights).size > 1:
-        return int(np.asarray(weights).shape[0])
+    weights = dense_matrix(network, "weight")
+    if weights is not None and weights.size > 1:
+        return int(weights.shape[0])
     return max(count, 1)
 
 
@@ -57,6 +68,45 @@ def refuse_network(experiment, backend: str, reach: str) -> None:
         raise NotImplementedError(
             f"the {backend} backend integrates {reach}, so the {n}-node network this experiment declares would be accepted and ignored. "
             "Run it on a backend that lowers a connectome (tvb, tvboptim, jax, python, pyrates)."
+        )
+
+
+def edge_needs(
+    network,
+    required: tuple[str, ...] = ("weight",),
+    delay_carriers: tuple[str, ...] = ("length",),
+    delayed=None,
+) -> list[tuple[str, tuple[str, ...]]]:
+    """What a connectome backend reads off *network*'s edges, as ``[(what for, (attributes, any one of which supplies it)), ...]``.
+
+    Each of *required* is needed on its own for any multi-node network — ``weight`` for the connectome. A delayed coupling needs one of *delay_carriers* besides, but only over a network that connects anything (`Network.has_connectome`): a node set has nothing to delay. *delayed* is the names of the delayed couplings, a bool, or ``None`` to read them off the network's own couplings. A network that generates its graph in the emitted code — a curated `graph_generator` ``type`` — needs nothing here; its matrices do not exist before the code runs.
+    """
+    if declared_node_count(network) <= 1 or getattr(getattr(network, "graph_generator", None), "type", None):
+        return []
+    needs = [("the connectome" if attr == "weight" else f"the {attr} it lowers", (attr,)) for attr in required]
+    if delayed is None:
+        delayed = [name for name, coupling in network_couplings(network).items() if getattr(coupling, "delayed", False)]
+    if delayed and getattr(network, "has_connectome", True):
+        names = ", ".join(delayed) if not isinstance(delayed, bool) else ""
+        needs.append((f"the delayed coupling {names}".rstrip(), tuple(delay_carriers)))
+    return needs
+
+
+def require_edge_attributes(network, backend: str, needs) -> None:
+    """Raise, naming what is missing, where *backend* would read an edge attribute *network* does not carry.
+
+    *needs* is `edge_needs`'s list. Each is decided through `Network.carries`, from the header and the declaration, so nothing is read; an object without `carries` is left to the caller. Without this every backend here substitutes zeros or falls through to an instantaneous graph, and a run declared delayed integrates a different system and reports success.
+    """
+    carries = getattr(network, "carries", None)
+    if not callable(carries):
+        return
+    for what_for, attributes in needs:
+        if any(carries(a) for a in attributes):
+            continue
+        carried = ", ".join(getattr(network, "matrix_names", None) or []) or "no edge matrix"
+        raise ValueError(
+            f"the {backend} backend needs {' or '.join(attributes)} for {what_for}, and {network} carries {carried}. "
+            "Add it to the network — a companion dataset edges/<name>, set_matrix(), or a per-edge parameter — or, for a delay, declare the coupling `delayed: false`."
         )
 
 
@@ -76,6 +126,12 @@ class BaseAdapter:
     than one template — NeuroML picks between four by what the dynamics declares — states
     that choice in its own `render_code` instead.
     """
+
+    REQUIRED_EDGE_ATTRIBUTES: tuple[str, ...] = ("weight",)
+    """Edge attributes this backend cannot lower a multi-node network without, each on its own. A backend that reads a leadfield or a receptor type off the edges adds it here and `refuse_unrenderable` names it when a network lacks it."""
+
+    DELAY_CARRIERS: tuple[str, ...] = ("length",)
+    """Edge attributes this backend derives a delayed coupling's delays from, any one sufficing. Tract lengths over a conduction speed is what TVB and the CUDA kernel size their history buffer with; a backend that also takes explicit per-edge delays lists ``delay``."""
 
     def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
@@ -228,15 +284,34 @@ class BaseAdapter:
 
     # ── Graph / network ──────────────────────────────────────────────────
 
+    @property
+    def backend(self) -> str:
+        """This backend's name as an error message spells it: the adapter's class name without its suffix."""
+        return type(self).__name__.removesuffix("Adapter")
+
+    def delayed_couplings(self) -> list[str]:
+        """The names of the couplings declared delayed, through `resolve_couplings` so a backend keying them differently is read the same way."""
+        return [name for name, coupling in (self.resolve_couplings() or {}).items() if getattr(coupling, "delayed", False)]
+
+    def edge_needs(self) -> list[tuple[str, tuple[str, ...]]]:
+        """This backend's :func:`edge_needs` for this experiment: `REQUIRED_EDGE_ATTRIBUTES`, and `DELAY_CARRIERS` where a coupling is delayed."""
+        network = getattr(self.experiment, "network", None)
+        return edge_needs(network, self.REQUIRED_EDGE_ATTRIBUTES, self.DELAY_CARRIERS, self.delayed_couplings())
+
+    def refuse_missing_edge_attributes(self) -> None:
+        """This adapter's :func:`require_edge_attributes`: raise, by name, where the network lacks an edge attribute this backend reads."""
+        require_edge_attributes(getattr(self.experiment, "network", None), self.backend, self.edge_needs())
+
     def refuse_unrenderable(self) -> None:
         """Raise where this backend's templates would drop part of the declaration and emit well-formed code for the rest.
 
-        Accepts everything by default. A backend overrides it to name what its templates do not lower — a delayed coupling with no history path, a declared observation with no monitor path — because rendering is not evidence: code that compiles and then answers a different question is indistinguishable from support to every caller that does not already know the answer.
+        By default this is `refuse_missing_edge_attributes`: a delayed coupling over a network with no tract lengths is the case every backend here would otherwise integrate instantaneous and report as a success. A backend overrides it — calling up — to name what else its templates do not lower, a delayed coupling with no history path, a declared observation with no monitor path, because rendering is not evidence: code that compiles and then answers a different question is indistinguishable from support to every caller that does not already know the answer.
         """
+        self.refuse_missing_edge_attributes()
 
     def refuse_network(self, reach: str) -> None:
         """This adapter's :func:`refuse_network`: raise if the experiment declares a network the backend would integrate one node of."""
-        refuse_network(self.experiment, type(self).__name__.removesuffix("Adapter"), reach)
+        refuse_network(self.experiment, self.backend, reach)
 
     def get_network_info(self) -> dict:
         """Extract network metadata: n_nodes, graph generator, edges, etc.
@@ -287,9 +362,7 @@ class BaseAdapter:
         Explicit edges are densified once there are more than *threshold* of them, below which a template lists them one by one. A network that carries its connectome as a matrix has no edge objects at all — every builder-generated one is like this — so the matrix is read from the network itself. Without that fallback the templates find no weights, no edges and no nameable generator, and the last branch of each builds an unweighted complete graph: the run succeeds and integrates a different network.
         """
         if not edges_list:
-            matrix = getattr(getattr(self.experiment, "network", None), "matrix", None)
-            W = matrix("weight") if callable(matrix) else None
-            W = np.asarray(W, dtype=float) if W is not None else None
+            W = dense_matrix(getattr(self.experiment, "network", None), "weight")
             return W if W is not None and W.size > 1 else None
         if len(edges_list) <= threshold:
             return None

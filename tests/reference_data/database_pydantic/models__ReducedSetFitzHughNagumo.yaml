@@ -1,0 +1,280 @@
+name: ReducedSetFitzHughNagumo
+iri: tvbo:ReducedSetFitzHughNagumo
+parameters:
+  tau:
+    name: tau
+    value: 3.0
+    domain:
+      enforce: none
+      lo: 1.5
+      hi: 4.5
+      log_scale: false
+  a:
+    name: a
+    value: 0.45
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  b:
+    name: b
+    value: 0.9
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  K11:
+    name: K11
+    value: 0.5
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  K12:
+    name: K12
+    value: 0.15
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  K21:
+    name: K21
+    value: 0.15
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  mu:
+    name: mu
+    value: 0.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  sigma:
+    name: sigma
+    value: 0.35
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      log_scale: false
+  Aik:
+    name: Aik
+    value:
+    - - 0.3328165811190223
+      - 0.18525241779532714
+      - 0.3328165811190241
+    - - 0.5984537933538554
+      - 0.3331114447027479
+      - 0.5984537933538587
+    - - 0.33281658111902046
+      - 0.18525241779532614
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (Aik).
+  Bik:
+    name: Bik
+    value:
+    - - 0.3328165811190223
+      - 0.5984537933538554
+      - 0.33281658111902046
+    - - 0.18525241779532714
+      - 0.3331114447027479
+      - 0.18525241779532614
+    - - 0.3328165811190241
+      - 0.5984537933538587
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (Bik).
+  Cik:
+    name: Cik
+    value:
+    - - 0.3328165811190223
+      - 0.18525241779532714
+      - 0.3328165811190241
+    - - 0.5984537933538554
+      - 0.3331114447027479
+      - 0.5984537933538587
+    - - 0.33281658111902046
+      - 0.18525241779532614
+      - 0.33281658111902235
+    description: Fixed SJ_2008 quadrature constant (Cik).
+  iV0:
+    name: iV0
+    value:
+    - 1.6668762461300366
+    - 0.9278169186250886
+    - 1.666876246130046
+    description: Fixed SJ_2008 quadrature constant (iV0).
+  iU0:
+    name: iU0
+    value:
+    - 1.6668762461300366
+    - 0.9278169186250886
+    - 1.666876246130046
+    description: Fixed SJ_2008 quadrature constant (iU0).
+  iV4:
+    name: iV4
+    value:
+    - 0.35990947874643836
+    - 1.1616503426964113
+    - 0.3599094787464342
+    description: Fixed SJ_2008 quadrature constant (iV4).
+  iU4:
+    name: iU4
+    value:
+    - 0.35990947874643836
+    - 1.1616503426964113
+    - 0.3599094787464342
+    description: Fixed SJ_2008 quadrature constant (iU4).
+  iZV:
+    name: iZV
+    value:
+    - -3.033148827134955
+    - 1.3877787807814457e-17
+    - 3.033148827134998
+    description: Fixed SJ_2008 quadrature constant (iZV).
+  iZU:
+    name: iZU
+    value:
+    - -3.033148827134955
+    - 1.3877787807814457e-17
+    - 3.033148827134998
+    description: Fixed SJ_2008 quadrature constant (iZU).
+description: Reduced set of FitzHugh-Nagumo oscillators (Stefanescu & Jirsa 2008);
+  3 modes coupled via mode-mixing matrices with Gaussian-quadrature coefficients recomputed
+  from mu/sigma.
+references:
+- StefanescuJirsa2008
+derived_parameters:
+  e_i:
+    name: e_i
+    equation:
+      lhs: e_i
+      rhs: iV4/sigma
+      latex: false
+  f_i:
+    name: f_i
+    equation:
+      lhs: f_i
+      rhs: iU4/sigma
+      latex: false
+  IE_i:
+    name: IE_i
+    equation:
+      lhs: IE_i
+      rhs: sqrt(sigma)*(mu*iV0 + sigma*iZV)
+      latex: false
+  II_i:
+    name: II_i
+    equation:
+      lhs: II_i
+      rhs: sqrt(sigma)*(mu*iU0 + sigma*iZU)
+      latex: false
+  m_i:
+    name: m_i
+    equation:
+      lhs: m_i
+      rhs: a*sqrt(sigma)*iV0
+      latex: false
+  n_i:
+    name: n_i
+    equation:
+      lhs: n_i
+      rhs: a*sqrt(sigma)*iU0
+      latex: false
+coupling_inputs:
+  c_glob0:
+    name: c_glob0
+    dimension: 1
+    local: false
+  c_glob1:
+    name: c_glob1
+    dimension: 1
+    local: false
+  local_coupling:
+    name: local_coupling
+    dimension: 1
+    local: true
+state_variables:
+  xi:
+    name: xi
+    domain:
+      enforce: none
+      lo: -4.0
+      hi: 4.0
+      log_scale: false
+    equation:
+      lhs: Derivative(xi, t)
+      rhs: tau*(xi - e_i*xi**3/3 - eta) + K11*(mode_dot(xi, Aik) - xi) - K12*(mode_dot(alpha,
+        Bik) - xi) + tau*(IE_i + mode_sum(c_glob0) + local_coupling*xi)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  eta:
+    name: eta
+    domain:
+      enforce: none
+      lo: -3.0
+      hi: 3.0
+      log_scale: false
+    equation:
+      lhs: Derivative(eta, t)
+      rhs: (xi - b*eta + m_i)/tau
+      latex: false
+    record: false
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  alpha:
+    name: alpha
+    domain:
+      enforce: none
+      lo: -4.0
+      hi: 4.0
+      log_scale: false
+    equation:
+      lhs: Derivative(alpha, t)
+      rhs: tau*(alpha - f_i*alpha**3/3 - beta) + K21*(mode_dot(xi, Cik) - alpha) +
+        tau*(II_i + mode_sum(c_glob0) + local_coupling*xi)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  beta:
+    name: beta
+    domain:
+      enforce: none
+      lo: -3.0
+      hi: 3.0
+      log_scale: false
+    equation:
+      lhs: Derivative(beta, t)
+      rhs: (alpha - b*beta + n_i)/tau
+      latex: false
+    record: false
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 3
+model_type: neural_mass
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

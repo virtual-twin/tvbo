@@ -482,7 +482,7 @@ def plot_graph_brain(
 
     # Use MNI coordinates from atlas metadata
     centers = network.get_centers()
-    W = weight_matrix if weight_matrix is not None else network.matrix("weight")
+    W = weight_matrix if weight_matrix is not None else network.matrix("weight", format="dense")
 
     # Filter out nodes with no valid coordinates (0,0,0)
     valid_idx = [i for i, coord in centers.items() if not (coord[0] == 0 and coord[1] == 0 and coord[2] == 0)]

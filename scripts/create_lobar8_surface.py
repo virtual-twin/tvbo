@@ -174,10 +174,10 @@ def build_hemi_surface(hemi_code: str, hemi_prefix: str, parent_network, db_dir:
         number_of_vertices=n_vertices,
         number_of_elements=n_elements,
     )
-    object.__setattr__(surf, "_mesh", mesh)
-    object.__setattr__(surf, "_mesh_vertices", vertices)
-    object.__setattr__(surf, "_mesh_elements", faces)
-    object.__setattr__(surf, "_mesh_normals", normals)
+    surf.mesh = mesh
+    surf.set_array("mesh/vertices", vertices)
+    surf.set_array("mesh/elements", faces)
+    surf.set_array("mesh/normals", normals)
 
     surf.set_node_mapping(
         rm,

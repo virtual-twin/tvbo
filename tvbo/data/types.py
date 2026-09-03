@@ -14,13 +14,13 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
-from jax.tree_util import register_pytree_node_class
 from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 
 import tvbo.jax.xarray_pytrees  # noqa: F401 – registers xr types as JAX pytrees
 from tvbo.classes.network import Network
 from tvbo.utils import Bunch, format_pytree_as_string
+from tvbo.utils.pytree import Pytree
 
 logger = logging.getLogger(__name__)
 
@@ -3164,38 +3164,14 @@ class ExperimentResult:
 # Time Series Classes
 
 
-@register_pytree_node_class
-class TimeSeries:
-    """Time-series dataType with JAX pytree support, domain-specific analysis, and visualization methods."""
+class TimeSeries(Pytree):
+    """Time-series dataType with JAX pytree support, domain-specific analysis, and visualization methods.
 
-    def tree_flatten(self):
-        """Flatten into JAX pytree (children, aux_data).
+    `sample_period` is a leaf, not metadata, because it may hold a tracer such as ``state.dt`` inside `jit`; so is the network, a pytree of its own.
+    """
 
-        `sample_period` is a child (not aux) because it may hold a JAX tracer such as `state.dt` inside `jit`.
-        """
-        # Keep network as a child (not metadata) to avoid non-hashable/array metadata. sample_period must also be a child because it can be a JAX-traced value (e.g. state.dt inside jit); putting tracers in aux_data causes UnexpectedTracerError on repeated JIT calls.
-        children = (self.time, self.data, self.network, self.sample_period)
-        aux_data = (
-            self.title,
-            self.labels_dimensions,
-            self.units,
-        )
-        return children, aux_data
-
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        """Reconstruct a `TimeSeries` from JAX pytree children and aux_data."""
-        time, data, network, sample_period = children
-        title, labels_dimensions, units = aux_data
-        return cls(
-            time,
-            data,
-            network=network,
-            title=title,
-            sample_period=sample_period,
-            labels_dimensions=labels_dimensions,
-            units=units,
-        )
+    LEAVES = ("time", "data", "network", "sample_period")
+    STATIC = ("title", "labels_dimensions", "units")
 
     def __init__(
         self,
@@ -4220,8 +4196,7 @@ class TimeSeries:
         return self.duplicate(data=roi_data, labels_dimensions=subspace_labels_dimensions)
 
 
-@register_pytree_node_class
-class SimulationState:
+class SimulationState(Pytree):
     """Bundled state passed to the integration backends for one simulation.
 
     Groups everything a backend needs to advance a run: the initial conditions, the `Network`, the integration step, the noise configuration, model parameters, stimulus, monitor settings, and the number of time steps.
@@ -4258,48 +4233,9 @@ class SimulationState:
         self.monitor_parameters = monitor_parameters
         self.nt = nt
 
-    def tree_flatten(self):
-        """Flatten into JAX pytree (children, aux_data).
-
-        `nt` is kept as static aux_data so it stays concrete in shape/length contexts under jit/vmap.
-        """
-        # Make `noise` a child so fields like sigma_vec can participate in vmap batching. Keep `nt` static (aux) to ensure it remains a concrete value under jit/vmap because we use it in shape/length contexts like jnp.arange(0, nt).
-        children = (
-            self.initial_conditions,
-            self.network,
-            self.dt,
-            self.noise,
-            self.parameters,
-            self.stimulus,
-            self.monitor_parameters,
-        )
-        aux = (self.nt,)
-        return children, aux
-
-    @classmethod
-    def tree_unflatten(cls, aux_data, children):
-        """Reconstruct a `SimulationState` from JAX pytree children and aux_data."""
-        # Reconstruct in the original __init__ order
-        (
-            initial_conditions,
-            network,
-            dt,
-            noise,
-            parameters,
-            stimulus,
-            monitor_parameters,
-        ) = children
-        (nt,) = aux_data if isinstance(aux_data, tuple) else (aux_data,)
-        return cls(
-            initial_conditions,
-            network,
-            dt,
-            noise,
-            parameters,
-            stimulus,
-            monitor_parameters,
-            nt,
-        )
+    LEAVES = ("initial_conditions", "network", "dt", "noise", "parameters", "stimulus", "monitor_parameters")
+    STATIC = ("nt",)
+    """``nt`` stays static so it is concrete where it sizes a scan or an ``arange`` under `jit`/`vmap`; everything else, the noise included, may be traced or batched."""
 
     def __repr__(self):
         """Return a string representation of the SimulationState object.

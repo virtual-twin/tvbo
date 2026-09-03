@@ -132,21 +132,10 @@ has_delay = any(c.delayed for c in all_couplings.values() if c)
 # uses the stock delay graph that derives max_delay from the delays.
 interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in all_couplings.values() if c)
 
-# tract lengths → DenseLengthGraph, explicit per-edge delays → DenseDelayGraph.
-use_length_graph, use_delay_graph = graph_selection(network, has_delay)
-
-# Stores the connectome as BCOO so each reduction is an O(nnz) edge-sum; tract lengths are the exception, needing DenseLengthGraph's live `speed` leaf, and are rejected below rather than downgraded.
-use_sparse = str(getattr(network, 'graph_representation', 'auto') or 'auto') == 'sparse'
-if use_sparse and use_length_graph:
-    raise ValueError(
-        "network.graph_representation: sparse is not available for a network with tract "
-        "lengths: delays are derived as lengths / conduction_speed on every forward pass, "
-        "which requires DenseLengthGraph's live `speed` leaf (swept by a "
-        "`network.conduction_speed` axis and differentiable), and tvboptim has no sparse "
-        "length-graph counterpart. Either drop graph_representation to keep the live "
-        "conduction speed, or supply explicit per-edge `delay` edge attributes instead of "
-        "lengths, which sparse does support (SparseDelayGraph)."
-    )
+# Lengths → DenseLengthGraph, per-edge delays → DenseDelayGraph; the representation is decided once, in Python, where the run path asks the same question.
+from tvbo.templates.tvboptim.utils import emitted_graph as _emitted_graph
+use_length_graph, use_delay_graph, _representation = _emitted_graph(network, has_delay)
+use_sparse = _representation == "sparse"
 
 # Collect all coupling parameters (for optimization)
 all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
@@ -1328,6 +1317,9 @@ from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph, DenseL
 % else:
 from tvboptim.experimental.network_dynamics.graph import DenseGraph, SparseGraph
 % endif
+% if use_sparse:
+from jax.experimental.sparse import BCOO
+% endif
 from tvboptim.experimental.network_dynamics.solvers import ${solver_class}
 % if has_state_bounds:
 from tvboptim.experimental.network_dynamics.solvers import BoundedSolver
@@ -1795,7 +1787,7 @@ def _bind_data_sources(spec_dir=None):
                 f"(looked in {', '.join(str(b) for b in bases)}); re-emit the kit so the "
                 "network travels with it, or pass spec_dir."
             )
-        _matrix = Network.from_file(str(_path)).matrix(_spec['edge'])
+        _matrix = Network.from_file(str(_path)).matrix(_spec['edge'], format="dense")
         if _matrix is None:
             raise KeyError(f"{_spec['path']!r} carries no {_spec['edge']!r} edge.")
         _DATA_SOURCES[_key] = jnp.asarray(_matrix)
@@ -3848,7 +3840,12 @@ def run_experiment(
     _BRANCH_SEED = branch_seed
     _SEED_PARAMS = seed_params
 
+% if use_sparse:
+    # A BCOO is the graph's own form; only a dense or scipy input is converted.
+    weights = weights if isinstance(weights, BCOO) else jnp.array(weights)
+% else:
     weights = jnp.array(weights)
+% endif
     # ``quiet=True`` silences this call whatever the configured level; otherwise the tvbo logger level decides.
     _quiet = kwargs.pop("quiet", False)
 
@@ -4947,8 +4944,9 @@ if __name__ == "__main__":
         observational_measures=${observational_measures},
 % endif
     )
-    # weights RAW — create_network applies the declared transforms.
-    weights = _network.matrix("weight", apply_transforms=False)
+    # weights RAW — create_network applies the declared transforms; a sparse graph takes them as BCOO.
+    from tvbo.adapters.tvboptim import solver_weights as _solver_weights
+    weights = _solver_weights(_network)
     distances = _network.lengths_matrix
     # Get region labels safely (may not be available in all BIDS datasets)
     try:

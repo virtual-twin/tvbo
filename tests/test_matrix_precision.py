@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from scipy import sparse
 
 from tvbo.data.matrix_io import read_matrix, write_matrix
 
@@ -22,11 +23,12 @@ def store(tmp_path):
     path = tmp_path / "m.h5"
 
     def _roundtrip(matrix, fmt="dense", **kwargs):
-        """The matrix as read back, and the dtype of every dataset that holds it."""
+        """The matrix as read back, densified for comparison, and the dtype of every dataset that holds it."""
         with h5py.File(path, "w") as f:
             write_matrix(f.create_group("m"), matrix, fmt=fmt, **kwargs)
         with h5py.File(path, "r") as f:
-            return read_matrix(f["m"]), {k: v.dtype for k, v in f["m"].items()}
+            got = read_matrix(f["m"])
+            return (got.toarray() if sparse.issparse(got) else got), {k: v.dtype for k, v in f["m"].items()}
 
     return _roundtrip
 

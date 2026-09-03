@@ -463,7 +463,7 @@ def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
         return False, False
     has_lengths = False
     try:
-        lengths = network.lengths_matrix
+        lengths = network.matrix("length")
         if lengths is not None:
             has_lengths = bool(float(lengths.max()) > 0)
     except Exception:
@@ -474,6 +474,42 @@ def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
         has_edge_delays = False
     use_delay_graph = has_edge_delays and not has_lengths
     return (not use_delay_graph), use_delay_graph
+
+
+def graph_representation(network, use_length_graph: bool, has_weight_transforms: bool) -> str:
+    """``"sparse"`` or ``"dense"``: the connectome representation the emitted code builds, from `Network.graph_representation` and what the network stores.
+
+    ``sparse`` stores the connectome as BCOO so each coupling reduction is an O(nnz) edge-sum, and a companion holding the weights in csr or coo reaches the solver without a dense N x N ever being allocated. ``auto`` is sparse exactly when the stored weight matrix is sparse and nothing forces dense; ``dense`` is dense. Two things force dense: tract lengths, whose delays are ``lengths / conduction_speed`` recomputed on every pass and need ``DenseLengthGraph``'s live ``speed`` leaf, and declared weight ``transforms:``, which the emitted ``create_network`` applies as dense JAX algebra. Asked for explicitly against either, sparse is refused here rather than downgraded, since a silent downgrade discards the memory characteristic the recipe asked for.
+    """
+    asked = str(getattr(network, "graph_representation", None) or "auto")
+    if asked == "sparse" and use_length_graph:
+        raise ValueError(
+            "network.graph_representation: sparse is not available for a network with tract lengths: delays are derived as lengths / conduction_speed on every forward pass, which requires DenseLengthGraph's live `speed` leaf (swept by a `network.conduction_speed` axis and differentiable), and tvboptim has no sparse length-graph counterpart. Either drop graph_representation to keep the live conduction speed, or supply explicit per-edge `delay` edge attributes instead of lengths, which sparse does support (SparseDelayGraph)."
+        )
+    if asked == "sparse" and has_weight_transforms:
+        raise ValueError(
+            "network.graph_representation: sparse is not available for a network with declared weight transforms: the emitted create_network applies them as dense algebra on the weights. Either drop graph_representation, or apply the transform to the stored matrix and drop `transforms:`."
+        )
+    if asked == "sparse":
+        return "sparse"
+    if asked == "dense" or use_length_graph or has_weight_transforms:
+        return "dense"
+    stored = getattr(network, "stored_format", None)
+    return "sparse" if callable(stored) and stored("weight") not in (None, "dense") else "dense"
+
+
+def emitted_graph(network, has_delay: bool | None = None) -> tuple[bool, bool, str]:
+    """``(use_length_graph, use_delay_graph, representation)`` for *network*: the one decision the template and the run path share.
+
+    The run path hands the emitted code its weights in the form the emitted graph takes — a BCOO for a sparse graph, a dense array otherwise — and the two cannot disagree because both ask here. *has_delay* is read off the network's couplings when not given.
+    """
+    from tvbo.utils import network_couplings
+
+    if has_delay is None:
+        has_delay = any(getattr(c, "delayed", False) for c in network_couplings(network).values())
+    use_length_graph, use_delay_graph = graph_selection(network, has_delay)
+    has_transforms = bool(weight_transform_codegen(network)[0])
+    return use_length_graph, use_delay_graph, graph_representation(network, use_length_graph, has_transforms)
 
 
 def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, func_to_ci, n_modes=1) -> dict[str, Any]:
@@ -833,7 +869,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
     _source_dir = getattr(network, "_source_dir", None)
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
     raw = network.matrix("weight", apply_transforms=False) if hasattr(network, "matrix") else None
-    n_nodes = None if raw is None else np.asarray(raw).shape[0]
+    n_nodes = None if raw is None else raw.shape[0]
     transforms: list[tuple[str, list[str]]] = []
     const_env: list[str] = []
     const_seen: set[str] = set()
@@ -3877,7 +3913,7 @@ def collect_network_edge_arrays(experiment: Any) -> dict[str, list]:
         lab = edge_label(name)
         if not lab or lab in arrays:
             return
-        mat = net.matrix(lab) if net is not None else None
+        mat = net.matrix(lab, format="dense") if net is not None else None
         if mat is None:
             raise ValueError(
                 f"An observation references {name} but the network has no {lab!r} "

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from tvbo.adapters.base import BaseAdapter
+from tvbo.adapters.base import BaseAdapter, dense_matrix, edge_needs, require_edge_attributes
 from tvbo.adapters.smallscale.lowering import node_dynamics_name
 from tvbo.utils import keyed_items, network_couplings, noise_sigma, normalize_params
 
@@ -46,6 +46,9 @@ def solver_class(method) -> str:
 class TvboptimAdapter(BaseAdapter):
     """What the tvboptim templates need, resolved in Python before they emit anything."""
 
+    DELAY_CARRIERS = ("length", "delay")
+    """Tract lengths build a ``DenseLengthGraph`` (delays = lengths / speed, differentiable); explicit per-edge delays build a ``DenseDelayGraph``."""
+
     def resolve_couplings(self):
         """The network's couplings, one key per distinct coupling.
 
@@ -54,6 +57,24 @@ class TvboptimAdapter(BaseAdapter):
         from tvbo.templates.tvboptim.utils import normalize_coupling_aliases
 
         return normalize_coupling_aliases(dict(super().resolve_couplings()), getattr(self.experiment, "dynamics", None))
+
+
+def solver_weights(network, apply_transforms: bool = False, delayed: bool | None = None):
+    """The weight matrix as the emitted tvboptim graph takes it: a BCOO when that graph is sparse and the network stores its weights sparse, a dense ``jnp`` array otherwise.
+
+    The one place a scipy matrix becomes a JAX one on this path, so a csr companion reaches ``SparseGraph`` without ``toarray``. The run path asks for the raw weights because the emitted ``create_network`` applies the declared transforms; `to_tvboptim`, which builds the graph itself, asks for them applied. *delayed* is `emitted_graph`'s *has_delay*.
+    """
+    import jax.numpy as jnp
+    from scipy import sparse
+
+    from tvbo.templates.tvboptim.utils import emitted_graph
+
+    matrix = network.matrix("weight", apply_transforms=apply_transforms)
+    if sparse.issparse(matrix) and emitted_graph(network, delayed)[2] == "sparse":
+        from jax.experimental.sparse import BCOO
+
+        return BCOO.from_scipy_sparse(matrix.tocoo())
+    return jnp.asarray(matrix.toarray() if sparse.issparse(matrix) else matrix, dtype=float)
 
 
 def _build_graph(network: Network, delays: bool = True, max_delay: float | None = None):
@@ -68,21 +89,27 @@ def _build_graph(network: Network, delays: bool = True, max_delay: float | None 
     ``None`` defaults it to the build-speed maximum delay.
     """
     import jax.numpy as jnp
-    from tvboptim.experimental.network_dynamics.graph import DenseGraph
+    from jax.experimental.sparse import BCOO
+    from tvboptim.experimental.network_dynamics.graph import DenseGraph, SparseDelayGraph, SparseGraph
     from tvboptim.experimental.network_dynamics.graph.base import (
         DenseDelayGraph,
         DenseLengthGraph,
     )
 
-    weights = jnp.asarray(np.asarray(network.matrix("weight"), dtype=float))
+    require_edge_attributes(
+        network, "tvboptim", edge_needs(network, delay_carriers=TvboptimAdapter.DELAY_CARRIERS, delayed=delays)
+    )
+    weights = solver_weights(network, apply_transforms=True, delayed=bool(delays))
     labels = network.node_labels
 
     if not delays:
+        if isinstance(weights, BCOO):
+            return SparseGraph(weights, region_labels=labels)
         return DenseGraph(weights=weights, region_labels=labels)
 
-    lengths = network.lengths_matrix
-    if lengths is not None and np.any(np.asarray(lengths) > 0):
-        lengths = jnp.asarray(np.asarray(lengths, dtype=float))
+    lengths = dense_matrix(network, "length")
+    if lengths is not None and np.any(lengths > 0):
+        lengths = jnp.asarray(lengths, dtype=float)
         cs = getattr(network, "conduction_speed", None)
         speed = float(getattr(cs, "value", cs)) if cs is not None else 3.0
         # Elementwise then max, as DenseLengthGraph measures it; the other order is a ULP short.
@@ -106,7 +133,9 @@ def _build_graph(network: Network, delays: bool = True, max_delay: float | None 
     except Exception:
         edge_delays = None
     if edge_delays is not None:
-        delay_matrix = jnp.nan_to_num(jnp.asarray(np.asarray(edge_delays, dtype=float)))
+        delay_matrix = jnp.nan_to_num(jnp.asarray(edge_delays, dtype=float))
+        if isinstance(weights, BCOO):
+            return SparseDelayGraph(weights, delay_matrix, region_labels=labels, max_delay_bound=max_delay)
         return DenseDelayGraph(
             weights=weights,
             delays=delay_matrix,

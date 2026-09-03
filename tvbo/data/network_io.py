@@ -11,6 +11,7 @@ See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
 
 import json
+from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -25,7 +26,9 @@ SCHEMA_VERSION = "tvb-datamodel/0.7.0"
 from tvbo.data.matrix_io import (
     LazyArrayStore,
     auto_format,
-    read_matrix,
+    edge_name,
+    read_edge,
+    template_edges,
     write_matrix,
 )
 
@@ -55,50 +58,22 @@ SENSOR_PATTERNS = [
 # ── Helpers ───────────────────────────────────────────────────────────
 
 
-def _template_edges(edges) -> list:
-    """Template edges = entries without source/target (matrix measures).
-
-    Works with both dicts (from yaml_loader.load_as_dict) and LinkML Edge objects (from Network.edges).
-    """
-    if not edges:
-        return []
-    result = []
-    for e in edges:
-        if isinstance(e, dict):
-            if e.get("source") is None:
-                result.append(e)
-        else:
-            if getattr(e, "source", None) is None:
-                result.append(e)
-    return result
+_template_edges = template_edges
 
 
 def _read_edges(store, meta: dict) -> tuple[dict, dict]:
-    """Read all template-edge matrices + edge parameters from a store.
+    """Every template-edge matrix and its edge parameters, from an open store.
 
-    Works identically for h5py.File and zarr.Group — both support ``"path" in store`` and ``store["path"]`` access.
+    Names come from the sidecar when it declares any, else from the store's own ``edges/`` listing. Each edge is read through :func:`tvbo.data.matrix_io.read_edge`, in its stored format.
     """
-    edges = _template_edges(meta.get("edges", []))
+    edges = template_edges(meta.get("edges", []))
+    names = [edge_name(e) for e in edges] if edges else (list(store["edges"]) if "edges" in store else [])
     arrays, params = {}, {}
-
-    # Determine edge names: from template metadata or store discovery
-    if edges:
-        edge_names = [e.get("name") or e.get("label") for e in edges]
-    elif "edges" in store:
-        edge_names = list(store["edges"])
-    else:
-        edge_names = []
-
-    for name in edge_names:
-        edge_path = f"edges/{name}"
-        if edge_path not in store:
+    for name in names:
+        try:
+            arrays[name], params[name] = read_edge(store, name)
+        except KeyError:
             continue
-        arrays[name] = read_matrix(store[edge_path])
-        params[name] = {}
-        ep_path = f"{edge_path}/edge_parameters"
-        if ep_path in store:
-            for pname in store[ep_path]:
-                params[name][pname] = read_matrix(store[f"{ep_path}/{pname}"])
     return arrays, params
 
 
@@ -321,7 +296,30 @@ def _create_ds(grp, name, *, data, **kwargs):
     return grp.create_dataset(name, data=data, **kwargs)
 
 
-def _write_nodes(store, network):
+def _carry_through(network) -> dict:
+    """The mesh and per-node datasets a re-save copies across, read while the source companion is still readable.
+
+    ``save_network`` opens the destination with truncation, and a network saved back onto its own companion would then find every lazy dataset gone — silently, because a missing mesh is indistinguishable from a network that never had one.
+    """
+    if not hasattr(network, "array"):
+        return {}
+    nm_path = getattr(network, "node_mapping", None) or "/nodes/parent_index"
+    paths = ["mesh/vertices", "mesh/elements", "mesh/normals", nm_path.lstrip("/")]
+    src = getattr(network, "_store", None)
+    if src is not None and hasattr(src, "dataset_keys"):
+        try:
+            paths.extend(src.dataset_keys("nodes"))
+        except (AttributeError, OSError, KeyError):
+            pass
+    out = {}
+    for path in paths:
+        value = network.array(path)
+        if value is not None:
+            out[path] = value
+    return out
+
+
+def _write_nodes(store, network, carried: dict):
     """Write node-level data to a store.
 
     Persists:
@@ -335,13 +333,9 @@ def _write_nodes(store, network):
     """
     written: set[str] = set()
 
-    # Hierarchical node mapping
-    try:
-        data = object.__getattribute__(network, "_node_mapping_data")
-    except AttributeError:
-        data = None
+    nm_path = getattr(network, "node_mapping", None) or "/nodes/parent_index"
+    data = carried.get(nm_path.lstrip("/"))
     if data is not None:
-        nm_path = getattr(network, "node_mapping", None) or "/nodes/parent_index"
         key = nm_path.lstrip("/")
         written.add(key)
         parts = key.rsplit("/", 1)
@@ -375,39 +369,30 @@ def _write_nodes(store, network):
         )
         written.add("nodes/coordinates")
 
-    src = getattr(network, "_store", None)
-    if src is None or not hasattr(src, "dataset_keys"):
-        return
     # `written` holds what was ACTUALLY emitted, so a dataset with no in-memory value is carried across from the source rather than silently dropped.
-    keys = [k for k in src.dataset_keys("nodes") if k not in written]
+    keys = [k for k in carried if k.startswith("nodes/") and k not in written]
     if not keys:
         return
     grp = store.require_group("nodes")
     for key in keys:
-        try:
-            array = src.read_dataset(key)
-        except (KeyError, OSError):
-            continue
-        _create_ds(grp, key.split("/", 1)[1], data=array)
+        _create_ds(grp, key.split("/", 1)[1], data=carried[key])
 
 
-def _write_mesh(store, network):
+def _write_mesh(store, network, carried: dict):
     """Write mesh data (vertices, elements, normals) to ``/mesh/`` group.
 
-    Reads mesh arrays from ``_mesh_vertices``, ``_mesh_elements``, ``_mesh_normals`` attributes on the network. These are set by ``from_tvb_surface()`` or directly by user code.
+    Each array comes from :func:`_carry_through` — resident if an adapter such as ``from_tvb_surface`` set it, read off the source companion before this store was opened otherwise — so a re-save of a surface network it never touched is lossless, including a re-save onto that same companion.
 
     Called after ``_write_nodes`` during ``save_network``.
     """
     import numpy as _np
 
-    try:
-        vertices = object.__getattribute__(network, "_mesh_vertices")
-    except AttributeError:
-        return  # No mesh data — nothing to write
+    vertices = carried.get("mesh/vertices")
+    if vertices is None:
+        return
 
     mesh_grp = store.require_group("mesh")
 
-    # Mesh metadata
     mesh_obj = getattr(network, "mesh", None)
     if mesh_obj:
         mesh_grp.attrs["tvbo_class"] = "tvbo:Mesh"
@@ -421,28 +406,18 @@ def _write_mesh(store, network):
         if ne is not None:
             mesh_grp.attrs["number_of_elements"] = int(ne)
 
-    # Vertices (V, 3)
     v = _np.asarray(vertices, dtype="float32")
-    v_chunks = (min(v.shape[0], 4096), 3)
-    _create_ds(mesh_grp, "vertices", data=v, chunks=v_chunks, compression="gzip")
+    _create_ds(mesh_grp, "vertices", data=v, chunks=(min(v.shape[0], 4096), 3), compression="gzip")
 
-    # Elements (E, K)
-    try:
-        elements = object.__getattribute__(network, "_mesh_elements")
+    elements = carried.get("mesh/elements")
+    if elements is not None:
         e = _np.asarray(elements, dtype="int32")
-        e_chunks = (min(e.shape[0], 4096), e.shape[1])
-        _create_ds(mesh_grp, "elements", data=e, chunks=e_chunks, compression="gzip")
-    except AttributeError:
-        pass
+        _create_ds(mesh_grp, "elements", data=e, chunks=(min(e.shape[0], 4096), e.shape[1]), compression="gzip")
 
-    # Normals (V, 3) — optional
-    try:
-        normals = object.__getattribute__(network, "_mesh_normals")
+    normals = carried.get("mesh/normals")
+    if normals is not None:
         n = _np.asarray(normals, dtype="float32")
-        n_chunks = (min(n.shape[0], 4096), 3)
-        _create_ds(mesh_grp, "normals", data=n, chunks=n_chunks, compression="gzip")
-    except AttributeError:
-        pass
+        _create_ds(mesh_grp, "normals", data=n, chunks=(min(n.shape[0], 4096), 3), compression="gzip")
 
 
 # ── Load ──────────────────────────────────────────────────────────────
@@ -595,7 +570,7 @@ def load_network(path):
 
 
 def _load_mesh(network, companion_path):
-    """Restore mesh arrays from the ``/mesh/`` group in a companion file."""
+    """Restore the ``Mesh`` record from a companion's ``/mesh/`` group attributes; its arrays stay on the store until asked for."""
     ext = Path(companion_path).suffix.lower()
     if ext not in (".h5", ".hdf5"):
         return
@@ -605,13 +580,6 @@ def _load_mesh(network, companion_path):
         if "mesh" not in f:
             return
         mg = f["mesh"]
-        if "vertices" in mg:
-            object.__setattr__(network, "_mesh_vertices", np.asarray(mg["vertices"][:], dtype="float32"))
-        if "elements" in mg:
-            object.__setattr__(network, "_mesh_elements", np.asarray(mg["elements"][:], dtype="int32"))
-        if "normals" in mg:
-            object.__setattr__(network, "_mesh_normals", np.asarray(mg["normals"][:], dtype="float32"))
-        # Reconstruct Mesh metadata object
         from tvbo.datamodel import schema as tvbo_datamodel
 
         et = mg.attrs.get("element_type", None)
@@ -652,41 +620,13 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     sidecar_ext = ".json" if sidecar_format == "json" else ".yaml"
     sidecar_path = yaml_path.with_suffix(sidecar_ext)
 
-    # Get arrays: merge lazy store with user-set _arrays (user wins)
+    # Every edge matrix, resident or still in the source companion (the resident one wins), keyed by edge name for the writer. Read under one open handle, and read BEFORE the companion is opened for writing: a save onto the network's own companion truncates it, and everything still lazy would be gone.
     store = getattr(network, "_store", None)
-    base_arrays = dict(store.arrays) if store else {}
-    # Use _get_arrays() if available (bypasses JsonObj), else fallback
-    if hasattr(network, "_get_arrays"):
-        user_arrays = network._get_arrays()
-    else:
-        user_arrays = getattr(network, "_arrays", {})
-        if not isinstance(user_arrays, dict):
-            user_arrays = {}
-    arrays = {**base_arrays, **user_arrays}
-
-    # Edge params: use _get_arrays pattern to bypass JsonObj
-    if store:
-        edge_params = dict(store.edge_params)
-    else:
-        try:
-            edge_params = object.__getattribute__(network, "_edge_params")
-            if not isinstance(edge_params, dict):
-                edge_params = {}
-        except AttributeError:
-            edge_params = {}
-
-    # Also pick up _cached_weights / _cached_lengths from from_matrix()
-    if not arrays:
-        cw = getattr(network, "_cached_weights", None)
-        cl = getattr(network, "_cached_lengths", None)
-        if cw is not None:
-            arrays = {"weight": cw}
-            if cl is not None:
-                arrays["length"] = cl
-
-    # Observational matrices (from_bids keeps them in `_bids_observations`) travel with the companion too: a frozen network must keep serving `observations` from its store, gated by `observational_measures`.
-    for name, mat in (getattr(network, "_bids_observations", None) or {}).items():
-        arrays.setdefault(name, mat)
+    with store if hasattr(store, "__enter__") else nullcontext():
+        arrays = dict(store.arrays) if store else {}
+        edge_params = network.edge_parameter_arrays() if hasattr(network, "edge_parameter_arrays") else {}
+        carried = _carry_through(network)
+    arrays.update(network.edge_arrays() if hasattr(network, "edge_arrays") else {})
 
     # Network._items() hides _cached_* attrs, so yaml_dumper works directly
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
@@ -709,18 +649,9 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
             if l_name and l_name != "length":
                 arrays[l_name] = arrays.pop("length")
 
-    if not arrays:
-        # Check if there's mesh data that needs a companion file
-        has_mesh = False
-        try:
-            object.__getattribute__(network, "_mesh_vertices")
-            has_mesh = True
-        except AttributeError:
-            pass
-        if not has_mesh:
-            # Metadata-only sidecar (no companion file)
-            _write_v07_sidecar(network, sidecar_path, sidecar_format)
-            return
+    if not arrays and carried.get("mesh/vertices") is None:
+        _write_v07_sidecar(network, sidecar_path, sidecar_format)
+        return
 
     companion = sidecar_path.with_suffix(f".{binary_format}")
     meta["data_file"] = companion.name
@@ -731,16 +662,16 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
 
         with h5py.File(companion, "w") as f:
             _write_edges(f, meta, arrays, edge_params)
-            _write_nodes(f, network)
-            _write_mesh(f, network)
+            _write_nodes(f, network, carried)
+            _write_mesh(f, network, carried)
 
     elif binary_format == "zarr":
         import zarr
 
         z = zarr.open(str(companion), mode="w")
         _write_edges(z, meta, arrays, edge_params)
-        _write_nodes(z, network)
-        _write_mesh(z, network)
+        _write_nodes(z, network, carried)
+        _write_mesh(z, network, carried)
 
     elif binary_format == "csv":
         # CSV: one file = one matrix = first template edge only

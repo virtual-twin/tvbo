@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import yaml as _yaml_mod
+from scipy import sparse
 
 # ── matrix_io tests ──────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ class TestMatrixRoundTrip:
 
         with h5py.File(path, "r") as hf2:
             result = read_matrix(hf2["test"])
+            result = result.toarray() if sparse.issparse(result) else result
         np.testing.assert_allclose(result, m, atol=1e-6)
 
     def test_csr_roundtrip(self, h5_file):
@@ -71,6 +73,7 @@ class TestMatrixRoundTrip:
 
         with h5py.File(path, "r") as hf2:
             result = read_matrix(hf2["test"])
+            result = result.toarray() if sparse.issparse(result) else result
         np.testing.assert_allclose(result, m, atol=1e-6)
 
     def test_coo_roundtrip(self, h5_file):
@@ -88,6 +91,7 @@ class TestMatrixRoundTrip:
 
         with h5py.File(path, "r") as hf2:
             result = read_matrix(hf2["test"])
+            result = result.toarray() if sparse.issparse(result) else result
         np.testing.assert_allclose(result, m, atol=1e-6)
 
     def test_scipy_sparse_input_records_its_shape(self, h5_file):
@@ -106,6 +110,7 @@ class TestMatrixRoundTrip:
         with h5py.File(path, "r") as hf2:
             assert tuple(hf2["test"].attrs["shape"]) == (400, 400)
             result = read_matrix(hf2["test"])
+            result = result.toarray() if sparse.issparse(result) else result
         np.testing.assert_allclose(result, m.toarray(), atol=1e-6)
 
 
@@ -333,10 +338,11 @@ class TestLazyArrayStore:
 
         store = LazyArrayStore(path, meta)
         assert not store._loaded
-        arrays = store.arrays  # triggers load
-        assert store._loaded
+        arrays = store.arrays
         assert "weight" in arrays
+        assert not store._loaded, "naming a matrix reads nothing"
         np.testing.assert_allclose(arrays["weight"], np.eye(3), atol=1e-6)
+        assert store._loaded
         path.unlink()
 
 
@@ -378,6 +384,7 @@ class TestZarrRoundTrip:
 
             z2 = zarr.open(str(Path(tmpdir) / "test.zarr"), mode="r")
             result = read_matrix(z2["test"])
+            result = result.toarray() if sparse.issparse(result) else result
             np.testing.assert_allclose(result, m, atol=1e-6)
 
 
@@ -422,7 +429,7 @@ class TestEdgeParametersRoundTrip:
         net = Network.from_matrix(weights, lengths)
         # Replace arrays with named edge + edge params
         net.set_matrix("streamlineCount", weights)
-        object.__setattr__(net, "_edge_params", {"streamlineCount": {"tractLength": lengths}})
+        net.set_array("edges/streamlineCount/edge_parameters/tractLength", lengths)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir) / "test_ep.yaml"
@@ -451,8 +458,7 @@ class TestHierarchicalNetwork:
         weights = np.random.rand(6, 6).astype("float32")
         net = Network.from_matrix(weights)
         # Simulate hierarchical mapping: 6 fine nodes → 3 coarse nodes
-        net._node_mapping_data = np.array([0, 0, 1, 1, 2, 2], dtype="int32")
-        net.node_mapping = "/nodes/parent_index"
+        net.set_node_mapping(np.array([0, 0, 1, 1, 2, 2], dtype="int32"))
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir) / "test_hier.yaml"
@@ -528,7 +534,7 @@ class TestBEP017Export:
                 valid_diagonal=False,
             )
         ]
-        object.__setattr__(net, "_arrays", {"streamlineCount": weights})
+        object.__setattr__(net, "_arrays", {"edges/streamlineCount": weights})
         net._store = None
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -610,11 +616,10 @@ class TestFromTvbZipRoundTrip:
                 np.testing.assert_allclose(pos.y, coords[i, 1], atol=1e-5)
                 np.testing.assert_allclose(pos.z, coords[i, 2], atol=1e-5)
 
-            # Verify arrays (canonical names: weight, length)
-            assert "weight" in net._arrays
-            np.testing.assert_allclose(net._arrays["weight"], weights, atol=1e-5)
-            assert "length" in net._arrays
-            np.testing.assert_allclose(net._arrays["length"], lengths, atol=1e-5)
+            assert "edges/weight" in net.arrays
+            np.testing.assert_allclose(net.arrays["edges/weight"], weights, atol=1e-5)
+            assert "edges/length" in net.arrays
+            np.testing.assert_allclose(net.arrays["edges/length"], lengths, atol=1e-5)
 
 
 class TestMultiEdgeFreezeRoundtrip:
@@ -989,7 +994,7 @@ class TestMaterialisedSaveKeepsCrosswalk:
 class TestCompanionWinsOverParcellation:
     """A sidecar's own matrices must beat the atlas's normative connectome.
 
-    ``load_network`` must strip ``data_file`` before construction, because ``_resolve_from_data_file`` treats it as an indirect reference to another network's sidecar and would recurse into the load in progress. That used to leave the eager ``_resolve`` in ``Network.__init__`` seeing no explicit source, so a sidecar declaring BOTH ``data_file:`` and ``parcellation:`` fell through to the parcellation branch, cached a normative database connectome, and served that forever — silently, because ``_cached_weights`` is consulted ahead of ``_store``. The loader now defers connectivity resolution until it has attached the store.
+    ``load_network`` must strip ``data_file`` before construction, because ``_resolve_from_data_file`` treats it as an indirect reference to another network's sidecar and would recurse into the load in progress. That used to leave the eager ``_resolve`` in ``Network.__init__`` seeing no explicit source, so a sidecar declaring BOTH ``data_file:`` and ``parcellation:`` fell through to the parcellation branch, cached a normative database connectome, and served that forever — silently, because a resident matrix is consulted ahead of the companion. The loader now defers connectivity resolution until it has attached the store.
     """
 
     @staticmethod

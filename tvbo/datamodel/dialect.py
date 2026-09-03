@@ -28,6 +28,7 @@ from functools import cache
 from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, SLOT_ALIASES
 
 __all__ = [
+    "identifier_field",
     "KEYED_COLLECTIONS",
     "SCALAR_SHORTCUTS",
     "SEMANTIC_FOLDS",
@@ -219,6 +220,23 @@ def _keeps_iri_slot(cls_name: str) -> bool:
     if cls is None or not dataclasses.is_dataclass(cls):
         return True
     return any(field.name == "iri" for field in dataclasses.fields(cls))
+
+
+def identifier_field(model_cls) -> str | None:
+    """Name of the slot a keyed collection's key maps onto, for a generated Pydantic model.
+
+    A non-``name``/``id`` key slot marks itself with a ``collection_key`` annotation, because LinkML consumes ``identifier``/``key`` into the field's required-ness and drops them from the emitted metadata, so they cannot be read back here. Otherwise the universal TVBO conventions ``name`` then ``id``. ``None`` when no identifier slot can be determined — the member is then left as it is.
+    """
+    fields = model_cls.model_fields
+    for fname, info in fields.items():
+        extra = info.json_schema_extra
+        meta = extra.get("linkml_meta") if isinstance(extra, dict) else None
+        if isinstance(meta, dict) and "collection_key" in (meta.get("annotations") or {}):
+            return fname
+    for candidate in ("name", "id"):
+        if candidate in fields:
+            return candidate
+    return None
 
 
 def key_members(cls_name: str, data: dict) -> dict:
