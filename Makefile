@@ -109,7 +109,7 @@ gen-studies:
 	@python scripts/ontology/bib_to_studies.py
 	@echo "✓ studies/ regenerated from bibtex"
 
-gen-abox: gen-studies
+gen-abox: gen-owl gen-studies
 	@echo "Generating A-box from YAML database..."
 	@mkdir -p ontology
 	@python scripts/ontology/gen_abox.py -o $(ABOX_OUT) --bio-output $(BIOLOGY_OUT)

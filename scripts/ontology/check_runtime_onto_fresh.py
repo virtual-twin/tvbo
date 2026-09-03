@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """Flag when the runtime ontology is stale relative to its sources.
 
-`tvbo/data/ontology/tvbo.owl` is the file the platform KG actually loads (via `tvbo/ontology/owl.py`, which does NOT run a reasoner — it relies on the asserted axioms baked in by ROBOT's ELK pass). `make gen-merged` rebuilds it from the sources below and packages it here (a copy of `ontology/tvbo.owl`).
-This check catches the case where a source (`tvb-o-axioms.ttl` / `tvb-o-struct.owl` / the A-box / clinical) was committed after the runtime owl, so the packaged copy silently lags the sources and the deployed KG is stale.
-(The deprecated class-based `tvb-o.owl` is preserved but no longer loaded.)
+`tvbo/data/ontology/tvbo.owl` is the file the platform KG actually loads (via `tvbo/ontology/owl.py`, which does NOT run a reasoner — it relies on the asserted axioms baked in by ROBOT's ELK pass). `make gen-merged` rebuilds it from the sources below and packages it here (a copy of `ontology/tvbo.owl`). This check catches the case where a source (`tvb-o-axioms.ttl` / the schema / the database / clinical) was committed after the runtime owl, so the packaged copy silently lags the sources and the deployed KG is stale. The T-box and the A-box are themselves derived and untracked, so each is represented here by the tree it is generated from — `schema/` and `tvbo/database/` — which is the thing that actually carries a commit. (The deprecated class-based `tvb-o.owl` is preserved but no longer loaded.)
 
 This makes it answerable. It compares git COMMIT timestamps (stable across checkouts and CI, unlike filesystem mtime): if any source was committed AFTER the runtime owl was last committed, the runtime owl is stale. It also reports working-tree mtime drift as a soft hint for local, not-yet-committed edits.
 
@@ -17,10 +15,10 @@ import sys
 
 RUNTIME = "tvbo/data/ontology/tvbo.owl"
 SOURCES = [
-    "ontology/tvb-o-struct.owl",  # gen-owl  (LinkML T-box)
+    "schema/",  # the LinkML T-box source; gen-owl's output is derived and untracked
     "ontology/tvb-o-axioms.ttl",  # hand-authored OWL axioms
     "ontology/tvb-o-coupling.ttl",  # coupling-evaluation scheme enrichment
-    "ontology/tvb-o-data.ttl",  # gen-abox (A-box)
+    "tvbo/database/",  # the A-box source; gen-abox's output is derived and untracked
     "ontology/tvb-o-clinical.ttl",  # clinical addon
     "ontology/tvb-o-clinical-nmm.ttl",
     "ontology/clinical-postmerge.ru",  # SPARQL updates applied on merge

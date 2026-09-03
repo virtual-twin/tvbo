@@ -158,6 +158,12 @@ tvbo/datamodel/_stamp.py
 # Copy of schema/study_layout.yaml, materialized by the same hook so a wheel can read it.
 tvbo/rules/
 
+# Derived ontology, rebuilt by `make gen-owl` / `gen-shacl` / `gen-abox`; untracked so it cannot lag its sources, and so a new linkml changes the output without changing the index.
+ontology/tvb-o-struct.owl
+ontology/tvb-o.shacl.ttl
+ontology/tvb-o-data.ttl
+ontology/tvb-o-biology.ttl
+
 # Build artifacts
 dist/
 *.egg-info/

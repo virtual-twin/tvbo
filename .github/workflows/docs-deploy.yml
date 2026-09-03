@@ -138,7 +138,7 @@ jobs:
                           "${UV_BIN}" venv /tmp/genenv
                           "${UV_BIN}" pip install --python /tmp/genenv/bin/python \
                               "linkml==1.11.1" pyyaml rdflib pybtex
-                          PATH="/tmp/genenv/bin:${PATH}" make gen-merged
+                          PATH="/tmp/genenv/bin:${PATH}" make gen-merged gen-shacl
                           cd docs
                           # Cold build: drop every cache so all code cells re-execute.
                           rm -rf _freeze .quarto _site .jupyter_cache
