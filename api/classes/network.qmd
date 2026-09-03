@@ -19,6 +19,7 @@ Defines [`Network`](#tvbo.classes.network.Network) and its matrix-style subclass
 | Name | Description |
 | --- | --- |
 | [Connectome](#tvbo.classes.network.Connectome) | Deprecated alias for Network. Use Network instead. |
+| [LazyMaterializationWarning](#tvbo.classes.network.LazyMaterializationWarning) | A `Network` entered a JAX transformation with arrays its companion offers still unread. |
 | [Network](#tvbo.classes.network.Network) | A brain network: parcellation, connectome, per-node dynamics, and coupling. |
 
 ### Connectome { #tvbo.classes.network.Connectome }
@@ -28,6 +29,16 @@ classes.network.Connectome(*args, **kwargs)
 ```
 
 Deprecated alias for Network. Use Network instead.
+
+### LazyMaterializationWarning { #tvbo.classes.network.LazyMaterializationWarning }
+
+```python
+classes.network.LazyMaterializationWarning()
+```
+
+A `Network` entered a JAX transformation with arrays its companion offers still unread.
+
+The solver then traces nothing and reads the connectome as a constant inside the trace. Set ``TVBO_JAX_STRICT`` to make it an error.
 
 ### Network { #tvbo.classes.network.Network }
 
@@ -132,8 +143,8 @@ See the [Network specification](/2-specify/Networks/Network.qmd) for the slot-by
 | [to_yaml](#tvbo.classes.network.Network.to_yaml) | Serialize Network to YAML format. |
 | [transform_expression](#tvbo.classes.network.Network.transform_expression) | A transform's equation as a sympy expression, with its arguments substituted. |
 | [transforms_for](#tvbo.classes.network.Network.transforms_for) | The declared `transforms:` that retarget *target*, in declaration order. |
-| [tree_flatten](#tvbo.classes.network.Network.tree_flatten) | Flatten into JAX pytree children `(weights, lengths)` plus metadata aux data. |
-| [tree_unflatten](#tvbo.classes.network.Network.tree_unflatten) | Rebuild a `Network` from JAX pytree children and metadata (inverse of `tree_flatten`). |
+| [tree_flatten](#tvbo.classes.network.Network.tree_flatten) | The resident arrays as JAX children, keyed by companion path, and the spec as static aux. |
+| [tree_unflatten](#tvbo.classes.network.Network.tree_unflatten) | The inverse of `tree_flatten`: the spec rebuilt from its JSON, the children installed as the resident arrays. |
 
 ##### add_edge { #tvbo.classes.network.Network.add_edge }
 
@@ -1120,7 +1131,7 @@ classes.network.Network.matrix(name, format=None, apply_transforms=True)
 
 Get a named edge matrix, optionally in a specific format.
 
-The single canonical connectivity accessor. Resolution order: the ``_pytree_data`` payload (the live matrices under a JAX transformation) → the resident `arrays` → the companion file, whose matrix is then kept resident → the explicit edges → ``None``. Each SOURCE is exhausted across every alias spelling before the next is consulted — precedence is between sources, and a spelling is not a precedence, so a companion file holding ``weight`` cannot shadow a user-set ``weights``.
+The single canonical connectivity accessor. Resolution order: the resident `arrays`, a JAX array among them returned untouched (the live leaf under a transformation) → the companion file, whose matrix is then kept resident → the explicit edges → ``None``. Each SOURCE is exhausted across every alias spelling before the next is consulted — precedence is between sources, and a spelling is not a precedence, so a companion file holding ``weight`` cannot shadow a user-set ``weights``.
 
 Being canonical means subsuming what the deprecated properties returned, so a WEIGHT target on a node set with no edges yields zeros rather than ``None``: an unconnected network is a legitimate one, and every consumer of this builds an ``(n, n)`` array from the result.
 
@@ -1802,18 +1813,13 @@ The one place the target name is matched, so the singular and plural spellings o
 classes.network.Network.tree_flatten()
 ```
 
-Flatten into JAX pytree children `(weights, lengths)` plus metadata aux data.
+The resident arrays as JAX children, keyed by companion path, and the spec as static aux.
 
-Metadata is stored without the array data to avoid duplicating the leaves.
+JAX flattens a dict by sorted key, so the order arrays were materialised in never retraces and the key set is the treedef: `materialize("weight", "gain")` and `materialize("gain", "weight")` compile once, `materialize("weight")` compiles again. Every resident array is a leaf whatever its shape or dtype — a `(276, 16384)` leadfield and a `(327684, 3)` vertex array as much as the connectome — so `jax.grad` returns a cotangent for each float one and, with ``allow_int=True``, a `float0` for integer topology.
 
-Four groups of slots are held out of that metadata, by the same private-attr rule ``Network._items()`` applies, so there is one source of truth for what is internal and never serialised:
+Nothing is read here. A network whose companion offers arrays it has not materialised flattens to an empty set and warns, because the solver would then trace nothing and read the connectome as a constant inside the trace; under ``TVBO_JAX_STRICT`` that is an error. A scipy sparse matrix is refused by name: it is not a JAX type, and converting it here would decide a treedef the caller never asked for.
 
-- ``weight`` / ``length`` — the matrices themselves, already carried in `children`.
-- ``edges`` — hold ``Parameter`` objects whose string form is not deterministic,
-  and whose weight/length content is likewise already in `children`.
-- ``parcellation`` / ``data_file`` / ``bids_dir`` — loading specs; keeping them
-  would make ``tree_unflatten`` re-resolve from disk, and fail.
-- the cache attributes, which are derived state.
+The aux is the spec as canonical JSON, compared as a string, which is what keeps treedef equality cheap.
 
 ##### tree_unflatten { #tvbo.classes.network.Network.tree_unflatten }
 
@@ -1821,9 +1827,9 @@ Four groups of slots are held out of that metadata, by the same private-attr rul
 classes.network.Network.tree_unflatten(aux_data, children)
 ```
 
-Rebuild a `Network` from JAX pytree children and metadata (inverse of `tree_flatten`).
+The inverse of `tree_flatten`: the spec rebuilt from its JSON, the children installed as the resident arrays.
 
-Arrays are re-attached as `_pytree_data` rather than `Matrix` objects, so it stays valid under JAX tracing.
+The arrays are installed as they arrive — tracers under a transformation — and `matrix` hands a JAX array back untouched, so what a traced computation reads is the leaf JAX gave it and never a pre-trace attribute.
 
 ## Functions
 
