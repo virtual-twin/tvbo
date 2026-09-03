@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Flag when the runtime ontology is stale relative to its sources.
 
-`tvbo/data/ontology/tvbo.owl` is the file the platform KG actually loads (via `tvbo/ontology/owl.py`, which does NOT run a reasoner — it relies on the asserted axioms baked in by ROBOT's ELK pass). `make gen-merged` rebuilds it from the sources below and packages it here (a copy of `ontology/tvbo.owl`). This check catches the case where a source (`tvb-o-axioms.ttl` / the schema / the database / clinical) was committed after the runtime owl, so the packaged copy silently lags the sources and the deployed KG is stale. The T-box and the A-box are themselves derived and untracked, so each is represented here by the tree it is generated from — `schema/` and `tvbo/database/` — which is the thing that actually carries a commit. (The deprecated class-based `tvb-o.owl` is preserved but no longer loaded.)
+`tvbo/data/ontology/tvbo.owl` is the file the platform KG actually loads (via `tvbo/ontology/owl.py`, which does NOT run a reasoner — it relies on the asserted axioms baked in by ROBOT's ELK pass). `make gen-merged` rebuilds it from the sources below and packages it here (a copy of `ontology/tvbo.owl`). This check catches the case where a source (`tvb-o-axioms.ttl` / the schema / the database / clinical) was committed after the runtime owl, so the copy in the tree describes an older world than the code beside it. It is about a checkout, not a release: `publish-pypi.yml` rebuilds the merged ontology from the released schema and hands it to the build, so a published wheel carries a current graph however far behind the committed copy has fallen. The T-box and the A-box are themselves derived and untracked, so each is represented here by the tree it is generated from — `schema/` and `tvbo/database/` — which is the thing that actually carries a commit. (The deprecated class-based `tvb-o.owl` is preserved but no longer loaded.)
 
 This makes it answerable. It compares git COMMIT timestamps (stable across checkouts and CI, unlike filesystem mtime): if any source was committed AFTER the runtime owl was last committed, the runtime owl is stale. It also reports working-tree mtime drift as a soft hint for local, not-yet-committed edits.
 
     python3 scripts/ontology/check_runtime_onto_fresh.py
-Exit 0 = current; non-zero = stale (suitable as a CI gate alongside the existing "committed artifact must match regenerated output" checks).
+Exit 0 = current; non-zero = stale. Deliberately not a CI gate: passing it after every schema commit would put ROBOT and a JVM in the path of anyone touching the schema, which is the cost the release-time rebuild exists to avoid.
 """
 
 import os

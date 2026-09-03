@@ -370,7 +370,7 @@ jobs:
 
       - name: Verify version consistency
         run: |
-          PKG_VERSION=$(grep -m1 '__version__' tvbo/__init__.py | sed 's/.*"\(.*\)".*/\1/')
+          PKG_VERSION=$(make -s print-version)
           WHL_NAME=$(ls dist/*.whl | head -1)
           echo "Package version: $PKG_VERSION"
           echo "Wheel: $WHL_NAME"

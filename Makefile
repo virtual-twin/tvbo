@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-studies gen-abox gen-merged gen-neuroml gen-all all check-runtime-onto
+.PHONY: help build save run docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed release print-version gen-linkml gen-openminds gen-owl gen-shacl gen-studies gen-abox gen-merged gen-neuroml gen-all all check-runtime-onto
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -39,7 +39,6 @@ help: ## Show this help
 	@echo "  make docs-test-to-debug Test and move fixed notebooks from to_debug/"
 	@echo ""
 	@echo "Release:"
-	@echo "  make pypi-release       Build and upload to PyPI"
 	@echo "  make release [BUMP=patch|minor|major | VERSION=x.y.z] [DRYRUN=1]"
 	@echo "                          Preview, confirm + publish a GitHub release (auto version bump)"
 	@echo ""
@@ -363,6 +362,10 @@ docs-test-to-debug:
 #   make release VERSION=0.6.0       # explicit version
 #   make release DRYRUN=1            # preview only, change nothing
 #   make release                     # release version currently in tvbo/__init__.py
+# The one reader of `__version__`, so the wheel, the ontology IRI and the release tag cannot disagree about what is shipping.
+print-version:
+	@echo "$(PKG_VERSION)"
+
 release:
 	@VERSION="$(VERSION)" BUMP="$(BUMP)" CONFIRM="$(CONFIRM)" DRYRUN="$(DRYRUN)" bash scripts/release.sh
 
