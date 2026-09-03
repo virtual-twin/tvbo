@@ -12,7 +12,7 @@ aliases:
 
 This page is the gallery. Each card links to the live page and to the platform's own guide for it.
 
-![The platform at tvbo.charite.de.](_static/platform/home.webp){fig-alt="The TVB-O platform home page, with entry points to the knowledge graph, the experiment builder and the account area."}
+![The platform at tvbo.charite.de.](../_static/platform/home.webp){fig-alt="The TVB-O platform home page, with entry points to the knowledge graph, the experiment builder and the account area."}
 
 ## ① Explore — the knowledge graph
 
@@ -21,7 +21,7 @@ A searchable catalogue of the ontology: dynamics, networks, integrators, couplin
 ::: {.platform-gallery}
 
 ::: {.platform-card}
-![](_static/platform/kg-list-view.webp){fig-alt="The knowledge graph list view: a search box, a class filter with per-class counts, a view toggle, and a grid of entity cards."}
+![](../_static/platform/kg-list-view.webp){fig-alt="The knowledge graph list view: a search box, a class filter with per-class counts, a view toggle, and a grid of entity cards."}
 ### List view
 Search filters live across names and descriptions; the **Class** facet narrows to Dynamics, Network, Coupling, Study, Atlas and the rest, each with a count.
 
@@ -29,7 +29,7 @@ Search filters live across names and descriptions; the **Class** facet narrows t
 :::
 
 ::: {.platform-card}
-![](_static/platform/kg-graph-view.webp){fig-alt="The knowledge graph drawn as an interactive node-link diagram, with entities as nodes and their relationships as edges."}
+![](../_static/platform/kg-graph-view.webp){fig-alt="The knowledge graph drawn as an interactive node-link diagram, with entities as nodes and their relationships as edges."}
 ### Graph view
 The same results as a node-link diagram. Edges are the relationships themselves, so it surfaces related entities you did not search for.
 
@@ -37,7 +37,7 @@ The same results as a node-link diagram. Edges are the relationships themselves,
 :::
 
 ::: {.platform-card}
-![](_static/platform/kg-detail.webp){fig-alt="An entity detail card showing a model's description, parameters, state variables, governing equations and related entities."}
+![](../_static/platform/kg-detail.webp){fig-alt="An entity detail card showing a model's description, parameters, state variables, governing equations and related entities."}
 ### Entity detail
 Description, parameters, state variables, governing equations and related entities, with one action that sends the entity straight into the builder.
 
@@ -57,7 +57,7 @@ Three ways to start, mixable: from a curated example, tab by tab, or by sending 
 ::: {.platform-gallery}
 
 ::: {.platform-card}
-![](_static/platform/builder-general.webp){fig-alt="The experiment builder's general tab beside the live YAML specification panel."}
+![](../_static/platform/builder-general.webp){fig-alt="The experiment builder's general tab beside the live YAML specification panel."}
 ### General
 Name, description and integration settings, with the live YAML beside them.
 
@@ -65,7 +65,7 @@ Name, description and integration settings, with the live YAML beside them.
 :::
 
 ::: {.platform-card}
-![](_static/platform/builder-dynamics.webp){fig-alt="The dynamics tab, choosing a neural mass model and editing its parameters."}
+![](../_static/platform/builder-dynamics.webp){fig-alt="The dynamics tab, choosing a neural mass model and editing its parameters."}
 ### Dynamics
 Pick a curated neural mass model and edit its parameters. This is the `dynamics:` block of [the running example](../2-specify/RunningExample.qmd).
 
@@ -73,7 +73,7 @@ Pick a curated neural mass model and edit its parameters. This is the `dynamics:
 :::
 
 ::: {.platform-card}
-![](_static/platform/builder-network.webp){fig-alt="The network tab, choosing a connectome and a coupling function."}
+![](../_static/platform/builder-network.webp){fig-alt="The network tab, choosing a connectome and a coupling function."}
 ### Network & coupling
 Choose a connectome and the coupling that carries activity between its nodes.
 
@@ -81,7 +81,7 @@ Choose a connectome and the coupling that carries activity between its nodes.
 :::
 
 ::: {.platform-card}
-![](_static/platform/builder-observations.webp){fig-alt="The observations tab, declaring what the simulation should measure."}
+![](../_static/platform/builder-observations.webp){fig-alt="The observations tab, declaring what the simulation should measure."}
 ### Observations
 Declare what the run measures rather than keeping the whole state.
 
@@ -95,7 +95,7 @@ Declare what the run measures rather than keeping the whole state.
 ::: {.platform-gallery}
 
 ::: {.platform-card}
-![](_static/platform/builder-run.webp){fig-alt="The builder's run tab: duration, step size, a compute backend such as JAX, and the run button."}
+![](../_static/platform/builder-run.webp){fig-alt="The builder's run tab: duration, step size, a compute backend such as JAX, and the run button."}
 ### Run in the browser
 Set duration, step size and a compute backend such as JAX, then run. The platform executes it with the `tvbo` package and returns the result, which is the quickest way to check an experiment before exporting it.
 
@@ -103,7 +103,7 @@ Set duration, step size and a compute backend such as JAX, then run. The platfor
 :::
 
 ::: {.platform-card}
-![](_static/platform/api-keys.webp){fig-alt="The API keys page, where a key is issued for scripted access."}
+![](../_static/platform/api-keys.webp){fig-alt="The API keys page, where a key is issued for scripted access."}
 ### REST API
 `GET /api/tvbo/v1/experiments` lists what you can see, `?format=yaml` fetches one, and `POST` saves one back, so a collaborator reproduces a run by id rather than by emailed YAML.
 
@@ -131,7 +131,7 @@ You can do both independently: share a draft with a colleague while you work on 
 ::: {.platform-gallery}
 
 ::: {.platform-card}
-![](_static/platform/my-models.webp){fig-alt="My Models, listing saved elements with their state and their share and submit actions."}
+![](../_static/platform/my-models.webp){fig-alt="My Models, listing saved elements with their state and their share and submit actions."}
 ### My models
 Saved models and experiments, each showing its state and its **Share** and **Submit** actions. Saved items stay private until you act.
 
@@ -139,7 +139,7 @@ Saved models and experiments, each showing its state and its **Share** and **Sub
 :::
 
 ::: {.platform-card}
-![](_static/platform/shared-with-me.webp){fig-alt="The Shared with me page, listing elements a colleague granted access to."}
+![](../_static/platform/shared-with-me.webp){fig-alt="The Shared with me page, listing elements a colleague granted access to."}
 ### Shared with me
 What colleagues granted you access to, instantly and without review. Reached from **My models**, where the sharing is granted.
 
@@ -147,7 +147,7 @@ What colleagues granted you access to, instantly and without review. Reached fro
 :::
 
 ::: {.platform-card}
-![](_static/platform/publications-queue.webp){fig-alt="The review-request queue in the backend, colour-coded by state, with filters for state, validation result, element kind and owner."}
+![](../_static/platform/publications-queue.webp){fig-alt="The review-request queue in the backend, colour-coded by state, with filters for state, validation result, element kind and owner."}
 ### Publication review
 Submissions queue for a reviewer, colour-coded by state: amber awaiting review, green published, red validation failed. One approval publishes.
 
@@ -163,7 +163,7 @@ A published result belongs in an archive as well as a gallery: [Results in BIDS]
 ::: {.platform-gallery}
 
 ::: {.platform-card}
-![](_static/platform/agents.webp){fig-alt="The agentic-coding guide on the platform, with a quick install for the assistant skills."}
+![](../_static/platform/agents.webp){fig-alt="The agentic-coding guide on the platform, with a quick install for the assistant skills."}
 ### AI agents
 A quick install for the assistant skills, then a path from running a curated model to describing an experiment in plain language and letting the assistant write it.
 
@@ -171,7 +171,7 @@ A quick install for the assistant skills, then a path from running a curated mod
 :::
 
 ::: {.platform-card}
-![](_static/platform/forum-index.webp){fig-alt="The community forum index, listing discussion and question topics."}
+![](../_static/platform/forum-index.webp){fig-alt="The community forum index, listing discussion and question topics."}
 ### Forum
 One place for both discussion and questions, with karma as the permission system. Built and documented, but not yet reachable on the deployed site.
 
@@ -179,7 +179,7 @@ One place for both discussion and questions, with karma as the permission system
 :::
 
 ::: {.platform-card}
-![](_static/platform/login.webp){fig-alt="The sign-in screen, taking an email address and a password."}
+![](../_static/platform/login.webp){fig-alt="The sign-in screen, taking an email address and a password."}
 ### Accounts
 Email and password, no separate identity provider. Registration takes under a minute and is only needed to keep work, not to do it.
 

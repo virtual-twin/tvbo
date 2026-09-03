@@ -2531,6 +2531,8 @@ website:
                         href: api/behaviour/integrator.qmd
                       - text: "Perturbation"
                         href: api/behaviour/perturbation.qmd
+                      - text: "Software"
+                        href: api/behaviour/software.qmd
                   - section: "Classes"
                     href: api/classes/index.qmd
                     contents:
@@ -2801,6 +2803,8 @@ website:
                         href: api/utils/figure_compare.qmd
                       - text: "Pydantic Loader"
                         href: api/utils/pydantic_loader.qmd
+                      - text: "Pytree"
+                        href: api/utils/pytree.qmd
                       - text: "Report"
                         href: api/utils/report.qmd
                       - text: "Study Layout"
