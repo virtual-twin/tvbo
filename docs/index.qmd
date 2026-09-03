@@ -3,8 +3,8 @@ title: The Virtual Brain Ontology
 # The Usage guide dissolved into topics; keep its URL resolving.
 aliases:
   - /Usage/index.html
-# The hero owns the page; a one-item ("Quickstart") right-rail adds nothing.
-toc: false
+# The rail is blank by design and hidden in styles.css; it stays enabled only so its grid column keeps existing, which is what holds this page in the same position as every other one.
+toc: true
 # The first simulation runs a recipe and shows the figure that recipe declares; nothing on this page is drawn by hand.
 native: true
 ---

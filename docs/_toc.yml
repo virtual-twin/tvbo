@@ -619,6 +619,8 @@ website:
                         href: datamodel/classes/StudyLayout.qmd
                       - text: "Study Member"
                         href: datamodel/classes/StudyMember.qmd
+                      - text: "Study Template"
+                        href: datamodel/classes/StudyTemplate.qmd
                       - text: "Style"
                         href: datamodel/classes/Style.qmd
                       - text: "Subject"
@@ -1577,6 +1579,8 @@ website:
                         href: datamodel/slots/non_negative.qmd
                       - text: "normals"
                         href: datamodel/slots/normals.qmd
+                      - text: "not_in_templates"
+                        href: datamodel/slots/not_in_templates.qmd
                       - text: "notes"
                         href: datamodel/slots/notes.qmd
                       - text: "nrows"
@@ -2053,6 +2057,8 @@ website:
                         href: datamodel/slots/template.qmd
                       - text: "template_variants"
                         href: datamodel/slots/template_variants.qmd
+                      - text: "templates"
+                        href: datamodel/slots/templates.qmd
                       - text: "tensor_coefficient"
                         href: datamodel/slots/tensor_coefficient.qmd
                       - text: "terminology"

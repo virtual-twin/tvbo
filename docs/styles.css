@@ -29,6 +29,9 @@
 /* Hide the default Quarto title block only on the home page — the hero owns the h1. */
 body:has(.tvbo-home) #title-block-header { display: none; }
 
+/* Keep the right rail's grid column allocated but blank: dropping it costs 300px of tracks, which pushes this page and its sidebar 150px right of every other one. `visibility`, never `display`, or the column collapses again. */
+body:has(.tvbo-home) #quarto-margin-sidebar { visibility: hidden; }
+
 /* Give the hero room to breathe at the top of the page. */
 .tvbo-home { margin-top: -0.5rem; }
 .tvbo-home * { box-sizing: border-box; }
