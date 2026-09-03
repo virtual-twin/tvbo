@@ -36,6 +36,19 @@ def _git_commit_time(path):
         return None
 
 
+def _newest_mtime(path):
+    """Newest mtime at or under `path`.
+
+    A directory's own mtime only moves when an entry is added or removed, so the two tree sources would otherwise look untouched after an edit to a file inside them.
+    """
+    if not os.path.isdir(path):
+        return os.path.getmtime(path)
+    return max(
+        (os.path.getmtime(os.path.join(root, f)) for root, _dirs, files in os.walk(path) for f in files),
+        default=os.path.getmtime(path),
+    )
+
+
 def main():
     if not os.path.exists(RUNTIME):
         print(f"? {RUNTIME} not found; skipping freshness check")
@@ -51,7 +64,7 @@ def main():
         sc = _git_commit_time(src)
         if rt_commit is not None and sc is not None and sc > rt_commit:
             stale_committed.append(src)
-        if os.path.getmtime(src) > rt_mtime:
+        if _newest_mtime(src) > rt_mtime:
             newer_uncommitted.append(src)
 
     if newer_uncommitted:

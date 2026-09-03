@@ -100,22 +100,21 @@ The core quality gate. Ensures code is correct before it reaches `main`.
 
 **All three gate jobs must pass before a PR can be merged.**
 
-### 2. Docs (`docs.yml`)
+### 2. Docs (`docs-deploy.yml`)
 
-> **Runs on:** push to `main`, manual dispatch
+> **Runs on:** called by `docker.yml` once the release image is pushed, or dispatched manually against any tag
 
-Publishes the [Quarto](https://quarto.org/) documentation site to GitHub Pages.
+Publishes the [Quarto](https://quarto.org/) documentation site to GitHub Pages. It is release-driven rather than branch-driven: the render happens *inside* the released container, at that image's locked dependency set, so the site is a faithful cold re-execution of every page rather than a replay of cached output.
 
 | Step | Details |
 |------|---------|
-| Checkout code | `actions/checkout@v6` |
-| Install Python + deps | `pip install ".[all,docs]"` + `quartodoc`, `jupyter` |
-| Install Quarto | `quarto-dev/quarto-actions/setup@v2` |
-| Publish | `quarto-dev/quarto-actions/publish@v2` → pushes to `gh-pages` branch |
+| Render | Inside the released image, with `_freeze`, `.quarto` and the Actions cache all dropped |
+| Build ontology | `make gen-merged gen-shacl` in an isolated venv, so the published spec is generated rather than read from the repository |
+| Widoco spec | Runs on the host, overlaying the W3C-style HTML and WebVOWL onto the built `_site` |
+| Publish | `quarto publish gh-pages --no-render`, reusing the `_site` just built |
 
-- Uses a **concurrency group** (`pages`) to cancel in-progress deploys if a new push arrives.
+- A dispatch defaults to *not* publishing, so the cold build can be exercised without deploying.
 - Requires `contents: write` permission to push to the `gh-pages` branch.
-- Can be triggered manually via the Actions tab (workflow_dispatch).
 
 ### 3. Docker (`docker.yml`)
 
@@ -166,23 +165,22 @@ The full release-to-PyPI pipeline with its own test gate.
 - The `id-token: write` permission is required for OIDC.
 - Tests run again independently (not reusing CI results) to ensure the release commit is clean.
 
-### 5. Release Ontology (`release-ontology.yml`)
+### 5. Ontology (the `ontology` job in `publish-pypi.yml`)
 
-> **Runs on:** push to `main` (only when `tvbo/data/ontology/tvb-o.owl` or `tvbo/__init__.py` changed)
+> **Runs on:** every run of `publish-pypi.yml`, and attaches to the release when there is one
 
-Automatically creates a GitHub Release for the OWL ontology file when it changes.
+The ontology is built from the released schema and shipped with the package that determines it, so there is one tag and one version rather than a parallel `ontology-v*` series that could name a different state of the schema. It runs `build` after it, not beside it, because the wheel carries a copy of the merged ontology at `tvbo/data/ontology/tvbo.owl` — building the two in parallel is how a release ends up with a fresh ontology attached and a stale one inside the wheel.
 
 | Step | Details |
 |------|---------|
-| Detect change | `git diff` checks if `tvb-o.owl` was modified in the latest commit |
-| Extract version | Reads `__version__` from `tvbo/__init__.py` |
-| Check existing release | Skips if `ontology-v<version>` release already exists |
-| Generate checksum | `sha256sum tvb-o.owl` |
-| Create release | `gh release create ontology-v<version>` with OWL file + checksum attached |
+| Build | `make gen-merged gen-shacl` — needs ROBOT and a JVM, which is why this is not a per-commit gate |
+| Version | `gen-merged` stamps the version IRI from `__version__`, the same file hatch reads the wheel version from |
+| Hand to `build` | The merged ontology goes to the build job as an artifact, which overwrites the committed copy before `python -m build` |
+| Attach | On a release only: `sha256sum` plus `gh release upload <tag>` with `tvbo.owl`, `tvb-o-struct.owl`, `tvb-o.shacl.ttl` and the checksum file |
 
-- Tag format: `ontology-v<version>` (e.g., `ontology-v0.5.0`)
-- Provides a persistent URL for referencing the ontology at a specific version.
-- Uses `actions/checkout@v4` and `actions/setup-python@v5` (not yet updated to v6).
+- `https://w3id.org/tvbo/<version>/tvbo.owl` resolves to the same version you can `pip install`, and to the copy inside it.
+- `tvb-o-struct.owl` and `tvb-o.shacl.ttl` are not committed; the release is where a versioned copy comes from, and `schema-artifacts` uploads them per-run for anything that needs the current tip.
+- A manual dispatch builds the ontology without attaching anything, so a break shows up while it is still cheap to fix rather than during a release.
 
 ---
 
@@ -194,13 +192,11 @@ The **CI** workflow triggers. All three gate jobs (Lint, Test, Test Docs) must p
 
 ### …a PR is merged to `main`
 
-Five things happen simultaneously:
+Three things happen simultaneously:
 
 1. **CI** runs again (lint + test + test-docs + **package build**)
 2. **Docker** builds and pushes images tagged `main`, `latest`, `<sha>`
-3. **Docs** publishes the site to GitHub Pages
-4. **Release Ontology** creates a GitHub Release if the OWL file changed
-5. Nothing happens on PyPI (that requires a manual GitHub Release)
+3. Nothing happens on PyPI, to the docs site or to the ontology — all three wait for a GitHub Release
 
 ### …you push to `dev`
 
@@ -315,9 +311,8 @@ python -m twine check dist/*  # Verify package metadata
 .github/workflows/
 ├── ci.yml               # Lint + Test + Test Docs + Package
 ├── docker.yml           # Docker multi-platform build & push
-├── docs.yml             # Quarto publish to GitHub Pages
-├── publish-pypi.yml     # PyPI release (on GitHub Release)
-└── release-ontology.yml # OWL ontology GitHub Release
+├── docs-deploy.yml      # Quarto publish to GitHub Pages
+└── publish-pypi.yml     # PyPI release + ontology artifacts (on GitHub Release)
 ```
 
 ## Schema Changes

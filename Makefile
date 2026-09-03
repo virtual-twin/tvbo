@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-neuroml gen-all all check-runtime-onto
+.PHONY: help build save run docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-studies gen-abox gen-merged gen-neuroml gen-all all check-runtime-onto
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -87,6 +87,8 @@ RUNTIME_GEN = tvbo/data/ontology/tvbo.owl
 RUNTIME_ONTO = tvbo/data/ontology/tvb-o.owl
 WIDOCO_OUT = docs/1-explore/ontology/spec
 ROBOT ?= robot
+# The release the merged ontology belongs to, so its version IRI names a package anyone can install rather than the day someone ran make; `cut -s` so a line that is not `__version__ = "..."` yields nothing and gen-merged's guard fires instead of stamping the raw line into the IRI.
+PKG_VERSION := $(shell grep -m1 '^__version__' tvbo/__init__.py | cut -s -d'"' -f2)
 WIDOCO_IMAGE ?= ghcr.io/dgarijo/widoco:v1.4.25
 
 gen-owl:
@@ -109,7 +111,7 @@ gen-studies:
 	@python scripts/ontology/bib_to_studies.py
 	@echo "✓ studies/ regenerated from bibtex"
 
-gen-abox: gen-owl gen-studies
+gen-abox: gen-studies
 	@echo "Generating A-box from YAML database..."
 	@mkdir -p ontology
 	@python scripts/ontology/gen_abox.py -o $(ABOX_OUT) --bio-output $(BIOLOGY_OUT)
@@ -139,7 +141,8 @@ gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox gen-neuroml gen-mer
 	@echo "✓ All schemas generated"
 
 gen-merged: gen-owl gen-abox
-	@echo "Merging T-box (struct + axioms) and A-box into a single distributable OWL file..."
+	@test -n "$(PKG_VERSION)" || { echo "PKG_VERSION is empty: could not read __version__ from tvbo/__init__.py, and an unversioned ontology IRI is worse than no build." >&2; exit 1; }
+	@echo "Merging T-box (struct + axioms) and A-box into a single distributable OWL file (version $(PKG_VERSION))..."
 	@mkdir -p ontology
 	@$(ROBOT) merge \
 		--input $(OWL_OUT) \
@@ -156,7 +159,7 @@ gen-merged: gen-owl gen-abox
 		query --update ontology/fix-punning.ru --update ontology/clinical-postmerge.ru \
 		annotate \
 		--ontology-iri "https://w3id.org/tvbo/tvbo.owl" \
-		--version-iri "https://w3id.org/tvbo/$(shell date +%Y-%m-%d)/tvbo.owl" \
+		--version-iri "https://w3id.org/tvbo/$(PKG_VERSION)/tvbo.owl" \
 		reason --reasoner ELK \
 		--output $(MERGED_OUT)
 	@cp $(MERGED_OUT) $(RUNTIME_GEN)
